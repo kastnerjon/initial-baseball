@@ -8,5 +8,11 @@ export function selectRandomPracticePlayer(players: Player[], rng: RandomNumberG
   }
 
   const index = Math.min(players.length - 1, Math.floor(rng() * players.length));
-  return players[index];
+  const player = players[index];
+
+  if (!player) {
+    throw new Error('Practice player selection produced an invalid player index.');
+  }
+
+  return player;
 }

@@ -3,7 +3,7 @@
   "compilerOptions": {
     "jsx": "react-jsx",
     "noEmit": true,
-    "types": ["react", "react-native"]
+    "types": ["node", "react", "react-native"]
   },
   "include": ["src/**/*.ts", "src/**/*.tsx", "App.tsx"]
 }
