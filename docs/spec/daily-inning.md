@@ -53,6 +53,47 @@ Daily Inning should use fixed rules for comparability:
 
 Do not support custom settings in Daily Inning v0.
 
+## Guessing UX
+
+Players do not submit free-text guesses.
+
+Flow:
+
+- User types into a search box.
+- App returns matching players using substring search over normalized names and aliases.
+- User selects a player from results.
+- App submits canonical `player_id`.
+
+Game rule:
+
+- Guess correctness is determined by exact `player_id` equality.
+- No fuzzy matching.
+- No string comparison at evaluation time.
+
+## BUNT rule
+
+BUNT is not a hit and never scores a run.
+
+BUNT always creates exactly 1 out.
+
+Case A — No runner on 3rd:
+
+- Batter is out.
+- All existing runners advance one base.
+- No run scores.
+
+Case B — Runner on 3rd:
+
+- Runner on 3rd is out.
+- Batter reaches 1st.
+- Other runners advance one base.
+- No run scores.
+
+Notes:
+
+- BUNT is strictly worse than a single.
+- BUNT can change base state but cannot produce runs.
+
 ## Share result
 
 Copied share text must be spoiler-safe.
