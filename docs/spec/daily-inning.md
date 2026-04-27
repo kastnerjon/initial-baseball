@@ -98,6 +98,12 @@ Notes:
 
 Copied share text must be spoiler-safe.
 
+Architecture boundary:
+
+- `createDailyShareResult` builds spoiler-safe share data from final `DailyGameState`.
+- `formatDailyShareText` converts `DailyShareResult` into copyable text.
+- Share output must use final engine score totals.
+
 It should show:
 
 - Daily puzzle number.
@@ -107,6 +113,7 @@ It should show:
 - Link.
 
 It must not show player names.
+It must show initials and outcomes only for pitch-level results.
 
 Example:
 
