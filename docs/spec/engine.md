@@ -90,6 +90,14 @@ Engine rule:
 - No fuzzy matching.
 - No string comparison at evaluation time.
 
+## Share Boundary
+
+- `createDailyShareResult` builds spoiler-safe share data from `DailyGameState`.
+- `formatDailyShareText` converts `DailyShareResult` into copyable text.
+- Share output must use final engine score totals.
+- Share output must include initials and outcomes only.
+- Share output must never include player names.
+
 ## Required tests
 
 - Initials: Ken Griffey Jr., CC Sabathia, J.D. Martinez, Ichiro, Elly De La Cruz.
