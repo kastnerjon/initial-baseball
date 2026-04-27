@@ -79,21 +79,18 @@ export type DailyHintRevealState = {
 export type DailyGuessResult =
   | {
       kind: 'incorrect';
-      guess: string;
       revealedCount: DailyRevealCount;
       strikeCount: number;
       remainingStrikes: number;
     }
   | {
       kind: 'correct';
-      guess: string;
       revealedCount: DailyRevealCount;
       outcome: Exclude<DailyOutcome, 'K'>;
       source: Exclude<DailyGuessSource, 'strikeout'>;
     }
   | {
       kind: 'strikeout';
-      guess: string;
       revealedCount: DailyRevealCount;
       strikeCount: number;
       outcome: 'K';

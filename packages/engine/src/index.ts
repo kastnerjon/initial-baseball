@@ -8,6 +8,7 @@ export * from './guesses/matchGuessToPlayer.js';
 export * from './guesses/normalizeGuess.js';
 export * from './guesses/searchPlayers.js';
 export * from './guesses/evaluateGuess.js';
+export * from './guesses/getGuessOutcome.js';
 export * from './practice/selectRandomPracticePlayer.js';
 
 export * from './daily/formatDailyShareText.js';
