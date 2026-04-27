@@ -27,12 +27,27 @@ The hint type does not determine the result. The slot does.
 
 ## Bunt rule
 
-Bunt is sacrifice:
+BUNT is not a hit and never scores a run.
+
+BUNT always creates exactly 1 out.
+
+Case A — No runner on 3rd:
 
 - Batter is out.
-- Existing runners advance one base.
-- Runner on third scores.
-- With 2 outs, the bunt ends the inning with no advancement and no run scored.
+- All existing runners advance one base.
+- No run scores.
+
+Case B — Runner on 3rd:
+
+- Runner on 3rd is out.
+- Batter reaches 1st.
+- Other runners advance one base.
+- No run scores.
+
+Notes:
+
+- BUNT is strictly worse than a single.
+- BUNT can change base state but cannot produce runs.
 
 ## Strikes
 
@@ -57,6 +72,23 @@ In the bottom half of the final scheduled inning or extra inning, if home team t
 Pitcher-selected player generates pre-populated hints from the player database. Pitcher may edit hint text before submission. The submitted/edited hint text is what the hitter sees.
 
 The canonical answer remains the selected `player_id`.
+
+## Guessing UX
+
+Players do not submit free-text guesses.
+
+Flow:
+
+- User types into a search box.
+- App returns matching players using substring search over normalized names and aliases.
+- User selects a player from results.
+- App submits canonical `player_id`.
+
+Engine rule:
+
+- Guess correctness is determined by exact `player_id` equality.
+- No fuzzy matching.
+- No string comparison at evaluation time.
 
 ## Required tests
 
