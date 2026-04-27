@@ -1,0 +1,22 @@
+{
+  "expo": {
+    "name": "Initial Baseball",
+    "slug": "initial-baseball",
+    "version": "0.0.1",
+    "orientation": "portrait",
+    "platforms": ["ios", "android"],
+    "scheme": "initialbaseball",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.initialbaseball.app"
+    },
+    "android": {
+      "package": "com.initialbaseball.app"
+    },
+    "extra": {
+      "eas": {
+        "projectId": "replace-after-eas-init"
+      }
+    }
+  }
+}
