@@ -1,9 +1,10 @@
-const SUFFIXES = new Set(['jr', 'sr', 'ii', 'iii', 'iv', 'v']);
-
 export function generateInitials(fullName: string): string {
   const cleaned = fullName
-    .replace(/[.’']/g, '')
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .replace(/[.,’'"]/g, '')
     .replace(/-/g, ' ')
+    .replace(/\s+/g, ' ')
     .trim();
 
   if (!cleaned) return '';
@@ -11,9 +12,8 @@ export function generateInitials(fullName: string): string {
   return cleaned
     .split(/\s+/)
     .filter(Boolean)
-    .map((part) => part.replace(/[^A-Za-z]/g, ''))
+    .map((part) => part.replace(/[^A-Za-z0-9]/g, ''))
     .filter(Boolean)
-    .filter((part) => !SUFFIXES.has(part.toLowerCase()))
     .map((part) => part[0]?.toUpperCase() ?? '')
     .join('');
 }
