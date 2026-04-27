@@ -1,9 +1,13 @@
 import type { AdvancementResult, BaseState } from './baseState.js';
 
-export function advanceRunnersOnBunt(bases: BaseState, outsBeforePlay: number): AdvancementResult {
-  if (outsBeforePlay >= 2) {
+export function advanceRunnersOnBunt(bases: BaseState): AdvancementResult {
+  if (bases.third) {
     return {
-      bases,
+      bases: {
+        first: true,
+        second: bases.first,
+        third: bases.second,
+      },
       runsScored: 0,
       outsAdded: 1,
     };
@@ -15,7 +19,7 @@ export function advanceRunnersOnBunt(bases: BaseState, outsBeforePlay: number): 
       second: bases.first,
       third: bases.second,
     },
-    runsScored: bases.third ? 1 : 0,
+    runsScored: 0,
     outsAdded: 1,
   };
 }
