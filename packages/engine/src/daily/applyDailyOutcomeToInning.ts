@@ -17,6 +17,7 @@ export function applyDailyOutcomeToInning(input: ApplyDailyOutcomeInput): DailyI
       inning: input.inning,
       score: {
         ...input.score,
+        outs: input.inning.outs,
         completed: true,
       },
     };
@@ -67,18 +68,19 @@ function finalizeState(
 ): DailyInningEngineState {
   const outs = input.inning.outs + outsAdded;
   const completed = outs >= input.inning.maxOuts;
+  const inning: DailyInningState = {
+    ...input.inning,
+    bases,
+    outs,
+  };
 
   return {
-    inning: {
-      ...input.inning,
-      bases,
-      outs,
-    },
+    inning,
     score: {
       ...input.score,
       runs: input.score.runs + runsAdded,
       hits: input.score.hits + hitsAdded,
-      outs: input.score.outs + outsAdded,
+      outs: inning.outs,
       strikeouts: input.score.strikeouts + strikeoutsAdded,
       completed,
     },

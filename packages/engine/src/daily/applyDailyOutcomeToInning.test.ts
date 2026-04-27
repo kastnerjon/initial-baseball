@@ -131,9 +131,42 @@ describe('applyDailyOutcomeToInning', () => {
     expect(result.score).toMatchObject({ outs: 3, strikeouts: 1, completed: true });
   });
 
+  it('derives returned score outs from inning outs when input score outs is stale', () => {
+    const result = applyDailyOutcomeToInning({
+      outcome: '1B',
+      inning: baseInning({ first: false, second: false, third: false }, 1),
+      score: baseScore({ outs: 99 }),
+    });
+
+    expect(result.inning.outs).toBe(1);
+    expect(result.score.outs).toBe(result.inning.outs);
+  });
+
+  it('keeps inning outs and score outs aligned after a strikeout from two outs', () => {
+    const result = applyDailyOutcomeToInning({
+      outcome: 'K',
+      inning: baseInning({ first: false, second: false, third: false }, 2),
+      score: baseScore({ outs: 0 }),
+    });
+
+    expect(result.inning.outs).toBe(3);
+    expect(result.score.outs).toBe(3);
+  });
+
+  it('keeps inning outs and score outs aligned after a bunt from two outs', () => {
+    const result = applyDailyOutcomeToInning({
+      outcome: 'BUNT',
+      inning: baseInning({ first: true, second: false, third: false }, 2),
+      score: baseScore({ outs: 1 }),
+    });
+
+    expect(result.inning.outs).toBe(3);
+    expect(result.score.outs).toBe(3);
+  });
+
   it('treats outcomes after inning completion as a no-op', () => {
     const inning = baseInning({ first: true, second: true, third: false }, 3);
-    const score = baseScore({ runs: 2, hits: 2, outs: 3, strikeouts: 1 });
+    const score = baseScore({ runs: 2, hits: 2, outs: 1, strikeouts: 1 });
 
     const result = applyDailyOutcomeToInning({
       outcome: 'HR',
@@ -145,6 +178,7 @@ describe('applyDailyOutcomeToInning', () => {
       inning,
       score: {
         ...score,
+        outs: inning.outs,
         completed: true,
       },
     });
