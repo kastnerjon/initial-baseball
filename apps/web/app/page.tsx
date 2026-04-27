@@ -1,6 +1,7 @@
+import type { JSX } from 'react';
 import { DEFAULT_DAILY_HINT_CONFIG } from '@initial-baseball/shared';
 
-export default function DailyInningHomePage() {
+export default function DailyInningHomePage(): JSX.Element {
   return (
     <main className="page-shell">
       <section className="hero-card">
