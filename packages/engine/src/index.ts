@@ -14,3 +14,4 @@ export * from './practice/selectRandomPracticePlayer.js';
 export * from './daily/formatDailyShareText.js';
 export * from './daily/computeDailyPitchAggregate.js';
 export * from './daily/applyDailyOutcomeToInning.js';
+export * from './daily/createDailyShareResult.js';
