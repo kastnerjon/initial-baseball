@@ -4,9 +4,13 @@ import { formatDailyShareText } from './formatDailyShareText.js';
 it('formats spoiler-safe daily share text with initials and outcomes', () => {
   expect(formatDailyShareText({
     puzzleNumber: 42,
-    runs: 4,
-    hits: 5,
-    outs: 3,
+    summary: {
+      runs: 4,
+      hits: 5,
+      outs: 3,
+      strikeouts: 1,
+      completed: true,
+    },
     url: 'https://dailyinning.com',
     pitchLines: [
       { initials: 'KGJ', outcome: 'HR' },
