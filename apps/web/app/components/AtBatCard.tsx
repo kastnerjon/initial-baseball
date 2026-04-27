@@ -1,10 +1,7 @@
 'use client';
 
 import type { JSX } from 'react';
-import { useState } from 'react';
 import {
-  evaluateGuess,
-  getGuessOutcome,
   searchPlayers,
   type PlayerSearchResult,
 } from '@initial-baseball/engine';
@@ -13,37 +10,53 @@ import { ResultDisplay } from './ResultDisplay';
 import { ResultsDropdown } from './ResultsDropdown';
 import { SearchInput } from './SearchInput';
 
-export type SingleAtBatDemo = {
-  puzzleNumber: number;
-  initials: string;
+export type AtBatCardPitch = {
+  pitchNumber: number;
+  player: {
+    initials: string;
+  };
   hintLabel: string;
   hintValue: string;
-  correctPlayerId: string;
 };
 
 type AtBatCardProps = {
-  atBat: SingleAtBatDemo;
+  atBat: AtBatCardPitch;
   players: Player[];
+  state: {
+    query: string;
+    selectedPlayerId: string | null;
+    revealCount: 0 | 1;
+    strikeCount: number;
+    submittedResult: DailyGuessResult | null;
+  };
+  onQueryChange: (query: string) => void;
+  onSelectPlayer: (playerId: string, displayName: string) => void;
+  onRevealHint: () => void;
+  onSubmit: () => void;
 };
 
-export function AtBatCard({ atBat, players }: AtBatCardProps): JSX.Element {
-  const [query, setQuery] = useState('');
-  const [selectedPlayerId, setSelectedPlayerId] = useState<string | null>(null);
-  const [revealCount, setRevealCount] = useState<0 | 1>(0);
-  const [submittedResult, setSubmittedResult] = useState<DailyGuessResult | null>(null);
-
-  const results = searchPlayers(query, players).slice(0, 5);
-  const hasRevealedHint = revealCount === 1;
-
-  if (submittedResult !== null) {
-    return <ResultDisplay result={submittedResult} />;
-  }
+export function AtBatCard({
+  atBat,
+  players,
+  state,
+  onQueryChange,
+  onSelectPlayer,
+  onRevealHint,
+  onSubmit,
+}: AtBatCardProps): JSX.Element {
+  const results = searchPlayers(state.query, players).slice(0, 5);
+  const hasRevealedHint = state.revealCount === 1;
 
   return (
     <div className="at-bat-card">
+      <div className="pitch-meta">
+        <span>{`Pitch ${atBat.pitchNumber}`}</span>
+        <span>{`Strikes ${state.strikeCount}/3`}</span>
+      </div>
+
       <div className="initials-block">
         <span className="initials-label">Initials</span>
-        <strong className="initials-value">{atBat.initials}</strong>
+        <strong className="initials-value">{atBat.player.initials}</strong>
       </div>
 
       <div className="hint-block">
@@ -54,7 +67,7 @@ export function AtBatCard({ atBat, players }: AtBatCardProps): JSX.Element {
         <button
           type="button"
           className="button-secondary"
-          onClick={() => setRevealCount(1)}
+          onClick={onRevealHint}
           disabled={hasRevealedHint}
         >
           Reveal Hint
@@ -63,25 +76,26 @@ export function AtBatCard({ atBat, players }: AtBatCardProps): JSX.Element {
 
       <div className="search-shell">
         <SearchInput
-          value={query}
-          onChange={(nextValue) => {
-            setQuery(nextValue);
-            setSelectedPlayerId(null);
-          }}
+          value={state.query}
+          onChange={onQueryChange}
         />
         <ResultsDropdown
           results={results}
-          visible={query.trim().length > 0}
-          selectedPlayerId={selectedPlayerId}
+          visible={state.query.trim().length > 0}
+          selectedPlayerId={state.selectedPlayerId}
           onSelect={handleSelect}
         />
       </div>
 
+      {state.submittedResult !== null && state.submittedResult.kind === 'incorrect' ? (
+        <ResultDisplay result={state.submittedResult} />
+      ) : null}
+
       <button
         type="button"
         className="button-primary"
-        onClick={handleSubmit}
-        disabled={selectedPlayerId === null}
+        onClick={onSubmit}
+        disabled={state.selectedPlayerId === null}
       >
         Submit Guess
       </button>
@@ -89,23 +103,6 @@ export function AtBatCard({ atBat, players }: AtBatCardProps): JSX.Element {
   );
 
   function handleSelect(result: PlayerSearchResult): void {
-    setSelectedPlayerId(result.playerId);
-    setQuery(result.displayName);
-  }
-
-  function handleSubmit(): void {
-    if (selectedPlayerId === null) {
-      return;
-    }
-
-    const isCorrect = evaluateGuess(selectedPlayerId, atBat.correctPlayerId);
-    const outcome = getGuessOutcome({
-      isCorrect,
-      revealCount,
-      strikeCount: 0,
-      maxStrikes: 3,
-    });
-
-    setSubmittedResult(outcome);
+    onSelectPlayer(result.playerId, result.displayName);
   }
 }
