@@ -5,6 +5,7 @@ import {
   DEFAULT_DAILY_STATS_HINT_CONFIG,
   type DailyGameState,
   type DailyGuessResult,
+  type DailyHintConfig,
   type DailyInningState,
   type DailyPuzzle,
   type HintType,
@@ -12,19 +13,23 @@ import {
   type PlayerIdentity,
 } from '@initial-baseball/shared';
 
+export type DemoPitchHint = {
+  hintType: HintType;
+  hintLabel: string;
+  hintValue: string;
+};
+
 export type DemoDailyPitch = {
   pitchNumber: number;
   player: PlayerIdentity;
-  hintType: Extract<HintType, 'main_decade' | 'teams'>;
-  hintLabel: string;
-  hintValue: string;
+  hints: DemoPitchHint[];
   correctPlayerId: string;
 };
 
 export type DemoAtBatUiState = {
   query: string;
   selectedPlayerId: string | null;
-  revealCount: 0 | 1;
+  revealCount: 0 | 1 | 2 | 3 | 4;
   strikeCount: number;
   submittedResult: DailyGuessResult | null;
 };
@@ -42,12 +47,42 @@ export const DEMO_PLAYERS: Player[] = [
 ];
 
 export const DEMO_DAILY_PITCHES: DemoDailyPitch[] = [
-  buildDemoPitch(1, 'KGJ', 'ken-griffey-jr', 'Ken Griffey Jr.', 'hitter', 'CF', 'main_decade', 'Main Decade', '1990s'),
-  buildDemoPitch(2, 'DW', 'david-wright', 'David Wright', 'hitter', '3B', 'teams', 'Teams', 'NYM'),
-  buildDemoPitch(3, 'CCS', 'cc-sabathia', 'CC Sabathia', 'pitcher', 'SP', 'main_decade', 'Main Decade', '2000s'),
-  buildDemoPitch(4, 'AJ', 'andruw-jones', 'Andruw Jones', 'hitter', 'CF', 'teams', 'Teams', 'ATL, LAD, TEX, CHW, NYY'),
-  buildDemoPitch(5, 'JV', 'jason-varitek', 'Jason Varitek', 'hitter', 'C', 'main_decade', 'Main Decade', '2000s'),
-  buildDemoPitch(6, 'HM', 'hideki-matsui', 'Hideki Matsui', 'hitter', 'LF', 'teams', 'Teams', 'NYY, LAA, OAK, TBR'),
+  buildDemoPitch(1, 'KGJ', 'ken-griffey-jr', 'Ken Griffey Jr.', 'hitter', 'CF', [
+    buildHint('main_decade', '1990s'),
+    buildHint('teams', 'SEA, CIN, CHW'),
+    buildHint('position', 'CF'),
+    buildHint('stats', 'bWAR 83.8, HR 630'),
+  ]),
+  buildDemoPitch(2, 'DW', 'david-wright', 'David Wright', 'hitter', '3B', [
+    buildHint('main_decade', '2000s'),
+    buildHint('teams', 'NYM'),
+    buildHint('position', '3B'),
+    buildHint('stats', 'bWAR 49.2, HR 242'),
+  ]),
+  buildDemoPitch(3, 'CCS', 'cc-sabathia', 'CC Sabathia', 'pitcher', 'SP', [
+    buildHint('main_decade', '2000s'),
+    buildHint('teams', 'CLE, MIL, NYY'),
+    buildHint('position', 'SP'),
+    buildHint('stats', 'bWAR 61.8, ERA 3.74'),
+  ]),
+  buildDemoPitch(4, 'AJ', 'andruw-jones', 'Andruw Jones', 'hitter', 'CF', [
+    buildHint('main_decade', '2000s'),
+    buildHint('teams', 'ATL, LAD, TEX, CHW, NYY'),
+    buildHint('position', 'CF'),
+    buildHint('stats', 'bWAR 62.7, HR 434'),
+  ]),
+  buildDemoPitch(5, 'JV', 'jason-varitek', 'Jason Varitek', 'hitter', 'C', [
+    buildHint('main_decade', '2000s'),
+    buildHint('teams', 'BOS'),
+    buildHint('position', 'C'),
+    buildHint('stats', 'bWAR 24.1, HR 193'),
+  ]),
+  buildDemoPitch(6, 'HM', 'hideki-matsui', 'Hideki Matsui', 'hitter', 'LF', [
+    buildHint('main_decade', '2000s'),
+    buildHint('teams', 'NYY, LAA, OAK, TBR'),
+    buildHint('position', 'LF'),
+    buildHint('stats', 'bWAR 21.3, HR 175'),
+  ]),
 ];
 
 export const DEMO_DAILY_PUZZLE: DailyPuzzle = {
@@ -60,9 +95,7 @@ export const DEMO_DAILY_PUZZLE: DailyPuzzle = {
   pitches: DEMO_DAILY_PITCHES.map((pitch) => ({
     pitchNumber: pitch.pitchNumber,
     player: pitch.player,
-    hints: {
-      [pitch.hintType]: pitch.hintValue,
-    },
+    hints: buildHintSet(pitch.hints),
   })),
 };
 
@@ -106,9 +139,7 @@ function buildDemoPitch(
   fullName: string,
   kind: PlayerIdentity['kind'],
   primaryPosition: string,
-  hintType: DemoDailyPitch['hintType'],
-  hintLabel: string,
-  hintValue: string,
+  hints: DemoPitchHint[],
 ): DemoDailyPitch {
   return {
     pitchNumber,
@@ -120,11 +151,36 @@ function buildDemoPitch(
       kind,
       primaryPosition,
     },
-    hintType,
-    hintLabel,
-    hintValue,
+    hints,
     correctPlayerId: playerId,
   };
+}
+
+function buildHint(hintType: HintType, hintValue: string): DemoPitchHint {
+  const hintConfig = getHintConfigForType(hintType);
+
+  return {
+    hintType,
+    hintLabel: hintConfig.displayLabel,
+    hintValue,
+  };
+}
+
+function buildHintSet(hints: DemoPitchHint[]): DailyPuzzle['pitches'][number]['hints'] {
+  return hints.reduce<DailyPuzzle['pitches'][number]['hints']>((hintSet, hint) => {
+    hintSet[hint.hintType] = hint.hintValue;
+    return hintSet;
+  }, {});
+}
+
+function getHintConfigForType(hintType: HintType): DailyHintConfig[number] {
+  const hintConfig = DEFAULT_DAILY_HINT_CONFIG.find((config) => config.hintType === hintType);
+
+  if (hintConfig === undefined) {
+    throw new Error(`Missing demo hint config for type: ${hintType}`);
+  }
+
+  return hintConfig;
 }
 
 function buildPlayer(
