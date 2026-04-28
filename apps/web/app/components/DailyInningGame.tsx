@@ -106,7 +106,7 @@ export function DailyInningGame({ puzzle, demoPitches, players }: DailyInningGam
         onRevealHint={() => {
           setAtBatState((currentState) => ({
             ...currentState,
-            revealCount: Math.min(currentState.revealCount + 1, 4) as DemoAtBatUiState['revealCount'],
+            revealCount: capRevealCount(currentState.revealCount + 1, currentDemoPitch.hints.length),
             submittedResult: null,
           }));
         }}
@@ -192,5 +192,20 @@ export function DailyInningGame({ puzzle, demoPitches, players }: DailyInningGam
     setCurrentPitchIndex(pendingAdvance.nextPitchIndex);
     setPendingAdvance(null);
     setAtBatState(createInitialAtBatUiState());
+  }
+}
+
+function capRevealCount(value: number, maxHints: number): DemoAtBatUiState['revealCount'] {
+  switch (Math.min(value, maxHints)) {
+    case 0:
+      return 0;
+    case 1:
+      return 1;
+    case 2:
+      return 2;
+    case 3:
+      return 3;
+    default:
+      return 4;
   }
 }
