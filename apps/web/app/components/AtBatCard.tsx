@@ -33,6 +33,7 @@ type AtBatCardProps = {
   onSelectPlayer: (playerId: string, displayName: string) => void;
   onRevealHint: () => void;
   onSubmit: () => void;
+  onNextPitch: () => void;
 };
 
 export function AtBatCard({
@@ -43,9 +44,32 @@ export function AtBatCard({
   onSelectPlayer,
   onRevealHint,
   onSubmit,
+  onNextPitch,
 }: AtBatCardProps): JSX.Element {
   const results = searchPlayers(state.query, players).slice(0, 5);
   const hasRevealedHint = state.revealCount === 1;
+  const resolvedTerminalResult = state.submittedResult !== null && state.submittedResult.kind !== 'incorrect'
+    ? state.submittedResult
+    : null;
+
+  if (resolvedTerminalResult !== null) {
+    return (
+      <div className="at-bat-card">
+        <div className="pitch-meta">
+          <span>{`Pitch ${atBat.pitchNumber}`}</span>
+          <span>{`Strikes ${state.strikeCount}/3`}</span>
+        </div>
+        <ResultDisplay result={resolvedTerminalResult} />
+        <button
+          type="button"
+          className="button-primary"
+          onClick={onNextPitch}
+        >
+          Next Pitch
+        </button>
+      </div>
+    );
+  }
 
   return (
     <div className="at-bat-card">
