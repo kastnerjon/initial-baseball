@@ -27,10 +27,18 @@ type DailyInningGameProps = {
   players: Player[];
 };
 
+type PendingAtBatAdvance = {
+  inning: DailyGameState['inning'];
+  score: DailyGameState['score'];
+  pitchLines: DailySharePitchLine[];
+  nextPitchIndex: number;
+};
+
 export function DailyInningGame({ puzzle, demoPitches, players }: DailyInningGameProps): JSX.Element {
   const [gameState, setGameState] = useState<DailyGameState>(() => createInitialDemoGameState(puzzle));
   const [currentPitchIndex, setCurrentPitchIndex] = useState(0);
   const [atBatState, setAtBatState] = useState<DemoAtBatUiState>(() => createInitialAtBatUiState());
+  const [pendingAdvance, setPendingAdvance] = useState<PendingAtBatAdvance | null>(null);
 
   const currentDemoPitch = demoPitches[currentPitchIndex] ?? null;
   const isPuzzleComplete = currentPitchIndex >= demoPitches.length;
@@ -98,6 +106,7 @@ export function DailyInningGame({ puzzle, demoPitches, players }: DailyInningGam
           }));
         }}
         onSubmit={() => handleSubmit(currentDemoPitch)}
+        onNextPitch={handleNextPitch}
       />
     </div>
   );
@@ -150,16 +159,33 @@ export function DailyInningGame({ puzzle, demoPitches, players }: DailyInningGam
     ];
 
     const nextPitchIndex = currentPitchIndex + 1;
+    setPendingAdvance({
+      inning: nextEngineState.inning,
+      score: nextEngineState.score,
+      pitchLines: nextPitchLines,
+      nextPitchIndex,
+    });
+    setAtBatState((currentState) => ({
+      ...currentState,
+      submittedResult: result,
+    }));
+  }
+
+  function handleNextPitch(): void {
+    if (pendingAdvance === null) {
+      return;
+    }
 
     setGameState({
       ...gameState,
-      status: nextEngineState.score.completed || nextPitchIndex >= demoPitches.length ? 'completed' : 'in_progress',
-      inning: nextEngineState.inning,
-      score: nextEngineState.score,
-      completedPitchLines: nextPitchLines,
+      status: pendingAdvance.score.completed || pendingAdvance.nextPitchIndex >= demoPitches.length ? 'completed' : 'in_progress',
+      inning: pendingAdvance.inning,
+      score: pendingAdvance.score,
+      completedPitchLines: pendingAdvance.pitchLines,
       shareResult: null,
     });
-    setCurrentPitchIndex(nextPitchIndex);
+    setCurrentPitchIndex(pendingAdvance.nextPitchIndex);
+    setPendingAdvance(null);
     setAtBatState(createInitialAtBatUiState());
   }
 }
