@@ -176,14 +176,14 @@ export function DailyInningGame({ puzzle, demoPitches, players }: DailyInningGam
       return;
     }
 
-    setGameState({
-      ...gameState,
+    setGameState((currentGameState) => ({
+      ...currentGameState,
       status: pendingAdvance.score.completed || pendingAdvance.nextPitchIndex >= demoPitches.length ? 'completed' : 'in_progress',
       inning: pendingAdvance.inning,
       score: pendingAdvance.score,
       completedPitchLines: pendingAdvance.pitchLines,
       shareResult: null,
-    });
+    }));
     setCurrentPitchIndex(pendingAdvance.nextPitchIndex);
     setPendingAdvance(null);
     setAtBatState(createInitialAtBatUiState());
