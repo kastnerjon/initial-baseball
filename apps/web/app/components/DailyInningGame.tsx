@@ -144,7 +144,7 @@ export function DailyInningGame({ puzzle, demoPitches, players }: DailyInningGam
 
     setGameState({
       ...gameState,
-      status: nextEngineState.score.completed || nextPitchIndex >= puzzle.pitches.length ? 'completed' : 'in_progress',
+      status: nextEngineState.score.completed || nextPitchIndex >= demoPitches.length ? 'completed' : 'in_progress',
       inning: nextEngineState.inning,
       score: nextEngineState.score,
       completedPitchLines: nextPitchLines,
