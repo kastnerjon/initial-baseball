@@ -17,9 +17,9 @@ import {
   createInitialDemoGameState,
 } from '../mockDailyPuzzle';
 import { AtBatCard } from './AtBatCard';
+import { DailyScorebug } from './DailyScorebug';
 import { GameCompleteView } from './GameCompleteView';
 import { PitchResultList } from './PitchResultList';
-import { ScoreLine } from './ScoreLine';
 
 type DailyInningGameProps = {
   puzzle: DailyPuzzle;
@@ -76,7 +76,12 @@ export function DailyInningGame({ puzzle, demoPitches, players }: DailyInningGam
 
   return (
     <div className="game-shell">
-      <ScoreLine summary={gameState.score} />
+      <DailyScorebug
+        puzzleNumber={puzzle.puzzleNumber}
+        summary={gameState.score}
+        bases={gameState.inning.bases}
+        currentStrikeCount={atBatState.strikeCount}
+      />
       <PitchResultList pitchLines={gameState.completedPitchLines} title="Completed Pitches" emptyLabel="No completed pitches yet." />
       <AtBatCard
         atBat={currentDemoPitch}

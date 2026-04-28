@@ -50,6 +50,103 @@ p {
   gap: 18px;
 }
 
+.scorebug-shell {
+  display: grid;
+  grid-template-columns: 1.1fr 1.4fr 1fr;
+  gap: 10px;
+  align-items: stretch;
+  padding: 12px;
+  border-radius: 16px;
+  background: rgba(23, 33, 26, 0.08);
+}
+
+.scorebug-block {
+  display: flex;
+  align-items: center;
+  padding: 10px 12px;
+  border-radius: 12px;
+  background: #fffef9;
+}
+
+.scorebug-left {
+  justify-content: flex-start;
+}
+
+.scorebug-middle {
+  justify-content: center;
+}
+
+.scorebug-right {
+  justify-content: flex-end;
+}
+
+.scorebug-title {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.scorebug-metrics {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+}
+
+.scorebug-metrics-right {
+  justify-content: flex-end;
+}
+
+.scorebug-metric {
+  display: grid;
+  gap: 2px;
+  min-width: 34px;
+}
+
+.scorebug-metric-label {
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  opacity: 0.72;
+}
+
+.scorebug-metric-value {
+  font-size: 18px;
+  line-height: 1;
+}
+
+.base-indicator {
+  display: flex;
+  gap: 10px;
+}
+
+.base-indicator-slot {
+  display: grid;
+  justify-items: center;
+  gap: 4px;
+}
+
+.base-indicator-dot {
+  width: 12px;
+  height: 12px;
+  border: 1px solid rgba(23, 33, 26, 0.24);
+  border-radius: 999px;
+  background: transparent;
+}
+
+.base-indicator-dot.occupied {
+  background: #17211a;
+}
+
+.base-indicator-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
 .score-line {
   display: flex;
   flex-wrap: wrap;
@@ -247,8 +344,23 @@ button:disabled {
 }
 
 @media (max-width: 640px) {
+  .scorebug-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .scorebug-left,
+  .scorebug-middle,
+  .scorebug-right,
   .hint-block {
     align-items: stretch;
+    justify-content: flex-start;
+  }
+
+  .scorebug-metrics {
+    flex-wrap: wrap;
+  }
+
+  .hint-block {
     flex-direction: column;
   }
 }
