@@ -45,6 +45,28 @@ p {
   line-height: 1.45;
 }
 
+.game-shell {
+  display: grid;
+  gap: 18px;
+}
+
+.score-line {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin: 0;
+}
+
+.score-line span {
+  padding: 8px 10px;
+  border-radius: 999px;
+  background: rgba(23, 33, 26, 0.08);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .at-bat-card {
   display: grid;
   gap: 18px;
@@ -52,10 +74,23 @@ p {
 
 .initials-block,
 .hint-block,
-.result-card {
+.result-card,
+.pitch-results-card,
+.complete-card,
+.share-card {
   padding: 18px;
   border-radius: 14px;
   background: rgba(23, 33, 26, 0.06);
+}
+
+.pitch-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .initials-label,
@@ -87,6 +122,11 @@ p {
 .result-note {
   margin: 0;
   font-size: 16px;
+}
+
+.pitch-results-empty {
+  margin: 0;
+  font-size: 15px;
 }
 
 .search-shell {
@@ -129,6 +169,28 @@ input[type="text"]:focus {
   font-size: 15px;
 }
 
+.pitch-list {
+  list-style: none;
+  padding: 0;
+  margin: 12px 0 0;
+  display: grid;
+  gap: 10px;
+}
+
+.pitch-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(23, 33, 26, 0.05);
+}
+
+.pitch-initials {
+  font-weight: 700;
+  letter-spacing: 0.08em;
+}
+
 .result-option,
 .button-primary,
 .button-secondary {
@@ -163,6 +225,20 @@ input[type="text"]:focus {
 .button-secondary {
   background: rgba(23, 33, 26, 0.12);
   color: inherit;
+}
+
+h2 {
+  margin: 0 0 12px;
+  font-size: 20px;
+}
+
+.share-text {
+  margin: 0;
+  padding: 16px;
+  border-radius: 14px;
+  overflow-x: auto;
+  font: 14px/1.5 "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace;
+  background: rgba(23, 33, 26, 0.08);
 }
 
 button:disabled {
