@@ -15,8 +15,10 @@ export type AtBatCardPitch = {
   player: {
     initials: string;
   };
-  hintLabel: string;
-  hintValue: string;
+  hints: Array<{
+    hintLabel: string;
+    hintValue: string;
+  }>;
 };
 
 type AtBatCardProps = {
@@ -25,7 +27,7 @@ type AtBatCardProps = {
   state: {
     query: string;
     selectedPlayerId: string | null;
-    revealCount: 0 | 1;
+    revealCount: 0 | 1 | 2 | 3 | 4;
     strikeCount: number;
     submittedResult: DailyGuessResult | null;
   };
@@ -47,7 +49,8 @@ export function AtBatCard({
   onNextPitch,
 }: AtBatCardProps): JSX.Element {
   const results = searchPlayers(state.query, players).slice(0, 5);
-  const hasRevealedHint = state.revealCount === 1;
+  const revealedHints = atBat.hints.slice(0, state.revealCount);
+  const hasRevealedAllHints = state.revealCount >= atBat.hints.length;
   const resolvedTerminalResult = state.submittedResult !== null && state.submittedResult.kind !== 'incorrect'
     ? state.submittedResult
     : null;
@@ -84,17 +87,28 @@ export function AtBatCard({
       </div>
 
       <div className="hint-block">
-        <div>
-          <span className="hint-label">{atBat.hintLabel}</span>
-          <p className="hint-value">{hasRevealedHint ? atBat.hintValue : 'Hidden'}</p>
+        <div className="hint-list">
+          {revealedHints.length === 0 ? (
+            <div>
+              <span className="hint-label">Hints</span>
+              <p className="hint-value">None revealed yet.</p>
+            </div>
+          ) : (
+            revealedHints.map((hint) => (
+              <div key={hint.hintLabel} className="revealed-hint">
+                <span className="hint-label">{hint.hintLabel}</span>
+                <p className="hint-value">{hint.hintValue}</p>
+              </div>
+            ))
+          )}
         </div>
         <button
           type="button"
           className="button-secondary"
           onClick={onRevealHint}
-          disabled={hasRevealedHint}
+          disabled={hasRevealedAllHints}
         >
-          Reveal Hint
+          Reveal Next Hint
         </button>
       </div>
 

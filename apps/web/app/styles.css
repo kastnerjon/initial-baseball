@@ -215,6 +215,16 @@ p {
   gap: 16px;
 }
 
+.hint-list {
+  display: grid;
+  gap: 12px;
+}
+
+.revealed-hint {
+  display: grid;
+  gap: 4px;
+}
+
 .hint-value,
 .result-note {
   margin: 0;

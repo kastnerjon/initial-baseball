@@ -106,7 +106,7 @@ export function DailyInningGame({ puzzle, demoPitches, players }: DailyInningGam
         onRevealHint={() => {
           setAtBatState((currentState) => ({
             ...currentState,
-            revealCount: 1,
+            revealCount: Math.min(currentState.revealCount + 1, 4) as DemoAtBatUiState['revealCount'],
             submittedResult: null,
           }));
         }}
