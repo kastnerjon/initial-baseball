@@ -125,7 +125,16 @@ export function DailyInningGame({ puzzle, demoPitches, players }: DailyInningGam
       return;
     }
 
-    const outcome = result.kind === 'correct' ? result.outcome : 'K';
+    let outcome: DailySharePitchLine['outcome'];
+
+    if (result.kind === 'correct') {
+      outcome = result.outcome;
+    } else if (result.kind === 'strikeout') {
+      outcome = 'K';
+    } else {
+      return;
+    }
+
     const nextEngineState = applyDailyOutcomeToInning({
       inning: gameState.inning,
       score: gameState.score,
