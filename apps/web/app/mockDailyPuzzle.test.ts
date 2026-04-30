@@ -83,6 +83,16 @@ describe('DEMO_DAILY_PITCHES', () => {
     }
   });
 
+  it('derives pitch player kind and primaryPosition from the resolved generated player', () => {
+    for (const pitch of DEMO_DAILY_PITCHES) {
+      const generatedPlayer = baseballPlayers.find((player) => player.id === pitch.correctPlayerId);
+
+      expect(generatedPlayer).toBeDefined();
+      expect(pitch.player.kind).toBe(generatedPlayer?.primaryRole);
+      expect(pitch.player.primaryPosition).toBe(generatedPlayer?.primaryPosition);
+    }
+  });
+
   it('keeps expected generated stats hints for Ken Griffey Jr. and CC Sabathia', () => {
     const kenGriffeyJrPitch = DEMO_DAILY_PITCHES.find((pitch) => pitch.player.fullName === 'Ken Griffey Jr.');
     const ccSabathiaPitch = DEMO_DAILY_PITCHES.find((pitch) => pitch.player.fullName === 'CC Sabathia');
@@ -90,5 +100,14 @@ describe('DEMO_DAILY_PITCHES', () => {
     expect(kenGriffeyJrPitch?.hints[3]?.hintValue).toContain('HR 630');
     expect(ccSabathiaPitch?.hints[3]?.hintValue).toContain('W 251');
     expect(ccSabathiaPitch?.hints[3]?.hintValue).toContain('K 3093');
+  });
+
+  it('does not include WAR or bWAR in generated stats hints', () => {
+    for (const pitch of DEMO_DAILY_PITCHES) {
+      const statsHint = pitch.hints[3];
+
+      expect(statsHint?.hintValue).not.toContain('WAR');
+      expect(statsHint?.hintValue).not.toContain('bWAR');
+    }
   });
 });

@@ -36,12 +36,12 @@ export type DemoAtBatUiState = {
 };
 
 export const DEMO_DAILY_PITCHES: DemoDailyPitch[] = [
-  buildDemoPitch(1, 'KGJ', requireDemoPlayer('Ken Griffey Jr.'), 'hitter'),
-  buildDemoPitch(2, 'DW', requireDemoPlayer('David Wright'), 'hitter'),
-  buildDemoPitch(3, 'CCS', requireDemoPlayer('CC Sabathia'), 'pitcher'),
-  buildDemoPitch(4, 'AJ', requireDemoPlayer('Andruw Jones'), 'hitter'),
-  buildDemoPitch(5, 'JV', requireDemoPlayer('Jason Varitek'), 'hitter'),
-  buildDemoPitch(6, 'HM', requireDemoPlayer('Hideki Matsui'), 'hitter'),
+  buildDemoPitch(1, 'KGJ', requireDemoPlayer('Ken Griffey Jr.')),
+  buildDemoPitch(2, 'DW', requireDemoPlayer('David Wright')),
+  buildDemoPitch(3, 'CCS', requireDemoPlayer('CC Sabathia')),
+  buildDemoPitch(4, 'AJ', requireDemoPlayer('Andruw Jones')),
+  buildDemoPitch(5, 'JV', requireDemoPlayer('Jason Varitek')),
+  buildDemoPitch(6, 'HM', requireDemoPlayer('Hideki Matsui')),
 ];
 
 export const DEMO_DAILY_PUZZLE: DailyPuzzle = {
@@ -95,7 +95,6 @@ function buildDemoPitch(
   pitchNumber: number,
   initials: string,
   player: Player,
-  kind: PlayerIdentity['kind'],
 ): DemoDailyPitch {
   return {
     pitchNumber,
@@ -104,12 +103,20 @@ function buildDemoPitch(
       fullName: player.fullName,
       displayName: player.displayName,
       initials,
-      kind,
+      kind: deriveDemoPlayerKind(player),
       primaryPosition: player.primaryPosition,
     },
     hints: buildDefaultDailyHints(player),
     correctPlayerId: player.id,
   };
+}
+
+function deriveDemoPlayerKind(player: Player): PlayerIdentity['kind'] {
+  if (player.primaryRole === 'pitcher' || player.primaryRole === 'hitter') {
+    return player.primaryRole;
+  }
+
+  return player.primaryPosition === 'P' ? 'pitcher' : 'hitter';
 }
 
 function buildHintSet(hints: DemoPitchHint[]): DailyPuzzle['pitches'][number]['hints'] {
