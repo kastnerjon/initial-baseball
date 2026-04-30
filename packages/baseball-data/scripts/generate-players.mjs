@@ -33,10 +33,9 @@ const nameRows = parseCsv(await fetchText(NAMES_URL));
 const aliasesByPersonId = buildAliasesByPersonId(nameRows);
 const lahmanPeopleRows = parseCsv(readFileSync(LAHMAN_PEOPLE_PATH, 'utf8'));
 const lahmanAppearancesRows = parseCsv(readFileSync(LAHMAN_APPEARANCES_PATH, 'utf8'));
-const lahmanPitchingRows = parseCsv(readFileSync(LAHMAN_PITCHING_PATH, 'utf8'));
 const lahmanTeamsRows = parseCsv(readFileSync(LAHMAN_TEAMS_PATH, 'utf8'));
 const lahmanPlayersByReference = buildLahmanPlayersByReference(lahmanPeopleRows);
-const lahmanEnrichmentByPlayerId = buildLahmanEnrichmentByPlayerId(lahmanAppearancesRows, lahmanPitchingRows, lahmanTeamsRows);
+const lahmanEnrichmentByPlayerId = buildLahmanEnrichmentByPlayerId(lahmanAppearancesRows, lahmanTeamsRows);
 
 const players = peopleRows
   .filter(isEligiblePlayer)
@@ -198,9 +197,8 @@ function buildLahmanPlayersByReference(rows) {
   };
 }
 
-function buildLahmanEnrichmentByPlayerId(appearanceRows, pitchingRows, teamRows) {
+function buildLahmanEnrichmentByPlayerId(appearanceRows, teamRows) {
   const teamAbbreviationByTeamId = buildTeamAbbreviationByTeamId(teamRows);
-  const pitchingGamesByPlayerId = buildPitchingGamesByPlayerId(pitchingRows);
   const enrichmentByPlayerId = new Map();
 
   for (const row of appearanceRows) {
@@ -238,12 +236,12 @@ function buildLahmanEnrichmentByPlayerId(appearanceRows, pitchingRows, teamRows)
   }
 
   return new Map([...enrichmentByPlayerId.entries()].map(([playerId, enrichment]) => {
-    const extraPitchingGames = pitchingGamesByPlayerId.get(playerId) ?? 0;
     const primaryPosition = derivePrimaryPosition(enrichment.positionGames);
     const teamsDisplay = deriveTeamsDisplay(enrichment.teamHistory);
+    const primaryRole = primaryPosition === 'P' ? 'pitcher' : 'hitter';
 
     return [playerId, {
-      primaryRole: enrichment.pitchingAppearances + extraPitchingGames > 0 ? 'pitcher' : 'hitter',
+      primaryRole,
       primaryPosition,
       teamsDisplay,
     }];
@@ -264,20 +262,6 @@ function buildTeamAbbreviationByTeamId(rows) {
   }
 
   return abbreviations;
-}
-
-function buildPitchingGamesByPlayerId(rows) {
-  const pitchingGamesByPlayerId = new Map();
-
-  for (const row of rows) {
-    if (!row.playerID) {
-      continue;
-    }
-
-    pitchingGamesByPlayerId.set(row.playerID, (pitchingGamesByPlayerId.get(row.playerID) ?? 0) + parseInteger(row.G));
-  }
-
-  return pitchingGamesByPlayerId;
 }
 
 function isEligiblePlayer(row) {

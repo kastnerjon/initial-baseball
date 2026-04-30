@@ -63,6 +63,22 @@ describe('baseballPlayers', () => {
     expect(hitters).toBeGreaterThan(0);
   });
 
+  it('marks players as pitchers only when their primary position is P', () => {
+    for (const player of baseballPlayers) {
+      if (player.primaryRole === 'pitcher') {
+        expect(player.primaryPosition).toBe('P');
+      }
+    }
+  });
+
+  it('marks players as hitters when their primary position is not P', () => {
+    for (const player of baseballPlayers) {
+      if (player.primaryPosition !== 'P') {
+        expect(player.primaryRole).toBe('hitter');
+      }
+    }
+  });
+
   it('keeps fallback placeholders for some players without full Lahman coverage', () => {
     expect(baseballPlayers.some((player) => player.primaryPosition === 'Unknown')).toBe(true);
     expect(baseballPlayers.some((player) => player.teamsDisplay === '')).toBe(true);
@@ -73,6 +89,21 @@ describe('baseballPlayers', () => {
       expect(player.primaryPosition).not.toBe('Unknown');
       expect(player.teamsDisplay.length).toBeGreaterThan(0);
     }
+  });
+
+  it('keeps the expected demo player role and position mapping', () => {
+    const ccSabathia = findPlayerByName('CC Sabathia');
+    const davidWright = findPlayerByName('David Wright');
+    const kenGriffeyJr = findPlayerByName('Ken Griffey Jr.');
+
+    expect(ccSabathia.primaryPosition).toBe('P');
+    expect(ccSabathia.primaryRole).toBe('pitcher');
+
+    expect(davidWright.primaryPosition).toBe('3B');
+    expect(davidWright.primaryRole).toBe('hitter');
+
+    expect(kenGriffeyJr.primaryPosition).toBe('CF');
+    expect(kenGriffeyJr.primaryRole).toBe('hitter');
   });
 });
 
