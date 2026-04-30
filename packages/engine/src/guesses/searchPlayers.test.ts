@@ -11,6 +11,7 @@ const players: Player[] = [
     primaryPosition: '3B',
     mainDecade: '2000s',
     teamsDisplay: 'NYM',
+    statsLine: 'HR 242 / RBI 970 / BA .296 / OBP .376 / SB 196',
     aliases: ['Captain America'],
   },
   {
@@ -21,6 +22,7 @@ const players: Player[] = [
     primaryPosition: 'DH',
     mainDecade: '2000s',
     teamsDisplay: 'MIN, BOS',
+    statsLine: 'HR 541 / RBI 1768 / BA .286 / OBP .380 / SB 17',
     aliases: ['Big Papi'],
   },
   {
@@ -31,6 +33,7 @@ const players: Player[] = [
     primaryPosition: 'SP',
     mainDecade: '1990s',
     teamsDisplay: 'KCR, NYM, TOR, NYY, BOS',
+    statsLine: 'W 194 / L 126 / ERA 3.46 / WHIP 1.17 / K 2668',
     aliases: [],
   },
   {
@@ -41,6 +44,7 @@ const players: Player[] = [
     primaryPosition: 'SP',
     mainDecade: '2000s',
     teamsDisplay: 'CLE, MIL, NYY',
+    statsLine: 'W 251 / L 161 / ERA 3.74 / WHIP 1.26 / K 3093',
     aliases: ['Carsten Sabathia'],
   },
   {
@@ -51,6 +55,7 @@ const players: Player[] = [
     primaryPosition: 'SS',
     mainDecade: '2020s',
     teamsDisplay: 'PIT',
+    statsLine: 'HR 49 / RBI 131 / BA .251 / OBP .320 / SB 32',
     aliases: [],
   },
 ];

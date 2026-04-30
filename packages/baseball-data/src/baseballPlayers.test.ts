@@ -27,6 +27,7 @@ describe('baseballPlayers', () => {
       expect(player.primaryPosition.length).toBeGreaterThan(0);
       expect(player.mainDecade.length).toBeGreaterThan(0);
       expect(player.teamsDisplay).toBeTypeOf('string');
+      expect(player.statsLine).toBeTypeOf('string');
       expect(Array.isArray(player.aliases)).toBe(true);
     }
   });
@@ -53,6 +54,20 @@ describe('baseballPlayers', () => {
     const withTeamsCount = baseballPlayers.filter((player) => player.teamsDisplay.length > 0).length;
 
     expect(withTeamsCount).toBeGreaterThan(baseballPlayers.length / 2);
+  });
+
+  it('gives a majority of hitters a non-empty statsLine', () => {
+    const hitters = baseballPlayers.filter((player) => player.primaryRole === 'hitter');
+    const hittersWithStats = hitters.filter((player) => player.statsLine.length > 0);
+
+    expect(hittersWithStats.length).toBeGreaterThan(hitters.length / 2);
+  });
+
+  it('gives a majority of pitchers a non-empty statsLine', () => {
+    const pitchers = baseballPlayers.filter((player) => player.primaryRole === 'pitcher');
+    const pitchersWithStats = pitchers.filter((player) => player.statsLine.length > 0);
+
+    expect(pitchersWithStats.length).toBeGreaterThan(pitchers.length / 2);
   });
 
   it('splits roles between hitters and pitchers', () => {
@@ -84,10 +99,15 @@ describe('baseballPlayers', () => {
     expect(baseballPlayers.some((player) => player.teamsDisplay === '')).toBe(true);
   });
 
+  it('does not include generic WAR in any statsLine', () => {
+    expect(baseballPlayers.every((player) => !/\bWAR\b/.test(player.statsLine))).toBe(true);
+  });
+
   it('enriches current demo players with real position and teams data', () => {
     for (const player of DEMO_PLAYER_NAMES.map((name) => findPlayerByName(name))) {
       expect(player.primaryPosition).not.toBe('Unknown');
       expect(player.teamsDisplay.length).toBeGreaterThan(0);
+      expect(player.statsLine.length).toBeGreaterThan(0);
     }
   });
 
@@ -104,6 +124,31 @@ describe('baseballPlayers', () => {
 
     expect(kenGriffeyJr.primaryPosition).toBe('CF');
     expect(kenGriffeyJr.primaryRole).toBe('hitter');
+  });
+
+  it('includes expected demo player statline values', () => {
+    const kenGriffeyJr = findPlayerByName('Ken Griffey Jr.');
+    const davidWright = findPlayerByName('David Wright');
+    const ccSabathia = findPlayerByName('CC Sabathia');
+
+    expect(kenGriffeyJr.statsLine).toContain('HR 630');
+    expect(davidWright.statsLine).toContain('HR 242');
+    expect(ccSabathia.statsLine).toContain('W 251');
+    expect(ccSabathia.statsLine).toContain('K 3093');
+  });
+
+  it('formats hitter statlines with BA and OBP decimals that begin with a dot', () => {
+    const kenGriffeyJr = findPlayerByName('Ken Griffey Jr.');
+
+    expect(kenGriffeyJr.statsLine).toMatch(/BA \.\d{3}/);
+    expect(kenGriffeyJr.statsLine).toMatch(/OBP \.\d{3}/);
+  });
+
+  it('formats pitcher statlines with ERA and WHIP to two decimals', () => {
+    const ccSabathia = findPlayerByName('CC Sabathia');
+
+    expect(ccSabathia.statsLine).toMatch(/ERA \d+\.\d{2}/);
+    expect(ccSabathia.statsLine).toMatch(/WHIP \d+\.\d{2}/);
   });
 });
 

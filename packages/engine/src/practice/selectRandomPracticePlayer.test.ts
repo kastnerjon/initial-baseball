@@ -11,6 +11,7 @@ const players: Player[] = [
     primaryPosition: 'CF',
     mainDecade: '1990s',
     teamsDisplay: 'SEA, CIN, CHW',
+    statsLine: 'HR 630 / RBI 1836 / BA .284 / OBP .370 / SB 184',
     aliases: [],
   },
   {
@@ -21,6 +22,7 @@ const players: Player[] = [
     primaryPosition: 'SP',
     mainDecade: '1990s',
     teamsDisplay: 'LAD, MON, BOS, NYM, PHI',
+    statsLine: 'W 219 / L 100 / ERA 2.93 / WHIP 1.05 / K 3154',
     aliases: [],
   },
 ];

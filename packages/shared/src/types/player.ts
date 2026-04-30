@@ -12,6 +12,7 @@ export type Player = {
   primaryPosition: string;
   mainDecade: string;
   teamsDisplay: string;
+  statsLine: string;
   aliases: string[];
 };
 
