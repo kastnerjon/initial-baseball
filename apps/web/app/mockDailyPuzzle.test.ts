@@ -13,6 +13,7 @@ describe('buildDefaultDailyHints', () => {
       primaryRole: 'hitter',
       primaryPosition: 'CF',
       mainDecade: '1990s',
+      primaryTeam: 'SEA',
       teamsDisplay: 'SEA, CIN, CHW',
       statsLine: 'HR 630 / RBI 1836 / BA .284 / OBP .370 / SB 184',
       aliases: ['The Kid'],
@@ -34,6 +35,7 @@ describe('buildDefaultDailyHints', () => {
       primaryRole: 'hitter',
       primaryPosition: 'Unknown',
       mainDecade: 'Unknown',
+      primaryTeam: '',
       teamsDisplay: '',
       statsLine: '',
       aliases: [],
@@ -80,6 +82,20 @@ describe('DEMO_DAILY_PITCHES', () => {
       expect(statsHint?.hintType).toBe('stats');
       expect(generatedPlayer).toBeDefined();
       expect(statsHint?.hintValue).toBe(generatedPlayer?.statsLine);
+    }
+  });
+
+  it('uses the resolved generated player mainDecade and chronological teams display hints', () => {
+    for (const pitch of DEMO_DAILY_PITCHES) {
+      const generatedPlayer = baseballPlayers.find((player) => player.id === pitch.correctPlayerId);
+      const mainDecadeHint = pitch.hints[0];
+      const teamsHint = pitch.hints[1];
+
+      expect(generatedPlayer).toBeDefined();
+      expect(mainDecadeHint?.hintType).toBe('main_decade');
+      expect(mainDecadeHint?.hintValue).toBe(generatedPlayer?.mainDecade);
+      expect(teamsHint?.hintType).toBe('teams');
+      expect(teamsHint?.hintValue).toBe(generatedPlayer?.teamsDisplay);
     }
   });
 

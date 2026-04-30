@@ -26,6 +26,7 @@ describe('baseballPlayers', () => {
       expect(player.displayName.length).toBeGreaterThan(0);
       expect(player.primaryPosition.length).toBeGreaterThan(0);
       expect(player.mainDecade.length).toBeGreaterThan(0);
+      expect(player.primaryTeam).toBeTypeOf('string');
       expect(player.teamsDisplay).toBeTypeOf('string');
       expect(player.statsLine).toBeTypeOf('string');
       expect(Array.isArray(player.aliases)).toBe(true);
@@ -54,6 +55,18 @@ describe('baseballPlayers', () => {
     const withTeamsCount = baseballPlayers.filter((player) => player.teamsDisplay.length > 0).length;
 
     expect(withTeamsCount).toBeGreaterThan(baseballPlayers.length / 2);
+  });
+
+  it('gives a majority of players a non-empty primary team', () => {
+    const withPrimaryTeamCount = baseballPlayers.filter((player) => player.primaryTeam.length > 0).length;
+
+    expect(withPrimaryTeamCount).toBeGreaterThan(baseballPlayers.length / 2);
+  });
+
+  it('gives a majority of players a non-Unknown main decade', () => {
+    const withKnownMainDecadeCount = baseballPlayers.filter((player) => player.mainDecade !== 'Unknown').length;
+
+    expect(withKnownMainDecadeCount).toBeGreaterThan(baseballPlayers.length / 2);
   });
 
   it('gives a majority of hitters a meaningfully enriched statsLine', () => {
@@ -106,24 +119,31 @@ describe('baseballPlayers', () => {
   it('enriches current demo players with real position and teams data', () => {
     for (const player of DEMO_PLAYER_NAMES.map((name) => findPlayerByName(name))) {
       expect(player.primaryPosition).not.toBe('Unknown');
+      expect(player.primaryTeam.length).toBeGreaterThan(0);
       expect(player.teamsDisplay.length).toBeGreaterThan(0);
       expect(player.statsLine.length).toBeGreaterThan(0);
     }
   });
 
-  it('keeps the expected demo player role and position mapping', () => {
+  it('keeps the expected demo player role, position, primary team, and main decade mapping', () => {
     const ccSabathia = findPlayerByName('CC Sabathia');
     const davidWright = findPlayerByName('David Wright');
     const kenGriffeyJr = findPlayerByName('Ken Griffey Jr.');
 
     expect(ccSabathia.primaryPosition).toBe('P');
     expect(ccSabathia.primaryRole).toBe('pitcher');
+    expect(ccSabathia.primaryTeam).toBe('NYY');
+    expect(ccSabathia.mainDecade).toBe('2000s');
 
     expect(davidWright.primaryPosition).toBe('3B');
     expect(davidWright.primaryRole).toBe('hitter');
+    expect(davidWright.primaryTeam).toBe('NYM');
+    expect(davidWright.mainDecade).toBe('2000s');
 
     expect(kenGriffeyJr.primaryPosition).toBe('CF');
     expect(kenGriffeyJr.primaryRole).toBe('hitter');
+    expect(kenGriffeyJr.primaryTeam).toBe('SEA');
+    expect(kenGriffeyJr.mainDecade).toBe('1990s');
   });
 
   it('includes expected demo player statline values', () => {

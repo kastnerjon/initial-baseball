@@ -7,10 +7,16 @@ Player data ingestion and normalization helpers.
 `baseballPlayers` is currently a broad Chadwick-derived search universe.
 
 - It is suitable for player name search and canonical player identity lookup.
-- It is enriched from a committed Lahman subset for `primaryRole`, `primaryPosition`, `teamsDisplay`, and career `statsLine` where matching data is available.
+- It is enriched from a committed Lahman subset for `primaryRole`, `primaryPosition`, appearance-weighted `mainDecade`, appearance-weighted `primaryTeam`, `teamsDisplay`, and career `statsLine` where matching data is available.
 - It is not yet a complete gameplay-ready hint dataset.
 - Some generated players still fall back to placeholder values when Lahman coverage or matching is incomplete.
 - `bWAR` is still not included.
+
+Field notes:
+
+- `mainDecade` now prefers the Lahman decade with the most appearance-weighted games.
+- `primaryTeam` is the appearance-weighted team with the most games played.
+- `teamsDisplay` remains the chronological team-list display field rather than a primary-team field.
 
 ## Future enrichment
 

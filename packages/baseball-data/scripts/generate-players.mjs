@@ -214,19 +214,19 @@ function buildLahmanEnrichmentByPlayerId(appearanceRows, battingRows, pitchingRo
   for (const row of appearanceRows) {
     const playerId = row.playerID;
     const year = parseInteger(row.yearID);
+    const appearanceGames = getAppearanceGames(row);
 
     if (!playerId || year === 0) {
       continue;
     }
 
     const current = enrichmentByPlayerId.get(playerId) ?? {
-      pitchingAppearances: 0,
+      decadeGames: new Map(),
       positionGames: new Map(),
+      teamFirstYear: new Map(),
+      teamGames: new Map(),
       teamHistory: [],
     };
-
-    const pitchingGames = parseInteger(row.G_p);
-    current.pitchingAppearances += pitchingGames;
 
     for (const [column, position] of POSITION_COLUMNS) {
       const games = parseInteger(row[column]);
@@ -236,17 +236,35 @@ function buildLahmanEnrichmentByPlayerId(appearanceRows, battingRows, pitchingRo
       }
     }
 
-    current.teamHistory.push({
-      year,
-      teamId: row.teamID,
-      abbreviation: teamAbbreviationByTeamId.get(row.teamID) ?? row.teamID,
-    });
+    const abbreviation = teamAbbreviationByTeamId.get(row.teamID) ?? row.teamID;
+
+    if (appearanceGames > 0) {
+      const decade = Math.floor(year / 10) * 10;
+      current.decadeGames.set(decade, (current.decadeGames.get(decade) ?? 0) + appearanceGames);
+
+      if (abbreviation) {
+        current.teamGames.set(abbreviation, (current.teamGames.get(abbreviation) ?? 0) + appearanceGames);
+        current.teamFirstYear.set(
+          abbreviation,
+          Math.min(current.teamFirstYear.get(abbreviation) ?? Number.POSITIVE_INFINITY, year),
+        );
+      }
+    }
+
+    if (abbreviation) {
+      current.teamHistory.push({
+        year,
+        abbreviation,
+      });
+    }
 
     enrichmentByPlayerId.set(playerId, current);
   }
 
   return new Map([...enrichmentByPlayerId.entries()].map(([playerId, enrichment]) => {
     const primaryPosition = derivePrimaryPosition(enrichment.positionGames);
+    const mainDecade = deriveMainDecade(enrichment.decadeGames);
+    const primaryTeam = derivePrimaryTeam(enrichment.teamGames, enrichment.teamFirstYear, enrichment.teamHistory);
     const teamsDisplay = deriveTeamsDisplay(enrichment.teamHistory);
     const primaryRole = primaryPosition === 'P' ? 'pitcher' : 'hitter';
     const statsLine = primaryRole === 'pitcher'
@@ -254,6 +272,8 @@ function buildLahmanEnrichmentByPlayerId(appearanceRows, battingRows, pitchingRo
       : formatHitterStatsLine(battingStatsByPlayerId.get(playerId));
 
     return [playerId, {
+      mainDecade,
+      primaryTeam,
       primaryRole,
       primaryPosition,
       teamsDisplay,
@@ -431,7 +451,8 @@ function buildPlayer({ row, aliases, lahmanPlayer, lahmanEnrichmentByPlayerId })
     displayName,
     primaryRole: enrichment?.primaryRole ?? 'hitter',
     primaryPosition: enrichment?.primaryPosition ?? 'Unknown',
-    mainDecade: mainYear === null ? 'Unknown' : `${Math.floor(mainYear / 10) * 10}s`,
+    mainDecade: enrichment?.mainDecade ?? (mainYear === null ? 'Unknown' : `${Math.floor(mainYear / 10) * 10}s`),
+    primaryTeam: enrichment?.primaryTeam ?? '',
     teamsDisplay: enrichment?.teamsDisplay ?? '',
     statsLine: enrichment?.statsLine ?? formatHitterStatsLine(undefined),
     aliases: [...new Set([...(legalName && legalName !== fullName ? [legalName] : []), ...(row.name_nick ? splitNicknames(row.name_nick) : []), ...aliases])]
@@ -465,6 +486,30 @@ function deriveTeamsDisplay(teamHistory) {
     });
 
   return uniqueTeams.slice(0, 5).join(', ');
+}
+
+function deriveMainDecade(decadeGames) {
+  const rankedDecades = [...decadeGames.entries()]
+    .filter(([, games]) => games > 0)
+    .sort((left, right) => right[1] - left[1] || left[0] - right[0]);
+
+  return rankedDecades[0] === undefined ? null : `${rankedDecades[0][0]}s`;
+}
+
+function derivePrimaryTeam(teamGames, teamFirstYear, teamHistory) {
+  const rankedTeams = [...teamGames.entries()]
+    .filter(([, games]) => games > 0)
+    .sort((left, right) => (
+      right[1] - left[1]
+      || (teamFirstYear.get(left[0]) ?? Number.POSITIVE_INFINITY) - (teamFirstYear.get(right[0]) ?? Number.POSITIVE_INFINITY)
+      || left[0].localeCompare(right[0])
+    ));
+
+  if (rankedTeams[0] !== undefined) {
+    return rankedTeams[0][0];
+  }
+
+  return deriveTeamsDisplay(teamHistory).split(', ')[0] ?? '';
 }
 
 function formatHitterStatsLine(stats) {
@@ -552,4 +597,14 @@ function yearDistance(lahmanPlayer, year) {
 function parseInteger(value) {
   const parsed = Number.parseInt(value?.trim() || '0', 10);
   return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+function getAppearanceGames(row) {
+  const overallGames = parseInteger(row.G_all);
+
+  if (overallGames > 0) {
+    return overallGames;
+  }
+
+  return POSITION_COLUMNS.reduce((total, [column]) => total + parseInteger(row[column]), 0);
 }

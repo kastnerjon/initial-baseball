@@ -9,6 +9,7 @@ const player: Player = {
   primaryRole: 'hitter',
   primaryPosition: 'CF',
   mainDecade: '1990s',
+  primaryTeam: 'SEA',
   teamsDisplay: 'SEA, CIN, CHW',
   statsLine: 'HR 630 / RBI 1836 / BA .284 / OBP .370 / SB 184',
   aliases: ['The Kid', 'Ken Griffey'],
