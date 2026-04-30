@@ -8,6 +8,7 @@ const OUTPUT_PATH = resolve(process.cwd(), 'src/generated/players.json');
 const LAHMAN_DIR = resolve(process.cwd(), 'data/lahman');
 const LAHMAN_PEOPLE_PATH = resolve(LAHMAN_DIR, 'People.csv');
 const LAHMAN_APPEARANCES_PATH = resolve(LAHMAN_DIR, 'Appearances.csv');
+const LAHMAN_BATTING_PATH = resolve(LAHMAN_DIR, 'Batting.csv');
 const LAHMAN_PITCHING_PATH = resolve(LAHMAN_DIR, 'Pitching.csv');
 const LAHMAN_TEAMS_PATH = resolve(LAHMAN_DIR, 'Teams.csv');
 const POSITION_COLUMNS = [
@@ -33,9 +34,16 @@ const nameRows = parseCsv(await fetchText(NAMES_URL));
 const aliasesByPersonId = buildAliasesByPersonId(nameRows);
 const lahmanPeopleRows = parseCsv(readFileSync(LAHMAN_PEOPLE_PATH, 'utf8'));
 const lahmanAppearancesRows = parseCsv(readFileSync(LAHMAN_APPEARANCES_PATH, 'utf8'));
+const lahmanBattingRows = parseCsv(readFileSync(LAHMAN_BATTING_PATH, 'utf8'));
+const lahmanPitchingRows = parseCsv(readFileSync(LAHMAN_PITCHING_PATH, 'utf8'));
 const lahmanTeamsRows = parseCsv(readFileSync(LAHMAN_TEAMS_PATH, 'utf8'));
 const lahmanPlayersByReference = buildLahmanPlayersByReference(lahmanPeopleRows);
-const lahmanEnrichmentByPlayerId = buildLahmanEnrichmentByPlayerId(lahmanAppearancesRows, lahmanTeamsRows);
+const lahmanEnrichmentByPlayerId = buildLahmanEnrichmentByPlayerId(
+  lahmanAppearancesRows,
+  lahmanBattingRows,
+  lahmanPitchingRows,
+  lahmanTeamsRows,
+);
 
 const players = peopleRows
   .filter(isEligiblePlayer)
@@ -197,8 +205,10 @@ function buildLahmanPlayersByReference(rows) {
   };
 }
 
-function buildLahmanEnrichmentByPlayerId(appearanceRows, teamRows) {
+function buildLahmanEnrichmentByPlayerId(appearanceRows, battingRows, pitchingRows, teamRows) {
   const teamAbbreviationByTeamId = buildTeamAbbreviationByTeamId(teamRows);
+  const battingStatsByPlayerId = buildBattingStatsByPlayerId(battingRows);
+  const pitchingStatsByPlayerId = buildPitchingStatsByPlayerId(pitchingRows);
   const enrichmentByPlayerId = new Map();
 
   for (const row of appearanceRows) {
@@ -239,13 +249,83 @@ function buildLahmanEnrichmentByPlayerId(appearanceRows, teamRows) {
     const primaryPosition = derivePrimaryPosition(enrichment.positionGames);
     const teamsDisplay = deriveTeamsDisplay(enrichment.teamHistory);
     const primaryRole = primaryPosition === 'P' ? 'pitcher' : 'hitter';
+    const statsLine = primaryRole === 'pitcher'
+      ? formatPitcherStatsLine(pitchingStatsByPlayerId.get(playerId))
+      : formatHitterStatsLine(battingStatsByPlayerId.get(playerId));
 
     return [playerId, {
       primaryRole,
       primaryPosition,
       teamsDisplay,
+      statsLine,
     }];
   }));
+}
+
+function buildBattingStatsByPlayerId(rows) {
+  const battingStatsByPlayerId = new Map();
+
+  for (const row of rows) {
+    if (!row.playerID) {
+      continue;
+    }
+
+    const current = battingStatsByPlayerId.get(row.playerID) ?? {
+      hr: 0,
+      rbi: 0,
+      sb: 0,
+      hits: 0,
+      atBats: 0,
+      walks: 0,
+      hitByPitch: 0,
+      sacrificeFlies: 0,
+    };
+
+    current.hr += parseInteger(row.HR);
+    current.rbi += parseInteger(row.RBI);
+    current.sb += parseInteger(row.SB);
+    current.hits += parseInteger(row.H);
+    current.atBats += parseInteger(row.AB);
+    current.walks += parseInteger(row.BB);
+    current.hitByPitch += parseInteger(row.HBP);
+    current.sacrificeFlies += parseInteger(row.SF);
+
+    battingStatsByPlayerId.set(row.playerID, current);
+  }
+
+  return battingStatsByPlayerId;
+}
+
+function buildPitchingStatsByPlayerId(rows) {
+  const pitchingStatsByPlayerId = new Map();
+
+  for (const row of rows) {
+    if (!row.playerID) {
+      continue;
+    }
+
+    const current = pitchingStatsByPlayerId.get(row.playerID) ?? {
+      wins: 0,
+      losses: 0,
+      strikeouts: 0,
+      earnedRuns: 0,
+      walks: 0,
+      hits: 0,
+      ipOuts: 0,
+    };
+
+    current.wins += parseInteger(row.W);
+    current.losses += parseInteger(row.L);
+    current.strikeouts += parseInteger(row.SO);
+    current.earnedRuns += parseInteger(row.ER);
+    current.walks += parseInteger(row.BB);
+    current.hits += parseInteger(row.H);
+    current.ipOuts += parseInteger(row.IPouts);
+
+    pitchingStatsByPlayerId.set(row.playerID, current);
+  }
+
+  return pitchingStatsByPlayerId;
 }
 
 function buildTeamAbbreviationByTeamId(rows) {
@@ -353,6 +433,7 @@ function buildPlayer({ row, aliases, lahmanPlayer, lahmanEnrichmentByPlayerId })
     primaryPosition: enrichment?.primaryPosition ?? 'Unknown',
     mainDecade: mainYear === null ? 'Unknown' : `${Math.floor(mainYear / 10) * 10}s`,
     teamsDisplay: enrichment?.teamsDisplay ?? '',
+    statsLine: enrichment?.statsLine ?? formatHitterStatsLine(undefined),
     aliases: [...new Set([...(legalName && legalName !== fullName ? [legalName] : []), ...(row.name_nick ? splitNicknames(row.name_nick) : []), ...aliases])]
       .filter((alias) => alias && alias !== fullName && alias !== displayName)
       .sort(),
@@ -386,6 +467,42 @@ function deriveTeamsDisplay(teamHistory) {
   return uniqueTeams.slice(0, 5).join(', ');
 }
 
+function formatHitterStatsLine(stats) {
+  const battingAverage = stats === undefined || stats.atBats === 0
+    ? 'BA —'
+    : `BA ${formatAverage(stats.hits / stats.atBats)}`;
+  const onBasePercentageDenominator = (stats?.atBats ?? 0) + (stats?.walks ?? 0) + (stats?.hitByPitch ?? 0) + (stats?.sacrificeFlies ?? 0);
+  const onBasePercentage = stats === undefined || onBasePercentageDenominator === 0
+    ? 'OBP —'
+    : `OBP ${formatAverage(((stats.hits ?? 0) + (stats.walks ?? 0) + (stats.hitByPitch ?? 0)) / onBasePercentageDenominator)}`;
+
+  return [
+    `HR ${stats?.hr ?? 0}`,
+    `RBI ${stats?.rbi ?? 0}`,
+    battingAverage,
+    onBasePercentage,
+    `SB ${stats?.sb ?? 0}`,
+  ].join(' / ');
+}
+
+function formatPitcherStatsLine(stats) {
+  const inningsPitched = (stats?.ipOuts ?? 0) / 3;
+  const era = stats === undefined || inningsPitched === 0
+    ? 'ERA —'
+    : `ERA ${formatFixedTwo((9 * (stats.earnedRuns ?? 0)) / inningsPitched)}`;
+  const whip = stats === undefined || inningsPitched === 0
+    ? 'WHIP —'
+    : `WHIP ${formatFixedTwo(((stats.walks ?? 0) + (stats.hits ?? 0)) / inningsPitched)}`;
+
+  return [
+    `W ${stats?.wins ?? 0}`,
+    `L ${stats?.losses ?? 0}`,
+    era,
+    whip,
+    `K ${stats?.strikeouts ?? 0}`,
+  ].join(' / ');
+}
+
 function formatName({ first, last, suffix }) {
   return [first?.trim(), last?.trim(), suffix?.trim()].filter(Boolean).join(' ');
 }
@@ -396,6 +513,15 @@ function normalizeName(value) {
     .replace(/[^a-z0-9\s]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+function formatAverage(value) {
+  const rounded = value.toFixed(3);
+  return rounded.startsWith('0') ? rounded.slice(1) : rounded;
+}
+
+function formatFixedTwo(value) {
+  return value.toFixed(2);
 }
 
 function parseYear(value) {
