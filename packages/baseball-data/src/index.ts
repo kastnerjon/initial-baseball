@@ -1,3 +1,6 @@
+import type { Player } from '@initial-baseball/shared';
+import generatedPlayers from './generated/players.json';
+
 export type NormalizedPlayerRow = {
   externalSource: string;
   externalId: string;
@@ -8,3 +11,5 @@ export type NormalizedPlayerRow = {
   mainDecade: string;
   teamsDisplay: string;
 };
+
+export const baseballPlayers = generatedPlayers as Player[];

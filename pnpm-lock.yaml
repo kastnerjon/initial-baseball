@@ -57,6 +57,9 @@ importers:
 
   apps/web:
     dependencies:
+      '@initial-baseball/baseball-data':
+        specifier: workspace:*
+        version: link:../../packages/baseball-data
       '@initial-baseball/engine':
         specifier: workspace:*
         version: link:../../packages/engine
