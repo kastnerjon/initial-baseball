@@ -11,6 +11,7 @@
     "test": "vitest run --passWithNoTests"
   },
   "dependencies": {
+    "@initial-baseball/baseball-data": "workspace:*",
     "@initial-baseball/engine": "workspace:*",
     "@initial-baseball/shared": "workspace:*",
     "@supabase/supabase-js": "^2.47.10",

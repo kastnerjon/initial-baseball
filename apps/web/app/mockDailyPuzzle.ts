@@ -9,9 +9,9 @@ import {
   type DailyInningState,
   type DailyPuzzle,
   type HintType,
-  type Player,
   type PlayerIdentity,
 } from '@initial-baseball/shared';
+import { baseballPlayers } from '@initial-baseball/baseball-data';
 
 export type DemoPitchHint = {
   hintType: HintType;
@@ -34,50 +34,38 @@ export type DemoAtBatUiState = {
   submittedResult: DailyGuessResult | null;
 };
 
-export const DEMO_PLAYERS: Player[] = [
-  buildPlayer('ken-griffey-jr', 'Ken Griffey Jr.', 'Ken Griffey Jr.', 'hitter', 'CF', '1990s', 'SEA, CIN, CHW', ['The Kid', 'Ken Griffey']),
-  buildPlayer('ken-griffey-sr', 'Ken Griffey Sr.', 'Ken Griffey Sr.', 'hitter', 'OF', '1970s', 'CIN, NYY, ATL, SEA', []),
-  buildPlayer('david-wright', 'David Wright', 'David Wright', 'hitter', '3B', '2000s', 'NYM', ['Captain America']),
-  buildPlayer('david-ortiz', 'David Ortiz', 'David Ortiz', 'hitter', 'DH', '2000s', 'MIN, BOS', ['Big Papi']),
-  buildPlayer('dave-winfield', 'Dave Winfield', 'Dave Winfield', 'hitter', 'RF', '1980s', 'SDP, NYY, CAL, TOR, MIN, CLE', []),
-  buildPlayer('cc-sabathia', 'CC Sabathia', 'CC Sabathia', 'pitcher', 'SP', '2000s', 'CLE, MIL, NYY', ['Carsten Sabathia']),
-  buildPlayer('andruw-jones', 'Andruw Jones', 'Andruw Jones', 'hitter', 'CF', '2000s', 'ATL, LAD, TEX, CHW, NYY', []),
-  buildPlayer('jason-varitek', 'Jason Varitek', 'Jason Varitek', 'hitter', 'C', '2000s', 'BOS', ['Tek']),
-  buildPlayer('hideki-matsui', 'Hideki Matsui', 'Hideki Matsui', 'hitter', 'LF', '2000s', 'NYY, LAA, OAK, TBR', ['Godzilla']),
-];
-
 export const DEMO_DAILY_PITCHES: DemoDailyPitch[] = [
-  buildDemoPitch(1, 'KGJ', 'ken-griffey-jr', 'Ken Griffey Jr.', 'hitter', 'CF', [
+  buildDemoPitch(1, 'KGJ', requireDemoPlayer('Ken Griffey Jr.'), 'hitter', 'CF', [
     buildHint('main_decade', '1990s'),
     buildHint('teams', 'SEA, CIN, CHW'),
     buildHint('position', 'CF'),
     buildHint('stats', 'bWAR 83.8, HR 630'),
   ]),
-  buildDemoPitch(2, 'DW', 'david-wright', 'David Wright', 'hitter', '3B', [
+  buildDemoPitch(2, 'DW', requireDemoPlayer('David Wright'), 'hitter', '3B', [
     buildHint('main_decade', '2000s'),
     buildHint('teams', 'NYM'),
     buildHint('position', '3B'),
     buildHint('stats', 'bWAR 49.2, HR 242'),
   ]),
-  buildDemoPitch(3, 'CCS', 'cc-sabathia', 'CC Sabathia', 'pitcher', 'SP', [
+  buildDemoPitch(3, 'CCS', requireDemoPlayer('CC Sabathia'), 'pitcher', 'SP', [
     buildHint('main_decade', '2000s'),
     buildHint('teams', 'CLE, MIL, NYY'),
     buildHint('position', 'SP'),
     buildHint('stats', 'bWAR 61.8, ERA 3.74'),
   ]),
-  buildDemoPitch(4, 'AJ', 'andruw-jones', 'Andruw Jones', 'hitter', 'CF', [
+  buildDemoPitch(4, 'AJ', requireDemoPlayer('Andruw Jones'), 'hitter', 'CF', [
     buildHint('main_decade', '2000s'),
     buildHint('teams', 'ATL, LAD, TEX, CHW, NYY'),
     buildHint('position', 'CF'),
     buildHint('stats', 'bWAR 62.7, HR 434'),
   ]),
-  buildDemoPitch(5, 'JV', 'jason-varitek', 'Jason Varitek', 'hitter', 'C', [
+  buildDemoPitch(5, 'JV', requireDemoPlayer('Jason Varitek'), 'hitter', 'C', [
     buildHint('main_decade', '2000s'),
     buildHint('teams', 'BOS'),
     buildHint('position', 'C'),
     buildHint('stats', 'bWAR 24.1, HR 193'),
   ]),
-  buildDemoPitch(6, 'HM', 'hideki-matsui', 'Hideki Matsui', 'hitter', 'LF', [
+  buildDemoPitch(6, 'HM', requireDemoPlayer('Hideki Matsui'), 'hitter', 'LF', [
     buildHint('main_decade', '2000s'),
     buildHint('teams', 'NYY, LAA, OAK, TBR'),
     buildHint('position', 'LF'),
@@ -135,8 +123,7 @@ export function createInitialAtBatUiState(): DemoAtBatUiState {
 function buildDemoPitch(
   pitchNumber: number,
   initials: string,
-  playerId: string,
-  fullName: string,
+  player: Pick<PlayerIdentity, 'playerId' | 'fullName' | 'displayName'>,
   kind: PlayerIdentity['kind'],
   primaryPosition: string,
   hints: DemoPitchHint[],
@@ -144,15 +131,15 @@ function buildDemoPitch(
   return {
     pitchNumber,
     player: {
-      playerId,
-      fullName,
-      displayName: fullName,
+      playerId: player.playerId,
+      fullName: player.fullName,
+      displayName: player.displayName,
       initials,
       kind,
       primaryPosition,
     },
     hints,
-    correctPlayerId: playerId,
+    correctPlayerId: player.playerId,
   };
 }
 
@@ -183,24 +170,16 @@ function getHintConfigForType(hintType: HintType): DailyHintConfig[number] {
   return hintConfig;
 }
 
-function buildPlayer(
-  id: string,
-  fullName: string,
-  displayName: string,
-  primaryRole: Player['primaryRole'],
-  primaryPosition: string,
-  mainDecade: string,
-  teamsDisplay: string,
-  aliases: string[],
-): Player {
+function requireDemoPlayer(name: string): Pick<PlayerIdentity, 'playerId' | 'fullName' | 'displayName'> {
+  const player = baseballPlayers.find((candidate) => candidate.fullName === name || candidate.displayName === name || candidate.aliases.includes(name));
+
+  if (player === undefined) {
+    throw new Error(`Missing generated demo player: ${name}`);
+  }
+
   return {
-    id,
-    fullName,
-    displayName,
-    primaryRole,
-    primaryPosition,
-    mainDecade,
-    teamsDisplay,
-    aliases,
+    playerId: player.id,
+    fullName: player.fullName,
+    displayName: player.displayName,
   };
 }

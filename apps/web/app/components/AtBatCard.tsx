@@ -1,6 +1,7 @@
 'use client';
 
 import type { JSX } from 'react';
+import { useMemo } from 'react';
 import {
   searchPlayers,
   type PlayerSearchResult,
@@ -48,7 +49,7 @@ export function AtBatCard({
   onSubmit,
   onNextPitch,
 }: AtBatCardProps): JSX.Element {
-  const results = searchPlayers(state.query, players).slice(0, 5);
+  const results = useMemo(() => searchPlayers(state.query, players).slice(0, 5), [players, state.query]);
   const revealedHints = atBat.hints.slice(0, state.revealCount);
   const hasRevealedAllHints = state.revealCount >= atBat.hints.length;
   const resolvedTerminalResult = state.submittedResult !== null && state.submittedResult.kind !== 'incorrect'
