@@ -5,13 +5,14 @@ import {
   DEFAULT_DAILY_STATS_HINT_CONFIG,
   type DailyGameState,
   type DailyGuessResult,
-  type DailyHintConfig,
   type DailyInningState,
   type DailyPuzzle,
   type HintType,
+  type Player,
   type PlayerIdentity,
 } from '@initial-baseball/shared';
 import { baseballPlayers } from '@initial-baseball/baseball-data';
+import { buildDefaultDailyHints } from './buildDefaultDailyHints';
 
 export type DemoPitchHint = {
   hintType: HintType;
@@ -35,42 +36,12 @@ export type DemoAtBatUiState = {
 };
 
 export const DEMO_DAILY_PITCHES: DemoDailyPitch[] = [
-  buildDemoPitch(1, 'KGJ', requireDemoPlayer('Ken Griffey Jr.'), 'hitter', 'CF', [
-    buildHint('main_decade', '1990s'),
-    buildHint('teams', 'SEA, CIN, CHW'),
-    buildHint('position', 'CF'),
-    buildHint('stats', 'bWAR 83.8, HR 630'),
-  ]),
-  buildDemoPitch(2, 'DW', requireDemoPlayer('David Wright'), 'hitter', '3B', [
-    buildHint('main_decade', '2000s'),
-    buildHint('teams', 'NYM'),
-    buildHint('position', '3B'),
-    buildHint('stats', 'bWAR 49.2, HR 242'),
-  ]),
-  buildDemoPitch(3, 'CCS', requireDemoPlayer('CC Sabathia'), 'pitcher', 'SP', [
-    buildHint('main_decade', '2000s'),
-    buildHint('teams', 'CLE, MIL, NYY'),
-    buildHint('position', 'SP'),
-    buildHint('stats', 'bWAR 61.8, ERA 3.74'),
-  ]),
-  buildDemoPitch(4, 'AJ', requireDemoPlayer('Andruw Jones'), 'hitter', 'CF', [
-    buildHint('main_decade', '2000s'),
-    buildHint('teams', 'ATL, LAD, TEX, CHW, NYY'),
-    buildHint('position', 'CF'),
-    buildHint('stats', 'bWAR 62.7, HR 434'),
-  ]),
-  buildDemoPitch(5, 'JV', requireDemoPlayer('Jason Varitek'), 'hitter', 'C', [
-    buildHint('main_decade', '2000s'),
-    buildHint('teams', 'BOS'),
-    buildHint('position', 'C'),
-    buildHint('stats', 'bWAR 24.1, HR 193'),
-  ]),
-  buildDemoPitch(6, 'HM', requireDemoPlayer('Hideki Matsui'), 'hitter', 'LF', [
-    buildHint('main_decade', '2000s'),
-    buildHint('teams', 'NYY, LAA, OAK, TBR'),
-    buildHint('position', 'LF'),
-    buildHint('stats', 'bWAR 21.3, HR 175'),
-  ]),
+  buildDemoPitch(1, 'KGJ', requireDemoPlayer('Ken Griffey Jr.')),
+  buildDemoPitch(2, 'DW', requireDemoPlayer('David Wright')),
+  buildDemoPitch(3, 'CCS', requireDemoPlayer('CC Sabathia')),
+  buildDemoPitch(4, 'AJ', requireDemoPlayer('Andruw Jones')),
+  buildDemoPitch(5, 'JV', requireDemoPlayer('Jason Varitek')),
+  buildDemoPitch(6, 'HM', requireDemoPlayer('Hideki Matsui')),
 ];
 
 export const DEMO_DAILY_PUZZLE: DailyPuzzle = {
@@ -123,34 +94,29 @@ export function createInitialAtBatUiState(): DemoAtBatUiState {
 function buildDemoPitch(
   pitchNumber: number,
   initials: string,
-  player: Pick<PlayerIdentity, 'playerId' | 'fullName' | 'displayName'>,
-  kind: PlayerIdentity['kind'],
-  primaryPosition: string,
-  hints: DemoPitchHint[],
+  player: Player,
 ): DemoDailyPitch {
   return {
     pitchNumber,
     player: {
-      playerId: player.playerId,
+      playerId: player.id,
       fullName: player.fullName,
       displayName: player.displayName,
       initials,
-      kind,
-      primaryPosition,
+      kind: deriveDemoPlayerKind(player),
+      primaryPosition: player.primaryPosition,
     },
-    hints,
-    correctPlayerId: player.playerId,
+    hints: buildDefaultDailyHints(player),
+    correctPlayerId: player.id,
   };
 }
 
-function buildHint(hintType: HintType, hintValue: string): DemoPitchHint {
-  const hintConfig = getHintConfigForType(hintType);
+function deriveDemoPlayerKind(player: Player): PlayerIdentity['kind'] {
+  if (player.primaryRole === 'pitcher' || player.primaryRole === 'hitter') {
+    return player.primaryRole;
+  }
 
-  return {
-    hintType,
-    hintLabel: hintConfig.displayLabel,
-    hintValue,
-  };
+  return player.primaryPosition === 'P' ? 'pitcher' : 'hitter';
 }
 
 function buildHintSet(hints: DemoPitchHint[]): DailyPuzzle['pitches'][number]['hints'] {
@@ -160,26 +126,12 @@ function buildHintSet(hints: DemoPitchHint[]): DailyPuzzle['pitches'][number]['h
   }, {});
 }
 
-function getHintConfigForType(hintType: HintType): DailyHintConfig[number] {
-  const hintConfig = DEFAULT_DAILY_HINT_CONFIG.find((config) => config.hintType === hintType);
-
-  if (hintConfig === undefined) {
-    throw new Error(`Missing demo hint config for type: ${hintType}`);
-  }
-
-  return hintConfig;
-}
-
-function requireDemoPlayer(name: string): Pick<PlayerIdentity, 'playerId' | 'fullName' | 'displayName'> {
+function requireDemoPlayer(name: string): Player {
   const player = baseballPlayers.find((candidate) => candidate.fullName === name || candidate.displayName === name || candidate.aliases.includes(name));
 
   if (player === undefined) {
     throw new Error(`Missing generated demo player: ${name}`);
   }
 
-  return {
-    playerId: player.id,
-    fullName: player.fullName,
-    displayName: player.displayName,
-  };
+  return player;
 }
