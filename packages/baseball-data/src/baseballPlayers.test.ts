@@ -11,8 +11,8 @@ const DEMO_PLAYER_NAMES = [
 ];
 
 describe('baseballPlayers', () => {
-  it('is non-empty', () => {
-    expect(baseballPlayers.length).toBeGreaterThan(0);
+  it('contains a broad searchable player universe', () => {
+    expect(baseballPlayers.length).toBeGreaterThanOrEqual(1000);
   });
 
   it('has unique ids', () => {
@@ -42,4 +42,27 @@ describe('baseballPlayers', () => {
       ).toBe(true);
     }
   });
+
+  it('may contain placeholder positions', () => {
+    expect(baseballPlayers.some((player) => player.primaryPosition === 'Unknown')).toBe(true);
+  });
+
+  it('does not guarantee generated position or teams enrichment for current demo players', () => {
+    const demoPlayers = DEMO_PLAYER_NAMES.map((name) => findPlayerByName(name));
+
+    expect(
+      demoPlayers.some((player) => player.primaryPosition === 'Unknown' || player.teamsDisplay === ''),
+    ).toBe(true);
+  });
 });
+
+function findPlayerByName(name: string) {
+  const player = baseballPlayers.find((candidate) => (
+    candidate.fullName === name
+    || candidate.displayName === name
+    || candidate.aliases.includes(name)
+  ));
+
+  expect(player).toBeDefined();
+  return player!;
+}
