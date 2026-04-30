@@ -43,16 +43,36 @@ describe('baseballPlayers', () => {
     }
   });
 
-  it('may contain placeholder positions', () => {
-    expect(baseballPlayers.some((player) => player.primaryPosition === 'Unknown')).toBe(true);
+  it('gives a majority of players a non-Unknown primary position', () => {
+    const knownPositionCount = baseballPlayers.filter((player) => player.primaryPosition !== 'Unknown').length;
+
+    expect(knownPositionCount).toBeGreaterThan(baseballPlayers.length / 2);
   });
 
-  it('does not guarantee generated position or teams enrichment for current demo players', () => {
-    const demoPlayers = DEMO_PLAYER_NAMES.map((name) => findPlayerByName(name));
+  it('gives a majority of players a non-empty teams display', () => {
+    const withTeamsCount = baseballPlayers.filter((player) => player.teamsDisplay.length > 0).length;
 
-    expect(
-      demoPlayers.some((player) => player.primaryPosition === 'Unknown' || player.teamsDisplay === ''),
-    ).toBe(true);
+    expect(withTeamsCount).toBeGreaterThan(baseballPlayers.length / 2);
+  });
+
+  it('splits roles between hitters and pitchers', () => {
+    const pitchers = baseballPlayers.filter((player) => player.primaryRole === 'pitcher').length;
+    const hitters = baseballPlayers.filter((player) => player.primaryRole === 'hitter').length;
+
+    expect(pitchers).toBeGreaterThan(0);
+    expect(hitters).toBeGreaterThan(0);
+  });
+
+  it('keeps fallback placeholders for some players without full Lahman coverage', () => {
+    expect(baseballPlayers.some((player) => player.primaryPosition === 'Unknown')).toBe(true);
+    expect(baseballPlayers.some((player) => player.teamsDisplay === '')).toBe(true);
+  });
+
+  it('enriches current demo players with real position and teams data', () => {
+    for (const player of DEMO_PLAYER_NAMES.map((name) => findPlayerByName(name))) {
+      expect(player.primaryPosition).not.toBe('Unknown');
+      expect(player.teamsDisplay.length).toBeGreaterThan(0);
+    }
   });
 });
 
