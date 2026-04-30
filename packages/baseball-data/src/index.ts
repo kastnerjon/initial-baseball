@@ -11,6 +11,11 @@ export type NormalizedPlayerRow = {
   mainDecade: string;
   primaryTeam: string;
   teamsDisplay: string;
+  dailyEligibilityTier: 'core' | 'extended' | 'none';
+  dailyEligible: boolean;
 };
 
 export const baseballPlayers = generatedPlayers as Player[];
+export const dailyEligiblePlayers = baseballPlayers.filter((player) => player.dailyEligible);
+export const coreDailyEligiblePlayers = baseballPlayers.filter((player) => player.dailyEligibilityTier === 'core');
+export const extendedDailyEligiblePlayers = baseballPlayers.filter((player) => player.dailyEligibilityTier === 'extended');

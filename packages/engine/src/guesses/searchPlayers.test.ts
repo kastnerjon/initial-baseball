@@ -13,6 +13,8 @@ const players: Player[] = [
     primaryTeam: 'NYM',
     teamsDisplay: 'NYM',
     statsLine: 'HR 242 / RBI 970 / BA .296 / OBP .376 / SB 196',
+    dailyEligibilityTier: 'core',
+    dailyEligible: true,
     aliases: ['Captain America'],
   },
   {
@@ -25,6 +27,8 @@ const players: Player[] = [
     primaryTeam: 'BOS',
     teamsDisplay: 'MIN, BOS',
     statsLine: 'HR 541 / RBI 1768 / BA .286 / OBP .380 / SB 17',
+    dailyEligibilityTier: 'core',
+    dailyEligible: true,
     aliases: ['Big Papi'],
   },
   {
@@ -37,6 +41,8 @@ const players: Player[] = [
     primaryTeam: 'TOR',
     teamsDisplay: 'KCR, NYM, TOR, NYY, BOS',
     statsLine: 'W 194 / L 126 / ERA 3.46 / WHIP 1.17 / K 2668',
+    dailyEligibilityTier: 'core',
+    dailyEligible: true,
     aliases: [],
   },
   {
@@ -49,6 +55,8 @@ const players: Player[] = [
     primaryTeam: 'NYY',
     teamsDisplay: 'CLE, MIL, NYY',
     statsLine: 'W 251 / L 161 / ERA 3.74 / WHIP 1.26 / K 3093',
+    dailyEligibilityTier: 'core',
+    dailyEligible: true,
     aliases: ['Carsten Sabathia'],
   },
   {
@@ -61,6 +69,8 @@ const players: Player[] = [
     primaryTeam: 'PIT',
     teamsDisplay: 'PIT',
     statsLine: 'HR 49 / RBI 131 / BA .251 / OBP .320 / SB 32',
+    dailyEligibilityTier: 'none',
+    dailyEligible: false,
     aliases: [],
   },
 ];

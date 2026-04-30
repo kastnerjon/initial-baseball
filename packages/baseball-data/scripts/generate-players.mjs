@@ -267,9 +267,17 @@ function buildLahmanEnrichmentByPlayerId(appearanceRows, battingRows, pitchingRo
     const primaryTeam = derivePrimaryTeam(enrichment.teamGames, enrichment.teamFirstYear, enrichment.teamHistory);
     const teamsDisplay = deriveTeamsDisplay(enrichment.teamHistory);
     const primaryRole = primaryPosition === 'P' ? 'pitcher' : 'hitter';
+    const battingStats = battingStatsByPlayerId.get(playerId);
+    const pitchingStats = pitchingStatsByPlayerId.get(playerId);
     const statsLine = primaryRole === 'pitcher'
-      ? formatPitcherStatsLine(pitchingStatsByPlayerId.get(playerId))
-      : formatHitterStatsLine(battingStatsByPlayerId.get(playerId));
+      ? formatPitcherStatsLine(pitchingStats)
+      : formatHitterStatsLine(battingStats);
+    const dailyEligibilityTier = deriveDailyEligibilityTier({
+      primaryRole,
+      appearanceGames: sumGames(enrichment.teamGames),
+      battingStats,
+      pitchingStats,
+    });
 
     return [playerId, {
       mainDecade,
@@ -278,6 +286,8 @@ function buildLahmanEnrichmentByPlayerId(appearanceRows, battingRows, pitchingRo
       primaryPosition,
       teamsDisplay,
       statsLine,
+      dailyEligibilityTier,
+      dailyEligible: dailyEligibilityTier !== 'none',
     }];
   }));
 }
@@ -327,6 +337,7 @@ function buildPitchingStatsByPlayerId(rows) {
     const current = pitchingStatsByPlayerId.get(row.playerID) ?? {
       wins: 0,
       losses: 0,
+      saves: 0,
       strikeouts: 0,
       earnedRuns: 0,
       walks: 0,
@@ -336,6 +347,7 @@ function buildPitchingStatsByPlayerId(rows) {
 
     current.wins += parseInteger(row.W);
     current.losses += parseInteger(row.L);
+    current.saves += parseInteger(row.SV);
     current.strikeouts += parseInteger(row.SO);
     current.earnedRuns += parseInteger(row.ER);
     current.walks += parseInteger(row.BB);
@@ -455,6 +467,8 @@ function buildPlayer({ row, aliases, lahmanPlayer, lahmanEnrichmentByPlayerId })
     primaryTeam: enrichment?.primaryTeam ?? '',
     teamsDisplay: enrichment?.teamsDisplay ?? '',
     statsLine: enrichment?.statsLine ?? formatHitterStatsLine(undefined),
+    dailyEligibilityTier: enrichment?.dailyEligibilityTier ?? 'none',
+    dailyEligible: enrichment?.dailyEligible ?? false,
     aliases: [...new Set([...(legalName && legalName !== fullName ? [legalName] : []), ...(row.name_nick ? splitNicknames(row.name_nick) : []), ...aliases])]
       .filter((alias) => alias && alias !== fullName && alias !== displayName)
       .sort(),
@@ -510,6 +524,56 @@ function derivePrimaryTeam(teamGames, teamFirstYear, teamHistory) {
   }
 
   return deriveTeamsDisplay(teamHistory).split(', ')[0] ?? '';
+}
+
+function deriveDailyEligibilityTier({ primaryRole, appearanceGames, battingStats, pitchingStats }) {
+  if (primaryRole === 'pitcher') {
+    const inningsPitched = (pitchingStats?.ipOuts ?? 0) / 3;
+
+    if (
+      (pitchingStats?.wins ?? 0) >= 150
+      || (pitchingStats?.strikeouts ?? 0) >= 2000
+      || (pitchingStats?.saves ?? 0) >= 200
+      || inningsPitched >= 1800
+      || appearanceGames >= 500
+    ) {
+      return 'core';
+    }
+
+    if (
+      (pitchingStats?.wins ?? 0) >= 75
+      || (pitchingStats?.strikeouts ?? 0) >= 1000
+      || (pitchingStats?.saves ?? 0) >= 100
+      || inningsPitched >= 1000
+      || appearanceGames >= 300
+    ) {
+      return 'extended';
+    }
+
+    return 'none';
+  }
+
+  if (
+    (battingStats?.hr ?? 0) >= 200
+    || (battingStats?.hits ?? 0) >= 1500
+    || (battingStats?.rbi ?? 0) >= 750
+    || (battingStats?.sb ?? 0) >= 300
+    || appearanceGames >= 1500
+  ) {
+    return 'core';
+  }
+
+  if (
+    (battingStats?.hr ?? 0) >= 100
+    || (battingStats?.hits ?? 0) >= 1000
+    || (battingStats?.rbi ?? 0) >= 500
+    || (battingStats?.sb ?? 0) >= 150
+    || appearanceGames >= 1000
+  ) {
+    return 'extended';
+  }
+
+  return 'none';
 }
 
 function formatHitterStatsLine(stats) {
@@ -607,4 +671,8 @@ function getAppearanceGames(row) {
   }
 
   return POSITION_COLUMNS.reduce((total, [column]) => total + parseInteger(row[column]), 0);
+}
+
+function sumGames(gamesByKey) {
+  return [...gamesByKey.values()].reduce((total, games) => total + games, 0);
 }

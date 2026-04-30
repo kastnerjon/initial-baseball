@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest';
-import { baseballPlayers } from './index.js';
+import {
+  baseballPlayers,
+  coreDailyEligiblePlayers,
+  dailyEligiblePlayers,
+  extendedDailyEligiblePlayers,
+} from './index.js';
 
 const DEMO_PLAYER_NAMES = [
   'Ken Griffey Jr.',
@@ -29,6 +34,8 @@ describe('baseballPlayers', () => {
       expect(player.primaryTeam).toBeTypeOf('string');
       expect(player.teamsDisplay).toBeTypeOf('string');
       expect(player.statsLine).toBeTypeOf('string');
+      expect(['core', 'extended', 'none']).toContain(player.dailyEligibilityTier);
+      expect(player.dailyEligible).toBeTypeOf('boolean');
       expect(Array.isArray(player.aliases)).toBe(true);
     }
   });
@@ -67,6 +74,28 @@ describe('baseballPlayers', () => {
     const withKnownMainDecadeCount = baseballPlayers.filter((player) => player.mainDecade !== 'Unknown').length;
 
     expect(withKnownMainDecadeCount).toBeGreaterThan(baseballPlayers.length / 2);
+  });
+
+  it('keeps dailyEligible consistent with dailyEligibilityTier', () => {
+    for (const player of baseballPlayers) {
+      expect(player.dailyEligible).toBe(player.dailyEligibilityTier !== 'none');
+    }
+  });
+
+  it('exports only the expected players in each Daily-eligible subset', () => {
+    expect(dailyEligiblePlayers.every((player) => player.dailyEligible)).toBe(true);
+    expect(coreDailyEligiblePlayers.every((player) => player.dailyEligibilityTier === 'core')).toBe(true);
+    expect(extendedDailyEligiblePlayers.every((player) => player.dailyEligibilityTier === 'extended')).toBe(true);
+  });
+
+  it('keeps both core and extended Daily pools populated', () => {
+    expect(coreDailyEligiblePlayers.length).toBeGreaterThan(0);
+    expect(extendedDailyEligiblePlayers.length).toBeGreaterThan(0);
+  });
+
+  it('keeps the Daily-eligible pool large but meaningfully smaller than the full search universe', () => {
+    expect(dailyEligiblePlayers.length).toBeGreaterThanOrEqual(500);
+    expect(dailyEligiblePlayers.length).toBeLessThan(baseballPlayers.length);
   });
 
   it('gives a majority of hitters a meaningfully enriched statsLine', () => {
@@ -122,28 +151,39 @@ describe('baseballPlayers', () => {
       expect(player.primaryTeam.length).toBeGreaterThan(0);
       expect(player.teamsDisplay.length).toBeGreaterThan(0);
       expect(player.statsLine.length).toBeGreaterThan(0);
+      expect(player.dailyEligible).toBe(true);
+      expect(player.dailyEligibilityTier).not.toBe('none');
     }
   });
 
-  it('keeps the expected demo player role, position, primary team, and main decade mapping', () => {
+  it('keeps the expected demo player role, position, primary team, main decade, and Daily tier mapping', () => {
     const ccSabathia = findPlayerByName('CC Sabathia');
     const davidWright = findPlayerByName('David Wright');
     const kenGriffeyJr = findPlayerByName('Ken Griffey Jr.');
+    const hidekiMatsui = findPlayerByName('Hideki Matsui');
+    const ajJimenez = findPlayerByName('A. J. Jiménez');
 
     expect(ccSabathia.primaryPosition).toBe('P');
     expect(ccSabathia.primaryRole).toBe('pitcher');
     expect(ccSabathia.primaryTeam).toBe('NYY');
     expect(ccSabathia.mainDecade).toBe('2000s');
+    expect(ccSabathia.dailyEligibilityTier).toBe('core');
 
     expect(davidWright.primaryPosition).toBe('3B');
     expect(davidWright.primaryRole).toBe('hitter');
     expect(davidWright.primaryTeam).toBe('NYM');
     expect(davidWright.mainDecade).toBe('2000s');
+    expect(davidWright.dailyEligibilityTier).toBe('core');
 
     expect(kenGriffeyJr.primaryPosition).toBe('CF');
     expect(kenGriffeyJr.primaryRole).toBe('hitter');
     expect(kenGriffeyJr.primaryTeam).toBe('SEA');
     expect(kenGriffeyJr.mainDecade).toBe('1990s');
+    expect(kenGriffeyJr.dailyEligibilityTier).toBe('core');
+
+    expect(hidekiMatsui.dailyEligibilityTier).toBe('core');
+    expect(ajJimenez.dailyEligibilityTier).toBe('none');
+    expect(ajJimenez.dailyEligible).toBe(false);
   });
 
   it('includes expected demo player statline values', () => {

@@ -12,6 +12,8 @@ const player: Player = {
   primaryTeam: 'SEA',
   teamsDisplay: 'SEA, CIN, CHW',
   statsLine: 'HR 630 / RBI 1836 / BA .284 / OBP .370 / SB 184',
+  dailyEligibilityTier: 'core',
+  dailyEligible: true,
   aliases: ['The Kid', 'Ken Griffey'],
 };
 

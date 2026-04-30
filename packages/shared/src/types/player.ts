@@ -14,6 +14,8 @@ export type Player = {
   primaryTeam: string;
   teamsDisplay: string;
   statsLine: string;
+  dailyEligibilityTier: 'core' | 'extended' | 'none';
+  dailyEligible: boolean;
   aliases: string[];
 };
 
