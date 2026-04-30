@@ -9,6 +9,7 @@ export type NormalizedPlayerRow = {
   primaryRole: 'hitter' | 'pitcher' | 'two_way';
   primaryPosition: string;
   mainDecade: string;
+  primaryTeam: string;
   teamsDisplay: string;
 };
 

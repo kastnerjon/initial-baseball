@@ -11,6 +11,7 @@ export type Player = {
   primaryRole: PlayerRole;
   primaryPosition: string;
   mainDecade: string;
+  primaryTeam: string;
   teamsDisplay: string;
   statsLine: string;
   aliases: string[];
