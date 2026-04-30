@@ -13,6 +13,8 @@ const players: Player[] = [
     primaryTeam: 'SEA',
     teamsDisplay: 'SEA, CIN, CHW',
     statsLine: 'HR 630 / RBI 1836 / BA .284 / OBP .370 / SB 184',
+    dailyEligibilityTier: 'core',
+    dailyEligible: true,
     aliases: [],
   },
   {
@@ -25,6 +27,8 @@ const players: Player[] = [
     primaryTeam: 'LAD',
     teamsDisplay: 'LAD, MON, BOS, NYM, PHI',
     statsLine: 'W 219 / L 100 / ERA 2.93 / WHIP 1.05 / K 3154',
+    dailyEligibilityTier: 'core',
+    dailyEligible: true,
     aliases: [],
   },
 ];

@@ -16,6 +16,8 @@ describe('buildDefaultDailyHints', () => {
       primaryTeam: 'SEA',
       teamsDisplay: 'SEA, CIN, CHW',
       statsLine: 'HR 630 / RBI 1836 / BA .284 / OBP .370 / SB 184',
+      dailyEligibilityTier: 'core',
+      dailyEligible: true,
       aliases: ['The Kid'],
     };
 
@@ -38,6 +40,8 @@ describe('buildDefaultDailyHints', () => {
       primaryTeam: '',
       teamsDisplay: '',
       statsLine: '',
+      dailyEligibilityTier: 'none',
+      dailyEligible: false,
       aliases: [],
     };
 
@@ -106,6 +110,16 @@ describe('DEMO_DAILY_PITCHES', () => {
       expect(generatedPlayer).toBeDefined();
       expect(pitch.player.kind).toBe(generatedPlayer?.primaryRole);
       expect(pitch.player.primaryPosition).toBe(generatedPlayer?.primaryPosition);
+    }
+  });
+
+  it('keeps the current demo Daily players inside the Daily-eligible pool', () => {
+    for (const pitch of DEMO_DAILY_PITCHES) {
+      const generatedPlayer = baseballPlayers.find((player) => player.id === pitch.correctPlayerId);
+
+      expect(generatedPlayer).toBeDefined();
+      expect(generatedPlayer?.dailyEligible).toBe(true);
+      expect(generatedPlayer?.dailyEligibilityTier).not.toBe('none');
     }
   });
 
