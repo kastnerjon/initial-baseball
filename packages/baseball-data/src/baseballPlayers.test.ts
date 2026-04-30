@@ -56,18 +56,18 @@ describe('baseballPlayers', () => {
     expect(withTeamsCount).toBeGreaterThan(baseballPlayers.length / 2);
   });
 
-  it('gives a majority of hitters a non-empty statsLine', () => {
+  it('gives a majority of hitters a meaningfully enriched statsLine', () => {
     const hitters = baseballPlayers.filter((player) => player.primaryRole === 'hitter');
-    const hittersWithStats = hitters.filter((player) => player.statsLine.length > 0);
+    const hittersWithRealRateStats = hitters.filter((player) => hasRealHitterRateStats(player.statsLine));
 
-    expect(hittersWithStats.length).toBeGreaterThan(hitters.length / 2);
+    expect(hittersWithRealRateStats.length).toBeGreaterThan(hitters.length / 2);
   });
 
-  it('gives a majority of pitchers a non-empty statsLine', () => {
+  it('gives a majority of pitchers a meaningfully enriched statsLine', () => {
     const pitchers = baseballPlayers.filter((player) => player.primaryRole === 'pitcher');
-    const pitchersWithStats = pitchers.filter((player) => player.statsLine.length > 0);
+    const pitchersWithRealRateStats = pitchers.filter((player) => hasRealPitcherRateStats(player.statsLine));
 
-    expect(pitchersWithStats.length).toBeGreaterThan(pitchers.length / 2);
+    expect(pitchersWithRealRateStats.length).toBeGreaterThan(pitchers.length / 2);
   });
 
   it('splits roles between hitters and pitchers', () => {
@@ -161,4 +161,12 @@ function findPlayerByName(name: string) {
 
   expect(player).toBeDefined();
   return player!;
+}
+
+function hasRealHitterRateStats(statsLine: string) {
+  return /BA \.\d{3}/.test(statsLine) && /OBP \.\d{3}/.test(statsLine);
+}
+
+function hasRealPitcherRateStats(statsLine: string) {
+  return /ERA \d+\.\d{2}/.test(statsLine) && /WHIP \d+\.\d{2}/.test(statsLine);
 }
