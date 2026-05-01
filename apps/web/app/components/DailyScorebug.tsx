@@ -17,7 +17,12 @@ export function DailyScorebug({
 }: DailyScorebugProps): JSX.Element {
   return (
     <ScorebugShell
-      left={<p className="scorebug-title">{`DAILY #${puzzleNumber}`}</p>}
+      left={(
+        <div className="scorebug-identity">
+          <span className="scorebug-kicker">Today</span>
+          <p className="scorebug-title">{`#${puzzleNumber}`}</p>
+        </div>
+      )}
       middle={(
         <div className="scorebug-metrics">
           <ScorebugMetric label="R" value={summary.runs} />
@@ -26,9 +31,9 @@ export function DailyScorebug({
         </div>
       )}
       right={(
-        <div className="scorebug-metrics scorebug-metrics-right">
-          <ScorebugMetric label="OUT" value={summary.outs} />
-          <ScorebugMetric label="STR" value={`${currentStrikeCount}/3`} />
+        <div className="count-panel">
+          <CountIndicator label="Outs" filledCount={Math.min(summary.outs, 2)} total={2} />
+          <CountIndicator label="Strikes" filledCount={Math.min(currentStrikeCount, 3)} total={3} />
         </div>
       )}
     />
@@ -45,23 +50,58 @@ function ScorebugMetric({ label, value }: { label: string; value: number | strin
 }
 
 function BaseOccupancyIndicator({ bases }: { bases: DailyBaseState }): JSX.Element {
-  const baseStates = [
-    { label: '1B', occupied: bases.first },
-    { label: '2B', occupied: bases.second },
-    { label: '3B', occupied: bases.third },
-  ];
-
   return (
-    <div className="base-indicator" aria-label="Base occupancy">
-      {baseStates.map((base) => (
-        <div key={base.label} className="base-indicator-slot">
+    <div className="diamond-shell">
+      <span className="scorebug-section-label">Bases</span>
+      <div className="base-diamond" aria-label="Base occupancy">
+        <BaseMarker className="base-marker-second" occupied={bases.second} label="Second base" />
+        <BaseMarker className="base-marker-third" occupied={bases.third} label="Third base" />
+        <BaseMarker className="base-marker-first" occupied={bases.first} label="First base" />
+      </div>
+    </div>
+  );
+}
+
+function BaseMarker({
+  className,
+  occupied,
+  label,
+}: {
+  className: string;
+  occupied: boolean;
+  label: string;
+}): JSX.Element {
+  return (
+    <span
+      className={occupied ? `base-marker ${className} occupied` : `base-marker ${className}`}
+      aria-label={label}
+    />
+  );
+}
+
+function CountIndicator({
+  label,
+  filledCount,
+  total,
+}: {
+  label: string;
+  filledCount: number;
+  total: number;
+}): JSX.Element {
+  return (
+    <div className="count-indicator">
+      <span className="scorebug-section-label">{label}</span>
+      <div className="count-markers" aria-label={label}>
+        {Array.from({ length: total }, (_, index) => (
           <span
-            className={base.occupied ? 'base-indicator-dot occupied' : 'base-indicator-dot'}
+            key={`${label}-${index}`}
+            className={index < filledCount ? 'count-marker filled' : 'count-marker'}
             aria-hidden="true"
-          />
-          <span className="base-indicator-label">{base.label}</span>
-        </div>
-      ))}
+          >
+            {index < filledCount ? '●' : '○'}
+          </span>
+        ))}
+      </div>
     </div>
   );
 }

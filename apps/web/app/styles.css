@@ -1,8 +1,10 @@
 :root {
   color-scheme: light;
-  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  background: #f5f1e8;
-  color: #17211a;
+  font-family: "Avenir Next Condensed", "Franklin Gothic Medium", "Arial Narrow", ui-sans-serif, system-ui, sans-serif;
+  background:
+    radial-gradient(circle at top, rgba(245, 241, 232, 0.95), rgba(233, 226, 206, 0.9)),
+    linear-gradient(180deg, #f3ecdf 0%, #e9dfc9 100%);
+  color: #162116;
 }
 
 * { box-sizing: border-box; }
@@ -13,31 +15,36 @@ body { margin: 0; }
   display: grid;
   place-items: center;
   padding: 24px;
-  max-width: 720px;
+  max-width: 760px;
   margin: 0 auto;
 }
 
 .daily-card {
   width: 100%;
-  border: 1px solid rgba(23, 33, 26, 0.16);
-  border-radius: 20px;
+  border: 1px solid rgba(22, 33, 22, 0.14);
+  border-radius: 22px;
   padding: 24px;
-  background: #fffaf0;
-  box-shadow: 0 18px 60px rgba(23, 33, 26, 0.08);
+  background:
+    linear-gradient(180deg, rgba(255, 252, 244, 0.98), rgba(249, 244, 230, 0.98));
+  box-shadow:
+    0 22px 70px rgba(22, 33, 22, 0.09),
+    inset 0 1px 0 rgba(255, 255, 255, 0.75);
 }
 
 .eyebrow {
   margin: 0 0 10px;
   text-transform: uppercase;
-  letter-spacing: 0.12em;
-  font-size: 12px;
+  letter-spacing: 0.18em;
+  font-size: 11px;
   font-weight: 700;
+  color: rgba(22, 33, 22, 0.7);
 }
 
 h1 {
   margin: 0 0 18px;
   font-size: clamp(36px, 8vw, 56px);
   line-height: 1;
+  letter-spacing: 0.02em;
 }
 
 p {
@@ -47,17 +54,21 @@ p {
 
 .game-shell {
   display: grid;
-  gap: 18px;
+  gap: 16px;
 }
 
 .scorebug-shell {
   display: grid;
-  grid-template-columns: 1.1fr 1.4fr 1fr;
-  gap: 10px;
+  grid-template-columns: 0.9fr 1.55fr 1.1fr;
+  gap: 8px;
   align-items: stretch;
-  padding: 12px;
-  border-radius: 16px;
-  background: rgba(23, 33, 26, 0.08);
+  padding: 10px;
+  border-radius: 18px;
+  background:
+    linear-gradient(180deg, #173326 0%, #0f2418 100%);
+  color: #f9f3e6;
+  border: 1px solid rgba(10, 20, 14, 0.4);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.06);
 }
 
 .scorebug-block {
@@ -65,7 +76,7 @@ p {
   align-items: center;
   padding: 10px 12px;
   border-radius: 12px;
-  background: #fffef9;
+  background: rgba(248, 242, 226, 0.08);
 }
 
 .scorebug-left {
@@ -82,16 +93,32 @@ p {
 
 .scorebug-title {
   margin: 0;
-  font-size: 14px;
+  font-size: 24px;
   font-weight: 800;
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
+.scorebug-identity {
+  display: grid;
+  gap: 4px;
+}
+
+.scorebug-kicker,
+.scorebug-section-label,
+.pitch-results-kicker,
+.at-bat-count-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(249, 243, 230, 0.7);
+}
+
 .scorebug-metrics {
   display: flex;
   align-items: center;
-  gap: 14px;
+  gap: 12px;
 }
 
 .scorebug-metrics-right {
@@ -100,51 +127,115 @@ p {
 
 .scorebug-metric {
   display: grid;
-  gap: 2px;
+  gap: 4px;
   min-width: 34px;
 }
 
 .scorebug-metric-label {
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
-  letter-spacing: 0.08em;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  opacity: 0.72;
+  color: rgba(249, 243, 230, 0.7);
 }
 
 .scorebug-metric-value {
-  font-size: 18px;
+  font-size: 24px;
   line-height: 1;
 }
 
-.base-indicator {
-  display: flex;
+.diamond-shell {
+  display: grid;
+  gap: 6px;
+}
+
+.base-diamond {
+  position: relative;
+  width: 56px;
+  height: 46px;
+}
+
+.base-diamond::before,
+.base-diamond::after {
+  content: "";
+  position: absolute;
+  background: rgba(249, 243, 230, 0.18);
+}
+
+.base-diamond::before {
+  top: 8px;
+  left: 14px;
+  width: 28px;
+  height: 1px;
+  transform: rotate(45deg);
+}
+
+.base-diamond::after {
+  top: 8px;
+  left: 14px;
+  width: 28px;
+  height: 1px;
+  transform: rotate(-45deg);
+}
+
+.base-marker {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 2px solid rgba(249, 243, 230, 0.62);
+  border-radius: 2px;
+  background: transparent;
+  transform: rotate(45deg);
+}
+
+.base-marker.occupied {
+  background: #f5d37f;
+  border-color: #f5d37f;
+}
+
+.base-marker-first {
+  right: 6px;
+  top: 18px;
+}
+
+.base-marker-second {
+  left: 22px;
+  top: 2px;
+}
+
+.base-marker-third {
+  left: 6px;
+  top: 18px;
+}
+
+.count-panel {
+  display: grid;
   gap: 10px;
 }
 
-.base-indicator-slot {
+.count-indicator {
   display: grid;
-  justify-items: center;
-  gap: 4px;
+  gap: 5px;
+  justify-items: end;
 }
 
-.base-indicator-dot {
-  width: 12px;
-  height: 12px;
-  border: 1px solid rgba(23, 33, 26, 0.24);
-  border-radius: 999px;
-  background: transparent;
+.count-markers,
+.at-bat-count-markers {
+  display: flex;
+  gap: 5px;
+  align-items: center;
 }
 
-.base-indicator-dot.occupied {
-  background: #17211a;
+.count-marker,
+.at-bat-count-marker {
+  font-size: 14px;
+  line-height: 1;
+  color: rgba(249, 243, 230, 0.45);
 }
 
-.base-indicator-label {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+.count-marker.filled,
+.at-bat-count-marker.filled {
+  color: #f5d37f;
 }
 
 .score-line {
@@ -166,7 +257,7 @@ p {
 
 .at-bat-card {
   display: grid;
-  gap: 18px;
+  gap: 16px;
 }
 
 .initials-block,
@@ -176,17 +267,22 @@ p {
 .complete-card,
 .share-card {
   padding: 18px;
-  border-radius: 14px;
-  background: rgba(23, 33, 26, 0.06);
+  border-radius: 16px;
+  background: rgba(22, 33, 22, 0.055);
+  border: 1px solid rgba(22, 33, 22, 0.08);
 }
 
 .pitch-meta {
   display: flex;
   justify-content: space-between;
   gap: 12px;
+  align-items: center;
+}
+
+.pitch-number {
   font-size: 13px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
+  font-weight: 800;
+  letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
@@ -198,7 +294,7 @@ p {
   margin-bottom: 8px;
   font-size: 12px;
   font-weight: 700;
-  letter-spacing: 0.1em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
@@ -206,6 +302,12 @@ p {
 .result-value {
   font-size: clamp(36px, 10vw, 52px);
   line-height: 1;
+}
+
+.initials-block {
+  display: grid;
+  gap: 10px;
+  justify-items: start;
 }
 
 .hint-block {
@@ -229,6 +331,24 @@ p {
 .result-note {
   margin: 0;
   font-size: 16px;
+}
+
+.at-bat-count {
+  display: grid;
+  gap: 5px;
+  justify-items: end;
+}
+
+.at-bat-count-label {
+  color: rgba(22, 33, 22, 0.7);
+}
+
+.at-bat-count-marker {
+  color: rgba(22, 33, 22, 0.24);
+}
+
+.at-bat-count-marker.filled {
+  color: #0f5a34;
 }
 
 .pitch-results-empty {
@@ -280,22 +400,35 @@ input[type="text"]:focus {
   list-style: none;
   padding: 0;
   margin: 12px 0 0;
-  display: grid;
+  display: flex;
+  flex-wrap: wrap;
   gap: 10px;
 }
 
 .pitch-row {
   display: flex;
-  justify-content: space-between;
-  gap: 16px;
-  padding: 14px 16px;
-  border-radius: 14px;
-  background: rgba(23, 33, 26, 0.05);
 }
 
-.pitch-initials {
+.pitch-row-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  padding: 12px 14px;
+  border-radius: 999px;
+  background: rgba(22, 33, 22, 0.08);
+  border: 1px solid rgba(22, 33, 22, 0.08);
+}
+
+.pitch-initials,
+.pitch-outcome {
   font-weight: 700;
   letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pitch-results-header {
+  display: grid;
+  gap: 4px;
 }
 
 .result-option,
@@ -325,12 +458,12 @@ input[type="text"]:focus {
 }
 
 .button-primary {
-  background: #17211a;
+  background: #163723;
   color: #fffaf0;
 }
 
 .button-secondary {
-  background: rgba(23, 33, 26, 0.12);
+  background: rgba(22, 33, 22, 0.1);
   color: inherit;
 }
 
@@ -370,7 +503,16 @@ button:disabled {
     flex-wrap: wrap;
   }
 
+  .count-indicator,
+  .at-bat-count {
+    justify-items: start;
+  }
+
   .hint-block {
     flex-direction: column;
+  }
+
+  .pitch-list {
+    display: grid;
   }
 }
