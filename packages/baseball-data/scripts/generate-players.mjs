@@ -9,6 +9,7 @@ const LAHMAN_DIR = resolve(process.cwd(), 'data/lahman');
 const LAHMAN_PEOPLE_PATH = resolve(LAHMAN_DIR, 'People.csv');
 const LAHMAN_APPEARANCES_PATH = resolve(LAHMAN_DIR, 'Appearances.csv');
 const LAHMAN_BATTING_PATH = resolve(LAHMAN_DIR, 'Batting.csv');
+const LAHMAN_HALL_OF_FAME_PATH = resolve(LAHMAN_DIR, 'HallOfFame.csv');
 const LAHMAN_PITCHING_PATH = resolve(LAHMAN_DIR, 'Pitching.csv');
 const LAHMAN_TEAMS_PATH = resolve(LAHMAN_DIR, 'Teams.csv');
 const POSITION_COLUMNS = [
@@ -35,22 +36,30 @@ const aliasesByPersonId = buildAliasesByPersonId(nameRows);
 const lahmanPeopleRows = parseCsv(readFileSync(LAHMAN_PEOPLE_PATH, 'utf8'));
 const lahmanAppearancesRows = parseCsv(readFileSync(LAHMAN_APPEARANCES_PATH, 'utf8'));
 const lahmanBattingRows = parseCsv(readFileSync(LAHMAN_BATTING_PATH, 'utf8'));
+const lahmanHallOfFameRows = parseCsv(readFileSync(LAHMAN_HALL_OF_FAME_PATH, 'utf8'));
 const lahmanPitchingRows = parseCsv(readFileSync(LAHMAN_PITCHING_PATH, 'utf8'));
 const lahmanTeamsRows = parseCsv(readFileSync(LAHMAN_TEAMS_PATH, 'utf8'));
 const lahmanPlayersByReference = buildLahmanPlayersByReference(lahmanPeopleRows);
+const inductedHallOfFamePlayerIds = buildInductedHallOfFamePlayerIds(lahmanHallOfFameRows);
 const lahmanEnrichmentByPlayerId = buildLahmanEnrichmentByPlayerId(
   lahmanAppearancesRows,
   lahmanBattingRows,
+  inductedHallOfFamePlayerIds,
   lahmanPitchingRows,
   lahmanTeamsRows,
 );
 
 const players = peopleRows
-  .filter(isEligiblePlayer)
-  .map((row) => buildPlayer({
+  .map((row) => ({
     row,
     aliases: aliasesByPersonId.get(row.key_person) ?? [],
     lahmanPlayer: resolveLahmanPlayer(row, lahmanPlayersByReference),
+  }))
+  .filter(({ row, lahmanPlayer }) => isEligiblePlayer(row, lahmanPlayer, inductedHallOfFamePlayerIds))
+  .map(({ row, aliases, lahmanPlayer }) => buildPlayer({
+    row,
+    aliases,
+    lahmanPlayer,
     lahmanEnrichmentByPlayerId,
   }))
   .sort((left, right) => left.displayName.localeCompare(right.displayName) || left.id.localeCompare(right.id));
@@ -205,7 +214,21 @@ function buildLahmanPlayersByReference(rows) {
   };
 }
 
-function buildLahmanEnrichmentByPlayerId(appearanceRows, battingRows, pitchingRows, teamRows) {
+function buildInductedHallOfFamePlayerIds(rows) {
+  const inductedPlayerIds = new Set();
+
+  for (const row of rows) {
+    if (row.inducted !== 'Y' || normalizeHallOfFameCategory(row.category) !== 'player' || !row.playerID) {
+      continue;
+    }
+
+    inductedPlayerIds.add(row.playerID);
+  }
+
+  return inductedPlayerIds;
+}
+
+function buildLahmanEnrichmentByPlayerId(appearanceRows, battingRows, inductedHallOfFamePlayerIds, pitchingRows, teamRows) {
   const teamAbbreviationByTeamId = buildTeamAbbreviationByTeamId(teamRows);
   const battingStatsByPlayerId = buildBattingStatsByPlayerId(battingRows);
   const pitchingStatsByPlayerId = buildPitchingStatsByPlayerId(pitchingRows);
@@ -276,6 +299,7 @@ function buildLahmanEnrichmentByPlayerId(appearanceRows, battingRows, pitchingRo
       primaryRole,
       appearanceGames: sumGames(enrichment.teamGames),
       battingStats,
+      isInductedHallOfFamer: inductedHallOfFamePlayerIds.has(playerId),
       pitchingStats,
     });
 
@@ -376,7 +400,11 @@ function buildTeamAbbreviationByTeamId(rows) {
   return abbreviations;
 }
 
-function isEligiblePlayer(row) {
+function isEligiblePlayer(row, lahmanPlayer, inductedHallOfFamePlayerIds) {
+  if (lahmanPlayer !== null && inductedHallOfFamePlayerIds.has(lahmanPlayer.playerId)) {
+    return true;
+  }
+
   const mlbFirst = parseYear(row.mlb_played_first);
   const mlbLast = parseYear(row.mlb_played_last);
   const hasMlbYears = mlbFirst !== null || mlbLast !== null;
@@ -526,7 +554,11 @@ function derivePrimaryTeam(teamGames, teamFirstYear, teamHistory) {
   return deriveTeamsDisplay(teamHistory).split(', ')[0] ?? '';
 }
 
-function deriveDailyEligibilityTier({ primaryRole, appearanceGames, battingStats, pitchingStats }) {
+function deriveDailyEligibilityTier({ primaryRole, appearanceGames, battingStats, isInductedHallOfFamer, pitchingStats }) {
+  if (isInductedHallOfFamer) {
+    return 'core';
+  }
+
   if (primaryRole === 'pitcher') {
     const inningsPitched = (pitchingStats?.ipOuts ?? 0) / 3;
 
@@ -661,6 +693,10 @@ function yearDistance(lahmanPlayer, year) {
 function parseInteger(value) {
   const parsed = Number.parseInt(value?.trim() || '0', 10);
   return Number.isNaN(parsed) ? 0 : parsed;
+}
+
+function normalizeHallOfFameCategory(value) {
+  return value?.trim().toLowerCase() ?? '';
 }
 
 function getAppearanceGames(row) {

@@ -8,6 +8,7 @@ Player data ingestion and normalization helpers.
 
 - It is suitable for player name search and canonical player identity lookup.
 - It is enriched from a committed Lahman subset for `primaryRole`, `primaryPosition`, appearance-weighted `mainDecade`, appearance-weighted `primaryTeam`, `teamsDisplay`, career `statsLine`, and default Daily eligibility metadata where matching data is available.
+- It is primarily built around MLB players with post-1950 played-year coverage, plus inducted Hall of Fame players even when they played before 1950.
 - It is not yet a complete gameplay-ready hint dataset.
 - Some generated players still fall back to placeholder values when Lahman coverage or matching is incomplete.
 - `bWAR` is still not included.
@@ -18,6 +19,8 @@ Field notes:
 - `primaryTeam` is the appearance-weighted team with the most games played.
 - `teamsDisplay` remains the chronological team-list display field rather than a primary-team field.
 - `dailyEligibilityTier` is a generated product heuristic rather than a claim of objective player value.
+- Inducted Hall of Fame players in the `Player` category are force-included in the generated universe and force-assigned to the `core` Daily eligibility tier.
+- Non-player Hall of Fame categories such as managers, executives, and umpires are excluded from that Hall-of-Fame inclusion rule.
 
 ## Daily-eligible exports
 
