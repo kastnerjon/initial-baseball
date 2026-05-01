@@ -60,8 +60,8 @@ export function AtBatCard({
     return (
       <div className="at-bat-card">
         <div className="pitch-meta">
-          <span>{`Pitch ${atBat.pitchNumber}`}</span>
-          <span>{`Strikes ${state.strikeCount}/3`}</span>
+          <span className="pitch-number">{`Pitch ${atBat.pitchNumber}`}</span>
+          <CountIndicator label="Strikes" filledCount={state.strikeCount} total={3} />
         </div>
         <ResultDisplay result={resolvedTerminalResult} />
         <button
@@ -78,12 +78,12 @@ export function AtBatCard({
   return (
     <div className="at-bat-card">
       <div className="pitch-meta">
-        <span>{`Pitch ${atBat.pitchNumber}`}</span>
-        <span>{`Strikes ${state.strikeCount}/3`}</span>
+        <span className="pitch-number">{`Pitch ${atBat.pitchNumber}`}</span>
+        <CountIndicator label="Strikes" filledCount={state.strikeCount} total={3} />
       </div>
 
       <div className="initials-block">
-        <span className="initials-label">Initials</span>
+        <span className="initials-label">Up Now</span>
         <strong className="initials-value">{atBat.player.initials}</strong>
       </div>
 
@@ -144,4 +144,31 @@ export function AtBatCard({
   function handleSelect(result: PlayerSearchResult): void {
     onSelectPlayer(result.playerId, result.displayName);
   }
+}
+
+function CountIndicator({
+  label,
+  filledCount,
+  total,
+}: {
+  label: string;
+  filledCount: number;
+  total: number;
+}): JSX.Element {
+  return (
+    <div className="at-bat-count">
+      <span className="at-bat-count-label">{label}</span>
+      <div className="at-bat-count-markers" aria-label={label}>
+        {Array.from({ length: total }, (_, index) => (
+          <span
+            key={`${label}-${index}`}
+            className={index < filledCount ? 'at-bat-count-marker filled' : 'at-bat-count-marker'}
+            aria-hidden="true"
+          >
+            {index < filledCount ? '●' : '○'}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
 }
