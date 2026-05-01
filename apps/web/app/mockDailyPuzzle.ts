@@ -12,6 +12,7 @@ import {
   type PlayerIdentity,
 } from '@initial-baseball/shared';
 import { baseballPlayers } from '@initial-baseball/baseball-data';
+import { generateInitials } from '@initial-baseball/engine';
 import { buildDefaultDailyHints } from './buildDefaultDailyHints';
 
 export type DemoPitchHint = {
@@ -51,11 +52,7 @@ export const DEMO_DAILY_PUZZLE: DailyPuzzle = {
   status: 'published',
   hintConfig: DEFAULT_DAILY_HINT_CONFIG,
   statsHintConfig: DEFAULT_DAILY_STATS_HINT_CONFIG,
-  pitches: DEMO_DAILY_PITCHES.map((pitch) => ({
-    pitchNumber: pitch.pitchNumber,
-    player: pitch.player,
-    hints: buildHintSet(pitch.hints),
-  })),
+  pitches: DEMO_DAILY_PITCHES.map((pitch) => createDailyPuzzlePitch(pitch.pitchNumber, requireDemoPlayer(pitch.player.fullName))),
 };
 
 export function createInitialDemoInningState(): DailyInningState {
@@ -91,6 +88,35 @@ export function createInitialAtBatUiState(): DemoAtBatUiState {
   };
 }
 
+export function createGamePitchesFromPuzzle(puzzle: DailyPuzzle): DemoDailyPitch[] {
+  return puzzle.pitches.map((pitch) => ({
+    pitchNumber: pitch.pitchNumber,
+    player: pitch.player,
+    hints: buildHintsFromHintSet(pitch.hints),
+    correctPlayerId: pitch.player.playerId,
+  }));
+}
+
+export function createDailyPuzzlePitch(pitchNumber: number, player: Player): DailyPuzzle['pitches'][number] {
+  return {
+    pitchNumber,
+    player: createPlayerIdentity(player),
+    hints: buildHintSet(buildDefaultDailyHints(player)),
+  };
+}
+
+export function createPlayerIdentity(player: Player): PlayerIdentity {
+  return {
+    playerId: player.id,
+    fullName: player.fullName,
+    displayName: player.displayName,
+    // Preserve the existing engine initials behavior for Daily, including suffix handling like KGJ for now.
+    initials: generateInitials(player.displayName || player.fullName),
+    kind: deriveDemoPlayerKind(player),
+    primaryPosition: player.primaryPosition,
+  };
+}
+
 function buildDemoPitch(
   pitchNumber: number,
   initials: string,
@@ -99,12 +125,8 @@ function buildDemoPitch(
   return {
     pitchNumber,
     player: {
-      playerId: player.id,
-      fullName: player.fullName,
-      displayName: player.displayName,
+      ...createPlayerIdentity(player),
       initials,
-      kind: deriveDemoPlayerKind(player),
-      primaryPosition: player.primaryPosition,
     },
     hints: buildDefaultDailyHints(player),
     correctPlayerId: player.id,
@@ -124,6 +146,23 @@ function buildHintSet(hints: DemoPitchHint[]): DailyPuzzle['pitches'][number]['h
     hintSet[hint.hintType] = hint.hintValue;
     return hintSet;
   }, {});
+}
+
+function buildHintsFromHintSet(hints: DailyPuzzle['pitches'][number]['hints']): DemoPitchHint[] {
+  return buildDefaultDailyHints({
+    id: '',
+    fullName: '',
+    displayName: '',
+    primaryRole: 'hitter',
+    primaryPosition: hints.position ?? 'Unknown',
+    mainDecade: hints.main_decade ?? 'Unknown',
+    primaryTeam: '',
+    teamsDisplay: hints.teams ?? '',
+    statsLine: hints.stats ?? '',
+    dailyEligibilityTier: 'none',
+    dailyEligible: false,
+    aliases: [],
+  });
 }
 
 function requireDemoPlayer(name: string): Player {
