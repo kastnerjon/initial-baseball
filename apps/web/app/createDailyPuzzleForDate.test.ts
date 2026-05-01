@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { coreDailyEligiblePlayers } from '@initial-baseball/baseball-data';
 import type { Player } from '@initial-baseball/shared';
 import { createDailyPuzzleForDate, getDailyPuzzleNumber } from './createDailyPuzzleForDate';
-import { createGamePitchesFromPuzzle, createPlayerIdentity } from './mockDailyPuzzle';
+import { createGamePitchesFromPuzzle, createPlayerIdentity } from './dailyPuzzleAdapters';
 
 describe('createDailyPuzzleForDate', () => {
   it('returns the same player ids in the same order for the same date', () => {

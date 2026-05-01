@@ -2,7 +2,7 @@ import type { JSX } from 'react';
 import { baseballPlayers } from '@initial-baseball/baseball-data';
 import { DailyInningGame } from './components/DailyInningGame';
 import { createDailyPuzzleForDate } from './createDailyPuzzleForDate';
-import { createGamePitchesFromPuzzle } from './mockDailyPuzzle';
+import { createGamePitchesFromPuzzle } from './dailyPuzzleAdapters';
 
 export default function DailyInningHomePage(): JSX.Element {
   const puzzle = createDailyPuzzleForDate(getTodayDateString());

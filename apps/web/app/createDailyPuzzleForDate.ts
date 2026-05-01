@@ -6,7 +6,7 @@ import {
   DEFAULT_DAILY_STATS_HINT_CONFIG,
   type DailyPuzzle,
 } from '@initial-baseball/shared';
-import { createDailyPuzzlePitch } from './mockDailyPuzzle';
+import { createDailyPuzzlePitch } from './dailyPuzzleAdapters';
 
 export const DAILY_PUZZLE_EPOCH = '2026-04-27';
 const DAILY_PITCH_COUNT = 6;
