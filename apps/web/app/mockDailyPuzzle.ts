@@ -13,6 +13,7 @@ import {
 } from '@initial-baseball/shared';
 import { baseballPlayers } from '@initial-baseball/baseball-data';
 import { buildDefaultDailyHints } from './buildDefaultDailyHints';
+import { createDailyPuzzlePitch, createPlayerIdentity } from './dailyPuzzleAdapters';
 
 export type DemoPitchHint = {
   hintType: HintType;
@@ -51,11 +52,7 @@ export const DEMO_DAILY_PUZZLE: DailyPuzzle = {
   status: 'published',
   hintConfig: DEFAULT_DAILY_HINT_CONFIG,
   statsHintConfig: DEFAULT_DAILY_STATS_HINT_CONFIG,
-  pitches: DEMO_DAILY_PITCHES.map((pitch) => ({
-    pitchNumber: pitch.pitchNumber,
-    player: pitch.player,
-    hints: buildHintSet(pitch.hints),
-  })),
+  pitches: DEMO_DAILY_PITCHES.map((pitch) => createDailyPuzzlePitch(pitch.pitchNumber, requireDemoPlayer(pitch.player.fullName))),
 };
 
 export function createInitialDemoInningState(): DailyInningState {
@@ -99,31 +96,12 @@ function buildDemoPitch(
   return {
     pitchNumber,
     player: {
-      playerId: player.id,
-      fullName: player.fullName,
-      displayName: player.displayName,
+      ...createPlayerIdentity(player),
       initials,
-      kind: deriveDemoPlayerKind(player),
-      primaryPosition: player.primaryPosition,
     },
     hints: buildDefaultDailyHints(player),
     correctPlayerId: player.id,
   };
-}
-
-function deriveDemoPlayerKind(player: Player): PlayerIdentity['kind'] {
-  if (player.primaryRole === 'pitcher' || player.primaryRole === 'hitter') {
-    return player.primaryRole;
-  }
-
-  return player.primaryPosition === 'P' ? 'pitcher' : 'hitter';
-}
-
-function buildHintSet(hints: DemoPitchHint[]): DailyPuzzle['pitches'][number]['hints'] {
-  return hints.reduce<DailyPuzzle['pitches'][number]['hints']>((hintSet, hint) => {
-    hintSet[hint.hintType] = hint.hintValue;
-    return hintSet;
-  }, {});
 }
 
 function requireDemoPlayer(name: string): Player {
