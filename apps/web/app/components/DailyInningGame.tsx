@@ -172,6 +172,7 @@ export function DailyInningGame({ puzzle, demoPitches, players }: DailyInningGam
     });
     setAtBatState((currentState) => ({
       ...currentState,
+      strikeCount: result.kind === 'strikeout' ? result.strikeCount : currentState.strikeCount,
       submittedResult: result,
     }));
   }

@@ -105,9 +105,7 @@ p {
 }
 
 .scorebug-kicker,
-.scorebug-section-label,
-.pitch-results-kicker,
-.at-bat-count-label {
+.scorebug-section-label {
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.18em;
@@ -431,6 +429,15 @@ input[type="text"]:focus {
   gap: 4px;
 }
 
+.pitch-results-kicker,
+.at-bat-count-label {
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(22, 33, 22, 0.7);
+}
+
 .result-option,
 .button-primary,
 .button-secondary {
@@ -487,23 +494,75 @@ button:disabled {
 }
 
 @media (max-width: 640px) {
-  .scorebug-shell {
-    grid-template-columns: 1fr;
+  .page-shell {
+    padding: 14px;
   }
 
-  .scorebug-left,
-  .scorebug-middle,
-  .scorebug-right,
+  .daily-card {
+    padding: 16px;
+    border-radius: 18px;
+  }
+
+  .scorebug-shell {
+    grid-template-columns: 0.75fr 1.55fr 0.95fr;
+    gap: 6px;
+    padding: 8px;
+    border-radius: 16px;
+  }
+
+  .scorebug-block {
+    padding: 8px;
+    border-radius: 10px;
+  }
+
+  .scorebug-title {
+    font-size: 20px;
+  }
+
+  .scorebug-metrics {
+    gap: 8px;
+    flex-wrap: nowrap;
+  }
+
+  .scorebug-metric {
+    min-width: 26px;
+  }
+
+  .scorebug-metric-value {
+    font-size: 20px;
+  }
+
+  .base-diamond {
+    width: 46px;
+    height: 38px;
+  }
+
+  .base-diamond::before,
+  .base-diamond::after {
+    left: 12px;
+    width: 22px;
+  }
+
+  .base-marker-first {
+    right: 4px;
+    top: 16px;
+  }
+
+  .base-marker-second {
+    left: 17px;
+    top: 2px;
+  }
+
+  .base-marker-third {
+    left: 4px;
+    top: 16px;
+  }
+
   .hint-block {
     align-items: stretch;
     justify-content: flex-start;
   }
 
-  .scorebug-metrics {
-    flex-wrap: wrap;
-  }
-
-  .count-indicator,
   .at-bat-count {
     justify-items: start;
   }
