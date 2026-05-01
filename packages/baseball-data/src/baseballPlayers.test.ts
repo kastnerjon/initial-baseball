@@ -138,7 +138,7 @@ describe('baseballPlayers', () => {
 
   it('keeps fallback placeholders for some players without full Lahman coverage', () => {
     expect(baseballPlayers.some((player) => player.primaryPosition === 'Unknown')).toBe(true);
-    expect(baseballPlayers.some((player) => player.teamsDisplay === '')).toBe(true);
+    expect(baseballPlayers.some((player) => player.statsLine.includes('BA —') || player.statsLine.includes('ERA —'))).toBe(true);
   });
 
   it('does not include generic WAR in any statsLine', () => {
@@ -186,6 +186,30 @@ describe('baseballPlayers', () => {
     expect(ajJimenez.dailyEligible).toBe(false);
   });
 
+  it('includes inducted pre-1950 Hall of Fame legends and forces them core eligible', () => {
+    for (const name of ['Babe Ruth', 'Lou Gehrig', 'Ty Cobb', 'Walter Johnson', 'Honus Wagner']) {
+      const player = findPlayerByExactName(name);
+
+      expect(player.dailyEligibilityTier).toBe('core');
+      expect(player.dailyEligible).toBe(true);
+    }
+  });
+
+  it('keeps all generated inducted Hall of Fame player names Daily-eligible', () => {
+    const generatedHallOfFamers = baseballPlayers.filter((player) => (
+      INDUCTED_HALL_OF_FAME_PLAYER_NAMES.has(player.fullName)
+      || INDUCTED_HALL_OF_FAME_PLAYER_NAMES.has(player.displayName)
+    ));
+
+    expect(generatedHallOfFamers.length).toBeGreaterThan(0);
+    expect(generatedHallOfFamers.every((player) => player.dailyEligible)).toBe(true);
+    expect(generatedHallOfFamers.every((player) => player.dailyEligibilityTier === 'core')).toBe(true);
+  });
+
+  it('does not broadly include pre-1950 non-Hall of Fame players solely because of old MLB years', () => {
+    expect(baseballPlayers.some((player) => player.fullName === 'Shoeless Joe Jackson' || player.displayName === 'Shoeless Joe Jackson')).toBe(false);
+  });
+
   it('includes expected demo player statline values', () => {
     const kenGriffeyJr = findPlayerByName('Ken Griffey Jr.');
     const davidWright = findPlayerByName('David Wright');
@@ -223,6 +247,13 @@ function findPlayerByName(name: string) {
   return player!;
 }
 
+function findPlayerByExactName(name: string) {
+  const player = baseballPlayers.find((candidate) => candidate.fullName === name || candidate.displayName === name);
+
+  expect(player).toBeDefined();
+  return player!;
+}
+
 function hasRealHitterRateStats(statsLine: string) {
   return /BA \.\d{3}/.test(statsLine) && /OBP \.\d{3}/.test(statsLine);
 }
@@ -230,3 +261,11 @@ function hasRealHitterRateStats(statsLine: string) {
 function hasRealPitcherRateStats(statsLine: string) {
   return /ERA \d+\.\d{2}/.test(statsLine) && /WHIP \d+\.\d{2}/.test(statsLine);
 }
+
+const INDUCTED_HALL_OF_FAME_PLAYER_NAMES = new Set([
+  'Babe Ruth',
+  'Lou Gehrig',
+  'Ty Cobb',
+  'Walter Johnson',
+  'Honus Wagner',
+]);

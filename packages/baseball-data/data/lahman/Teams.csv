@@ -1,4 +1,1203 @@
 yearID,teamID,teamIDBR,teamIDretro,name
+1871,CL1,CLE,CL1,Cleveland Forest Citys
+1871,RC1,ROK,RC1,Rockford Forest Citys
+1872,CL1,CLE,CL1,Cleveland Forest Citys
+1872,MID,MAN,MID,Middletown Mansfields
+1872,PH1,ATH,PH1,Philadelphia Athletics
+1873,BS1,BOS,BS1,Boston Red Stockings
+1873,PH1,ATH,PH1,Philadelphia Athletics
+1874,BS1,BOS,BS1,Boston Red Stockings
+1874,PH1,ATH,PH1,Philadelphia Athletics
+1875,BS1,BOS,BS1,Boston Red Stockings
+1875,PH1,ATH,PH1,Philadelphia Athletics
+1875,SL2,STL,SL2,St. Louis Brown Stockings
+1876,BSN,BSN,BSN,Boston Red Caps
+1876,CHN,CHC,CHN,Chicago White Stockings
+1877,BSN,BSN,BSN,Boston Red Caps
+1877,CHN,CHC,CHN,Chicago White Stockings
+1878,BSN,BSN,BSN,Boston Red Caps
+1878,CHN,CHC,CHN,Chicago White Stockings
+1878,CN1,CIN,CN1,Cincinnati Reds
+1878,PRO,PRO,PRO,Providence Grays
+1879,BFN,BUF,BFN,Buffalo Bisons
+1879,CHN,CHC,CHN,Chicago White Stockings
+1879,CN1,CIN,CN1,Cincinnati Reds
+1879,PRO,PRO,PRO,Providence Grays
+1879,TRN,TRO,TRN,Troy Trojans
+1880,BFN,BUF,BFN,Buffalo Bisons
+1880,BSN,BSN,BSN,Boston Red Caps
+1880,CHN,CHC,CHN,Chicago White Stockings
+1880,CN1,CIN,CN4,Cincinnati Reds
+1880,PRO,PRO,PRO,Providence Grays
+1880,TRN,TRO,TRN,Troy Trojans
+1881,BFN,BUF,BFN,Buffalo Bisons
+1881,CHN,CHC,CHN,Chicago White Stockings
+1881,PRO,PRO,PRO,Providence Grays
+1881,TRN,TRO,TRN,Troy Trojans
+1882,BFN,BUF,BFN,Buffalo Bisons
+1882,CHN,CHC,CHN,Chicago White Stockings
+1882,CN2,CIN,CN2,Cincinnati Red Stockings
+1882,PRO,PRO,PRO,Providence Grays
+1882,TRN,TRO,TRN,Troy Trojans
+1882,WOR,WOR,WOR,Worcester Ruby Legs
+1883,BFN,BUF,BFN,Buffalo Bisons
+1883,CHN,CHC,CHN,Chicago White Stockings
+1883,CN2,CIN,CN2,Cincinnati Red Stockings
+1883,NY1,NYG,NY1,New York Gothams
+1883,NY4,NYP,NY4,New York Metropolitans
+1883,PRO,PRO,PRO,Providence Grays
+1884,BFN,BUF,BFN,Buffalo Bisons
+1884,BSU,BOS,BSU,Boston Reds
+1884,CHN,CHC,CHN,Chicago White Stockings
+1884,CN2,CIN,CN2,Cincinnati Red Stockings
+1884,NY1,NYG,NY1,New York Gothams
+1884,NY4,NYP,NY4,New York Metropolitans
+1884,PRO,PRO,PRO,Providence Grays
+1885,BFN,BUF,BFN,Buffalo Bisons
+1885,BSN,BSN,BSN,Boston Beaneaters
+1885,CHN,CHC,CHN,Chicago White Stockings
+1885,CN2,CIN,CN2,Cincinnati Red Stockings
+1885,DTN,DTN,DTN,Detroit Wolverines
+1885,NY1,NYG,NY1,New York Giants
+1885,PRO,PRO,PRO,Providence Grays
+1885,PT1,PIT,PT1,Pittsburg Alleghenys
+1886,BSN,BSN,BSN,Boston Beaneaters
+1886,CHN,CHC,CHN,Chicago White Stockings
+1886,CN2,CIN,CN2,Cincinnati Red Stockings
+1886,DTN,DTN,DTN,Detroit Wolverines
+1886,NY1,NYG,NY1,New York Giants
+1886,PHI,PHI,PHI,Philadelphia Quakers
+1886,PT1,PIT,PT1,Pittsburg Alleghenys
+1887,BSN,BSN,BSN,Boston Beaneaters
+1887,CHN,CHC,CHN,Chicago White Stockings
+1887,CN2,CIN,CN2,Cincinnati Red Stockings
+1887,DTN,DTN,DTN,Detroit Wolverines
+1887,NY1,NYG,NY1,New York Giants
+1887,PHI,PHI,PHI,Philadelphia Quakers
+1887,PIT,PIT,PIT,Pittsburg Alleghenys
+1888,BSN,BSN,BSN,Boston Beaneaters
+1888,CHN,CHC,CHN,Chicago White Stockings
+1888,CN2,CIN,CN2,Cincinnati Red Stockings
+1888,DTN,DTN,DTN,Detroit Wolverines
+1888,KC2,KCC,KC2,Kansas City Cowboys
+1888,NY1,NYG,NY1,New York Giants
+1888,PHI,PHI,PHI,Philadelphia Quakers
+1888,PIT,PIT,PIT,Pittsburg Alleghenys
+1888,SL4,STL,SL4,St. Louis Browns
+1889,BSN,BSN,BSN,Boston Beaneaters
+1889,CHN,CHC,CHN,Chicago White Stockings
+1889,CN2,CIN,CN2,Cincinnati Red Stockings
+1889,IN3,IND,IN3,Indianapolis Hoosiers
+1889,KC2,KCC,KC2,Kansas City Cowboys
+1889,NY1,NYG,NY1,New York Giants
+1889,PHI,PHI,PHI,Philadelphia Quakers
+1889,PIT,PIT,PIT,Pittsburg Alleghenys
+1889,SL4,STL,SL4,St. Louis Browns
+1890,BFP,BUF,BFP,Buffalo Bisons
+1890,BRP,BWW,BRP,Brooklyn Ward's Wonders
+1890,BSN,BSN,BSN,Boston Beaneaters
+1890,BSP,BOS,BSP,Boston Reds
+1890,CHN,CHC,CHN,Chicago Colts
+1890,CHP,CHI,CHP,Chicago Pirates
+1890,CIN,CIN,CIN,Cincinnati Reds
+1890,CL4,CLV,CL4,Cleveland Spiders
+1890,CLP,CLE,CLP,Cleveland Infants
+1890,NY1,NYG,NY1,New York Giants
+1890,NYP,NYI,NYP,New York Giants
+1890,PHI,PHI,PHI,Philadelphia Phillies
+1890,PTP,PBB,PTP,Pittsburgh Burghers
+1890,SL4,STL,SL4,St. Louis Browns
+1891,BRO,BRO,BRO,Brooklyn Grooms
+1891,BS2,BOS,BS2,Boston Reds
+1891,BSN,BSN,BSN,Boston Beaneaters
+1891,CBG,CBG,,Cuban Giants
+1891,CHN,CHC,CHN,Chicago Colts
+1891,CIN,CIN,CIN,Cincinnati Reds
+1891,CL4,CLV,CL4,Cleveland Spiders
+1891,CN3,CKK,CN3,Cincinnati Kelly's Killers
+1891,GOR,GOR,,New York Gorhams
+1891,LS2,LOU,LS2,Louisville Colonels
+1891,NY1,NYG,NY1,New York Giants
+1891,PHI,PHI,PHI,Philadelphia Phillies
+1891,PIT,PIT,PIT,Pittsburgh Pirates
+1891,SL4,STL,SL4,St. Louis Browns
+1892,BLN,BLN,BLN,Baltimore Orioles
+1892,BRO,BRO,BRO,Brooklyn Grooms
+1892,BSN,BSN,BSN,Boston Beaneaters
+1892,CHN,CHC,CHN,Chicago Colts
+1892,CIN,CIN,CIN,Cincinnati Reds
+1892,CL4,CLV,CL4,Cleveland Spiders
+1892,LS3,LOU,LS3,Louisville Colonels
+1892,NY1,NYG,NY1,New York Giants
+1892,PHI,PHI,PHI,Philadelphia Phillies
+1892,PIT,PIT,PIT,Pittsburgh Pirates
+1892,SLN,STL,SLN,St. Louis Browns
+1893,BLN,BLN,BLN,Baltimore Orioles
+1893,BRO,BRO,BRO,Brooklyn Grooms
+1893,BSN,BSN,BSN,Boston Beaneaters
+1893,CHN,CHC,CHN,Chicago Colts
+1893,CIN,CIN,CIN,Cincinnati Reds
+1893,CL4,CLV,CL4,Cleveland Spiders
+1893,LS3,LOU,LS3,Louisville Colonels
+1893,NY1,NYG,NY1,New York Giants
+1893,PHI,PHI,PHI,Philadelphia Phillies
+1893,PIT,PIT,PIT,Pittsburgh Pirates
+1893,WAS,WHS,WSN,Washington Senators
+1894,BLN,BLN,BLN,Baltimore Orioles
+1894,BSN,BSN,BSN,Boston Beaneaters
+1894,CBG,CBG,,Cuban Giants
+1894,CHN,CHC,CHN,Chicago Colts
+1894,CIN,CIN,CIN,Cincinnati Reds
+1894,CL4,CLV,CL4,Cleveland Spiders
+1894,LS3,LOU,LS3,Louisville Colonels
+1894,NY1,NYG,NY1,New York Giants
+1894,PHI,PHI,PHI,Philadelphia Phillies
+1894,PIT,PIT,PIT,Pittsburgh Pirates
+1894,SLN,STL,SLN,St. Louis Browns
+1895,BLN,BLN,BLN,Baltimore Orioles
+1895,BSN,BSN,BSN,Boston Beaneaters
+1895,CHN,CHC,CHN,Chicago Colts
+1895,CIN,CIN,CIN,Cincinnati Reds
+1895,CL4,CLV,CL4,Cleveland Spiders
+1895,LS3,LOU,LS3,Louisville Colonels
+1895,NY1,NYG,NY1,New York Giants
+1895,PHI,PHI,PHI,Philadelphia Phillies
+1895,PIT,PIT,PIT,Pittsburgh Pirates
+1895,SLN,STL,SLN,St. Louis Browns
+1896,BLN,BLN,BLN,Baltimore Orioles
+1896,BRO,BRO,BRO,Brooklyn Bridegrooms
+1896,BSN,BSN,BSN,Boston Beaneaters
+1896,CHN,CHC,CHN,Chicago Colts
+1896,CIN,CIN,CIN,Cincinnati Reds
+1896,CL4,CLV,CL4,Cleveland Spiders
+1896,LS3,LOU,LS3,Louisville Colonels
+1896,NY1,NYG,NY1,New York Giants
+1896,PHI,PHI,PHI,Philadelphia Phillies
+1896,PIT,PIT,PIT,Pittsburgh Pirates
+1896,SLN,STL,SLN,St. Louis Browns
+1897,BLN,BLN,BLN,Baltimore Orioles
+1897,BSN,BSN,BSN,Boston Beaneaters
+1897,CHN,CHC,CHN,Chicago Colts
+1897,CIN,CIN,CIN,Cincinnati Reds
+1897,CL4,CLV,CL4,Cleveland Spiders
+1897,LS3,LOU,LS3,Louisville Colonels
+1897,NY1,NYG,NY1,New York Giants
+1897,PHI,PHI,PHI,Philadelphia Phillies
+1897,SLN,STL,SLN,St. Louis Browns
+1897,WAS,WHS,WSN,Washington Senators
+1898,BLN,BLN,BLN,Baltimore Orioles
+1898,BSN,BSN,BSN,Boston Beaneaters
+1898,CHN,CHC,CHN,Chicago Orphans
+1898,CIN,CIN,CIN,Cincinnati Reds
+1898,CL4,CLV,CL4,Cleveland Spiders
+1898,CXG,CXG,CUX,Cuban X Giants
+1898,LS3,LOU,LS3,Louisville Colonels
+1898,NY1,NYG,NY1,New York Giants
+1898,PHI,PHI,PHI,Philadelphia Phillies
+1899,BLN,BLN,BLN,Baltimore Orioles
+1899,BRO,BRO,BRO,Brooklyn Superbas
+1899,BSN,BSN,BSN,Boston Beaneaters
+1899,CHN,CHC,CHN,Chicago Orphans
+1899,CIN,CIN,CIN,Cincinnati Reds
+1899,CXG,CXG,CUX,Cuban X Giants
+1899,LS3,LOU,LS3,Louisville Colonels
+1899,NY1,NYG,NY1,New York Giants
+1899,PHI,PHI,PHI,Philadelphia Phillies
+1899,PIT,PIT,PIT,Pittsburgh Pirates
+1899,SLN,STL,SLN,St. Louis Perfectos
+1900,BRO,BRO,BRO,Brooklyn Superbas
+1900,BSN,BSN,BSN,Boston Beaneaters
+1900,CCG,CCG,,Chicago Columbia Giants
+1900,CHN,CHC,CHN,Chicago Orphans
+1900,CIN,CIN,CIN,Cincinnati Reds
+1900,NY1,NYG,NY1,New York Giants
+1900,PHI,PHI,PHI,Philadelphia Phillies
+1900,PIT,PIT,PIT,Pittsburgh Pirates
+1900,SLN,STL,SLN,St. Louis Cardinals
+1901,BLA,BLA,BLA,Baltimore Orioles
+1901,BOS,BOS,BOS,Boston Americans
+1901,BRO,BRO,BRO,Brooklyn Superbas
+1901,BSN,BSN,BSN,Boston Beaneaters
+1901,CHA,CHW,CHA,Chicago White Sox
+1901,CHN,CHC,CHN,Chicago Orphans
+1901,CIN,CIN,CIN,Cincinnati Reds
+1901,MLA,MLA,MLA,Milwaukee Brewers
+1901,NY1,NYG,NY1,New York Giants
+1901,PHA,PHA,PHA,Philadelphia Athletics
+1901,PHI,PHI,PHI,Philadelphia Phillies
+1901,PIT,PIT,PIT,Pittsburgh Pirates
+1901,SLN,STL,SLN,St. Louis Cardinals
+1902,BLA,BLA,BLA,Baltimore Orioles
+1902,BOS,BOS,BOS,Boston Americans
+1902,BRO,BRO,BRO,Brooklyn Superbas
+1902,BSN,BSN,BSN,Boston Beaneaters
+1902,CHA,CHW,CHA,Chicago White Sox
+1902,CHN,CHC,CHN,Chicago Orphans
+1902,CIN,CIN,CIN,Cincinnati Reds
+1902,CLE,CLE,CLE,Cleveland Bronchos
+1902,NY1,NYG,NY1,New York Giants
+1902,PHA,PHA,PHA,Philadelphia Athletics
+1902,PHI,PHI,PHI,Philadelphia Phillies
+1902,PIT,PIT,PIT,Pittsburgh Pirates
+1902,SLA,SLB,SLA,St. Louis Browns
+1902,WS1,WSH,WS1,Washington Senators
+1903,BOS,BOS,BOS,Boston Americans
+1903,BRO,BRO,BRO,Brooklyn Superbas
+1903,BSN,BSN,BSN,Boston Beaneaters
+1903,CHN,CHC,CHN,Chicago Cubs
+1903,CIN,CIN,CIN,Cincinnati Reds
+1903,CLE,CLE,CLE,Cleveland Naps
+1903,DET,DET,DET,Detroit Tigers
+1903,NY1,NYG,NY1,New York Giants
+1903,NYA,NYY,NYA,New York Highlanders
+1903,PG,PG,,Philadelphia Giants
+1903,PHA,PHA,PHA,Philadelphia Athletics
+1903,PIT,PIT,PIT,Pittsburgh Pirates
+1903,SLA,SLB,SLA,St. Louis Browns
+1903,SLN,STL,SLN,St. Louis Cardinals
+1903,WS1,WSH,WS1,Washington Senators
+1904,BOS,BOS,BOS,Boston Americans
+1904,BSN,BSN,BSN,Boston Beaneaters
+1904,CHA,CHW,CHA,Chicago White Sox
+1904,CHN,CHC,CHN,Chicago Cubs
+1904,CIN,CIN,CIN,Cincinnati Reds
+1904,CLE,CLE,CLE,Cleveland Naps
+1904,DET,DET,DET,Detroit Tigers
+1904,NY1,NYG,NY1,New York Giants
+1904,NYA,NYY,NYA,New York Highlanders
+1904,PG,PG,,Philadelphia Giants
+1904,PHA,PHA,PHA,Philadelphia Athletics
+1904,PHI,PHI,PHI,Philadelphia Phillies
+1904,PIT,PIT,PIT,Pittsburgh Pirates
+1904,SLA,SLB,SLA,St. Louis Browns
+1904,SLN,STL,SLN,St. Louis Cardinals
+1905,BOS,BOS,BOS,Boston Americans
+1905,BSN,BSN,BSN,Boston Beaneaters
+1905,CHA,CHW,CHA,Chicago White Sox
+1905,CHN,CHC,CHN,Chicago Cubs
+1905,CIN,CIN,CIN,Cincinnati Reds
+1905,CLE,CLE,CLE,Cleveland Naps
+1905,DET,DET,DET,Detroit Tigers
+1905,NY1,NYG,NY1,New York Giants
+1905,NYA,NYY,NYA,New York Highlanders
+1905,PG,PG,,Philadelphia Giants
+1905,PHA,PHA,PHA,Philadelphia Athletics
+1905,PHI,PHI,PHI,Philadelphia Phillies
+1905,PIT,PIT,PIT,Pittsburgh Pirates
+1905,SLA,SLB,SLA,St. Louis Browns
+1905,SLN,STL,SLN,St. Louis Cardinals
+1906,BOS,BOS,BOS,Boston Americans
+1906,CHA,CHW,CHA,Chicago White Sox
+1906,CHN,CHC,CHN,Chicago Cubs
+1906,CIN,CIN,CIN,Cincinnati Reds
+1906,CLE,CLE,CLE,Cleveland Naps
+1906,CXG,CXG,CUX,Cuban X Giants
+1906,DET,DET,DET,Detroit Tigers
+1906,NY1,NYG,NY1,New York Giants
+1906,NYA,NYY,NYA,New York Highlanders
+1906,PG,PG,,Philadelphia Giants
+1906,PHA,PHA,PHA,Philadelphia Athletics
+1906,PHI,PHI,PHI,Philadelphia Phillies
+1906,PIT,PIT,PIT,Pittsburgh Pirates
+1906,SLA,SLB,SLA,St. Louis Browns
+1906,SLN,STL,SLN,St. Louis Cardinals
+1907,BOS,BOS,BOS,Boston Americans
+1907,BRG,BRG,BRG,Brooklyn Royal Giants
+1907,CHA,CHW,CHA,Chicago White Sox
+1907,CHN,CHC,CHN,Chicago Cubs
+1907,CLE,CLE,CLE,Cleveland Naps
+1907,DET,DET,DET,Detroit Tigers
+1907,NY1,NYG,NY1,New York Giants
+1907,NYA,NYY,NYA,New York Highlanders
+1907,PG,PG,,Philadelphia Giants
+1907,PHA,PHA,PHA,Philadelphia Athletics
+1907,PIT,PIT,PIT,Pittsburgh Pirates
+1907,SLA,SLB,SLA,St. Louis Browns
+1907,SLN,STL,SLN,St. Louis Cardinals
+1907,WS1,WSH,WS1,Washington Senators
+1908,BOS,BOS,BOS,Boston Red Sox
+1908,BSN,BSN,BSN,Boston Doves
+1908,CHA,CHW,CHA,Chicago White Sox
+1908,CHN,CHC,CHN,Chicago Cubs
+1908,CLE,CLE,CLE,Cleveland Naps
+1908,CSH,CSH,,Cuban Stars of Havana
+1908,DET,DET,DET,Detroit Tigers
+1908,LEL,LEL,,Chicago Leland Giants
+1908,NY1,NYG,NY1,New York Giants
+1908,NYA,NYY,NYA,New York Highlanders
+1908,PG,PG,,Philadelphia Giants
+1908,PHA,PHA,PHA,Philadelphia Athletics
+1908,PIT,PIT,PIT,Pittsburgh Pirates
+1908,SLA,SLB,SLA,St. Louis Browns
+1908,WS1,WSH,WS1,Washington Senators
+1909,BOS,BOS,BOS,Boston Red Sox
+1909,BRO,BRO,BRO,Brooklyn Superbas
+1909,CHA,CHW,CHA,Chicago White Sox
+1909,CHN,CHC,CHN,Chicago Cubs
+1909,CIN,CIN,CIN,Cincinnati Reds
+1909,CLE,CLE,CLE,Cleveland Naps
+1909,CSH,CSH,,Cuban Stars of Havana
+1909,DET,DET,DET,Detroit Tigers
+1909,LEL,LEL,,Chicago Leland Giants
+1909,NY1,NYG,NY1,New York Giants
+1909,NYA,NYY,NYA,New York Highlanders
+1909,PG,PG,,Philadelphia Giants
+1909,PHA,PHA,PHA,Philadelphia Athletics
+1909,PIT,PIT,PIT,Pittsburgh Pirates
+1909,SLA,SLB,SLA,St. Louis Browns
+1909,SLN,STL,SLN,St. Louis Cardinals
+1909,WS1,WSH,WS1,Washington Senators
+1910,BOS,BOS,BOS,Boston Red Sox
+1910,BRO,BRO,BRO,Brooklyn Superbas
+1910,CHA,CHW,CHA,Chicago White Sox
+1910,CHN,CHC,CHN,Chicago Cubs
+1910,CIN,CIN,CIN,Cincinnati Reds
+1910,CLE,CLE,CLE,Cleveland Naps
+1910,COG,COG,CG1,Chicago Giants
+1910,CSH,CSH,,Cuban Stars of Havana
+1910,DET,DET,DET,Detroit Tigers
+1910,LEL,LEL,,Chicago Leland Giants
+1910,NY1,NYG,NY1,New York Giants
+1910,OKM,OKM,,Oklahoma Monarchs
+1910,PHA,PHA,PHA,Philadelphia Athletics
+1910,PIT,PIT,PIT,Pittsburgh Pirates
+1910,SC1,SC1,,Stars of Cuba
+1910,SLA,SLB,SLA,St. Louis Browns
+1910,SLN,STL,SLN,St. Louis Cardinals
+1910,WBS,WBS,,West Baden Sprudels
+1910,WS1,WSH,WS1,Washington Senators
+1911,BOS,BOS,BOS,Boston Red Sox
+1911,BRO,BRO,BRO,Brooklyn Dodgers
+1911,BSN,BSN,BSN,Boston Rustlers
+1911,CAG,CAG,CAG,Chicago American Giants
+1911,CHA,CHW,CHA,Chicago White Sox
+1911,CHN,CHC,CHN,Chicago Cubs
+1911,CLE,CLE,CLE,Cleveland Naps
+1911,COG,COG,CG1,Chicago Giants
+1911,CSH,CSH,,Cuban Stars of Havana
+1911,DET,DET,DET,Detroit Tigers
+1911,NLG,NLG,NYL,New York Lincoln Giants
+1911,NY1,NYG,NY1,New York Giants
+1911,PG,PG,,Philadelphia Giants
+1911,PHA,PHA,PHA,Philadelphia Athletics
+1911,PHI,PHI,PHI,Philadelphia Phillies
+1911,PIT,PIT,PIT,Pittsburgh Pirates
+1911,SLA,SLB,SLA,St. Louis Browns
+1911,SLG,SLG,SLG,St. Louis Giants
+1911,SLN,STL,SLN,St. Louis Cardinals
+1911,WS1,WSH,WS1,Washington Senators
+1912,BOS,BOS,BOS,Boston Red Sox
+1912,BRO,BRO,BRO,Brooklyn Dodgers
+1912,BSN,BSN,BSN,Boston Braves
+1912,CAG,CAG,CAG,Chicago American Giants
+1912,CHA,CHW,CHA,Chicago White Sox
+1912,CHN,CHC,CHN,Chicago Cubs
+1912,CLE,CLE,CLE,Cleveland Naps
+1912,CSH,CSH,,Cuban Stars of Havana
+1912,DET,DET,DET,Detroit Tigers
+1912,NLG,NLG,NYL,New York Lincoln Giants
+1912,NY1,NYG,NY1,New York Giants
+1912,PHA,PHA,PHA,Philadelphia Athletics
+1912,PHI,PHI,PHI,Philadelphia Phillies
+1912,PIT,PIT,PIT,Pittsburgh Pirates
+1912,SLA,SLB,SLA,St. Louis Browns
+1912,SLN,STL,SLN,St. Louis Cardinals
+1912,WBS,WBS,,West Baden Sprudels
+1912,WS1,WSH,WS1,Washington Senators
+1913,BOS,BOS,BOS,Boston Red Sox
+1913,BRO,BRO,BRO,Brooklyn Superbas
+1913,BSN,BSN,BSN,Boston Braves
+1913,CAG,CAG,CAG,Chicago American Giants
+1913,CHA,CHW,CHA,Chicago White Sox
+1913,CHN,CHC,CHN,Chicago Cubs
+1913,CIN,CIN,CIN,Cincinnati Reds
+1913,CLE,CLE,CLE,Cleveland Naps
+1913,CSH,CSH,,Cuban Stars of Havana
+1913,DET,DET,DET,Detroit Tigers
+1913,NLG,NLG,NYL,New York Lincoln Giants
+1913,NY1,NYG,NY1,New York Giants
+1913,NYA,NYY,NYA,New York Yankees
+1913,PHA,PHA,PHA,Philadelphia Athletics
+1913,PHI,PHI,PHI,Philadelphia Phillies
+1913,PIT,PIT,PIT,Pittsburgh Pirates
+1913,SLA,SLB,SLA,St. Louis Browns
+1913,WBS,WBS,,West Baden Sprudels
+1913,WS1,WSH,WS1,Washington Senators
+1914,ABC,ABC,IN4,Indianapolis ABCs
+1914,BOS,BOS,BOS,Boston Red Sox
+1914,BRF,BTT,BRF,Brooklyn Tip-Tops
+1914,BRO,BRO,BRO,Brooklyn Robins
+1914,BSN,BSN,BSN,Boston Braves
+1914,CAG,CAG,CAG,Chicago American Giants
+1914,CHA,CHW,CHA,Chicago White Sox
+1914,CHF,CHI,CHF,Chicago Chi-Feds
+1914,CHN,CHC,CHN,Chicago Cubs
+1914,CLE,CLE,CLE,Cleveland Naps
+1914,CSH,CSH,,Cuban Stars of Havana
+1914,DET,DET,DET,Detroit Tigers
+1914,IND,IND,IND,Indianapolis Hoosiers
+1914,NLG,NLG,NYL,New York Lincoln Giants
+1914,NY1,NYG,NY1,New York Giants
+1914,NYA,NYY,NYA,New York Yankees
+1914,PHA,PHA,PHA,Philadelphia Athletics
+1914,PHI,PHI,PHI,Philadelphia Phillies
+1914,PIT,PIT,PIT,Pittsburgh Pirates
+1914,SLA,SLB,SLA,St. Louis Browns
+1914,SLF,SLM,SLF,St. Louis Terriers
+1914,WS1,WSH,WS1,Washington Senators
+1915,ABC,ABC,IN4,Indianapolis ABCs
+1915,BLF,BAL,BLF,Baltimore Terrapins
+1915,BOS,BOS,BOS,Boston Red Sox
+1915,BRO,BRO,BRO,Brooklyn Robins
+1915,BSN,BSN,BSN,Boston Braves
+1915,CAG,CAG,CAG,Chicago American Giants
+1915,CHA,CHW,CHA,Chicago White Sox
+1915,CHF,CHI,CHF,Chicago Whales
+1915,CHN,CHC,CHN,Chicago Cubs
+1915,CSH,CSH,,Cuban Stars of Havana
+1915,DET,DET,DET,Detroit Tigers
+1915,NEW,NEW,NEW,Newark Pepper
+1915,NLG,NLG,NYL,New York Lincoln Giants
+1915,NLS,NLS,,New York Lincoln Stars
+1915,NY1,NYG,NY1,New York Giants
+1915,NYA,NYY,NYA,New York Yankees
+1915,PHA,PHA,PHA,Philadelphia Athletics
+1915,PHI,PHI,PHI,Philadelphia Phillies
+1915,PIT,PIT,PIT,Pittsburgh Pirates
+1915,SLA,SLB,SLA,St. Louis Browns
+1915,SLF,SLM,SLF,St. Louis Terriers
+1915,SLN,STL,SLN,St. Louis Cardinals
+1915,WS1,WSH,WS1,Washington Senators
+1916,ABC,ABC,IN4,Indianapolis ABCs
+1916,BOS,BOS,BOS,Boston Red Sox
+1916,BRG,BRG,BRG,Brooklyn Royal Giants
+1916,BRO,BRO,BRO,Brooklyn Robins
+1916,BSN,BSN,BSN,Boston Braves
+1916,CAG,CAG,CAG,Chicago American Giants
+1916,CHA,CHW,CHA,Chicago White Sox
+1916,CHN,CHC,CHN,Chicago Cubs
+1916,CIN,CIN,CIN,Cincinnati Reds
+1916,CLE,CLE,CLE,Cleveland Indians
+1916,CSW,CSW,CUW,Cuban Stars West
+1916,DET,DET,DET,Detroit Tigers
+1916,NLG,NLG,NYL,New York Lincoln Giants
+1916,NLS,NLS,,New York Lincoln Stars
+1916,NY1,NYG,NY1,New York Giants
+1916,NYA,NYY,NYA,New York Yankees
+1916,PHA,PHA,PHA,Philadelphia Athletics
+1916,PHI,PHI,PHI,Philadelphia Phillies
+1916,PIT,PIT,PIT,Pittsburgh Pirates
+1916,SLA,SLB,SLA,St. Louis Browns
+1916,SLN,STL,SLN,St. Louis Cardinals
+1916,WS1,WSH,WS1,Washington Senators
+1917,ABC,ABC,IN4,Indianapolis ABCs
+1917,BOS,BOS,BOS,Boston Red Sox
+1917,BRG,BRG,BRG,Brooklyn Royal Giants
+1917,BRO,BRO,BRO,Brooklyn Robins
+1917,BSN,BSN,BSN,Boston Braves
+1917,CAG,CAG,CAG,Chicago American Giants
+1917,CHA,CHW,CHA,Chicago White Sox
+1917,CIN,CIN,CIN,Cincinnati Reds
+1917,CLE,CLE,CLE,Cleveland Indians
+1917,DET,DET,DET,Detroit Tigers
+1917,NLG,NLG,NYL,New York Lincoln Giants
+1917,NY1,NYG,NY1,New York Giants
+1917,NYA,NYY,NYA,New York Yankees
+1917,PHI,PHI,PHI,Philadelphia Phillies
+1917,PIT,PIT,PIT,Pittsburgh Pirates
+1917,SLA,SLB,SLA,St. Louis Browns
+1917,SLN,STL,SLN,St. Louis Cardinals
+1917,WS1,WSH,WS1,Washington Senators
+1918,ABC,ABC,IN4,Indianapolis ABCs
+1918,AC,AC,ACY,Atlantic City Bacharach Giants
+1918,BOS,BOS,BOS,Boston Red Sox
+1918,BRG,BRG,BRG,Brooklyn Royal Giants
+1918,BRO,BRO,BRO,Brooklyn Robins
+1918,BSN,BSN,BSN,Boston Braves
+1918,CAG,CAG,CAG,Chicago American Giants
+1918,CHA,CHW,CHA,Chicago White Sox
+1918,CHN,CHC,CHN,Chicago Cubs
+1918,CIN,CIN,CIN,Cincinnati Reds
+1918,CLE,CLE,CLE,Cleveland Indians
+1918,CSW,CSW,CUW,Cuban Stars West
+1918,DET,DET,DET,Detroit Tigers
+1918,HIL,HIL,HIL,Hilldale Club
+1918,NLG,NLG,NYL,New York Lincoln Giants
+1918,NY1,NYG,NY1,New York Giants
+1918,NYA,NYY,NYA,New York Yankees
+1918,PHI,PHI,PHI,Philadelphia Phillies
+1918,PIT,PIT,PIT,Pittsburgh Pirates
+1918,SLA,SLB,SLA,St. Louis Browns
+1918,SLN,STL,SLN,St. Louis Cardinals
+1918,WS1,WSH,WS1,Washington Senators
+1919,AC,AC,ACY,Atlantic City Bacharach Giants
+1919,BOS,BOS,BOS,Boston Red Sox
+1919,BRG,BRG,BRG,Brooklyn Royal Giants
+1919,BRO,BRO,BRO,Brooklyn Robins
+1919,BSN,BSN,BSN,Boston Braves
+1919,CAG,CAG,CAG,Chicago American Giants
+1919,CHA,CHW,CHA,Chicago White Sox
+1919,CHN,CHC,CHN,Chicago Cubs
+1919,CIN,CIN,CIN,Cincinnati Reds
+1919,CLE,CLE,CLE,Cleveland Indians
+1919,DET,DET,DET,Detroit Tigers
+1919,DS,DS,DT1,Detroit Stars
+1919,HIL,HIL,HIL,Hilldale Club
+1919,NLG,NLG,NYL,New York Lincoln Giants
+1919,NY1,NYG,NY1,New York Giants
+1919,NYA,NYY,NYA,New York Yankees
+1919,PHI,PHI,PHI,Philadelphia Phillies
+1919,PIT,PIT,PIT,Pittsburgh Pirates
+1919,SLA,SLB,SLA,St. Louis Browns
+1919,SLN,STL,SLN,St. Louis Cardinals
+1919,WS1,WSH,WS1,Washington Senators
+1920,ABC,ABC,IN4,Indianapolis ABCs
+1920,BOS,BOS,BOS,Boston Red Sox
+1920,BRG,BRG,BRG,Brooklyn Royal Giants
+1920,BRO,BRO,BRO,Brooklyn Robins
+1920,BSN,BSN,BSN,Boston Braves
+1920,CAG,CAG,CAG,Chicago American Giants
+1920,CHA,CHW,CHA,Chicago White Sox
+1920,CHN,CHC,CHN,Chicago Cubs
+1920,CIN,CIN,CIN,Cincinnati Reds
+1920,CLE,CLE,CLE,Cleveland Indians
+1920,DET,DET,DET,Detroit Tigers
+1920,DS,DS,DT1,Detroit Stars
+1920,HIL,HIL,HIL,Hilldale Club
+1920,KCM,KCM,KCM,Kansas City Monarchs
+1920,NLG,NLG,NYL,New York Lincoln Giants
+1920,NY1,NYG,NY1,New York Giants
+1920,NYA,NYY,NYA,New York Yankees
+1920,PHI,PHI,PHI,Philadelphia Phillies
+1920,PIT,PIT,PIT,Pittsburgh Pirates
+1920,SLA,SLB,SLA,St. Louis Browns
+1920,SLN,STL,SLN,St. Louis Cardinals
+1920,WS1,WSH,WS1,Washington Senators
+1921,ABC,ABC,IN4,Indianapolis ABCs
+1921,BOS,BOS,BOS,Boston Red Sox
+1921,BRO,BRO,BRO,Brooklyn Robins
+1921,CAG,CAG,CAG,Chicago American Giants
+1921,CHA,CHW,CHA,Chicago White Sox
+1921,CHN,CHC,CHN,Chicago Cubs
+1921,CIN,CIN,CIN,Cincinnati Reds
+1921,CLE,CLE,CLE,Cleveland Indians
+1921,COB,COB,CB1,Columbus Buckeyes
+1921,DET,DET,DET,Detroit Tigers
+1921,DS,DS,DT1,Detroit Stars
+1921,HIL,HIL,HIL,Hilldale Club
+1921,KCM,KCM,KCM,Kansas City Monarchs
+1921,NLG,NLG,NYL,New York Lincoln Giants
+1921,NY1,NYG,NY1,New York Giants
+1921,NYA,NYY,NYA,New York Yankees
+1921,PIT,PIT,PIT,Pittsburgh Pirates
+1921,SLA,SLB,SLA,St. Louis Browns
+1921,SLG,SLG,SLG,St. Louis Giants
+1921,SLN,STL,SLN,St. Louis Cardinals
+1921,WS1,WSH,WS1,Washington Senators
+1922,ABC,ABC,IN4,Indianapolis ABCs
+1922,BBS,BBS,BLS,Baltimore Black Sox
+1922,BOS,BOS,BOS,Boston Red Sox
+1922,BRO,BRO,BRO,Brooklyn Robins
+1922,BSN,BSN,BSN,Boston Braves
+1922,CAG,CAG,CAG,Chicago American Giants
+1922,CHA,CHW,CHA,Chicago White Sox
+1922,CHN,CHC,CHN,Chicago Cubs
+1922,CIN,CIN,CIN,Cincinnati Reds
+1922,CLE,CLE,CLE,Cleveland Indians
+1922,DET,DET,DET,Detroit Tigers
+1922,DS,DS,DT1,Detroit Stars
+1922,HIL,HIL,HIL,Hilldale Club
+1922,KCM,KCM,KCM,Kansas City Monarchs
+1922,NLG,NLG,NYL,New York Lincoln Giants
+1922,NY1,NYG,NY1,New York Giants
+1922,NYA,NYY,NYA,New York Yankees
+1922,NYB,NYB,NBG,New York Bacharach Giants
+1922,PIT,PIT,PIT,Pittsburgh Pirates
+1922,SLA,SLB,SLA,St. Louis Browns
+1922,SLN,STL,SLN,St. Louis Cardinals
+1922,SLS,SLS,SSN,St. Louis Stars
+1922,WS1,WSH,WS1,Washington Senators
+1923,ABC,ABC,IN4,Indianapolis ABCs
+1923,BBB,BBB,BIR,Birmingham Black Barons
+1923,BBS,BBS,BLS,Baltimore Black Sox
+1923,BRO,BRO,BRO,Brooklyn Robins
+1923,BSN,BSN,BSN,Boston Braves
+1923,CAG,CAG,CAG,Chicago American Giants
+1923,CHA,CHW,CHA,Chicago White Sox
+1923,CHN,CHC,CHN,Chicago Cubs
+1923,CIN,CIN,CIN,Cincinnati Reds
+1923,CLE,CLE,CLE,Cleveland Indians
+1923,CSE,CSE,CUE,Cuban Stars East
+1923,DET,DET,DET,Detroit Tigers
+1923,DS,DS,DT1,Detroit Stars
+1923,HIL,HIL,HIL,Hilldale Club
+1923,KCM,KCM,KCM,Kansas City Monarchs
+1923,MB,MB,ML4,Milwaukee Bears
+1923,MRS,MRS,MEM,Memphis Red Sox
+1923,NLG,NLG,NYL,New York Lincoln Giants
+1923,NY1,NYG,NY1,New York Giants
+1923,NYA,NYY,NYA,New York Yankees
+1923,PIT,PIT,PIT,Pittsburgh Pirates
+1923,SLN,STL,SLN,St. Louis Cardinals
+1923,SLS,SLS,SSN,St. Louis Stars
+1923,WS1,WSH,WS1,Washington Senators
+1924,ACB,ACB,ACY,Atlantic City Bacharach Giants
+1924,BBB,BBB,BIR,Birmingham Black Barons
+1924,BBS,BBS,BLS,Baltimore Black Sox
+1924,BOS,BOS,BOS,Boston Red Sox
+1924,BRG,BRG,BRG,Brooklyn Royal Giants
+1924,BRO,BRO,BRO,Brooklyn Robins
+1924,BSN,BSN,BSN,Boston Braves
+1924,CAG,CAG,CAG,Chicago American Giants
+1924,CHA,CHW,CHA,Chicago White Sox
+1924,CHN,CHC,CHN,Chicago Cubs
+1924,CIN,CIN,CIN,Cincinnati Reds
+1924,CLE,CLE,CLE,Cleveland Indians
+1924,CSE,CSE,CUE,Cuban Stars East
+1924,DET,DET,DET,Detroit Tigers
+1924,DS,DS,DT1,Detroit Stars
+1924,HBG,HBG,HAE,Harrisburg Giants
+1924,HIL,HIL,HIL,Hilldale Club
+1924,KCM,KCM,KCM,Kansas City Monarchs
+1924,MRS,MRS,MEM,Memphis Red Sox
+1924,NY1,NYG,NY1,New York Giants
+1924,NYA,NYY,NYA,New York Yankees
+1924,PHA,PHA,PHA,Philadelphia Athletics
+1924,PIT,PIT,PIT,Pittsburgh Pirates
+1924,SLA,SLB,SLA,St. Louis Browns
+1924,SLN,STL,SLN,St. Louis Cardinals
+1924,SLS,SLS,SSN,St. Louis Stars
+1924,WP,WP,WSE,Washington Potomacs
+1924,WS1,WSH,WS1,Washington Senators
+1925,ACB,ACB,ACY,Atlantic City Bacharach Giants
+1925,BBB,BBB,BIR,Birmingham Black Barons
+1925,BBS,BBS,BLS,Baltimore Black Sox
+1925,BOS,BOS,BOS,Boston Red Sox
+1925,BRO,BRO,BRO,Brooklyn Robins
+1925,BSN,BSN,BSN,Boston Braves
+1925,CAG,CAG,CAG,Chicago American Giants
+1925,CHA,CHW,CHA,Chicago White Sox
+1925,CHN,CHC,CHN,Chicago Cubs
+1925,CIN,CIN,CIN,Cincinnati Reds
+1925,CLE,CLE,CLE,Cleveland Indians
+1925,CSE,CSE,CUE,Cuban Stars East
+1925,DET,DET,DET,Detroit Tigers
+1925,DS,DS,DT1,Detroit Stars
+1925,HBG,HBG,HAE,Harrisburg Giants
+1925,HIL,HIL,HIL,Hilldale Club
+1925,KCM,KCM,KCM,Kansas City Monarchs
+1925,NY1,NYG,NY1,New York Giants
+1925,NYA,NYY,NYA,New York Yankees
+1925,PHA,PHA,PHA,Philadelphia Athletics
+1925,PIT,PIT,PIT,Pittsburgh Pirates
+1925,SLA,SLB,SLA,St. Louis Browns
+1925,SLN,STL,SLN,St. Louis Cardinals
+1925,SLS,SLS,SSN,St. Louis Stars
+1925,WS1,WSH,WS1,Washington Senators
+1926,BBS,BBS,BLS,Baltimore Black Sox
+1926,BOS,BOS,BOS,Boston Red Sox
+1926,BRO,BRO,BRO,Brooklyn Robins
+1926,BSN,BSN,BSN,Boston Braves
+1926,CAG,CAG,CAG,Chicago American Giants
+1926,CHA,CHW,CHA,Chicago White Sox
+1926,CHN,CHC,CHN,Chicago Cubs
+1926,CIN,CIN,CIN,Cincinnati Reds
+1926,CLE,CLE,CLE,Cleveland Indians
+1926,CSE,CSE,CUE,Cuban Stars East
+1926,DET,DET,DET,Detroit Tigers
+1926,DS,DS,DT1,Detroit Stars
+1926,HBG,HBG,HAE,Harrisburg Giants
+1926,HIL,HIL,HIL,Hilldale Club
+1926,KCM,KCM,KCM,Kansas City Monarchs
+1926,NLG,NLG,NYL,New York Lincoln Giants
+1926,NY1,NYG,NY1,New York Giants
+1926,NYA,NYY,NYA,New York Yankees
+1926,PHA,PHA,PHA,Philadelphia Athletics
+1926,PIT,PIT,PIT,Pittsburgh Pirates
+1926,SLA,SLB,SLA,St. Louis Browns
+1926,SLN,STL,SLN,St. Louis Cardinals
+1926,SLS,SLS,SSN,St. Louis Stars
+1926,WS1,WSH,WS1,Washington Senators
+1927,BBB,BBB,BIR,Birmingham Black Barons
+1927,BBS,BBS,BLS,Baltimore Black Sox
+1927,BOS,BOS,BOS,Boston Red Sox
+1927,BRO,BRO,BRO,Brooklyn Robins
+1927,BSN,BSN,BSN,Boston Braves
+1927,CAG,CAG,CAG,Chicago American Giants
+1927,CHA,CHW,CHA,Chicago White Sox
+1927,CHN,CHC,CHN,Chicago Cubs
+1927,CIN,CIN,CIN,Cincinnati Reds
+1927,CLE,CLE,CLE,Cleveland Indians
+1927,CSE,CSE,CUE,Cuban Stars East
+1927,DET,DET,DET,Detroit Tigers
+1927,DS,DS,DT1,Detroit Stars
+1927,HBG,HBG,HAE,Harrisburg Giants
+1927,HIL,HIL,HIL,Hilldale Club
+1927,KCM,KCM,KCM,Kansas City Monarchs
+1927,NLG,NLG,NYL,New York Lincoln Giants
+1927,NY1,NYG,NY1,New York Giants
+1927,NYA,NYY,NYA,New York Yankees
+1927,PHA,PHA,PHA,Philadelphia Athletics
+1927,PIT,PIT,PIT,Pittsburgh Pirates
+1927,SLA,SLB,SLA,St. Louis Browns
+1927,SLN,STL,SLN,St. Louis Cardinals
+1927,SLS,SLS,SSN,St. Louis Stars
+1927,WS1,WSH,WS1,Washington Senators
+1928,BBB,BBB,BIR,Birmingham Black Barons
+1928,BBS,BBS,BLS,Baltimore Black Sox
+1928,BOS,BOS,BOS,Boston Red Sox
+1928,BRO,BRO,BRO,Brooklyn Robins
+1928,BSN,BSN,BSN,Boston Braves
+1928,CAG,CAG,CAG,Chicago American Giants
+1928,CHA,CHW,CHA,Chicago White Sox
+1928,CHN,CHC,CHN,Chicago Cubs
+1928,CIN,CIN,CIN,Cincinnati Reds
+1928,CLE,CLE,CLE,Cleveland Indians
+1928,DET,DET,DET,Detroit Tigers
+1928,DS,DS,DT1,Detroit Stars
+1928,HG,HG,HOM,Homestead Grays
+1928,HIL,HIL,HIL,Hilldale Club
+1928,KCM,KCM,KCM,Kansas City Monarchs
+1928,NLG,NLG,NYL,New York Lincoln Giants
+1928,NY1,NYG,NY1,New York Giants
+1928,NYA,NYY,NYA,New York Yankees
+1928,PHA,PHA,PHA,Philadelphia Athletics
+1928,PHI,PHI,PHI,Philadelphia Phillies
+1928,PIT,PIT,PIT,Pittsburgh Pirates
+1928,SLA,SLB,SLA,St. Louis Browns
+1928,SLN,STL,SLN,St. Louis Cardinals
+1928,SLS,SLS,SSN,St. Louis Stars
+1928,WS1,WSH,WS1,Washington Senators
+1929,ACB,ACB,ACY,Atlantic City Bacharach Giants
+1929,BBB,BBB,BIR,Birmingham Black Barons
+1929,BBS,BBS,BLS,Baltimore Black Sox
+1929,BOS,BOS,BOS,Boston Red Sox
+1929,BRO,BRO,BRO,Brooklyn Robins
+1929,BSN,BSN,BSN,Boston Braves
+1929,CAG,CAG,CAG,Chicago American Giants
+1929,CHA,CHW,CHA,Chicago White Sox
+1929,CHN,CHC,CHN,Chicago Cubs
+1929,CIN,CIN,CIN,Cincinnati Reds
+1929,CLE,CLE,CLE,Cleveland Indians
+1929,DET,DET,DET,Detroit Tigers
+1929,DS,DS,DT1,Detroit Stars
+1929,HG,HG,HOM,Homestead Grays
+1929,HIL,HIL,HIL,Hilldale Club
+1929,KCM,KCM,KCM,Kansas City Monarchs
+1929,NLG,NLG,NYL,New York Lincoln Giants
+1929,NY1,NYG,NY1,New York Giants
+1929,NYA,NYY,NYA,New York Yankees
+1929,PHA,PHA,PHA,Philadelphia Athletics
+1929,PHI,PHI,PHI,Philadelphia Phillies
+1929,PIT,PIT,PIT,Pittsburgh Pirates
+1929,SLA,SLB,SLA,St. Louis Browns
+1929,SLN,STL,SLN,St. Louis Cardinals
+1929,SLS,SLS,SSN,St. Louis Stars
+1929,WS1,WSH,WS1,Washington Senators
+1930,BBB,BBB,BIR,Birmingham Black Barons
+1930,BBS,BBS,BLS,Baltimore Black Sox
+1930,BOS,BOS,BOS,Boston Red Sox
+1930,BRO,BRO,BRO,Brooklyn Robins
+1930,BSN,BSN,BSN,Boston Braves
+1930,CAG,CAG,CAG,Chicago American Giants
+1930,CHA,CHW,CHA,Chicago White Sox
+1930,CHN,CHC,CHN,Chicago Cubs
+1930,CIN,CIN,CIN,Cincinnati Reds
+1930,CLE,CLE,CLE,Cleveland Indians
+1930,DET,DET,DET,Detroit Tigers
+1930,DS,DS,DT1,Detroit Stars
+1930,HG,HG,HOM,Homestead Grays
+1930,HIL,HIL,HIL,Hilldale Club
+1930,KCM,KCM,KCM,Kansas City Monarchs
+1930,MRS,MRS,MEM,Memphis Red Sox
+1930,NLG,NLG,NYL,New York Lincoln Giants
+1930,NY1,NYG,NY1,New York Giants
+1930,NYA,NYY,NYA,New York Yankees
+1930,PHA,PHA,PHA,Philadelphia Athletics
+1930,PHI,PHI,PHI,Philadelphia Phillies
+1930,PIT,PIT,PIT,Pittsburgh Pirates
+1930,SLA,SLB,SLA,St. Louis Browns
+1930,SLN,STL,SLN,St. Louis Cardinals
+1930,SLS,SLS,SSN,St. Louis Stars
+1930,WS1,WSH,WS1,Washington Senators
+1931,AB2,AB2,IN5,Indianapolis ABCs
+1931,BBS,BBS,BLS,Baltimore Black Sox
+1931,BRO,BRO,BRO,Brooklyn Robins
+1931,BSN,BSN,BSN,Boston Braves
+1931,CCU,CCU,CV6,Cleveland Cubs
+1931,CHA,CHW,CHA,Chicago White Sox
+1931,CHN,CHC,CHN,Chicago Cubs
+1931,CIN,CIN,CIN,Cincinnati Reds
+1931,CLE,CLE,CLE,Cleveland Indians
+1931,DET,DET,DET,Detroit Tigers
+1931,DS,DS,DT1,Detroit Stars
+1931,HAR,HAR,HAS,Harlem Stars
+1931,HG,HG,HOM,Homestead Grays
+1931,HIL,HIL,HIL,Hilldale Club
+1931,KCM,KCM,KCM,Kansas City Monarchs
+1931,NY1,NYG,NY1,New York Giants
+1931,NYA,NYY,NYA,New York Yankees
+1931,PHA,PHA,PHA,Philadelphia Athletics
+1931,PHI,PHI,PHI,Philadelphia Phillies
+1931,PIT,PIT,PIT,Pittsburgh Pirates
+1931,SLA,SLB,SLA,St. Louis Browns
+1931,SLN,STL,SLN,St. Louis Cardinals
+1931,SLS,SLS,SSN,St. Louis Stars
+1931,WS1,WSH,WS1,Washington Senators
+1932,BRO,BRO,BRO,Brooklyn Dodgers
+1932,BSN,BSN,BSN,Boston Braves
+1932,CAG,CAG,CAG,Chicago American Giants
+1932,CHA,CHW,CHA,Chicago White Sox
+1932,CHN,CHC,CHN,Chicago Cubs
+1932,CIN,CIN,CIN,Cincinnati Reds
+1932,CLE,CLE,CLE,Cleveland Indians
+1932,DET,DET,DET,Detroit Tigers
+1932,DW,DW,DTW,Detroit Wolves
+1932,HG,HG,HOM,Homestead Grays
+1932,HIL,HIL,HIL,Hilldale Club
+1932,KCM,KCM,KCM,Kansas City Monarchs
+1932,LVB,LVB,LS4,Louisville Black Caps
+1932,MRM,MRM,MNR,Monroe Monarchs
+1932,NY1,NYG,NY1,New York Giants
+1932,NYA,NYY,NYA,New York Yankees
+1932,PC,PC,PTC,Pittsburgh Crawfords
+1932,PHA,PHA,PHA,Philadelphia Athletics
+1932,PHI,PHI,PHI,Philadelphia Phillies
+1932,PIT,PIT,PIT,Pittsburgh Pirates
+1932,SLA,SLB,SLA,St. Louis Browns
+1932,SLN,STL,SLN,St. Louis Cardinals
+1932,WAP,WAP,WSW,Washington Pilots
+1932,WS1,WSH,WS1,Washington Senators
+1933,BOS,BOS,BOS,Boston Red Sox
+1933,BRO,BRO,BRO,Brooklyn Dodgers
+1933,BSN,BSN,BSN,Boston Braves
+1933,CAG,CAG,CAG,Chicago American Giants
+1933,CHA,CHW,CHA,Chicago White Sox
+1933,CHN,CHC,CHN,Chicago Cubs
+1933,CIN,CIN,CIN,Cincinnati Reds
+1933,CLE,CLE,CLE,Cleveland Indians
+1933,DET,DET,DET,Detroit Tigers
+1933,HG,HG,HOM,Homestead Grays
+1933,ID,ID,DI1,Indianapolis ABCs/Detroit Stars
+1933,KCM,KCM,KCM,Kansas City Monarchs
+1933,NEG,NEG,NSH,Nashville Elite Giants
+1933,NY1,NYG,NY1,New York Giants
+1933,NYA,NYY,NYA,New York Yankees
+1933,PC,PC,PTC,Pittsburgh Crawfords
+1933,PHA,PHA,PHA,Philadelphia Athletics
+1933,PHI,PHI,PHI,Philadelphia Phillies
+1933,PIT,PIT,PIT,Pittsburgh Pirates
+1933,PS,PS,PH5,Philadelphia Stars
+1933,SLA,SLB,SLA,St. Louis Browns
+1933,SLN,STL,SLN,St. Louis Cardinals
+1933,WS1,WSH,WS1,Washington Senators
+1934,BBS,BBS,BLS,Baltimore Black Sox
+1934,BOS,BOS,BOS,Boston Red Sox
+1934,BRO,BRO,BRO,Brooklyn Dodgers
+1934,CAG,CAG,CAG,Chicago American Giants
+1934,CHA,CHW,CHA,Chicago White Sox
+1934,CHN,CHC,CHN,Chicago Cubs
+1934,CIN,CIN,CIN,Cincinnati Reds
+1934,CLE,CLE,CLE,Cleveland Indians
+1934,DET,DET,DET,Detroit Tigers
+1934,HG,HG,HOM,Homestead Grays
+1934,KCM,KCM,KCM,Kansas City Monarchs
+1934,ND,ND,NW1,Newark Dodgers
+1934,NY1,NYG,NY1,New York Giants
+1934,NYA,NYY,NYA,New York Yankees
+1934,PC,PC,PTC,Pittsburgh Crawfords
+1934,PHA,PHA,PHA,Philadelphia Athletics
+1934,PHI,PHI,PHI,Philadelphia Phillies
+1934,PIT,PIT,PIT,Pittsburgh Pirates
+1934,PS,PS,PH5,Philadelphia Stars
+1934,SLA,SLB,SLA,St. Louis Browns
+1934,SLN,STL,SLN,St. Louis Cardinals
+1934,WS1,WSH,WS1,Washington Senators
+1935,BE,BE,BRN,Brooklyn Eagles
+1935,BOS,BOS,BOS,Boston Red Sox
+1935,BRO,BRO,BRO,Brooklyn Dodgers
+1935,BSN,BSN,BSN,Boston Braves
+1935,CAG,CAG,CAG,Chicago American Giants
+1935,CHA,CHW,CHA,Chicago White Sox
+1935,CHN,CHC,CHN,Chicago Cubs
+1935,CIN,CIN,CIN,Cincinnati Reds
+1935,CLE,CLE,CLE,Cleveland Indians
+1935,DET,DET,DET,Detroit Tigers
+1935,HG,HG,HOM,Homestead Grays
+1935,KCM,KCM,KCM,Kansas City Monarchs
+1935,ND,ND,NW1,Newark Dodgers
+1935,NY1,NYG,NY1,New York Giants
+1935,NYA,NYY,NYA,New York Yankees
+1935,NYC,NYC,NY6,New York Cubans
+1935,PC,PC,PTC,Pittsburgh Crawfords
+1935,PHA,PHA,PHA,Philadelphia Athletics
+1935,PIT,PIT,PIT,Pittsburgh Pirates
+1935,PS,PS,PH5,Philadelphia Stars
+1935,SLA,SLB,SLA,St. Louis Browns
+1935,SLN,STL,SLN,St. Louis Cardinals
+1935,WS1,WSH,WS1,Washington Senators
+1936,BOS,BOS,BOS,Boston Red Sox
+1936,BRO,BRO,BRO,Brooklyn Dodgers
+1936,CHA,CHW,CHA,Chicago White Sox
+1936,CHN,CHC,CHN,Chicago Cubs
+1936,CIN,CIN,CIN,Cincinnati Reds
+1936,CLE,CLE,CLE,Cleveland Indians
+1936,DET,DET,DET,Detroit Tigers
+1936,HG,HG,HOM,Homestead Grays
+1936,KCM,KCM,KCM,Kansas City Monarchs
+1936,NE,NE,NW2,Newark Eagles
+1936,NY1,NYG,NY1,New York Giants
+1936,NYA,NYY,NYA,New York Yankees
+1936,NYC,NYC,NY6,New York Cubans
+1936,PC,PC,PTC,Pittsburgh Crawfords
+1936,PHI,PHI,PHI,Philadelphia Phillies
+1936,PIT,PIT,PIT,Pittsburgh Pirates
+1936,PS,PS,PH5,Philadelphia Stars
+1936,SLA,SLB,SLA,St. Louis Browns
+1936,SLN,STL,SLN,St. Louis Cardinals
+1936,WEG,WEG,WEG,Washington Elite Giants
+1937,BOS,BOS,BOS,Boston Red Sox
+1937,BRO,BRO,BRO,Brooklyn Dodgers
+1937,CAG,CAG,CAG,Chicago American Giants
+1937,CHA,CHW,CHA,Chicago White Sox
+1937,CHN,CHC,CHN,Chicago Cubs
+1937,CIN,CIN,CIN,Cincinnati Reds
+1937,CLE,CLE,CLE,Cleveland Indians
+1937,DET,DET,DET,Detroit Tigers
+1937,DTS,DTS,DT2,Detroit Stars
+1937,HG,HG,HOM,Homestead Grays
+1937,KCM,KCM,KCM,Kansas City Monarchs
+1937,NE,NE,NW2,Newark Eagles
+1937,NY1,NYG,NY1,New York Giants
+1937,NYA,NYY,NYA,New York Yankees
+1937,PC,PC,PTC,Pittsburgh Crawfords
+1937,PHI,PHI,PHI,Philadelphia Phillies
+1937,PIT,PIT,PIT,Pittsburgh Pirates
+1937,PS,PS,PH5,Philadelphia Stars
+1937,SLA,SLB,SLA,St. Louis Browns
+1937,SLN,STL,SLN,St. Louis Cardinals
+1937,WEG,WEG,WEG,Washington Elite Giants
+1937,WS1,WSH,WS1,Washington Senators
+1938,BEG,BEG,BLG,Baltimore Elite Giants
+1938,BOS,BOS,BOS,Boston Red Sox
+1938,BRO,BRO,BRO,Brooklyn Dodgers
+1938,CAG,CAG,CAG,Chicago American Giants
+1938,CHA,CHW,CHA,Chicago White Sox
+1938,CHN,CHC,CHN,Chicago Cubs
+1938,CIN,CIN,CIN,Cincinnati Reds
+1938,CLE,CLE,CLE,Cleveland Indians
+1938,DET,DET,DET,Detroit Tigers
+1938,HG,HG,HOM,Homestead Grays
+1938,KCM,KCM,KCM,Kansas City Monarchs
+1938,NE,NE,NW2,Newark Eagles
+1938,NY1,NYG,NY1,New York Giants
+1938,NYA,NYY,NYA,New York Yankees
+1938,PC,PC,PTC,Pittsburgh Crawfords
+1938,PHI,PHI,PHI,Philadelphia Phillies
+1938,PIT,PIT,PIT,Pittsburgh Pirates
+1938,PS,PS,PH5,Philadelphia Stars
+1938,SLN,STL,SLN,St. Louis Cardinals
+1938,WS1,WSH,WS1,Washington Senators
+1939,BEG,BEG,BLG,Baltimore Elite Giants
+1939,BOS,BOS,BOS,Boston Red Sox
+1939,BRO,BRO,BRO,Brooklyn Dodgers
+1939,BSN,BSN,BSN,Boston Bees
+1939,CHA,CHW,CHA,Chicago White Sox
+1939,CHN,CHC,CHN,Chicago Cubs
+1939,CIN,CIN,CIN,Cincinnati Reds
+1939,CLE,CLE,CLE,Cleveland Indians
+1939,DET,DET,DET,Detroit Tigers
+1939,HG,HG,HOM,Homestead Grays
+1939,KCM,KCM,KCM,Kansas City Monarchs
+1939,NE,NE,NW2,Newark Eagles
+1939,NY1,NYG,NY1,New York Giants
+1939,NYA,NYY,NYA,New York Yankees
+1939,PHI,PHI,PHI,Philadelphia Phillies
+1939,PIT,PIT,PIT,Pittsburgh Pirates
+1939,PS,PS,PH5,Philadelphia Stars
+1939,SLN,STL,SLN,St. Louis Cardinals
+1939,TC,TC,TLC,Toledo Crawfords
+1939,TC2,TC2,TLC,Toledo Crawfords
+1939,WS1,WSH,WS1,Washington Senators
+1940,BEG,BEG,BLG,Baltimore Elite Giants
+1940,BOS,BOS,BOS,Boston Red Sox
+1940,BRO,BRO,BRO,Brooklyn Dodgers
+1940,CHA,CHW,CHA,Chicago White Sox
+1940,CHN,CHC,CHN,Chicago Cubs
+1940,CIN,CIN,CIN,Cincinnati Reds
+1940,CLE,CLE,CLE,Cleveland Indians
+1940,DET,DET,DET,Detroit Tigers
+1940,HG,HG,HOM,Homestead Grays
+1940,KCM,KCM,KCM,Kansas City Monarchs
+1940,NE,NE,NW2,Newark Eagles
+1940,NY1,NYG,NY1,New York Giants
+1940,NYA,NYY,NYA,New York Yankees
+1940,NYC,NYC,NY6,New York Cubans
+1940,PHA,PHA,PHA,Philadelphia Athletics
+1940,PHI,PHI,PHI,Philadelphia Phillies
+1940,PIT,PIT,PIT,Pittsburgh Pirates
+1940,SLN,STL,SLN,St. Louis Cardinals
+1940,TIC,TIC,IN8,Toledo-Indianapolis Crawfords
+1940,WS1,WSH,WS1,Washington Senators
+1941,BEG,BEG,BLG,Baltimore Elite Giants
+1941,BOS,BOS,BOS,Boston Red Sox
+1941,BRO,BRO,BRO,Brooklyn Dodgers
+1941,BSN,BSN,BSN,Boston Braves
+1941,CHA,CHW,CHA,Chicago White Sox
+1941,CHN,CHC,CHN,Chicago Cubs
+1941,CIN,CIN,CIN,Cincinnati Reds
+1941,CLE,CLE,CLE,Cleveland Indians
+1941,DET,DET,DET,Detroit Tigers
+1941,HG,HG,HOM,Homestead Grays
+1941,KCM,KCM,KCM,Kansas City Monarchs
+1941,NBY,NBY,NY5,New York Black Yankees
+1941,NE,NE,NW2,Newark Eagles
+1941,NY1,NYG,NY1,New York Giants
+1941,NYA,NYY,NYA,New York Yankees
+1941,PHA,PHA,PHA,Philadelphia Athletics
+1941,PHI,PHI,PHI,Philadelphia Phillies
+1941,PIT,PIT,PIT,Pittsburgh Pirates
+1941,PS,PS,PH5,Philadelphia Stars
+1941,SLA,SLB,SLA,St. Louis Browns
+1941,SLN,STL,SLN,St. Louis Cardinals
+1941,WS1,WSH,WS1,Washington Senators
+1942,BEG,BEG,BLG,Baltimore Elite Giants
+1942,BOS,BOS,BOS,Boston Red Sox
+1942,BRO,BRO,BRO,Brooklyn Dodgers
+1942,BSN,BSN,BSN,Boston Braves
+1942,CAG,CAG,CAG,Chicago American Giants
+1942,CHA,CHW,CHA,Chicago White Sox
+1942,CHN,CHC,CHN,Chicago Cubs
+1942,CLE,CLE,CLE,Cleveland Indians
+1942,DET,DET,DET,Detroit Tigers
+1942,HG,HG,HOM,Homestead Grays
+1942,KCM,KCM,KCM,Kansas City Monarchs
+1942,NE,NE,NW2,Newark Eagles
+1942,NY1,NYG,NY1,New York Giants
+1942,NYA,NYY,NYA,New York Yankees
+1942,PHI,PHI,PHI,Philadelphia Phillies
+1942,SLA,SLB,SLA,St. Louis Browns
+1942,SLN,STL,SLN,St. Louis Cardinals
+1942,WS1,WSH,WS1,Washington Senators
+1943,BOS,BOS,BOS,Boston Red Sox
+1943,BRO,BRO,BRO,Brooklyn Dodgers
+1943,CHA,CHW,CHA,Chicago White Sox
+1943,CLE,CLE,CLE,Cleveland Indians
+1943,DET,DET,DET,Detroit Tigers
+1943,HG,HG,HOM,Homestead Grays
+1943,KCM,KCM,KCM,Kansas City Monarchs
+1943,MRS,MRS,MEM,Memphis Red Sox
+1943,NE,NE,NW2,Newark Eagles
+1943,NY1,NYG,NY1,New York Giants
+1943,NYA,NYY,NYA,New York Yankees
+1943,PHA,PHA,PHA,Philadelphia Athletics
+1943,PHI,PHI,PHI,Philadelphia Blue Jays
+1943,PS,PS,PH5,Philadelphia Stars
+1943,SLA,SLB,SLA,St. Louis Browns
+1943,SLN,STL,SLN,St. Louis Cardinals
+1943,WS1,WSH,WS1,Washington Senators
+1944,BEG,BEG,BLG,Baltimore Elite Giants
+1944,BOS,BOS,BOS,Boston Red Sox
+1944,BRO,BRO,BRO,Brooklyn Dodgers
+1944,CHN,CHC,CHN,Chicago Cubs
+1944,CLE,CLE,CLE,Cleveland Indians
+1944,DET,DET,DET,Detroit Tigers
+1944,HG,HG,HOM,Homestead Grays
+1944,KCM,KCM,KCM,Kansas City Monarchs
+1944,NE,NE,NW2,Newark Eagles
+1944,NY1,NYG,NY1,New York Giants
+1944,NYA,NYY,NYA,New York Yankees
+1944,PHA,PHA,PHA,Philadelphia Athletics
+1944,PHI,PHI,PHI,Philadelphia Blue Jays
+1944,PIT,PIT,PIT,Pittsburgh Pirates
+1944,PS,PS,PH5,Philadelphia Stars
+1944,SLN,STL,SLN,St. Louis Cardinals
+1944,WS1,WSH,WS1,Washington Senators
+1945,BEG,BEG,BLG,Baltimore Elite Giants
+1945,BOS,BOS,BOS,Boston Red Sox
+1945,BSN,BSN,BSN,Boston Braves
+1945,CHA,CHW,CHA,Chicago White Sox
+1945,CLE,CLE,CLE,Cleveland Indians
+1945,DET,DET,DET,Detroit Tigers
+1945,HG,HG,HOM,Homestead Grays
+1945,KCM,KCM,KCM,Kansas City Monarchs
+1945,NBY,NBY,NY5,New York Black Yankees
+1945,NE,NE,NW2,Newark Eagles
+1945,NY1,NYG,NY1,New York Giants
+1945,NYA,NYY,NYA,New York Yankees
+1945,NYC,NYC,NY6,New York Cubans
+1945,PHA,PHA,PHA,Philadelphia Athletics
+1945,PHI,PHI,PHI,Philadelphia Phillies
+1945,PIT,PIT,PIT,Pittsburgh Pirates
+1945,SLN,STL,SLN,St. Louis Cardinals
+1945,WS1,WSH,WS1,Washington Senators
+1946,BEG,BEG,BLG,Baltimore Elite Giants
+1946,BOS,BOS,BOS,Boston Red Sox
+1946,BRO,BRO,BRO,Brooklyn Dodgers
+1946,BSN,BSN,BSN,Boston Braves
+1946,CHA,CHW,CHA,Chicago White Sox
+1946,CLE,CLE,CLE,Cleveland Indians
+1946,DET,DET,DET,Detroit Tigers
+1946,HG,HG,HOM,Homestead Grays
+1946,KCM,KCM,KCM,Kansas City Monarchs
+1946,NBY,NBY,NY5,New York Black Yankees
+1946,NE,NE,NW2,Newark Eagles
+1946,NY1,NYG,NY1,New York Giants
+1946,NYA,NYY,NYA,New York Yankees
+1946,NYC,NYC,NY6,New York Cubans
+1946,PHA,PHA,PHA,Philadelphia Athletics
+1946,PIT,PIT,PIT,Pittsburgh Pirates
+1946,SLN,STL,SLN,St. Louis Cardinals
+1946,WS1,WSH,WS1,Washington Senators
+1947,BOS,BOS,BOS,Boston Red Sox
+1947,BRO,BRO,BRO,Brooklyn Dodgers
+1947,BSN,BSN,BSN,Boston Braves
+1947,CHA,CHW,CHA,Chicago White Sox
+1947,CIC,CIC,CIA,Cincinnati-Indianapolis Clowns
+1947,CLE,CLE,CLE,Cleveland Indians
+1947,DET,DET,DET,Detroit Tigers
+1947,HG,HG,HOM,Homestead Grays
+1947,KCM,KCM,KCM,Kansas City Monarchs
+1947,NE,NE,NW2,Newark Eagles
+1947,NY1,NYG,NY1,New York Giants
+1947,NYA,NYY,NYA,New York Yankees
+1947,NYC,NYC,NY6,New York Cubans
+1947,PHA,PHA,PHA,Philadelphia Athletics
+1947,PIT,PIT,PIT,Pittsburgh Pirates
+1947,SLA,SLB,SLA,St. Louis Browns
+1947,SLN,STL,SLN,St. Louis Cardinals
+1947,WS1,WSH,WS1,Washington Senators
+1948,BBB,BBB,BIR,Birmingham Black Barons
+1948,BOS,BOS,BOS,Boston Red Sox
+1948,BRO,BRO,BRO,Brooklyn Dodgers
+1948,BSN,BSN,BSN,Boston Braves
+1948,CHA,CHW,CHA,Chicago White Sox
+1948,CLE,CLE,CLE,Cleveland Indians
+1948,DET,DET,DET,Detroit Tigers
+1948,HG,HG,HOM,Homestead Grays
+1948,KCM,KCM,KCM,Kansas City Monarchs
+1948,MRS,MRS,MEM,Memphis Red Sox
+1948,NE,NE,NW2,Newark Eagles
+1948,NY1,NYG,NY1,New York Giants
+1948,NYA,NYY,NYA,New York Yankees
+1948,NYC,NYC,NY6,New York Cubans
+1948,PHA,PHA,PHA,Philadelphia Athletics
+1948,PHI,PHI,PHI,Philadelphia Phillies
+1948,PIT,PIT,PIT,Pittsburgh Pirates
+1948,SLN,STL,SLN,St. Louis Cardinals
+1948,WS1,WSH,WS1,Washington Senators
+1949,BOS,BOS,BOS,Boston Red Sox
+1949,BRO,BRO,BRO,Brooklyn Dodgers
+1949,BSN,BSN,BSN,Boston Braves
+1949,CHA,CHW,CHA,Chicago White Sox
+1949,CLE,CLE,CLE,Cleveland Indians
+1949,DET,DET,DET,Detroit Tigers
+1949,NY1,NYG,NY1,New York Giants
+1949,NYA,NYY,NYA,New York Yankees
+1949,PHA,PHA,PHA,Philadelphia Athletics
+1949,PHI,PHI,PHI,Philadelphia Phillies
+1949,PIT,PIT,PIT,Pittsburgh Pirates
+1949,SLN,STL,SLN,St. Louis Cardinals
 1950,BOS,BOS,BOS,Boston Red Sox
 1950,BRO,BRO,BRO,Brooklyn Dodgers
 1950,BSN,BSN,BSN,Boston Braves
@@ -1801,3 +3000,123 @@ yearID,teamID,teamIDBR,teamIDretro,name
 2021,TEX,TEX,TEX,Texas Rangers
 2021,TOR,TOR,TOR,Toronto Blue Jays
 2021,WAS,WSN,WAS,Washington Nationals
+2022,ARI,ARI,ARI,Arizona Diamondbacks
+2022,ATL,ATL,ATL,Atlanta Braves
+2022,BAL,BAL,BAL,Baltimore Orioles
+2022,BOS,BOS,BOS,Boston Red Sox
+2022,CHA,CHW,CHA,Chicago White Sox
+2022,CHN,CHC,CHN,Chicago Cubs
+2022,CIN,CIN,CIN,Cincinnati Reds
+2022,CLE,CLE,CLE,Cleveland Guardians
+2022,COL,COL,COL,Colorado Rockies
+2022,DET,DET,DET,Detroit Tigers
+2022,HOU,HOU,HOU,Houston Astros
+2022,KCA,KCR,KCA,Kansas City Royals
+2022,LAA,LAA,ANA,Los Angeles Angels of Anaheim
+2022,LAN,LAD,LAN,Los Angeles Dodgers
+2022,MIA,MIA,MIA,Miami Marlins
+2022,MIL,MIL,MIL,Milwaukee Brewers
+2022,MIN,MIN,MIN,Minnesota Twins
+2022,NYA,NYY,NYA,New York Yankees
+2022,NYN,NYM,NYN,New York Mets
+2022,OAK,OAK,OAK,Oakland Athletics
+2022,PHI,PHI,PHI,Philadelphia Phillies
+2022,PIT,PIT,PIT,Pittsburgh Pirates
+2022,SDN,SDP,SDN,San Diego Padres
+2022,SEA,SEA,SEA,Seattle Mariners
+2022,SFN,SFG,SFN,San Francisco Giants
+2022,SLN,STL,SLN,St. Louis Cardinals
+2022,TBA,TBR,TBA,Tampa Bay Rays
+2022,TEX,TEX,TEX,Texas Rangers
+2022,TOR,TOR,TOR,Toronto Blue Jays
+2022,WAS,WSN,WAS,Washington Nationals
+2023,ARI,ARI,ARI,Arizona Diamondbacks
+2023,ATL,ATL,ATL,Atlanta Braves
+2023,BAL,BAL,BAL,Baltimore Orioles
+2023,BOS,BOS,BOS,Boston Red Sox
+2023,CHA,CHW,CHA,Chicago White Sox
+2023,CHN,CHC,CHN,Chicago Cubs
+2023,CIN,CIN,CIN,Cincinnati Reds
+2023,CLE,CLE,CLE,Cleveland Guardians
+2023,COL,COL,COL,Colorado Rockies
+2023,DET,DET,DET,Detroit Tigers
+2023,HOU,HOU,HOU,Houston Astros
+2023,KCA,KCR,KCA,Kansas City Royals
+2023,LAA,LAA,ANA,Los Angeles Angels of Anaheim
+2023,LAN,LAD,LAN,Los Angeles Dodgers
+2023,MIA,MIA,MIA,Miami Marlins
+2023,MIL,MIL,MIL,Milwaukee Brewers
+2023,MIN,MIN,MIN,Minnesota Twins
+2023,NYA,NYY,NYA,New York Yankees
+2023,NYN,NYM,NYN,New York Mets
+2023,OAK,OAK,OAK,Oakland Athletics
+2023,PHI,PHI,PHI,Philadelphia Phillies
+2023,PIT,PIT,PIT,Pittsburgh Pirates
+2023,SDN,SDP,SDN,San Diego Padres
+2023,SEA,SEA,SEA,Seattle Mariners
+2023,SFN,SFG,SFN,San Francisco Giants
+2023,SLN,STL,SLN,St. Louis Cardinals
+2023,TBA,TBR,TBA,Tampa Bay Rays
+2023,TEX,TEX,TEX,Texas Rangers
+2023,TOR,TOR,TOR,Toronto Blue Jays
+2023,WAS,WSN,WAS,Washington Nationals
+2024,ARI,ARI,ARI,Arizona Diamondbacks
+2024,ATL,ATL,ATL,Atlanta Braves
+2024,BAL,BAL,BAL,Baltimore Orioles
+2024,BOS,BOS,BOS,Boston Red Sox
+2024,CHA,CHW,CHA,Chicago White Sox
+2024,CHN,CHC,CHN,Chicago Cubs
+2024,CIN,CIN,CIN,Cincinnati Reds
+2024,CLE,CLE,CLE,Cleveland Guardians
+2024,COL,COL,COL,Colorado Rockies
+2024,DET,DET,DET,Detroit Tigers
+2024,HOU,HOU,HOU,Houston Astros
+2024,KCA,KCR,KCA,Kansas City Royals
+2024,LAA,LAA,ANA,Los Angeles Angels of Anaheim
+2024,LAN,LAD,LAN,Los Angeles Dodgers
+2024,MIA,MIA,MIA,Miami Marlins
+2024,MIL,MIL,MIL,Milwaukee Brewers
+2024,MIN,MIN,MIN,Minnesota Twins
+2024,NYA,NYY,NYA,New York Yankees
+2024,NYN,NYM,NYN,New York Mets
+2024,OAK,OAK,OAK,Oakland Athletics
+2024,PHI,PHI,PHI,Philadelphia Phillies
+2024,PIT,PIT,PIT,Pittsburgh Pirates
+2024,SDN,SDP,SDN,San Diego Padres
+2024,SEA,SEA,SEA,Seattle Mariners
+2024,SFN,SFG,SFN,San Francisco Giants
+2024,SLN,STL,SLN,St. Louis Cardinals
+2024,TBA,TBR,TBA,Tampa Bay Rays
+2024,TEX,TEX,TEX,Texas Rangers
+2024,TOR,TOR,TOR,Toronto Blue Jays
+2024,WAS,WSN,WAS,Washington Nationals
+2025,ARI,ARI,ARI,Arizona Diamondbacks
+2025,ATH,ATH,ATH,Athletics
+2025,ATL,ATL,ATL,Atlanta Braves
+2025,BAL,BAL,BAL,Baltimore Orioles
+2025,BOS,BOS,BOS,Boston Red Sox
+2025,CHA,CHW,CHA,Chicago White Sox
+2025,CHN,CHC,CHN,Chicago Cubs
+2025,CIN,CIN,CIN,Cincinnati Reds
+2025,CLE,CLE,CLE,Cleveland Guardians
+2025,COL,COL,COL,Colorado Rockies
+2025,DET,DET,DET,Detroit Tigers
+2025,HOU,HOU,HOU,Houston Astros
+2025,KCA,KCR,KCA,Kansas City Royals
+2025,LAA,LAA,ANA,Los Angeles Angels of Anaheim
+2025,LAN,LAD,LAN,Los Angeles Dodgers
+2025,MIA,MIA,MIA,Miami Marlins
+2025,MIL,MIL,MIL,Milwaukee Brewers
+2025,MIN,MIN,MIN,Minnesota Twins
+2025,NYA,NYY,NYA,New York Yankees
+2025,NYN,NYM,NYN,New York Mets
+2025,PHI,PHI,PHI,Philadelphia Phillies
+2025,PIT,PIT,PIT,Pittsburgh Pirates
+2025,SDN,SDP,SDN,San Diego Padres
+2025,SEA,SEA,SEA,Seattle Mariners
+2025,SFN,SFG,SFN,San Francisco Giants
+2025,SLN,STL,SLN,St. Louis Cardinals
+2025,TBA,TBR,TBA,Tampa Bay Rays
+2025,TEX,TEX,TEX,Texas Rangers
+2025,TOR,TOR,TOR,Toronto Blue Jays
+2025,WAS,WSN,WAS,Washington Nationals
