@@ -59,7 +59,7 @@ p {
 
 .scorebug-shell {
   display: grid;
-  grid-template-columns: 0.9fr 1.55fr 1.1fr;
+  grid-template-columns: minmax(96px, 0.85fr) minmax(190px, 1.65fr) minmax(120px, 1fr);
   gap: 8px;
   align-items: stretch;
   padding: 10px;
@@ -72,23 +72,24 @@ p {
 }
 
 .scorebug-block {
-  display: flex;
-  align-items: center;
+  display: grid;
+  align-items: stretch;
   padding: 10px 12px;
   border-radius: 12px;
   background: rgba(248, 242, 226, 0.08);
+  min-height: 94px;
 }
 
 .scorebug-left {
-  justify-content: flex-start;
+  align-items: center;
 }
 
 .scorebug-middle {
-  justify-content: center;
+  align-items: center;
 }
 
 .scorebug-right {
-  justify-content: flex-end;
+  align-items: center;
 }
 
 .scorebug-title {
@@ -102,6 +103,8 @@ p {
 .scorebug-identity {
   display: grid;
   gap: 4px;
+  align-content: center;
+  min-height: 62px;
 }
 
 .scorebug-kicker,
@@ -121,14 +124,22 @@ p {
   gap: 12px;
 }
 
-.scorebug-metrics-right {
-  justify-content: flex-end;
+.scorebug-center-grid {
+  display: grid;
+  grid-template-columns: minmax(34px, 0.72fr) minmax(34px, 0.72fr) minmax(72px, 1.35fr);
+  align-items: center;
+  justify-items: center;
+  gap: 12px;
+  width: 100%;
 }
 
 .scorebug-metric {
   display: grid;
-  gap: 4px;
+  gap: 6px;
+  align-content: center;
+  justify-items: center;
   min-width: 34px;
+  min-height: 62px;
 }
 
 .scorebug-metric-label {
@@ -146,13 +157,16 @@ p {
 
 .diamond-shell {
   display: grid;
-  gap: 6px;
+  gap: 5px;
+  align-content: center;
+  justify-items: center;
+  min-height: 62px;
 }
 
 .base-diamond {
   position: relative;
-  width: 56px;
-  height: 46px;
+  width: 50px;
+  height: 38px;
 }
 
 .base-diamond::before,
@@ -163,17 +177,17 @@ p {
 }
 
 .base-diamond::before {
-  top: 8px;
-  left: 14px;
-  width: 28px;
+  top: 10px;
+  left: 13px;
+  width: 24px;
   height: 1px;
   transform: rotate(45deg);
 }
 
 .base-diamond::after {
-  top: 8px;
-  left: 14px;
-  width: 28px;
+  top: 10px;
+  left: 13px;
+  width: 24px;
   height: 1px;
   transform: rotate(-45deg);
 }
@@ -194,28 +208,32 @@ p {
 }
 
 .base-marker-first {
-  right: 6px;
+  right: 5px;
   top: 18px;
 }
 
 .base-marker-second {
-  left: 22px;
-  top: 2px;
+  left: 19px;
+  top: 4px;
 }
 
 .base-marker-third {
-  left: 6px;
+  left: 5px;
   top: 18px;
 }
 
 .count-panel {
   display: grid;
-  gap: 10px;
+  align-content: center;
+  justify-items: end;
+  gap: 12px;
+  min-height: 62px;
+  width: 100%;
 }
 
 .count-indicator {
   display: grid;
-  gap: 5px;
+  gap: 6px;
   justify-items: end;
 }
 
@@ -500,22 +518,60 @@ button:disabled {
 
 @media (max-width: 640px) {
   .scorebug-shell {
-    grid-template-columns: 1fr;
+    grid-template-columns: minmax(74px, 0.75fr) minmax(150px, 1.55fr) minmax(96px, 0.95fr);
+    gap: 6px;
+    padding: 8px;
   }
 
-  .scorebug-left,
-  .scorebug-middle,
-  .scorebug-right,
-  .hint-block {
-    align-items: stretch;
-    justify-content: flex-start;
+  .scorebug-block {
+    min-height: 82px;
+    padding: 8px;
+    border-radius: 10px;
   }
 
-  .scorebug-metrics {
-    flex-wrap: wrap;
+  .scorebug-title {
+    font-size: 20px;
   }
 
-  .count-indicator,
+  .scorebug-center-grid {
+    grid-template-columns: minmax(26px, 0.66fr) minmax(26px, 0.66fr) minmax(52px, 1.45fr);
+    gap: 8px;
+  }
+
+  .scorebug-metric {
+    min-width: 26px;
+  }
+
+  .scorebug-metric-value {
+    font-size: 20px;
+  }
+
+  .base-diamond {
+    width: 44px;
+    height: 34px;
+  }
+
+  .base-diamond::before,
+  .base-diamond::after {
+    left: 11px;
+    width: 22px;
+  }
+
+  .base-marker-first {
+    right: 4px;
+    top: 16px;
+  }
+
+  .base-marker-second {
+    left: 16px;
+    top: 4px;
+  }
+
+  .base-marker-third {
+    left: 4px;
+    top: 16px;
+  }
+
   .at-bat-count {
     justify-items: start;
   }
@@ -530,5 +586,31 @@ button:disabled {
 
   .pitch-list {
     display: grid;
+  }
+}
+
+@media (max-width: 480px) {
+  .scorebug-shell {
+    grid-template-columns: 1fr;
+  }
+
+  .scorebug-block {
+    min-height: auto;
+  }
+
+  .scorebug-identity,
+  .scorebug-metric,
+  .diamond-shell,
+  .count-panel {
+    min-height: 52px;
+  }
+
+  .scorebug-center-grid {
+    grid-template-columns: 1fr 1fr 1.25fr;
+  }
+
+  .count-panel,
+  .count-indicator {
+    justify-items: start;
   }
 }

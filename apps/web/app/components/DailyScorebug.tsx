@@ -24,7 +24,7 @@ export function DailyScorebug({
         </div>
       )}
       middle={(
-        <div className="scorebug-metrics">
+        <div className="scorebug-center-grid">
           <ScorebugMetric label="R" value={summary.runs} />
           <ScorebugMetric label="H" value={summary.hits} />
           <BaseOccupancyIndicator bases={bases} />
