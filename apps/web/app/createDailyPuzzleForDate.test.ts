@@ -1,8 +1,13 @@
 import { describe, expect, it } from 'vitest';
-import { coreDailyEligiblePlayers } from '@initial-baseball/baseball-data';
+import { baseballPlayers, coreDailyEligiblePlayers } from '@initial-baseball/baseball-data';
 import type { Player } from '@initial-baseball/shared';
-import { createDailyPuzzleForDate, getDailyPuzzleNumber } from './createDailyPuzzleForDate';
+import {
+  createDailyPuzzleForDate,
+  createDailyPuzzleForDateWithOverrides,
+  getDailyPuzzleNumber,
+} from './createDailyPuzzleForDate';
 import { createGamePitchesFromPuzzle, createPlayerIdentity } from './dailyPuzzleAdapters';
+import { DAILY_PUZZLE_OVERRIDES } from './dailyPuzzleOverrides';
 
 describe('createDailyPuzzleForDate', () => {
   it('returns the same player ids in the same order for the same date', () => {
@@ -12,6 +17,38 @@ describe('createDailyPuzzleForDate', () => {
     expect(firstPuzzle.pitches.map((pitch) => pitch.player.playerId)).toEqual(
       secondPuzzle.pitches.map((pitch) => pitch.player.playerId),
     );
+  });
+
+  it('uses manual override players in the specified order for override dates', () => {
+    const puzzle = createDailyPuzzleForDate('2026-05-04');
+    const overrideNames = DAILY_PUZZLE_OVERRIDES['2026-05-04'];
+
+    expect(puzzle.pitches.map((pitch) => pitch.player.fullName)).toEqual(overrideNames);
+  });
+
+  it('creates override puzzles with six unique players', () => {
+    const puzzle = createDailyPuzzleForDate('2026-05-04');
+    const playerIds = puzzle.pitches.map((pitch) => pitch.player.playerId);
+
+    expect(puzzle.pitches).toHaveLength(6);
+    expect(new Set(playerIds).size).toBe(playerIds.length);
+  });
+
+  it('does not require override players to come from the core Daily pool', () => {
+    const puzzle = createDailyPuzzleForDateWithOverrides('2026-05-05', {
+      '2026-05-05': [
+        'A. J. Jiménez',
+        'Ken Griffey Jr.',
+        'David Wright',
+        'CC Sabathia',
+        'Albert Pujols',
+        'Derek Jeter',
+      ],
+    });
+    const overridePlayer = baseballPlayers.find((player) => player.fullName === 'A. J. Jiménez');
+
+    expect(overridePlayer?.dailyEligibilityTier).toBe('none');
+    expect(puzzle.pitches[0]?.player.fullName).toBe('A. J. Jiménez');
   });
 
   it('usually returns a different player sequence for nearby dates', () => {
@@ -43,6 +80,17 @@ describe('createDailyPuzzleForDate', () => {
     }
   });
 
+  it('still uses deterministic core players when no override exists', () => {
+    const puzzle = createDailyPuzzleForDate('2026-05-02');
+    const playerIds = puzzle.pitches.map((pitch) => pitch.player.playerId);
+
+    for (const playerId of playerIds) {
+      const player = coreDailyEligiblePlayers.find((candidate) => candidate.id === playerId);
+
+      expect(player).toBeDefined();
+    }
+  });
+
   it('keeps puzzle metadata stable and increments puzzle numbers by one day', () => {
     const firstPuzzle = createDailyPuzzleForDate('2026-04-27');
     const secondPuzzle = createDailyPuzzleForDate('2026-04-28');
@@ -50,6 +98,45 @@ describe('createDailyPuzzleForDate', () => {
     expect(firstPuzzle.puzzleDate).toBe('2026-04-27');
     expect(firstPuzzle.puzzleNumber).toBe(getDailyPuzzleNumber('2026-04-27'));
     expect(secondPuzzle.puzzleNumber).toBe(firstPuzzle.puzzleNumber + 1);
+  });
+
+  it('throws a clear error for missing override player names', () => {
+    expect(() => createDailyPuzzleForDateWithOverrides('2026-05-06', {
+      '2026-05-06': [
+        'Definitely Not A Real Player',
+        'Ken Griffey Jr.',
+        'David Wright',
+        'CC Sabathia',
+        'Albert Pujols',
+        'Derek Jeter',
+      ],
+    })).toThrow('Daily puzzle override for 2026-05-06 could not resolve player: Definitely Not A Real Player.');
+  });
+
+  it('throws a clear error when an override resolves duplicate players', () => {
+    expect(() => createDailyPuzzleForDateWithOverrides('2026-05-07', {
+      '2026-05-07': [
+        'Ken Griffey Jr.',
+        'Ken Griffey Jr.',
+        'David Wright',
+        'CC Sabathia',
+        'Albert Pujols',
+        'Derek Jeter',
+      ],
+    })).toThrow('Daily puzzle override for 2026-05-07 resolves duplicate player:');
+  });
+
+  it('throws a clear error when an override player name is ambiguous', () => {
+    expect(() => createDailyPuzzleForDateWithOverrides('2026-05-08', {
+      '2026-05-08': [
+        'David Ortiz',
+        'Ken Griffey Jr.',
+        'David Wright',
+        'CC Sabathia',
+        'Derek Jeter',
+        'Ichiro Suzuki',
+      ],
+    })).toThrow('Daily puzzle override for 2026-05-08 resolved ambiguous player name: David Ortiz.');
   });
 });
 
@@ -69,6 +156,22 @@ describe('createGamePitchesFromPuzzle', () => {
         'position',
         'stats',
       ]);
+      expect(pitch.hints[0]?.hintValue).toBe(player?.mainDecade);
+      expect(pitch.hints[1]?.hintValue).toBe(player?.teamsDisplay);
+      expect(pitch.hints[2]?.hintValue).toBe(player?.primaryPosition);
+      expect(pitch.hints[3]?.hintValue).toBe(player?.statsLine);
+    }
+  });
+
+  it('builds override player hints from generated player records', () => {
+    const puzzle = createDailyPuzzleForDate('2026-05-04');
+    const pitches = createGamePitchesFromPuzzle(puzzle);
+
+    for (const pitch of pitches) {
+      const player = baseballPlayers.find((candidate) => candidate.id === pitch.correctPlayerId);
+
+      expect(player).toBeDefined();
+      expect(pitch.hints).toHaveLength(4);
       expect(pitch.hints[0]?.hintValue).toBe(player?.mainDecade);
       expect(pitch.hints[1]?.hintValue).toBe(player?.teamsDisplay);
       expect(pitch.hints[2]?.hintValue).toBe(player?.primaryPosition);
