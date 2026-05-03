@@ -15,6 +15,7 @@ export type AtBatCardPitch = {
   pitchNumber: number;
   player: {
     initials: string;
+    fullName: string;
   };
   hints: Array<{
     hintLabel: string;
@@ -36,6 +37,7 @@ type AtBatCardProps = {
   onSelectPlayer: (playerId: string, displayName: string) => void;
   onRevealHint: () => void;
   onSubmit: () => void;
+  onGiveUp: () => void;
   onNextPitch: () => void;
 };
 
@@ -47,6 +49,7 @@ export function AtBatCard({
   onSelectPlayer,
   onRevealHint,
   onSubmit,
+  onGiveUp,
   onNextPitch,
 }: AtBatCardProps): JSX.Element {
   const results = useMemo(() => searchPlayers(state.query, players).slice(0, 5), [players, state.query]);
@@ -63,7 +66,12 @@ export function AtBatCard({
           <span className="pitch-number">{`Pitch ${atBat.pitchNumber}`}</span>
           <CountIndicator label="Strikes" filledCount={state.strikeCount} total={3} />
         </div>
-        <ResultDisplay result={resolvedTerminalResult} />
+        <ResultDisplay
+          result={resolvedTerminalResult}
+          correctAnswer={atBat.player.fullName}
+          revealAnswer={resolvedTerminalResult.kind === 'strikeout'}
+        />
+        <OutcomeDistributionPlaceholder />
         <button
           type="button"
           className="button-primary"
@@ -130,14 +138,23 @@ export function AtBatCard({
         <ResultDisplay result={state.submittedResult} />
       ) : null}
 
-      <button
-        type="button"
-        className="button-primary"
-        onClick={onSubmit}
-        disabled={state.selectedPlayerId === null}
-      >
-        Submit Guess
-      </button>
+      <div className="at-bat-actions">
+        <button
+          type="button"
+          className="button-secondary button-give-up"
+          onClick={onGiveUp}
+        >
+          Give up
+        </button>
+        <button
+          type="button"
+          className="button-primary"
+          onClick={onSubmit}
+          disabled={state.selectedPlayerId === null}
+        >
+          Submit Guess
+        </button>
+      </div>
     </div>
   );
 
@@ -170,5 +187,15 @@ function CountIndicator({
         ))}
       </div>
     </div>
+  );
+}
+
+function OutcomeDistributionPlaceholder(): JSX.Element {
+  return (
+    <section className="outcome-distribution-card">
+      <span className="field-label">Field Results</span>
+      {/* TODO: Replace with persisted public Daily results grouped by puzzleNumber, pitchNumber, and outcome. */}
+      <p className="result-note">Outcome distribution will appear once public results are collected.</p>
+    </section>
   );
 }

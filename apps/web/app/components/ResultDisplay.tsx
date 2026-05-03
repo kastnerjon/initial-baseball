@@ -3,14 +3,19 @@ import type { DailyGuessResult } from '@initial-baseball/shared';
 
 type ResultDisplayProps = {
   result: DailyGuessResult;
+  correctAnswer?: string;
+  revealAnswer?: boolean;
 };
 
-export function ResultDisplay({ result }: ResultDisplayProps): JSX.Element {
+export function ResultDisplay({ result, correctAnswer, revealAnswer = false }: ResultDisplayProps): JSX.Element {
   if (result.kind === 'correct') {
     return (
       <div className="result-card">
         <span className="result-label">Outcome</span>
         <strong className="result-value">{result.outcome}</strong>
+        {correctAnswer !== undefined ? (
+          <p className="result-note">{`Answer: ${correctAnswer}`}</p>
+        ) : null}
       </div>
     );
   }
@@ -20,6 +25,10 @@ export function ResultDisplay({ result }: ResultDisplayProps): JSX.Element {
       <div className="result-card">
         <span className="result-label">Outcome</span>
         <strong className="result-value">{result.outcome}</strong>
+        <p className="result-note">Strikeout</p>
+        {revealAnswer && correctAnswer !== undefined ? (
+          <p className="result-note">{`Answer: ${correctAnswer}`}</p>
+        ) : null}
       </div>
     );
   }

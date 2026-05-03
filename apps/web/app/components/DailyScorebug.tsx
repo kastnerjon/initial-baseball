@@ -74,7 +74,7 @@ function BaseMarker({
   return (
     <span
       className={occupied ? `base-marker ${className} occupied` : `base-marker ${className}`}
-      aria-label={label}
+      aria-label={`${label} ${occupied ? 'occupied' : 'empty'}`}
     />
   );
 }
