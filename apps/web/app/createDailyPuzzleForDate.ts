@@ -9,11 +9,11 @@ import {
 } from '@initial-baseball/shared';
 import type { Player } from '@initial-baseball/shared';
 import { createDailyPuzzlePitch } from './dailyPuzzleAdapters';
-import { DAILY_PUZZLE_OVERRIDES } from './dailyPuzzleOverrides';
+import { DAILY_PUZZLE_OVERRIDES, type DailyPuzzleOverrideEntry } from './dailyPuzzleOverrides';
 
 export const DAILY_PUZZLE_EPOCH = '2026-04-27';
 const DAILY_PITCH_COUNT = 6;
-type DailyPuzzleOverrideMap = Record<string, readonly string[]>;
+type DailyPuzzleOverrideMap = Record<string, readonly DailyPuzzleOverrideEntry[]>;
 
 export function createDailyPuzzleForDate(date: string): DailyPuzzle {
   return createDailyPuzzleForDateWithOverrides(date, DAILY_PUZZLE_OVERRIDES);
@@ -61,16 +61,19 @@ function selectPlayersForDate(date: string, overrides: DailyPuzzleOverrideMap): 
     .slice(0, DAILY_PITCH_COUNT);
 }
 
-function getOverrideNames(date: string, overrides: DailyPuzzleOverrideMap): readonly string[] | undefined {
+function getOverrideNames(date: string, overrides: DailyPuzzleOverrideMap): readonly DailyPuzzleOverrideEntry[] | undefined {
   return overrides[date];
 }
 
-function resolveOverridePlayers(date: string, names: readonly string[]): Player[] {
-  if (names.length !== DAILY_PITCH_COUNT) {
+export function resolveDailyPuzzleOverridePlayers(
+  date: string,
+  overrideEntries: readonly DailyPuzzleOverrideEntry[],
+): Player[] {
+  if (overrideEntries.length !== DAILY_PITCH_COUNT) {
     throw new Error(`Daily puzzle override for ${date} must contain exactly ${DAILY_PITCH_COUNT} players.`);
   }
 
-  const players = names.map((name) => resolveOverridePlayer(date, name));
+  const players = overrideEntries.map((entry) => resolveOverridePlayer(date, entry));
   const duplicatePlayer = findFirstDuplicate(players.map((player) => player.id));
 
   if (duplicatePlayer !== null) {
@@ -80,7 +83,19 @@ function resolveOverridePlayers(date: string, names: readonly string[]): Player[
   return players;
 }
 
-function resolveOverridePlayer(date: string, name: string): Player {
+function resolveOverridePlayers(date: string, entries: readonly DailyPuzzleOverrideEntry[]): Player[] {
+  return resolveDailyPuzzleOverridePlayers(date, entries);
+}
+
+function resolveOverridePlayer(date: string, entry: DailyPuzzleOverrideEntry): Player {
+  if (typeof entry !== 'string') {
+    return resolveOverridePlayerById(date, entry);
+  }
+
+  return resolveOverridePlayerByName(date, entry);
+}
+
+function resolveOverridePlayerByName(date: string, name: string): Player {
   const matchingPlayers = findExactPlayerMatches(name);
 
   if (matchingPlayers.length === 0) {
@@ -100,6 +115,23 @@ function resolveOverridePlayer(date: string, name: string): Player {
   return player;
 }
 
+function resolveOverridePlayerById(
+  date: string,
+  entry: Exclude<DailyPuzzleOverrideEntry, string>,
+): Player {
+  const player = baseballPlayers.find((candidate) => candidate.id === entry.playerId);
+
+  if (player === undefined) {
+    throw new Error(`Daily puzzle override for ${date} could not resolve playerId: ${entry.playerId}.`);
+  }
+
+  if (entry.name !== undefined && !doesPlayerMatchName(player, entry.name)) {
+    throw new Error(`Daily puzzle override for ${date} playerId ${entry.playerId} does not match name: ${entry.name}.`);
+  }
+
+  return player;
+}
+
 function findExactPlayerMatches(name: string): Player[] {
   const fullNameMatches = baseballPlayers.filter((player) => player.fullName === name);
 
@@ -114,6 +146,10 @@ function findExactPlayerMatches(name: string): Player[] {
   }
 
   return baseballPlayers.filter((player) => player.aliases.includes(name));
+}
+
+function doesPlayerMatchName(player: Player, name: string): boolean {
+  return player.fullName === name || player.displayName === name || player.aliases.includes(name);
 }
 
 function findFirstDuplicate(values: string[]): string | null {
