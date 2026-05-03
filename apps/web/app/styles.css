@@ -263,6 +263,7 @@ p {
 .initials-block,
 .hint-block,
 .result-card,
+.outcome-distribution-card,
 .pitch-results-card,
 .complete-card,
 .share-card {
@@ -331,6 +332,17 @@ p {
 .result-note {
   margin: 0;
   font-size: 16px;
+}
+
+.at-bat-actions {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.button-give-up {
+  color: #7a281f;
+  background: rgba(122, 40, 31, 0.1);
 }
 
 .at-bat-count {
@@ -510,6 +522,10 @@ button:disabled {
 
   .hint-block {
     flex-direction: column;
+  }
+
+  .at-bat-actions {
+    flex-direction: column-reverse;
   }
 
   .pitch-list {

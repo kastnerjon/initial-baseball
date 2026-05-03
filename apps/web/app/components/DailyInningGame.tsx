@@ -3,13 +3,17 @@
 import type { JSX } from 'react';
 import { useMemo, useState } from 'react';
 import {
-  applyDailyOutcomeToInning,
   createDailyShareResult,
   evaluateGuess,
   formatDailyShareText,
   getGuessOutcome,
 } from '@initial-baseball/engine';
-import type { DailyGameState, DailyPuzzle, DailySharePitchLine, Player } from '@initial-baseball/shared';
+import type { DailyGameState, DailyGuessResult, DailyPuzzle, Player } from '@initial-baseball/shared';
+import {
+  type PendingAtBatAdvance,
+  createGiveUpResult,
+  resolveDailyTerminalAtBat,
+} from '../dailyAtBatResolution';
 import {
   type DemoAtBatUiState,
   type DemoDailyPitch,
@@ -25,13 +29,6 @@ type DailyInningGameProps = {
   puzzle: DailyPuzzle;
   demoPitches: DemoDailyPitch[];
   players: Player[];
-};
-
-type PendingAtBatAdvance = {
-  inning: DailyGameState['inning'];
-  score: DailyGameState['score'];
-  pitchLines: DailySharePitchLine[];
-  nextPitchIndex: number;
 };
 
 export function DailyInningGame({ puzzle, demoPitches, players }: DailyInningGameProps): JSX.Element {
@@ -111,6 +108,7 @@ export function DailyInningGame({ puzzle, demoPitches, players }: DailyInningGam
           }));
         }}
         onSubmit={() => handleSubmit(currentDemoPitch)}
+        onGiveUp={() => handleGiveUp(currentDemoPitch)}
         onNextPitch={handleNextPitch}
       />
     </div>
@@ -139,39 +137,30 @@ export function DailyInningGame({ puzzle, demoPitches, players }: DailyInningGam
       return;
     }
 
-    let outcome: DailySharePitchLine['outcome'];
-
     if (result.kind === 'correct') {
-      outcome = result.outcome;
+      resolveTerminalResult(pitch, result);
     } else if (result.kind === 'strikeout') {
-      outcome = 'K';
-    } else {
-      return;
+      resolveTerminalResult(pitch, result);
     }
+  }
 
-    const nextEngineState = applyDailyOutcomeToInning({
-      inning: gameState.inning,
-      score: gameState.score,
-      outcome,
-    });
+  function handleGiveUp(pitch: DemoDailyPitch): void {
+    resolveTerminalResult(pitch, createGiveUpResult(atBatState.revealCount, 3));
+  }
 
-    const nextPitchLines: DailySharePitchLine[] = [
-      ...gameState.completedPitchLines,
-      {
-        initials: pitch.player.initials,
-        outcome,
-      },
-    ];
-
-    const nextPitchIndex = currentPitchIndex + 1;
-    setPendingAdvance({
-      inning: nextEngineState.inning,
-      score: nextEngineState.score,
-      pitchLines: nextPitchLines,
-      nextPitchIndex,
-    });
+  function resolveTerminalResult(
+    pitch: DemoDailyPitch,
+    result: Extract<DailyGuessResult, { kind: 'correct' | 'strikeout' }>,
+  ): void {
+    setPendingAdvance(resolveDailyTerminalAtBat({
+      gameState,
+      pitch,
+      result,
+      currentPitchIndex,
+    }));
     setAtBatState((currentState) => ({
       ...currentState,
+      strikeCount: result.kind === 'strikeout' ? result.strikeCount : currentState.strikeCount,
       submittedResult: result,
     }));
   }
