@@ -3,9 +3,10 @@ import { baseballPlayers } from '@initial-baseball/baseball-data';
 import { DailyInningGame } from './components/DailyInningGame';
 import { createDailyPuzzleForDate } from './createDailyPuzzleForDate';
 import { createGamePitchesFromPuzzle } from './dailyPuzzleAdapters';
+import { getPacificDailyDateString } from './getPacificDailyDateString';
 
 export default function DailyInningHomePage(): JSX.Element {
-  const puzzle = createDailyPuzzleForDate(getTodayDateString());
+  const puzzle = createDailyPuzzleForDate(getPacificDailyDateString());
   const pitches = createGamePitchesFromPuzzle(puzzle);
 
   return (
@@ -17,8 +18,4 @@ export default function DailyInningHomePage(): JSX.Element {
       </section>
     </main>
   );
-}
-
-function getTodayDateString(): string {
-  return new Date().toISOString().slice(0, 10);
 }

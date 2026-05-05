@@ -5,6 +5,7 @@ import {
   createDailyPuzzleForDate,
   createDailyPuzzleForDateWithOverrides,
   getDailyPuzzleNumber,
+  resolveDailyPuzzleOverridePlayers,
 } from './createDailyPuzzleForDate';
 import { createGamePitchesFromPuzzle, createPlayerIdentity } from './dailyPuzzleAdapters';
 import { DAILY_PUZZLE_OVERRIDES } from './dailyPuzzleOverrides';
@@ -24,6 +25,12 @@ describe('createDailyPuzzleForDate', () => {
     const overrideNames = DAILY_PUZZLE_OVERRIDES['2026-05-04'];
 
     expect(puzzle.pitches.map((pitch) => pitch.player.fullName)).toEqual(overrideNames);
+  });
+
+  it('keeps simple string override entries working', () => {
+    const players = resolveDailyPuzzleOverridePlayers('2026-05-04', DAILY_PUZZLE_OVERRIDES['2026-05-04']);
+
+    expect(players.map((player) => player.fullName)).toEqual(DAILY_PUZZLE_OVERRIDES['2026-05-04']);
   });
 
   it('creates override puzzles with six unique players', () => {
@@ -138,6 +145,78 @@ describe('createDailyPuzzleForDate', () => {
       ],
     })).toThrow('Daily puzzle override for 2026-05-08 resolved ambiguous player name: David Ortiz.');
   });
+
+  it('resolves object override entries by playerId', () => {
+    const davidOrtiz = requirePlayerById('chadwick:0fa4c972');
+    const puzzle = createDailyPuzzleForDateWithOverrides('2026-05-09', {
+      '2026-05-09': [
+        { name: 'David Ortiz', playerId: davidOrtiz.id },
+        'Ken Griffey Jr.',
+        'David Wright',
+        'CC Sabathia',
+        'Derek Jeter',
+        'Ichiro Suzuki',
+      ],
+    });
+
+    expect(puzzle.pitches[0]?.player.playerId).toBe(davidOrtiz.id);
+    expect(puzzle.pitches[0]?.player.fullName).toBe(davidOrtiz.fullName);
+  });
+
+  it('throws a clear error for object override entries with a bad playerId', () => {
+    expect(() => createDailyPuzzleForDateWithOverrides('2026-05-10', {
+      '2026-05-10': [
+        { name: 'David Ortiz', playerId: 'missing-player-id' },
+        'Ken Griffey Jr.',
+        'David Wright',
+        'CC Sabathia',
+        'Derek Jeter',
+        'Ichiro Suzuki',
+      ],
+    })).toThrow('Daily puzzle override for 2026-05-10 could not resolve playerId: missing-player-id.');
+  });
+
+  it('throws a clear error for object override entries with a mismatched name', () => {
+    const davidOrtiz = requirePlayerById('chadwick:0fa4c972');
+
+    expect(() => createDailyPuzzleForDateWithOverrides('2026-05-11', {
+      '2026-05-11': [
+        { name: 'Ken Griffey Jr.', playerId: davidOrtiz.id },
+        'David Wright',
+        'CC Sabathia',
+        'Albert Pujols',
+        'Derek Jeter',
+        'Ichiro Suzuki',
+      ],
+    })).toThrow(`Daily puzzle override for 2026-05-11 playerId ${davidOrtiz.id} does not match name: Ken Griffey Jr.`);
+  });
+
+  it('allows an ambiguous player when a playerId object disambiguates it', () => {
+    const davidOrtiz = requirePlayerById('chadwick:0fa4c972');
+    const players = resolveDailyPuzzleOverridePlayers('2026-05-12', [
+      { name: 'David Ortiz', playerId: davidOrtiz.id },
+      'Ken Griffey Jr.',
+      'David Wright',
+      'CC Sabathia',
+      'Derek Jeter',
+      'Ichiro Suzuki',
+    ]);
+
+    expect(players[0]?.id).toBe(davidOrtiz.id);
+  });
+
+  it('still throws when object override entries resolve duplicate player IDs', () => {
+    const kenGriffeyJr = requirePlayerByName('Ken Griffey Jr.');
+
+    expect(() => resolveDailyPuzzleOverridePlayers('2026-05-13', [
+      'Ken Griffey Jr.',
+      { name: 'Ken Griffey Jr.', playerId: kenGriffeyJr.id },
+      'David Wright',
+      'CC Sabathia',
+      'Derek Jeter',
+      'Ichiro Suzuki',
+    ])).toThrow('Daily puzzle override for 2026-05-13 resolves duplicate player:');
+  });
 });
 
 describe('createGamePitchesFromPuzzle', () => {
@@ -204,4 +283,24 @@ function buildPlayer(displayName: string): Player {
     dailyEligible: true,
     aliases: [],
   };
+}
+
+function requirePlayerById(playerId: string): Player {
+  const player = baseballPlayers.find((candidate) => candidate.id === playerId);
+
+  if (player === undefined) {
+    throw new Error(`Missing expected player: ${playerId}`);
+  }
+
+  return player;
+}
+
+function requirePlayerByName(name: string): Player {
+  const player = baseballPlayers.find((candidate) => candidate.fullName === name);
+
+  if (player === undefined) {
+    throw new Error(`Missing expected player: ${name}`);
+  }
+
+  return player;
 }
