@@ -168,42 +168,23 @@ p {
   height: 46px;
 }
 
-.base-diamond::before,
-.base-diamond::after {
-  content: "";
-  position: absolute;
-  background: rgba(249, 243, 230, 0.18);
-}
-
-.base-diamond::before {
-  top: 8px;
-  left: 14px;
-  width: 28px;
-  height: 1px;
-  transform: rotate(45deg);
-}
-
-.base-diamond::after {
-  top: 8px;
-  left: 14px;
-  width: 28px;
-  height: 1px;
-  transform: rotate(-45deg);
-}
-
 .base-marker {
   position: absolute;
-  width: 12px;
-  height: 12px;
-  border: 2px solid rgba(249, 243, 230, 0.62);
+  width: 14px;
+  height: 14px;
+  border: 2px solid rgba(249, 243, 230, 0.78);
   border-radius: 2px;
   background: transparent;
+  box-shadow: 0 0 0 1px rgba(15, 36, 24, 0.24);
   transform: rotate(45deg);
 }
 
 .base-marker.occupied {
   background: #f5d37f;
   border-color: #f5d37f;
+  box-shadow:
+    0 0 0 1px rgba(15, 36, 24, 0.35),
+    0 0 10px rgba(245, 211, 127, 0.35);
 }
 
 .base-marker-first {
