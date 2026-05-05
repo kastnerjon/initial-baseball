@@ -5,6 +5,7 @@ import type { DailyGameState, DailyGuessResult } from '@initial-baseball/shared'
 import { describe, expect, it } from 'vitest';
 import { AtBatCard } from './components/AtBatCard';
 import { createGiveUpResult, resolveDailyTerminalAtBat } from './dailyAtBatResolution';
+import { createDailyShareUrl } from './dailyShareUrl';
 import {
   DEMO_DAILY_PITCHES,
   DEMO_DAILY_PUZZLE,
@@ -86,11 +87,13 @@ describe('resolveDailyTerminalAtBat', () => {
     };
     const shareText = formatDailyShareText(createDailyShareResult({
       gameState,
-      url: 'https://initialbaseball.com/daily/42',
+      url: createDailyShareUrl(),
     }));
 
+    expect(shareText).toContain(`Daily Inning #${DEMO_DAILY_PUZZLE.puzzleNumber}`);
     expect(shareText).toContain(`${firstPitch.player.initials}: K`);
     expect(shareText).not.toContain(firstPitch.player.fullName);
+    expect(shareText).not.toContain('initialbaseball.com');
   });
 });
 
