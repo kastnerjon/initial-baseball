@@ -1,7 +1,7 @@
 'use client';
 
 import type { JSX } from 'react';
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import {
   createDailyShareResult,
   evaluateGuess,
@@ -14,6 +14,11 @@ import {
   createGiveUpResult,
   resolveDailyTerminalAtBat,
 } from '../dailyAtBatResolution';
+import {
+  clearSavedDailyGame,
+  loadSavedDailyGame,
+  saveDailyGame,
+} from '../dailyLocalStorage';
 import {
   type DemoAtBatUiState,
   type DemoDailyPitch,
@@ -36,6 +41,7 @@ export function DailyInningGame({ puzzle, demoPitches, players }: DailyInningGam
   const [currentPitchIndex, setCurrentPitchIndex] = useState(0);
   const [atBatState, setAtBatState] = useState<DemoAtBatUiState>(() => createInitialAtBatUiState());
   const [pendingAdvance, setPendingAdvance] = useState<PendingAtBatAdvance | null>(null);
+  const [hasLoadedSavedState, setHasLoadedSavedState] = useState(false);
 
   const currentDemoPitch = demoPitches[currentPitchIndex] ?? null;
   const isPuzzleComplete = currentPitchIndex >= demoPitches.length;
@@ -58,11 +64,43 @@ export function DailyInningGame({ puzzle, demoPitches, players }: DailyInningGam
     [gameState, isGameComplete, puzzle.puzzleNumber],
   );
 
+  useEffect(() => {
+    const savedGame = loadSavedDailyGame(puzzle);
+
+    if (savedGame !== null) {
+      setGameState(savedGame.gameState);
+      setCurrentPitchIndex(savedGame.currentPitchIndex);
+      setAtBatState(savedGame.atBatState);
+      setPendingAdvance(savedGame.pendingAdvance);
+    } else {
+      setGameState(createInitialDemoGameState(puzzle));
+      setCurrentPitchIndex(0);
+      setAtBatState(createInitialAtBatUiState());
+      setPendingAdvance(null);
+    }
+
+    setHasLoadedSavedState(true);
+  }, [puzzle]);
+
+  useEffect(() => {
+    if (!hasLoadedSavedState) {
+      return;
+    }
+
+    saveDailyGame(puzzle, {
+      currentPitchIndex,
+      gameState,
+      atBatState,
+      pendingAdvance,
+    });
+  }, [atBatState, currentPitchIndex, gameState, hasLoadedSavedState, pendingAdvance, puzzle]);
+
   if (shareResult !== null) {
     return (
       <GameCompleteView
         shareResult={shareResult}
         shareText={formatDailyShareText(shareResult)}
+        onResetToday={handleResetToday}
       />
     );
   }
@@ -111,6 +149,13 @@ export function DailyInningGame({ puzzle, demoPitches, players }: DailyInningGam
         onGiveUp={() => handleGiveUp(currentDemoPitch)}
         onNextPitch={handleNextPitch}
       />
+      <button
+        type="button"
+        className="reset-local-result-button"
+        onClick={handleResetToday}
+      >
+        Reset today's local result
+      </button>
     </div>
   );
 
@@ -181,6 +226,15 @@ export function DailyInningGame({ puzzle, demoPitches, players }: DailyInningGam
     setCurrentPitchIndex(pendingAdvance.nextPitchIndex);
     setPendingAdvance(null);
     setAtBatState(createInitialAtBatUiState());
+  }
+
+  function handleResetToday(): void {
+    clearSavedDailyGame(puzzle);
+    setGameState(createInitialDemoGameState(puzzle));
+    setCurrentPitchIndex(0);
+    setAtBatState(createInitialAtBatUiState());
+    setPendingAdvance(null);
+    setHasLoadedSavedState(true);
   }
 }
 

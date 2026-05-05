@@ -445,7 +445,8 @@ input[type="text"]:focus {
 
 .result-option,
 .button-primary,
-.button-secondary {
+.button-secondary,
+.reset-local-result-button {
   border: 0;
   border-radius: 12px;
   font: inherit;
@@ -477,6 +478,16 @@ input[type="text"]:focus {
 .button-secondary {
   background: rgba(22, 33, 22, 0.1);
   color: inherit;
+}
+
+.reset-local-result-button {
+  justify-self: end;
+  padding: 8px 10px;
+  background: transparent;
+  color: rgba(22, 33, 22, 0.58);
+  font-size: 13px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
 }
 
 h2 {
