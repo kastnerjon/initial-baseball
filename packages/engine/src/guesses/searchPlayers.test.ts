@@ -1,5 +1,6 @@
 import { expect, it } from 'vitest';
 import type { Player } from '@initial-baseball/shared';
+import { normalizeGuess } from './normalizeGuess.js';
 import { searchPlayers } from './searchPlayers.js';
 
 const players: Player[] = [
@@ -18,7 +19,35 @@ const players: Player[] = [
     aliases: ['Captain America'],
   },
   {
+    id: 'david-ortiz-duplicate-non-eligible',
+    fullName: 'David Ortiz',
+    displayName: 'David Ortiz',
+    primaryRole: 'hitter',
+    primaryPosition: 'DH',
+    mainDecade: '2000s',
+    primaryTeam: 'BOS',
+    teamsDisplay: 'MIN, BOS',
+    statsLine: 'HR 541 / RBI 1768 / BA .286 / OBP .380 / SB 17',
+    dailyEligibilityTier: 'none',
+    dailyEligible: false,
+    aliases: ['Big Papi'],
+  },
+  {
     id: 'david-ortiz',
+    fullName: 'David Ortiz',
+    displayName: 'David Ortiz',
+    primaryRole: 'hitter',
+    primaryPosition: 'DH',
+    mainDecade: '2000s',
+    primaryTeam: 'BOS',
+    teamsDisplay: 'MIN, BOS',
+    statsLine: 'HR 541 / RBI 1768 / BA .286 / OBP .380 / SB 17',
+    dailyEligibilityTier: 'core',
+    dailyEligible: true,
+    aliases: ['Big Papi'],
+  },
+  {
+    id: 'david-ortiz-duplicate-core',
     fullName: 'David Ortiz',
     displayName: 'David Ortiz',
     primaryRole: 'hitter',
@@ -89,6 +118,19 @@ it('ranks a more specific starts-with match highly', () => {
 
 it('matches aliases using substring search', () => {
   expect(searchPlayers('papi', players).map((player) => player.playerId)).toEqual(['david-ortiz']);
+});
+
+it('dedupes repeated visible player names from search results', () => {
+  const results = searchPlayers('david ort', players);
+
+  expect(results.map((player) => player.displayName)).toEqual(['David Ortiz']);
+  expect(results[0]?.playerId).toBe('david-ortiz');
+});
+
+it('does not return duplicate normalized display names', () => {
+  const normalizedDisplayNames = searchPlayers('david', players).map((player) => normalizeGuess(player.displayName));
+
+  expect(new Set(normalizedDisplayNames).size).toBe(normalizedDisplayNames.length);
 });
 
 it('normalizes punctuation and repeated spaces in queries', () => {

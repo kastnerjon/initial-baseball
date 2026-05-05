@@ -6,6 +6,7 @@ export type PlayerSearchResult = {
   displayName: string;
   fullName: string;
   metadata?: {
+    dailyEligibilityTier?: Player['dailyEligibilityTier'];
     mainDecade?: string;
     primaryPosition?: string;
     teamsDisplay?: string;
@@ -29,10 +30,10 @@ export function searchPlayers(query: string, players: Player[]): PlayerSearchRes
   const rankedResults = players
     .map((player) => rankPlayerSearchResult(normalizedQuery, player))
     .filter((result): result is RankedPlayerSearchResult => result !== null)
-    .sort(compareRankedResults)
-    .slice(0, SEARCH_RESULT_LIMIT);
+    .sort(compareRankedResults);
 
-  return rankedResults.map(({ matchPriority: _matchPriority, bestIndex: _bestIndex, ...result }) => result);
+  return dedupeRankedResults(rankedResults)
+    .slice(0, SEARCH_RESULT_LIMIT);
 }
 
 function rankPlayerSearchResult(query: string, player: Player): RankedPlayerSearchResult | null {
@@ -52,6 +53,7 @@ function rankPlayerSearchResult(query: string, player: Player): RankedPlayerSear
     displayName: player.displayName,
     fullName: player.fullName,
     metadata: {
+      dailyEligibilityTier: player.dailyEligibilityTier,
       mainDecade: player.mainDecade,
       primaryPosition: player.primaryPosition,
       teamsDisplay: player.teamsDisplay,
@@ -68,4 +70,51 @@ function compareRankedResults(left: RankedPlayerSearchResult, right: RankedPlaye
     || left.displayName.localeCompare(right.displayName)
     || left.playerId.localeCompare(right.playerId)
   );
+}
+
+function dedupeRankedResults(results: RankedPlayerSearchResult[]): PlayerSearchResult[] {
+  const playerIdDedupedResults = dedupeBy(results, (result) => result.playerId);
+  const displayNameDedupedResults = dedupeBy(playerIdDedupedResults, (result) => normalizeGuess(result.displayName));
+  const fullNameDedupedResults = dedupeBy(displayNameDedupedResults, (result) => normalizeGuess(result.fullName));
+
+  return fullNameDedupedResults
+    .sort(compareRankedResults)
+    .map(({ matchPriority: _matchPriority, bestIndex: _bestIndex, ...result }) => result);
+}
+
+function dedupeBy(
+  results: RankedPlayerSearchResult[],
+  getDedupeKey: (result: RankedPlayerSearchResult) => string,
+): RankedPlayerSearchResult[] {
+  const selectedResults = new Map<string, RankedPlayerSearchResult>();
+
+  for (const result of results) {
+    const dedupeKey = getDedupeKey(result);
+    const existingResult = selectedResults.get(dedupeKey);
+
+    if (existingResult === undefined || compareDuplicateCandidates(result, existingResult) < 0) {
+      selectedResults.set(dedupeKey, result);
+    }
+  }
+
+  return Array.from(selectedResults.values());
+}
+
+function compareDuplicateCandidates(left: RankedPlayerSearchResult, right: RankedPlayerSearchResult): number {
+  return (
+    getEligibilityPriority(left) - getEligibilityPriority(right)
+    || compareRankedResults(left, right)
+  );
+}
+
+function getEligibilityPriority(result: PlayerSearchResult): number {
+  if (result.metadata?.dailyEligibilityTier === 'core') {
+    return 0;
+  }
+
+  if (result.metadata?.dailyEligibilityTier === 'extended') {
+    return 1;
+  }
+
+  return 2;
 }
