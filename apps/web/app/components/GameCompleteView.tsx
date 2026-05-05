@@ -6,9 +6,10 @@ import { ScoreLine } from './ScoreLine';
 type GameCompleteViewProps = {
   shareResult: DailyShareResult;
   shareText: string;
+  onResetToday?: () => void;
 };
 
-export function GameCompleteView({ shareResult, shareText }: GameCompleteViewProps): JSX.Element {
+export function GameCompleteView({ shareResult, shareText, onResetToday }: GameCompleteViewProps): JSX.Element {
   return (
     <div className="game-shell">
       <section className="complete-card">
@@ -24,6 +25,15 @@ export function GameCompleteView({ shareResult, shareText }: GameCompleteViewPro
         <h2>Share Text</h2>
         <pre className="share-text">{shareText}</pre>
       </section>
+      {onResetToday !== undefined ? (
+        <button
+          type="button"
+          className="reset-local-result-button"
+          onClick={onResetToday}
+        >
+          Reset today's local result
+        </button>
+      ) : null}
     </div>
   );
 }
