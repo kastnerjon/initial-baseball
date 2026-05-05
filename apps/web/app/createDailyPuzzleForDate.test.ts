@@ -10,6 +10,15 @@ import {
 import { createGamePitchesFromPuzzle, createPlayerIdentity } from './dailyPuzzleAdapters';
 import { DAILY_PUZZLE_OVERRIDES } from './dailyPuzzleOverrides';
 
+const currentOverrideNames = [
+  'David Ortiz',
+  'Randy Johnson',
+  'Whitey Ford',
+  'Joe Mauer',
+  'Johan Santana',
+  'Dave Winfield',
+];
+
 describe('createDailyPuzzleForDate', () => {
   it('returns the same player ids in the same order for the same date', () => {
     const firstPuzzle = createDailyPuzzleForDate('2026-05-02');
@@ -22,15 +31,14 @@ describe('createDailyPuzzleForDate', () => {
 
   it('uses manual override players in the specified order for override dates', () => {
     const puzzle = createDailyPuzzleForDate('2026-05-04');
-    const overrideNames = DAILY_PUZZLE_OVERRIDES['2026-05-04'];
 
-    expect(puzzle.pitches.map((pitch) => pitch.player.fullName)).toEqual(overrideNames);
+    expect(puzzle.pitches.map((pitch) => pitch.player.fullName)).toEqual(currentOverrideNames);
   });
 
-  it('keeps simple string override entries working', () => {
+  it('resolves current hardened override entries by player ID', () => {
     const players = resolveDailyPuzzleOverridePlayers('2026-05-04', DAILY_PUZZLE_OVERRIDES['2026-05-04']);
 
-    expect(players.map((player) => player.fullName)).toEqual(DAILY_PUZZLE_OVERRIDES['2026-05-04']);
+    expect(players.map((player) => player.fullName)).toEqual(currentOverrideNames);
   });
 
   it('creates override puzzles with six unique players', () => {
