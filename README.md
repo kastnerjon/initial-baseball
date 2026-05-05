@@ -70,3 +70,26 @@ Use three Supabase projects:
 - `initial-baseball-prod`
 
 Production keys should not be given to coding agents early. Use dev/staging for agent work.
+
+## Daily Web Deployment
+
+Local development:
+
+```bash
+corepack pnpm install
+corepack pnpm --filter @initial-baseball/web dev
+```
+
+Production build:
+
+```bash
+corepack pnpm --filter @initial-baseball/web build
+```
+
+Vercel deployment notes:
+
+- Deploy the monorepo with `apps/web` as the Next.js app.
+- Set `NEXT_PUBLIC_SITE_URL=https://your-domain.com` so Daily share text uses the public origin.
+- If `NEXT_PUBLIC_SITE_URL` is absent, share links fall back to the browser origin when available, then `/`.
+- Daily puzzles reset at midnight Pacific Time.
+- Manual Daily puzzle configuration is currently code-based in `apps/web/app/dailyPuzzleOverrides.ts`.

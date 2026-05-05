@@ -19,6 +19,7 @@ import {
   loadSavedDailyGame,
   saveDailyGame,
 } from '../dailyLocalStorage';
+import { createDailyShareUrl } from '../dailyShareUrl';
 import {
   type DemoAtBatUiState,
   type DemoDailyPitch,
@@ -58,10 +59,10 @@ export function DailyInningGame({ puzzle, demoPitches, players }: DailyInningGam
               completed: true,
             },
           },
-          url: `https://initialbaseball.com/daily/${puzzle.puzzleNumber}`,
+          url: createDailyShareUrl(),
         })
       : null),
-    [gameState, isGameComplete, puzzle.puzzleNumber],
+    [gameState, isGameComplete],
   );
 
   useEffect(() => {

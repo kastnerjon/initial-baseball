@@ -3,8 +3,12 @@ import type { Metadata } from 'next';
 import './styles.css';
 
 export const metadata: Metadata = {
-  title: 'Daily Inning by Initial Baseball',
-  description: 'A daily baseball guessing game. Score an inning and compare how the field did.',
+  title: 'Initial Baseball',
+  description: 'A daily baseball initials guessing game.',
+  openGraph: {
+    title: 'Initial Baseball',
+    description: 'A daily baseball initials guessing game.',
+  },
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }): JSX.Element {

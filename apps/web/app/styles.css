@@ -52,6 +52,19 @@ p {
   line-height: 1.45;
 }
 
+.daily-instructions {
+  margin: 0 0 18px;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: rgba(22, 33, 22, 0.055);
+  border: 1px solid rgba(22, 33, 22, 0.08);
+}
+
+.daily-instructions p {
+  margin: 0;
+  font-size: 16px;
+}
+
 .game-shell {
   display: grid;
   gap: 16px;
