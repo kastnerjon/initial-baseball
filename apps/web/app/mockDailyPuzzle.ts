@@ -31,6 +31,7 @@ export type DemoDailyPitch = {
 export type DemoAtBatUiState = {
   query: string;
   selectedPlayerId: string | null;
+  selectedAcceptedPlayerIds: string[] | null;
   revealCount: 0 | 1 | 2 | 3 | 4;
   strikeCount: number;
   submittedResult: DailyGuessResult | null;
@@ -82,6 +83,7 @@ export function createInitialAtBatUiState(): DemoAtBatUiState {
   return {
     query: '',
     selectedPlayerId: null,
+    selectedAcceptedPlayerIds: null,
     revealCount: 0,
     strikeCount: 0,
     submittedResult: null,

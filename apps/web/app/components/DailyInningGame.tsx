@@ -7,6 +7,7 @@ import {
   evaluateGuess,
   formatDailyShareText,
   getGuessOutcome,
+  type PlayerSearchResult,
 } from '@initial-baseball/engine';
 import type { DailyGameState, DailyGuessResult, DailyPuzzle, Player } from '@initial-baseball/shared';
 import {
@@ -128,14 +129,16 @@ export function DailyInningGame({ puzzle, demoPitches, players }: DailyInningGam
             ...currentState,
             query,
             selectedPlayerId: null,
+            selectedAcceptedPlayerIds: null,
             submittedResult: null,
           }));
         }}
-        onSelectPlayer={(playerId, displayName) => {
+        onSelectPlayer={(result: PlayerSearchResult) => {
           setAtBatState((currentState) => ({
             ...currentState,
-            query: displayName,
-            selectedPlayerId: playerId,
+            query: result.displayName,
+            selectedPlayerId: result.playerId,
+            selectedAcceptedPlayerIds: result.acceptedPlayerIds,
             submittedResult: null,
           }));
         }}
@@ -166,7 +169,7 @@ export function DailyInningGame({ puzzle, demoPitches, players }: DailyInningGam
     }
 
     const result = getGuessOutcome({
-      isCorrect: evaluateGuess(atBatState.selectedPlayerId, pitch.correctPlayerId),
+      isCorrect: evaluateGuess(atBatState.selectedAcceptedPlayerIds ?? atBatState.selectedPlayerId, pitch.correctPlayerId),
       revealCount: atBatState.revealCount,
       strikeCount: atBatState.strikeCount,
       maxStrikes: 3,
@@ -177,6 +180,7 @@ export function DailyInningGame({ puzzle, demoPitches, players }: DailyInningGam
         ...currentState,
         query: '',
         selectedPlayerId: null,
+        selectedAcceptedPlayerIds: null,
         strikeCount: result.strikeCount,
         submittedResult: result,
       }));

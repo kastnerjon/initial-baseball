@@ -29,12 +29,13 @@ type AtBatCardProps = {
   state: {
     query: string;
     selectedPlayerId: string | null;
+    selectedAcceptedPlayerIds: string[] | null;
     revealCount: 0 | 1 | 2 | 3 | 4;
     strikeCount: number;
     submittedResult: DailyGuessResult | null;
   };
   onQueryChange: (query: string) => void;
-  onSelectPlayer: (playerId: string, displayName: string) => void;
+  onSelectPlayer: (result: PlayerSearchResult) => void;
   onRevealHint: () => void;
   onSubmit: () => void;
   onGiveUp: () => void;
@@ -159,7 +160,7 @@ export function AtBatCard({
   );
 
   function handleSelect(result: PlayerSearchResult): void {
-    onSelectPlayer(result.playerId, result.displayName);
+    onSelectPlayer(result);
   }
 }
 

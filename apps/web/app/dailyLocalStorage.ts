@@ -49,7 +49,14 @@ export function loadSavedDailyGame(
     return null;
   }
 
-  return parsedValue;
+  return {
+    ...parsedValue,
+    atBatState: {
+      ...parsedValue.atBatState,
+      selectedAcceptedPlayerIds: parsedValue.atBatState.selectedAcceptedPlayerIds
+        ?? (parsedValue.atBatState.selectedPlayerId === null ? null : [parsedValue.atBatState.selectedPlayerId]),
+    },
+  };
 }
 
 export function saveDailyGame(
@@ -157,6 +164,11 @@ function isSavedDailyGameForPuzzle(value: unknown, puzzle: DailyPuzzle): value i
     && Array.isArray(gameState.completedPitchLines)
     && typeof atBatState.query === 'string'
     && (typeof atBatState.selectedPlayerId === 'string' || atBatState.selectedPlayerId === null)
+    && (
+      isStringArray(atBatState.selectedAcceptedPlayerIds)
+      || atBatState.selectedAcceptedPlayerIds === null
+      || atBatState.selectedAcceptedPlayerIds === undefined
+    )
     && typeof atBatState.revealCount === 'number'
     && typeof atBatState.strikeCount === 'number'
   );
@@ -164,4 +176,8 @@ function isSavedDailyGameForPuzzle(value: unknown, puzzle: DailyPuzzle): value i
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === 'string');
 }

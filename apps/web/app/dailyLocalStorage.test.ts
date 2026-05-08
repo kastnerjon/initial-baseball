@@ -109,6 +109,20 @@ describe('dailyLocalStorage', () => {
     });
   });
 
+  it('restores older selected player state with a single accepted player id', () => {
+    const storage = new FakeStorage();
+    const savedGame = buildSavedGame({
+      atBatState: {
+        ...createInitialAtBatUiState(),
+        selectedPlayerId: 'player-42',
+      },
+    });
+    delete (savedGame.atBatState as Partial<typeof savedGame.atBatState>).selectedAcceptedPlayerIds;
+    storage.setItem(getDailyStorageKey(DEMO_DAILY_PUZZLE.puzzleDate), JSON.stringify(savedGame));
+
+    expect(loadSavedDailyGame(DEMO_DAILY_PUZZLE, storage)?.atBatState.selectedAcceptedPlayerIds).toEqual(['player-42']);
+  });
+
   it('clear removes current puzzle storage', () => {
     const storage = new FakeStorage();
     saveDailyGame(DEMO_DAILY_PUZZLE, {

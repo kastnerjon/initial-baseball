@@ -221,6 +221,13 @@ describe('baseballPlayers', () => {
     expect(ccSabathia.statsLine).toContain('K 3093');
   });
 
+  it('includes Luis Arráez in the generated searchable universe', () => {
+    const luisArraez = findPlayerByName('Luis Sangel Arráez');
+
+    expect(luisArraez.displayName).toContain('Arráez');
+    expect(luisArraez.aliases).toContain('Luis Sangel Arráez');
+  });
+
   it('formats hitter statlines with BA and OBP decimals that begin with a dot', () => {
     const kenGriffeyJr = findPlayerByName('Ken Griffey Jr.');
 
