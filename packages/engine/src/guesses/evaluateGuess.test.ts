@@ -8,3 +8,11 @@ it('returns true when the submitted player id matches the correct player id', ()
 it('returns false when the submitted player id does not match the correct player id', () => {
   expect(evaluateGuess('player-42', 'player-99')).toBe(false);
 });
+
+it('returns true when grouped accepted player ids include the correct player id', () => {
+  expect(evaluateGuess(['chris-davis-hitter', 'chris-davis-pitcher'], 'chris-davis-pitcher')).toBe(true);
+});
+
+it('returns false when grouped accepted player ids do not include the correct player id', () => {
+  expect(evaluateGuess(['chris-davis-hitter', 'chris-davis-pitcher'], 'player-99')).toBe(false);
+});
