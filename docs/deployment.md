@@ -5,13 +5,13 @@ This document is the source of truth for deploying Initial Baseball.
 ## Canonical Production Deployment
 
 - Vercel project: `initial-baseball-web`
-- Production URL: `https://initial-baseball.vercel.app/`
+- Production URL: `https://initial-baseball-web.vercel.app/`
 - GitHub repo: `kastnerjon/initial-baseball`
 - Root Directory: `./`
 - Install and build config: controlled by the root `vercel.json`
-- Required environment variable: `NEXT_PUBLIC_SITE_URL=https://initial-baseball.vercel.app`
+- Required environment variable: `NEXT_PUBLIC_SITE_URL=https://initial-baseball-web.vercel.app`
 
-Do not create duplicate Vercel projects for this repo. If deployment ownership changes, update this document in the same PR as the config or dashboard change.
+Do not create duplicate Vercel projects for this repo. If deployment ownership changes, update this document in the same PR as the config or dashboard change. If a cleaner custom or Vercel domain alias such as `initial-baseball.vercel.app` is intentionally attached later, update this document and `NEXT_PUBLIC_SITE_URL` in the same PR or dashboard change.
 
 ## Vercel Settings
 
@@ -22,9 +22,9 @@ Use these settings for the canonical `initial-baseball-web` project:
 - Install Command: use the root `vercel.json`
 - Build Command: use the root `vercel.json`
 - Output Directory: use the root `vercel.json`
-- Environment Variables: `NEXT_PUBLIC_SITE_URL=https://initial-baseball.vercel.app`
+- Environment Variables: `NEXT_PUBLIC_SITE_URL=https://initial-baseball-web.vercel.app`
 
-Set `NEXT_PUBLIC_SITE_URL` after the first successful deployment URL is known. The canonical production value should remain `https://initial-baseball.vercel.app` unless the production domain intentionally changes.
+Set `NEXT_PUBLIC_SITE_URL` after the first successful deployment URL is known. The canonical production value should remain `https://initial-baseball-web.vercel.app` unless the production domain intentionally changes.
 
 ## Monorepo Build Model
 
