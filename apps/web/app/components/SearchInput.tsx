@@ -8,7 +8,7 @@ type SearchInputProps = {
 export function SearchInput({ value, onChange }: SearchInputProps): JSX.Element {
   return (
     <label className="search-field">
-      <span className="field-label">Search Players</span>
+      <span className="field-label">Guess the player</span>
       <input
         type="text"
         value={value}

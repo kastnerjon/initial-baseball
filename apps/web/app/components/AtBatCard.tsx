@@ -64,7 +64,7 @@ export function AtBatCard({
     return (
       <div className="at-bat-card">
         <div className="pitch-meta">
-          <span className="pitch-number">{`Pitch ${atBat.pitchNumber}`}</span>
+          <span className="pitch-number">{`At Bat ${atBat.pitchNumber}`}</span>
           <CountIndicator label="Strikes" filledCount={state.strikeCount} total={3} />
         </div>
         <ResultDisplay
@@ -78,7 +78,7 @@ export function AtBatCard({
           className="button-primary"
           onClick={onNextPitch}
         >
-          Next Pitch
+          Next At Bat
         </button>
       </div>
     );
@@ -87,7 +87,7 @@ export function AtBatCard({
   return (
     <div className="at-bat-card">
       <div className="pitch-meta">
-        <span className="pitch-number">{`Pitch ${atBat.pitchNumber}`}</span>
+        <span className="pitch-number">{`At Bat ${atBat.pitchNumber}`}</span>
         <CountIndicator label="Strikes" filledCount={state.strikeCount} total={3} />
       </div>
 
@@ -195,7 +195,7 @@ function OutcomeDistributionPlaceholder(): JSX.Element {
   return (
     <section className="outcome-distribution-card">
       <span className="field-label">Field Results</span>
-      {/* TODO: Replace with persisted public Daily results grouped by puzzleNumber, pitchNumber, and outcome. */}
+      {/* TODO: Replace with persisted public Daily results grouped by puzzleNumber, at-bat number, and outcome. */}
       <p className="result-note">Outcome distribution will appear once public results are collected.</p>
     </section>
   );

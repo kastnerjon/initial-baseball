@@ -18,8 +18,8 @@ export function GameCompleteView({ shareResult, shareText, onResetToday }: GameC
       </section>
       <PitchResultList
         pitchLines={shareResult.pitchLines}
-        title="Pitch Results"
-        emptyLabel="No pitch results were recorded."
+        title="At-bat Results"
+        emptyLabel="No at-bat results were recorded."
       />
       <section className="share-card">
         <h2>Share Text</h2>

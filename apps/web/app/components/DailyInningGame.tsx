@@ -119,7 +119,7 @@ export function DailyInningGame({ puzzle, demoPitches, players }: DailyInningGam
         bases={gameState.inning.bases}
         currentStrikeCount={atBatState.strikeCount}
       />
-      <PitchResultList pitchLines={gameState.completedPitchLines} title="Completed Pitches" emptyLabel="No completed pitches yet." />
+      <PitchResultList pitchLines={gameState.completedPitchLines} title="Completed At-bats" emptyLabel="No completed at-bats yet." />
       <AtBatCard
         atBat={currentDemoPitch}
         players={players}
