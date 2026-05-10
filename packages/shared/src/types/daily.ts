@@ -5,7 +5,7 @@ import type { StatsHintConfig } from './stats.js';
 export type DailyPuzzleStatus = 'draft' | 'published' | 'archived';
 export type DailyGameStatus = 'not_started' | 'in_progress' | 'completed';
 
-export type DailyOutcome = 'HR' | '3B' | '2B' | '1B' | 'BUNT' | 'K';
+export type DailyOutcome = 'HR' | '3B' | '2B' | '1B' | 'SAC' | 'K';
 export type DailyRevealCount = 0 | HintConfigSlot['slot'];
 export type DailyGuessSource = 'initials' | HintConfigSlot['slot'] | 'strikeout';
 export type DailyHintConfig = HintConfigSlot[];
@@ -39,7 +39,7 @@ export type DailyPitchAggregate = {
   triplePct: number;
   doublePct: number;
   singlePct: number;
-  buntPct: number;
+  sacPct: number;
   strikeoutPct: number;
   averageBases: number;
 };
@@ -138,7 +138,7 @@ export const DEFAULT_DAILY_SCORING: DailyScoringMapping = {
   1: '3B',
   2: '2B',
   3: '1B',
-  4: 'BUNT',
+  4: 'SAC',
   strikeout: 'K',
 };
 

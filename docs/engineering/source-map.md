@@ -9,7 +9,7 @@ Use this to find the right file quickly.
 | Settings validation | `packages/shared/src/validators/validateGameSettings.ts` |
 | Initials generation | `packages/engine/src/hints/generateInitials.ts` |
 | Stats hint formatting | `packages/engine/src/hints/buildStatsHint.ts` |
-| Bunt rules | `packages/engine/src/scoring/advanceRunnersOnBunt.ts` |
+| Sacrifice rules | `packages/engine/src/scoring/advanceRunnersOnSacrifice.ts` |
 | Hit result by revealed hints | `packages/engine/src/scoring/getHitResultForRevealCount.ts` |
 | Base advancement | `packages/engine/src/scoring/advanceRunners.ts` |
 | Guess matching | `packages/engine/src/guesses/matchGuessToPlayer.ts` |

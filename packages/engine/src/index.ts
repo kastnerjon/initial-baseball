@@ -1,6 +1,6 @@
 export * from './hints/buildStatsHint.js';
 export * from './hints/generateInitials.js';
-export * from './scoring/advanceRunnersOnBunt.js';
+export * from './scoring/advanceRunnersOnSacrifice.js';
 export * from './scoring/baseState.js';
 export * from './scoring/getHitResultForRevealCount.js';
 export * from './scoring/advanceRunners.js';

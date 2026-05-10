@@ -15,7 +15,7 @@ Practice Mode includes:
 - User sees initials first.
 - User can reveal hints in the selected practice settings order.
 - User guesses free-text.
-- Correct guesses produce HR/Triple/Double/Single/Bunt based on reveal count.
+- Correct guesses produce HR/Triple/Double/Single/Sacrifice based on reveal count.
 - Wrong guesses produce strikes.
 - Practice can use the same default settings and Custom Stats Picker as multiplayer.
 - Practice uses the same seeded player database and same hint generation code.
@@ -47,7 +47,7 @@ Default practice settings should mirror the alpha multiplayer defaults:
 | Triple hint | Main decade played in |
 | Double hint | Teams |
 | Single hint | Position |
-| Bunt hint | Stats |
+| Sacrifice hint | Stats |
 | Stats Picker | Default alpha stats |
 
 Practice may later support timed drills, streak mode, or nine-player rounds, but alpha should start simple.

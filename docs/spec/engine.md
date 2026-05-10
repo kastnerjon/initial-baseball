@@ -21,33 +21,22 @@ The engine answers deterministic rule questions:
 | After hint slot 1 | Triple |
 | After hint slot 2 | Double |
 | After hint slot 3 | Single |
-| After hint slot 4 | Bunt |
+| After hint slot 4 | Sacrifice |
 
 The hint type does not determine the result. The slot does.
 
-## Bunt rule
+## SAC rule
 
-BUNT is not a hit and never scores a run.
+SAC is not a hit.
 
-BUNT always creates exactly 1 out.
-
-Case A — No runner on 3rd:
+SAC always creates exactly 1 out.
 
 - Batter is out.
-- All existing runners advance one base.
-- No run scores.
+- All existing baserunners advance exactly one base.
+- Runner on 3rd scores.
+- Batter does not reach base.
 
-Case B — Runner on 3rd:
-
-- Runner on 3rd is out.
-- Batter reaches 1st.
-- Other runners advance one base.
-- No run scores.
-
-Notes:
-
-- BUNT is strictly worse than a single.
-- BUNT can change base state but cannot produce runs.
+SAC is strictly worse than a single because it costs an out and the batter never reaches base.
 
 ## Strikes
 
@@ -102,7 +91,7 @@ Engine rule:
 
 - Initials: Ken Griffey Jr., CC Sabathia, J.D. Martinez, Ichiro, Elly De La Cruz.
 - Hit result by reveal count.
-- Bunt with 0, 1, 2 outs.
+- Sacrifice with 0, 1, 2 outs.
 - Base advancement for single/double/triple/HR.
 - Ghost runner on/off.
 - Walk-off.

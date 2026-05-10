@@ -1,4 +1,4 @@
-import type { DailyGameState, DailyPuzzle } from '@initial-baseball/shared';
+import type { DailyGameState, DailyGuessResult, DailyOutcome, DailyPuzzle, DailySharePitchLine } from '@initial-baseball/shared';
 import type { PendingAtBatAdvance } from './dailyAtBatResolution';
 import type { DemoAtBatUiState } from './mockDailyPuzzle';
 
@@ -49,14 +49,14 @@ export function loadSavedDailyGame(
     return null;
   }
 
-  return {
+  return normalizeSavedDailyGame({
     ...parsedValue,
     atBatState: {
       ...parsedValue.atBatState,
       selectedAcceptedPlayerIds: parsedValue.atBatState.selectedAcceptedPlayerIds
         ?? (parsedValue.atBatState.selectedPlayerId === null ? null : [parsedValue.atBatState.selectedPlayerId]),
     },
-  };
+  });
 }
 
 export function saveDailyGame(
@@ -180,4 +180,56 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((item) => typeof item === 'string');
+}
+
+function normalizeSavedDailyGame(savedGame: SavedDailyGame): SavedDailyGame {
+  return {
+    ...savedGame,
+    gameState: {
+      ...savedGame.gameState,
+      completedPitchLines: savedGame.gameState.completedPitchLines.map(normalizeSharePitchLine),
+      shareResult: savedGame.gameState.shareResult === null
+        ? null
+        : {
+            ...savedGame.gameState.shareResult,
+            pitchLines: savedGame.gameState.shareResult.pitchLines.map(normalizeSharePitchLine),
+          },
+    },
+    atBatState: {
+      ...savedGame.atBatState,
+      submittedResult: normalizeDailyGuessResult(savedGame.atBatState.submittedResult),
+    },
+    pendingAdvance: savedGame.pendingAdvance === null
+      ? null
+      : {
+          ...savedGame.pendingAdvance,
+          pitchLines: savedGame.pendingAdvance.pitchLines.map(normalizeSharePitchLine),
+        },
+  };
+}
+
+function normalizeSharePitchLine(line: DailySharePitchLine): DailySharePitchLine {
+  return {
+    ...line,
+    outcome: normalizeLegacyDailyOutcome(line.outcome),
+  };
+}
+
+function normalizeDailyGuessResult(result: DailyGuessResult | null): DailyGuessResult | null {
+  if (result === null || result.kind === 'incorrect' || result.kind === 'strikeout') {
+    return result;
+  }
+
+  return {
+    ...result,
+    outcome: normalizeLegacyCorrectOutcome(result.outcome),
+  };
+}
+
+function normalizeLegacyDailyOutcome(outcome: unknown): DailyOutcome {
+  return outcome === 'BUNT' ? 'SAC' : outcome as DailyOutcome;
+}
+
+function normalizeLegacyCorrectOutcome(outcome: unknown): Exclude<DailyOutcome, 'K'> {
+  return outcome === 'BUNT' ? 'SAC' : outcome as Exclude<DailyOutcome, 'K'>;
 }

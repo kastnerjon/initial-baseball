@@ -14,7 +14,7 @@ it('computes field performance by initials without exposing player names', () =>
     triplePct: 0,
     doublePct: 33.3,
     singlePct: 0,
-    buntPct: 0,
+    sacPct: 0,
     strikeoutPct: 33.3,
     averageBases: 2,
   });

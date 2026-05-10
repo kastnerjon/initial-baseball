@@ -22,8 +22,8 @@ Before wider friend alpha:
 - 9-inning game.
 - Tie after scheduled innings with ghost runner ON.
 - Tie after scheduled innings with ghost runner OFF.
-- Bunt with runner on third and less than 2 outs.
-- Bunt with 2 outs.
+- Sacrifice with runner on third and less than 2 outs.
+- Sacrifice with 2 outs.
 - Bottom-inning walk-off.
 - Strikeout after configured strike count.
 - Pitcher queues multiple at-bats.

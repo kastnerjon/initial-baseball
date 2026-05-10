@@ -123,6 +123,38 @@ describe('dailyLocalStorage', () => {
     expect(loadSavedDailyGame(DEMO_DAILY_PUZZLE, storage)?.atBatState.selectedAcceptedPlayerIds).toEqual(['player-42']);
   });
 
+  it('normalizes legacy BUNT outcomes to SAC when restoring saved state', () => {
+    const storage = new FakeStorage();
+    const savedGame = buildSavedGame({
+      gameState: {
+        ...createInitialDemoGameState(DEMO_DAILY_PUZZLE),
+        completedPitchLines: [{ initials: 'KGJ', outcome: 'BUNT' }],
+      } as unknown as DailyGameState,
+      atBatState: {
+        ...createInitialAtBatUiState(),
+        submittedResult: {
+          kind: 'correct',
+          revealedCount: 4,
+          outcome: 'BUNT',
+          source: 4,
+        },
+      } as unknown as SavedDailyGame['atBatState'],
+      pendingAdvance: {
+        inning: createInitialDemoGameState(DEMO_DAILY_PUZZLE).inning,
+        score: createInitialDemoGameState(DEMO_DAILY_PUZZLE).score,
+        pitchLines: [{ initials: 'KGJ', outcome: 'BUNT' }],
+        nextPitchIndex: 1,
+      } as unknown as PendingAtBatAdvance,
+    });
+    storage.setItem(getDailyStorageKey(DEMO_DAILY_PUZZLE.puzzleDate), JSON.stringify(savedGame));
+
+    const restored = loadSavedDailyGame(DEMO_DAILY_PUZZLE, storage);
+
+    expect(restored?.gameState.completedPitchLines).toEqual([{ initials: 'KGJ', outcome: 'SAC' }]);
+    expect(restored?.atBatState.submittedResult).toMatchObject({ outcome: 'SAC' });
+    expect(restored?.pendingAdvance?.pitchLines).toEqual([{ initials: 'KGJ', outcome: 'SAC' }]);
+  });
+
   it('clear removes current puzzle storage', () => {
     const storage = new FakeStorage();
     saveDailyGame(DEMO_DAILY_PUZZLE, {
