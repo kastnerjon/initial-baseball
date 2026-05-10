@@ -23,6 +23,7 @@ it('formats spoiler-safe daily share text with initials and outcomes', () => {
     pitchLines: [
       { initials: 'KGJ', outcome: 'HR' },
       { initials: 'PM', outcome: '2B' },
+      { initials: 'CR', outcome: 'SAC' },
       { initials: 'DW', outcome: 'K' },
     ],
   })).toBe([
@@ -33,6 +34,7 @@ it('formats spoiler-safe daily share text with initials and outcomes', () => {
     '',
     'KGJ: HR',
     'PM: 2B',
+    'CR: SAC',
     'DW: K',
     '',
     'https://dailyinning.com',

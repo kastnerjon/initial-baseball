@@ -16,7 +16,7 @@ export const DEFAULT_ALPHA_SETTINGS = {
     { slot: 1, result: 'triple', hintType: 'main_decade' },
     { slot: 2, result: 'double', hintType: 'teams' },
     { slot: 3, result: 'single', hintType: 'position' },
-    { slot: 4, result: 'bunt', hintType: 'stats' },
+    { slot: 4, result: 'sac', hintType: 'stats' },
   ],
   statsHintConfig: {
     hitter: ['bwar', 'hr', 'rbi', 'ba', 'obp', 'sb'],
@@ -82,7 +82,7 @@ If Baseball Reference WAR is used, label as `bWAR`, not generic `WAR`.
 `hintConfig` is an ordered array of four slots.
 
 ```ts
-type HitResult = 'triple' | 'double' | 'single' | 'bunt';
+type HitResult = 'triple' | 'double' | 'single' | 'sac';
 
 type HintConfigSlot = {
   slot: 1 | 2 | 3 | 4;
@@ -97,7 +97,7 @@ Rules:
 - Slot 1 maps to Triple.
 - Slot 2 maps to Double.
 - Slot 3 maps to Single.
-- Slot 4 maps to Bunt.
+- Slot 4 maps to Sacrifice.
 - Initials-only maps to Home Run.
 - In alpha, each default hint type may appear at most once.
 - No randomization by default.
@@ -130,7 +130,7 @@ Initials only = Home Run
 Hint 1: Main decade played in = Triple
 Hint 2: Teams = Double
 Hint 3: Position = Single
-Hint 4: Stats = Bunt
+Hint 4: Stats = Sacrifice
 
 Stats hint
 Hitters: bWAR, HR, RBI, BA, OBP, SB

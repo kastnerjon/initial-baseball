@@ -7,7 +7,7 @@ describe('getGuessOutcome', () => {
     [1, '3B', 1],
     [2, '2B', 2],
     [3, '1B', 3],
-    [4, 'BUNT', 4],
+    [4, 'SAC', 4],
   ] as const)('maps a correct guess at reveal count %i to %s', (revealCount, outcome, source) => {
     expect(getGuessOutcome({
       isCorrect: true,

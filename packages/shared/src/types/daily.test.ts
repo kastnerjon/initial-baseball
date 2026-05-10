@@ -10,7 +10,7 @@ import {
 
 it('keeps the default daily hint ladder in the expected order', () => {
   expect(DEFAULT_DAILY_HINT_CONFIG.map((slot) => slot.hintType)).toEqual(DEFAULT_DAILY_HINT_TYPES);
-  expect(DEFAULT_DAILY_HINT_CONFIG.map((slot) => slot.result)).toEqual(['triple', 'double', 'single', 'bunt']);
+  expect(DEFAULT_DAILY_HINT_CONFIG.map((slot) => slot.result)).toEqual(['triple', 'double', 'single', 'sac']);
   expect(DEFAULT_DAILY_HINT_CONFIG.map((slot) => slot.displayLabel)).toEqual([
     'Main decade played in',
     'Teams',
@@ -25,7 +25,7 @@ it('maps daily scoring points to the expected outcomes', () => {
     1: '3B',
     2: '2B',
     3: '1B',
-    4: 'BUNT',
+    4: 'SAC',
     strikeout: 'K',
   });
 });

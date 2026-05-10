@@ -60,7 +60,7 @@ Daily Inning uses fixed rules for comparability:
 | After Main decade played in | Triple |
 | After Teams | Double |
 | After Position | Single |
-| After Stats | Bunt |
+| After Stats | Sacrifice |
 | Three wrong guesses | K/out |
 
 ## H2H default settings, later
@@ -74,7 +74,7 @@ Daily Inning uses fixed rules for comparability:
 | Triple hint | Main decade played in |
 | Double hint | Teams |
 | Single hint | Position |
-| Bunt hint | Stats |
+| Sacrifice hint | Stats |
 
 H2H games start only after both players accept the latest settings proposal.
 

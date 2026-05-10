@@ -93,7 +93,7 @@ Later mobile app excludes initially:
 - Guess after Hint 1 = Triple.
 - Guess after Hint 2 = Double.
 - Guess after Hint 3 = Single.
-- Guess after Hint 4 = Bunt.
+- Guess after Hint 4 = Sacrifice.
 - Three wrong guesses = Out / strikeout.
 
 Default Daily hint order:
@@ -101,7 +101,7 @@ Default Daily hint order:
 1. Main decade played in = Triple
 2. Teams = Double
 3. Position = Single
-4. Stats = Bunt
+4. Stats = Sacrifice
 
 ## H2H default settings, later
 

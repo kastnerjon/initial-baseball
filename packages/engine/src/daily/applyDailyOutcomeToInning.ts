@@ -1,6 +1,6 @@
 import type { DailyInningState, DailyOutcome, DailyScoreSummary } from '@initial-baseball/shared';
 import { advanceRunners } from '../scoring/advanceRunners.js';
-import { advanceRunnersOnBunt } from '../scoring/advanceRunnersOnBunt.js';
+import { advanceRunnersOnSacrifice } from '../scoring/advanceRunnersOnSacrifice.js';
 
 export type DailyInningEngineState = {
   inning: DailyInningState;
@@ -32,8 +32,8 @@ export function applyDailyOutcomeToInning(input: ApplyDailyOutcomeInput): DailyI
       return applyAdvancementOutcome(input, 'double', 1, 0);
     case '1B':
       return applyAdvancementOutcome(input, 'single', 1, 0);
-    case 'BUNT':
-      return applyBuntOutcome(input);
+    case 'SAC':
+      return applySacrificeOutcome(input);
     case 'K':
       return applyStrikeoutOutcome(input);
   }
@@ -49,8 +49,8 @@ function applyAdvancementOutcome(
   return finalizeState(input, advancement.bases, advancement.runsScored, advancement.outsAdded, hitsAdded, strikeoutsAdded);
 }
 
-function applyBuntOutcome(input: ApplyDailyOutcomeInput): DailyInningEngineState {
-  const advancement = advanceRunnersOnBunt(input.inning.bases);
+function applySacrificeOutcome(input: ApplyDailyOutcomeInput): DailyInningEngineState {
+  const advancement = advanceRunnersOnSacrifice(input.inning.bases);
   return finalizeState(input, advancement.bases, advancement.runsScored, advancement.outsAdded, 0, 0);
 }
 

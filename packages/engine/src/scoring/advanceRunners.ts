@@ -1,8 +1,8 @@
 import type { AdvancementResult, BaseState } from './baseState.js';
 
-export type NonBuntHitResult = 'single' | 'double' | 'triple' | 'home_run';
+export type NonSacrificeHitResult = 'single' | 'double' | 'triple' | 'home_run';
 
-export function advanceRunners(bases: BaseState, hitResult: NonBuntHitResult): AdvancementResult {
+export function advanceRunners(bases: BaseState, hitResult: NonSacrificeHitResult): AdvancementResult {
   switch (hitResult) {
     case 'single':
       return {

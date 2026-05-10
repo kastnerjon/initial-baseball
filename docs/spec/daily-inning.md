@@ -48,7 +48,7 @@ Daily Inning should use fixed rules for comparability:
 | After Main decade played in | 3B |
 | After Teams | 2B |
 | After Position | 1B |
-| After Stats | Bunt |
+| After Stats | SAC |
 | Three wrong guesses | K/out |
 
 Do not support custom settings in Daily Inning v0.
@@ -70,29 +70,18 @@ Game rule:
 - No fuzzy matching.
 - No string comparison at evaluation time.
 
-## BUNT rule
+## SAC rule
 
-BUNT is not a hit and never scores a run.
+SAC is not a hit.
 
-BUNT always creates exactly 1 out.
-
-Case A — No runner on 3rd:
+SAC always creates exactly 1 out.
 
 - Batter is out.
-- All existing runners advance one base.
-- No run scores.
+- All existing baserunners advance exactly one base.
+- Runner on 3rd scores.
+- Batter does not reach base.
 
-Case B — Runner on 3rd:
-
-- Runner on 3rd is out.
-- Batter reaches 1st.
-- Other runners advance one base.
-- No run scores.
-
-Notes:
-
-- BUNT is strictly worse than a single.
-- BUNT can change base state but cannot produce runs.
+SAC is strictly worse than a single because it costs an out and the batter never reaches base.
 
 ## Share result
 
@@ -156,7 +145,7 @@ For each puzzle pitch, compute:
 - 3B percentage.
 - 2B percentage.
 - 1B percentage.
-- Bunt percentage.
+- SAC percentage.
 - Strikeout percentage.
 - Average bases.
 - Number of attempts.

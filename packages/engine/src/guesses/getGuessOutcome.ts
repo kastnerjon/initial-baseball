@@ -48,6 +48,6 @@ function getCorrectOutcome(revealCount: DailyRevealCount): Exclude<DailyGuessRes
     case 3:
       return '1B';
     case 4:
-      return 'BUNT';
+      return 'SAC';
   }
 }

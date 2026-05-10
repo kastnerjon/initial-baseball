@@ -26,7 +26,7 @@ describe('applyDailyOutcomeToInning', () => {
     ['3B', { first: false, second: false, third: false }, { first: false, second: false, third: true }, 0, 1, 0, 0],
     ['2B', { first: false, second: false, third: false }, { first: false, second: true, third: false }, 0, 1, 0, 0],
     ['1B', { first: false, second: false, third: false }, { first: true, second: false, third: false }, 0, 1, 0, 0],
-    ['BUNT', { first: false, second: false, third: false }, { first: false, second: false, third: false }, 0, 0, 1, 0],
+    ['SAC', { first: false, second: false, third: false }, { first: false, second: false, third: false }, 0, 0, 1, 0],
     ['K', { first: false, second: false, third: false }, { first: false, second: false, third: false }, 0, 0, 1, 1],
   ] as const)(
     'applies %s with empty bases',
@@ -93,20 +93,20 @@ describe('applyDailyOutcomeToInning', () => {
   });
 
   it.each([
-    [{ first: false, second: false, third: false }, { first: false, second: false, third: false }],
-    [{ first: true, second: false, third: false }, { first: false, second: true, third: false }],
-    [{ first: false, second: true, third: false }, { first: false, second: false, third: true }],
-    [{ first: false, second: false, third: true }, { first: true, second: false, third: false }],
-    [{ first: true, second: true, third: true }, { first: true, second: true, third: true }],
-  ] as const)('applies BUNT from %o to %o with no hit or run', (startingBases, endingBases) => {
+    [{ first: false, second: false, third: false }, { first: false, second: false, third: false }, 0],
+    [{ first: true, second: false, third: false }, { first: false, second: true, third: false }, 0],
+    [{ first: false, second: true, third: false }, { first: false, second: false, third: true }, 0],
+    [{ first: false, second: false, third: true }, { first: false, second: false, third: false }, 1],
+    [{ first: true, second: true, third: true }, { first: false, second: true, third: true }, 1],
+  ] as const)('applies SAC from %o to %o and scores %i', (startingBases, endingBases, runs) => {
     const result = applyDailyOutcomeToInning({
-      outcome: 'BUNT',
+      outcome: 'SAC',
       inning: baseInning(startingBases),
       score: baseScore(),
     });
 
     expect(result.inning.bases).toEqual(endingBases);
-    expect(result.score).toMatchObject({ runs: 0, hits: 0, outs: 1, strikeouts: 0 });
+    expect(result.score).toMatchObject({ runs, hits: 0, outs: 1, strikeouts: 0 });
   });
 
   it('adds an out and a strikeout for K with no runner movement', () => {
@@ -153,9 +153,9 @@ describe('applyDailyOutcomeToInning', () => {
     expect(result.score.outs).toBe(3);
   });
 
-  it('keeps inning outs and score outs aligned after a bunt from two outs', () => {
+  it('keeps inning outs and score outs aligned after a sacrifice from two outs', () => {
     const result = applyDailyOutcomeToInning({
-      outcome: 'BUNT',
+      outcome: 'SAC',
       inning: baseInning({ first: true, second: false, third: false }, 2),
       score: baseScore({ outs: 1 }),
     });
