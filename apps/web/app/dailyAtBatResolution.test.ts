@@ -98,21 +98,27 @@ describe('resolveDailyTerminalAtBat', () => {
 });
 
 describe('AtBatCard terminal output', () => {
-  it('renders a Give up action while the pitch is active', () => {
+  it('renders At Bat language and a Give up action while active', () => {
     const html = renderAtBatCard({
       submittedResult: null,
       strikeCount: 0,
     });
 
+    expect(html).toContain(`At Bat ${firstPitch.pitchNumber}`);
+    expect(html).not.toContain(`Pitch ${firstPitch.pitchNumber}`);
     expect(html).toContain('Give up');
+    expect(html).toContain('Guess the player');
   });
 
-  it('reveals the correct answer after Give Up', () => {
+  it('reveals the correct answer after Give Up and waits for the next at-bat', () => {
     const html = renderAtBatCard({
       submittedResult: createGiveUpResult(0, 3),
       strikeCount: 3,
     });
 
+    expect(html).toContain(`At Bat ${firstPitch.pitchNumber}`);
+    expect(html).toContain('Next At Bat');
+    expect(html).not.toContain('Next Pitch');
     expect(html).toContain('K');
     expect(html).toContain(`Answer: ${firstPitch.player.fullName}`);
     expect(html).toContain('Outcome distribution will appear once public results are collected.');
