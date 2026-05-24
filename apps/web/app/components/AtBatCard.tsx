@@ -7,15 +7,21 @@ import {
   type PlayerSearchResult,
 } from '@initial-baseball/engine';
 import type { DailyGuessResult, Player } from '@initial-baseball/shared';
+import { PlayerRevealCard, type PlayerRevealCardPlayer } from './PlayerRevealCard';
 import { ResultDisplay } from './ResultDisplay';
 import { ResultsDropdown } from './ResultsDropdown';
 import { SearchInput } from './SearchInput';
 
 export type AtBatCardPitch = {
   pitchNumber: number;
+  correctPlayerId: string;
   player: {
+    playerId: string;
     initials: string;
     fullName: string;
+    displayName: string;
+    kind: 'hitter' | 'pitcher';
+    primaryPosition: string;
   };
   hints: Array<{
     hintLabel: string;
@@ -56,6 +62,10 @@ export function AtBatCard({
   const results = useMemo(() => searchPlayers(state.query, players).slice(0, 5), [players, state.query]);
   const revealedHints = atBat.hints.slice(0, state.revealCount);
   const hasRevealedAllHints = state.revealCount >= atBat.hints.length;
+  const revealPlayer = useMemo(
+    () => players.find((player) => player.id === atBat.correctPlayerId) ?? createFallbackRevealPlayer(atBat),
+    [atBat, players],
+  );
   const resolvedTerminalResult = state.submittedResult !== null && state.submittedResult.kind !== 'incorrect'
     ? state.submittedResult
     : null;
@@ -67,11 +77,8 @@ export function AtBatCard({
           <span className="pitch-number">{`At Bat ${atBat.pitchNumber}`}</span>
           <CountIndicator label="Strikes" filledCount={state.strikeCount} total={3} />
         </div>
-        <ResultDisplay
-          result={resolvedTerminalResult}
-          correctAnswer={atBat.player.fullName}
-          revealAnswer={resolvedTerminalResult.kind === 'strikeout'}
-        />
+        <ResultDisplay result={resolvedTerminalResult} />
+        <PlayerRevealCard player={revealPlayer} />
         <OutcomeDistributionPlaceholder />
         <button
           type="button"
@@ -162,6 +169,15 @@ export function AtBatCard({
   function handleSelect(result: PlayerSearchResult): void {
     onSelectPlayer(result);
   }
+}
+
+function createFallbackRevealPlayer(atBat: AtBatCardPitch): PlayerRevealCardPlayer {
+  return {
+    displayName: atBat.player.displayName,
+    fullName: atBat.player.fullName,
+    primaryRole: atBat.player.kind,
+    primaryPosition: atBat.player.primaryPosition,
+  };
 }
 
 function CountIndicator({
