@@ -257,6 +257,7 @@ p {
 .initials-block,
 .hint-block,
 .result-card,
+.player-reveal-card,
 .outcome-distribution-card,
 .pitch-results-card,
 .complete-card,
@@ -326,6 +327,120 @@ p {
 .result-note {
   margin: 0;
   font-size: 16px;
+}
+
+.player-reveal-card {
+  display: grid;
+  gap: 14px;
+  background:
+    linear-gradient(135deg, rgba(255, 252, 244, 0.96), rgba(238, 229, 205, 0.94));
+}
+
+.player-reveal-topline {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 14px;
+  align-items: center;
+}
+
+.player-reveal-silhouette {
+  position: relative;
+  width: 72px;
+  height: 86px;
+  border-radius: 10px;
+  overflow: hidden;
+  background:
+    linear-gradient(180deg, rgba(21, 51, 37, 0.14), rgba(21, 51, 37, 0.06)),
+    repeating-linear-gradient(90deg, rgba(21, 51, 37, 0.08) 0 1px, transparent 1px 9px);
+  border: 1px solid rgba(22, 33, 22, 0.1);
+}
+
+.player-reveal-cap,
+.player-reveal-head,
+.player-reveal-shoulders {
+  position: absolute;
+  left: 50%;
+  transform: translateX(-50%);
+  background: #173326;
+}
+
+.player-reveal-cap {
+  top: 18px;
+  width: 38px;
+  height: 10px;
+  border-radius: 10px 10px 3px 3px;
+}
+
+.player-reveal-head {
+  top: 28px;
+  width: 28px;
+  height: 30px;
+  border-radius: 50%;
+}
+
+.player-reveal-shoulders {
+  bottom: 10px;
+  width: 56px;
+  height: 26px;
+  border-radius: 26px 26px 8px 8px;
+}
+
+.player-reveal-heading {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+}
+
+.player-reveal-kicker {
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: rgba(22, 33, 22, 0.68);
+}
+
+.player-reveal-name {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: clamp(28px, 7vw, 40px);
+  line-height: 1;
+}
+
+.player-reveal-meta {
+  margin: 0;
+  color: rgba(22, 33, 22, 0.74);
+  font-size: 15px;
+  font-weight: 700;
+}
+
+.player-reveal-details {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+
+.player-reveal-detail {
+  display: grid;
+  grid-template-columns: 72px 1fr;
+  gap: 12px;
+  align-items: baseline;
+  padding-top: 8px;
+  border-top: 1px solid rgba(22, 33, 22, 0.1);
+}
+
+.player-reveal-detail dt {
+  color: rgba(22, 33, 22, 0.66);
+  font-size: 11px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.player-reveal-detail dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 15px;
+  line-height: 1.35;
 }
 
 .at-bat-actions {
@@ -527,6 +642,11 @@ button:disabled {
 
   .hint-block {
     flex-direction: column;
+  }
+
+  .player-reveal-topline,
+  .player-reveal-detail {
+    grid-template-columns: 1fr;
   }
 
   .at-bat-actions {

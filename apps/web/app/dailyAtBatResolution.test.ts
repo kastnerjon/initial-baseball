@@ -1,5 +1,6 @@
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { baseballPlayers } from '@initial-baseball/baseball-data';
 import { createDailyShareResult, formatDailyShareText, getGuessOutcome } from '@initial-baseball/engine';
 import type { DailyGameState, DailyGuessResult } from '@initial-baseball/shared';
 import { describe, expect, it } from 'vitest';
@@ -14,6 +15,7 @@ import {
 } from './mockDailyPuzzle';
 
 const firstPitch = getFirstDemoPitch();
+const firstRevealPlayer = getFirstRevealPlayer();
 (globalThis as Record<string, unknown>).React = React;
 
 describe('createGiveUpResult', () => {
@@ -120,7 +122,10 @@ describe('AtBatCard terminal output', () => {
     expect(html).toContain('Next At Bat');
     expect(html).not.toContain('Next Pitch');
     expect(html).toContain('K');
-    expect(html).toContain(`Answer: ${firstPitch.player.fullName}`);
+    expect(html).toContain('Player Reveal');
+    expect(html).toContain(firstPitch.player.fullName);
+    expect(html).toContain(`Hitter · ${firstRevealPlayer.primaryPosition} · ${firstRevealPlayer.primaryTeam}`);
+    expect(html).toContain(firstRevealPlayer.statsLine);
     expect(html).toContain('Outcome distribution will appear once public results are collected.');
   });
 
@@ -138,7 +143,32 @@ describe('AtBatCard terminal output', () => {
     });
 
     expect(html).toContain('Strikeout');
-    expect(html).toContain(`Answer: ${firstPitch.player.fullName}`);
+    expect(html).toContain('Player Reveal');
+    expect(html).toContain(firstPitch.player.fullName);
+  });
+
+  it('reveals the player card after a correct outcome', () => {
+    const correctResult = getGuessOutcome({
+      isCorrect: true,
+      revealCount: 1,
+      strikeCount: 0,
+      maxStrikes: 3,
+    });
+
+    if (correctResult.kind !== 'correct') {
+      throw new Error('Expected a correct result.');
+    }
+
+    const html = renderAtBatCard({
+      submittedResult: correctResult,
+      strikeCount: 0,
+    });
+
+    expect(html).toContain('Player Reveal');
+    expect(html).toContain(firstPitch.player.fullName);
+    expect(html).toContain('Era');
+    expect(html).toContain('Teams');
+    expect(html).not.toContain(`Answer: ${firstPitch.player.fullName}`);
   });
 });
 
@@ -152,7 +182,7 @@ function renderAtBatCard({
   return renderToStaticMarkup(
     React.createElement(AtBatCard, {
       atBat: firstPitch,
-      players: [],
+      players: baseballPlayers,
       state: {
         ...createInitialAtBatUiState(),
         strikeCount,
@@ -176,4 +206,14 @@ function getFirstDemoPitch() {
   }
 
   return pitch;
+}
+
+function getFirstRevealPlayer() {
+  const player = baseballPlayers.find((candidate) => candidate.id === firstPitch.correctPlayerId);
+
+  if (player === undefined) {
+    throw new Error('Expected first Daily pitch player to exist in generated player data.');
+  }
+
+  return player;
 }
