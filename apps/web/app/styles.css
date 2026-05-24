@@ -552,6 +552,41 @@ input[type="text"]:focus {
   gap: 4px;
 }
 
+.pitch-results-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  cursor: pointer;
+  list-style: none;
+}
+
+.pitch-results-summary::-webkit-details-marker {
+  display: none;
+}
+
+.pitch-results-summary::after {
+  content: "+";
+  display: inline-grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
+  background: rgba(22, 33, 22, 0.1);
+  font-weight: 800;
+}
+
+.pitch-results-card-compact[open] .pitch-results-summary::after {
+  content: "−";
+}
+
+.pitch-results-title {
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .result-option,
 .button-primary,
 .button-secondary,
@@ -619,41 +654,322 @@ button:disabled {
 }
 
 @media (max-width: 640px) {
-  .scorebug-shell {
-    grid-template-columns: 1fr;
+  .page-shell {
+    min-height: 100svh;
+    align-items: start;
+    padding: 8px;
   }
 
-  .scorebug-left,
-  .scorebug-middle,
-  .scorebug-right,
-  .hint-block {
-    align-items: stretch;
-    justify-content: flex-start;
+  .daily-card {
+    border-radius: 16px;
+    padding: 10px;
+  }
+
+  .eyebrow {
+    margin-bottom: 4px;
+    font-size: 9px;
+    letter-spacing: 0.14em;
+  }
+
+  h1 {
+    margin-bottom: 8px;
+    font-size: clamp(28px, 9vw, 36px);
+  }
+
+  h2 {
+    margin-bottom: 6px;
+    font-size: 16px;
+  }
+
+  .daily-instructions {
+    margin-bottom: 8px;
+    padding: 8px 10px;
+    border-radius: 10px;
+  }
+
+  .daily-instructions p {
+    font-size: 13px;
+    line-height: 1.28;
+  }
+
+  .game-shell,
+  .at-bat-card {
+    gap: 8px;
+  }
+
+  .scorebug-shell {
+    grid-template-columns: 0.8fr 1.2fr 0.82fr;
+    gap: 5px;
+    padding: 6px;
+    border-radius: 12px;
+  }
+
+  .scorebug-block {
+    min-width: 0;
+    padding: 6px;
+    border-radius: 9px;
+  }
+
+  .scorebug-title {
+    font-size: 18px;
+    letter-spacing: 0.05em;
+  }
+
+  .scorebug-kicker,
+  .scorebug-section-label,
+  .scorebug-metric-label,
+  .pitch-results-kicker,
+  .at-bat-count-label {
+    font-size: 8px;
+    letter-spacing: 0.12em;
   }
 
   .scorebug-metrics {
-    flex-wrap: wrap;
+    justify-content: center;
+    gap: 8px;
+  }
+
+  .scorebug-metric {
+    min-width: 20px;
+    gap: 2px;
+  }
+
+  .scorebug-metric-value {
+    font-size: 18px;
+  }
+
+  .diamond-shell,
+  .count-panel {
+    gap: 4px;
+  }
+
+  .base-diamond {
+    width: 42px;
+    height: 34px;
+  }
+
+  .base-marker {
+    width: 10px;
+    height: 10px;
+  }
+
+  .base-marker-first {
+    right: 4px;
+    top: 13px;
+  }
+
+  .base-marker-second {
+    left: 16px;
+    top: 1px;
+  }
+
+  .base-marker-third {
+    left: 4px;
+    top: 13px;
+  }
+
+  .count-marker,
+  .at-bat-count-marker {
+    font-size: 11px;
+  }
+
+  .initials-block,
+  .hint-block,
+  .result-card,
+  .player-reveal-card,
+  .outcome-distribution-card,
+  .pitch-results-card,
+  .complete-card,
+  .share-card {
+    padding: 10px;
+    border-radius: 10px;
+  }
+
+  .pitch-meta {
+    gap: 8px;
+  }
+
+  .pitch-number {
+    font-size: 11px;
+    letter-spacing: 0.09em;
+  }
+
+  .initials-label,
+  .hint-label,
+  .field-label,
+  .result-label {
+    margin-bottom: 4px;
+    font-size: 10px;
+    letter-spacing: 0.1em;
+  }
+
+  .initials-block {
+    gap: 4px;
+  }
+
+  .initials-value,
+  .result-value {
+    font-size: clamp(30px, 11vw, 40px);
   }
 
   .count-indicator,
   .at-bat-count {
-    justify-items: start;
+    gap: 3px;
   }
 
   .hint-block {
     flex-direction: column;
+    align-items: stretch;
+    justify-content: flex-start;
+    gap: 8px;
+  }
+
+  .hint-list {
+    gap: 7px;
+  }
+
+  .revealed-hint {
+    gap: 2px;
+  }
+
+  .hint-value,
+  .result-note {
+    font-size: 13px;
+    line-height: 1.28;
+  }
+
+  input[type="text"] {
+    min-height: 42px;
+    padding: 10px 12px;
+    border-radius: 10px;
+  }
+
+  .results-dropdown {
+    margin-top: 6px;
+    padding: 5px;
+    gap: 4px;
+    border-radius: 10px;
+  }
+
+  .results-dropdown.empty,
+  .result-option {
+    padding: 9px 10px;
+    font-size: 14px;
+  }
+
+  .at-bat-actions {
+    display: grid;
+    grid-template-columns: minmax(0, 0.85fr) minmax(0, 1.15fr);
+    gap: 8px;
+  }
+
+  .button-primary,
+  .button-secondary {
+    min-height: 40px;
+    padding: 9px 10px;
+    border-radius: 10px;
+  }
+
+  .reset-local-result-button {
+    padding: 4px 2px;
+    font-size: 11px;
+  }
+
+  .pitch-results-card-compact {
+    padding: 8px 10px;
+  }
+
+  .pitch-results-title {
+    font-size: 12px;
+  }
+
+  .pitch-list {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 6px;
+    margin-top: 8px;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .pitch-row {
+    flex: 0 0 auto;
+  }
+
+  .pitch-row-chip {
+    gap: 7px;
+    padding: 7px 9px;
+    font-size: 12px;
+  }
+
+  .player-reveal-card {
+    gap: 8px;
   }
 
   .player-reveal-topline,
   .player-reveal-detail {
-    grid-template-columns: 1fr;
+    grid-template-columns: 52px 1fr;
+    gap: 8px;
   }
 
-  .at-bat-actions {
-    flex-direction: column-reverse;
+  .player-reveal-silhouette {
+    width: 52px;
+    height: 60px;
+    border-radius: 8px;
   }
 
-  .pitch-list {
-    display: grid;
+  .player-reveal-cap {
+    top: 11px;
+    width: 29px;
+    height: 8px;
+  }
+
+  .player-reveal-head {
+    top: 18px;
+    width: 22px;
+    height: 23px;
+  }
+
+  .player-reveal-shoulders {
+    bottom: 7px;
+    width: 42px;
+    height: 18px;
+  }
+
+  .player-reveal-kicker {
+    font-size: 9px;
+    letter-spacing: 0.11em;
+  }
+
+  .player-reveal-name {
+    font-size: clamp(22px, 7vw, 28px);
+  }
+
+  .player-reveal-meta,
+  .player-reveal-detail dd {
+    font-size: 12px;
+    line-height: 1.25;
+  }
+
+  .player-reveal-details {
+    gap: 4px;
+  }
+
+  .player-reveal-detail {
+    padding-top: 4px;
+  }
+
+  .player-reveal-detail dt {
+    font-size: 9px;
+    letter-spacing: 0.1em;
+  }
+
+  .outcome-distribution-card {
+    display: none;
+  }
+
+  .share-text {
+    padding: 10px;
+    font-size: 12px;
   }
 }
