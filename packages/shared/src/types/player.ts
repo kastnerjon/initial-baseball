@@ -11,9 +11,13 @@ export type Player = {
   primaryRole: PlayerRole;
   primaryPosition: string;
   mainDecade: string;
+  firstYear: number | null;
+  lastYear: number | null;
+  yearsPlayedDisplay: string;
   primaryTeam: string;
   teamsDisplay: string;
   statsLine: string;
+  careerStats: PlayerCareerStatStrip | null;
   dailyEligibilityTier: 'core' | 'extended' | 'none';
   dailyEligible: boolean;
   aliases: string[];
@@ -30,3 +34,33 @@ export type PlayerIdentity = {
 };
 
 export type PlayerCareerStats = Partial<Record<HitterStatField | PitcherStatField, number | string>>;
+
+export type HitterCareerStatStrip = {
+  kind: 'hitter';
+  stats: {
+    AB: number;
+    H: number;
+    HR: number;
+    BA: string;
+    R: number;
+    RBI: number;
+    SB: number;
+    OBP: string;
+    SLG: string;
+    OPS: string;
+  };
+};
+
+export type PitcherCareerStatStrip = {
+  kind: 'pitcher';
+  stats: {
+    W: number;
+    L: number;
+    ERA: string;
+    WHIP: string;
+    K: number;
+    IP: string;
+  };
+};
+
+export type PlayerCareerStatStrip = HitterCareerStatStrip | PitcherCareerStatStrip;

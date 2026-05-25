@@ -12,6 +12,7 @@ const LAHMAN_BATTING_PATH = resolve(LAHMAN_DIR, 'Batting.csv');
 const LAHMAN_HALL_OF_FAME_PATH = resolve(LAHMAN_DIR, 'HallOfFame.csv');
 const LAHMAN_PITCHING_PATH = resolve(LAHMAN_DIR, 'Pitching.csv');
 const LAHMAN_TEAMS_PATH = resolve(LAHMAN_DIR, 'Teams.csv');
+const EMPTY_STAT_VALUE = '—';
 const POSITION_COLUMNS = [
   ['G_p', 'P'],
   ['G_c', 'C'],
@@ -245,11 +246,16 @@ function buildLahmanEnrichmentByPlayerId(appearanceRows, battingRows, inductedHa
 
     const current = enrichmentByPlayerId.get(playerId) ?? {
       decadeGames: new Map(),
+      firstYear: null,
+      lastYear: null,
       positionGames: new Map(),
       teamFirstYear: new Map(),
       teamGames: new Map(),
       teamHistory: [],
     };
+
+    current.firstYear = current.firstYear === null ? year : Math.min(current.firstYear, year);
+    current.lastYear = current.lastYear === null ? year : Math.max(current.lastYear, year);
 
     for (const [column, position] of POSITION_COLUMNS) {
       const games = parseInteger(row[column]);
@@ -295,6 +301,9 @@ function buildLahmanEnrichmentByPlayerId(appearanceRows, battingRows, inductedHa
     const statsLine = primaryRole === 'pitcher'
       ? formatPitcherStatsLine(pitchingStats)
       : formatHitterStatsLine(battingStats);
+    const careerStats = primaryRole === 'pitcher'
+      ? formatPitcherCareerStats(pitchingStats)
+      : formatHitterCareerStats(battingStats);
     const dailyEligibilityTier = deriveDailyEligibilityTier({
       primaryRole,
       appearanceGames: sumGames(enrichment.teamGames),
@@ -308,8 +317,12 @@ function buildLahmanEnrichmentByPlayerId(appearanceRows, battingRows, inductedHa
       primaryTeam,
       primaryRole,
       primaryPosition,
+      firstYear: enrichment.firstYear,
+      lastYear: enrichment.lastYear,
+      yearsPlayedDisplay: formatYearsPlayedDisplay(enrichment.firstYear, enrichment.lastYear),
       teamsDisplay,
       statsLine,
+      careerStats,
       dailyEligibilityTier,
       dailyEligible: dailyEligibilityTier !== 'none',
     }];
@@ -333,6 +346,9 @@ function buildBattingStatsByPlayerId(rows) {
       walks: 0,
       hitByPitch: 0,
       sacrificeFlies: 0,
+      doubles: 0,
+      triples: 0,
+      runs: 0,
     };
 
     current.hr += parseInteger(row.HR);
@@ -343,6 +359,9 @@ function buildBattingStatsByPlayerId(rows) {
     current.walks += parseInteger(row.BB);
     current.hitByPitch += parseInteger(row.HBP);
     current.sacrificeFlies += parseInteger(row.SF);
+    current.doubles += parseInteger(row['2B']);
+    current.triples += parseInteger(row['3B']);
+    current.runs += parseInteger(row.R);
 
     battingStatsByPlayerId.set(row.playerID, current);
   }
@@ -483,7 +502,11 @@ function buildPlayer({ row, aliases, lahmanPlayer, lahmanEnrichmentByPlayerId })
     ?? parseYear(row.mlb_played_last)
     ?? parseYear(row.pro_played_first)
     ?? parseYear(row.pro_played_last);
+  const fallbackFirstYear = parseYear(row.mlb_played_first) ?? mainYear;
+  const fallbackLastYear = parseYear(row.mlb_played_last) ?? fallbackFirstYear;
   const enrichment = lahmanPlayer === null ? null : lahmanEnrichmentByPlayerId.get(lahmanPlayer.playerId) ?? null;
+  const firstYear = enrichment?.firstYear ?? fallbackFirstYear;
+  const lastYear = enrichment?.lastYear ?? fallbackLastYear;
 
   return {
     id: `chadwick:${row.key_person}`,
@@ -492,9 +515,13 @@ function buildPlayer({ row, aliases, lahmanPlayer, lahmanEnrichmentByPlayerId })
     primaryRole: enrichment?.primaryRole ?? 'hitter',
     primaryPosition: enrichment?.primaryPosition ?? 'Unknown',
     mainDecade: enrichment?.mainDecade ?? (mainYear === null ? 'Unknown' : `${Math.floor(mainYear / 10) * 10}s`),
+    firstYear,
+    lastYear,
+    yearsPlayedDisplay: formatYearsPlayedDisplay(firstYear, lastYear),
     primaryTeam: enrichment?.primaryTeam ?? '',
     teamsDisplay: enrichment?.teamsDisplay ?? '',
     statsLine: enrichment?.statsLine ?? formatHitterStatsLine(undefined),
+    careerStats: enrichment?.careerStats ?? formatHitterCareerStats(undefined),
     dailyEligibilityTier: enrichment?.dailyEligibilityTier ?? 'none',
     dailyEligible: enrichment?.dailyEligible ?? false,
     aliases: [...new Set([...(legalName && legalName !== fullName ? [legalName] : []), ...(row.name_nick ? splitNicknames(row.name_nick) : []), ...aliases])]
@@ -626,6 +653,35 @@ function formatHitterStatsLine(stats) {
   ].join(' / ');
 }
 
+function formatHitterCareerStats(stats) {
+  const onBasePercentageDenominator = (stats?.atBats ?? 0) + (stats?.walks ?? 0) + (stats?.hitByPitch ?? 0) + (stats?.sacrificeFlies ?? 0);
+  const totalBases = (stats?.hits ?? 0) + (stats?.doubles ?? 0) + (2 * (stats?.triples ?? 0)) + (3 * (stats?.hr ?? 0));
+  const onBasePercentage = stats === undefined || onBasePercentageDenominator === 0
+    ? EMPTY_STAT_VALUE
+    : formatAverage(((stats.hits ?? 0) + (stats.walks ?? 0) + (stats.hitByPitch ?? 0)) / onBasePercentageDenominator);
+  const sluggingPercentage = stats === undefined || stats.atBats === 0
+    ? EMPTY_STAT_VALUE
+    : formatAverage(totalBases / stats.atBats);
+
+  return {
+    kind: 'hitter',
+    stats: {
+      AB: stats?.atBats ?? 0,
+      H: stats?.hits ?? 0,
+      HR: stats?.hr ?? 0,
+      BA: stats === undefined || stats.atBats === 0 ? EMPTY_STAT_VALUE : formatAverage(stats.hits / stats.atBats),
+      R: stats?.runs ?? 0,
+      RBI: stats?.rbi ?? 0,
+      SB: stats?.sb ?? 0,
+      OBP: onBasePercentage,
+      SLG: sluggingPercentage,
+      OPS: onBasePercentage === EMPTY_STAT_VALUE || sluggingPercentage === EMPTY_STAT_VALUE
+        ? EMPTY_STAT_VALUE
+        : formatAverage(Number(onBasePercentage) + Number(sluggingPercentage)),
+    },
+  };
+}
+
 function formatPitcherStatsLine(stats) {
   const inningsPitched = (stats?.ipOuts ?? 0) / 3;
   const era = stats === undefined || inningsPitched === 0
@@ -642,6 +698,34 @@ function formatPitcherStatsLine(stats) {
     whip,
     `K ${stats?.strikeouts ?? 0}`,
   ].join(' / ');
+}
+
+function formatPitcherCareerStats(stats) {
+  const inningsPitched = (stats?.ipOuts ?? 0) / 3;
+
+  return {
+    kind: 'pitcher',
+    stats: {
+      W: stats?.wins ?? 0,
+      L: stats?.losses ?? 0,
+      ERA: stats === undefined || inningsPitched === 0
+        ? EMPTY_STAT_VALUE
+        : formatFixedTwo((9 * (stats.earnedRuns ?? 0)) / inningsPitched),
+      WHIP: stats === undefined || inningsPitched === 0
+        ? EMPTY_STAT_VALUE
+        : formatFixedTwo(((stats.walks ?? 0) + (stats.hits ?? 0)) / inningsPitched),
+      K: stats?.strikeouts ?? 0,
+      IP: stats === undefined ? EMPTY_STAT_VALUE : formatInningsPitched(stats.ipOuts ?? 0),
+    },
+  };
+}
+
+function formatYearsPlayedDisplay(firstYear, lastYear) {
+  if (firstYear === null || lastYear === null) {
+    return 'Unknown';
+  }
+
+  return firstYear === lastYear ? `${firstYear}` : `${firstYear}–${lastYear}`;
 }
 
 function formatName({ first, last, suffix }) {
@@ -663,6 +747,13 @@ function formatAverage(value) {
 
 function formatFixedTwo(value) {
   return value.toFixed(2);
+}
+
+function formatInningsPitched(ipOuts) {
+  const fullInnings = Math.floor(ipOuts / 3);
+  const partialOuts = ipOuts % 3;
+
+  return partialOuts === 0 ? `${fullInnings}` : `${fullInnings}.${partialOuts}`;
 }
 
 function parseYear(value) {
