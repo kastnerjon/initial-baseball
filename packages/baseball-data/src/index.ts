@@ -17,8 +17,9 @@ export type NormalizedPlayerRow = {
 };
 
 const pitcherSaves = generatedPitcherSaves as Record<string, number>;
+const generatedPlayerRows = generatedPlayers as unknown as Player[];
 
-export const baseballPlayers = (generatedPlayers as Player[]).map((player) => {
+export const baseballPlayers = generatedPlayerRows.map((player) => {
   if (player.careerStats?.kind !== 'pitcher') {
     return player;
   }
