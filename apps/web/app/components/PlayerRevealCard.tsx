@@ -136,12 +136,12 @@ function SeasonStatsDisclosure({
   }
 
   return (
-    <details className="player-season-stats" onToggle={(event) => {
-      if (event.currentTarget.hasAttribute('open')) {
+    <details className="player-season-stats">
+      <summary onClick={() => {
         void loadSeasons();
-      }
-    }}>
-      <summary>View season-by-season stats</summary>
+      }}>
+        View season-by-season stats
+      </summary>
       {loading ? <p>Loading season stats…</p> : null}
       {error === null ? null : <p role="alert">{error}</p>}
       {seasons !== null && seasons.length === 0 ? <p>No season stats available.</p> : null}
