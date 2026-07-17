@@ -69,15 +69,27 @@ function CareerStatStrip({
     );
   }
 
-  const columns = careerStats.kind === 'pitcher' ? PITCHER_COLUMNS : HITTER_COLUMNS;
+  if (careerStats.kind === 'pitcher') {
+    return (
+      <StatTable
+        columns={PITCHER_COLUMNS}
+        rows={[{
+          key: 'career',
+          label: 'Career',
+          values: PITCHER_COLUMNS.map((column) => careerStats.stats[column]),
+        }]}
+        ariaLabel="Career stat summary"
+      />
+    );
+  }
 
   return (
     <StatTable
-      columns={columns}
+      columns={HITTER_COLUMNS}
       rows={[{
         key: 'career',
         label: 'Career',
-        values: columns.map((column) => careerStats.stats[column]),
+        values: HITTER_COLUMNS.map((column) => careerStats.stats[column]),
       }]}
       ariaLabel="Career stat summary"
     />
@@ -100,13 +112,20 @@ function SeasonStatsDisclosure({
   }
 
   async function loadSeasons(): Promise<void> {
-    if (loading || seasons !== null) return;
+    if (loading || seasons !== null) {
+      return;
+    }
+
     setLoading(true);
     setError(null);
 
     try {
       const response = await fetch(`/api/player-seasons?playerId=${encodeURIComponent(playerId ?? '')}`);
-      if (!response.ok) throw new Error(`Season request failed with ${response.status}.`);
+
+      if (!response.ok) {
+        throw new Error(`Season request failed with ${response.status}.`);
+      }
+
       const payload = await response.json() as { seasons?: PlayerSeasonStatRow[] };
       setSeasons(Array.isArray(payload.seasons) ? payload.seasons : []);
     } catch {
@@ -118,7 +137,9 @@ function SeasonStatsDisclosure({
 
   return (
     <details className="player-season-stats" onToggle={(event) => {
-      if (event.currentTarget.open) void loadSeasons();
+      if (event.currentTarget.open) {
+        void loadSeasons();
+      }
     }}>
       <summary>View season-by-season stats</summary>
       {loading ? <p>Loading season stats…</p> : null}
@@ -138,16 +159,35 @@ function SeasonStatTable({
   seasons: PlayerSeasonStatRow[];
   careerKind: PlayerCareerStatStrip['kind'];
 }): JSX.Element {
-  const columns = careerKind === 'pitcher' ? PITCHER_COLUMNS : HITTER_COLUMNS;
-  const matchingSeasons = seasons.filter((season) => season.kind === careerKind);
+  if (careerKind === 'pitcher') {
+    const pitcherSeasons = seasons.filter((season): season is Extract<PlayerSeasonStatRow, { kind: 'pitcher' }> => (
+      season.kind === 'pitcher'
+    ));
+
+    return (
+      <StatTable
+        columns={PITCHER_COLUMNS}
+        rows={pitcherSeasons.map((season) => ({
+          key: `${season.year}:${season.teams}`,
+          label: `${season.year} · ${season.teams || EMPTY_VALUE}`,
+          values: PITCHER_COLUMNS.map((column) => season.stats[column]),
+        }))}
+        ariaLabel="Season-by-season statistics"
+      />
+    );
+  }
+
+  const hitterSeasons = seasons.filter((season): season is Extract<PlayerSeasonStatRow, { kind: 'hitter' }> => (
+    season.kind === 'hitter'
+  ));
 
   return (
     <StatTable
-      columns={columns}
-      rows={matchingSeasons.map((season) => ({
+      columns={HITTER_COLUMNS}
+      rows={hitterSeasons.map((season) => ({
         key: `${season.year}:${season.teams}`,
         label: `${season.year} · ${season.teams || EMPTY_VALUE}`,
-        values: columns.map((column) => season.stats[column]),
+        values: HITTER_COLUMNS.map((column) => season.stats[column]),
       }))}
       ariaLabel="Season-by-season statistics"
     />
