@@ -4,6 +4,7 @@
   "version": "0.0.1",
   "scripts": {
     "dev": "next dev",
+    "prebuild": "cd ../.. && node scripts/generate-season-stats.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
