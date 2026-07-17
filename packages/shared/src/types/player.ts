@@ -35,32 +35,51 @@ export type PlayerIdentity = {
 
 export type PlayerCareerStats = Partial<Record<HitterStatField | PitcherStatField, number | string>>;
 
+export type HitterStatValues = {
+  AB: number;
+  H: number;
+  HR: number;
+  BA: string;
+  R: number;
+  RBI: number;
+  SB: number;
+  OBP: string;
+  SLG: string;
+  OPS: string;
+};
+
+export type PitcherStatValues = {
+  W: number;
+  L: number;
+  SV: number;
+  ERA: string;
+  WHIP: string;
+  K: number;
+  IP: string;
+};
+
 export type HitterCareerStatStrip = {
   kind: 'hitter';
-  stats: {
-    AB: number;
-    H: number;
-    HR: number;
-    BA: string;
-    R: number;
-    RBI: number;
-    SB: number;
-    OBP: string;
-    SLG: string;
-    OPS: string;
-  };
+  stats: HitterStatValues;
 };
 
 export type PitcherCareerStatStrip = {
   kind: 'pitcher';
-  stats: {
-    W: number;
-    L: number;
-    ERA: string;
-    WHIP: string;
-    K: number;
-    IP: string;
-  };
+  stats: PitcherStatValues;
 };
 
 export type PlayerCareerStatStrip = HitterCareerStatStrip | PitcherCareerStatStrip;
+
+export type PlayerSeasonStatRow = {
+  year: number;
+  teams: string;
+} & (
+  | {
+      kind: 'hitter';
+      stats: HitterStatValues;
+    }
+  | {
+      kind: 'pitcher';
+      stats: PitcherStatValues;
+    }
+);
