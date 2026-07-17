@@ -1,6 +1,6 @@
 import {
   baseballPlayers,
-  coreDailyEligiblePlayers,
+  dailyEligiblePlayers,
 } from '@initial-baseball/baseball-data';
 import {
   DEFAULT_DAILY_HINT_CONFIG,
@@ -12,7 +12,9 @@ import { createDailyPuzzlePitch } from './dailyPuzzleAdapters';
 import { DAILY_PUZZLE_OVERRIDES, type DailyPuzzleOverrideEntry } from './dailyPuzzleOverrides';
 
 export const DAILY_PUZZLE_EPOCH = '2026-04-27';
-const DAILY_PITCH_COUNT = 6;
+export const DAILY_AT_BAT_COUNT = 9;
+const LEGACY_OVERRIDE_COUNT = 6;
+const RECOGNIZABILITY_POOL_SIZES = [250, 250, 1000, 1000, 2500, 2500, 5000, 5000, 5000] as const;
 type DailyPuzzleOverrideMap = Record<string, readonly DailyPuzzleOverrideEntry[]>;
 
 export function createDailyPuzzleForDate(date: string): DailyPuzzle {
@@ -41,6 +43,15 @@ export function getDailyPuzzleNumber(date: string): number {
   return getDaysSinceEpoch(DAILY_PUZZLE_EPOCH, date) + 1;
 }
 
+export function rankPlayersByRecognizability(players: readonly Player[]): Player[] {
+  return [...players].sort((left, right) => (
+    getRecognizabilityScore(right) - getRecognizabilityScore(left)
+    || right.lastYear === null ? 1 : left.lastYear === null ? -1 : right.lastYear - left.lastYear
+    || left.displayName.localeCompare(right.displayName)
+    || left.id.localeCompare(right.id)
+  ));
+}
+
 function selectPlayersForDate(date: string, overrides: DailyPuzzleOverrideMap): Player[] {
   const overrideNames = getOverrideNames(date, overrides);
 
@@ -48,17 +59,79 @@ function selectPlayersForDate(date: string, overrides: DailyPuzzleOverrideMap): 
     return resolveOverridePlayers(date, overrideNames);
   }
 
-  if (coreDailyEligiblePlayers.length < DAILY_PITCH_COUNT) {
-    throw new Error(`Not enough core Daily-eligible players to build a ${DAILY_PITCH_COUNT}-pitch puzzle.`);
+  if (dailyEligiblePlayers.length < DAILY_AT_BAT_COUNT) {
+    throw new Error(`Not enough Daily-eligible players to build a ${DAILY_AT_BAT_COUNT}-at-bat puzzle.`);
   }
 
-  return [...coreDailyEligiblePlayers]
-    .sort((left, right) => (
-      compareHashedValues(`${date}:${left.id}`, `${date}:${right.id}`)
-      || left.displayName.localeCompare(right.displayName)
-      || left.id.localeCompare(right.id)
-    ))
-    .slice(0, DAILY_PITCH_COUNT);
+  const rankedPlayers = rankPlayersByRecognizability(dailyEligiblePlayers);
+  const selectedPlayers: Player[] = [];
+  const selectedIds = new Set<string>();
+
+  for (let index = 0; index < RECOGNIZABILITY_POOL_SIZES.length; index += 1) {
+    const poolSize = RECOGNIZABILITY_POOL_SIZES[index] ?? rankedPlayers.length;
+    const pool = rankedPlayers.slice(0, Math.min(poolSize, rankedPlayers.length));
+    const player = selectDeterministicUnusedPlayer(pool, selectedIds, `${date}:${index + 1}`);
+
+    if (player === null) {
+      throw new Error(`Could not select a unique player for at bat ${index + 1}.`);
+    }
+
+    selectedPlayers.push(player);
+    selectedIds.add(player.id);
+  }
+
+  return selectedPlayers;
+}
+
+function selectDeterministicUnusedPlayer(
+  pool: readonly Player[],
+  selectedIds: ReadonlySet<string>,
+  seed: string,
+): Player | null {
+  const rankedByDate = [...pool].sort((left, right) => (
+    compareHashedValues(`${seed}:${left.id}`, `${seed}:${right.id}`)
+    || left.displayName.localeCompare(right.displayName)
+    || left.id.localeCompare(right.id)
+  ));
+
+  return rankedByDate.find((player) => !selectedIds.has(player.id)) ?? null;
+}
+
+function getRecognizabilityScore(player: Player): number {
+  const recencyBonus = player.lastYear === null ? 0 : Math.max(0, player.lastYear - 1940) * 4;
+  const longevityBonus = player.firstYear === null || player.lastYear === null
+    ? 0
+    : Math.max(0, player.lastYear - player.firstYear + 1) * 20;
+  const coreBonus = player.dailyEligibilityTier === 'core' ? 5000 : 0;
+
+  if (player.careerStats?.kind === 'pitcher') {
+    const { W, K, IP } = player.careerStats.stats;
+    const innings = Number.parseFloat(IP === '—' ? '0' : IP);
+
+    return coreBonus
+      + recencyBonus
+      + longevityBonus
+      + (W * 18)
+      + (K * 2)
+      + (Number.isFinite(innings) ? innings : 0);
+  }
+
+  if (player.careerStats?.kind === 'hitter') {
+    const { H, HR, R, RBI, SB, OPS } = player.careerStats.stats;
+    const ops = Number.parseFloat(OPS === '—' ? '0' : OPS);
+
+    return coreBonus
+      + recencyBonus
+      + longevityBonus
+      + H
+      + (HR * 8)
+      + R
+      + RBI
+      + (SB * 2)
+      + (Number.isFinite(ops) ? ops * 1000 : 0);
+  }
+
+  return coreBonus + recencyBonus + longevityBonus;
 }
 
 function getOverrideNames(date: string, overrides: DailyPuzzleOverrideMap): readonly DailyPuzzleOverrideEntry[] | undefined {
@@ -69,8 +142,10 @@ export function resolveDailyPuzzleOverridePlayers(
   date: string,
   overrideEntries: readonly DailyPuzzleOverrideEntry[],
 ): Player[] {
-  if (overrideEntries.length !== DAILY_PITCH_COUNT) {
-    throw new Error(`Daily puzzle override for ${date} must contain exactly ${DAILY_PITCH_COUNT} players.`);
+  if (overrideEntries.length !== DAILY_AT_BAT_COUNT && overrideEntries.length !== LEGACY_OVERRIDE_COUNT) {
+    throw new Error(
+      `Daily puzzle override for ${date} must contain exactly ${DAILY_AT_BAT_COUNT} players (${LEGACY_OVERRIDE_COUNT} is accepted for legacy dates).`,
+    );
   }
 
   const players = overrideEntries.map((entry) => resolveOverridePlayer(date, entry));
