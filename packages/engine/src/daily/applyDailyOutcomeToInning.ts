@@ -51,7 +51,10 @@ function applyAdvancementOutcome(
 
 function applySacrificeOutcome(input: ApplyDailyOutcomeInput): DailyInningEngineState {
   const advancement = advanceRunnersOnSacrifice(input.inning.bases);
-  return finalizeState(input, advancement.bases, advancement.runsScored, advancement.outsAdded, 0, 0);
+  const createsThirdOut = input.inning.outs + advancement.outsAdded >= input.inning.maxOuts;
+  const runsScored = createsThirdOut ? 0 : advancement.runsScored;
+
+  return finalizeState(input, advancement.bases, runsScored, advancement.outsAdded, 0, 0);
 }
 
 function applyStrikeoutOutcome(input: ApplyDailyOutcomeInput): DailyInningEngineState {
