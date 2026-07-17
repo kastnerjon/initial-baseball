@@ -31,9 +31,13 @@ describe('baseballPlayers', () => {
       expect(player.displayName.length).toBeGreaterThan(0);
       expect(player.primaryPosition.length).toBeGreaterThan(0);
       expect(player.mainDecade.length).toBeGreaterThan(0);
+      expect(player.firstYear === null || typeof player.firstYear === 'number').toBe(true);
+      expect(player.lastYear === null || typeof player.lastYear === 'number').toBe(true);
+      expect(player.yearsPlayedDisplay).toBeTypeOf('string');
       expect(player.primaryTeam).toBeTypeOf('string');
       expect(player.teamsDisplay).toBeTypeOf('string');
       expect(player.statsLine).toBeTypeOf('string');
+      expect(player.careerStats === null || ['hitter', 'pitcher'].includes(player.careerStats.kind)).toBe(true);
       expect(['core', 'extended', 'none']).toContain(player.dailyEligibilityTier);
       expect(player.dailyEligible).toBeTypeOf('boolean');
       expect(Array.isArray(player.aliases)).toBe(true);
@@ -145,6 +149,12 @@ describe('baseballPlayers', () => {
     expect(baseballPlayers.every((player) => !/\bWAR\b/.test(player.statsLine))).toBe(true);
   });
 
+  it('does not include generic WAR or OPS+ in structured career stats', () => {
+    for (const player of baseballPlayers) {
+      expect(JSON.stringify(player.careerStats)).not.toMatch(/\b(?:WAR|OPS\+)\b/);
+    }
+  });
+
   it('enriches current demo players with real position and teams data', () => {
     for (const player of DEMO_PLAYER_NAMES.map((name) => findPlayerByName(name))) {
       expect(player.primaryPosition).not.toBe('Unknown');
@@ -219,6 +229,50 @@ describe('baseballPlayers', () => {
     expect(davidWright.statsLine).toContain('HR 242');
     expect(ccSabathia.statsLine).toContain('W 251');
     expect(ccSabathia.statsLine).toContain('K 3093');
+  });
+
+  it('includes expected demo player career spans from appearances', () => {
+    const kenGriffeyJr = findPlayerByName('Ken Griffey Jr.');
+    const ccSabathia = findPlayerByName('CC Sabathia');
+
+    expect(kenGriffeyJr.firstYear).toBe(1989);
+    expect(kenGriffeyJr.lastYear).toBe(2010);
+    expect(kenGriffeyJr.yearsPlayedDisplay).toBe('1989–2010');
+    expect(ccSabathia.firstYear).toBe(2001);
+    expect(ccSabathia.lastYear).toBe(2019);
+    expect(ccSabathia.yearsPlayedDisplay).toBe('2001–2019');
+  });
+
+  it('includes structured hitter career stats for Ken Griffey Jr.', () => {
+    const kenGriffeyJr = findPlayerByName('Ken Griffey Jr.');
+
+    expect(kenGriffeyJr.careerStats?.kind).toBe('hitter');
+    expect(kenGriffeyJr.careerStats?.stats).toMatchObject({
+      AB: 9801,
+      H: 2781,
+      HR: 630,
+      BA: '.284',
+      R: 1662,
+      RBI: 1836,
+      SB: 184,
+      OBP: '.370',
+      SLG: '.538',
+      OPS: '.908',
+    });
+  });
+
+  it('includes structured pitcher career stats for CC Sabathia', () => {
+    const ccSabathia = findPlayerByName('CC Sabathia');
+
+    expect(ccSabathia.careerStats?.kind).toBe('pitcher');
+    expect(ccSabathia.careerStats?.stats).toMatchObject({
+      W: 251,
+      L: 161,
+      ERA: '3.74',
+      WHIP: '1.26',
+      K: 3093,
+      IP: '3577.1',
+    });
   });
 
   it('includes Luis Arráez in the generated searchable universe', () => {

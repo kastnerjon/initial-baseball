@@ -5,6 +5,7 @@ import { createDailyShareResult, formatDailyShareText, getGuessOutcome } from '@
 import type { DailyGameState, DailyGuessResult } from '@initial-baseball/shared';
 import { describe, expect, it } from 'vitest';
 import { AtBatCard } from './components/AtBatCard';
+import { PlayerRevealCard } from './components/PlayerRevealCard';
 import { createGiveUpResult, resolveDailyTerminalAtBat } from './dailyAtBatResolution';
 import { createDailyShareUrl } from './dailyShareUrl';
 import {
@@ -124,8 +125,10 @@ describe('AtBatCard terminal output', () => {
     expect(html).toContain('K');
     expect(html).toContain('Player Reveal');
     expect(html).toContain(firstPitch.player.fullName);
-    expect(html).toContain(`Hitter · ${firstRevealPlayer.primaryPosition} · ${firstRevealPlayer.primaryTeam}`);
-    expect(html).toContain(firstRevealPlayer.statsLine);
+    expect(html).toContain(`${firstRevealPlayer.yearsPlayedDisplay} · Hitter · ${firstRevealPlayer.primaryPosition} · ${firstRevealPlayer.primaryTeam}`);
+    expect(html).toContain('<th scope="col">Summary</th>');
+    expect(html).toContain('<th scope="col">OPS</th>');
+    expect(html).toContain('<td>630</td>');
     expect(html).toContain('Outcome distribution will appear once public results are collected.');
   });
 
@@ -166,9 +169,36 @@ describe('AtBatCard terminal output', () => {
 
     expect(html).toContain('Player Reveal');
     expect(html).toContain(firstPitch.player.fullName);
-    expect(html).toContain('Era');
-    expect(html).toContain('Teams');
+    expect(html).toContain(firstRevealPlayer.yearsPlayedDisplay);
+    expect(html).toContain('Career');
     expect(html).not.toContain(`Answer: ${firstPitch.player.fullName}`);
+  });
+});
+
+describe('PlayerRevealCard', () => {
+  it('renders years played and hitter stat strip labels and values', () => {
+    const kenGriffeyJr = requirePlayerByName('Ken Griffey Jr.');
+    const html = renderToStaticMarkup(React.createElement(PlayerRevealCard, { player: kenGriffeyJr }));
+
+    expect(html).toContain('1989–2010');
+    expect(html).toContain('<th scope="col">Summary</th>');
+    expect(html).toContain('<th scope="col">AB</th>');
+    expect(html).toContain('<th scope="col">OPS</th>');
+    expect(html).toContain('<th scope="row">Career</th>');
+    expect(html).toContain('<td>630</td>');
+    expect(html).toContain('<td>.908</td>');
+  });
+
+  it('renders pitcher stat strip labels and values', () => {
+    const ccSabathia = requirePlayerByName('CC Sabathia');
+    const html = renderToStaticMarkup(React.createElement(PlayerRevealCard, { player: ccSabathia }));
+
+    expect(html).toContain('2001–2019');
+    expect(html).toContain('<th scope="col">ERA</th>');
+    expect(html).toContain('<th scope="col">WHIP</th>');
+    expect(html).toContain('<th scope="col">IP</th>');
+    expect(html).toContain('<td>251</td>');
+    expect(html).toContain('<td>3093</td>');
   });
 });
 
@@ -213,6 +243,20 @@ function getFirstRevealPlayer() {
 
   if (player === undefined) {
     throw new Error('Expected first Daily pitch player to exist in generated player data.');
+  }
+
+  return player;
+}
+
+function requirePlayerByName(name: string) {
+  const player = baseballPlayers.find((candidate) => (
+    candidate.fullName === name
+    || candidate.displayName === name
+    || candidate.aliases.includes(name)
+  ));
+
+  if (player === undefined) {
+    throw new Error(`Expected ${name} to exist in generated player data.`);
   }
 
   return player;

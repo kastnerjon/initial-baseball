@@ -331,63 +331,14 @@ p {
 
 .player-reveal-card {
   display: grid;
-  gap: 14px;
-  background:
-    linear-gradient(135deg, rgba(255, 252, 244, 0.96), rgba(238, 229, 205, 0.94));
-}
-
-.player-reveal-topline {
-  display: grid;
-  grid-template-columns: 72px 1fr;
-  gap: 14px;
-  align-items: center;
-}
-
-.player-reveal-silhouette {
-  position: relative;
-  width: 72px;
-  height: 86px;
-  border-radius: 10px;
-  overflow: hidden;
-  background:
-    linear-gradient(180deg, rgba(21, 51, 37, 0.14), rgba(21, 51, 37, 0.06)),
-    repeating-linear-gradient(90deg, rgba(21, 51, 37, 0.08) 0 1px, transparent 1px 9px);
-  border: 1px solid rgba(22, 33, 22, 0.1);
-}
-
-.player-reveal-cap,
-.player-reveal-head,
-.player-reveal-shoulders {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
-  background: #173326;
-}
-
-.player-reveal-cap {
-  top: 18px;
-  width: 38px;
-  height: 10px;
-  border-radius: 10px 10px 3px 3px;
-}
-
-.player-reveal-head {
-  top: 28px;
-  width: 28px;
-  height: 30px;
-  border-radius: 50%;
-}
-
-.player-reveal-shoulders {
-  bottom: 10px;
-  width: 56px;
-  height: 26px;
-  border-radius: 26px 26px 8px 8px;
+  gap: 10px;
+  padding: 12px;
+  background: #fffdf7;
 }
 
 .player-reveal-heading {
   display: grid;
-  gap: 5px;
+  gap: 3px;
   min-width: 0;
 }
 
@@ -402,45 +353,98 @@ p {
 .player-reveal-name {
   margin: 0;
   overflow-wrap: anywhere;
-  font-size: clamp(28px, 7vw, 40px);
-  line-height: 1;
+  font-size: 26px;
+  line-height: 0.95;
 }
 
-.player-reveal-meta {
+.player-reveal-meta,
+.player-reveal-teams {
   margin: 0;
   color: rgba(22, 33, 22, 0.74);
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 700;
 }
 
-.player-reveal-details {
-  display: grid;
-  gap: 8px;
-  margin: 0;
+.player-reveal-teams {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
-.player-reveal-detail {
-  display: grid;
-  grid-template-columns: 72px 1fr;
-  gap: 12px;
-  align-items: baseline;
-  padding-top: 8px;
+.player-reveal-stat-strip {
+  max-width: 100%;
+  overflow-x: auto;
+  border: 1px solid rgba(22, 33, 22, 0.14);
   border-top: 1px solid rgba(22, 33, 22, 0.1);
+  background: #fffaf0;
+  -webkit-overflow-scrolling: touch;
 }
 
-.player-reveal-detail dt {
-  color: rgba(22, 33, 22, 0.66);
-  font-size: 11px;
+.player-reveal-stat-strip table {
+  width: max-content;
+  min-width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.player-reveal-stat-strip th,
+.player-reveal-stat-strip td {
+  min-width: 54px;
+  padding: 5px 8px;
+  border-right: 1px solid rgba(22, 33, 22, 0.1);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.player-reveal-stat-strip th:first-child,
+.player-reveal-stat-strip td:first-child {
+  min-width: 78px;
+  text-align: left;
+}
+
+.player-reveal-stat-strip th:last-child,
+.player-reveal-stat-strip td:last-child {
+  border-right: 0;
+}
+
+.player-reveal-stat-strip thead th {
+  color: #a92a23;
+  font-size: 10px;
   font-weight: 800;
   letter-spacing: 0.12em;
   text-transform: uppercase;
 }
 
-.player-reveal-detail dd {
-  margin: 0;
-  overflow-wrap: anywhere;
+.player-reveal-stat-strip tbody th,
+.player-reveal-stat-strip tbody td {
+  border-top: 1px solid rgba(22, 33, 22, 0.12);
+  color: #11170f;
   font-size: 15px;
-  line-height: 1.35;
+  font-weight: 800;
+  line-height: 1.1;
+}
+
+.player-reveal-stat-strip-fallback {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  padding: 7px 8px;
+}
+
+.player-reveal-stat-header {
+  color: #a92a23;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.player-reveal-stat-value {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: 14px;
+  font-weight: 800;
 }
 
 .at-bat-actions {
