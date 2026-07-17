@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { baseballPlayers, coreDailyEligiblePlayers } from '@initial-baseball/baseball-data';
+import { baseballPlayers, dailyEligiblePlayers } from '@initial-baseball/baseball-data';
 import type { Player } from '@initial-baseball/shared';
 import {
   createDailyPuzzleForDate,
@@ -83,24 +83,24 @@ describe('createDailyPuzzleForDate', () => {
     expect(new Set(playerIds).size).toBe(playerIds.length);
   });
 
-  it('selects only core Daily-eligible players', () => {
+  it('selects only Daily-eligible players', () => {
     const puzzle = createDailyPuzzleForDate('2026-05-02');
 
     for (const pitch of puzzle.pitches) {
-      const player = coreDailyEligiblePlayers.find((candidate) => candidate.id === pitch.player.playerId);
+      const player = dailyEligiblePlayers.find((candidate) => candidate.id === pitch.player.playerId);
 
       expect(player).toBeDefined();
       expect(player?.dailyEligible).toBe(true);
-      expect(player?.dailyEligibilityTier).toBe('core');
+      expect(player?.dailyEligibilityTier).not.toBe('none');
     }
   });
 
-  it('still uses deterministic core players when no override exists', () => {
+  it('still uses deterministic Daily-eligible players when no override exists', () => {
     const puzzle = createDailyPuzzleForDate('2026-05-02');
     const playerIds = puzzle.pitches.map((pitch) => pitch.player.playerId);
 
     for (const playerId of playerIds) {
-      const player = coreDailyEligiblePlayers.find((candidate) => candidate.id === playerId);
+      const player = dailyEligiblePlayers.find((candidate) => candidate.id === playerId);
 
       expect(player).toBeDefined();
     }
@@ -233,7 +233,7 @@ describe('createGamePitchesFromPuzzle', () => {
     const pitches = createGamePitchesFromPuzzle(puzzle);
 
     for (const pitch of pitches) {
-      const player = coreDailyEligiblePlayers.find((candidate) => candidate.id === pitch.correctPlayerId);
+      const player = dailyEligiblePlayers.find((candidate) => candidate.id === pitch.correctPlayerId);
 
       expect(player).toBeDefined();
       expect(pitch.hints).toHaveLength(4);
