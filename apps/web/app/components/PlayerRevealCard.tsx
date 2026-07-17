@@ -137,7 +137,7 @@ function SeasonStatsDisclosure({
 
   return (
     <details className="player-season-stats" onToggle={(event) => {
-      if (event.currentTarget.open) {
+      if (event.currentTarget.hasAttribute('open')) {
         void loadSeasons();
       }
     }}>
