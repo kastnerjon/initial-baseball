@@ -75,11 +75,11 @@ describe('createDailyPuzzleForDate', () => {
     );
   });
 
-  it('creates a six-pitch puzzle with no duplicate players', () => {
+  it('creates a nine-at-bat puzzle with no duplicate players', () => {
     const puzzle = createDailyPuzzleForDate('2026-05-02');
     const playerIds = puzzle.pitches.map((pitch) => pitch.player.playerId);
 
-    expect(puzzle.pitches).toHaveLength(6);
+    expect(puzzle.pitches).toHaveLength(9);
     expect(new Set(playerIds).size).toBe(playerIds.length);
   });
 
