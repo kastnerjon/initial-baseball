@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Player } from '@initial-baseball/shared';
+import { deriveBaseballDisplayName } from './index';
 import {
   applyPlayerAdminCorrection,
   buildPlayerAdminRecord,
@@ -81,6 +82,34 @@ describe('player admin records', () => {
       field: 'displayName',
       message: 'Display name is required.',
     });
+  });
+});
+
+describe('baseball display names', () => {
+  it('keeps familiar two-part baseball names', () => {
+    expect(deriveBaseballDisplayName({ fullName: 'Henry Louis Aaron', displayName: 'Hank Aaron' })).toBe('Hank Aaron');
+    expect(deriveBaseballDisplayName({ fullName: 'Markus Lynn Betts', displayName: 'Mookie Betts' })).toBe('Mookie Betts');
+  });
+
+  it('uses the approved David Ortiz override', () => {
+    expect(deriveBaseballDisplayName({
+      fullName: 'David Américo Ortiz Arias',
+      displayName: 'David Américo Ortiz Arias',
+    })).toBe('David Ortiz');
+  });
+
+  it('removes ordinary middle names while preserving suffixes', () => {
+    expect(deriveBaseballDisplayName({
+      fullName: 'George Kenneth Griffey Jr.',
+      displayName: 'George Kenneth Griffey Jr.',
+    })).toBe('George Griffey Jr.');
+  });
+
+  it('preserves recognized multi-word surnames', () => {
+    expect(deriveBaseballDisplayName({
+      fullName: 'Example de la Cruz',
+      displayName: 'Example de la Cruz',
+    })).toBe('Example de la Cruz');
   });
 });
 
