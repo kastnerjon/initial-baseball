@@ -11,11 +11,22 @@ describe('player admin records', () => {
   it('applies an auditable display-name and alias correction', () => {
     const corrected = applyPlayerAdminCorrection(buildPlayer(), buildCorrection({
       displayName: 'Ken Griffey Jr.',
-      aliases: ['Junior', 'Ken Griffey Jr.', 'junior'],
+      aliases: ['Junior', 'Ken Griffey Jr.'],
     }));
 
     expect(corrected.displayName).toBe('Ken Griffey Jr.');
     expect(corrected.aliases).toEqual(['Junior']);
+  });
+
+  it('rejects duplicate aliases after normalization', () => {
+    const issues = validatePlayerAdminCorrection(buildPlayer(), buildCorrection({
+      aliases: ['Junior', 'junior'],
+    }));
+
+    expect(issues).toContainEqual({
+      field: 'aliases',
+      message: 'Aliases must not contain duplicates.',
+    });
   });
 
   it('keeps eligibility fields synchronized', () => {
