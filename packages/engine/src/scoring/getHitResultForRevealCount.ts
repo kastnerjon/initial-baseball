@@ -1,6 +1,6 @@
 import type { GameSettings } from '@initial-baseball/shared';
 
-export type ResolvedHitResult = 'home_run' | 'triple' | 'double' | 'single' | 'sac';
+export type ResolvedHitResult = 'home_run' | 'triple' | 'double' | 'single' | 'walk';
 
 export function getHitResultForRevealCount(revealedHintCount: number, settings: GameSettings): ResolvedHitResult {
   if (revealedHintCount === 0) return 'home_run';

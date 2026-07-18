@@ -10,7 +10,7 @@ const BASE_VALUES: Record<DailyOutcome, number> = {
   '3B': 3,
   '2B': 2,
   '1B': 1,
-  SAC: 0,
+  BB: 0,
   K: 0,
 };
 
@@ -32,7 +32,7 @@ export function computeDailyPitchAggregate(initials: string, records: DailyPitch
     triplePct: pct(count('3B'), attempts),
     doublePct: pct(count('2B'), attempts),
     singlePct: pct(count('1B'), attempts),
-    sacPct: pct(count('SAC'), attempts),
+    walkPct: pct(count('BB'), attempts),
     strikeoutPct: pct(count('K'), attempts),
     averageBases: attempts === 0 ? 0 : Math.round((totalBases / attempts) * 100) / 100,
   };

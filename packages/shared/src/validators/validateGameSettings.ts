@@ -26,7 +26,7 @@ export function validateGameSettings(settings: GameSettings): ValidationResult {
   }
 
   const sorted = [...settings.hintConfig].sort((a, b) => a.slot - b.slot);
-  const expectedResults = ['triple', 'double', 'single', 'sac'];
+  const expectedResults = ['triple', 'double', 'single', 'walk'];
   const seenHints = new Set<HintType>();
 
   sorted.forEach((slot, index) => {

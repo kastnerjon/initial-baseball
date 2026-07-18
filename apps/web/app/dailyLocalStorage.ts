@@ -227,9 +227,9 @@ function normalizeDailyGuessResult(result: DailyGuessResult | null): DailyGuessR
 }
 
 function normalizeLegacyDailyOutcome(outcome: unknown): DailyOutcome {
-  return outcome === 'BUNT' ? 'SAC' : outcome as DailyOutcome;
+  return outcome === 'BUNT' || outcome === 'SAC' ? 'BB' : outcome as DailyOutcome;
 }
 
 function normalizeLegacyCorrectOutcome(outcome: unknown): Exclude<DailyOutcome, 'K'> {
-  return outcome === 'BUNT' ? 'SAC' : outcome as Exclude<DailyOutcome, 'K'>;
+  return outcome === 'BUNT' || outcome === 'SAC' ? 'BB' : outcome as Exclude<DailyOutcome, 'K'>;
 }
