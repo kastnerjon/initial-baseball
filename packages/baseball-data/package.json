@@ -6,8 +6,9 @@
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
   "scripts": {
-    "build": "tsc -p tsconfig.json",
+    "build": "cd ../.. && node scripts/generate-season-stats.mjs && cd packages/baseball-data && tsc -p tsconfig.json",
     "generate:players": "node ./scripts/generate-players.mjs",
+    "generate:seasons": "cd ../.. && node scripts/generate-season-stats.mjs",
     "pretest": "pnpm --filter @initial-baseball/shared build && pnpm build",
     "test": "vitest run --passWithNoTests",
     "lint": "tsc -p tsconfig.json --noEmit",
