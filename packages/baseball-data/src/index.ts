@@ -31,6 +31,7 @@ const pitcherSaves = generatedPitcherSaves as Record<string, number>;
 const generatedPlayerRows = generatedPlayers as unknown as Player[];
 const displayNameOverrides: Readonly<Record<string, string>> = {
   'david americo ortiz arias': 'David Ortiz',
+  'emmanuel de la cruz clase': 'Emmanuel Clase',
 };
 const suffixes = new Set(['jr', 'jr.', 'sr', 'sr.', 'ii', 'iii', 'iv', 'v']);
 const surnameParticles = new Set(['da', 'de', 'del', 'della', 'der', 'di', 'dos', 'du', 'la', 'le', 'van', 'von']);
