@@ -1,10 +1,8 @@
-export type DailyPuzzleOverrideEntry = string | {
-  name?: string;
-  playerId: string;
-};
+import type { DailyPuzzleOverrideEntry } from '@initial-baseball/daily';
 
 // Lightweight editorial overrides before Daily puzzles move to an admin UI or database.
-// Daily resets at midnight Pacific Time. Each date must contain exactly 6 players.
+// Daily resets at midnight Pacific Time. New dates should contain exactly 9 players.
+// Six-player overrides remain accepted only for historical compatibility.
 // Use simple names for unambiguous players: 'Ken Griffey Jr.'
 // Use playerId objects for ambiguous names: { name: 'David Ortiz', playerId: 'chadwick:...' }
 // If a date is absent here, the app falls back to deterministic generated selection.
