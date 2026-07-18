@@ -49,19 +49,31 @@ export function deriveBaseballDisplayName(player: Pick<Player, 'displayName' | '
     return player.displayName.trim();
   }
 
+  const firstName = parts[0];
   const suffix = parts[parts.length - 1];
-  const hasSuffix = suffix !== undefined && suffixes.has(suffix.toLocaleLowerCase());
+
+  if (firstName === undefined || suffix === undefined) {
+    return player.displayName.trim();
+  }
+
+  const hasSuffix = suffixes.has(suffix.toLocaleLowerCase());
   const surnameEndIndex = hasSuffix ? parts.length - 2 : parts.length - 1;
   let surnameStartIndex = surnameEndIndex;
 
-  while (surnameStartIndex > 1 && surnameParticles.has(parts[surnameStartIndex - 1].toLocaleLowerCase())) {
+  while (surnameStartIndex > 1) {
+    const precedingPart = parts[surnameStartIndex - 1];
+
+    if (precedingPart === undefined || !surnameParticles.has(precedingPart.toLocaleLowerCase())) {
+      break;
+    }
+
     surnameStartIndex -= 1;
   }
 
   return [
-    parts[0],
+    firstName,
     ...parts.slice(surnameStartIndex, surnameEndIndex + 1),
-    ...(hasSuffix && suffix !== undefined ? [suffix] : []),
+    ...(hasSuffix ? [suffix] : []),
   ].join(' ');
 }
 
