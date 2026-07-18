@@ -2,6 +2,17 @@ import type { Player } from '@initial-baseball/shared';
 import generatedPlayers from './generated/players.json';
 import generatedPitcherSaves from './generated/pitcher-saves.json';
 
+export {
+  applyPlayerAdminCorrection,
+  buildPlayerAdminRecord,
+  validatePlayerAdminCorrection,
+  validatePlayerForAdmin,
+  type PlayerAdminCorrection,
+  type PlayerAdminPatch,
+  type PlayerAdminRecord,
+  type PlayerAdminValidationIssue,
+} from './playerAdminRecords';
+
 export type NormalizedPlayerRow = {
   externalSource: string;
   externalId: string;
