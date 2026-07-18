@@ -17,7 +17,14 @@ jobs:
         with:
           node-version: 22
           cache: pnpm
-      - run: pnpm install --no-frozen-lockfile
+      - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm check:file-sizes
+      - name: Verify production package build order
+        run: |
+          pnpm --filter @initial-baseball/shared build
+          pnpm --filter @initial-baseball/engine build
+          pnpm --filter @initial-baseball/baseball-data build
+          pnpm --filter @initial-baseball/daily build
+          pnpm --filter @initial-baseball/web build
