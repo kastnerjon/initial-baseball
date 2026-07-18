@@ -18,21 +18,21 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --no-frozen-lockfile
-      - name: Run typecheck
-        id: typecheck
+      - run: pnpm typecheck
+      - name: Run tests
+        id: tests
         continue-on-error: true
         shell: bash
         run: |
           set -o pipefail
-          pnpm typecheck 2>&1 | tee typecheck-output.log
-      - name: Upload typecheck output
+          pnpm test 2>&1 | tee test-output.log
+      - name: Upload test output
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: typecheck-output
-          path: typecheck-output.log
-      - name: Fail when typecheck fails
-        if: steps.typecheck.outcome == 'failure'
+          name: test-output
+          path: test-output.log
+      - name: Fail when tests fail
+        if: steps.tests.outcome == 'failure'
         run: exit 1
-      - run: pnpm test
       - run: pnpm check:file-sizes
