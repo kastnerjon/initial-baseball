@@ -44,12 +44,39 @@ export function getDailyPuzzleNumber(date: string): number {
 }
 
 export function rankPlayersByRecognizability(players: readonly Player[]): Player[] {
-  return [...players].sort((left, right) => (
-    getRecognizabilityScore(right) - getRecognizabilityScore(left)
-    || right.lastYear === null ? 1 : left.lastYear === null ? -1 : right.lastYear - left.lastYear
-    || left.displayName.localeCompare(right.displayName)
-    || left.id.localeCompare(right.id)
-  ));
+  return [...players].sort(comparePlayersByRecognizability);
+}
+
+export function comparePlayersByRecognizability(left: Player, right: Player): number {
+  const scoreDifference = getRecognizabilityScore(right) - getRecognizabilityScore(left);
+
+  if (scoreDifference !== 0) {
+    return scoreDifference;
+  }
+
+  const yearDifference = compareNullableYearsDescending(left.lastYear, right.lastYear);
+
+  if (yearDifference !== 0) {
+    return yearDifference;
+  }
+
+  return left.displayName.localeCompare(right.displayName) || left.id.localeCompare(right.id);
+}
+
+function compareNullableYearsDescending(leftYear: number | null, rightYear: number | null): number {
+  if (leftYear === null && rightYear === null) {
+    return 0;
+  }
+
+  if (leftYear === null) {
+    return 1;
+  }
+
+  if (rightYear === null) {
+    return -1;
+  }
+
+  return rightYear - leftYear;
 }
 
 function selectPlayersForDate(date: string, overrides: DailyPuzzleOverrideMap): Player[] {
