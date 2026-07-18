@@ -36,6 +36,22 @@ Requirements:
 - Suffixes such as Jr. or Sr. should be handled consistently.
 - Manual display-name overrides must be stored as auditable data, not hardcoded in UI components.
 
+## Admin-editable correction contract
+
+The admin dashboard must edit canonical player records through a service or repository boundary rather than changing generated JSON or React state directly.
+
+Every correction must include:
+
+- canonical `playerId`
+- the fields being changed
+- a human-readable reason
+- editor identity
+- edit timestamp
+
+The first supported editable fields are display name, full name, aliases, role, position, career years, teams, and Daily eligibility tier. Applying a correction must automatically keep derived fields consistent, including `dailyEligible` and the displayed career-year range.
+
+Corrections must be validated before publication. Invalid player IDs, empty required fields, duplicate aliases, impossible career ranges, invalid timestamps, and inconsistent Daily eligibility must be rejected. The correction record must remain available for audit and rollback after the resulting player artifact is regenerated.
+
 ## Duplicate resolution
 
 The generation pipeline must detect and classify at least:
@@ -95,14 +111,15 @@ It should warn when a candidate has unresolved data-quality flags or incomplete 
 
 ## Implementation sequence
 
-1. Inventory current generated duplicates, name collisions, and career-range anomalies.
-2. Define the canonical identity and alias artifact format.
-3. Move all player normalization and overrides under `packages/baseball-data`.
-4. Add deterministic duplicate detection and validation tests.
-5. Add an auditable override file for display names, aliases, merges, and intentional non-merges.
-6. Regenerate player, search, career, and season artifacts from canonical identities.
-7. Verify Daily lineup generation and historical overrides still resolve correctly.
-8. Add the quality report to CI and the future admin workflow.
+1. Define and test the admin-editable correction and validation model.
+2. Inventory current generated duplicates, name collisions, and career-range anomalies.
+3. Define the canonical identity and alias artifact format.
+4. Move all player normalization and overrides under `packages/baseball-data`.
+5. Add deterministic duplicate detection and validation tests.
+6. Add persisted, auditable corrections for display names, aliases, merges, and intentional non-merges.
+7. Regenerate player, search, career, and season artifacts from canonical identities.
+8. Verify Daily lineup generation and historical overrides still resolve correctly.
+9. Add the quality report to CI and the admin workflow.
 
 ## Completion criteria
 
