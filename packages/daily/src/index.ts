@@ -1,3 +1,11 @@
-// Daily-specific domain logic will be exported from this package.
-// Keep this entrypoint platform-neutral: no React, Next.js, storage, or database imports.
-export {};
+export {
+  DAILY_AT_BAT_COUNT,
+  DAILY_PUZZLE_EPOCH,
+  comparePlayersByRecognizability,
+  getDailyPuzzleNumber,
+  rankPlayersByRecognizability,
+  resolveDailyPuzzleOverridePlayers,
+  selectDailyPlayersForDate,
+  type DailyPuzzleOverrideEntry,
+  type DailyPuzzleOverrideMap,
+} from './dailyPuzzleSelection';
