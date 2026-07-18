@@ -1,170 +1,130 @@
 # Initial Baseball — Agent Operating Manual
 
-Read this before touching code. This repo is optimized for AI-assisted development and maintenance.
+Read this before touching code. This repository is maintained primarily through AI-assisted development, so architectural discipline must be explicit rather than assumed.
 
-## Product summary
+## Current product
 
-Initial Baseball is a baseball guessing-game platform built around player initials, hints, and baseball scoring.
+Initial Baseball is currently one committed product: **Daily Inning**, a browser-first daily baseball guessing game.
 
-The first product surface is **Daily Inning by Initial Baseball**: a web-first daily puzzle where users bat through one inning against computer-selected players, share their run total and pitch-by-pitch outcomes, and compare how the field did.
+A future native client or head-to-head mode is possible, but neither is a committed roadmap item. Preserve inexpensive portability seams; do not add infrastructure or abstractions solely for hypothetical products.
 
-The later product surface is the **Initial Baseball mobile app**: async H2H multiplayer with friend games, random opponents, game-only chat, records, and League Lite.
+Canonical product intent: `docs/product/daily-inning-blueprint.md`.
+Canonical architecture: `docs/architecture-and-scale-plan.md`.
+Documentation rules: `docs/engineering/documentation-governance.md`.
+Player identity and data quality: `docs/spec/player-data-quality.md`.
 
-Both surfaces must share the same player database, game engine, hint logic, guess matching, stats formatting, and eventual account/profile system.
+## Package ownership
 
-## Current build priority
+### `packages/shared`
+Stable cross-platform types, schemas, settings, and serialization contracts. No React, Next.js, browser APIs, Supabase, or generated baseball data.
 
-The first playable milestone is **Daily Inning web MVP**.
+### `packages/engine`
+Pure baseball/game rules: guess evaluation, outcomes, runner advancement, inning state, search behavior, and share/result calculations. Depends only on `shared`.
 
-Do not start broad mobile H2H implementation until the following are working:
+### `packages/baseball-data`
+Source data, player identity resolution, aliases, normalization, corrections, generation scripts, recognizability inputs, career stats, season stats, and data-quality reports.
 
-- Shared engine and tests.
-- Curated player seed.
-- Daily puzzle flow.
-- Anonymous attempt tracking.
-- Spoiler-safe share result.
-- Results page with field comparison stats.
-- Mobile-friendly web UI.
+### `packages/daily`
+Daily puzzle numbering, lineup generation, recognizability ranking, override validation, puzzle construction, and portable Daily session transitions. May depend on `shared`, `engine`, and `baseball-data`.
 
-## Product surfaces
+### `apps/web`
+Next.js routes, React components, web rendering, browser persistence, sharing, and web-specific infrastructure adapters. It should transport and render domain behavior, not define it.
 
-| Surface | Folder | Priority | Purpose |
-|---|---|---:|---|
-| Daily Inning website | `apps/web` | First | Daily puzzle, anonymous play, sharing, aggregate stats |
-| Initial Baseball mobile app | `apps/mobile` | Later | H2H games, random opponents, chat, leagues, records |
+### Database/repository adapters
+Publication lifecycle, admin persistence, completed-game results, and eventual accounts. Database clients must stay behind explicit repository/service boundaries.
 
-## Daily Inning MVP scope
+## Dependency direction
 
-Daily Inning includes:
+```text
+shared
+  ├── engine
+  └── baseball-data
+         \
+          daily
+            \
+             web / API / admin adapters
+                       \
+                        database adapters
+```
 
-- Mobile-friendly web experience.
-- No login required.
-- Anonymous browser/session ID.
-- One daily inning shared by all users.
-- Computer-selected daily pitches from the seeded player database.
-- Initials, hints, guesses, and baseball scoring.
-- Play until three outs.
-- Shareable result showing initials + user outcome only.
-- Results page showing initials + user outcome + aggregate field performance.
-- Player names hidden until completion.
-- Anonymous Daily history claimable into a real account later.
+Dependencies must not point upward. In particular:
 
-Daily Inning excludes initially:
+- React and Next.js must not be imported by domain packages.
+- Database clients must not be imported by `engine` or pure Daily logic.
+- UI components must not own baseball rules, player normalization, or puzzle generation.
+- Data generation must not be owned by `apps/web`.
 
-- Required login.
-- App Store / Play Store.
-- Payments.
-- H2H multiplayer.
-- Chat.
-- Leagues.
-- Public leaderboards.
+## Mandatory architecture check before implementation
 
-## Later mobile app scope
+Before changing code, answer:
 
-The later Initial Baseball app should include:
+1. Which layer owns this behavior?
+2. Does an implementation already exist elsewhere?
+3. What may this code depend on?
+4. What must not depend on it?
+5. Is the behavior pure and portable, or platform-specific?
+6. Does this change alter a product rule, data contract, persistence model, or package boundary?
+7. Which canonical document must change with it, if any?
 
-- iOS + Android via Expo React Native.
-- Auth and username required to play.
-- Friend games by invite link/code.
-- Random opponent matchmaking.
-- Game-only text chat.
-- Block/report from day one.
-- League Lite: private league creation, invite code/link, member list, league games, standings.
-- Custom game settings proposal/counterproposal/acceptance before first pitch.
-- Configurable hint order.
-- Custom Stats Picker for the Stats hint.
-- Pitcher-selected canonical player from seeded database.
-- Hints pre-populated from the database and editable by pitcher before submission.
-- Server-authoritative game mutations.
-- Free app; no payments or ads in alpha.
+Do not begin implementation until ownership is clear. When ownership is genuinely ambiguous, choose the narrowest existing layer that owns the behavior; do not create a new abstraction merely to avoid deciding.
 
-Later mobile app excludes initially:
+## Non-negotiable guardrails
 
-- Paid app / paid leagues / payments.
-- League playoffs.
-- League-wide chat.
-- Public chat rooms.
-- Chat media, images, attachments, links.
-- Live third-party baseball API calls during gameplay.
+1. No new baseball or scoring rule directly inside a React component or route.
+2. No player-data correction, alias, merge, or display-name patch inside UI code.
+3. No Supabase, database, network, storage, date reads, or platform APIs inside `packages/engine`.
+4. No database calls inside pure Daily puzzle/session logic.
+5. No duplicate implementation of the same rule across web and packages.
+6. No large component that combines rendering, game transitions, persistence, search, scoring, and network access.
+7. No generic dumping-ground files such as `utils.ts`, `helpers.ts`, or `misc.ts`.
+8. No new package, repository interface, or abstraction without a concrete upcoming consumer.
+9. No hidden-answer leakage through HTML, serialized props, initial payloads, APIs, logs, or share output.
+10. No direct generated-artifact edits when the correct fix belongs in source data, normalization, or auditable corrections.
+11. Published Daily puzzles are immutable; changes require an explicit new version or editorial action.
+12. Tests live with the layer that owns the behavior.
 
-## Default scoring
+## File and component discipline
 
-- Initials-only correct guess = Home Run.
-- Guess after Hint 1 = Triple.
-- Guess after Hint 2 = Double.
-- Guess after Hint 3 = Single.
-- Guess after Hint 4 = Sacrifice.
-- Three wrong guesses = Out / strikeout.
+- Target fewer than 300 lines per source file.
+- Any file above 500 lines requires explicit justification and a decomposition review.
+- React components should primarily render state and dispatch actions.
+- Route handlers should validate, authorize, call a service/repository, and format a response.
+- Pure transformations should be exported and tested independently.
+- Prefer explicit domain names over vague reusable names.
 
-Default Daily hint order:
+## Required PR architecture section
 
-1. Main decade played in = Triple
-2. Teams = Double
-3. Position = Single
-4. Stats = Sacrifice
+Every substantial PR must state:
 
-## H2H default settings, later
+- **Owning layer:** where the behavior belongs.
+- **Dependency impact:** new or changed dependencies and why they are allowed.
+- **Boundary check:** confirmation that rules, data normalization, persistence, and UI remain separated.
+- **Duplication check:** whether similar logic exists elsewhere.
+- **Documentation impact:** files updated, or why no canonical document changed.
+- **Portability impact:** whether portable logic remains free of web/database dependencies.
 
-- 3 innings.
-- 3 strikes per at-bat.
-- 3 outs per half-inning.
-- Extra-innings ghost runner ON.
-- Allowed innings: 1–9.
-- Game settings are proposed/countered/accepted before first pitch.
-- Accepted settings are immutable once the game starts.
+“Architecture impact: none” is acceptable only with a brief explanation.
 
-## Stats hint rules
+## Definition of done
 
-- Stats hint is configurable in H2H game settings.
-- If Stats is included, the Custom Stats Picker requires at least 1 hitter stat and at least 1 pitcher stat.
-- If WAR is sourced from Baseball Reference, label it `bWAR` everywhere.
-- Alpha hitter stat fields: `bWAR`, `HR`, `RBI`, `BA`, `OBP`, `SLG`, `OPS`, `SB`.
-- Alpha pitcher stat fields: `bWAR`, `W`, `L`, `ERA`, `WHIP`, `K`, `SV`, `IP`.
-- Daily Inning should use a fixed daily stat configuration unless the spec explicitly changes.
+A change is complete only when:
 
-## Non-negotiable engineering rules
+1. Behavior and ownership are clear.
+2. Focused tests cover the behavior at the owning layer.
+3. Build, tests, typecheck, lint, and file-size checks pass as applicable.
+4. User-facing changes are checked on common mobile web sizes.
+5. Answer leakage and spoiler-safe sharing remain protected.
+6. No prohibited dependency direction or duplicated rule was introduced.
+7. Relevant canonical documentation is updated in the same PR.
+8. The PR description contains the architecture section above.
 
-1. **Pure engine.** No React, Supabase, network, storage, date reads, or platform APIs inside `packages/engine`.
-2. **Shared rules.** Web, mobile, and backend must use the same engine/types where practical.
-3. **Canonical players.** A pitch stores `player_id`, not a text answer.
-4. **No answer leakage.** Hidden player names/IDs must not be exposed to users before the appropriate reveal/completion point.
-5. **Append-only event/result trail.** Store enough per-pitch/per-attempt data to reconstruct Daily results and aggregate stats.
-6. **Server authoritative for competitive modes.** H2H game mutations go through Supabase Edge Functions. Clients never directly update authoritative game state.
-7. **Small files.** Target <300 lines/source file; hard-review anything >500 lines. No 1,000-line screens.
-8. **Obvious names.** Avoid generic `utils.ts`, `helpers.ts`, `misc.ts`. File names should say what behavior lives there.
-9. **Tests next to logic.** Every baseball rule gets colocated tests.
-10. **Feature flags.** Risky/social features must be disable-able when introduced: random opponents, chat, links, leagues.
-11. **No production experiments.** Use dev/staging before production.
+## Working protocol
 
-## Where to find things
-
-| Need | File/folder |
-|---|---|
-| Current ordered work | `tasks/todo.md` |
-| Prior corrections | `tasks/lessons.md` |
-| Product scope | `docs/product/prd.md` |
-| Monetization | `docs/product/monetization.md` |
-| Platform strategy | `docs/product/platform-strategy.md` |
-| Daily Inning | `docs/spec/daily-inning.md` |
-| Game settings | `docs/spec/game-settings.md` |
-| Game rules/engine | `docs/spec/engine.md` |
-| Database schema | `docs/spec/data-model.md` |
-| API contracts | `docs/spec/api.md` |
-| Player data ETL | `docs/spec/etl.md` |
-| Random/chat/leagues/social | `docs/spec/stats-social.md` |
-| QA | `docs/spec/qa.md` |
-| Repo structure | `docs/engineering/repo-structure.md` |
-| Environments | `docs/engineering/environments.md` |
-| Deployment | `docs/engineering/deployment.md` |
-| Source map | `docs/engineering/source-map.md` |
-| AI maintenance workflow | `docs/engineering/ai-maintenance.md` |
-
-## Work protocol
-
-1. Pick the next task from `tasks/todo.md`.
-2. Read only the relevant specs and source-map entries.
+1. Read the canonical blueprint and only the relevant architecture/spec files.
+2. Identify the owning layer and dependency direction.
 3. Write a brief implementation plan.
-4. Implement code and tests together.
-5. Run tests/typecheck/file-size check.
-6. Update `tasks/lessons.md` when corrected.
-7. Do not mark a task complete until tests pass and specs still agree.
+4. Implement behavior and tests together.
+5. Verify package boundaries and search for duplicate logic.
+6. Run repository checks.
+7. Update canonical documentation and lessons when applicable.
+8. Do not mark complete until code, tests, PR description, and docs agree.
