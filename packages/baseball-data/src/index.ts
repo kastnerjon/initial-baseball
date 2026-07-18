@@ -49,7 +49,7 @@ export function deriveBaseballDisplayName(player: Pick<Player, 'displayName' | '
     return player.displayName.trim();
   }
 
-  const suffix = parts.at(-1);
+  const suffix = parts[parts.length - 1];
   const hasSuffix = suffix !== undefined && suffixes.has(suffix.toLocaleLowerCase());
   const surnameEndIndex = hasSuffix ? parts.length - 2 : parts.length - 1;
   let surnameStartIndex = surnameEndIndex;
