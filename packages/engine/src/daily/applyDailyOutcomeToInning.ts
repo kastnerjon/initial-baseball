@@ -1,6 +1,5 @@
-import type { DailyInningState, DailyOutcome, DailyScoreSummary } from '@initial-baseball/shared';
+import type { DailyBaseState, DailyInningState, DailyOutcome, DailyScoreSummary } from '@initial-baseball/shared';
 import { advanceRunners } from '../scoring/advanceRunners.js';
-import { advanceRunnersOnSacrifice } from '../scoring/advanceRunnersOnSacrifice.js';
 
 export type DailyInningEngineState = {
   inning: DailyInningState;
@@ -32,8 +31,8 @@ export function applyDailyOutcomeToInning(input: ApplyDailyOutcomeInput): DailyI
       return applyAdvancementOutcome(input, 'double', 1, 0);
     case '1B':
       return applyAdvancementOutcome(input, 'single', 1, 0);
-    case 'SAC':
-      return applySacrificeOutcome(input);
+    case 'BB':
+      return applyWalkOutcome(input);
     case 'K':
       return applyStrikeoutOutcome(input);
   }
@@ -49,12 +48,19 @@ function applyAdvancementOutcome(
   return finalizeState(input, advancement.bases, advancement.runsScored, advancement.outsAdded, hitsAdded, strikeoutsAdded);
 }
 
-function applySacrificeOutcome(input: ApplyDailyOutcomeInput): DailyInningEngineState {
-  const advancement = advanceRunnersOnSacrifice(input.inning.bases);
-  const createsThirdOut = input.inning.outs + advancement.outsAdded >= input.inning.maxOuts;
-  const runsScored = createsThirdOut ? 0 : advancement.runsScored;
+function applyWalkOutcome(input: ApplyDailyOutcomeInput): DailyInningEngineState {
+  const bases = advanceForcedRunnersOnWalk(input.inning.bases);
+  const runsScored = input.inning.bases.first && input.inning.bases.second && input.inning.bases.third ? 1 : 0;
 
-  return finalizeState(input, advancement.bases, runsScored, advancement.outsAdded, 0, 0);
+  return finalizeState(input, bases, runsScored, 0, 0, 0);
+}
+
+function advanceForcedRunnersOnWalk(bases: DailyBaseState): DailyBaseState {
+  return {
+    first: true,
+    second: bases.first || bases.second,
+    third: bases.third || (bases.first && bases.second),
+  };
 }
 
 function applyStrikeoutOutcome(input: ApplyDailyOutcomeInput): DailyInningEngineState {
