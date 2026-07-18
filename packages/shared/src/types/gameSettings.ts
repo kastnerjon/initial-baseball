@@ -2,7 +2,7 @@ import type { StatsHintConfig } from './stats.js';
 
 export type HintType = 'main_decade' | 'teams' | 'position' | 'stats';
 
-export type HitResult = 'triple' | 'double' | 'single' | 'sac';
+export type HitResult = 'triple' | 'double' | 'single' | 'walk';
 
 export type HintConfigSlot = {
   slot: 1 | 2 | 3 | 4;
@@ -29,7 +29,7 @@ export const DEFAULT_ALPHA_SETTINGS: GameSettings = {
     { slot: 1, result: 'triple', hintType: 'main_decade', displayLabel: 'Main decade played in' },
     { slot: 2, result: 'double', hintType: 'teams', displayLabel: 'Teams' },
     { slot: 3, result: 'single', hintType: 'position', displayLabel: 'Position' },
-    { slot: 4, result: 'sac', hintType: 'stats', displayLabel: 'Stats' },
+    { slot: 4, result: 'walk', hintType: 'stats', displayLabel: 'Stats' },
   ],
   statsHintConfig: {
     hitter: ['bwar', 'hr', 'rbi', 'ba', 'obp', 'sb'],
