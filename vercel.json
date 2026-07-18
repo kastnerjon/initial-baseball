@@ -2,6 +2,6 @@
   "$schema": "https://openapi.vercel.sh/vercel.json",
   "framework": "nextjs",
   "installCommand": "corepack pnpm install --frozen-lockfile",
-  "buildCommand": "corepack pnpm --filter @initial-baseball/shared build && corepack pnpm --filter @initial-baseball/engine build && corepack pnpm --filter @initial-baseball/baseball-data build && corepack pnpm --filter @initial-baseball/web build",
+  "buildCommand": "corepack pnpm --filter @initial-baseball/shared build && corepack pnpm --filter @initial-baseball/engine build && corepack pnpm --filter @initial-baseball/baseball-data build && corepack pnpm --filter @initial-baseball/daily build && corepack pnpm --filter @initial-baseball/web build",
   "outputDirectory": "apps/web/.next"
 }
