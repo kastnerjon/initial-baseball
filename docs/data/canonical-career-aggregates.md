@@ -49,7 +49,7 @@ Strict generation fails for:
 - malformed or negative counting values;
 - unexpected or missing career records.
 
-Representative regression checks cover Ken Griffey Jr., David Wright, CC Sabathia, David Ortiz, Mariano Rivera, and Shohei Ohtani through stable Lahman IDs.
+Representative regression checks cover Ken Griffey Jr., David Wright, David Ortiz, and Mariano Rivera through stable Lahman IDs.
 
 ## Commands
 
