@@ -13,6 +13,8 @@
     "generate:canonical-identities:strict": "node ./scripts/generate-canonical-identities.mjs --strict && node ./scripts/generate-identity-review-evidence.mjs && node ./scripts/recommend-identity-dispositions.mjs",
     "generate:canonical-universe": "node ./scripts/generate-canonical-universe.mjs",
     "generate:canonical-universe:strict": "node ./scripts/generate-canonical-universe.mjs --strict",
+    "generate:canonical-season-facts": "node ./scripts/generate-canonical-season-facts.mjs",
+    "generate:canonical-season-facts:strict": "node ./scripts/generate-canonical-season-facts.mjs --strict",
     "audit:current": "node ./scripts/audit-current-data.mjs",
     "audit:current:strict": "node ./scripts/audit-current-data.mjs --strict",
     "pretest": "pnpm --filter @initial-baseball/shared build && pnpm build",
