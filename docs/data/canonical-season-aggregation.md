@@ -47,14 +47,16 @@ A statistic remains `null` only when every contributing source row has `null` fo
 
 Pitching workload remains stored as outs. Rates such as batting average, on-base percentage, slugging, OPS, ERA and WHIP are calculated later from aggregate components rather than averaged from formatted source rates.
 
-Appearance statistics are summed across team rows. Their sorted unique team IDs become the authoritative team history attached to the batting and pitching season records.
+Appearance statistics are summed across team rows. Their sorted unique team IDs become the team history attached to the batting and pitching season records when a matching appearance season exists.
+
+A compact batting or pitching row may occasionally be newer than the corresponding appearance source. In that case the statistical season remains published with an empty `teamIds` array, and the missing appearance link is reported as a source warning rather than disguised or reconstructed.
 
 Each season row preserves:
 
 - the canonical player ID;
 - the exact Lahman player ID;
 - the season;
-- sorted unique team IDs from appearances;
+- sorted unique team IDs from appearances when available;
 - the number of contributing batting, pitching or appearance source rows;
 - the available summed counting statistics.
 
@@ -70,9 +72,10 @@ Strict generation fails when:
 - a counting statistic is negative or not an integer;
 - an aggregate row count differs from independently grouped source rows;
 - any summed statistic differs from an independent source-row calculation;
-- source-row counts, appearance-row counts or team IDs do not reconcile;
-- an expected aggregate is missing or an unexpected aggregate appears;
-- a batting or pitching season cannot be linked to an appearance season.
+- source-row counts, appearance-row counts or available team IDs do not reconcile;
+- an expected aggregate is missing or an unexpected aggregate appears.
+
+Missing appearance coverage is not a mathematical or identity failure. It is recorded in `missingAppearanceLinks`, counted in the report summary and emitted as an explicit warning. Later serving and Daily-eligibility gates may require complete team history before a player-season can be used for those features.
 
 The reconciliation path independently groups and sums the source artifacts rather than calling the production aggregation functions. This prevents a shared implementation bug from validating itself.
 
