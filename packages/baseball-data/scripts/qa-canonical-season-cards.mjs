@@ -3,25 +3,36 @@ import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const PACKAGE_DIR = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const UNIVERSE_DIR = resolve(PACKAGE_DIR, 'reports/canonical-universe');
 const AGGREGATE_DIR = resolve(PACKAGE_DIR, 'reports/canonical-season-aggregates');
 const CARD_DIR = resolve(PACKAGE_DIR, 'reports/canonical-season-cards');
 
+const universe = JSON.parse(readFileSync(resolve(UNIVERSE_DIR, 'canonical-player-universe.json'), 'utf8')).players ?? [];
 const batting = readFacts(resolve(AGGREGATE_DIR, 'batting-seasons.json'));
 const pitching = readFacts(resolve(AGGREGATE_DIR, 'pitching-seasons.json'));
 const appearances = readFacts(resolve(AGGREGATE_DIR, 'appearance-seasons.json'));
 const cards = JSON.parse(readFileSync(resolve(CARD_DIR, 'season-cards.json'), 'utf8')).cards ?? [];
-
-const battingByKey = index(batting, 'batting');
-const pitchingByKey = index(pitching, 'pitching');
-const appearancesByKey = index(appearances, 'appearances');
-const cardsByKey = index(cards, 'cards');
-const expectedKeys = new Set([...battingByKey.keys(), ...pitchingByKey.keys(), ...appearancesByKey.keys()]);
 const issues = [];
+
+const playerByCanonicalId = uniqueIndex(universe, (player) => player.canonicalId, 'canonical player ID');
+const playerByLahmanId = uniqueIndex(universe, (player) => player.lahmanPlayerId, 'Lahman player ID');
+validateExternalIdOwnership(universe);
+
+const battingByKey = indexSeasons(batting, 'batting');
+const pitchingByKey = indexSeasons(pitching, 'pitching');
+const appearancesByKey = indexSeasons(appearances, 'appearances');
+const cardsByKey = indexSeasons(cards, 'cards');
+const expectedKeys = new Set([...battingByKey.keys(), ...pitchingByKey.keys(), ...appearancesByKey.keys()]);
+
+for (const [family, rows] of [['batting', batting], ['pitching', pitching], ['appearances', appearances]]) {
+  for (const row of rows) validateRowIdentity(row, family);
+}
 
 if (cardsByKey.size !== expectedKeys.size) issues.push(`Card count ${cardsByKey.size} does not match expected player-season count ${expectedKeys.size}`);
 for (const key of expectedKeys) {
   const card = cardsByKey.get(key);
   if (!card) { issues.push(`Missing card ${key}`); continue; }
+  validateCardIdentity(card, key);
   compareIdentity(card, battingByKey.get(key), pitchingByKey.get(key), appearancesByKey.get(key), key);
   compareSection(card.batting, battingByKey.get(key), [
     'atBats','runs','hits','doubles','triples','homeRuns','runsBattedIn','stolenBases','walks','hitByPitch','sacrificeFlies',
@@ -45,17 +56,51 @@ const regressionCases = [
   ['ohtansh01', 2021, { batting: { homeRuns: 46 }, pitching: { wins: 9, strikeouts: 156 }, teamIds: ['LAA'] }],
 ];
 for (const [lahmanPlayerId, season, expected] of regressionCases) {
-  const matches = cards.filter((card) => card.lahmanPlayerId === lahmanPlayerId && card.season === season);
-  if (matches.length !== 1) { issues.push(`Regression case ${lahmanPlayerId}:${season} matched ${matches.length} cards`); continue; }
-  compareExpected(matches[0], expected, `${lahmanPlayerId}:${season}`);
+  const player = playerByLahmanId.get(lahmanPlayerId);
+  if (!player) { issues.push(`Regression player missing from universe: ${lahmanPlayerId}`); continue; }
+  const card = cardsByKey.get(`${player.canonicalId}:${season}`);
+  if (!card) { issues.push(`Regression card missing: ${lahmanPlayerId}:${season}`); continue; }
+  if (card.lahmanPlayerId !== lahmanPlayerId) issues.push(`Regression identity mismatch: ${lahmanPlayerId}:${season}`);
+  compareExpected(card, expected, `${lahmanPlayerId}:${season}`);
 }
 
-console.log(`QA checked ${cards.length} season cards against ${batting.length} batting, ${pitching.length} pitching, and ${appearances.length} appearance aggregates.`);
+console.log(`QA checked ${cards.length} season cards against ${universe.length} canonical players, ${batting.length} batting, ${pitching.length} pitching, and ${appearances.length} appearance aggregates.`);
 console.log(`Regression cases checked: ${regressionCases.length}. Issues: ${issues.length}.`);
 if (issues.length) {
   console.error(issues.slice(0, 100).join('\n'));
   if (issues.length > 100) console.error(`...and ${issues.length - 100} more`);
   process.exitCode = 1;
+}
+
+function validateExternalIdOwnership(players) {
+  const owners = new Map();
+  for (const player of players) {
+    for (const mapping of player.sourceMappings ?? []) {
+      const externalKey = `${mapping.source}:${mapping.externalId}`;
+      const owner = owners.get(externalKey);
+      if (owner && owner !== player.canonicalId) issues.push(`External ID ${externalKey} belongs to both ${owner} and ${player.canonicalId}`);
+      else owners.set(externalKey, player.canonicalId);
+    }
+  }
+}
+
+function validateRowIdentity(row, family) {
+  const player = playerByCanonicalId.get(row.playerId);
+  if (!player) { issues.push(`${family} row has unknown canonical player ${row.playerId}:${row.season}`); return; }
+  if (row.lahmanPlayerId !== player.lahmanPlayerId) issues.push(`${family} identity crosswalk mismatch ${row.playerId}:${row.season}: ${row.lahmanPlayerId} != ${player.lahmanPlayerId}`);
+  validateCareerRange(player, row.season, `${family} ${row.playerId}:${row.season}`);
+}
+
+function validateCardIdentity(card, key) {
+  const player = playerByCanonicalId.get(card.playerId);
+  if (!player) { issues.push(`Card ${key} has unknown canonical player`); return; }
+  if (card.lahmanPlayerId !== player.lahmanPlayerId) issues.push(`Card ${key} Lahman ID ${card.lahmanPlayerId} does not belong to canonical player ${card.playerId}`);
+  validateCareerRange(player, card.season, `card ${key}`);
+}
+
+function validateCareerRange(player, season, label) {
+  if (Number.isInteger(player.firstYear) && season < player.firstYear) issues.push(`${label} predates ${player.displayName}'s debut year ${player.firstYear}`);
+  if (Number.isInteger(player.lastYear) && season > player.lastYear) issues.push(`${label} follows ${player.displayName}'s final year ${player.lastYear}`);
 }
 
 function verifyDerived(card, key) {
@@ -75,14 +120,18 @@ function verifyDerived(card, key) {
     exact(p.strikeoutWalkRatio, known(p.strikeouts, p.walksAllowed) && p.walksAllowed > 0 ? p.strikeouts/p.walksAllowed : null, `KBB ${key}`);
   }
 }
+
 function compareIdentity(card, ...rowsAndKey) {
   const key = rowsAndKey.pop();
   const rows = rowsAndKey.filter(Boolean);
+  const canonicalIds = [...new Set(rows.map((row) => row.playerId))];
   const lahmanIds = [...new Set(rows.map((row) => row.lahmanPlayerId))];
+  if (canonicalIds.length !== 1 || card.playerId !== canonicalIds[0]) issues.push(`Canonical identity mismatch ${key}`);
   if (lahmanIds.length !== 1 || card.lahmanPlayerId !== lahmanIds[0]) issues.push(`Lahman identity mismatch ${key}`);
   const teams = [...new Set(rows.flatMap((row) => row.teamIds ?? []))].sort();
   if (JSON.stringify(card.teamIds) !== JSON.stringify(teams)) issues.push(`Team mismatch ${key}`);
 }
+
 function compareSection(actual, source, fields, label) {
   if (!source) { if (actual !== null) issues.push(`Unexpected ${label}`); return; }
   if (!actual) { issues.push(`Missing ${label}`); return; }
@@ -96,6 +145,7 @@ function exact(actual, expected, label) { if (actual === null && expected === nu
 function perNine(value, outs) { return known(value, outs) && outs > 0 ? value*27/outs : null; }
 function ratio(value, denominator) { return known(value, denominator) && denominator > 0 ? value/denominator : null; }
 function known(...values) { return values.every((value) => Number.isFinite(value)); }
-function key(row) { return `${row.playerId}:${row.season}`; }
-function index(rows, label) { const map = new Map(); for (const row of rows) { const k = key(row); if (map.has(k)) throw new Error(`Duplicate ${label} key ${k}`); map.set(k, row); } return map; }
+function seasonKey(row) { return `${row.playerId}:${row.season}`; }
+function indexSeasons(rows, label) { return uniqueIndex(rows, seasonKey, `${label} key`); }
+function uniqueIndex(rows, keyFn, label) { const map = new Map(); for (const row of rows) { const key = keyFn(row); if (!key) { issues.push(`Missing ${label}`); continue; } if (map.has(key)) issues.push(`Duplicate ${label} ${key}`); else map.set(key, row); } return map; }
 function readFacts(path) { return JSON.parse(readFileSync(path, 'utf8')).facts ?? []; }
