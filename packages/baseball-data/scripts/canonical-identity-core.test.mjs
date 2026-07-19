@@ -58,7 +58,10 @@ describe('canonical identity resolution', () => {
         }),
       ],
       chadwickRows: [
-        chadwickRow(),
+        chadwickRow({
+          key_bbref: 'playerex01',
+          key_retro: 'playe001',
+        }),
         chadwickRow({
           key_person: 'two',
           key_uuid: 'uuid-two',
