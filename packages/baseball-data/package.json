@@ -9,6 +9,8 @@
     "build": "cd ../.. && node scripts/generate-season-stats.mjs && cd packages/baseball-data && tsc -p tsconfig.json",
     "generate:players": "node ./scripts/generate-players.mjs",
     "generate:seasons": "cd ../.. && node scripts/generate-season-stats.mjs",
+    "generate:canonical-identities": "node ./scripts/generate-canonical-identities.mjs && node ./scripts/generate-identity-review-evidence.mjs && node ./scripts/recommend-identity-dispositions.mjs",
+    "generate:canonical-identities:strict": "node ./scripts/generate-canonical-identities.mjs --strict && node ./scripts/generate-identity-review-evidence.mjs && node ./scripts/recommend-identity-dispositions.mjs",
     "audit:current": "node ./scripts/audit-current-data.mjs",
     "audit:current:strict": "node ./scripts/audit-current-data.mjs --strict",
     "pretest": "pnpm --filter @initial-baseball/shared build && pnpm build",

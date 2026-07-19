@@ -31,6 +31,16 @@ jobs:
             packages/baseball-data/reports/current-data-audit.json
             packages/baseball-data/reports/current-data-audit.md
           if-no-files-found: error
+      - name: Generate canonical identity candidates
+        run: pnpm data:identities
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+      - name: Upload canonical identity candidates
+        uses: actions/upload-artifact@v4
+        with:
+          name: canonical-baseball-identities
+          path: packages/baseball-data/reports/canonical-identities/
+          if-no-files-found: error
       - name: Verify production package build order
         run: |
           pnpm --filter @initial-baseball/shared build
