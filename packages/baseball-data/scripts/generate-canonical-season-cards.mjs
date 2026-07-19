@@ -18,7 +18,7 @@ const inputs = {
 };
 
 const players = inputs.universe.artifact.players ?? [];
-const knownPlayerIds = new Set(players.map((player) => player.playerId));
+const knownPlayerIds = new Set(players.map((player) => player.canonicalId));
 const battingByKey = indexFacts(inputs.batting.artifact.facts ?? [], 'batting');
 const pitchingByKey = indexFacts(inputs.pitching.artifact.facts ?? [], 'pitching');
 const appearanceByKey = indexFacts(inputs.appearances.artifact.facts ?? [], 'appearances');
