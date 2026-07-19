@@ -9,7 +9,8 @@
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",
     "check:file-sizes": "node scripts/check-file-sizes.mjs",
-    "data:audit": "pnpm --filter @initial-baseball/baseball-data audit:current"
+    "data:audit": "pnpm --filter @initial-baseball/baseball-data audit:current",
+    "data:identities": "pnpm --filter @initial-baseball/baseball-data generate:canonical-identities"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",
