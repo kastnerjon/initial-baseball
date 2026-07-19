@@ -9,13 +9,15 @@ const INPUT_DIR = resolve(PACKAGE_DIR, 'reports/canonical-season-facts');
 const OUTPUT_DIR = resolve(PACKAGE_DIR, 'reports/canonical-season-aggregates');
 const args = process.argv.slice(2);
 const strict = args.includes('--strict');
+const BAT_FIELDS = ['games','atBats','runs','hits','doubles','triples','homeRuns','runsBattedIn','stolenBases','caughtStealing','walks','strikeouts','intentionalWalks','hitByPitch','sacrificeHits','sacrificeFlies','groundedIntoDoublePlay'];
+const PITCH_FIELDS = ['wins','losses','games','gamesStarted','completeGames','shutouts','saves','outsPitched','hitsAllowed','earnedRuns','homeRunsAllowed','walksAllowed','strikeouts','opponentBattersFaced','intentionalWalks','wildPitches','hitBatters','balks','runsAllowed','sacrificeHitsAllowed','sacrificeFliesAllowed','groundedIntoDoublePlay'];
+const APPEARANCE_FIELDS = ['gamesAll','gamesStarted','gamesBatting','gamesDefense','gamesPitcher','gamesCatcher','gamesFirstBase','gamesSecondBase','gamesThirdBase','gamesShortstop','gamesLeftField','gamesCenterField','gamesRightField','gamesOutfield','gamesDesignatedHitter','gamesPinchHitter','gamesPinchRunner'];
 
 const sources = {
   batting: readArtifact('batting-stints.json'),
   pitching: readArtifact('pitching-stints.json'),
   appearances: readArtifact('appearances.json'),
 };
-
 const batting = aggregate(sources.batting.artifact.facts ?? [], BAT_FIELDS);
 const pitching = aggregate(sources.pitching.artifact.facts ?? [], PITCH_FIELDS);
 const appearances = aggregate(sources.appearances.artifact.facts ?? [], APPEARANCE_FIELDS);
@@ -33,13 +35,8 @@ writeJson('pitching-seasons.json', { schemaVersion: 1, sourceManifest, facts: pi
 writeJson('appearance-seasons.json', { schemaVersion: 1, sourceManifest, facts: appearances });
 writeJson('canonical-season-aggregates-report.json', { schemaVersion: 1, sourceManifest, ...validation });
 writeFileSync(resolve(OUTPUT_DIR, 'canonical-season-aggregates-report.md'), renderMarkdown(validation));
-
 console.log(`Built ${batting.length} batting seasons, ${pitching.length} pitching seasons, and ${appearances.length} appearance seasons. Critical issues: ${validation.summary.criticalIssueCount}.`);
 if (strict && validation.summary.criticalIssueCount > 0) process.exitCode = 1;
-
-const BAT_FIELDS = ['games','atBats','runs','hits','doubles','triples','homeRuns','runsBattedIn','stolenBases','caughtStealing','walks','strikeouts','intentionalWalks','hitByPitch','sacrificeHits','sacrificeFlies','groundedIntoDoublePlay'];
-const PITCH_FIELDS = ['wins','losses','games','gamesStarted','completeGames','shutouts','saves','outsPitched','hitsAllowed','earnedRuns','homeRunsAllowed','walksAllowed','strikeouts','opponentBattersFaced','intentionalWalks','wildPitches','hitBatters','balks','runsAllowed','sacrificeHitsAllowed','sacrificeFliesAllowed','groundedIntoDoublePlay'];
-const APPEARANCE_FIELDS = ['gamesAll','gamesStarted','gamesBatting','gamesDefense','gamesPitcher','gamesCatcher','gamesFirstBase','gamesSecondBase','gamesThirdBase','gamesShortstop','gamesLeftField','gamesCenterField','gamesRightField','gamesOutfield','gamesDesignatedHitter','gamesPinchHitter','gamesPinchRunner'];
 
 function aggregate(facts, fields) {
   const groups = new Map();
@@ -78,11 +75,7 @@ function aggregate(facts, fields) {
 
 function validate({ batting, pitching, appearances, sources }) {
   const criticalIssues = [];
-  const duplicateKeys = {
-    batting: duplicates(batting),
-    pitching: duplicates(pitching),
-    appearances: duplicates(appearances),
-  };
+  const duplicateKeys = { batting: duplicates(batting), pitching: duplicates(pitching), appearances: duplicates(appearances) };
   for (const [kind, keys] of Object.entries(duplicateKeys)) {
     for (const key of keys) criticalIssues.push(`${kind} duplicate player-season: ${key}`);
   }
@@ -133,7 +126,6 @@ function duplicates(facts) {
   }
   return [...result].sort();
 }
-
 function intersectionCount(left, right) {
   const keys = new Set(left.map(seasonKey));
   return new Set(right.map(seasonKey).filter((key) => keys.has(key))).size;
