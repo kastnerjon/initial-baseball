@@ -21,6 +21,16 @@ jobs:
       - run: pnpm typecheck
       - run: pnpm test
       - run: pnpm check:file-sizes
+      - name: Generate current baseball data audit
+        run: pnpm data:audit
+      - name: Upload current baseball data audit
+        uses: actions/upload-artifact@v4
+        with:
+          name: current-baseball-data-audit
+          path: |
+            packages/baseball-data/reports/current-data-audit.json
+            packages/baseball-data/reports/current-data-audit.md
+          if-no-files-found: error
       - name: Verify production package build order
         run: |
           pnpm --filter @initial-baseball/shared build

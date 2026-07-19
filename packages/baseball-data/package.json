@@ -9,6 +9,8 @@
     "build": "cd ../.. && node scripts/generate-season-stats.mjs && cd packages/baseball-data && tsc -p tsconfig.json",
     "generate:players": "node ./scripts/generate-players.mjs",
     "generate:seasons": "cd ../.. && node scripts/generate-season-stats.mjs",
+    "audit:current": "node ./scripts/audit-current-data.mjs",
+    "audit:current:strict": "node ./scripts/audit-current-data.mjs --strict",
     "pretest": "pnpm --filter @initial-baseball/shared build && pnpm build",
     "test": "vitest run --passWithNoTests",
     "lint": "tsc -p tsconfig.json --noEmit",
