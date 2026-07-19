@@ -1,20 +1,37 @@
 # Canonical Player-Season Aggregation
 
-This document defines the shadow player-season aggregation layer introduced after the canonical Lahman stint pipeline.
+This document defines the shadow player-season aggregation layer built on the repository's canonical Lahman source facts.
 
-## Inputs
+## Source reality
 
-The generator consumes the immutable raw canonical artifacts produced by `generate-canonical-season-facts.mjs`:
+The checked-in baseball files are intentionally compact, not complete copies of every Lahman table.
 
-- `batting-stints.json`;
-- `pitching-stints.json`;
-- `appearances.json`.
+- `Batting.csv` contains player, season and selected batting counting statistics.
+- `Pitching.csv` contains player, season and selected pitching counting statistics.
+- Either compact file may contain more than one row for the same player-season, but it does not retain team, league or formal Lahman stint columns.
+- `Appearances.csv` retains player, season, team and position-appearance counts.
 
-Every input row is already attached to an Initial Baseball canonical player ID through an exact Lahman player-ID mapping. This layer performs no name matching or identity resolution.
+The pipeline must model those files as they exist. It must not invent stint or team attributes that are absent from the source.
 
-## Grain
+## Canonical source facts
 
-The output grain is one row per `(playerId, season)` for each independent fact family:
+`generate-canonical-season-facts.mjs` attaches every accepted source row to an Initial Baseball canonical player through the player's exact Lahman ID. It performs no name matching or career-year matching.
+
+The generator writes:
+
+- `batting-source-rows.json`;
+- `pitching-source-rows.json`;
+- `appearances.json`;
+- `canonical-season-facts-report.json`;
+- `canonical-season-facts-report.md`.
+
+Repeated batting or pitching rows for one player-season receive a deterministic `sourceRow` ordinal. That ordinal preserves each checked-in row for auditability without claiming that it is an official team stint.
+
+Appearance rows remain at their source grain of one player, season and team.
+
+## Season grain
+
+`generate-canonical-season-aggregates.mjs` produces one row per `(playerId, season)` for each independent fact family:
 
 - batting seasons;
 - pitching seasons;
@@ -24,37 +41,44 @@ Batting and pitching remain separate so two-way players retain both records.
 
 ## Aggregation rules
 
-Counting statistics are summed across every contributing team stint.
+Batting and pitching counting statistics are summed across every compact source row belonging to the same canonical player-season.
 
-A statistic is `null` only when every contributing stint has `null` for that field. A mixture of known and missing values sums the known source values without converting the missing rows to explicit zeroes.
+A statistic remains `null` only when every contributing source row has `null` for that field. Known values are summed without converting an unknown historical value into an explicit zero.
 
-Pitching workload remains stored as outs. Rates such as batting average, OPS and ERA are not stored here; later serving layers calculate them from aggregate components.
+Pitching workload remains stored as outs. Rates such as batting average, on-base percentage, slugging, OPS, ERA and WHIP are calculated later from aggregate components rather than averaged from formatted source rates.
 
-Each season row also preserves:
+Appearance statistics are summed across team rows. Their sorted unique team IDs become the authoritative team history attached to the batting and pitching season records.
 
-- sorted unique team IDs;
-- sorted unique league IDs;
-- the number of contributing source rows;
+Each season row preserves:
+
 - the canonical player ID;
-- the exact Lahman player ID.
+- the exact Lahman player ID;
+- the season;
+- sorted unique team IDs from appearances;
+- the number of contributing batting, pitching or appearance source rows;
+- the available summed counting statistics.
+
+League IDs are not published because the checked-in compact source files do not provide a reliable league field at the required grain.
 
 ## Validation
 
 Strict generation fails when:
 
-- duplicate player-season rows exist;
-- one canonical player-season contains conflicting Lahman player IDs;
-- a counting-stat value is not an integer;
-- the output row count differs from the independently grouped source facts;
+- a source or aggregate key is duplicated;
+- required canonical, Lahman, season, source-row or team identifiers are malformed;
+- one canonical player-season contains conflicting Lahman IDs;
+- a counting statistic is negative or not an integer;
+- an aggregate row count differs from independently grouped source rows;
 - any summed statistic differs from an independent source-row calculation;
-- team IDs, league IDs or stint counts do not reconcile;
-- an expected aggregate is missing or an unexpected aggregate appears.
+- source-row counts, appearance-row counts or team IDs do not reconcile;
+- an expected aggregate is missing or an unexpected aggregate appears;
+- a batting or pitching season cannot be linked to an appearance season.
 
-The reconciliation path does not call the production aggregation function. This prevents a shared implementation bug from validating itself.
+The reconciliation path independently groups and sums the source artifacts rather than calling the production aggregation functions. This prevents a shared implementation bug from validating itself.
 
 ## Outputs
 
-The generator writes:
+The season generator writes:
 
 - `batting-seasons.json`;
 - `pitching-seasons.json`;
@@ -62,7 +86,7 @@ The generator writes:
 - `canonical-season-aggregates-report.json`;
 - `canonical-season-aggregates-report.md`.
 
-Every artifact records SHA-256 hashes for its raw input artifacts.
+Every artifact includes SHA-256 hashes for its direct input artifacts.
 
 ## Commands
 
@@ -71,10 +95,14 @@ pnpm --filter @initial-baseball/baseball-data generate:canonical-season-facts:st
 pnpm --filter @initial-baseball/baseball-data generate:canonical-season-aggregates:strict
 ```
 
-CI runs both commands in strict mode and uploads the universe, raw facts and season aggregates together as the `canonical-baseball-data` artifact.
+CI runs both commands in strict mode and uploads the canonical universe, source facts, season aggregates, reports and captured generator log as the `canonical-baseball-data` artifact. The artifact is uploaded even when strict validation fails so the failure can be audited.
+
+## Future source upgrades
+
+A future data release may replace the compact batting and pitching files with complete team-stint facts. That requires an explicit adapter and schema-version change. The current pipeline must not infer or reconstruct missing team stints from row order.
 
 ## Safety boundary
 
-This is still a shadow data layer. It does not change the live game, search, hints, reveal cards, Daily selection or current serving artifacts.
+This remains a shadow data layer. It does not change the live game, search, hints, reveal cards, Daily selection or current serving artifacts.
 
 The next layer derives career facts from these player-season records. Runtime migration occurs only after career and serving artifacts reconcile and pass release gates.
