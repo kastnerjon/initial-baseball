@@ -9,37 +9,133 @@ const INPUT_DIR = resolve(PACKAGE_DIR, 'reports/canonical-season-facts');
 const OUTPUT_DIR = resolve(PACKAGE_DIR, 'reports/canonical-season-aggregates');
 const args = process.argv.slice(2);
 const strict = args.includes('--strict');
-const BAT_FIELDS = ['games','atBats','runs','hits','doubles','triples','homeRuns','runsBattedIn','stolenBases','caughtStealing','walks','strikeouts','intentionalWalks','hitByPitch','sacrificeHits','sacrificeFlies','groundedIntoDoublePlay'];
-const PITCH_FIELDS = ['wins','losses','games','gamesStarted','completeGames','shutouts','saves','outsPitched','hitsAllowed','earnedRuns','homeRunsAllowed','walksAllowed','strikeouts','opponentBattersFaced','intentionalWalks','wildPitches','hitBatters','balks','runsAllowed','sacrificeHitsAllowed','sacrificeFliesAllowed','groundedIntoDoublePlay'];
-const APPEARANCE_FIELDS = ['gamesAll','gamesStarted','gamesBatting','gamesDefense','gamesPitcher','gamesCatcher','gamesFirstBase','gamesSecondBase','gamesThirdBase','gamesShortstop','gamesLeftField','gamesCenterField','gamesRightField','gamesOutfield','gamesDesignatedHitter','gamesPinchHitter','gamesPinchRunner'];
+const BATTING_FIELDS = [
+  'atBats', 'runs', 'hits', 'doubles', 'triples', 'homeRuns',
+  'runsBattedIn', 'stolenBases', 'walks', 'hitByPitch', 'sacrificeFlies',
+];
+const PITCHING_FIELDS = [
+  'wins', 'losses', 'saves', 'outsPitched', 'hitsAllowed',
+  'earnedRuns', 'walksAllowed', 'strikeouts',
+];
+const APPEARANCE_FIELDS = [
+  'gamesAll', 'gamesPitcher', 'gamesCatcher', 'gamesFirstBase',
+  'gamesSecondBase', 'gamesThirdBase', 'gamesShortstop', 'gamesLeftField',
+  'gamesCenterField', 'gamesRightField', 'gamesDesignatedHitter',
+];
 
 const sources = {
-  batting: readArtifact('batting-stints.json'),
-  pitching: readArtifact('pitching-stints.json'),
+  batting: readArtifact('batting-source-rows.json'),
+  pitching: readArtifact('pitching-source-rows.json'),
   appearances: readArtifact('appearances.json'),
 };
-const batting = aggregate(sources.batting.artifact.facts ?? [], BAT_FIELDS);
-const pitching = aggregate(sources.pitching.artifact.facts ?? [], PITCH_FIELDS);
-const appearances = aggregate(sources.appearances.artifact.facts ?? [], APPEARANCE_FIELDS);
-const validation = validate({ batting, pitching, appearances, sources });
+const appearanceFacts = sources.appearances.artifact.facts ?? [];
+const appearances = aggregateAppearances(appearanceFacts);
+const appearanceByKey = new Map(appearances.map((fact) => [seasonKey(fact), fact]));
+const batting = aggregateSourceRows(
+  sources.batting.artifact.facts ?? [],
+  BATTING_FIELDS,
+  appearanceByKey,
+);
+const pitching = aggregateSourceRows(
+  sources.pitching.artifact.facts ?? [],
+  PITCHING_FIELDS,
+  appearanceByKey,
+);
+const validation = validate({
+  batting,
+  pitching,
+  appearances,
+  sources,
+});
 const sourceManifest = {
   schemaVersion: 1,
-  batting: manifestEntry('packages/baseball-data/reports/canonical-season-facts/batting-stints.json', sources.batting.text),
-  pitching: manifestEntry('packages/baseball-data/reports/canonical-season-facts/pitching-stints.json', sources.pitching.text),
-  appearances: manifestEntry('packages/baseball-data/reports/canonical-season-facts/appearances.json', sources.appearances.text),
+  batting: manifestEntry(
+    'packages/baseball-data/reports/canonical-season-facts/batting-source-rows.json',
+    sources.batting.text,
+  ),
+  pitching: manifestEntry(
+    'packages/baseball-data/reports/canonical-season-facts/pitching-source-rows.json',
+    sources.pitching.text,
+  ),
+  appearances: manifestEntry(
+    'packages/baseball-data/reports/canonical-season-facts/appearances.json',
+    sources.appearances.text,
+  ),
 };
 
 mkdirSync(OUTPUT_DIR, { recursive: true });
-writeJson('batting-seasons.json', { schemaVersion: 1, sourceManifest, facts: batting });
-writeJson('pitching-seasons.json', { schemaVersion: 1, sourceManifest, facts: pitching });
-writeJson('appearance-seasons.json', { schemaVersion: 1, sourceManifest, facts: appearances });
-writeJson('canonical-season-aggregates-report.json', { schemaVersion: 1, sourceManifest, ...validation });
-writeFileSync(resolve(OUTPUT_DIR, 'canonical-season-aggregates-report.md'), renderMarkdown(validation));
-console.log(`Built ${batting.length} batting seasons, ${pitching.length} pitching seasons, and ${appearances.length} appearance seasons. Critical issues: ${validation.summary.criticalIssueCount}.`);
-if (strict && validation.summary.criticalIssueCount > 0) process.exitCode = 1;
+writeJson('batting-seasons.json', {
+  schemaVersion: 1,
+  sourceManifest,
+  facts: batting,
+});
+writeJson('pitching-seasons.json', {
+  schemaVersion: 1,
+  sourceManifest,
+  facts: pitching,
+});
+writeJson('appearance-seasons.json', {
+  schemaVersion: 1,
+  sourceManifest,
+  facts: appearances,
+});
+writeJson('canonical-season-aggregates-report.json', {
+  schemaVersion: 1,
+  sourceManifest,
+  ...validation,
+});
+writeFileSync(
+  resolve(OUTPUT_DIR, 'canonical-season-aggregates-report.md'),
+  renderMarkdown(validation),
+);
 
-function aggregate(facts, fields) {
+console.log([
+  `Built ${batting.length} batting seasons,`,
+  `${pitching.length} pitching seasons, and`,
+  `${appearances.length} appearance seasons.`,
+  `Critical issues: ${validation.summary.criticalIssueCount}.`,
+].join(' '));
+
+if (strict && validation.summary.criticalIssueCount > 0) {
+  process.exitCode = 1;
+}
+
+function aggregateSourceRows(facts, fields, appearanceByKey) {
   const groups = new Map();
+
+  for (const fact of facts) {
+    const key = seasonKey(fact);
+    const group = groups.get(key) ?? {
+      playerId: fact.playerId,
+      lahmanPlayerId: fact.lahmanPlayerId,
+      season: fact.season,
+      sourceRowCount: 0,
+      values: createAccumulators(fields),
+    };
+    assertSameLahmanPlayer(group, fact, key);
+    group.sourceRowCount += 1;
+    addValues(group.values, fact, fields, key);
+    groups.set(key, group);
+  }
+
+  return [...groups.values()]
+    .map((group) => {
+      const appearance = appearanceByKey.get(seasonKey(group));
+      return {
+        playerId: group.playerId,
+        lahmanPlayerId: group.lahmanPlayerId,
+        season: group.season,
+        teamIds: appearance?.teamIds ?? [],
+        sourceRowCount: group.sourceRowCount,
+        ...finalizeValues(group.values, fields),
+      };
+    })
+    .sort(compareSeason);
+}
+
+function aggregateAppearances(facts) {
+  const groups = new Map();
+
   for (const fact of facts) {
     const key = seasonKey(fact);
     const group = groups.get(key) ?? {
@@ -47,51 +143,116 @@ function aggregate(facts, fields) {
       lahmanPlayerId: fact.lahmanPlayerId,
       season: fact.season,
       teamIds: new Set(),
-      leagueIds: new Set(),
-      stintCount: 0,
-      values: Object.fromEntries(fields.map((field) => [field, { total: 0, present: 0 }])),
+      appearanceRowCount: 0,
+      values: createAccumulators(APPEARANCE_FIELDS),
     };
-    if (group.lahmanPlayerId !== fact.lahmanPlayerId) {
-      throw new Error(`Conflicting Lahman IDs for ${key}: ${group.lahmanPlayerId} and ${fact.lahmanPlayerId}`);
-    }
+    assertSameLahmanPlayer(group, fact, key);
     if (fact.teamId) group.teamIds.add(fact.teamId);
-    if (fact.leagueId) group.leagueIds.add(fact.leagueId);
-    group.stintCount += 1;
-    for (const field of fields) {
-      const value = fact[field];
-      if (value !== null && value !== undefined) {
-        if (!Number.isInteger(value)) throw new Error(`Non-integer ${field} for ${key}`);
-        group.values[field].total += value;
-        group.values[field].present += 1;
-      }
-    }
+    group.appearanceRowCount += 1;
+    addValues(group.values, fact, APPEARANCE_FIELDS, key);
     groups.set(key, group);
   }
-  return [...groups.values()].map((group) => ({
-    playerId: group.playerId,
-    lahmanPlayerId: group.lahmanPlayerId,
-    season: group.season,
-    teamIds: [...group.teamIds].sort(),
-    leagueIds: [...group.leagueIds].sort(),
-    stintCount: group.stintCount,
-    ...Object.fromEntries(fields.map((field) => [field, group.values[field].present > 0 ? group.values[field].total : null])),
-  })).sort(compareSeason);
+
+  return [...groups.values()]
+    .map((group) => ({
+      playerId: group.playerId,
+      lahmanPlayerId: group.lahmanPlayerId,
+      season: group.season,
+      teamIds: [...group.teamIds].sort(),
+      appearanceRowCount: group.appearanceRowCount,
+      ...finalizeValues(group.values, APPEARANCE_FIELDS),
+    }))
+    .sort(compareSeason);
+}
+
+function createAccumulators(fields) {
+  return Object.fromEntries(
+    fields.map((field) => [field, { total: 0, present: 0 }]),
+  );
+}
+
+function addValues(accumulators, fact, fields, key) {
+  for (const field of fields) {
+    const value = fact[field];
+    if (value === null || value === undefined) continue;
+    if (!Number.isInteger(value) || value < 0) {
+      throw new Error(`Invalid ${field} for ${key}: ${value}`);
+    }
+    accumulators[field].total += value;
+    accumulators[field].present += 1;
+  }
+}
+
+function finalizeValues(accumulators, fields) {
+  return Object.fromEntries(fields.map((field) => [
+    field,
+    accumulators[field].present > 0 ? accumulators[field].total : null,
+  ]));
+}
+
+function assertSameLahmanPlayer(group, fact, key) {
+  if (group.lahmanPlayerId !== fact.lahmanPlayerId) {
+    throw new Error([
+      `Conflicting Lahman IDs for ${key}:`,
+      group.lahmanPlayerId,
+      'and',
+      fact.lahmanPlayerId,
+    ].join(' '));
+  }
 }
 
 function validate({ batting, pitching, appearances, sources }) {
   const criticalIssues = [];
-  const duplicateKeys = { batting: duplicates(batting), pitching: duplicates(pitching), appearances: duplicates(appearances) };
+  const duplicateKeys = {
+    batting: duplicates(batting),
+    pitching: duplicates(pitching),
+    appearances: duplicates(appearances),
+  };
   for (const [kind, keys] of Object.entries(duplicateKeys)) {
-    for (const key of keys) criticalIssues.push(`${kind} duplicate player-season: ${key}`);
+    for (const key of keys) {
+      criticalIssues.push(`${kind} duplicate player-season: ${key}`);
+    }
   }
+
+  const appearanceByKey = new Map(appearances.map((fact) => [seasonKey(fact), fact]));
   const reconciliation = {
-    batting: reconcileIndependently(batting, sources.batting.artifact.facts ?? [], BAT_FIELDS),
-    pitching: reconcileIndependently(pitching, sources.pitching.artifact.facts ?? [], PITCH_FIELDS),
-    appearances: reconcileIndependently(appearances, sources.appearances.artifact.facts ?? [], APPEARANCE_FIELDS),
+    batting: reconcileSourceRows(
+      batting,
+      sources.batting.artifact.facts ?? [],
+      BATTING_FIELDS,
+      appearanceByKey,
+    ),
+    pitching: reconcileSourceRows(
+      pitching,
+      sources.pitching.artifact.facts ?? [],
+      PITCHING_FIELDS,
+      appearanceByKey,
+    ),
+    appearances: reconcileAppearances(
+      appearances,
+      sources.appearances.artifact.facts ?? [],
+    ),
   };
   for (const [kind, issues] of Object.entries(reconciliation)) {
-    for (const issue of issues) criticalIssues.push(`${kind} reconciliation: ${issue}`);
+    for (const issue of issues) {
+      criticalIssues.push(`${kind} reconciliation: ${issue}`);
+    }
   }
+
+  const missingAppearanceLinks = {
+    batting: batting
+      .filter((fact) => !appearanceByKey.has(seasonKey(fact)))
+      .map(seasonKey),
+    pitching: pitching
+      .filter((fact) => !appearanceByKey.has(seasonKey(fact)))
+      .map(seasonKey),
+  };
+  for (const [kind, keys] of Object.entries(missingAppearanceLinks)) {
+    for (const key of keys) {
+      criticalIssues.push(`${kind} missing appearance season: ${key}`);
+    }
+  }
+
   return {
     summary: {
       battingSeasonCount: batting.length,
@@ -100,42 +261,121 @@ function validate({ batting, pitching, appearances, sources }) {
       twoWayPlayerSeasonCount: intersectionCount(batting, pitching),
       multiTeamBattingSeasonCount: batting.filter((fact) => fact.teamIds.length > 1).length,
       multiTeamPitchingSeasonCount: pitching.filter((fact) => fact.teamIds.length > 1).length,
+      battingSeasonWithoutAppearanceCount: missingAppearanceLinks.batting.length,
+      pitchingSeasonWithoutAppearanceCount: missingAppearanceLinks.pitching.length,
       criticalIssueCount: criticalIssues.length,
     },
-    validation: { duplicateKeys, reconciliation, criticalIssues },
+    validation: {
+      duplicateKeys,
+      reconciliation,
+      missingAppearanceLinks,
+      criticalIssues,
+    },
   };
 }
 
-function reconcileIndependently(aggregates, stints, fields) {
+function reconcileSourceRows(aggregates, sourceRows, fields, appearanceByKey) {
   const issues = [];
-  const aggregateByKey = new Map(aggregates.map((fact) => [seasonKey(fact), fact]));
-  const stintsByKey = new Map();
-  for (const stint of stints) {
-    const key = seasonKey(stint);
-    const group = stintsByKey.get(key) ?? [];
-    group.push(stint);
-    stintsByKey.set(key, group);
+  const aggregateByKey = new Map(
+    aggregates.map((fact) => [seasonKey(fact), fact]),
+  );
+  const rowsByKey = groupBySeason(sourceRows);
+
+  if (aggregateByKey.size !== rowsByKey.size) {
+    issues.push(`row count ${aggregateByKey.size} != ${rowsByKey.size}`);
   }
-  if (aggregateByKey.size !== stintsByKey.size) issues.push(`row count ${aggregateByKey.size} != ${stintsByKey.size}`);
-  for (const [key, group] of stintsByKey) {
+
+  for (const [key, rows] of rowsByKey) {
     const actual = aggregateByKey.get(key);
-    if (!actual) { issues.push(`missing ${key}`); continue; }
-    const teamIds = [...new Set(group.map((fact) => fact.teamId).filter(Boolean))].sort();
-    const leagueIds = [...new Set(group.map((fact) => fact.leagueId).filter(Boolean))].sort();
-    if (actual.stintCount !== group.length) issues.push(`${key} stintCount ${actual.stintCount} != ${group.length}`);
-    if (JSON.stringify(actual.teamIds) !== JSON.stringify(teamIds)) issues.push(`${key} teamIds differ`);
-    if (JSON.stringify(actual.leagueIds) !== JSON.stringify(leagueIds)) issues.push(`${key} leagueIds differ`);
-    if (group.some((fact) => fact.lahmanPlayerId !== actual.lahmanPlayerId)) issues.push(`${key} Lahman ID differs`);
+    if (!actual) {
+      issues.push(`missing ${key}`);
+      continue;
+    }
+    if (actual.sourceRowCount !== rows.length) {
+      issues.push(`${key} sourceRowCount ${actual.sourceRowCount} != ${rows.length}`);
+    }
+    if (rows.some((row) => row.lahmanPlayerId !== actual.lahmanPlayerId)) {
+      issues.push(`${key} Lahman ID differs`);
+    }
     for (const field of fields) {
-      const present = group.map((fact) => fact[field]).filter((value) => value !== null && value !== undefined);
-      const expected = present.length === 0 ? null : present.reduce((sum, value) => sum + value, 0);
-      if (actual[field] !== expected) issues.push(`${key} ${field}: ${actual[field]} != ${expected}`);
+      const expected = sumKnown(rows, field);
+      if (actual[field] !== expected) {
+        issues.push(`${key} ${field}: ${actual[field]} != ${expected}`);
+      }
+    }
+    const expectedTeams = appearanceByKey.get(key)?.teamIds ?? [];
+    if (!sameArray(actual.teamIds, expectedTeams)) {
+      issues.push(`${key} teamIds differ`);
     }
   }
+
   for (const key of aggregateByKey.keys()) {
-    if (!stintsByKey.has(key)) issues.push(`unexpected ${key}`);
+    if (!rowsByKey.has(key)) issues.push(`unexpected ${key}`);
   }
   return issues;
+}
+
+function reconcileAppearances(aggregates, sourceRows) {
+  const issues = [];
+  const aggregateByKey = new Map(
+    aggregates.map((fact) => [seasonKey(fact), fact]),
+  );
+  const rowsByKey = groupBySeason(sourceRows);
+
+  if (aggregateByKey.size !== rowsByKey.size) {
+    issues.push(`row count ${aggregateByKey.size} != ${rowsByKey.size}`);
+  }
+
+  for (const [key, rows] of rowsByKey) {
+    const actual = aggregateByKey.get(key);
+    if (!actual) {
+      issues.push(`missing ${key}`);
+      continue;
+    }
+    const expectedTeams = [...new Set(
+      rows.map((row) => row.teamId).filter(Boolean),
+    )].sort();
+    if (actual.appearanceRowCount !== rows.length) {
+      issues.push(`${key} appearanceRowCount ${actual.appearanceRowCount} != ${rows.length}`);
+    }
+    if (!sameArray(actual.teamIds, expectedTeams)) {
+      issues.push(`${key} teamIds differ`);
+    }
+    if (rows.some((row) => row.lahmanPlayerId !== actual.lahmanPlayerId)) {
+      issues.push(`${key} Lahman ID differs`);
+    }
+    for (const field of APPEARANCE_FIELDS) {
+      const expected = sumKnown(rows, field);
+      if (actual[field] !== expected) {
+        issues.push(`${key} ${field}: ${actual[field]} != ${expected}`);
+      }
+    }
+  }
+
+  for (const key of aggregateByKey.keys()) {
+    if (!rowsByKey.has(key)) issues.push(`unexpected ${key}`);
+  }
+  return issues;
+}
+
+function groupBySeason(facts) {
+  const groups = new Map();
+  for (const fact of facts) {
+    const key = seasonKey(fact);
+    const group = groups.get(key) ?? [];
+    group.push(fact);
+    groups.set(key, group);
+  }
+  return groups;
+}
+
+function sumKnown(rows, field) {
+  const values = rows
+    .map((row) => row[field])
+    .filter((value) => value !== null && value !== undefined);
+  return values.length === 0
+    ? null
+    : values.reduce((sum, value) => sum + value, 0);
 }
 
 function duplicates(facts) {
@@ -148,15 +388,86 @@ function duplicates(facts) {
   }
   return [...result].sort();
 }
+
 function intersectionCount(left, right) {
   const keys = new Set(left.map(seasonKey));
-  return new Set(right.map(seasonKey).filter((key) => keys.has(key))).size;
+  return new Set(
+    right.map(seasonKey).filter((key) => keys.has(key)),
+  ).size;
 }
-function seasonKey(fact) { return `${fact.playerId}|${fact.season}`; }
-function compareSeason(left, right) { return left.playerId.localeCompare(right.playerId) || left.season - right.season; }
-function manifestEntry(path, text) { return { path, sha256: createHash('sha256').update(text).digest('hex') }; }
-function readArtifact(name) { const text = readFileSync(resolve(INPUT_DIR, name), 'utf8'); return { text, artifact: JSON.parse(text) }; }
-function writeJson(name, value) { writeFileSync(resolve(OUTPUT_DIR, name), `${JSON.stringify(value, null, 2)}\n`); }
+
+function sameArray(left, right) {
+  return JSON.stringify(left) === JSON.stringify(right);
+}
+
+function seasonKey(fact) {
+  return `${fact.playerId}|${fact.season}`;
+}
+
+function compareSeason(left, right) {
+  return left.playerId.localeCompare(right.playerId)
+    || left.season - right.season;
+}
+
+function manifestEntry(path, text) {
+  return {
+    path,
+    sha256: createHash('sha256').update(text).digest('hex'),
+  };
+}
+
+function readArtifact(name) {
+  const text = readFileSync(resolve(INPUT_DIR, name), 'utf8');
+  return { text, artifact: JSON.parse(text) };
+}
+
+function writeJson(name, value) {
+  writeFileSync(
+    resolve(OUTPUT_DIR, name),
+    `${JSON.stringify(value, null, 2)}\n`,
+  );
+}
+
 function renderMarkdown(report) {
-  return `# Canonical Player-Season Aggregates\n\nThis remains a shadow artifact; the live game is unchanged.\n\n## Summary\n\n- Batting seasons: ${report.summary.battingSeasonCount}\n- Pitching seasons: ${report.summary.pitchingSeasonCount}\n- Appearance seasons: ${report.summary.appearanceSeasonCount}\n- Two-way player-seasons: ${report.summary.twoWayPlayerSeasonCount}\n- Multi-team batting seasons: ${report.summary.multiTeamBattingSeasonCount}\n- Multi-team pitching seasons: ${report.summary.multiTeamPitchingSeasonCount}\n- Critical issues: ${report.summary.criticalIssueCount}\n\n## Contract\n\n- One row per canonical player and season.\n- Counting statistics sum across source stints.\n- A field remains null only when every contributing stint is null.\n- Team and league histories remain explicit sorted arrays.\n- Raw stint artifacts remain authoritative and auditable.\n- Reconciliation is independently recomputed from the raw stint rows.\n- Career aggregation and runtime migration remain deferred.\n`;
+  const lines = [
+    '# Canonical Player-Season Aggregates',
+    '',
+    'This remains a shadow artifact; the live game is unchanged.',
+    '',
+    '## Summary',
+    '',
+    `- Batting seasons: ${report.summary.battingSeasonCount}`,
+    `- Pitching seasons: ${report.summary.pitchingSeasonCount}`,
+    `- Appearance seasons: ${report.summary.appearanceSeasonCount}`,
+    `- Two-way player-seasons: ${report.summary.twoWayPlayerSeasonCount}`,
+    `- Multi-team batting seasons: ${report.summary.multiTeamBattingSeasonCount}`,
+    `- Multi-team pitching seasons: ${report.summary.multiTeamPitchingSeasonCount}`,
+    `- Batting seasons without appearances: ${report.summary.battingSeasonWithoutAppearanceCount}`,
+    `- Pitching seasons without appearances: ${report.summary.pitchingSeasonWithoutAppearanceCount}`,
+    `- Critical issues: ${report.summary.criticalIssueCount}`,
+    '',
+    '## Contract',
+    '',
+    '- One row per canonical player and season.',
+    '- Batting and pitching counting statistics sum across the slim source rows.',
+    '- A field remains null only when every contributing source row is null.',
+    '- Team histories are joined from the team-grain appearances source.',
+    '- Position appearances are summed across team rows.',
+    '- Reconciliation is independently recomputed from the source artifacts.',
+    '- Career aggregation and runtime migration remain deferred.',
+    '',
+  ];
+
+  if (report.validation.criticalIssues.length > 0) {
+    lines.push('## Critical issues', '');
+    for (const issue of report.validation.criticalIssues.slice(0, 100)) {
+      lines.push(`- ${issue}`);
+    }
+    if (report.validation.criticalIssues.length > 100) {
+      lines.push(`- …and ${report.validation.criticalIssues.length - 100} more.`);
+    }
+    lines.push('');
+  }
+
+  return `${lines.join('\n')}\n`;
 }
