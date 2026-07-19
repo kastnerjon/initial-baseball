@@ -13,6 +13,7 @@ const pitching = readFacts(resolve(AGGREGATE_DIR, 'pitching-seasons.json'));
 const appearances = readFacts(resolve(AGGREGATE_DIR, 'appearance-seasons.json'));
 const cards = JSON.parse(readFileSync(resolve(CARD_DIR, 'season-cards.json'), 'utf8')).cards ?? [];
 const issues = [];
+const warnings = [];
 
 const playerByCanonicalId = uniqueIndex(universe, (player) => player.canonicalId, 'canonical player ID');
 const playerByLahmanId = uniqueIndex(universe, (player) => player.lahmanPlayerId, 'Lahman player ID');
@@ -65,7 +66,11 @@ for (const [lahmanPlayerId, season, expected] of regressionCases) {
 }
 
 console.log(`QA checked ${cards.length} season cards against ${universe.length} canonical players, ${batting.length} batting, ${pitching.length} pitching, and ${appearances.length} appearance aggregates.`);
-console.log(`Regression cases checked: ${regressionCases.length}. Issues: ${issues.length}.`);
+console.log(`Regression cases checked: ${regressionCases.length}. Critical issues: ${issues.length}. Source-range warnings: ${warnings.length}.`);
+if (warnings.length) {
+  console.warn(warnings.slice(0, 25).join('\n'));
+  if (warnings.length > 25) console.warn(`...and ${warnings.length - 25} more source-range warnings`);
+}
 if (issues.length) {
   console.error(issues.slice(0, 100).join('\n'));
   if (issues.length > 100) console.error(`...and ${issues.length - 100} more`);
@@ -88,19 +93,22 @@ function validateRowIdentity(row, family) {
   const player = playerByCanonicalId.get(row.playerId);
   if (!player) { issues.push(`${family} row has unknown canonical player ${row.playerId}:${row.season}`); return; }
   if (row.lahmanPlayerId !== player.lahmanPlayerId) issues.push(`${family} identity crosswalk mismatch ${row.playerId}:${row.season}: ${row.lahmanPlayerId} != ${player.lahmanPlayerId}`);
-  validateCareerRange(player, row.season, `${family} ${row.playerId}:${row.season}`);
+  noteCareerRangeDrift(player, row.season, `${family} ${row.playerId}:${row.season}`);
 }
 
 function validateCardIdentity(card, key) {
   const player = playerByCanonicalId.get(card.playerId);
   if (!player) { issues.push(`Card ${key} has unknown canonical player`); return; }
   if (card.lahmanPlayerId !== player.lahmanPlayerId) issues.push(`Card ${key} Lahman ID ${card.lahmanPlayerId} does not belong to canonical player ${card.playerId}`);
-  validateCareerRange(player, card.season, `card ${key}`);
+  noteCareerRangeDrift(player, card.season, `card ${key}`);
 }
 
-function validateCareerRange(player, season, label) {
-  if (Number.isInteger(player.firstYear) && season < player.firstYear) issues.push(`${label} predates ${player.displayName}'s debut year ${player.firstYear}`);
-  if (Number.isInteger(player.lastYear) && season > player.lastYear) issues.push(`${label} follows ${player.displayName}'s final year ${player.lastYear}`);
+function noteCareerRangeDrift(player, season, label) {
+  // Lahman's People.csv debut/final fields represent MLB dates. They do not bound
+  // Negro League seasons, and can lag newer season-stat files for returning players.
+  // Keep this visible for source QA, but do not misclassify valid rows as identity failures.
+  if (Number.isInteger(player.firstYear) && season < player.firstYear) warnings.push(`${label} predates ${player.displayName}'s MLB debut year ${player.firstYear}`);
+  if (Number.isInteger(player.lastYear) && season > player.lastYear) warnings.push(`${label} follows ${player.displayName}'s recorded MLB final year ${player.lastYear}`);
 }
 
 function verifyDerived(card, key) {
