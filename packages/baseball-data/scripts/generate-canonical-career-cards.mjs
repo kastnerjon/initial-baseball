@@ -61,7 +61,7 @@ function buildCard(player) {
   const seasons = [...(seasonCardsById.get(player.canonicalId) ?? [])].sort((a, b) => a.season - b.season);
   if (!batting && !pitching && !appearances && seasons.length === 0) return null;
 
-  const playerType = batting && pitching ? 'two-way' : pitching ? 'pitcher' : 'hitter';
+  const playerType = classifyPlayerType({ batting, pitching, appearances });
   const firstSeason = minKnown([batting?.firstSeason, pitching?.firstSeason, appearances?.firstSeason, seasons[0]?.season]);
   const lastSeason = maxKnown([batting?.lastSeason, pitching?.lastSeason, appearances?.lastSeason, seasons.at(-1)?.season]);
   const teamIds = [...new Set([
@@ -94,7 +94,7 @@ function buildCard(player) {
       pitching: pitching ? pitchingSummary(pitching) : null,
       advanced: {
         war: null,
-        ops: batting ? deriveOpsUnavailable() : null,
+        ops: batting ? null : null,
         opsPlus: null,
         eraPlus: null,
         fip: null,
@@ -120,6 +120,30 @@ function buildCard(player) {
       seasonCardCount: seasons.length,
     },
   };
+}
+
+function classifyPlayerType({ batting, pitching, appearances }) {
+  if (!pitching) return 'hitter';
+  if (!batting) return 'pitcher';
+
+  const pitchingGames = appearances?.gamesPitcher ?? 0;
+  const nonPitchingGames = [
+    appearances?.gamesCatcher,
+    appearances?.gamesFirstBase,
+    appearances?.gamesSecondBase,
+    appearances?.gamesThirdBase,
+    appearances?.gamesShortstop,
+    appearances?.gamesLeftField,
+    appearances?.gamesCenterField,
+    appearances?.gamesRightField,
+    appearances?.gamesDesignatedHitter,
+  ].filter(Number.isInteger).reduce((sum, value) => sum + value, 0);
+
+  const substantialPitching = pitchingGames >= 20;
+  const substantialNonPitching = nonPitchingGames >= 20;
+  if (substantialPitching && substantialNonPitching) return 'two-way';
+  if (substantialPitching && pitchingGames >= nonPitchingGames) return 'pitcher';
+  return 'hitter';
 }
 
 function battingSummary(row) {
@@ -186,7 +210,7 @@ function validate(cards, out) {
     if (new Set(years).size !== years.length) out.push(`Duplicate season reference: ${card.playerId}`);
     const sorted = [...years].sort((a, b) => a - b);
     if (JSON.stringify(years) !== JSON.stringify(sorted)) out.push(`Unsorted season references: ${card.playerId}`);
-    if (card.summary.advanced.war !== null || card.summary.advanced.opsPlus !== null || card.summary.advanced.eraPlus !== null || card.summary.advanced.fip !== null) out.push(`Unsupported advanced value populated: ${card.playerId}`);
+    if (card.summary.advanced.war !== null || card.summary.advanced.ops !== null || card.summary.advanced.opsPlus !== null || card.summary.advanced.eraPlus !== null || card.summary.advanced.fip !== null) out.push(`Unsupported advanced value populated: ${card.playerId}`);
   }
 }
 
@@ -208,7 +232,6 @@ function regression(cards, out) {
   }
 }
 
-function deriveOpsUnavailable() { return null; }
 function slugging(row) {
   if (!allKnown([row.hits, row.doubles, row.triples, row.homeRuns, row.atBats]) || row.atBats <= 0) return null;
   const totalBases = row.hits + row.doubles + (2 * row.triples) + (3 * row.homeRuns);
