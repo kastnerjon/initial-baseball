@@ -48,6 +48,7 @@ jobs:
       - name: Generate canonical player-season aggregates
         run: pnpm --filter @initial-baseball/baseball-data generate:canonical-season-aggregates:strict
       - name: Upload canonical baseball data pipeline
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: canonical-baseball-data
