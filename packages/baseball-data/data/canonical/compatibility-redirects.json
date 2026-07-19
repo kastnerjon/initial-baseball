@@ -1,0 +1,21 @@
+{
+  "schemaVersion": 1,
+  "redirects": [
+    {
+      "legacyPlayerId": "chadwick:0fa4c972",
+      "targetLahmanPlayerId": "ortizda01",
+      "scope": "historical_daily_override",
+      "reason": "The 2026-05-04 Daily override explicitly labels this legacy record David Ortiz, but the source row has no MLB identity evidence. Preserve the published puzzle's intended player without claiming the source row is the same person.",
+      "reviewedBy": "project-owner",
+      "reviewedAt": "2026-07-19"
+    },
+    {
+      "legacyPlayerId": "chadwick:1b1083b5",
+      "targetLahmanPlayerId": "johnsra05",
+      "scope": "historical_daily_override",
+      "reason": "The 2026-05-04 Daily override explicitly labels this legacy record Randy Johnson, but the source row lacks the strong IDs of the MLB player. Preserve the published puzzle's intended player without claiming source identity equivalence.",
+      "reviewedBy": "project-owner",
+      "reviewedAt": "2026-07-19"
+    }
+  ]
+}

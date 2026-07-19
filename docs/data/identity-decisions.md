@@ -26,10 +26,10 @@ Use a forced mapping only after reviewing source evidence.
 
 ```json
 {
-  "legacyPlayerId": "chadwick:0fa4c972",
-  "lahmanPlayerId": "ortizda01",
+  "legacyPlayerId": "chadwick:example",
+  "lahmanPlayerId": "example01",
   "canonicalId": "ibp_existing_id",
-  "canonicalGroup": "david-ortiz",
+  "canonicalGroup": "reviewed-person-group",
   "reason": "Reviewed duplicate source identities",
   "reviewedBy": "editor name",
   "reviewedAt": "2026-07-19"
@@ -45,6 +45,8 @@ Fields:
 - `reason`, `reviewedBy`, and `reviewedAt` provide the audit trail.
 
 At least one of `lahmanPlayerId`, `canonicalId`, or `canonicalGroup` should be present.
+
+A forced mapping asserts that the source records describe the same human. It must not be used merely because old application behavior treated two records as interchangeable.
 
 ## `blockedLinks`
 
@@ -85,6 +87,46 @@ Display-name overrides are keyed by stable canonical ID, not by mutable source n
 ```
 
 Display-name overrides do not merge identities. Identity must be resolved first.
+
+## Compatibility redirects
+
+`packages/baseball-data/data/canonical/compatibility-redirects.json` is separate from identity decisions.
+
+A compatibility redirect preserves an explicit historical application reference when the old app record was wrong but the intended player is unambiguous. It does not claim that the old source row and the target player are the same person.
+
+Example:
+
+```json
+{
+  "legacyPlayerId": "chadwick:old-bad-reference",
+  "targetLahmanPlayerId": "target01",
+  "scope": "historical_daily_override",
+  "reason": "The published override explicitly named the intended player.",
+  "reviewedBy": "project-owner",
+  "reviewedAt": "2026-07-19"
+}
+```
+
+Use compatibility redirects only for persisted application references such as:
+
+- published Daily overrides;
+- migrated saved state;
+- other immutable historical records.
+
+They must not make an unsupported row searchable, selectable, statistically eligible, or part of the canonical identity's source mappings.
+
+## Retired legacy IDs
+
+A legacy row with no supported MLB identity and no required compatibility mapping is retired without a redirect.
+
+Retirement means:
+
+- it does not appear in the future search universe;
+- it cannot become a Daily answer;
+- its incorrect inherited stats are discarded;
+- it is retained in migration reports for auditability.
+
+A retired ID is not automatically redirected to a famous same-name player.
 
 ## Review requirements
 

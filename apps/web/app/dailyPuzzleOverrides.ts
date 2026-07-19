@@ -4,7 +4,7 @@ import type { DailyPuzzleOverrideEntry } from '@initial-baseball/daily';
 // Daily resets at midnight Pacific Time. New dates should contain exactly 9 players.
 // Six-player overrides remain accepted only for historical compatibility.
 // Use simple names for unambiguous players: 'Ken Griffey Jr.'
-// Use playerId objects for ambiguous names: { name: 'David Ortiz', playerId: 'chadwick:...' }
+// Use an object with a real player ID for ambiguous names; see the existing override below.
 // If a date is absent here, the app falls back to deterministic generated selection.
 export const DAILY_PUZZLE_OVERRIDES = {
   '2026-05-04': [

@@ -11,7 +11,8 @@
     "typecheck": "turbo typecheck",
     "check:file-sizes": "node scripts/check-file-sizes.mjs",
     "data:audit": "pnpm --filter @initial-baseball/baseball-data audit:current",
-    "data:identities": "pnpm --filter @initial-baseball/baseball-data generate:canonical-identities"
+    "data:identities": "pnpm --filter @initial-baseball/baseball-data generate:canonical-identities",
+    "data:universe": "pnpm data:identities && pnpm --filter @initial-baseball/baseball-data generate:canonical-universe"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

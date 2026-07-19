@@ -41,6 +41,16 @@ jobs:
           name: canonical-baseball-identities
           path: packages/baseball-data/reports/canonical-identities/
           if-no-files-found: error
+      - name: Generate Lahman-first canonical universe
+        run: pnpm --filter @initial-baseball/baseball-data generate:canonical-universe
+      - name: Upload Lahman-first canonical universe
+        uses: actions/upload-artifact@v4
+        with:
+          name: canonical-baseball-universe
+          path: packages/baseball-data/reports/canonical-universe/
+          if-no-files-found: error
+      - name: Validate Lahman-first canonical universe
+        run: node -e "const r=require('./packages/baseball-data/reports/canonical-universe/canonical-universe-report.json'); if(r.summary.criticalIssueCount){console.error(JSON.stringify(r.validation.criticalIssues,null,2)); throw new Error('Canonical universe validation failed');}"
       - name: Verify production package build order
         run: |
           pnpm --filter @initial-baseball/shared build
