@@ -41,6 +41,14 @@ jobs:
           name: canonical-baseball-identities
           path: packages/baseball-data/reports/canonical-identities/
           if-no-files-found: error
+      - name: Generate Lahman-first canonical universe
+        run: pnpm --filter @initial-baseball/baseball-data generate:canonical-universe:strict
+      - name: Upload Lahman-first canonical universe
+        uses: actions/upload-artifact@v4
+        with:
+          name: canonical-baseball-universe
+          path: packages/baseball-data/reports/canonical-universe/
+          if-no-files-found: error
       - name: Verify production package build order
         run: |
           pnpm --filter @initial-baseball/shared build
