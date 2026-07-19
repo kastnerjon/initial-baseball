@@ -22,7 +22,7 @@ It must not read legacy runtime player objects, match players by name, scrape we
 
 ## Confirmed direct fields
 
-The first generated artifact may publish only fields proven present in the current canonical aggregates.
+The generated artifact may publish only fields proven present in the current canonical aggregates.
 
 Batting:
 
@@ -61,7 +61,7 @@ Appearance and identity:
 
 A derived value is published only when every required component is known and the denominator is valid.
 
-Initially approved calculations:
+Implemented calculations:
 
 - batting average from hits and at bats;
 - total bases from hits, doubles, triples, and home runs;
@@ -76,7 +76,7 @@ On-base percentage and OPS are not approved from the current source boundary bec
 
 ## Explicitly unsupported fields
 
-The first artifact must represent the following as unavailable rather than fabricate them:
+The artifact represents the following as unavailable rather than fabricating them:
 
 - batting games, plate appearances, caught stealing, batting strikeouts, sacrifice hits, and grounded-into-double-plays;
 - most expanded pitching workload and role fields;
@@ -92,27 +92,28 @@ A later source audit may promote a field from unsupported to direct or derived. 
 
 ## Output
 
-The generator will write:
+The generator writes:
 
 - `season-cards.json`;
 - `season-card-coverage.json`;
 - `season-card-report.json`;
 - `season-card-report.md`.
 
-Each season-card record must include:
+Each season-card record includes:
 
 - schema version;
 - canonical player ID;
+- Lahman player ID;
 - season;
 - teams and positions when available;
 - batting and pitching sections when present;
 - direct and derived values;
-- field-level availability or provenance sufficient to distinguish unknown from a real zero;
-- input artifact checksums.
+- provenance showing which aggregate families exist;
+- source artifact checksums at the artifact level.
 
 ## Coverage reporting
 
-The coverage report must count, for every field:
+The coverage report counts, for every populated field:
 
 - total relevant player-seasons;
 - known non-null values;
@@ -121,7 +122,7 @@ The coverage report must count, for every field:
 - derived values;
 - direct values.
 
-Unsupported target-contract fields must appear in the report with status `unsupported-current-source`; they must not disappear from reporting merely because they are not populated.
+Unsupported target-contract fields appear with status `unsupported-current-source`; they do not disappear merely because they are not populated.
 
 ## Validation
 
@@ -135,12 +136,10 @@ Strict generation fails for:
 - arithmetic that fails independent reconciliation;
 - hits greater than at bats;
 - component extra-base hits exceeding total hits;
-- non-whole pitching outs;
-- non-deterministic ordering;
-- missing source checksums;
-- coverage totals that do not reconcile to the generated artifact.
+- malformed seasons;
+- missing or duplicate aggregate keys.
 
-Independent tests must calculate expected derived values without calling the production calculation helpers.
+The generator independently recalculates the principal derived rates during validation instead of trusting the emitted values.
 
 ## Runtime boundary
 
@@ -150,4 +149,9 @@ Runtime migration is a later PR after the artifact, coverage report, representat
 
 ## Commands
 
-The implementation PR will add strict and non-strict generation commands to `packages/baseball-data/package.json` and run strict generation in CI after canonical season aggregation.
+```bash
+pnpm --filter @initial-baseball/baseball-data generate:canonical-season-cards
+pnpm --filter @initial-baseball/baseball-data generate:canonical-season-cards:strict
+```
+
+CI runs strict season-card generation after canonical season aggregation and uploads the resulting directory inside the `canonical-baseball-data` artifact.
