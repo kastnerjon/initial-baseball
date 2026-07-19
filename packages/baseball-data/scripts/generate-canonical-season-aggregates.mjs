@@ -94,6 +94,7 @@ console.log([
   `${pitching.length} pitching seasons, and`,
   `${appearances.length} appearance seasons.`,
   `Critical issues: ${validation.summary.criticalIssueCount}.`,
+  `Source warnings: ${validation.summary.warningCount}.`,
 ].join(' '));
 
 if (strict && validation.summary.criticalIssueCount > 0) {
@@ -247,11 +248,14 @@ function validate({ batting, pitching, appearances, sources }) {
       .filter((fact) => !appearanceByKey.has(seasonKey(fact)))
       .map(seasonKey),
   };
-  for (const [kind, keys] of Object.entries(missingAppearanceLinks)) {
-    for (const key of keys) {
-      criticalIssues.push(`${kind} missing appearance season: ${key}`);
-    }
-  }
+  const warnings = [
+    ...missingAppearanceLinks.batting.map(
+      (key) => `batting source has no appearance season: ${key}`,
+    ),
+    ...missingAppearanceLinks.pitching.map(
+      (key) => `pitching source has no appearance season: ${key}`,
+    ),
+  ];
 
   return {
     summary: {
@@ -263,12 +267,14 @@ function validate({ batting, pitching, appearances, sources }) {
       multiTeamPitchingSeasonCount: pitching.filter((fact) => fact.teamIds.length > 1).length,
       battingSeasonWithoutAppearanceCount: missingAppearanceLinks.batting.length,
       pitchingSeasonWithoutAppearanceCount: missingAppearanceLinks.pitching.length,
+      warningCount: warnings.length,
       criticalIssueCount: criticalIssues.length,
     },
     validation: {
       duplicateKeys,
       reconciliation,
       missingAppearanceLinks,
+      warnings,
       criticalIssues,
     },
   };
@@ -444,6 +450,7 @@ function renderMarkdown(report) {
     `- Multi-team pitching seasons: ${report.summary.multiTeamPitchingSeasonCount}`,
     `- Batting seasons without appearances: ${report.summary.battingSeasonWithoutAppearanceCount}`,
     `- Pitching seasons without appearances: ${report.summary.pitchingSeasonWithoutAppearanceCount}`,
+    `- Source warnings: ${report.summary.warningCount}`,
     `- Critical issues: ${report.summary.criticalIssueCount}`,
     '',
     '## Contract',
@@ -451,12 +458,24 @@ function renderMarkdown(report) {
     '- One row per canonical player and season.',
     '- Batting and pitching counting statistics sum across the slim source rows.',
     '- A field remains null only when every contributing source row is null.',
-    '- Team histories are joined from the team-grain appearances source.',
+    '- Team histories are joined from the team-grain appearances source when available.',
+    '- A missing appearance row is preserved as an explicit source warning with an empty team list.',
     '- Position appearances are summed across team rows.',
     '- Reconciliation is independently recomputed from the source artifacts.',
     '- Career aggregation and runtime migration remain deferred.',
     '',
   ];
+
+  if (report.validation.warnings.length > 0) {
+    lines.push('## Source warnings', '');
+    for (const warning of report.validation.warnings.slice(0, 100)) {
+      lines.push(`- ${warning}`);
+    }
+    if (report.validation.warnings.length > 100) {
+      lines.push(`- …and ${report.validation.warnings.length - 100} more.`);
+    }
+    lines.push('');
+  }
 
   if (report.validation.criticalIssues.length > 0) {
     lines.push('## Critical issues', '');
