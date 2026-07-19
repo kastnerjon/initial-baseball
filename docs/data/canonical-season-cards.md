@@ -1,96 +1,40 @@
 # Canonical Season Cards
 
-This document defines the implementation boundary for the generated Initial Baseball player-season card artifact.
+This document defines the implemented shadow artifact that sits between the canonical season aggregates and future runtime serving data.
 
 ## Objective
 
-Produce one deterministic canonical season-card record per `(playerId, season)` using only facts confirmed by the repository's checked-in sources and calculations that can be derived safely from complete inputs.
+Produce one deterministic record per `(playerId, season)` using only checked-in canonical facts and calculations that can be derived safely from complete inputs.
 
-The target product contract remains documented in `season-card-data-contract.md`. Source feasibility remains documented in `season-card-source-feasibility.md`. This document governs the implementation that sits between those two documents.
+Related documents have distinct roles:
 
-## Inputs
+- `season-card-data-contract.md` defines the desired long-term product shape.
+- `season-card-source-feasibility.md` defines which fields current sources can support.
+- this document defines what is implemented now and how it is validated.
 
-The generator consumes only existing canonical artifacts:
+## Inputs and ownership
 
-- canonical player universe;
-- canonical batting-season aggregates;
-- canonical pitching-season aggregates;
-- canonical appearance-season aggregates;
-- source manifests and checksums emitted by those generators.
+The generator consumes only the canonical player universe and canonical batting, pitching, and appearance season aggregates. It must not read legacy runtime player objects, match players by name, scrape websites, or reconstruct absent fields.
 
-It must not read legacy runtime player objects, match players by name, scrape websites, or reconstruct fields absent from the canonical inputs.
+Names are display and search data. Stable source IDs determine which person owns each statistic.
 
-## Confirmed direct fields
+## Implemented fields
 
-The generated artifact may publish only fields proven present in the current canonical aggregates.
+Direct batting fields: AB, R, H, 2B, 3B, HR, RBI, SB, BB, HBP, and SF.
 
-Batting:
+Direct pitching fields: W, L, SV, outs pitched, H allowed, ER, BB allowed, and SO.
 
-- at bats;
-- runs;
-- hits;
-- doubles;
-- triples;
-- home runs;
-- runs batted in;
-- stolen bases;
-- walks;
-- hit by pitch;
-- sacrifice flies.
+Identity and appearance fields: canonical player ID, Lahman player ID, season, available team IDs, and available position-appearance totals.
 
-Pitching:
+Safely derived fields: AVG, total bases, SLG, ERA, WHIP, K/9, BB/9, and K/BB. A derived value is emitted only when every required component is known and the denominator is valid.
 
-- wins;
-- losses;
-- saves;
-- outs pitched;
-- hits allowed;
-- earned runs;
-- walks allowed;
-- strikeouts.
+## Unsupported fields
 
-Appearance and identity:
+The artifact does not fabricate unsupported fields. Current unsupported fields include G, PA, batting SO, CS, SH, GIDP, OBP, OPS, WAR, OPS+, ERA+, FIP, awards, award voting, All-Star selections, league-leader flags, and authoritative league IDs where player-season coverage is absent.
 
-- canonical player ID;
-- Lahman player ID for provenance;
-- season;
-- available team IDs;
-- available position-appearance totals.
+Promoting a field requires a documented source, reproducible ingestion, identity mapping, coverage analysis, reconciliation, and schema review.
 
-## Safe derived fields
-
-A derived value is published only when every required component is known and the denominator is valid.
-
-Implemented calculations:
-
-- batting average from hits and at bats;
-- total bases from hits, doubles, triples, and home runs;
-- slugging percentage from total bases and at bats;
-- earned-run average from earned runs and outs pitched;
-- WHIP from walks allowed, hits allowed, and outs pitched;
-- strikeouts per nine innings;
-- walks per nine innings;
-- strikeout-to-walk ratio when walks allowed is greater than zero.
-
-On-base percentage and OPS are not approved from the current source boundary because the compact batting data does not confirm every required denominator component across the full historical range.
-
-## Explicitly unsupported fields
-
-The artifact represents the following as unavailable rather than fabricating them:
-
-- batting games, plate appearances, caught stealing, batting strikeouts, sacrifice hits, and grounded-into-double-plays;
-- most expanded pitching workload and role fields;
-- OPS and OPS+;
-- ERA+ and FIP;
-- WAR;
-- league-leader flags;
-- All-Star selections;
-- awards and award-voting finishes;
-- authoritative league IDs when unavailable at player-season grain.
-
-A later source audit may promote a field from unsupported to direct or derived. That requires a documented source, coverage analysis, mapping strategy, reproducible ingestion, and schema-version review.
-
-## Output
+## Outputs
 
 The generator writes:
 
@@ -99,59 +43,39 @@ The generator writes:
 - `season-card-report.json`;
 - `season-card-report.md`.
 
-Each season-card record includes:
+The artifact records source checksums and distinguishes unknown `null` values from real zeroes.
 
-- schema version;
-- canonical player ID;
-- Lahman player ID;
-- season;
-- teams and positions when available;
-- batting and pitching sections when present;
-- direct and derived values;
-- provenance showing which aggregate families exist;
-- source artifact checksums at the artifact level.
+## Validation gates
 
-## Coverage reporting
+Strict generation rejects duplicate keys, unknown canonical players, conflicting Lahman IDs, malformed counts, impossible batting totals, invalid derived values, and missing or duplicate aggregate keys.
 
-The coverage report counts, for every populated field:
+The independent QA command then verifies every generated card against the canonical universe and source aggregates. It fails when:
 
-- total relevant player-seasons;
-- known non-null values;
-- real zero values;
-- unknown values;
-- derived values;
-- direct values.
+- a canonical ID and Lahman ID do not describe the same player;
+- one external source ID is owned by multiple canonical players;
+- batting, pitching, team, or position values differ from their aggregates;
+- a derived statistic cannot be independently reproduced;
+- a player-season is missing, duplicated, or unexpected;
+- a representative regression player resolves to the wrong identity or values.
 
-Unsupported target-contract fields appear with status `unsupported-current-source`; they do not disappear merely because they are not populated.
+Recorded career ranges are diagnostic rather than authoritative identity gates. Lahman MLB debut and final dates do not bound Negro League seasons and may lag newer season-stat files, so range drift is reported as a warning while exact ID-crosswalk mismatches remain fatal.
 
-## Validation
+## Representative regression cases
 
-Strict generation fails for:
-
-- duplicate `(playerId, season)` records;
-- unknown canonical player IDs;
-- conflicting Lahman IDs for one canonical player-season;
-- negative or malformed counting statistics;
-- derived values emitted with missing inputs;
-- arithmetic that fails independent reconciliation;
-- hits greater than at bats;
-- component extra-base hits exceeding total hits;
-- malformed seasons;
-- missing or duplicate aggregate keys.
-
-The generator independently recalculates the principal derived rates during validation instead of trusting the emitted values.
+The current suite includes David Ortiz, Hank Aaron, Mookie Betts, Mariano Rivera, Pedro Martínez, and Shohei Ohtani. These cases are resolved through the canonical Lahman crosswalk, not by matching visible names.
 
 ## Runtime boundary
 
-This remains a shadow artifact. It does not change the live game, reveal, search, hints, Daily selection, saved-state loading, or admin dashboard.
+This is still a shadow artifact. The live game, reveal, search, hints, Daily selection, saved-state loading, and admin dashboard remain on the existing runtime data.
 
-Runtime migration is a later PR after the artifact, coverage report, representative player checks, and reconciliation tests pass.
+Runtime migration must be a separate change with parity tests and rollback support. It must not reimplement baseball calculations in the game layer.
 
 ## Commands
 
 ```bash
 pnpm --filter @initial-baseball/baseball-data generate:canonical-season-cards
 pnpm --filter @initial-baseball/baseball-data generate:canonical-season-cards:strict
+pnpm --filter @initial-baseball/baseball-data qa:canonical-season-cards
 ```
 
-CI runs strict season-card generation after canonical season aggregation and uploads the resulting directory inside the `canonical-baseball-data` artifact.
+CI runs the complete canonical identity-to-season-card pipeline, executes independent QA, and uploads the reports in the `canonical-baseball-data` artifact.
