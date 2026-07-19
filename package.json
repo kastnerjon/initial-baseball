@@ -5,6 +5,7 @@
   "packageManager": "pnpm@9.15.0",
   "scripts": {
     "build": "turbo build",
+    "build:web": "pnpm --filter @initial-baseball/shared build && pnpm --filter @initial-baseball/engine build && pnpm --filter @initial-baseball/baseball-data build && pnpm --filter @initial-baseball/daily build && pnpm --filter @initial-baseball/web build",
     "test": "turbo test",
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",
