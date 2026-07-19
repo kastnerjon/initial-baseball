@@ -17,6 +17,8 @@
     "generate:canonical-season-facts:strict": "node ./scripts/generate-canonical-season-facts.mjs --strict",
     "generate:canonical-season-aggregates": "node ./scripts/generate-canonical-season-aggregates.mjs",
     "generate:canonical-season-aggregates:strict": "node ./scripts/generate-canonical-season-aggregates.mjs --strict",
+    "generate:canonical-season-cards": "node ./scripts/generate-canonical-season-cards.mjs",
+    "generate:canonical-season-cards:strict": "node ./scripts/generate-canonical-season-cards.mjs --strict",
     "audit:current": "node ./scripts/audit-current-data.mjs",
     "audit:current:strict": "node ./scripts/audit-current-data.mjs --strict",
     "pretest": "pnpm --filter @initial-baseball/shared build && pnpm build",
