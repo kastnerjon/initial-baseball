@@ -212,7 +212,7 @@ function validate({ canonicalPlayers, batting, pitching, appearances }) {
     ...findMalformedFacts('pitching', pitching.facts),
     ...findMalformedFacts('appearances', appearances.facts),
   ];
-  criticalIssues.push(...malformed);
+  for (const issue of malformed) criticalIssues.push(issue);
 
   return {
     summary: {
