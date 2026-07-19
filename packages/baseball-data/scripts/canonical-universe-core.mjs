@@ -233,7 +233,8 @@ export function isEligibleLahmanPlayer(player, inductedHallOfFamePlayerIds = new
 
 function buildUniversePlayer({ lahmanPlayer, identity, isHallOfFamer }) {
   const canonicalId = identity?.canonicalId ?? createCanonicalPlayerId(`lahman:${lahmanPlayer.playerId}`);
-  const displayName = identity?.displayName || lahmanPlayer.displayName || lahmanPlayer.legalName || canonicalId;
+  const baseDisplayName = identity?.displayName || lahmanPlayer.displayName || lahmanPlayer.legalName || canonicalId;
+  const displayName = chooseSuffixQualifiedDisplayName(baseDisplayName, identity?.aliases ?? []);
   const legalName = lahmanPlayer.legalName || displayName;
   const aliases = uniqueNames([
     legalName,
@@ -259,6 +260,23 @@ function buildUniversePlayer({ lahmanPlayer, identity, isHallOfFamer }) {
     legacyPlayerIds: [...(identity?.legacyPlayerIds ?? [])].sort(),
     sourceMappings,
   };
+}
+
+function chooseSuffixQualifiedDisplayName(baseDisplayName, aliases) {
+  const normalizedBase = normalizeName(baseDisplayName);
+  const allowedSuffixes = new Set(['jr', 'sr', 'ii', 'iii', 'iv', 'v']);
+  const candidates = aliases
+    .map((alias) => String(alias ?? '').trim())
+    .filter(Boolean)
+    .filter((alias) => {
+      const normalizedAlias = normalizeName(alias);
+      if (!normalizedAlias.startsWith(`${normalizedBase} `)) return false;
+      const remainder = normalizedAlias.slice(normalizedBase.length + 1);
+      return allowedSuffixes.has(remainder);
+    })
+    .sort((left, right) => left.length - right.length || left.localeCompare(right));
+
+  return candidates[0] ?? baseDisplayName;
 }
 
 function buildUnresolvedLegacyDispositionEntries({ dispositionRecommendations, redirects }) {
