@@ -52,6 +52,8 @@ jobs:
         run: pnpm --filter @initial-baseball/baseball-data generate:canonical-season-aggregates:strict
       - name: Generate canonical season cards
         run: pnpm --filter @initial-baseball/baseball-data generate:canonical-season-cards:strict
+      - name: Exhaustively QA canonical season cards
+        run: pnpm --filter @initial-baseball/baseball-data qa:canonical-season-cards
       - name: Upload canonical baseball data pipeline
         if: always()
         uses: actions/upload-artifact@v4
