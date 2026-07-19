@@ -58,6 +58,21 @@ Before merge, reviewers should be able to answer:
 - Is the behavior easier to predict and test?
 - Can the change be explained without relying on undocumented exceptions?
 
+## 6. The UI formats data; it does not invent it
+
+Web, iOS, Android, admin, and any future client should receive the same baseball meaning from the baseball-data layer. A client may choose which approved fields to show, how to arrange them, and how to adapt them to its screen size. It must not create or reinterpret baseball facts.
+
+The UI must not:
+
+- calculate OPS, ERA, WHIP, WAR, age, or career totals;
+- combine traded-player rows or reconstruct team history;
+- infer league leaders by comparing visible values;
+- decide which name or abbreviation is authoritative;
+- convert unknown values to zero;
+- apply source-specific statistical rules independently.
+
+Presentation-ready metadata such as explicit league-leader flags, ordered teams, display names, null values, and documented formatting units comes from the serving contract. This keeps every client consistent and prevents silent statistical differences between platforms.
+
 ## Layer boundaries
 
 The intended dependency direction is:
@@ -82,5 +97,6 @@ A pull request is not ready to merge until:
 3. Baseball logic and gameplay logic remain separated.
 4. Manual decisions are represented as explicit overrides.
 5. The change reduces or at least does not increase architectural ambiguity.
-6. Relevant tests and CI checks pass.
-7. The PR description explains the change in plain English in no more than three paragraphs before technical detail.
+6. Client code formats approved data without inventing baseball meaning.
+7. Relevant tests and CI checks pass.
+8. The PR description explains the change in plain English in no more than three paragraphs before technical detail.
