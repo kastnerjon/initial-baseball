@@ -2,7 +2,7 @@
 
 ## Purpose
 
-Initial Baseball should have one authoritative player-season record that can power the reveal, career totals, search, admin tools, and future clients. The contract below is the complete near-term target, not a speculative backlog.
+Initial Baseball should have one authoritative player-season record that can power the reveal, career totals, search, admin tools, and future clients. This document defines the desired shape while `season-card-source-feasibility.md` records which fields are actually implementable from current checked-in sources.
 
 The baseball-data layer owns baseball meaning. Clients may select and format fields, but they must not calculate statistics, combine traded-player rows, infer league leaders, interpret awards, or replace unknown values.
 
@@ -28,7 +28,7 @@ interface SeasonCardRecord {
   batting: BattingSeasonCard | null;
   pitching: PitchingSeasonCard | null;
   fielding: FieldingSeasonSummary | null;
-  honors: SeasonHonors;
+  honors: SeasonHonors | null;
   provenance: SeasonCardProvenance;
 }
 
@@ -73,7 +73,7 @@ interface BattingSeasonCard {
   adjustedOpsPlus: number | null;          // OPS+
   war: number | null;
 
-  leagueLeaderFields: BattingLeagueLeaderField[];
+  leagueLeaderFields: BattingLeagueLeaderField[] | null;
 }
 ```
 
@@ -89,7 +89,7 @@ Expanded fields:
 HBP | SH | SF | GIDP | TB
 ```
 
-`BattingLeagueLeaderField` may reference any batting field above whose league-leading status is supported by approved source logic. Ties count as leaders.
+A field appearing in this target contract does not mean current sources populate it. The feasibility audit is authoritative for current-source coverage.
 
 ## Pitching contract
 
@@ -108,26 +108,26 @@ interface PitchingSeasonCard {
   inningsPitchedDisplay: string | null;
   battersFaced: number | null;              // BF
   hitsAllowed: number | null;               // H
-  runsAllowed: number | null;               // R
+  runsAllowed: number | null;                // R
   earnedRuns: number | null;                // ER
-  homeRunsAllowed: number | null;           // HR
-  walksAllowed: number | null;              // BB
-  intentionalWalks: number | null;          // IBB
-  strikeouts: number | null;                // SO
-  hitBatters: number | null;                // HBP
-  wildPitches: number | null;               // WP
-  balks: number | null;                     // BK
+  homeRunsAllowed: number | null;            // HR
+  walksAllowed: number | null;               // BB
+  intentionalWalks: number | null;           // IBB
+  strikeouts: number | null;                 // SO
+  hitBatters: number | null;                 // HBP
+  wildPitches: number | null;                // WP
+  balks: number | null;                      // BK
 
-  earnedRunAverage: number | null;          // ERA
-  whip: number | null;                      // WHIP
-  strikeoutsPerNine: number | null;         // SO/9
-  walksPerNine: number | null;              // BB/9
-  strikeoutWalkRatio: number | null;        // SO/BB
-  adjustedEraPlus: number | null;           // ERA+
+  earnedRunAverage: number | null;           // ERA
+  whip: number | null;                       // WHIP
+  strikeoutsPerNine: number | null;          // SO/9
+  walksPerNine: number | null;               // BB/9
+  strikeoutWalkRatio: number | null;         // SO/BB
+  adjustedEraPlus: number | null;            // ERA+
   fieldingIndependentPitching: number | null; // FIP
   war: number | null;
 
-  leagueLeaderFields: PitchingLeagueLeaderField[];
+  leagueLeaderFields: PitchingLeagueLeaderField[] | null;
 }
 ```
 
@@ -143,7 +143,7 @@ Expanded fields:
 GF | CG | SHO | BF | H | R | ER | HR | IBB | HBP | WP | BK | SO/9 | BB/9 | SO/BB | FIP
 ```
 
-`PitchingLeagueLeaderField` may reference any pitching field above whose league-leading status is supported by approved source logic. Saves are part of the default pitcher line.
+Saves are confirmed in the current slim pitching source. Other fields are governed by the feasibility audit.
 
 ## Fielding summary
 
@@ -161,7 +161,7 @@ Detailed defensive metrics are not required for this implementation. Position hi
 
 ## Structured honors and awards
 
-Awards are part of the complete near-term contract. They are not stored as free-form strings.
+Awards are a desired product capability, but no award source is currently part of the checked-in canonical source manifest. The schema reserves a structured representation so future ingestion does not require redesign.
 
 ```ts
 interface SeasonHonors {
@@ -174,7 +174,6 @@ interface SeasonHonors {
 interface HonorSelection {
   honor: "ALL_STAR";
   league: string | null;
-  selectionNumber: number | null;
 }
 
 interface AwardWin {
@@ -188,7 +187,6 @@ interface AwardWin {
     | "OTHER";
   league: string | null;
   position: string | null;
-  count: number;
   sourceLabel: string | null;
 }
 
@@ -214,33 +212,28 @@ SS
 AS
 ```
 
-The canonical data stores structured facts; the UI creates compact labels. `MVP-5` means fifth in voting, not an MVP award win.
+`MVP-5` means fifth in voting, not an MVP award win. These values remain unavailable until a source audit confirms licensing, coverage, freshness, and canonical-ID mapping.
 
 ## League leaders
 
 Bold text means the player led the applicable league in that statistic during that season. It does not mean career best.
 
-Rules:
+Leader metadata is not currently present in the checked-in artifacts. It may only be generated after the implementation validates league membership, ties, era-specific qualification rules, traded-player treatment, and completeness of the underlying field.
 
-1. Leader status is computed or imported in the baseball-data layer.
-2. Ties count as league-leading.
-3. Rate-stat qualification follows the authoritative source and era rules.
-4. Multi-league traded seasons require explicit authoritative treatment.
-5. The UI receives explicit leader fields and only formats them.
-6. Unknown leader coverage must not be treated as false coverage.
+Unknown leader coverage is represented as `null`, not an empty array.
 
 ## Source and provenance rules
 
-WAR, OPS+, ERA+, FIP, awards, voting finishes, All-Star selections, and league-leader metadata may require sources beyond the current compact Lahman-derived inputs.
+Every published field must be classified as:
 
-The next implementation PR or two must:
+- `source`: directly present in an approved source;
+- `derived`: calculated from complete approved components;
+- `unavailable`: part of the target schema but not currently supported;
+- `not_applicable`: not meaningful for that record.
 
-1. publish a field-coverage matrix;
-2. populate every field available from current checked-in sources;
-3. select one consistent WAR family;
-4. add approved reproducible sources for the remaining agreed fields;
-5. represent unavailable values as `null`, never invented substitutes;
-6. identify coverage gaps explicitly rather than silently omitting them.
+The current feasibility classification lives in `season-card-source-feasibility.md`.
+
+WAR, OPS+, ERA+, FIP, awards, voting finishes, All-Star selections, and league-leader metadata require additional proof before implementation. No PR may claim those fields are populated until it identifies the source, confirms legal and reproducible use, measures coverage, maps player IDs, and validates samples.
 
 Do not combine Baseball-Reference WAR and FanGraphs WAR under one undifferentiated `war` field.
 
@@ -251,8 +244,8 @@ The baseball-data layer may derive a statistic only when all required source com
 Examples:
 
 - AVG from H and AB;
-- SLG from total bases and AB;
-- OPS from OBP and SLG;
+- total bases and SLG from hit components and AB;
+- OPS only when OBP and SLG are valid;
 - ERA from earned runs and outs;
 - WHIP from walks, hits, and innings.
 
@@ -264,8 +257,9 @@ The UI never performs these calculations.
 - A real zero remains `0`.
 - Missing batting or pitching sections are `null`.
 - Rate stats with no valid denominator are `null`.
-- Empty award arrays mean confirmed no entries only when source coverage is complete.
-- Unknown award coverage must remain distinguishable through provenance.
+- Empty award arrays mean confirmed no entries only when award-source coverage is complete.
+- Unknown awards are represented by `honors: null` or explicit incomplete provenance.
+- Unknown leader coverage is `null`.
 - Clients display an em dash for unknown scalar values.
 
 ## Validation requirements
@@ -285,7 +279,6 @@ The generator must reject or report:
 - leader flags whose corresponding values are null;
 - invalid award codes or non-positive voting finishes;
 - duplicate award records for the same player, season, award, league, and position;
-- award wins conflicting with voting finish when both sources claim complete coverage;
 - two-way seasons split into competing top-level records;
 - provenance claiming complete coverage when required fields are missing.
 
@@ -293,4 +286,6 @@ Generation must be deterministic and reconcile canonical season totals back to a
 
 ## Implementation boundary
 
-This PR defines the complete target contract. The next one or two PRs should implement the typed schema, coverage matrix, current-source population, advanced-stat and award ingestion, league-leader metadata, and serving artifact. The live reveal migrates only after reconciliation passes.
+PR77 defines the target schema and documents actual current-source feasibility. The next implementation PR should populate only confirmed direct and safely derived fields and publish coverage and reconciliation results.
+
+Advanced statistics, league leaders, and awards require a separate source audit before they are scheduled for ingestion. The live reveal migrates only after the implemented field set passes reconciliation.
