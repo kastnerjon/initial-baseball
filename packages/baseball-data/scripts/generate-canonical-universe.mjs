@@ -96,6 +96,11 @@ writeJson(resolve(outputDir, 'retired-legacy-player-ids.json'), {
   sourceManifest,
   retiredLegacyIds: result.retiredLegacyIds,
 });
+writeJson(resolve(outputDir, 'unresolved-review-legacy-ids.json'), {
+  schemaVersion: 1,
+  sourceManifest,
+  unresolvedReviewLegacyIds: result.unresolvedReviewLegacyIds,
+});
 writeJson(resolve(outputDir, 'canonical-universe-report.json'), report);
 writeFileSync(resolve(outputDir, 'canonical-universe-report.md'), renderMarkdown(report));
 
@@ -104,6 +109,7 @@ console.log([
   `Strong legacy identities: ${report.summary.playersWithStrongLegacyIdentityCount}.`,
   `Compatibility redirects: ${report.summary.compatibilityRedirectCount}.`,
   `Retired legacy IDs: ${report.summary.retiredLegacyIdCount}.`,
+  `Unresolved review legacy IDs: ${report.summary.unresolvedReviewLegacyIdCount}.`,
   `Unresolved historical references: ${report.summary.unresolvedHistoricalReferenceCount}.`,
   `Critical issues: ${report.summary.criticalIssueCount}.`,
   `Reports written to ${outputDir}.`,
@@ -198,7 +204,8 @@ function renderMarkdown(report) {
     `| Strong identity redirects | ${report.summary.identityRedirectCount} |`,
     `| Compatibility redirects | ${report.summary.compatibilityRedirectCount} |`,
     `| Retired unsupported legacy IDs | ${report.summary.retiredLegacyIdCount} |`,
-    `| Unpublished review candidates | ${report.summary.reviewCandidateCount} |`,
+    `| Unresolved legacy IDs requiring review | ${report.summary.unresolvedReviewLegacyIdCount} |`,
+    `| Unpublished identity candidates | ${report.summary.reviewCandidateCount} |`,
     `| Genuine same-name groups | ${report.summary.duplicateDisplayNameGroupCount} |`,
     `| Historical player references | ${report.summary.historicalReferenceCount} |`,
     `| Unresolved historical references | ${report.summary.unresolvedHistoricalReferenceCount} |`,
@@ -245,6 +252,7 @@ function renderMarkdown(report) {
 
   appendSameNameGroups(lines, report.duplicateDisplayNameGroups);
   appendRetiredLegacyIds(lines, report.retiredLegacyIds);
+  appendUnresolvedReviewLegacyIds(lines, report.unresolvedReviewLegacyIds);
   appendCriticalIssues(lines, report.validation.criticalIssues);
 
   lines.push(
@@ -280,6 +288,20 @@ function appendSameNameGroups(lines, groups) {
 
 function appendRetiredLegacyIds(lines, entries) {
   lines.push('## Retired legacy IDs', '');
+  if (entries.length === 0) {
+    lines.push('None.', '');
+    return;
+  }
+
+  for (const entry of entries.slice(0, 150)) {
+    lines.push(`- \`${entry.legacyPlayerId}\` — **${entry.displayName}**; ${entry.disposition}; ${entry.reason}`);
+  }
+  lines.push('');
+  appendTruncation(lines, entries.length, 150);
+}
+
+function appendUnresolvedReviewLegacyIds(lines, entries) {
+  lines.push('## Unresolved legacy IDs requiring review', '');
   if (entries.length === 0) {
     lines.push('None.', '');
     return;
