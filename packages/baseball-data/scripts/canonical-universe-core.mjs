@@ -10,7 +10,7 @@ export function buildCanonicalPlayerUniverse({
   compatibilityRedirects = [],
   historicalReferenceIds = [],
 }) {
-  const lahmanPlayerById = buildUniqueMap(lahmanPlayers, (player) => player.playerId, 'Lahman player ID');
+  buildUniqueMap(lahmanPlayers, (player) => player.playerId, 'Lahman player ID');
   const approvedIdentityByLahmanId = new Map();
   const validationIssues = [];
 
@@ -134,10 +134,14 @@ export function buildCanonicalPlayerUniverse({
     });
   }
 
-  const retiredLegacyIds = buildRetiredLegacyIds({
+  const unresolvedLegacyDispositionEntries = buildUnresolvedLegacyDispositionEntries({
     dispositionRecommendations,
     redirects,
   });
+  const retiredLegacyIds = unresolvedLegacyDispositionEntries
+    .filter((entry) => entry.disposition === 'exclude_unverified_non_mlb');
+  const unresolvedReviewLegacyIds = unresolvedLegacyDispositionEntries
+    .filter((entry) => entry.disposition !== 'exclude_unverified_non_mlb');
   const historicalReferenceAudit = [...new Set(historicalReferenceIds)].sort().map((legacyPlayerId) => ({
     legacyPlayerId,
     canonicalId: redirects[legacyPlayerId] ?? null,
@@ -184,6 +188,7 @@ export function buildCanonicalPlayerUniverse({
     redirects: sortObject(redirects),
     identityRedirects: sortObject(identityRedirects),
     retiredLegacyIds,
+    unresolvedReviewLegacyIds,
     historicalReferenceAudit,
     report: {
       summary: {
@@ -195,6 +200,7 @@ export function buildCanonicalPlayerUniverse({
         compatibilityRedirectCount: appliedCompatibilityRedirects.length,
         redundantCompatibilityRedirectCount: redundantCompatibilityRedirects.length,
         retiredLegacyIdCount: retiredLegacyIds.length,
+        unresolvedReviewLegacyIdCount: unresolvedReviewLegacyIds.length,
         reviewCandidateCount: reviewCandidatesNotPublished.length,
         duplicateDisplayNameGroupCount: duplicateDisplayNameGroups.length,
         historicalReferenceCount: historicalReferenceAudit.length,
@@ -205,6 +211,7 @@ export function buildCanonicalPlayerUniverse({
       appliedCompatibilityRedirects,
       redundantCompatibilityRedirects,
       retiredLegacyIds,
+      unresolvedReviewLegacyIds,
       historicalReferenceAudit,
       reviewCandidatesNotPublished,
       universePlayersWithoutLegacyIdentity,
@@ -254,7 +261,7 @@ function buildUniversePlayer({ lahmanPlayer, identity, isHallOfFamer }) {
   };
 }
 
-function buildRetiredLegacyIds({ dispositionRecommendations, redirects }) {
+function buildUnresolvedLegacyDispositionEntries({ dispositionRecommendations, redirects }) {
   return dispositionRecommendations
     .flatMap((recommendation) => (recommendation.legacyPlayerIds ?? []).map((legacyPlayerId) => ({
       legacyPlayerId,
