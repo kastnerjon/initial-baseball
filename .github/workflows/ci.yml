@@ -44,7 +44,10 @@ jobs:
       - name: Generate Lahman-first canonical universe
         run: pnpm --filter @initial-baseball/baseball-data generate:canonical-universe:strict
       - name: Generate canonical Lahman season facts
-        run: pnpm --filter @initial-baseball/baseball-data generate:canonical-season-facts:strict
+        run: |
+          mkdir -p packages/baseball-data/reports/canonical-season-facts
+          set -o pipefail
+          pnpm --filter @initial-baseball/baseball-data generate:canonical-season-facts:strict 2>&1 | tee packages/baseball-data/reports/canonical-season-facts/generator.log
       - name: Generate canonical player-season aggregates
         run: pnpm --filter @initial-baseball/baseball-data generate:canonical-season-aggregates:strict
       - name: Upload canonical baseball data pipeline
