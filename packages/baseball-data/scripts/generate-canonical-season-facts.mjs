@@ -6,31 +6,55 @@ import { fileURLToPath } from 'node:url';
 const SCRIPT_DIR = dirname(fileURLToPath(import.meta.url));
 const PACKAGE_DIR = resolve(SCRIPT_DIR, '..');
 const DEFAULT_OUTPUT_DIR = resolve(PACKAGE_DIR, 'reports/canonical-season-facts');
-
 const PATHS = {
   universe: resolve(PACKAGE_DIR, 'reports/canonical-universe/canonical-player-universe.json'),
   batting: resolve(PACKAGE_DIR, 'data/lahman/Batting.csv'),
   pitching: resolve(PACKAGE_DIR, 'data/lahman/Pitching.csv'),
   appearances: resolve(PACKAGE_DIR, 'data/lahman/Appearances.csv'),
 };
+const BATTING_FIELDS = [
+  'atBats', 'runs', 'hits', 'doubles', 'triples', 'homeRuns',
+  'runsBattedIn', 'stolenBases', 'walks', 'hitByPitch', 'sacrificeFlies',
+];
+const PITCHING_FIELDS = [
+  'wins', 'losses', 'saves', 'outsPitched', 'hitsAllowed',
+  'earnedRuns', 'walksAllowed', 'strikeouts',
+];
+const APPEARANCE_FIELDS = [
+  'gamesAll', 'gamesPitcher', 'gamesCatcher', 'gamesFirstBase',
+  'gamesSecondBase', 'gamesThirdBase', 'gamesShortstop', 'gamesLeftField',
+  'gamesCenterField', 'gamesRightField', 'gamesDesignatedHitter',
+];
 
 const args = process.argv.slice(2);
 const outputDir = readArgumentValue('--output-dir') ?? DEFAULT_OUTPUT_DIR;
 const strict = args.includes('--strict');
-
 const inputs = Object.fromEntries(
   Object.entries(PATHS).map(([name, path]) => [name, readFileSync(path, 'utf8')]),
 );
-
 const universe = JSON.parse(inputs.universe);
 const canonicalPlayers = universe.players ?? [];
 const canonicalByLahmanId = buildCanonicalIndex(canonicalPlayers);
-
-const batting = buildFacts(parseCsv(inputs.batting), canonicalByLahmanId, buildBattingFact);
-const pitching = buildFacts(parseCsv(inputs.pitching), canonicalByLahmanId, buildPitchingFact);
-const appearances = buildFacts(parseCsv(inputs.appearances), canonicalByLahmanId, buildAppearanceFact);
-
-const validation = validate({ canonicalPlayers, batting, pitching, appearances });
+const batting = buildSourceRows(
+  parseCsv(inputs.batting),
+  canonicalByLahmanId,
+  buildBattingFact,
+);
+const pitching = buildSourceRows(
+  parseCsv(inputs.pitching),
+  canonicalByLahmanId,
+  buildPitchingFact,
+);
+const appearances = buildAppearanceFacts(
+  parseCsv(inputs.appearances),
+  canonicalByLahmanId,
+);
+const validation = validate({
+  canonicalPlayers,
+  batting,
+  pitching,
+  appearances,
+});
 const sourceManifest = {
   schemaVersion: 1,
   canonicalUniverse: sourceEntry(
@@ -43,12 +67,21 @@ const sourceManifest = {
     appearances: sourceEntry('packages/baseball-data/data/lahman/Appearances.csv', inputs.appearances),
   },
 };
-
 const shared = { schemaVersion: 1, sourceManifest };
+
 mkdirSync(outputDir, { recursive: true });
-writeJson(resolve(outputDir, 'batting-stints.json'), { ...shared, facts: batting.facts });
-writeJson(resolve(outputDir, 'pitching-stints.json'), { ...shared, facts: pitching.facts });
-writeJson(resolve(outputDir, 'appearances.json'), { ...shared, facts: appearances.facts });
+writeJson(resolve(outputDir, 'batting-source-rows.json'), {
+  ...shared,
+  facts: batting.facts,
+});
+writeJson(resolve(outputDir, 'pitching-source-rows.json'), {
+  ...shared,
+  facts: pitching.facts,
+});
+writeJson(resolve(outputDir, 'appearances.json'), {
+  ...shared,
+  facts: appearances.facts,
+});
 writeJson(resolve(outputDir, 'canonical-season-facts-report.json'), {
   ...shared,
   summary: validation.summary,
@@ -60,8 +93,8 @@ writeFileSync(
 );
 
 console.log([
-  `Built ${batting.facts.length} canonical batting stints,`,
-  `${pitching.facts.length} pitching stints, and`,
+  `Built ${batting.facts.length} canonical batting source rows,`,
+  `${pitching.facts.length} pitching source rows, and`,
   `${appearances.facts.length} appearance rows.`,
   `Critical issues: ${validation.summary.criticalIssueCount}.`,
   `Reports written to ${outputDir}.`,
@@ -85,37 +118,77 @@ function buildCanonicalIndex(players) {
   return index;
 }
 
-function buildFacts(rows, canonicalByLahmanId, mapper) {
+function buildSourceRows(rows, canonicalByLahmanId, mapper) {
   const facts = [];
   const unmatchedLahmanPlayerIds = new Set();
+  const nextSourceRowByPlayerSeason = new Map();
 
   for (const row of rows) {
     const lahmanPlayerId = clean(row.playerID);
     if (!lahmanPlayerId) continue;
-    const canonicalId = canonicalByLahmanId.get(lahmanPlayerId);
-    if (!canonicalId) {
+    const playerId = canonicalByLahmanId.get(lahmanPlayerId);
+    if (!playerId) {
       unmatchedLahmanPlayerIds.add(lahmanPlayerId);
       continue;
     }
-    facts.push(mapper(row, canonicalId, lahmanPlayerId));
+    const season = integer(row.yearID);
+    const key = `${playerId}|${season}`;
+    const sourceRow = (nextSourceRowByPlayerSeason.get(key) ?? 0) + 1;
+    nextSourceRowByPlayerSeason.set(key, sourceRow);
+    facts.push(mapper(row, playerId, lahmanPlayerId, season, sourceRow));
   }
 
-  facts.sort(compareFacts);
+  facts.sort(compareSourceFacts);
   return {
     facts,
     unmatchedLahmanPlayerIds: [...unmatchedLahmanPlayerIds].sort(),
   };
 }
 
-function buildBattingFact(row, playerId, lahmanPlayerId) {
+function buildAppearanceFacts(rows, canonicalByLahmanId) {
+  const facts = [];
+  const unmatchedLahmanPlayerIds = new Set();
+
+  for (const row of rows) {
+    const lahmanPlayerId = clean(row.playerID);
+    if (!lahmanPlayerId) continue;
+    const playerId = canonicalByLahmanId.get(lahmanPlayerId);
+    if (!playerId) {
+      unmatchedLahmanPlayerIds.add(lahmanPlayerId);
+      continue;
+    }
+    facts.push({
+      playerId,
+      lahmanPlayerId,
+      season: integer(row.yearID),
+      teamId: clean(row.teamID),
+      gamesPitcher: nullableInteger(row.G_p),
+      gamesCatcher: nullableInteger(row.G_c),
+      gamesFirstBase: nullableInteger(row.G_1b),
+      gamesSecondBase: nullableInteger(row.G_2b),
+      gamesThirdBase: nullableInteger(row.G_3b),
+      gamesShortstop: nullableInteger(row.G_ss),
+      gamesLeftField: nullableInteger(row.G_lf),
+      gamesCenterField: nullableInteger(row.G_cf),
+      gamesRightField: nullableInteger(row.G_rf),
+      gamesDesignatedHitter: nullableInteger(row.G_dh),
+      gamesAll: nullableInteger(row.G_all),
+    });
+  }
+
+  facts.sort(compareAppearanceFacts);
+  return {
+    facts,
+    unmatchedLahmanPlayerIds: [...unmatchedLahmanPlayerIds].sort(),
+  };
+}
+
+function buildBattingFact(row, playerId, lahmanPlayerId, season, sourceRow) {
   return {
     playerId,
     lahmanPlayerId,
-    season: integer(row.yearID),
-    teamId: clean(row.teamID),
-    leagueId: clean(row.lgID) || null,
-    stint: integer(row.stint),
-    games: nullableInteger(row.G),
+    season,
+    sourceRow,
     atBats: nullableInteger(row.AB),
     runs: nullableInteger(row.R),
     hits: nullableInteger(row.H),
@@ -124,102 +197,56 @@ function buildBattingFact(row, playerId, lahmanPlayerId) {
     homeRuns: nullableInteger(row.HR),
     runsBattedIn: nullableInteger(row.RBI),
     stolenBases: nullableInteger(row.SB),
-    caughtStealing: nullableInteger(row.CS),
     walks: nullableInteger(row.BB),
-    strikeouts: nullableInteger(row.SO),
-    intentionalWalks: nullableInteger(row.IBB),
     hitByPitch: nullableInteger(row.HBP),
-    sacrificeHits: nullableInteger(row.SH),
     sacrificeFlies: nullableInteger(row.SF),
-    groundedIntoDoublePlay: nullableInteger(row.GIDP),
   };
 }
 
-function buildPitchingFact(row, playerId, lahmanPlayerId) {
+function buildPitchingFact(row, playerId, lahmanPlayerId, season, sourceRow) {
   return {
     playerId,
     lahmanPlayerId,
-    season: integer(row.yearID),
-    teamId: clean(row.teamID),
-    leagueId: clean(row.lgID) || null,
-    stint: integer(row.stint),
+    season,
+    sourceRow,
     wins: nullableInteger(row.W),
     losses: nullableInteger(row.L),
-    games: nullableInteger(row.G),
-    gamesStarted: nullableInteger(row.GS),
-    completeGames: nullableInteger(row.CG),
-    shutouts: nullableInteger(row.SHO),
     saves: nullableInteger(row.SV),
-    outsPitched: inningsToOuts(row.IPouts, row.IP),
+    outsPitched: nullableInteger(row.IPouts),
     hitsAllowed: nullableInteger(row.H),
     earnedRuns: nullableInteger(row.ER),
-    homeRunsAllowed: nullableInteger(row.HR),
     walksAllowed: nullableInteger(row.BB),
     strikeouts: nullableInteger(row.SO),
-    opponentBattersFaced: nullableInteger(row.BFP),
-    intentionalWalks: nullableInteger(row.IBB),
-    wildPitches: nullableInteger(row.WP),
-    hitBatters: nullableInteger(row.HBP),
-    balks: nullableInteger(row.BK),
-    runsAllowed: nullableInteger(row.R),
-    sacrificeHitsAllowed: nullableInteger(row.SH),
-    sacrificeFliesAllowed: nullableInteger(row.SF),
-    groundedIntoDoublePlay: nullableInteger(row.GIDP),
-  };
-}
-
-function buildAppearanceFact(row, playerId, lahmanPlayerId) {
-  return {
-    playerId,
-    lahmanPlayerId,
-    season: integer(row.yearID),
-    teamId: clean(row.teamID),
-    leagueId: clean(row.lgID) || null,
-    gamesAll: nullableInteger(row.G_all),
-    gamesStarted: nullableInteger(row.GS),
-    gamesBatting: nullableInteger(row.G_batting),
-    gamesDefense: nullableInteger(row.G_defense),
-    gamesPitcher: nullableInteger(row.G_p),
-    gamesCatcher: nullableInteger(row.G_c),
-    gamesFirstBase: nullableInteger(row.G_1b),
-    gamesSecondBase: nullableInteger(row.G_2b),
-    gamesThirdBase: nullableInteger(row.G_3b),
-    gamesShortstop: nullableInteger(row.G_ss),
-    gamesLeftField: nullableInteger(row.G_lf),
-    gamesCenterField: nullableInteger(row.G_cf),
-    gamesRightField: nullableInteger(row.G_rf),
-    gamesOutfield: nullableInteger(row.G_of),
-    gamesDesignatedHitter: nullableInteger(row.G_dh),
-    gamesPinchHitter: nullableInteger(row.G_ph),
-    gamesPinchRunner: nullableInteger(row.G_pr),
   };
 }
 
 function validate({ canonicalPlayers, batting, pitching, appearances }) {
   const criticalIssues = [];
   const duplicateKeys = {
-    batting: findDuplicateKeys(batting.facts, stintKey),
-    pitching: findDuplicateKeys(pitching.facts, stintKey),
+    batting: findDuplicateKeys(batting.facts, sourceRowKey),
+    pitching: findDuplicateKeys(pitching.facts, sourceRowKey),
     appearances: findDuplicateKeys(appearances.facts, appearanceKey),
   };
-
   for (const [kind, keys] of Object.entries(duplicateKeys)) {
     for (const key of keys) criticalIssues.push(`${kind} duplicate key: ${key}`);
   }
 
-  const malformed = [
-    ...findMalformedFacts('batting', batting.facts),
-    ...findMalformedFacts('pitching', pitching.facts),
-    ...findMalformedFacts('appearances', appearances.facts),
-  ];
-  for (const issue of malformed) criticalIssues.push(issue);
+  appendIssues(criticalIssues, findMalformedSourceRows('batting', batting.facts));
+  appendIssues(criticalIssues, findMalformedSourceRows('pitching', pitching.facts));
+  appendIssues(criticalIssues, findMalformedAppearances(appearances.facts));
+  appendIssues(criticalIssues, findInvalidIntegers('batting', batting.facts, BATTING_FIELDS));
+  appendIssues(criticalIssues, findInvalidIntegers('pitching', pitching.facts, PITCHING_FIELDS));
+  appendIssues(criticalIssues, findInvalidIntegers('appearances', appearances.facts, APPEARANCE_FIELDS));
 
   return {
     summary: {
       canonicalPlayerCount: canonicalPlayers.length,
-      battingStintCount: batting.facts.length,
-      pitchingStintCount: pitching.facts.length,
+      battingSourceRowCount: batting.facts.length,
+      pitchingSourceRowCount: pitching.facts.length,
       appearanceRowCount: appearances.facts.length,
+      battingPlayerSeasonCount: distinctSeasonCount(batting.facts),
+      pitchingPlayerSeasonCount: distinctSeasonCount(pitching.facts),
+      appearancePlayerSeasonCount: distinctSeasonCount(appearances.facts),
       playersWithBattingFacts: distinctPlayerCount(batting.facts),
       playersWithPitchingFacts: distinctPlayerCount(pitching.facts),
       playersWithAppearanceFacts: distinctPlayerCount(appearances.facts),
@@ -240,14 +267,33 @@ function validate({ canonicalPlayers, batting, pitching, appearances }) {
   };
 }
 
-function findMalformedFacts(kind, facts) {
+function findMalformedSourceRows(kind, facts) {
+  return facts
+    .filter((fact) => !fact.playerId || !fact.lahmanPlayerId || fact.season <= 0 || fact.sourceRow <= 0)
+    .map((fact) => `${kind} malformed source row: ${JSON.stringify(fact)}`);
+}
+
+function findMalformedAppearances(facts) {
+  return facts
+    .filter((fact) => !fact.playerId || !fact.lahmanPlayerId || fact.season <= 0 || !fact.teamId)
+    .map((fact) => `appearances malformed row: ${JSON.stringify(fact)}`);
+}
+
+function findInvalidIntegers(kind, facts, fields) {
   const issues = [];
   for (const fact of facts) {
-    if (!fact.playerId || !fact.lahmanPlayerId || !fact.season || !fact.teamId) {
-      issues.push(`${kind} malformed fact: ${JSON.stringify(fact)}`);
+    for (const field of fields) {
+      const value = fact[field];
+      if (value !== null && (!Number.isInteger(value) || value < 0)) {
+        issues.push(`${kind} invalid ${field} for ${sourceRowKey(fact)}: ${value}`);
+      }
     }
   }
   return issues;
+}
+
+function appendIssues(target, issues) {
+  for (const issue of issues) target.push(issue);
 }
 
 function findDuplicateKeys(facts, keyBuilder) {
@@ -261,33 +307,36 @@ function findDuplicateKeys(facts, keyBuilder) {
   return [...duplicates].sort();
 }
 
-function stintKey(fact) {
-  return [fact.playerId, fact.season, fact.teamId, fact.stint].join('|');
+function sourceRowKey(fact) {
+  return [fact.playerId, fact.season, fact.sourceRow].join('|');
 }
 
 function appearanceKey(fact) {
   return [fact.playerId, fact.season, fact.teamId].join('|');
 }
 
-function compareFacts(left, right) {
+function seasonKey(fact) {
+  return [fact.playerId, fact.season].join('|');
+}
+
+function compareSourceFacts(left, right) {
   return left.playerId.localeCompare(right.playerId)
     || left.season - right.season
-    || left.teamId.localeCompare(right.teamId)
-    || (left.stint ?? 0) - (right.stint ?? 0);
+    || left.sourceRow - right.sourceRow;
+}
+
+function compareAppearanceFacts(left, right) {
+  return left.playerId.localeCompare(right.playerId)
+    || left.season - right.season
+    || left.teamId.localeCompare(right.teamId);
 }
 
 function distinctPlayerCount(facts) {
   return new Set(facts.map((fact) => fact.playerId)).size;
 }
 
-function inningsToOuts(ipOuts, innings) {
-  const explicitOuts = nullableInteger(ipOuts);
-  if (explicitOuts !== null) return explicitOuts;
-  const value = clean(innings);
-  if (!value) return null;
-  const [whole, fraction = '0'] = value.split('.');
-  const partialOuts = fraction === '1' ? 1 : fraction === '2' ? 2 : 0;
-  return integer(whole) * 3 + partialOuts;
+function distinctSeasonCount(facts) {
+  return new Set(facts.map(seasonKey)).size;
 }
 
 function sourceEntry(path, content) {
@@ -362,13 +411,15 @@ function parseCsv(text) {
   const [header = [], ...body] = rows;
   return body
     .filter((values) => values.some((value) => value !== ''))
-    .map((values) => Object.fromEntries(header.map((key, index) => [key, values[index] ?? ''])));
+    .map((values) => Object.fromEntries(
+      header.map((key, index) => [key, values[index] ?? '']),
+    ));
 }
 
 function renderMarkdown(validation) {
   const { summary, details } = validation;
   const lines = [
-    '# Canonical Lahman Season Facts',
+    '# Canonical Lahman Source Facts',
     '',
     'This is a shadow artifact. The live game still consumes the existing serving files.',
     '',
@@ -377,15 +428,15 @@ function renderMarkdown(validation) {
     '| Check | Count |',
     '| --- | ---: |',
     `| Canonical players | ${summary.canonicalPlayerCount} |`,
-    `| Batting stints | ${summary.battingStintCount} |`,
-    `| Pitching stints | ${summary.pitchingStintCount} |`,
+    `| Batting source rows | ${summary.battingSourceRowCount} |`,
+    `| Pitching source rows | ${summary.pitchingSourceRowCount} |`,
     `| Appearance rows | ${summary.appearanceRowCount} |`,
-    `| Players with batting facts | ${summary.playersWithBattingFacts} |`,
-    `| Players with pitching facts | ${summary.playersWithPitchingFacts} |`,
-    `| Players with appearance facts | ${summary.playersWithAppearanceFacts} |`,
+    `| Batting player-seasons | ${summary.battingPlayerSeasonCount} |`,
+    `| Pitching player-seasons | ${summary.pitchingPlayerSeasonCount} |`,
+    `| Appearance player-seasons | ${summary.appearancePlayerSeasonCount} |`,
     `| Critical issues | ${summary.criticalIssueCount} |`,
     '',
-    'Every published fact is joined through the canonical player’s exact Lahman player ID. No name or career-year matching occurs.',
+    'Every published row is joined through the canonical player’s exact Lahman player ID. No name or career-year matching occurs.',
     '',
     '## Validation',
     '',
@@ -395,18 +446,22 @@ function renderMarkdown(validation) {
     lines.push('No critical issues.', '');
   } else {
     for (const issue of details.criticalIssues.slice(0, 100)) lines.push(`- ${issue}`);
-    if (details.criticalIssues.length > 100) lines.push(`- …and ${details.criticalIssues.length - 100} more.`);
+    if (details.criticalIssues.length > 100) {
+      lines.push(`- …and ${details.criticalIssues.length - 100} more.`);
+    }
     lines.push('');
   }
 
   lines.push(
-    '## Contract',
+    '## Source contract',
     '',
-    '- Batting and pitching remain independent for two-way players.',
+    '- The repository batting and pitching files are slim source tables, not full Lahman stint tables.',
+    '- Their rows retain only the counting-stat columns present in those files.',
+    '- Repeated player-year rows are preserved with a deterministic source-row ordinal and summed in the season layer.',
+    '- Team and position history comes from the separate team-grain appearances file.',
     '- Missing historical values remain null rather than becoming zero.',
-    '- Pitching innings are stored as outs.',
-    '- Stint rows remain at their natural Lahman grain.',
-    '- Season and career totals are intentionally deferred to the next migration step.',
+    '- Pitching workload is stored as outs.',
+    '- Career aggregation and runtime migration remain deferred.',
     '',
   );
 
