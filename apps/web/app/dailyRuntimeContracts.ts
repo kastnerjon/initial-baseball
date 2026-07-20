@@ -34,7 +34,7 @@ export type DailyResolutionResponse = {
 };
 
 export type DailyRuntimeService = {
-  getPublicSession: (date: string) => DailyPublicSession;
-  revealHint: (request: DailyHintRequest) => DailyHintResponse;
-  resolveAtBat: (request: DailyResolutionRequest) => DailyResolutionResponse;
+  getPublicSession: (date: string) => Promise<DailyPublicSession>;
+  revealHint: (request: DailyHintRequest) => Promise<DailyHintResponse>;
+  resolveAtBat: (request: DailyResolutionRequest) => Promise<DailyResolutionResponse>;
 };
