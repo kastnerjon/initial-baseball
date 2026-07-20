@@ -114,6 +114,8 @@ The canonical serving contract separates lightweight search data from full revea
 - Legal/source names remain searchable aliases but are excluded from the display payload.
 - Initial page props contain public puzzle metadata and initials, not answer IDs, names, hint values, or reveal records.
 - Browser search uses a thin route over the canonical index. Hint and resolution routes release only the data authorized by the current action.
+- Every page load receives a unique signed Daily session token. A short-lived web replay-store adapter consumes each token once, preserves exact retry idempotency, and rejects superseded tokens.
+- The replay store protects authorization only. Browser state remains the gameplay source of continuity; the cache does not become a second scoring engine or durable game-session model.
 
 A valid runtime artifact is not permission to serialize the answer's full reveal record into initial HTML or client props before the at-bat is resolved. Full reveal data is returned only after a correct answer, a third strike, or Give Up.
 
@@ -126,12 +128,13 @@ Ten thousand Daily players is modest systems load if the game remains mostly sta
 - Serve immutable player and season data with CDN-friendly caching.
 - Load the lightweight search index once and reveal data on demand.
 - Keep anonymous gameplay state in the client.
-- Avoid a database write for every reveal, incorrect guess, or base transition.
+- Avoid a durable database write for every reveal, incorrect guess, or base transition.
+- Keep only one bounded, expiring anti-replay record per active browser session.
 - Submit at most one compact, idempotent result per completed game when aggregate statistics are introduced.
 
 ### Avoid unnecessary infrastructure
 
-The initial launch does not require microservices, queues, a dedicated mobile backend, real-time subscriptions, or server-side game sessions. Vercel plus a small relational database can support expected traffic if routes remain thin and cacheable.
+The initial launch does not require microservices, queues, a dedicated mobile backend, real-time subscriptions, or durable server-side game sessions. Vercel plus a small relational database can support expected traffic if routes remain thin and cacheable. The current web adapter uses Vercel Runtime Cache only for short-lived token-consumption records; the `DailyProgressionReplayStore` interface keeps that provider replaceable.
 
 Vercel is an adapter for hosting and deployment, not the owner of domain behavior, baseball data, persistence contracts, or the public domain.
 
@@ -165,6 +168,7 @@ Do not create an abstraction solely for an imagined future mode. Extract a bound
 Before broad friend distribution:
 
 - Daily puzzles and historical overrides are deterministic and regression-tested.
+- Canonical deduplication preserves the established legacy-ID hash input so previously generated lineups do not silently change.
 - Tomorrow's lineup is editorially reviewable before publication.
 - Search handles aliases, accents, ordered tokens, and genuine same-name players.
 - Player reveal data is accurate, understandable, and season-complete where sources allow.
@@ -174,7 +178,7 @@ Before broad friend distribution:
 - The full web game is polished at common iPhone and iPad sizes.
 - Share output is reliable and spoiler-safe.
 - One deployment is canonical and observable.
-- Repeated play does not require per-action server state.
+- Repeated play does not require durable per-action server sessions; the only per-action server state is bounded anti-replay authorization data.
 
 ## Explicit non-goals
 
@@ -182,7 +186,7 @@ Before broad friend distribution:
 - Building a native mobile application now.
 - Building head-to-head gameplay, chat, leagues, or matchmaking.
 - Introducing microservices or queues.
-- Persisting every anonymous gameplay action.
+- Persisting every anonymous gameplay action as durable application data.
 - Adding accounts before the anonymous Daily loop is excellent.
 - Creating abstractions without a concrete upcoming consumer.
 
