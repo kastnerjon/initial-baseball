@@ -111,21 +111,33 @@ Local persistence restores:
 - revealed hints and strike count;
 - resolved at-bat results;
 - pending reveal/advance state;
-- completed-game share result.
+- completed-game share result;
+- the opaque signed progression token used for later server-authorized actions.
 
-Invalid, stale, or mismatched saved state fails safely. Saved legacy player IDs resolve through canonical redirects when submitted.
+The token is an authorization adapter, not the owner of the visible game state or baseball score. It contains only public progression fields and no answer, hint value, reveal record, base state, or run total.
+
+Invalid, stale, mismatched, or unverifiable saved state fails safely. Saved legacy player IDs resolve through canonical redirects when submitted. A saved state without a compatible token must not invent later authorized progression; migration may restart an unresolved current at-bat when necessary while preserving completed history when possible.
 
 When aggregate statistics are introduced, the client submits at most one compact, idempotent completed-game result rather than writing every interaction.
 
 ## 8. Data and answer integrity
 
+The accepted launch threat model is recorded in `docs/decisions/0001-daily-answer-integrity.md`.
+
 - A player answer is identified by canonical `playerId`, not display text.
 - Search aliases do not determine the reveal display name.
 - Genuine same-name players remain separate and receive context such as career years, position, or teams.
 - Search remains accent-insensitive and supports ordered token matching.
-- Hidden answers must not leak through initial HTML, serialized props, routes, logs, share text, or prematurely loaded reveal records.
+- Hidden answers must not leak through initial HTML, serialized props, client bundles, logs, share text, public static data, or prematurely loaded reveal records.
 - Baseball data is generated ahead of time from committed sources; gameplay does not use a live third-party baseball API.
 - The runtime serving layer joins canonical records but does not calculate baseball facts.
+- Hint and resolution routes derive puzzle date, current pitch, hint depth, strikes, and outs from a verified stateless signed token rather than trusting browser counters.
+- A caller cannot forge later progression, use a token across puzzles/dates, or directly request an arbitrary future pitch.
+- Correct, third-strike, and Give Up responses reveal only the token-authorized current player.
+
+Launch answer integrity is not adversarial anti-cheat. A determined player may replay an earlier valid request, reset or manipulate local state, or deliberately Give Up through the lineup. Daily does not claim tamper-proof scoring, one-time action consumption, or authoritative anonymous attempt history.
+
+Accounts, prizes, public competitive leaderboards, or authoritative streaks require a separate stronger-integrity decision rather than silently expanding this launch model.
 
 ## 9. Statistics and reveal contract
 
@@ -147,7 +159,7 @@ A known zero is shown as zero. An unavailable value remains `null` and is omitte
 
 WAR must not be displayed until a reproducible source is committed. If Baseball Reference WAR is approved later, it is labeled `bWAR`. OPS+, ERA+, awards, All-Star selections, voting finishes, and leader flags follow the same upstream-source requirement.
 
-Canonical runtime records now supply live answer resolution and reveal data. The browser receives the lightweight public puzzle first and receives a full canonical reveal only after the at-bat is resolved.
+Canonical runtime records supply live answer resolution and reveal data. The browser receives the lightweight public puzzle first and receives a full canonical reveal only after the at-bat is resolved.
 
 ## 10. Administration
 
@@ -183,8 +195,9 @@ Raw completed-game outcomes are retained so aggregates can be recalculated after
 - Generated baseball data owned by `packages/baseball-data`.
 - Daily puzzle creation and session transitions owned by `packages/daily`.
 - Next.js routes and components remain thin adapters and renderers.
+- Stateless progression signing and verification remain a provider-neutral `apps/web` adapter with a server-only secret.
 - One small relational database is sufficient when publication, aggregate results, or accounts require persistence.
-- No microservices, queues, real-time subscriptions, or server-side per-play sessions for launch.
+- No microservices, queues, replay caches, real-time subscriptions, or server-side per-play sessions for launch.
 
 ## 13. Quality gates
 
@@ -196,6 +209,7 @@ A material change is complete only when:
 - review findings are resolved;
 - mobile web behavior is checked for user-facing changes;
 - answer leakage and spoiler-safe sharing remain protected;
+- progression tests cover tampering, cross-date use, future-pitch attempts, hints, strikes, outs, completion, and terminal reveal boundaries;
 - canonical documentation and `tasks/todo.md` reflect the resulting state.
 
 ## 14. Definition of launch-ready
@@ -208,6 +222,7 @@ Daily Inning is ready for broad friend distribution when:
 - search handles aliases, accents, and same-name cases;
 - reveal data is accurate and understandable;
 - final results and sharing are reliable and spoiler-safe;
+- ordinary callers cannot request arbitrary future players or fabricate server-authorized progression;
 - aggregate results work without per-action database writes;
 - analytics, error monitoring, deployment, domain, and legal basics are in place.
 
