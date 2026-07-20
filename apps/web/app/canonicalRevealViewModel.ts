@@ -1,4 +1,5 @@
 import type {
+  CanonicalAdvancedLine,
   CanonicalBattingLine,
   CanonicalPitchingLine,
   CanonicalPlayerReveal,
@@ -6,6 +7,11 @@ import type {
 
 export type RevealStatKind = 'hitter' | 'pitcher';
 export type RevealStatValues = Record<string, number | string>;
+
+export type CanonicalRevealStatLine = {
+  kind: RevealStatKind;
+  stats: RevealStatValues;
+};
 
 export type CanonicalRevealViewModel = {
   playerId: string;
@@ -15,21 +21,18 @@ export type CanonicalRevealViewModel = {
   yearsPlayedDisplay: string;
   teamIds: string[];
   career: {
-    kind: RevealStatKind;
-    stats: RevealStatValues;
+    lines: CanonicalRevealStatLine[];
   };
   seasons: Array<{
     season: number;
     teamIds: string[];
-    kind: RevealStatKind;
-    stats: RevealStatValues;
+    lines: CanonicalRevealStatLine[];
   }>;
 };
 
 export function createCanonicalRevealViewModel(
   reveal: CanonicalPlayerReveal,
 ): CanonicalRevealViewModel {
-  const kind = choosePresentationKind(reveal);
   return {
     playerId: reveal.playerId,
     displayName: reveal.displayName,
@@ -38,34 +41,52 @@ export function createCanonicalRevealViewModel(
     yearsPlayedDisplay: `${reveal.career.firstSeason}–${reveal.career.lastSeason}`,
     teamIds: reveal.career.teamIds,
     career: {
-      kind,
-      stats: kind === 'pitcher'
-        ? formatPitching(reveal.career.pitching)
-        : formatBatting(reveal.career.batting, reveal.career.advanced),
+      lines: buildStatLines({
+        playerType: reveal.playerType,
+        batting: reveal.career.batting,
+        pitching: reveal.career.pitching,
+        advanced: reveal.career.advanced,
+      }),
     },
     seasons: reveal.seasons.map((season) => ({
       season: season.season,
       teamIds: season.teamIds,
-      kind,
-      stats: kind === 'pitcher'
-        ? formatPitching(season.pitching)
-        : formatBatting(season.batting, season.advanced),
+      lines: buildStatLines({
+        playerType: reveal.playerType,
+        batting: season.batting,
+        pitching: season.pitching,
+        advanced: season.advanced,
+      }),
     })),
   };
 }
-function choosePresentationKind(reveal: CanonicalPlayerReveal): RevealStatKind {
-  if (reveal.playerType === 'pitcher') {
-    return 'pitcher';
+
+function buildStatLines({
+  playerType,
+  batting,
+  pitching,
+  advanced,
+}: {
+  playerType: CanonicalPlayerReveal['playerType'];
+  batting: CanonicalBattingLine | null;
+  pitching: CanonicalPitchingLine | null;
+  advanced: CanonicalAdvancedLine | null;
+}): CanonicalRevealStatLine[] {
+  if (playerType === 'hitter') {
+    return [{ kind: 'hitter', stats: formatBatting(batting, advanced) }];
   }
-  if (reveal.playerType === 'hitter') {
-    return 'hitter';
+  if (playerType === 'pitcher') {
+    return [{ kind: 'pitcher', stats: formatPitching(pitching) }];
   }
-  return reveal.career.batting === null && reveal.career.pitching !== null ? 'pitcher' : 'hitter';
+  return [
+    { kind: 'hitter', stats: formatBatting(batting, advanced) },
+    { kind: 'pitcher', stats: formatPitching(pitching) },
+  ];
 }
 
 function formatBatting(
   batting: CanonicalBattingLine | null,
-  advanced: CanonicalPlayerReveal['career']['advanced'],
+  advanced: CanonicalAdvancedLine | null,
 ): RevealStatValues {
   return {
     AB: value(batting?.atBats),
