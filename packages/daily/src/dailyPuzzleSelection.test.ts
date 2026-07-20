@@ -1,9 +1,10 @@
-import { describe, expect, it } from 'vitest';
 import type { Player } from '@initial-baseball/shared';
+import { describe, expect, it } from 'vitest';
 import {
   comparePlayersByRecognizability,
   rankPlayersByRecognizability,
   selectCanonicalDailyPlayersForDate,
+  selectDailyPlayersForDate,
 } from './dailyPuzzleSelection';
 
 describe('recognizability ranking', () => {
@@ -70,6 +71,20 @@ describe('recognizability ranking', () => {
 });
 
 describe('canonical Daily selection compatibility', () => {
+  it('preserves established generated lineups when canonical IDs are one-to-one', () => {
+    for (const date of ['2026-04-27', '2026-07-19', '2026-07-20']) {
+      const legacyPlayerIds = selectDailyPlayersForDate(date, {})
+        .map((player) => player.id);
+      const canonicalPlayerIds = selectCanonicalDailyPlayersForDate(
+        date,
+        {},
+        playerId => `canonical:${playerId}`,
+      ).map(({ player }) => player.id);
+
+      expect(canonicalPlayerIds).toEqual(legacyPlayerIds);
+    }
+  });
+
   it('filters generated candidates without a canonical runtime target', () => {
     const selections = selectCanonicalDailyPlayersForDate('2026-07-20', {}, playerId => (
       playerId === 'chadwick:9b391785' ? null : `canonical:${playerId}`
@@ -78,6 +93,41 @@ describe('canonical Daily selection compatibility', () => {
     expect(selections).toHaveLength(9);
     expect(selections.every(({ canonicalPlayerId }) => canonicalPlayerId.startsWith('canonical:'))).toBe(true);
     expect(selections.some(({ player }) => player.id === 'chadwick:9b391785')).toBe(false);
+  });
+
+  it('deduplicates two selected legacy answers that resolve to one canonical player', () => {
+    const date = '2026-07-20';
+    const legacyLineup = selectDailyPlayersForDate(date, {});
+    const firstPlayerId = legacyLineup[0]?.id;
+    const secondPlayerId = legacyLineup[1]?.id;
+    if (firstPlayerId === undefined || secondPlayerId === undefined) {
+      throw new Error('Expected two generated Daily players.');
+    }
+
+    const selections = selectCanonicalDailyPlayersForDate(date, {}, playerId => (
+      playerId === firstPlayerId || playerId === secondPlayerId
+        ? 'canonical:merged-selected-player'
+        : `canonical:${playerId}`
+    ));
+
+    expect(selections).toHaveLength(9);
+    expect(new Set(selections.map(({ canonicalPlayerId }) => canonicalPlayerId)).size).toBe(9);
+    expect(selections.filter(
+      ({ canonicalPlayerId }) => canonicalPlayerId === 'canonical:merged-selected-player',
+    )).toHaveLength(1);
+  });
+
+  it('rejects overrides that resolve two legacy records to one canonical player', () => {
+    expect(() => selectCanonicalDailyPlayersForDate('2026-07-20', {
+      '2026-07-20': [
+        'Ken Griffey Jr.',
+        'David Wright',
+        'CC Sabathia',
+        'Albert Pujols',
+        'Derek Jeter',
+        'Ichiro Suzuki',
+      ],
+    }, () => 'canonical:duplicate')).toThrow('duplicate canonical player');
   });
 
   it('fails visibly when a historical override has no canonical target', () => {

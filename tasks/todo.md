@@ -17,7 +17,6 @@ Completed work should not remain here as future work. Historical rationale belon
 ## 2. Finalize Daily lineup quality
 
 - [ ] Apply the nine-slot recognizability curve: top 250 for at-bats 1-2, top 1,000 for 3-4, top 2,500 for 5-6, and top 5,000 for 7-9.
-- [ ] Prevent duplicate canonical players within one lineup.
 - [ ] Avoid recently used players within the approved repeat window, currently 90 days.
 - [ ] Confirm deterministic generation for a date and data version.
 - [ ] Verify historical overrides and saved references still resolve after runtime migration.
