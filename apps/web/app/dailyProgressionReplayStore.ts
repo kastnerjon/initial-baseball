@@ -50,10 +50,15 @@ export function createInMemoryDailyProgressionReplayStore(): DailyProgressionRep
       records.set(sessionId, createInitialRecord(progressionToken));
     },
 
-    execute(input) {
-      return withLocalSessionLock(input.sessionId, async () => {
+    async execute<Response extends ReplayResponse>(input: {
+      sessionId: string;
+      progressionToken: string;
+      actionKey: string;
+      createResponse: () => Response | Promise<Response>;
+    }): Promise<Response> {
+      return withLocalSessionLock<Response>(input.sessionId, async () => {
         const record = records.get(input.sessionId);
-        const replayedResponse = resolveReplayedAction(record, input);
+        const replayedResponse = resolveReplayedAction<Response>(record, input);
         if (replayedResponse !== null) {
           return replayedResponse;
         }
@@ -82,10 +87,15 @@ export function createVercelDailyProgressionReplayStore(): DailyProgressionRepla
       });
     },
 
-    execute(input) {
-      return withLocalSessionLock(input.sessionId, async () => {
+    async execute<Response extends ReplayResponse>(input: {
+      sessionId: string;
+      progressionToken: string;
+      actionKey: string;
+      createResponse: () => Response | Promise<Response>;
+    }): Promise<Response> {
+      return withLocalSessionLock<Response>(input.sessionId, async () => {
         const initialRecord = await readCacheRecord(cache, input.sessionId);
-        const replayedResponse = resolveReplayedAction(initialRecord, input);
+        const replayedResponse = resolveReplayedAction<Response>(initialRecord, input);
         if (replayedResponse !== null) {
           return replayedResponse;
         }
@@ -101,7 +111,7 @@ export function createVercelDailyProgressionReplayStore(): DailyProgressionRepla
         await delay(CLAIM_STABILIZATION_MS);
 
         const claimedRecord = await readCacheRecord(cache, input.sessionId);
-        const claimedReplay = resolveReplayedAction(claimedRecord, input);
+        const claimedReplay = resolveReplayedAction<Response>(claimedRecord, input);
         if (claimedReplay !== null) {
           return claimedReplay;
         }
@@ -121,7 +131,7 @@ export function createVercelDailyProgressionReplayStore(): DailyProgressionRepla
         await delay(CLAIM_STABILIZATION_MS);
 
         const confirmedRecord = await readCacheRecord(cache, input.sessionId);
-        const confirmedReplay = resolveReplayedAction(confirmedRecord, input);
+        const confirmedReplay = resolveReplayedAction<Response>(confirmedRecord, input);
         if (confirmedReplay !== null) {
           return confirmedReplay;
         }
