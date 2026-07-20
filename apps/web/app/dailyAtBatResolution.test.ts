@@ -267,7 +267,9 @@ function buildReveal(kind: 'hitter' | 'pitcher'): CanonicalRevealViewModel {
     primaryPosition: kind === 'hitter' ? 'CF' : 'P',
     yearsPlayedDisplay: kind === 'hitter' ? '1989–2010' : '2001–2019',
     teamIds: kind === 'hitter' ? ['SEA', 'CIN', 'CHA'] : ['CLE', 'MIL', 'NYA'],
-    career: { kind, stats: kind === 'hitter' ? hitterStats : pitcherStats },
+    career: {
+      lines: [{ kind, stats: kind === 'hitter' ? hitterStats : pitcherStats }],
+    },
     seasons: [],
   };
 }
