@@ -57,6 +57,15 @@ describe('Daily canonical runtime service', () => {
     expect(JSON.stringify(response)).not.toContain(answerName);
   });
 
+  it('rejects hint requests beyond the configured maximum', () => {
+    const exhaustedHintToken = progressionTokens.sign({
+      ...initialClaims(),
+      revealCount: 4,
+    });
+
+    expect(() => service.revealHint(exhaustedHintToken)).toThrow(/No additional hint/);
+  });
+
   it('returns no reveal and increments signed strikes for an incorrect guess', () => {
     const response = service.resolveAtBat({
       progressionToken: service.getBootstrap(puzzleDate).progressionToken,
@@ -95,6 +104,13 @@ describe('Daily canonical runtime service', () => {
     });
 
     expect(response.result.kind).toBe('correct');
+  });
+
+  it('rejects unknown submitted IDs as safe request errors', () => {
+    expect(() => service.resolveAtBat({
+      progressionToken: service.getBootstrap(puzzleDate).progressionToken,
+      submittedPlayerId: 'unknown-player-id',
+    })).toThrow(DailyRuntimeRequestError);
   });
 
   it('returns the reveal, increments outs, and advances after a third strike', () => {
