@@ -1,6 +1,10 @@
 import { describe, expect, it } from 'vitest';
 import type { DailyGameState } from '@initial-baseball/shared';
-import type { PendingAtBatAdvance } from './dailyAtBatResolution';
+import {
+  createGiveUpResult,
+  resolveDailyTerminalAtBat,
+  type PendingAtBatAdvance,
+} from './dailyAtBatResolution';
 import {
   clearSavedDailyGame,
   getDailyStorageKey,
@@ -168,6 +172,40 @@ describe('dailyLocalStorage', () => {
     storage.setItem(getDailyStorageKey(DEMO_DAILY_PUZZLE.puzzleDate), JSON.stringify(savedGame));
 
     expect(loadSavedDailyGame(DEMO_DAILY_PUZZLE, storage)).toBeNull();
+  });
+
+  it('preserves legacy progress at a clean next-at-bat boundary', () => {
+    const storage = new FakeStorage();
+    const initialGameState = createInitialDemoGameState(DEMO_DAILY_PUZZLE);
+    const firstPitch = DEMO_DAILY_PUZZLE.pitches[0];
+    if (firstPitch === undefined) {
+      throw new Error('Expected a first Daily pitch.');
+    }
+    const advance = resolveDailyTerminalAtBat({
+      gameState: initialGameState,
+      pitch: firstPitch,
+      result: createGiveUpResult(0, 3),
+      currentPitchIndex: 0,
+    });
+    const savedGame = buildSavedGame({
+      currentPitchIndex: 1,
+      gameState: {
+        ...initialGameState,
+        status: 'in_progress',
+        inning: advance.inning,
+        score: advance.score,
+        completedPitchLines: advance.pitchLines,
+      },
+      atBatState: createInitialAtBatUiState(),
+      pendingAdvance: null,
+    });
+    setLegacySchema(savedGame);
+    storage.setItem(getDailyStorageKey(DEMO_DAILY_PUZZLE.puzzleDate), JSON.stringify(savedGame));
+
+    const restored = loadSavedDailyGame(DEMO_DAILY_PUZZLE, storage);
+    expect(restored?.currentPitchIndex).toBe(1);
+    expect(restored?.gameState.completedPitchLines).toEqual(advance.pitchLines);
+    expect(restored?.atBatState).toEqual(createInitialAtBatUiState());
   });
 
   it('preserves a completed legacy result as read-only history', () => {

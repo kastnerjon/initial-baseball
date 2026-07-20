@@ -238,7 +238,8 @@ function isSafeLegacySave(
   savedGame: PersistedSavedDailyGame,
   publicPuzzle: DailyPublicPuzzle,
 ): boolean {
-  return isCompletedLegacySave(savedGame, publicPuzzle) || isUnstartedLegacySave(savedGame);
+  return isCompletedLegacySave(savedGame, publicPuzzle)
+    || isCleanLegacyAtBatBoundary(savedGame, publicPuzzle);
 }
 
 function isCompletedLegacySave(
@@ -250,25 +251,25 @@ function isCompletedLegacySave(
     || savedGame.currentPitchIndex >= publicPuzzle.pitches.length;
 }
 
-function isUnstartedLegacySave(savedGame: PersistedSavedDailyGame): boolean {
+function isCleanLegacyAtBatBoundary(
+  savedGame: PersistedSavedDailyGame,
+  publicPuzzle: DailyPublicPuzzle,
+): boolean {
   const atBatState = savedGame.atBatState as DailyAtBatUiState & {
     revealedHints?: DailyAtBatUiState['revealedHints'];
     reveal?: DailyAtBatUiState['reveal'];
   };
-  const score = savedGame.gameState.score;
-  const inning = savedGame.gameState.inning;
 
   return (
-    savedGame.currentPitchIndex === 0
+    Number.isInteger(savedGame.currentPitchIndex)
+    && savedGame.currentPitchIndex >= 0
+    && savedGame.currentPitchIndex < publicPuzzle.pitches.length
     && savedGame.pendingAdvance === null
-    && savedGame.gameState.completedPitchLines.length === 0
-    && score.runs === 0
-    && score.hits === 0
-    && score.outs === 0
-    && score.strikeouts === 0
-    && score.completed === false
-    && inning.outs === 0
-    && inning.completedAtBats.length === 0
+    && savedGame.gameState.status !== 'completed'
+    && savedGame.gameState.score.completed === false
+    && savedGame.gameState.shareResult === null
+    && savedGame.gameState.completedPitchLines.length === savedGame.currentPitchIndex
+    && savedGame.gameState.inning.completedAtBats.length === savedGame.currentPitchIndex
     && atBatState.revealCount === 0
     && atBatState.strikeCount === 0
     && (atBatState.revealedHints === undefined || atBatState.revealedHints.length === 0)
