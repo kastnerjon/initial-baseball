@@ -9,7 +9,6 @@ Completed work should not remain here as future work. Historical rationale belon
 
 - [ ] Show the canonical career summary after each resolved at-bat.
 - [ ] Show one ordered row per regular season, including multiple teams when applicable.
-- [ ] Use hitter, pitcher, and two-way column presets.
 - [ ] Support configurable reveal columns without changing canonical data ownership.
 - [ ] Display OPS for hitters and saves for pitchers when available.
 - [ ] Keep WAR, OPS+, ERA+, awards, All-Star selections, voting finishes, and leader flags hidden until approved upstream data exists.
