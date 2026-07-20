@@ -1,42 +1,54 @@
 # Initial Baseball
 
-Initial Baseball is a baseball guessing-game platform with two product surfaces:
+Initial Baseball is currently one product: **Daily Inning**, a browser-first daily baseball guessing game. Everyone receives the same nine-player inning, guesses players from their initials and revealed hints, then sees accurate career and season information after each at-bat.
 
-1. **Daily Inning** — a web-first daily puzzle where everyone plays the same inning, shares a spoiler-safe result, and compares how the field did pitch-by-pitch.
-2. **Initial Baseball H2H** — a later iOS/Android async multiplayer app with friend games, random opponents, chat, records, and League Lite.
+A future native client or head-to-head mode is possible, but neither is a committed roadmap item. The code should preserve inexpensive portability without adding infrastructure for hypothetical products.
 
-Both surfaces share the same backend, player database, hint generation, guess matching, scoring engine, and eventual user account.
+## Current product state
 
-## Current build priority
+The Daily web game is implemented and deployed through Next.js/Vercel. Current work is focused on:
 
-The first playable milestone is **Daily Inning Web MVP**, not the full mobile app.
+1. replacing the legacy player dataset with the validated canonical identity and statistics pipeline;
+2. connecting the canonical runtime payload to search and player reveals;
+3. completing the season-by-season reveal experience;
+4. applying the nine-slot recognizability curve and repeat protections;
+5. adding an editorial workflow for tomorrow's lineup;
+6. adding aggregate results, monitoring, and launch hardening.
 
-Build order:
+The canonical data pipeline currently produces identity, season, career, enrichment, and runtime-serving artifacts as shadow outputs. The live game is not migrated merely because a shadow artifact exists.
 
-1. Shared engine, shared types, seeded player database.
-2. Daily Inning web private beta.
-3. Daily Inning public web launch.
-4. Optional account/streak/history layer.
-5. Initial Baseball H2H mobile app.
+## Architecture stance
 
-## Build stance
+- One monorepo.
+- Browser-first Daily Inning through Next.js.
+- Pure TypeScript game rules and Daily logic outside React.
+- Generated baseball data owned by `packages/baseball-data`.
+- Daily puzzle construction owned by `packages/daily`.
+- No live third-party baseball API during gameplay.
+- Client-driven anonymous gameplay; persistence is added only behind repository/service boundaries.
+- Vercel is the current web host, not a permanent data or domain lock-in.
+- A custom domain can be attached without changing the game engine or canonical data contracts.
 
-- One monorepo. No separate repos for web/mobile/backend.
-- Web-first Daily Inning via Next.js.
-- Mobile H2H later via Expo React Native.
-- Supabase for Auth, Postgres, Realtime, and Edge Functions.
-- Pure TypeScript game engine shared by web, mobile, and server.
-- Seeded baseball database. No live third-party baseball API during gameplay.
-- Anonymous Daily Inning play by default; users may later claim history into an account.
-- Free alpha. No payments in alpha.
-- Future monetization: web ads/sponsorships, app Pro, private leagues.
-- Codebase optimized for AI-assisted maintenance: small files, explicit names, colocated tests, folder READMEs, source map, and `AGENTS.md`.
+## Repository layout
+
+```text
+apps/web/                 Next.js Daily Inning website
+apps/mobile/              Inactive future-client scaffold
+packages/shared/          Stable cross-platform types and schemas
+packages/engine/          Pure game and baseball rules
+packages/baseball-data/   Sources, canonical identity/stats pipeline, QA, runtime artifacts
+packages/daily/           Daily numbering, lineup generation, overrides, session logic
+supabase/                  Persistence scaffolding and future adapters
+docs/                     Product, architecture, specifications, QA, and data contracts
+tasks/                    Current ordered work and durable lessons
+```
 
 ## First commands
 
 ```bash
 pnpm install
 pnpm test
+pnpm typecheck
 pnpm lint
 ```
 
@@ -44,34 +56,30 @@ Read in order:
 
 1. `AGENTS.md`
 2. `tasks/todo.md`
-3. `docs/engineering/source-map.md`
-4. The spec file for the current task
+3. `docs/architecture-and-scale-plan.md`
+4. `docs/product/daily-inning-blueprint.md`
+5. the specification or data contract for the current task
 
-## Repository layout
+## Canonical baseball-data flow
 
 ```text
-apps/web/                 Next.js Daily Inning website
-apps/mobile/              Expo React Native H2H app, later milestone
-packages/engine/          Pure game rules, scoring, sharing, daily aggregates
-packages/shared/          Shared types, constants, validators
-packages/baseball-data/   Player data ingestion/normalization helpers
-supabase/migrations/      Database schema migrations
-supabase/functions/       Edge Function skeletons
-docs/                     Product, spec, engineering, QA docs
-tasks/                    Ordered tasks and lessons learned
+canonical identity
+  -> Lahman-first player universe
+  -> season source facts
+  -> player-season aggregates
+  -> season cards
+  -> career aggregates
+  -> career cards
+  -> season and career enrichment
+  -> lightweight player index + reveal shards + legacy redirects
+  -> later web runtime migration
 ```
 
-## Environments
+Identity owns display names and aliases. Season records own season facts. Career records summarize seasons. Enrichment owns derived or separately sourced facts. The runtime payload joins these layers but does not calculate baseball statistics.
 
-Use three Supabase projects:
+See `packages/baseball-data/README.md` and `docs/data/canonical-runtime-payload.md`.
 
-- `initial-baseball-dev`
-- `initial-baseball-staging`
-- `initial-baseball-prod`
-
-Production keys should not be given to coding agents early. Use dev/staging for agent work.
-
-## Daily Web Deployment
+## Daily web development
 
 Local development:
 
@@ -83,13 +91,12 @@ corepack pnpm --filter @initial-baseball/web dev
 Production build:
 
 ```bash
-corepack pnpm --filter @initial-baseball/web build
+corepack pnpm build:web
 ```
 
 Vercel deployment notes:
 
-- Deploy the monorepo with `apps/web` as the Next.js app.
-- Set `NEXT_PUBLIC_SITE_URL=https://your-domain.com` so Daily share text uses the public origin.
-- If `NEXT_PUBLIC_SITE_URL` is absent, share links fall back to the browser origin when available, then `/`.
+- Deploy the monorepo as the existing Next.js project.
+- Set `NEXT_PUBLIC_SITE_URL` to the canonical public origin when a domain is connected.
 - Daily puzzles reset at midnight Pacific Time.
-- Manual Daily puzzle configuration is currently code-based in `apps/web/app/dailyPuzzleOverrides.ts`.
+- Manual Daily puzzle configuration remains code-based in `apps/web/app/dailyPuzzleOverrides.ts` until the admin publication workflow replaces it.
