@@ -144,7 +144,7 @@ function regression(rows, out) {
   const byLahman = new Map(rows.map(row => [row.lahmanPlayerId, row]));
   const tests = [
     ['ortizda01', true, true],
-    ['riverma01', false, true],
+    ['riverma01', true, true],
     ['griffke02', true, true],
     ['wrighda03', true, false],
   ];
