@@ -28,11 +28,19 @@ Before wider friend alpha:
 - Client chunks contain no generated legacy player universe or Daily answer records.
 - The browser submits only an opaque progression token and the chosen action; pitch number, hint depth, strike count, and outs are verified server-side.
 - Tampered, stale, and cross-date progression tokens are rejected.
+- A consumed token may return the original saved response for the exact same retry, but a different action using that token is rejected.
+- Simultaneous different actions cannot both consume the same token.
 - Give Up cannot target an arbitrary future pitch or continue after the verified third out.
 - Incorrect resolution responses contain no reveal.
 - Correct, third-strike, and Give Up responses contain only the resolved player's canonical reveal.
 - Public search results expose candidate identity context but not Daily answer relationships.
 - Browser and server logs contain no hidden answer data.
+
+## Lineup-integrity tests
+
+- One-to-one canonical resolution reproduces the exact legacy-ID-generated lineup for representative published dates.
+- Canonical deduplication prevents two redirected legacy rows from appearing as the same player in one lineup.
+- Historical overrides fail visibly when a player has no valid canonical runtime target.
 
 ## Regression rule
 
