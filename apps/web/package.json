@@ -4,10 +4,10 @@
   "version": "0.0.1",
   "scripts": {
     "dev": "next dev",
-    "prebuild": "cd ../.. && node scripts/generate-season-stats.mjs",
     "build": "next build",
+    "postbuild": "node scripts/qa-hidden-answer-build.mjs",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "tsc --noEmit",
     "typecheck": "tsc --noEmit",
     "test": "vitest run --passWithNoTests"
   },

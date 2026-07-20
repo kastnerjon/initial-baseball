@@ -4,15 +4,12 @@ import type { JSX } from 'react';
 import { useEffect, useMemo, useState } from 'react';
 import {
   createDailyShareResult,
-  evaluateGuess,
   formatDailyShareText,
-  getGuessOutcome,
   type PlayerSearchResult,
 } from '@initial-baseball/engine';
-import type { DailyGameState, DailyGuessResult, DailyPuzzle, Player } from '@initial-baseball/shared';
+import type { DailyGameState, DailyGuessResult, DailyPublicPuzzle } from '@initial-baseball/shared';
 import {
   type PendingAtBatAdvance,
-  createGiveUpResult,
   resolveDailyTerminalAtBat,
 } from '../dailyAtBatResolution';
 import {
@@ -21,32 +18,33 @@ import {
   saveDailyGame,
 } from '../dailyLocalStorage';
 import { createDailyShareUrl } from '../dailyShareUrl';
+import type { CanonicalRevealViewModel } from '../canonicalRevealViewModel';
 import {
-  type DemoAtBatUiState,
-  type DemoDailyPitch,
+  type DailyAtBatUiState,
   createInitialAtBatUiState,
-  createInitialDemoGameState,
-} from '../mockDailyPuzzle';
+  createInitialDailyGameState,
+} from '../dailyClientState';
+import type { DailyHintResponse, DailyResolutionResponse } from '../dailyRuntimeContracts';
 import { AtBatCard } from './AtBatCard';
 import { DailyScorebug } from './DailyScorebug';
 import { GameCompleteView } from './GameCompleteView';
 import { PitchResultList } from './PitchResultList';
 
 type DailyInningGameProps = {
-  puzzle: DailyPuzzle;
-  demoPitches: DemoDailyPitch[];
-  players: Player[];
+  puzzle: DailyPublicPuzzle;
 };
 
-export function DailyInningGame({ puzzle, demoPitches, players }: DailyInningGameProps): JSX.Element {
-  const [gameState, setGameState] = useState<DailyGameState>(() => createInitialDemoGameState(puzzle));
+export function DailyInningGame({ puzzle }: DailyInningGameProps): JSX.Element {
+  const [gameState, setGameState] = useState<DailyGameState>(() => createInitialDailyGameState(puzzle));
   const [currentPitchIndex, setCurrentPitchIndex] = useState(0);
-  const [atBatState, setAtBatState] = useState<DemoAtBatUiState>(() => createInitialAtBatUiState());
+  const [atBatState, setAtBatState] = useState<DailyAtBatUiState>(() => createInitialAtBatUiState());
   const [pendingAdvance, setPendingAdvance] = useState<PendingAtBatAdvance | null>(null);
   const [hasLoadedSavedState, setHasLoadedSavedState] = useState(false);
+  const [requestPending, setRequestPending] = useState(false);
+  const [requestError, setRequestError] = useState<string | null>(null);
 
-  const currentDemoPitch = demoPitches[currentPitchIndex] ?? null;
-  const isPuzzleComplete = currentPitchIndex >= demoPitches.length;
+  const currentPitch = puzzle.pitches[currentPitchIndex] ?? null;
+  const isPuzzleComplete = currentPitchIndex >= puzzle.pitches.length;
   const isGameComplete = gameState.score.completed || isPuzzleComplete;
 
   const shareResult = useMemo(
@@ -75,7 +73,7 @@ export function DailyInningGame({ puzzle, demoPitches, players }: DailyInningGam
       setAtBatState(savedGame.atBatState);
       setPendingAdvance(savedGame.pendingAdvance);
     } else {
-      setGameState(createInitialDemoGameState(puzzle));
+      setGameState(createInitialDailyGameState(puzzle));
       setCurrentPitchIndex(0);
       setAtBatState(createInitialAtBatUiState());
       setPendingAdvance(null);
@@ -107,9 +105,10 @@ export function DailyInningGame({ puzzle, demoPitches, players }: DailyInningGam
     );
   }
 
-  if (currentDemoPitch === null) {
+  if (currentPitch === null) {
     return <div className="game-shell" />;
   }
+  const activePitch = currentPitch;
 
   return (
     <div className="game-shell">
@@ -128,36 +127,30 @@ export function DailyInningGame({ puzzle, demoPitches, players }: DailyInningGam
         />
       ) : null}
       <AtBatCard
-        atBat={currentDemoPitch}
-        players={players}
+        atBat={activePitch}
         state={atBatState}
+        requestPending={requestPending}
+        requestError={requestError}
         onQueryChange={(query) => {
           setAtBatState((currentState) => ({
             ...currentState,
             query,
             selectedPlayerId: null,
-            selectedAcceptedPlayerIds: null,
             submittedResult: null,
           }));
+          setRequestError(null);
         }}
         onSelectPlayer={(result: PlayerSearchResult) => {
           setAtBatState((currentState) => ({
             ...currentState,
             query: result.displayName,
             selectedPlayerId: result.playerId,
-            selectedAcceptedPlayerIds: result.acceptedPlayerIds,
             submittedResult: null,
           }));
         }}
-        onRevealHint={() => {
-          setAtBatState((currentState) => ({
-            ...currentState,
-            revealCount: capRevealCount(currentState.revealCount + 1, currentDemoPitch.hints.length),
-            submittedResult: null,
-          }));
-        }}
-        onSubmit={() => handleSubmit(currentDemoPitch)}
-        onGiveUp={() => handleGiveUp(currentDemoPitch)}
+        onRevealHint={() => { void handleRevealHint(); }}
+        onSubmit={() => { void handleSubmit(); }}
+        onGiveUp={() => { void handleGiveUp(); }}
         onNextPitch={handleNextPitch}
       />
       <button
@@ -170,24 +163,19 @@ export function DailyInningGame({ puzzle, demoPitches, players }: DailyInningGam
     </div>
   );
 
-  function handleSubmit(pitch: DemoDailyPitch): void {
+  async function handleSubmit(): Promise<void> {
     if (atBatState.selectedPlayerId === null) {
       return;
     }
-
-    const result = getGuessOutcome({
-      isCorrect: evaluateGuess(atBatState.selectedAcceptedPlayerIds ?? atBatState.selectedPlayerId, pitch.correctPlayerId),
-      revealCount: atBatState.revealCount,
-      strikeCount: atBatState.strikeCount,
-      maxStrikes: 3,
-    });
+    const response = await resolveAtBat({ submittedPlayerId: atBatState.selectedPlayerId });
+    if (response === null) return;
+    const { result } = response;
 
     if (result.kind === 'incorrect') {
       setAtBatState((currentState) => ({
         ...currentState,
         query: '',
         selectedPlayerId: null,
-        selectedAcceptedPlayerIds: null,
         strikeCount: result.strikeCount,
         submittedResult: result,
       }));
@@ -195,23 +183,25 @@ export function DailyInningGame({ puzzle, demoPitches, players }: DailyInningGam
     }
 
     if (result.kind === 'correct') {
-      resolveTerminalResult(pitch, result);
+      resolveTerminalResult(result, requireReveal(response.reveal));
     } else if (result.kind === 'strikeout') {
-      resolveTerminalResult(pitch, result);
+      resolveTerminalResult(result, requireReveal(response.reveal));
     }
   }
 
-  function handleGiveUp(pitch: DemoDailyPitch): void {
-    resolveTerminalResult(pitch, createGiveUpResult(atBatState.revealCount, 3));
+  async function handleGiveUp(): Promise<void> {
+    const response = await resolveAtBat({ giveUp: true });
+    if (response === null || response.result.kind === 'incorrect') return;
+    resolveTerminalResult(response.result, requireReveal(response.reveal));
   }
 
   function resolveTerminalResult(
-    pitch: DemoDailyPitch,
     result: Extract<DailyGuessResult, { kind: 'correct' | 'strikeout' }>,
+    reveal: CanonicalRevealViewModel,
   ): void {
     setPendingAdvance(resolveDailyTerminalAtBat({
       gameState,
-      pitch,
+      pitch: { player: { initials: activePitch.initials } },
       result,
       currentPitchIndex,
     }));
@@ -219,6 +209,7 @@ export function DailyInningGame({ puzzle, demoPitches, players }: DailyInningGam
       ...currentState,
       strikeCount: result.kind === 'strikeout' ? result.strikeCount : currentState.strikeCount,
       submittedResult: result,
+      reveal,
     }));
   }
 
@@ -229,7 +220,7 @@ export function DailyInningGame({ puzzle, demoPitches, players }: DailyInningGam
 
     setGameState((currentGameState) => ({
       ...currentGameState,
-      status: pendingAdvance.score.completed || pendingAdvance.nextPitchIndex >= demoPitches.length ? 'completed' : 'in_progress',
+      status: pendingAdvance.score.completed || pendingAdvance.nextPitchIndex >= puzzle.pitches.length ? 'completed' : 'in_progress',
       inning: pendingAdvance.inning,
       score: pendingAdvance.score,
       completedPitchLines: pendingAdvance.pitchLines,
@@ -238,19 +229,79 @@ export function DailyInningGame({ puzzle, demoPitches, players }: DailyInningGam
     setCurrentPitchIndex(pendingAdvance.nextPitchIndex);
     setPendingAdvance(null);
     setAtBatState(createInitialAtBatUiState());
+    setRequestError(null);
   }
 
   function handleResetToday(): void {
     clearSavedDailyGame(puzzle);
-    setGameState(createInitialDemoGameState(puzzle));
+    setGameState(createInitialDailyGameState(puzzle));
     setCurrentPitchIndex(0);
     setAtBatState(createInitialAtBatUiState());
     setPendingAdvance(null);
+    setRequestError(null);
+    setRequestPending(false);
     setHasLoadedSavedState(true);
+  }
+
+  async function handleRevealHint(): Promise<void> {
+    const response = await requestJson<DailyHintResponse>('/api/daily/hint', {
+      puzzleDate: puzzle.puzzleDate,
+      pitchNumber: activePitch.pitchNumber,
+      revealCount: atBatState.revealCount,
+    });
+    if (response === null) return;
+    setAtBatState((currentState) => ({
+      ...currentState,
+      revealCount: capRevealCount(currentState.revealCount + 1, puzzle.hintConfig.length),
+      revealedHints: [...currentState.revealedHints, response.hint],
+      submittedResult: null,
+    }));
+  }
+
+  async function resolveAtBat(
+    action: { submittedPlayerId: string } | { giveUp: true },
+  ): Promise<DailyResolutionResponse | null> {
+    return requestJson<DailyResolutionResponse>('/api/daily/resolve', {
+      puzzleDate: puzzle.puzzleDate,
+      pitchNumber: activePitch.pitchNumber,
+      revealCount: atBatState.revealCount,
+      strikeCount: atBatState.strikeCount,
+      ...action,
+    });
+  }
+
+  async function requestJson<T>(path: string, body: Record<string, unknown>): Promise<T | null> {
+    if (requestPending) return null;
+    setRequestPending(true);
+    setRequestError(null);
+    try {
+      const response = await fetch(path, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(body),
+      });
+      const payload = await response.json() as T & { error?: string };
+      if (!response.ok) {
+        throw new Error(payload.error ?? `Request failed with ${response.status}.`);
+      }
+      return payload;
+    } catch {
+      setRequestError('The Daily game could not complete that action. Please try again.');
+      return null;
+    } finally {
+      setRequestPending(false);
+    }
   }
 }
 
-function capRevealCount(value: number, maxHints: number): DemoAtBatUiState['revealCount'] {
+function requireReveal(reveal: CanonicalRevealViewModel | null): CanonicalRevealViewModel {
+  if (reveal === null) {
+    throw new Error('A terminal Daily result did not include canonical reveal data.');
+  }
+  return reveal;
+}
+
+function capRevealCount(value: number, maxHints: number): DailyAtBatUiState['revealCount'] {
   switch (Math.min(value, maxHints)) {
     case 0:
       return 0;

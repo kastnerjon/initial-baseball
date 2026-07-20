@@ -5,20 +5,16 @@ const ROOT = process.cwd();
 const DATA_DIR = resolve(ROOT, 'packages/baseball-data/data/lahman');
 const PLAYERS_PATH = resolve(ROOT, 'packages/baseball-data/src/generated/players.json');
 const SAVES_OUTPUT_PATH = resolve(ROOT, 'packages/baseball-data/src/generated/pitcher-saves.json');
-const SEASONS_OUTPUT_PATH = resolve(ROOT, 'apps/web/app/api/player-seasons/season-stats.json');
 const EMPTY = '—';
 
 const players = JSON.parse(readFileSync(PLAYERS_PATH, 'utf8'));
 const peopleRows = parseCsv(readFileSync(resolve(DATA_DIR, 'People.csv'), 'utf8'));
-const battingRows = parseCsv(readFileSync(resolve(DATA_DIR, 'Batting.csv'), 'utf8'));
 const pitchingRows = parseCsv(readFileSync(resolve(DATA_DIR, 'Pitching.csv'), 'utf8'));
 const teamRows = parseCsv(readFileSync(resolve(DATA_DIR, 'Teams.csv'), 'utf8'));
 
 const playerByLahmanId = matchPlayersToLahman(players, peopleRows);
 const teamAbbreviations = buildTeamAbbreviations(teamRows);
-const battingByPlayerYear = aggregateBatting(battingRows, teamAbbreviations);
 const pitchingByPlayerYear = aggregatePitching(pitchingRows, teamAbbreviations);
-const seasonStats = {};
 const pitcherSaves = {};
 
 for (const [lahmanId, player] of playerByLahmanId) {
@@ -26,18 +22,12 @@ for (const [lahmanId, player] of playerByLahmanId) {
     const seasons = [...(pitchingByPlayerYear.get(lahmanId)?.values() ?? [])]
       .sort((left, right) => right.year - left.year)
       .map(formatPitcherSeason);
-    seasonStats[player.id] = seasons;
     pitcherSaves[player.id] = seasons.reduce((total, season) => total + season.stats.SV, 0);
-  } else {
-    seasonStats[player.id] = [...(battingByPlayerYear.get(lahmanId)?.values() ?? [])]
-      .sort((left, right) => right.year - left.year)
-      .map(formatHitterSeason);
   }
 }
 
 writeJson(SAVES_OUTPUT_PATH, pitcherSaves);
-writeJson(SEASONS_OUTPUT_PATH, seasonStats);
-console.log(`Generated season stats for ${Object.keys(seasonStats).length} players.`);
+console.log(`Generated save totals for ${Object.keys(pitcherSaves).length} pitchers.`);
 
 function matchPlayersToLahman(generatedPlayers, rows) {
   const lahmanCandidatesByName = new Map();
@@ -81,45 +71,6 @@ function matchPlayersToLahman(generatedPlayers, rows) {
   return matches;
 }
 
-function aggregateBatting(rows, teamAbbreviations) {
-  const byPlayer = new Map();
-  for (const row of rows) {
-    const year = parseInteger(row.yearID);
-    if (!row.playerID || year === 0) continue;
-    const byYear = byPlayer.get(row.playerID) ?? new Map();
-    const current = byYear.get(year) ?? {
-      year,
-      teams: new Set(),
-      atBats: 0,
-      hits: 0,
-      homeRuns: 0,
-      runs: 0,
-      runsBattedIn: 0,
-      stolenBases: 0,
-      walks: 0,
-      hitByPitch: 0,
-      sacrificeFlies: 0,
-      doubles: 0,
-      triples: 0,
-    };
-    addTeam(current.teams, teamAbbreviations, row);
-    current.atBats += parseInteger(row.AB);
-    current.hits += parseInteger(row.H);
-    current.homeRuns += parseInteger(row.HR);
-    current.runs += parseInteger(row.R);
-    current.runsBattedIn += parseInteger(row.RBI);
-    current.stolenBases += parseInteger(row.SB);
-    current.walks += parseInteger(row.BB);
-    current.hitByPitch += parseInteger(row.HBP);
-    current.sacrificeFlies += parseInteger(row.SF);
-    current.doubles += parseInteger(row['2B']);
-    current.triples += parseInteger(row['3B']);
-    byYear.set(year, current);
-    byPlayer.set(row.playerID, byYear);
-  }
-  return byPlayer;
-}
-
 function aggregatePitching(rows, teamAbbreviations) {
   const byPlayer = new Map();
   for (const row of rows) {
@@ -151,30 +102,6 @@ function aggregatePitching(rows, teamAbbreviations) {
     byPlayer.set(row.playerID, byYear);
   }
   return byPlayer;
-}
-
-function formatHitterSeason(season) {
-  const obpDenominator = season.atBats + season.walks + season.hitByPitch + season.sacrificeFlies;
-  const totalBases = season.hits + season.doubles + (2 * season.triples) + (3 * season.homeRuns);
-  const obp = obpDenominator === 0 ? EMPTY : formatAverage((season.hits + season.walks + season.hitByPitch) / obpDenominator);
-  const slg = season.atBats === 0 ? EMPTY : formatAverage(totalBases / season.atBats);
-  return {
-    year: season.year,
-    teams: formatTeams(season.teams),
-    kind: 'hitter',
-    stats: {
-      AB: season.atBats,
-      H: season.hits,
-      HR: season.homeRuns,
-      BA: season.atBats === 0 ? EMPTY : formatAverage(season.hits / season.atBats),
-      R: season.runs,
-      RBI: season.runsBattedIn,
-      SB: season.stolenBases,
-      OBP: obp,
-      SLG: slg,
-      OPS: obp === EMPTY || slg === EMPTY ? EMPTY : formatAverage(Number(obp) + Number(slg)),
-    },
-  };
 }
 
 function formatPitcherSeason(season) {
@@ -270,11 +197,6 @@ function parseInteger(value) {
 function parseYear(value) {
   const year = Number.parseInt(value?.slice(0, 4) ?? '', 10);
   return Number.isNaN(year) ? null : year;
-}
-
-function formatAverage(value) {
-  const rounded = value.toFixed(3);
-  return rounded.startsWith('0') ? rounded.slice(1) : rounded;
 }
 
 function formatInnings(ipOuts) {

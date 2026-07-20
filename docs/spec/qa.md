@@ -1,40 +1,34 @@
 # QA Spec
 
-## Alpha readiness gates
+## Daily alpha readiness gates
 
 Before wider friend alpha:
 
 - Engine tests pass.
-- Database migrations apply cleanly to dev/staging.
-- Friend game can be completed end-to-end.
-- Random opponent game can be completed end-to-end.
-- Chat report/block works.
-- League Lite create/join/standings works.
-- Hints pre-populate and can be edited.
-- Custom Stats Picker validates at least 1 hitter + 1 pitcher stat.
-- No answer leakage to hitter before resolution.
-- App can be closed/reopened without losing active games.
+- Canonical runtime generation and consumer QA pass.
+- Daily Inning can be completed end to end by correct guesses, strikes, and Give Up.
+- Search distinguishes genuine same-name players with career, role, position, and team context.
+- Refresh restores the active Daily game without restoring private answer data.
+- Share text contains no player names.
+- Common iPhone and iPad layouts are usable.
 
-## Manual baseball scenario tests
+## Manual Daily scenarios
 
-- 1-inning game.
-- 3-inning game.
-- 9-inning game.
-- Tie after scheduled innings with ghost runner ON.
-- Tie after scheduled innings with ghost runner OFF.
-- Sacrifice with runner on third and less than 2 outs.
-- Sacrifice with 2 outs.
-- Bottom-inning walk-off.
-- Strikeout after configured strike count.
-- Pitcher queues multiple at-bats.
+- Correct guess with zero through four revealed hints.
+- Incorrect guess followed by a correct guess.
+- Third-strike and Give Up reveal paths.
+- Nine scheduled at-bats and an inning ending on three outs.
+- Reset and refresh recovery.
+- Hitter, pitcher, two-way, multi-team, incomplete historical, and same-name reveal cases.
 
-## Social/safety tests
+## Answer-integrity tests
 
-- Blocked users cannot be matched randomly.
-- Reported message stores context.
-- Links are blocked/disabled in chat.
-- Chat can be disabled by feature flag.
-- Random opponent can be disabled by feature flag.
+- Initial HTML and serialized props contain no answer ID, display name, hint value, or reveal record.
+- Client chunks contain no generated legacy player universe or Daily answer records.
+- Incorrect resolution responses contain no reveal.
+- Correct, third-strike, and Give Up responses contain only the resolved player's canonical reveal.
+- Public search results expose candidate identity context but not Daily answer relationships.
+- Browser and server logs contain no hidden answer data.
 
 ## Regression rule
 

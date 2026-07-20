@@ -1,13 +1,12 @@
 import type { JSX } from 'react';
-import { baseballPlayers } from '@initial-baseball/baseball-data';
 import { DailyInningGame } from './components/DailyInningGame';
-import { createDailyPuzzleForDate } from './createDailyPuzzleForDate';
-import { createGamePitchesFromPuzzle } from './dailyPuzzleAdapters';
 import { getPacificDailyDateString } from './getPacificDailyDateString';
+import { dailyRuntime } from './serverCanonicalRuntime';
+
+export const revalidate = 60;
 
 export default function DailyInningHomePage(): JSX.Element {
-  const puzzle = createDailyPuzzleForDate(getPacificDailyDateString());
-  const pitches = createGamePitchesFromPuzzle(puzzle);
+  const puzzle = dailyRuntime.getPublicPuzzle(getPacificDailyDateString());
 
   return (
     <main className="page-shell">
@@ -20,7 +19,7 @@ export default function DailyInningHomePage(): JSX.Element {
             Give up records a strikeout. Come back daily after midnight Pacific.
           </p>
         </section>
-        <DailyInningGame puzzle={puzzle} demoPitches={pitches} players={baseballPlayers} />
+        <DailyInningGame puzzle={puzzle} />
       </section>
     </main>
   );

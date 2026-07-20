@@ -60,7 +60,7 @@ for (const [shardId, records] of [...shards.entries()].sort(([a], [b]) => a.loca
     shardId,
     players: Object.fromEntries(records.map(record => [record.playerId, record])),
   };
-  const text = jsonText(value);
+  const text = servingJsonText(value);
   writeFileSync(path, text);
   shardManifest.push({
     shardId,
@@ -82,9 +82,9 @@ const summary = {
   criticalIssueCount: issues.length,
 };
 
-writeJson(resolve(outputDir, 'player-index.json'), { schemaVersion: 1, sourceManifest, players: playerIndex });
-writeJson(resolve(outputDir, 'legacy-redirects.json'), { schemaVersion: 1, sourceManifest, redirects: runtimeRedirects, excludedRedirects });
-writeJson(resolve(outputDir, 'reveal-shard-manifest.json'), { schemaVersion: 1, sourceManifest, shards: shardManifest });
+writeServingJson(resolve(outputDir, 'player-index.json'), { schemaVersion: 1, sourceManifest, players: playerIndex });
+writeServingJson(resolve(outputDir, 'legacy-redirects.json'), { schemaVersion: 1, sourceManifest, redirects: runtimeRedirects, excludedRedirects });
+writeServingJson(resolve(outputDir, 'reveal-shard-manifest.json'), { schemaVersion: 1, sourceManifest, shards: shardManifest });
 writeJson(resolve(outputDir, 'canonical-runtime-payload-report.json'), { schemaVersion: 1, sourceManifest, summary, warnings, criticalIssues: issues });
 writeFileSync(resolve(outputDir, 'canonical-runtime-payload-report.md'), renderMarkdown(summary, warnings, issues));
 
@@ -231,7 +231,9 @@ function readJson(path) { const text = readFileSync(path, 'utf8'); return { path
 function manifestJson(input) { return { path: relativePath(input.path), schemaVersion: input.value.schemaVersion ?? null, sha256: sha256(input.text) }; }
 function relativePath(path) { return path.replace(`${resolve(packageDir, '../..')}/`, '').replaceAll('\\', '/'); }
 function jsonText(value) { return `${JSON.stringify(value, null, 2)}\n`; }
+function servingJsonText(value) { return `${JSON.stringify(value)}\n`; }
 function writeJson(path, value) { writeFileSync(path, jsonText(value)); }
+function writeServingJson(path, value) { writeFileSync(path, servingJsonText(value)); }
 function sha256(value) { return createHash('sha256').update(value).digest('hex'); }
 function group(rows, fn) { const map = new Map(); for (const row of rows) { const key = fn(row); const list = map.get(key) ?? []; list.push(row); map.set(key, list); } return map; }
 function uniqueIndex(rows, fn, label, out = null) { const map = new Map(); for (const row of rows) { const key = fn(row); if (!key) { if (out) out.push(`Missing ${label} key`); else throw new Error(`Missing ${label} key`); continue; } if (map.has(key)) { if (out) out.push(`Duplicate ${label}: ${key}`); else throw new Error(`Duplicate ${label}: ${key}`); } else map.set(key, row); } return map; }

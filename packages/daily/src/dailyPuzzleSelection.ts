@@ -15,6 +15,11 @@ export type DailyPuzzleOverrideEntry = string | {
 };
 
 export type DailyPuzzleOverrideMap = Record<string, readonly DailyPuzzleOverrideEntry[]>;
+export type CanonicalDailyPlayerSelection = {
+  canonicalPlayerId: string;
+  player: Player;
+};
+export type ResolveCanonicalPlayerId = (playerId: string) => string | null;
 
 export function getDailyPuzzleNumber(date: string): number {
   return getDaysSinceEpoch(DAILY_PUZZLE_EPOCH, date) + 1;
@@ -34,7 +39,38 @@ export function selectDailyPlayersForDate(
     throw new Error(`Not enough Daily-eligible players to build a ${DAILY_AT_BAT_COUNT}-at-bat puzzle.`);
   }
 
-  const rankedPlayers = rankPlayersByRecognizability(dailyEligiblePlayers);
+  return selectGeneratedDailyPlayers(date, dailyEligiblePlayers);
+}
+
+export function selectCanonicalDailyPlayersForDate(
+  date: string,
+  overrides: DailyPuzzleOverrideMap,
+  resolveCanonicalPlayerId: ResolveCanonicalPlayerId,
+): CanonicalDailyPlayerSelection[] {
+  const overrideEntries = overrides[date];
+  if (overrideEntries !== undefined) {
+    return resolveDailyPuzzleOverridePlayers(date, overrideEntries).map((player) => ({
+      player,
+      canonicalPlayerId: requireResolvedCanonicalPlayerId(date, player.id, resolveCanonicalPlayerId),
+    }));
+  }
+
+  const candidates = dailyEligiblePlayers.flatMap((player) => {
+    const canonicalPlayerId = resolveCanonicalPlayerId(player.id);
+    return canonicalPlayerId === null ? [] : [{ player, canonicalPlayerId }];
+  });
+  if (candidates.length < DAILY_AT_BAT_COUNT) {
+    throw new Error(`Not enough canonically resolvable Daily players for ${date}.`);
+  }
+  const canonicalIdByLegacyId = new Map(candidates.map((candidate) => [candidate.player.id, candidate.canonicalPlayerId]));
+  return selectGeneratedDailyPlayers(date, candidates.map((candidate) => candidate.player)).map((player) => ({
+    player,
+    canonicalPlayerId: requireResolvedCanonicalPlayerId(date, player.id, id => canonicalIdByLegacyId.get(id) ?? null),
+  }));
+}
+
+function selectGeneratedDailyPlayers(date: string, candidates: readonly Player[]): Player[] {
+  const rankedPlayers = rankPlayersByRecognizability(candidates);
   const selectedPlayers: Player[] = [];
   const selectedIds = new Set<string>();
 
@@ -52,6 +88,18 @@ export function selectDailyPlayersForDate(
   }
 
   return selectedPlayers;
+}
+
+function requireResolvedCanonicalPlayerId(
+  date: string,
+  playerId: string,
+  resolveCanonicalPlayerId: ResolveCanonicalPlayerId,
+): string {
+  const canonicalPlayerId = resolveCanonicalPlayerId(playerId);
+  if (canonicalPlayerId === null) {
+    throw new Error(`Daily puzzle for ${date} could not resolve legacy playerId to canonical runtime data: ${playerId}.`);
+  }
+  return canonicalPlayerId;
 }
 
 export function rankPlayersByRecognizability(players: readonly Player[]): Player[] {

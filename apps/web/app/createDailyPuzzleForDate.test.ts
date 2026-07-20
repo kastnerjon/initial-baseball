@@ -7,7 +7,7 @@ import {
   getDailyPuzzleNumber,
   resolveDailyPuzzleOverridePlayers,
 } from './createDailyPuzzleForDate';
-import { createGamePitchesFromPuzzle, createPlayerIdentity } from './dailyPuzzleAdapters';
+import { createPlayerIdentity } from './dailyPuzzleAdapters';
 import { DAILY_PUZZLE_OVERRIDES } from './dailyPuzzleOverrides';
 
 const currentOverrideNames = [
@@ -227,42 +227,38 @@ describe('createDailyPuzzleForDate', () => {
   });
 });
 
-describe('createGamePitchesFromPuzzle', () => {
+describe('Daily puzzle hints', () => {
   it('builds four ordered hints per pitch from the selected player record', () => {
     const puzzle = createDailyPuzzleForDate('2026-05-02');
-    const pitches = createGamePitchesFromPuzzle(puzzle);
-
-    for (const pitch of pitches) {
-      const player = dailyEligiblePlayers.find((candidate) => candidate.id === pitch.correctPlayerId);
+    for (const pitch of puzzle.pitches) {
+      const player = dailyEligiblePlayers.find((candidate) => candidate.id === pitch.player.playerId);
 
       expect(player).toBeDefined();
-      expect(pitch.hints).toHaveLength(4);
-      expect(pitch.hints.map((hint) => hint.hintType)).toEqual([
+      expect(Object.keys(pitch.hints)).toHaveLength(4);
+      expect(Object.keys(pitch.hints)).toEqual([
         'main_decade',
         'teams',
         'position',
         'stats',
       ]);
-      expect(pitch.hints[0]?.hintValue).toBe(player?.mainDecade);
-      expect(pitch.hints[1]?.hintValue).toBe(player?.teamsDisplay);
-      expect(pitch.hints[2]?.hintValue).toBe(player?.primaryPosition);
-      expect(pitch.hints[3]?.hintValue).toBe(player?.statsLine);
+      expect(pitch.hints.main_decade).toBe(player?.mainDecade);
+      expect(pitch.hints.teams).toBe(player?.teamsDisplay);
+      expect(pitch.hints.position).toBe(player?.primaryPosition);
+      expect(pitch.hints.stats).toBe(player?.statsLine);
     }
   });
 
   it('builds override player hints from generated player records', () => {
     const puzzle = createDailyPuzzleForDate('2026-05-04');
-    const pitches = createGamePitchesFromPuzzle(puzzle);
-
-    for (const pitch of pitches) {
-      const player = baseballPlayers.find((candidate) => candidate.id === pitch.correctPlayerId);
+    for (const pitch of puzzle.pitches) {
+      const player = baseballPlayers.find((candidate) => candidate.id === pitch.player.playerId);
 
       expect(player).toBeDefined();
-      expect(pitch.hints).toHaveLength(4);
-      expect(pitch.hints[0]?.hintValue).toBe(player?.mainDecade);
-      expect(pitch.hints[1]?.hintValue).toBe(player?.teamsDisplay);
-      expect(pitch.hints[2]?.hintValue).toBe(player?.primaryPosition);
-      expect(pitch.hints[3]?.hintValue).toBe(player?.statsLine);
+      expect(Object.keys(pitch.hints)).toHaveLength(4);
+      expect(pitch.hints.main_decade).toBe(player?.mainDecade);
+      expect(pitch.hints.teams).toBe(player?.teamsDisplay);
+      expect(pitch.hints.position).toBe(player?.primaryPosition);
+      expect(pitch.hints.stats).toBe(player?.statsLine);
     }
   });
 });

@@ -64,6 +64,8 @@ jobs:
         run: pnpm --filter @initial-baseball/baseball-data generate:canonical-career-enrichment:strict
       - name: Generate canonical runtime payload
         run: pnpm --filter @initial-baseball/baseball-data generate:canonical-runtime-payload:strict
+      - name: Verify canonical runtime consumer and representative records
+        run: pnpm --filter @initial-baseball/baseball-data qa:canonical-runtime-consumer
       - name: Upload canonical baseball data pipeline
         if: always()
         uses: actions/upload-artifact@v4

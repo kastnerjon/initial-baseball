@@ -55,7 +55,7 @@ describe('dailyLocalStorage', () => {
   it('ignores saved state missing required fields', () => {
     const storage = new FakeStorage();
     storage.setItem(getDailyStorageKey(DEMO_DAILY_PUZZLE.puzzleDate), JSON.stringify({
-      schemaVersion: 1,
+      schemaVersion: 2,
       puzzleDate: DEMO_DAILY_PUZZLE.puzzleDate,
       puzzleNumber: DEMO_DAILY_PUZZLE.puzzleNumber,
     }));
@@ -98,7 +98,7 @@ describe('dailyLocalStorage', () => {
     }, storage);
 
     expect(loadSavedDailyGame(DEMO_DAILY_PUZZLE, storage)).toEqual({
-      schemaVersion: 1,
+      schemaVersion: 2,
       puzzleId: DEMO_DAILY_PUZZLE.id,
       puzzleDate: DEMO_DAILY_PUZZLE.puzzleDate,
       puzzleNumber: DEMO_DAILY_PUZZLE.puzzleNumber,
@@ -109,7 +109,7 @@ describe('dailyLocalStorage', () => {
     });
   });
 
-  it('restores older selected player state with a single accepted player id', () => {
+  it('preserves a legacy selected player ID for server-side redirect resolution', () => {
     const storage = new FakeStorage();
     const savedGame = buildSavedGame({
       atBatState: {
@@ -117,10 +117,28 @@ describe('dailyLocalStorage', () => {
         selectedPlayerId: 'player-42',
       },
     });
-    delete (savedGame.atBatState as Partial<typeof savedGame.atBatState>).selectedAcceptedPlayerIds;
+    (savedGame as unknown as { schemaVersion: number }).schemaVersion = 1;
     storage.setItem(getDailyStorageKey(DEMO_DAILY_PUZZLE.puzzleDate), JSON.stringify(savedGame));
 
-    expect(loadSavedDailyGame(DEMO_DAILY_PUZZLE, storage)?.atBatState.selectedAcceptedPlayerIds).toEqual(['player-42']);
+    expect(loadSavedDailyGame(DEMO_DAILY_PUZZLE, storage)?.atBatState.selectedPlayerId).toBe('player-42');
+    expect(loadSavedDailyGame(DEMO_DAILY_PUZZLE, storage)?.schemaVersion).toBe(2);
+  });
+
+  it('sanitizes legacy saved puzzle answers out of the current storage contract', () => {
+    const storage = new FakeStorage();
+    const legacySavedGame = buildSavedGame({
+      gameState: {
+        ...createInitialDemoGameState(DEMO_DAILY_PUZZLE),
+        puzzle: DEMO_DAILY_PUZZLE,
+      } as unknown as DailyGameState,
+    });
+    (legacySavedGame as unknown as { schemaVersion: number }).schemaVersion = 1;
+    storage.setItem(getDailyStorageKey(DEMO_DAILY_PUZZLE.puzzleDate), JSON.stringify(legacySavedGame));
+
+    const restored = loadSavedDailyGame(DEMO_DAILY_PUZZLE, storage);
+    expect(restored?.gameState.puzzle.pitches[0]).toEqual({ pitchNumber: 1, initials: 'KGJ' });
+    expect(JSON.stringify(restored?.gameState.puzzle)).not.toContain('Ken Griffey Jr.');
+    expect(JSON.stringify(restored?.gameState.puzzle)).not.toContain('correctPlayerId');
   });
 
   it('normalizes legacy BUNT outcomes to BB when restoring saved state', () => {
@@ -188,7 +206,7 @@ class FakeStorage {
 
 function buildSavedGame(overrides: Partial<SavedDailyGame>): SavedDailyGame {
   return {
-    schemaVersion: 1,
+    schemaVersion: 2,
     puzzleId: DEMO_DAILY_PUZZLE.id,
     puzzleDate: DEMO_DAILY_PUZZLE.puzzleDate,
     puzzleNumber: DEMO_DAILY_PUZZLE.puzzleNumber,

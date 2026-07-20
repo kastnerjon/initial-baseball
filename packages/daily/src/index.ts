@@ -5,7 +5,10 @@ export {
   getDailyPuzzleNumber,
   rankPlayersByRecognizability,
   resolveDailyPuzzleOverridePlayers,
+  selectCanonicalDailyPlayersForDate,
   selectDailyPlayersForDate,
+  type CanonicalDailyPlayerSelection,
   type DailyPuzzleOverrideEntry,
   type DailyPuzzleOverrideMap,
+  type ResolveCanonicalPlayerId,
 } from './dailyPuzzleSelection';

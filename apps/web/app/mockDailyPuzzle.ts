@@ -1,12 +1,8 @@
 import {
-  DEFAULT_DAILY_BASE_STATE,
   DEFAULT_DAILY_HINT_CONFIG,
-  DEFAULT_DAILY_SCORE_SUMMARY,
   DEFAULT_DAILY_STATS_HINT_CONFIG,
-  type DailyGameState,
-  type DailyGuessResult,
-  type DailyInningState,
   type DailyPuzzle,
+  type DailyPublicPuzzle,
   type HintType,
   type Player,
   type PlayerIdentity,
@@ -14,6 +10,12 @@ import {
 import { baseballPlayers } from '@initial-baseball/baseball-data';
 import { buildDefaultDailyHints } from './buildDefaultDailyHints';
 import { createDailyPuzzlePitch, createPlayerIdentity } from './dailyPuzzleAdapters';
+import {
+  createInitialAtBatUiState,
+  createInitialDailyGameState,
+  createInitialDailyInningState,
+  type DailyAtBatUiState,
+} from './dailyClientState';
 
 export type DemoPitchHint = {
   hintType: HintType;
@@ -28,14 +30,7 @@ export type DemoDailyPitch = {
   correctPlayerId: string;
 };
 
-export type DemoAtBatUiState = {
-  query: string;
-  selectedPlayerId: string | null;
-  selectedAcceptedPlayerIds: string[] | null;
-  revealCount: 0 | 1 | 2 | 3 | 4;
-  strikeCount: number;
-  submittedResult: DailyGuessResult | null;
-};
+export type DemoAtBatUiState = DailyAtBatUiState;
 
 export const DEMO_DAILY_PITCHES: DemoDailyPitch[] = [
   buildDemoPitch(1, 'KGJ', requireDemoPlayer('Ken Griffey Jr.')),
@@ -56,37 +51,22 @@ export const DEMO_DAILY_PUZZLE: DailyPuzzle = {
   pitches: DEMO_DAILY_PITCHES.map((pitch) => createDailyPuzzlePitch(pitch.pitchNumber, requireDemoPlayer(pitch.player.fullName))),
 };
 
-export function createInitialDemoInningState(): DailyInningState {
-  return {
-    inningNumber: 1,
-    outs: 0,
-    maxOuts: 3,
-    bases: { ...DEFAULT_DAILY_BASE_STATE },
-    completedAtBats: [],
-    currentAtBat: null,
-  };
+export const createInitialDemoInningState = createInitialDailyInningState;
+
+export function createInitialDemoGameState(puzzle: DailyPublicPuzzle | DailyPuzzle) {
+  return createInitialDailyGameState(toPublicPuzzle(puzzle));
 }
 
-export function createInitialDemoGameState(puzzle: DailyPuzzle): DailyGameState {
-  return {
-    anonymousPlayerId: 'anon-demo',
-    status: 'in_progress',
-    puzzle,
-    inning: createInitialDemoInningState(),
-    score: { ...DEFAULT_DAILY_SCORE_SUMMARY },
-    completedPitchLines: [],
-    shareResult: null,
-  };
-}
+export { createInitialAtBatUiState };
 
-export function createInitialAtBatUiState(): DemoAtBatUiState {
+function toPublicPuzzle(puzzle: DailyPublicPuzzle | DailyPuzzle): DailyPublicPuzzle {
   return {
-    query: '',
-    selectedPlayerId: null,
-    selectedAcceptedPlayerIds: null,
-    revealCount: 0,
-    strikeCount: 0,
-    submittedResult: null,
+    ...puzzle,
+    pitches: puzzle.pitches.map((pitch) => (
+      'initials' in pitch
+        ? pitch
+        : { pitchNumber: pitch.pitchNumber, initials: pitch.player.initials }
+    )),
   };
 }
 

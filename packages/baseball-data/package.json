@@ -5,6 +5,16 @@
   "type": "module",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./runtime": {
+      "types": "./dist/runtime/index.d.ts",
+      "import": "./dist/runtime/index.js"
+    }
+  },
   "scripts": {
     "build": "cd ../.. && node scripts/generate-season-stats.mjs && cd packages/baseball-data && tsc -p tsconfig.json",
     "generate:players": "node ./scripts/generate-players.mjs",
@@ -30,6 +40,7 @@
     "generate:canonical-career-enrichment:strict": "node ./scripts/generate-canonical-career-enrichment.mjs --strict",
     "generate:canonical-runtime-payload": "node ./scripts/generate-canonical-runtime-payload.mjs",
     "generate:canonical-runtime-payload:strict": "node ./scripts/generate-canonical-runtime-payload.mjs --strict",
+    "qa:canonical-runtime-consumer": "pnpm build && node ./scripts/qa-canonical-runtime-consumer.mjs",
     "audit:current": "node ./scripts/audit-current-data.mjs",
     "audit:current:strict": "node ./scripts/audit-current-data.mjs --strict",
     "pretest": "pnpm --filter @initial-baseball/shared build && pnpm build",

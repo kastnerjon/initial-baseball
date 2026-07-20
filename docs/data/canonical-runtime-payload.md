@@ -1,8 +1,6 @@
 # Canonical Runtime Payload
 
-The canonical runtime payload is the serving contract between the baseball-data pipeline and future web, mobile, and server consumers. It joins canonical identity, season cards, career cards, and enrichment without asking the UI to recompute baseball facts.
-
-This PR creates a shadow artifact only. The live game still uses the legacy generated dataset until a separate runtime migration.
+The canonical runtime payload is the live serving contract between the baseball-data pipeline and server consumers. It joins canonical identity, season cards, career cards, and enrichment without asking the UI to recompute baseball facts.
 
 ## Generated files
 
@@ -12,7 +10,7 @@ The generator writes `packages/baseball-data/reports/canonical-runtime-payload/`
 - `legacy-redirects.json`: valid legacy-ID redirects plus explicit exclusions;
 - `reveal-shard-manifest.json`: shard paths, counts, sizes, and hashes;
 - `reveal-shards/00.json` through `reveal-shards/ff.json`: full player reveal records;
-- JSON and Markdown QA reports.
+- compact JSON serving files plus JSON and Markdown QA reports.
 
 ## Player index
 
@@ -30,7 +28,7 @@ The runtime generator only joins validated canonical records. It does not derive
 
 Canonical IDs use the form `ibp_<20 hexadecimal characters>`. Reveal records are assigned to 256 stable shards using the first two characters after `ibp_`.
 
-A client loads the player index, reads the selected player's shard path, fetches that shard, and retrieves the record by canonical ID. This avoids loading every player's season history into the initial browser bundle and keeps the contract portable across web, mobile, and server code.
+The baseball-data runtime accessor loads the index and redirects on the server, validates shard identity, and lazily caches only requested reveal shards. The browser searches through a route and never downloads the complete index or a reveal shard. This avoids loading every player's identity or season history into the initial browser bundle while keeping the underlying contract portable.
 
 ## Redirects
 
@@ -40,8 +38,8 @@ A legacy redirect is published only when its canonical target has a runtime reve
 
 Strict generation verifies one index row and one reveal per career card, one runtime season row per canonical season card, exact identity and enrichment joins, stable shard assignment, valid redirect targets, and exclusion of legal names from display payloads.
 
-Regression cases cover David Ortiz, Mariano Rivera, Shohei Ohtani, Ken Griffey Jr., and David Wright.
+Consumer QA covers David Ortiz, Mariano Rivera, Shohei Ohtani, Ken Griffey Jr., David Wright, Willie Mays, Roy Campanella, the distinct Ben Taylor identities, redirects, and explicit redirect exclusions.
 
-## Next step
+## Web serving boundary
 
-A later PR will migrate web search, reveals, and saved-state resolution to this contract. The UI may format canonical values, but it should not recalculate or reinterpret them.
+The initial Daily page receives a public puzzle containing initials and display configuration only. Search results expose canonical IDs plus disambiguation context. Hint routes return one requested hint. Guess resolution canonicalizes submitted legacy or canonical IDs and returns full reveal data only for a correct answer, third strike, or Give Up. Action routes reject unpublished future Daily dates. The UI may format canonical values, but it does not recalculate or reinterpret baseball facts.

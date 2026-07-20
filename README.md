@@ -6,16 +6,14 @@ A future native client or head-to-head mode is possible, but neither is a commit
 
 ## Current product state
 
-The Daily web game is implemented and deployed through Next.js/Vercel. Current work is focused on:
+The Daily web game is implemented and deployed through Next.js/Vercel. It now uses the canonical player index, IDs, redirects, and reveal shards for live search, answer resolution, and post-at-bat data. Current work is focused on:
 
-1. replacing the legacy player dataset with the validated canonical identity and statistics pipeline;
-2. connecting the canonical runtime payload to search and player reveals;
-3. completing the season-by-season reveal experience;
-4. applying the nine-slot recognizability curve and repeat protections;
-5. adding an editorial workflow for tomorrow's lineup;
-6. adding aggregate results, monitoring, and launch hardening.
+1. completing the season-by-season reveal experience;
+2. applying repeat protections to the existing nine-slot recognizability curve;
+3. adding an editorial workflow for tomorrow's lineup;
+4. adding aggregate results, monitoring, and launch hardening.
 
-The canonical data pipeline currently produces identity, season, career, enrichment, and runtime-serving artifacts as shadow outputs. The live game is not migrated merely because a shadow artifact exists.
+The legacy player objects remain only as a temporary input to Daily recognizability selection and hint construction. They are not shipped as the browser search universe or used for reveal statistics.
 
 ## Architecture stance
 
@@ -72,7 +70,8 @@ canonical identity
   -> career cards
   -> season and career enrichment
   -> lightweight player index + reveal shards + legacy redirects
-  -> later web runtime migration
+  -> server-side runtime accessor
+  -> safe search, guess-resolution, hint, and reveal routes
 ```
 
 Identity owns display names and aliases. Season records own season facts. Career records summarize seasons. Enrichment owns derived or separately sourced facts. The runtime payload joins these layers but does not calculate baseball statistics.
@@ -93,6 +92,8 @@ Production build:
 ```bash
 corepack pnpm build:web
 ```
+
+`build:web` regenerates and strictly validates the complete canonical runtime payload before building Next.js.
 
 Vercel deployment notes:
 

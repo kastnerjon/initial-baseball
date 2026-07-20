@@ -30,6 +30,10 @@ Add durable corrections here when product review, QA, or code review catches a m
 - Regression fixtures should include ordinary stars, pitchers, two-way players, historical incomplete data, multi-team seasons, and genuine same-name identities.
 - A post-merge review finding should be fixed in the next active data PR and reflected in canonical documentation.
 - Documentation must describe current code and current intent. Remove obsolete plans rather than leaving old and new rules side by side.
+- A browser-safe Daily puzzle is a separate contract from the authoritative server puzzle. Initial props contain only public initials and configuration; hints and canonical reveal records cross the network only when the action permits them.
+- Production bundle inspection is part of answer-leakage QA. A test fixture imported by live client code can silently pull the legacy player universe and its answers into a browser chunk even when page props are safe.
+- Canonical same-name search results must carry only their own accepted ID. Compatibility grouping by visible name belongs only to the legacy search path.
+- Filter legacy Daily candidates through canonical redirect validity before deterministic selection. Missing canonical reveal data is an explicit exclusion, never a guessed identity repair.
 
 ## Locked product rules
 

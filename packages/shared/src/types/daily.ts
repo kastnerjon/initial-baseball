@@ -52,6 +52,15 @@ export type DailyPuzzlePitch = {
   hints: DailyPitchHintSet;
 };
 
+export type DailyPublicPuzzlePitch = {
+  pitchNumber: number;
+  initials: string;
+};
+
+export type DailyPublicPuzzle = Omit<DailyPuzzle, 'pitches'> & {
+  pitches: DailyPublicPuzzlePitch[];
+};
+
 export type DailyPuzzle = {
   id: string;
   puzzleNumber: number;
@@ -126,7 +135,7 @@ export type DailyInningState = {
 export type DailyGameState = {
   anonymousPlayerId: string;
   status: DailyGameStatus;
-  puzzle: DailyPuzzle;
+  puzzle: DailyPublicPuzzle;
   inning: DailyInningState;
   score: DailyScoreSummary;
   completedPitchLines: DailySharePitchLine[];

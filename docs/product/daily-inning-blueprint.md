@@ -113,7 +113,7 @@ Local persistence restores:
 - pending reveal/advance state;
 - completed-game share result.
 
-Invalid, stale, or mismatched saved state fails safely. Legacy player IDs must resolve through canonical redirects during runtime migration.
+Invalid, stale, or mismatched saved state fails safely. Saved legacy player IDs resolve through canonical redirects when submitted.
 
 When aggregate statistics are introduced, the client submits at most one compact, idempotent completed-game result rather than writing every interaction.
 
@@ -147,7 +147,7 @@ A known zero is shown as zero. An unavailable value remains `null` and is omitte
 
 WAR must not be displayed until a reproducible source is committed. If Baseball Reference WAR is approved later, it is labeled `bWAR`. OPS+, ERA+, awards, All-Star selections, voting finishes, and leader flags follow the same upstream-source requirement.
 
-The canonical runtime payload is currently a shadow artifact. The live reveal remains unchanged until the web runtime migration is completed and answer-leakage protections pass.
+Canonical runtime records now supply live answer resolution and reveal data. The browser receives the lightweight public puzzle first and receives a full canonical reveal only after the at-bat is resolved.
 
 ## 10. Administration
 

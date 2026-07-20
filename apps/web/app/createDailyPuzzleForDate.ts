@@ -10,6 +10,7 @@ import {
   getDailyPuzzleNumber,
   rankPlayersByRecognizability,
   resolveDailyPuzzleOverridePlayers,
+  selectCanonicalDailyPlayersForDate,
   selectDailyPlayersForDate,
   type DailyPuzzleOverrideMap,
 } from '@initial-baseball/daily';
@@ -43,5 +44,32 @@ export function createDailyPuzzleForDateWithOverrides(
     hintConfig: DEFAULT_DAILY_HINT_CONFIG,
     statsHintConfig: DEFAULT_DAILY_STATS_HINT_CONFIG,
     pitches: selectedPlayers.map((player, index) => createDailyPuzzlePitch(index + 1, player)),
+  };
+}
+
+export function createCanonicalDailyPuzzleForDate(
+  date: string,
+  resolveCanonicalPlayerId: (playerId: string) => string | null,
+): DailyPuzzle {
+  const selectedPlayers = selectCanonicalDailyPlayersForDate(
+    date,
+    DAILY_PUZZLE_OVERRIDES,
+    resolveCanonicalPlayerId,
+  );
+
+  return {
+    id: `daily-${date}`,
+    puzzleNumber: getDailyPuzzleNumber(date),
+    puzzleDate: date,
+    status: 'published',
+    hintConfig: DEFAULT_DAILY_HINT_CONFIG,
+    statsHintConfig: DEFAULT_DAILY_STATS_HINT_CONFIG,
+    pitches: selectedPlayers.map(({ player, canonicalPlayerId }, index) => {
+      const pitch = createDailyPuzzlePitch(index + 1, player);
+      return {
+        ...pitch,
+        player: { ...pitch.player, playerId: canonicalPlayerId },
+      };
+    }),
   };
 }

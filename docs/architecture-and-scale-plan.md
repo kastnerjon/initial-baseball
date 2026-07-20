@@ -87,7 +87,7 @@ canonical identities
   -> canonical career cards
   -> canonical season and career enrichment
   -> canonical runtime player index, reveal shards, and valid redirects
-  -> web runtime migration
+  -> server-side web runtime accessor and safe transport routes
 ```
 
 Rules:
@@ -101,7 +101,7 @@ Rules:
 - Known zero and unavailable data remain distinct.
 - A rate statistic is not published from partially known contributing source rows.
 
-The canonical pipeline is currently a shadow system. The live game remains on the legacy generated player objects until a dedicated migration changes its consumers and compatibility paths.
+The canonical pipeline is the live identity, search, answer-resolution, and reveal source. Legacy player objects remain a temporary input to recognizability selection and hint construction until those inputs receive their own canonical contract.
 
 ## Runtime serving and answer protection
 
@@ -109,11 +109,13 @@ The canonical serving contract separates lightweight search data from full revea
 
 - The initial index contains identity, aliases, classification, career context, and a reveal-shard path.
 - Full career and regular-season reveal records are split into deterministic shards.
-- A consumer fetches only the shard needed for a selected or safely revealed player.
+- The server accessor loads only the shard needed for a safely revealed player and caches it for later requests.
 - Legacy IDs resolve through validated redirects whose targets actually have runtime records.
 - Legal/source names remain searchable aliases but are excluded from the display payload.
+- Initial page props contain public puzzle metadata and initials, not answer IDs, names, hint values, or reveal records.
+- Browser search uses a thin route over the canonical index. Hint and resolution routes release only the data authorized by the current action.
 
-The web migration must preserve hidden-answer integrity. A valid runtime artifact is not permission to serialize the answer's full reveal record into initial HTML or client props before the at-bat is resolved.
+A valid runtime artifact is not permission to serialize the answer's full reveal record into initial HTML or client props before the at-bat is resolved. Full reveal data is returned only after a correct answer, a third strike, or Give Up.
 
 ## Scale target: 10,000+ plays per day
 
@@ -141,32 +143,19 @@ Do not create an abstraction solely for an imagined future mode. Extract a bound
 
 ## Current stabilization sequence
 
-### 1. Canonical runtime payload
-
-- Complete source-row completeness fixes for season and career rates.
-- Generate a lightweight index, reveal shards, redirect filtering, manifests, and strict QA.
-- Keep the artifact shadow-only until review and migration are complete.
-
-### 2. Web runtime migration
-
-- Add baseball-data accessors for the canonical index and reveal shards.
-- Migrate search, answer resolution, saved state, and historical overrides through canonical IDs and redirects.
-- Add same-name disambiguation and hidden-answer leakage tests.
-- Retire legacy paths only after compatibility coverage passes.
-
-### 3. Reveal presentation
+### 1. Reveal presentation
 
 - Render a career summary plus one ordered row per regular season.
 - Use hitter, pitcher, and two-way display presets.
 - Keep unsupported fields hidden until upstream canonical data supplies them.
 
-### 4. Lineup quality and administration
+### 2. Lineup quality and administration
 
 - Enforce the nine-slot recognizability curve and repeat protection.
 - Make tomorrow's generated lineup reviewable and replaceable.
 - Persist draft, scheduled, published, and archived states behind a repository boundary.
 
-### 5. Aggregate results and launch hardening
+### 3. Aggregate results and launch hardening
 
 - Store one compact completed-game result.
 - Add field comparison, analytics, error monitoring, payload measurement, legal pages, and canonical domain configuration.
