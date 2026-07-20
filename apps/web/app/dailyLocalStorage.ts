@@ -269,7 +269,6 @@ function isCleanLegacyAtBatBoundary(
     && savedGame.gameState.score.completed === false
     && savedGame.gameState.shareResult === null
     && savedGame.gameState.completedPitchLines.length === savedGame.currentPitchIndex
-    && savedGame.gameState.inning.completedAtBats.length === savedGame.currentPitchIndex
     && atBatState.revealCount === 0
     && atBatState.strikeCount === 0
     && (atBatState.revealedHints === undefined || atBatState.revealedHints.length === 0)
