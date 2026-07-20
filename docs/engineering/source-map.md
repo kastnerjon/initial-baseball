@@ -10,7 +10,7 @@ Use this to find the owning file or package before changing behavior.
 | Package ownership and launch architecture | `docs/architecture-and-scale-plan.md` |
 | Player identity and data-quality rules | `docs/spec/player-data-quality.md` |
 | Documentation maintenance rules | `docs/engineering/documentation-governance.md` |
-| Current ordered implementation work | `tasks/todo.md` |
+| Current ordered implementation plan | `tasks/todo.md` |
 | Durable mistakes and corrections | `tasks/lessons.md` |
 
 ## Game and Daily logic
@@ -45,7 +45,13 @@ Use this to find the owning file or package before changing behavior.
 
 | Change needed | Go here |
 |---|---|
-| Canonical identity generation | `packages/baseball-data/scripts/generate-canonical-identities.mjs` |
+| Reviewed Chadwick revision and source checksums | `packages/baseball-data/data/canonical/chadwick-source.json` |
+| Committed reviewed identity snapshot and checksum manifest | `packages/baseball-data/data/canonical/identity-snapshot/` |
+| Generate review candidates from the pinned external source | `packages/baseball-data/scripts/generate-reviewed-canonical-identities.mjs` |
+| Validate or update the reviewed identity snapshot | `packages/baseball-data/scripts/update-reviewed-identity-snapshot.mjs` |
+| Load and checksum-validate the reviewed snapshot | `packages/baseball-data/scripts/load-reviewed-identity-snapshot.mjs` |
+| Materialize reviewed identities for local, preview, and production builds | `packages/baseball-data/scripts/materialize-reviewed-identity-snapshot.mjs` |
+| Canonical identity generation rules | `packages/baseball-data/scripts/generate-canonical-identities.mjs` |
 | Identity graph and canonical IDs | `packages/baseball-data/scripts/canonical-identity-core.mjs` |
 | Lahman-first player universe and redirects | `packages/baseball-data/scripts/generate-canonical-universe.mjs` |
 | Universe eligibility and identity assembly | `packages/baseball-data/scripts/canonical-universe-core.mjs` |
@@ -60,7 +66,7 @@ Use this to find the owning file or package before changing behavior.
 | Lightweight runtime index, redirects, and reveal shards | `packages/baseball-data/scripts/generate-canonical-runtime-payload.mjs` |
 | Canonical index, redirect, and reveal-shard access | `packages/baseball-data/src/runtime/` |
 | Runtime consumer regression QA | `packages/baseball-data/scripts/qa-canonical-runtime-consumer.mjs` |
-| Canonical data scripts and current live/shadow distinction | `packages/baseball-data/README.md` |
+| Canonical pipeline, source refresh, and runtime distinction | `packages/baseball-data/README.md` |
 | Enrichment contract and missing-data rules | `docs/data/canonical-career-enrichment.md` |
 | Runtime serving contract | `docs/data/canonical-runtime-payload.md` |
 | Canonical pipeline CI order and artifacts | `.github/workflows/ci.yml` |

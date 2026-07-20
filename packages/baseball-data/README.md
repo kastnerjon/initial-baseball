@@ -8,13 +8,34 @@ The canonical runtime payload supplies live player search, identity resolution, 
 
 The legacy `baseballPlayers` exports remain temporarily for Daily recognizability selection, historical overrides, and hint construction. They are no longer the browser search universe or reveal-stat source. WAR is not included.
 
-The live dataset is being replaced in stages. Until runtime migration is complete, changes to the canonical pipeline do not automatically change the game.
+## Reviewed identity source contract
+
+Normal production, preview, and local runtime builds start from the committed reviewed identity snapshot under `data/canonical/identity-snapshot/`. They do not fetch Chadwick or depend on a moving remote branch.
+
+The source policy has three separate operations:
+
+1. `pnpm data:runtime` materializes the committed reviewed snapshot into the canonical identity report contract, then runs the downstream pipeline without an identity-source network fetch.
+2. `pnpm data:identities` regenerates review candidates from the exact Chadwick commit and checksums recorded in `data/canonical/chadwick-source.json`. This is an explicit review operation and requires network access.
+3. `pnpm --filter @initial-baseball/baseball-data verify:canonical-identity-snapshot` requires the regenerated candidates to match the committed snapshot exactly. After a deliberately reviewed source or identity change, `update:canonical-identity-snapshot` rewrites the snapshot deterministically.
+
+The snapshot is split into 16 canonical-ID shards plus a disposition file and checksum manifest. Generated snapshot files must not be hand-edited. Change the source pin, identity decisions, or generator; inspect the identity reports; then regenerate and commit the complete reviewed snapshot.
+
+### Refresh procedure
+
+1. Review and update `data/canonical/chadwick-source.json` to one exact Chadwick commit and expected source checksums.
+2. Run `pnpm data:identities`.
+3. Inspect the identity report, review evidence, disposition recommendations, regression cases, player count, and source manifest.
+4. Run `pnpm --filter @initial-baseball/baseball-data update:canonical-identity-snapshot` only after the regenerated identity set is accepted.
+5. Run `verify:canonical-identity-snapshot`, the strict canonical pipeline, runtime consumer QA, and the production web build.
+6. Commit the source metadata, scripts, manifest, dispositions, and all snapshot shards together.
+
+A source refresh that changes identity matching, player content, or dispositions beyond the deliberately reviewed result is a separate data-contract change, not incidental build maintenance.
 
 ## Canonical pipeline
 
-The replacement pipeline now generates these layers in order:
+The live pipeline generates these layers in order:
 
-1. canonical identities;
+1. materialized reviewed canonical identities;
 2. Lahman-first canonical player universe and legacy redirects;
 3. canonical season source facts;
 4. canonical player-season aggregates;
@@ -76,6 +97,8 @@ See:
 ## Principles
 
 - Gameplay never calls external baseball APIs live.
+- Production and preview builds do not depend on external identity-source availability.
+- External data refreshes are pinned, checksum-verified, reviewed, and reproducible.
 - Data is imported and normalized ahead of time.
 - The UI formats canonical values but does not derive or reinterpret baseball facts.
 - Missing statistics remain nullable and can later be corrected through approved data or admin overrides.

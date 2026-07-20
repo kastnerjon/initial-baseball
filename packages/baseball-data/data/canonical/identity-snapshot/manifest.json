@@ -1,0 +1,113 @@
+{
+  "schemaVersion": 1,
+  "source": {
+    "repository": "chadwickbureau/register",
+    "commitSha": "7e23e7dfaff51b3ae72c16393703eda7e5ecad27",
+    "namesSha256": "aca760f81e90efb5e3a8706b1a71a902a58d1caae545d7f137609eefb4a28ba3",
+    "peopleShardsSha256": "6cffa94d318857520e11a5729fa14c509d9d02fabe95fcef346157f26d17599a"
+  },
+  "playerCount": 13898,
+  "shards": [
+    {
+      "shardId": "0",
+      "path": "players-0.json",
+      "playerCount": 878,
+      "sha256": "ce5b50aece2bb677d1da8dc57f263e4d055f2d87399e84c2a53d7d85ee5ab8cc"
+    },
+    {
+      "shardId": "1",
+      "path": "players-1.json",
+      "playerCount": 858,
+      "sha256": "5ec549867011b10aa320dc8add5ebe61e19ebaa1860e96fd0b923f5b2029334c"
+    },
+    {
+      "shardId": "2",
+      "path": "players-2.json",
+      "playerCount": 834,
+      "sha256": "13fd92e961c776575833a225b348af0812e77acefc58f3e20b2ee61bbff74902"
+    },
+    {
+      "shardId": "3",
+      "path": "players-3.json",
+      "playerCount": 951,
+      "sha256": "ec919968d13641784ff315dcec6438af0a39e76e926375bcb23b7e61d3ce5642"
+    },
+    {
+      "shardId": "4",
+      "path": "players-4.json",
+      "playerCount": 849,
+      "sha256": "7e22744ded98146d4328e7d334163f3902b9dab0054a6ab779a67c48e4c38fbf"
+    },
+    {
+      "shardId": "5",
+      "path": "players-5.json",
+      "playerCount": 857,
+      "sha256": "3ec8633185d1a2d6191edd101509d641b82a89f3d6fdb676bc151d6d54c9defe"
+    },
+    {
+      "shardId": "6",
+      "path": "players-6.json",
+      "playerCount": 879,
+      "sha256": "b257c88e1107eb769365e811816b655e3d3740ece48af6bc91dfcc92e8592012"
+    },
+    {
+      "shardId": "7",
+      "path": "players-7.json",
+      "playerCount": 866,
+      "sha256": "6309c47dfa1c2dda7acbf642e6ef678045170640f2545302c63e0466f3563812"
+    },
+    {
+      "shardId": "8",
+      "path": "players-8.json",
+      "playerCount": 885,
+      "sha256": "4cca1b9f37704c5c0080fd2e4fd84595c79135ccce3d46b2cbe631f7b92c6e26"
+    },
+    {
+      "shardId": "9",
+      "path": "players-9.json",
+      "playerCount": 850,
+      "sha256": "f2a665792be5b358fdbd47f2c9b331c5ffb144e2a405f46932000fb3f6901a0d"
+    },
+    {
+      "shardId": "a",
+      "path": "players-a.json",
+      "playerCount": 826,
+      "sha256": "6b020d4dd7b081a1f2d92fdfdb10619a0888d765094dbac0fa65b8a851ce257f"
+    },
+    {
+      "shardId": "b",
+      "path": "players-b.json",
+      "playerCount": 891,
+      "sha256": "aaa71d69ecb54bb0a7a2900e0f511c95cad7fc708f63cba11ad6b5f2fc7f7297"
+    },
+    {
+      "shardId": "c",
+      "path": "players-c.json",
+      "playerCount": 870,
+      "sha256": "c6861c377fce8cfe6a907938064cda9dc584cba0164020e573bb46d5ed6ef7c5"
+    },
+    {
+      "shardId": "d",
+      "path": "players-d.json",
+      "playerCount": 898,
+      "sha256": "3a9a6724d1adcc2b5d60134a01c653eedbf8d010e861f233c4ea4a6870d6d780"
+    },
+    {
+      "shardId": "e",
+      "path": "players-e.json",
+      "playerCount": 872,
+      "sha256": "b069304aa74b32dd4a240527397c219c8a6bbe23712d21660afb435875203d84"
+    },
+    {
+      "shardId": "f",
+      "path": "players-f.json",
+      "playerCount": 834,
+      "sha256": "420ae3ad71f32d3d560848e79e6b441e56d9adf6b856206685282a6943d22a7d"
+    }
+  ],
+  "dispositions": {
+    "path": "dispositions.json",
+    "recommendationCount": 277,
+    "sha256": "5f39852b06bd6eee8a605510f60d7dadd03d6fe3ec7ff37c0fb735628afb3c9c"
+  }
+}
