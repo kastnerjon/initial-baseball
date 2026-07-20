@@ -28,6 +28,8 @@
     "generate:canonical-season-enrichment:strict": "node ./scripts/generate-canonical-season-enrichment.mjs --strict",
     "generate:canonical-career-enrichment": "node ./scripts/generate-canonical-career-enrichment.mjs",
     "generate:canonical-career-enrichment:strict": "node ./scripts/generate-canonical-career-enrichment.mjs --strict",
+    "generate:canonical-runtime-payload": "node ./scripts/generate-canonical-runtime-payload.mjs",
+    "generate:canonical-runtime-payload:strict": "node ./scripts/generate-canonical-runtime-payload.mjs --strict",
     "audit:current": "node ./scripts/audit-current-data.mjs",
     "audit:current:strict": "node ./scripts/audit-current-data.mjs --strict",
     "pretest": "pnpm --filter @initial-baseball/shared build && pnpm build",

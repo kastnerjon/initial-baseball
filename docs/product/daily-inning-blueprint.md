@@ -1,13 +1,13 @@
 # Daily Inning end-to-end blueprint
 
 Status: Living source of truth
-Last updated: 2026-07-18
+Last updated: 2026-07-20
 
 ## 1. Product decision
 
 Initial Baseball is currently one product: Daily Inning, a browser-first daily baseball guessing game.
 
-A future head-to-head mode is a possibility, not a committed roadmap item. Current work may preserve inexpensive reuse seams, but must not add infrastructure, product requirements, or abstractions solely for a hypothetical second game.
+A future head-to-head mode or native client is possible, not committed scope. Current work may preserve inexpensive reuse seams but must not add requirements or infrastructure solely for hypothetical products.
 
 ## 2. Core promise
 
@@ -18,18 +18,18 @@ Baseball knowledge should matter more than luck. The game should feel clean, fas
 ## 3. Canonical gameplay loop
 
 1. The player opens today's Daily Inning without signing in.
-2. The same nine-player puzzle is presented to every player for the Daily date.
+2. Everyone receives the same nine-player puzzle for the Daily date.
 3. Each at-bat begins with the hidden player's initials.
 4. The player may guess immediately or reveal hints in the fixed order.
-5. A correct answer produces an outcome based on how many hints were revealed:
+5. A correct answer produces an outcome based on revealed hints:
    - 0 hints: HR
    - 1 hint: 3B
    - 2 hints: 2B
    - 3 hints: 1B
    - 4 hints: BB
 6. An incorrect guess consumes a strike. Three strikes or Give Up produces a K.
-7. The baseball engine advances runners, outs, hits, walks, and runs.
-8. The resolved player is revealed with career and optional season-by-season statistics.
+7. The engine advances runners, outs, hits, walks, and runs.
+8. The resolved player is revealed with a career summary and expandable regular-season statistics.
 9. The inning ends after three outs or after all nine scheduled at-bats are resolved, according to the implemented Daily rules.
 10. The player receives a spoiler-safe share result.
 
@@ -45,20 +45,20 @@ Baseball knowledge should matter more than luck. The game should feel clean, fas
 - Expandable season-by-season statistics
 - Completed-at-bat history
 - Final score and share output
-- Local reset for testing/alpha recovery
+- Local reset for testing and alpha recovery
 
 ### Required before broad launch
 
 - Clear first-play instructions
-- Reliable already-played and refresh recovery behavior
+- Reliable already-played and refresh recovery
 - Final results summary
-- Aggregate field comparison by at-bat/outcome
+- Aggregate field comparison by at-bat and outcome
 - Editorial workflow for tomorrow's lineup
 - Analytics and error monitoring
 - Privacy policy and basic terms/disclaimer
 - Canonical production domain and social metadata
 
-### Deferred until the core loop proves demand
+### Deferred
 
 - Required accounts
 - Streaks and cross-device history
@@ -77,90 +77,104 @@ Each puzzle has a lifecycle:
 - `published`: immutable public puzzle for its Daily date
 - `archived`: historical published puzzle retained for audit and replay support
 
-The system should generate a deterministic default lineup from recognizability tiers. An editor may replace players before publication. Published puzzles must not silently change.
+The system generates a deterministic default lineup from recognizability tiers. An editor may replace players before publication. Published puzzles must not silently change.
 
-For the current code-based phase, manual overrides are an interim adapter. The target state is an admin workflow backed by a `DailyPuzzleRepository` boundary.
+Manual code overrides are an interim adapter. The target is an admin workflow behind a `DailyPuzzleRepository` boundary.
 
 ## 6. Recognizability and lineup quality
 
 The default nine-player curve is:
 
-- At-bats 1-2: candidates from the top 250
-- At-bats 3-4: candidates from the top 1,000
-- At-bats 5-6: candidates from the top 2,500
-- At-bats 7-9: candidates from the top 5,000
+- At-bats 1-2: top 250
+- At-bats 3-4: top 1,000
+- At-bats 5-6: top 2,500
+- At-bats 7-9: top 5,000
 
 Requirements:
 
-- No duplicate canonical players within one puzzle.
-- Ordering is deterministic for a given date and data version.
+- No duplicate canonical players in one puzzle.
+- Avoid players used within the approved repeat window, currently 90 days.
+- Ordering is deterministic for a date and data version.
 - Historical overrides remain reproducible.
 - Editorial review can replace any candidate before publication.
-- Player metadata and stats must be traceable to committed source data.
+- Player metadata and statistics are traceable to committed sources.
 
 ## 7. State and persistence
 
 Anonymous gameplay remains client-driven at launch.
 
-Local persistence must restore:
+Local persistence restores:
 
-- puzzle identity and schema version
-- current at-bat index
-- inning state
-- revealed hints and strike count
-- resolved at-bat results
-- pending reveal/advance state
-- completed-game share result
+- puzzle identity and schema version;
+- current at-bat index;
+- inning state;
+- revealed hints and strike count;
+- resolved at-bat results;
+- pending reveal/advance state;
+- completed-game share result.
 
-Invalid, stale, or mismatched saved state should fail safely without breaking the game.
+Invalid, stale, or mismatched saved state fails safely. Legacy player IDs must resolve through canonical redirects during runtime migration.
 
-When aggregate statistics are introduced, the client should submit at most one compact, idempotent completed-game result rather than writing every interaction to the database.
+When aggregate statistics are introduced, the client submits at most one compact, idempotent completed-game result rather than writing every interaction.
 
 ## 8. Data and answer integrity
 
 - A player answer is identified by canonical `playerId`, not display text.
-- Aliases and same-name records may map one visible search option to multiple accepted canonical IDs when required.
+- Search aliases do not determine the reveal display name.
+- Genuine same-name players remain separate and receive context such as career years, position, or teams.
 - Search remains accent-insensitive and supports ordered token matching.
-- Hidden answers must not leak through initial page data, API responses, HTML, share text, or client logs.
-- Baseball data is generated ahead of time from committed sources; gameplay must not depend on a live third-party baseball API.
+- Hidden answers must not leak through initial HTML, serialized props, routes, logs, share text, or prematurely loaded reveal records.
+- Baseball data is generated ahead of time from committed sources; gameplay does not use a live third-party baseball API.
+- The runtime serving layer joins canonical records but does not calculate baseball facts.
 
-## 9. Statistics
+## 9. Statistics and reveal contract
 
-Career and season statistics are reveal content, not answer validation logic.
+Career and season statistics are reveal content, not answer-validation logic.
 
-Current supported reveal fields:
+Supported hitter fields include AB, H, HR, BA, R, RBI, SB, OBP, SLG, and OPS.
 
-Hitters: AB, H, HR, BA, R, RBI, SB, OBP, SLG, OPS.
+Supported pitcher fields include W, L, SV, ERA, WHIP, K, and IP.
 
-Pitchers: W, L, SV, ERA, WHIP, K, IP.
+Reveal structure:
 
-WAR must not be displayed until a reproducible source is committed. If Baseball Reference WAR is later used, it must be labeled `bWAR`.
+- a separate career summary;
+- one chronologically ordered row per regular season;
+- all teams represented for multi-team seasons;
+- hitter, pitcher, and two-way display presets;
+- configurable presentation columns without moving data ownership into the UI.
+
+A known zero is shown as zero. An unavailable value remains `null` and is omitted or displayed as unavailable. OBP, SLG, and OPS are not estimated from partially known source rows.
+
+WAR must not be displayed until a reproducible source is committed. If Baseball Reference WAR is approved later, it is labeled `bWAR`. OPS+, ERA+, awards, All-Star selections, voting finishes, and leader flags follow the same upstream-source requirement.
+
+The canonical runtime payload is currently a shadow artifact. The live reveal remains unchanged until the web runtime migration is completed and answer-leakage protections pass.
 
 ## 10. Administration
 
-The first admin workflow should allow an authorized editor to:
+The first admin workflow allows an authorized editor to:
 
-- inspect automatically generated future puzzles
-- search and replace a player in a lineup slot
-- validate duplicates and required hint/stat data
-- preview initials, hints, and reveal content
-- schedule or publish a puzzle
-- see whether a published puzzle differs from its generated draft
+- inspect generated future puzzles;
+- search and replace a lineup slot;
+- distinguish same-name players using canonical context;
+- validate duplicates, recognizability tier, recent repeats, and required reveal data;
+- preview initials, hints, and reveal content;
+- schedule or publish a puzzle;
+- see whether a published puzzle differs from its generated draft.
 
-Admin code must use repository/service boundaries rather than editing database records from React components.
+Admin code uses repository/service boundaries rather than editing generated JSON or database records directly from React components.
 
 ## 11. Aggregate results
 
-The launch-scale result model should store one compact record per completed game, sufficient to calculate:
+The launch-scale model stores one compact record per completed game, sufficient to calculate:
 
-- completion count
-- average runs and hits
-- outcome distribution for each at-bat
-- solve rate by hint depth
-- strikeout/give-up rate
-- distribution of final run totals
+- completion count;
+- average runs and hits;
+- outcome distribution by at-bat;
+- solve rate by hint depth;
+- strikeout and give-up rate;
+- final-run distribution.
 
-Raw completed-game outcome data should be retained so aggregates can be recalculated after logic or display changes.
+Raw completed-game outcomes are retained so aggregates can be recalculated after logic or display changes.
 
 ## 12. Architecture constraints
 
@@ -174,27 +188,29 @@ Raw completed-game outcome data should be retained so aggregates can be recalcul
 
 ## 13. Quality gates
 
-A change is complete only when:
+A material change is complete only when:
 
-- behavior is covered by focused tests
-- full tests, typecheck, build, and file-size checks pass
-- mobile web behavior is checked for user-facing changes
-- answer leakage and spoiler-safe sharing remain protected
-- relevant canonical documentation is updated in the same pull request
+- focused tests cover behavior at the owning layer;
+- full tests, typecheck, build, and file-size checks pass;
+- generated data reports and representative records are inspected when data contracts change;
+- review findings are resolved;
+- mobile web behavior is checked for user-facing changes;
+- answer leakage and spoiler-safe sharing remain protected;
+- canonical documentation and `tasks/todo.md` reflect the resulting state.
 
 ## 14. Definition of launch-ready
 
 Daily Inning is ready for broad friend distribution when:
 
-- the nine-player puzzle is reliable and editorially reviewable
-- the full game is polished on common iPhone viewport sizes
-- refreshes and ordinary errors do not erase progress
-- search handles common aliases, accents, and same-name cases
-- reveal data is accurate and understandable
-- final results and sharing are reliable and spoiler-safe
-- aggregate results work without per-action database writes
-- analytics, error monitoring, deployment, and legal basics are in place
+- the nine-player puzzle is reliable and editorially reviewable;
+- the game is polished at common iPhone and iPad web sizes;
+- refreshes and ordinary errors do not erase progress;
+- search handles aliases, accents, and same-name cases;
+- reveal data is accurate and understandable;
+- final results and sharing are reliable and spoiler-safe;
+- aggregate results work without per-action database writes;
+- analytics, error monitoring, deployment, domain, and legal basics are in place.
 
 ## 15. Change rule
 
-This document describes the product as it exists and is currently intended to work. It is not immutable. When a product decision changes, the implementation and this blueprint must be updated together.
+This document describes the product as it currently exists and is intended to work. When a product decision changes, implementation and this blueprint must change together.

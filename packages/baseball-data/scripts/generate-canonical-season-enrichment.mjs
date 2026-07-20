@@ -5,11 +5,19 @@ import { fileURLToPath } from 'node:url';
 
 const packageDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const seasonCardPath = resolve(packageDir, 'reports/canonical-season-cards/season-cards.json');
+const battingSourceRowsPath = resolve(packageDir, 'reports/canonical-season-facts/batting-source-rows.json');
 const outputDir = resolve(packageDir, 'reports/canonical-season-enrichment');
 const strict = process.argv.includes('--strict');
 
-const input = readJson(seasonCardPath);
-const cards = input.value.cards ?? [];
+const inputs = {
+  seasonCards: readJson(seasonCardPath),
+  battingSourceRows: readJson(battingSourceRowsPath),
+};
+const cards = inputs.seasonCards.value.cards ?? [];
+const battingSourceRowsByKey = group(
+  inputs.battingSourceRows.value.facts ?? [],
+  row => seasonKey(row),
+);
 const issues = [];
 
 const enrichments = cards
@@ -20,7 +28,8 @@ validate(enrichments, issues);
 regression(enrichments, issues);
 
 const sourceManifest = {
-  seasonCards: manifestJson(input),
+  seasonCards: manifestJson(inputs.seasonCards),
+  battingSourceRows: manifestJson(inputs.battingSourceRows),
   unavailableSources: {
     war: 'No committed, licensed WAR source is present.',
     opsPlus: 'No committed league-adjusted batting source is present.',
@@ -36,6 +45,7 @@ const summary = {
   seasonCardCount: cards.length,
   enrichmentCount: enrichments.length,
   opsCount: enrichments.filter(row => row.advanced.ops != null).length,
+  incompleteBattingSourceCount: enrichments.filter(row => row.provenance.battingSourceCompleteness === 'incomplete').length,
   criticalIssueCount: issues.length,
 };
 
@@ -43,13 +53,20 @@ mkdirSync(outputDir, { recursive: true });
 writeJson(resolve(outputDir, 'season-enrichment.json'), { schemaVersion: 1, sourceManifest, enrichments });
 writeJson(resolve(outputDir, 'canonical-season-enrichment-report.json'), { schemaVersion: 1, sourceManifest, summary, criticalIssues: issues });
 writeFileSync(resolve(outputDir, 'canonical-season-enrichment-report.md'), renderMarkdown(summary, issues));
-console.log(`Built ${enrichments.length} canonical season enrichments. OPS: ${summary.opsCount}. Critical issues: ${issues.length}.`);
+console.log(`Built ${enrichments.length} canonical season enrichments. OPS: ${summary.opsCount}. Incomplete batting sources: ${summary.incompleteBattingSourceCount}. Critical issues: ${issues.length}.`);
 if (strict && issues.length) process.exitCode = 1;
 
 function buildEnrichment(card) {
   const batting = card.batting ?? null;
-  const onBasePercentage = batting ? deriveOnBasePercentage(batting) : null;
-  const sluggingPercentage = batting?.sluggingPercentage ?? null;
+  const sourceRows = battingSourceRowsByKey.get(seasonKey(card)) ?? [];
+  const hasCompleteObpSource = batting && hasCompleteFields(sourceRows, [
+    'hits', 'walks', 'hitByPitch', 'atBats', 'sacrificeFlies',
+  ]);
+  const hasCompleteSluggingSource = batting && hasCompleteFields(sourceRows, [
+    'hits', 'doubles', 'triples', 'homeRuns', 'atBats',
+  ]);
+  const onBasePercentage = hasCompleteObpSource ? deriveOnBasePercentage(batting) : null;
+  const sluggingPercentage = hasCompleteSluggingSource ? batting.sluggingPercentage : null;
   const ops = onBasePercentage != null && sluggingPercentage != null
     ? onBasePercentage + sluggingPercentage
     : null;
@@ -75,15 +92,19 @@ function buildEnrichment(card) {
       awardVotingFinishes: null,
     },
     provenance: {
-      ops: ops == null ? null : 'derived_from_canonical_lahman_season_totals',
+      ops: ops == null ? null : 'derived_from_complete_canonical_lahman_season_source_rows',
+      battingSourceRowCount: sourceRows.length,
+      battingSourceCompleteness: !batting
+        ? 'not_applicable'
+        : hasCompleteObpSource && hasCompleteSluggingSource
+          ? 'complete'
+          : 'incomplete',
       unavailableFieldsRemainNull: true,
     },
   };
 }
 
 function deriveOnBasePercentage(row) {
-  const values = [row.hits, row.walks, row.hitByPitch, row.atBats, row.sacrificeFlies];
-  if (!allKnown(values)) return null;
   const denominator = row.atBats + row.walks + row.hitByPitch + row.sacrificeFlies;
   return denominator > 0 ? (row.hits + row.walks + row.hitByPitch) / denominator : null;
 }
@@ -99,6 +120,7 @@ function validate(rows, out) {
     if (!card || card.lahmanPlayerId !== row.lahmanPlayerId) out.push(`Identity mismatch: ${key}`);
     if (!Number.isInteger(row.season)) out.push(`Invalid season: ${key}`);
     if (row.advanced.ops != null) {
+      if (row.provenance.battingSourceCompleteness !== 'complete') out.push(`OPS populated from incomplete source rows: ${key}`);
       if (row.advanced.onBasePercentage == null || row.advanced.sluggingPercentage == null) out.push(`OPS missing component: ${key}`);
       if (Math.abs(row.advanced.ops - (row.advanced.onBasePercentage + row.advanced.sluggingPercentage)) > 1e-12) out.push(`OPS reconciliation failed: ${key}`);
     }
@@ -110,23 +132,27 @@ function validate(rows, out) {
 function regression(rows, out) {
   const byKey = new Map(rows.map(row => [`${row.lahmanPlayerId}:${row.season}`, row]));
   const tests = [
-    ['ortizda01', 2006],
-    ['griffke02', 1997],
-    ['ohtansh01', 2021],
+    ['ortizda01', 2006, true],
+    ['griffke02', 1997, true],
+    ['ohtansh01', 2021, true],
+    ['camparo01', 1944, false],
   ];
-  for (const [lahmanId, season] of tests) {
+  for (const [lahmanId, season, expectOps] of tests) {
     const row = byKey.get(`${lahmanId}:${season}`);
     if (!row) out.push(`Regression enrichment missing: ${lahmanId}:${season}`);
-    else if (row.advanced.ops == null) out.push(`Regression OPS missing: ${lahmanId}:${season}`);
+    else if ((row.advanced.ops != null) !== expectOps) out.push(`Regression OPS availability mismatch: ${lahmanId}:${season}`);
   }
 }
 
+function hasCompleteFields(rows, fields) {
+  return rows.length > 0 && rows.every(row => fields.every(field => Number.isFinite(row[field])));
+}
 function readJson(path) { const text = readFileSync(path, 'utf8'); return { path, text, value: JSON.parse(text) }; }
 function manifestJson(input) { return { path: relativePath(input.path), schemaVersion: input.value.schemaVersion ?? null, sha256: sha256(input.text) }; }
 function relativePath(path) { return path.replace(`${resolve(packageDir, '../..')}/`, ''); }
 function writeJson(path, value) { writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`); }
 function sha256(value) { return createHash('sha256').update(value).digest('hex'); }
-function allKnown(values) { return values.every(value => value !== null && value !== undefined && Number.isFinite(value)); }
 function seasonKey(row) { return `${row.playerId}:${row.season}`; }
+function group(rows, fn) { const map = new Map(); for (const row of rows) { const key = fn(row); const list = map.get(key) ?? []; list.push(row); map.set(key, list); } return map; }
 function uniqueIndex(rows, fn, label, out = null) { const map = new Map(); for (const row of rows) { const key = fn(row); if (!key) { if (out) out.push(`Missing ${label} key`); else throw new Error(`Missing ${label} key`); continue; } if (map.has(key)) { if (out) out.push(`Duplicate ${label}: ${key}`); else throw new Error(`Duplicate ${label}: ${key}`); } else map.set(key, row); } return map; }
-function renderMarkdown(summary, issues) { return `# Canonical Season Enrichment Report\n\n- Season cards: ${summary.seasonCardCount}\n- Enrichments: ${summary.enrichmentCount}\n- Seasons with OPS: ${summary.opsCount}\n- Critical issues: ${summary.criticalIssueCount}\n\n${issues.length ? issues.map(issue => `- ${issue}`).join('\n') : 'No critical issues.'}\n`; }
+function renderMarkdown(summary, issues) { return `# Canonical Season Enrichment Report\n\n- Season cards: ${summary.seasonCardCount}\n- Enrichments: ${summary.enrichmentCount}\n- Seasons with OPS: ${summary.opsCount}\n- Incomplete batting sources: ${summary.incompleteBattingSourceCount}\n- Critical issues: ${summary.criticalIssueCount}\n\n${issues.length ? issues.map(issue => `- ${issue}`).join('\n') : 'No critical issues.'}\n`; }

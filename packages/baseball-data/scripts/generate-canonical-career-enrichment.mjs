@@ -6,6 +6,7 @@ import { fileURLToPath } from 'node:url';
 const packageDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const careerCardPath = resolve(packageDir, 'reports/canonical-career-cards/career-cards.json');
 const battingCareerPath = resolve(packageDir, 'reports/canonical-career-aggregates/batting-careers.json');
+const battingSourceRowsPath = resolve(packageDir, 'reports/canonical-season-facts/batting-source-rows.json');
 const hallOfFamePath = resolve(packageDir, 'data/lahman/HallOfFame.csv');
 const outputDir = resolve(packageDir, 'reports/canonical-career-enrichment');
 const strict = process.argv.includes('--strict');
@@ -13,11 +14,13 @@ const strict = process.argv.includes('--strict');
 const inputs = {
   careerCards: readJson(careerCardPath),
   battingCareers: readJson(battingCareerPath),
+  battingSourceRows: readJson(battingSourceRowsPath),
   hallOfFame: readText(hallOfFamePath),
 };
 
 const cards = inputs.careerCards.value.cards ?? [];
 const battingByPlayerId = uniqueIndex(inputs.battingCareers.value.facts ?? [], row => row.playerId, 'batting career');
+const battingSourceRowsByPlayerId = group(inputs.battingSourceRows.value.facts ?? [], row => row.playerId);
 const hallRowsByLahmanId = group(parseCsv(inputs.hallOfFame.text).filter(row => row.playerID), row => row.playerID.trim());
 const issues = [];
 
@@ -28,6 +31,7 @@ regression(enrichments, issues);
 const sourceManifest = {
   careerCards: manifestJson(inputs.careerCards),
   battingCareers: manifestJson(inputs.battingCareers),
+  battingSourceRows: manifestJson(inputs.battingSourceRows),
   hallOfFame: {
     path: relativePath(hallOfFamePath),
     sha256: sha256(inputs.hallOfFame.text),
@@ -46,6 +50,7 @@ const summary = {
   careerCardCount: cards.length,
   enrichmentCount: enrichments.length,
   opsCount: enrichments.filter(row => row.advanced.ops != null).length,
+  incompleteBattingSourceCount: enrichments.filter(row => row.provenance.battingSourceCompleteness === 'incomplete').length,
   inductedHallOfFameCount: enrichments.filter(row => row.achievements.hallOfFame?.inducted).length,
   criticalIssueCount: issues.length,
 };
@@ -54,11 +59,12 @@ mkdirSync(outputDir, { recursive: true });
 writeJson(resolve(outputDir, 'career-enrichment.json'), { schemaVersion: 1, sourceManifest, enrichments });
 writeJson(resolve(outputDir, 'canonical-career-enrichment-report.json'), { schemaVersion: 1, sourceManifest, summary, criticalIssues: issues });
 writeFileSync(resolve(outputDir, 'canonical-career-enrichment-report.md'), renderMarkdown(summary, issues));
-console.log(`Built ${enrichments.length} canonical career enrichments. OPS: ${summary.opsCount}. Hall inductees: ${summary.inductedHallOfFameCount}. Critical issues: ${issues.length}.`);
+console.log(`Built ${enrichments.length} canonical career enrichments. OPS: ${summary.opsCount}. Incomplete batting sources: ${summary.incompleteBattingSourceCount}. Hall inductees: ${summary.inductedHallOfFameCount}. Critical issues: ${issues.length}.`);
 if (strict && issues.length) process.exitCode = 1;
 
 function buildEnrichment(card) {
   const batting = battingByPlayerId.get(card.playerId) ?? null;
+  const sourceRows = battingSourceRowsByPlayerId.get(card.playerId) ?? [];
   const hallRows = hallRowsByLahmanId.get(card.lahmanPlayerId) ?? [];
   const playerRows = hallRows.filter(row => String(row.category ?? '').trim().toLowerCase() === 'player');
   const inductedRows = playerRows.filter(row => String(row.inducted ?? '').trim().toUpperCase() === 'Y');
@@ -72,8 +78,14 @@ function buildEnrichment(card) {
     }))
     .sort((a, b) => (a.year ?? Number.MAX_SAFE_INTEGER) - (b.year ?? Number.MAX_SAFE_INTEGER))[0] ?? null;
 
-  const onBasePercentage = batting ? deriveOnBasePercentage(batting) : null;
-  const sluggingPercentage = batting ? deriveSluggingPercentage(batting) : null;
+  const hasCompleteObpSource = batting && hasCompleteFields(sourceRows, [
+    'hits', 'walks', 'hitByPitch', 'atBats', 'sacrificeFlies',
+  ]);
+  const hasCompleteSluggingSource = batting && hasCompleteFields(sourceRows, [
+    'hits', 'doubles', 'triples', 'homeRuns', 'atBats',
+  ]);
+  const onBasePercentage = hasCompleteObpSource ? deriveOnBasePercentage(batting) : null;
+  const sluggingPercentage = hasCompleteSluggingSource ? deriveSluggingPercentage(batting) : null;
   const ops = onBasePercentage != null && sluggingPercentage != null
     ? onBasePercentage + sluggingPercentage
     : null;
@@ -102,7 +114,13 @@ function buildEnrichment(card) {
       leagueLeaders: null,
     },
     provenance: {
-      ops: ops == null ? null : 'derived_from_canonical_lahman_career_totals',
+      ops: ops == null ? null : 'derived_from_complete_canonical_lahman_career_source_rows',
+      battingSourceRowCount: sourceRows.length,
+      battingSourceCompleteness: !batting
+        ? 'not_applicable'
+        : hasCompleteObpSource && hasCompleteSluggingSource
+          ? 'complete'
+          : 'incomplete',
       hallOfFame: 'lahman_hall_of_fame',
       unavailableFieldsRemainNull: true,
     },
@@ -110,15 +128,12 @@ function buildEnrichment(card) {
 }
 
 function deriveOnBasePercentage(row) {
-  const values = [row.hits, row.walks, row.hitByPitch, row.atBats, row.sacrificeFlies];
-  if (!allKnown(values)) return null;
   const denominator = row.atBats + row.walks + row.hitByPitch + row.sacrificeFlies;
   return denominator > 0 ? (row.hits + row.walks + row.hitByPitch) / denominator : null;
 }
 
 function deriveSluggingPercentage(row) {
-  const values = [row.hits, row.doubles, row.triples, row.homeRuns, row.atBats];
-  if (!allKnown(values) || row.atBats <= 0) return null;
+  if (row.atBats <= 0) return null;
   const totalBases = row.hits + row.doubles + (2 * row.triples) + (3 * row.homeRuns);
   return totalBases / row.atBats;
 }
@@ -132,6 +147,7 @@ function validate(rows, out) {
     const card = cardsById.get(row.playerId);
     if (!card || card.lahmanPlayerId !== row.lahmanPlayerId) out.push(`Identity mismatch: ${row.playerId}`);
     if (row.advanced.ops != null) {
+      if (row.provenance.battingSourceCompleteness !== 'complete') out.push(`OPS populated from incomplete source rows: ${row.playerId}`);
       if (row.advanced.onBasePercentage == null || row.advanced.sluggingPercentage == null) out.push(`OPS missing component: ${row.playerId}`);
       if (Math.abs(row.advanced.ops - (row.advanced.onBasePercentage + row.advanced.sluggingPercentage)) > 1e-12) out.push(`OPS reconciliation failed: ${row.playerId}`);
     }
@@ -147,6 +163,7 @@ function regression(rows, out) {
     ['riverma01', true, true],
     ['griffke02', true, true],
     ['wrighda03', true, false],
+    ['mayswi01', false, true],
   ];
   for (const [lahmanId, expectOps, expectHall] of tests) {
     const row = byLahman.get(lahmanId);
@@ -177,15 +194,15 @@ function parseCsv(textValue) {
   return values.map(cells => Object.fromEntries(headers.map((header, index) => [header, cells[index] ?? ''])));
 }
 
+function hasCompleteFields(rows, fields) { return rows.length > 0 && rows.every(row => fields.every(field => Number.isFinite(row[field]))); }
 function readJson(path) { const textValue = readFileSync(path, 'utf8'); return { path, text: textValue, value: JSON.parse(textValue) }; }
 function readText(path) { if (!existsSync(path)) throw new Error(`Missing required enrichment source: ${path}`); return { path, text: readFileSync(path, 'utf8') }; }
 function manifestJson(input) { return { path: relativePath(input.path), schemaVersion: input.value.schemaVersion ?? null, sha256: sha256(input.text) }; }
 function relativePath(path) { return path.replace(`${resolve(packageDir, '../..')}/`, ''); }
 function writeJson(path, value) { writeFileSync(path, `${JSON.stringify(value, null, 2)}\n`); }
 function sha256(value) { return createHash('sha256').update(value).digest('hex'); }
-function allKnown(values) { return values.every(value => value !== null && value !== undefined); }
 function integer(value) { const parsed = Number.parseInt(String(value ?? '').trim(), 10); return Number.isInteger(parsed) ? parsed : null; }
 function text(value) { const result = String(value ?? '').trim(); return result || null; }
 function group(rows, fn) { const map = new Map(); for (const row of rows) { const key = fn(row); const list = map.get(key) ?? []; list.push(row); map.set(key, list); } return map; }
 function uniqueIndex(rows, fn, label, out = null) { const map = new Map(); for (const row of rows) { const key = fn(row); if (!key) { if (out) out.push(`Missing ${label} key`); else throw new Error(`Missing ${label} key`); continue; } if (map.has(key)) { if (out) out.push(`Duplicate ${label}: ${key}`); else throw new Error(`Duplicate ${label}: ${key}`); } else map.set(key, row); } return map; }
-function renderMarkdown(summary, issues) { return `# Canonical Career Enrichment Report\n\n- Career cards: ${summary.careerCardCount}\n- Enrichments: ${summary.enrichmentCount}\n- Careers with OPS: ${summary.opsCount}\n- Inducted Hall of Fame players: ${summary.inductedHallOfFameCount}\n- Critical issues: ${summary.criticalIssueCount}\n\n${issues.length ? issues.map(issue => `- ${issue}`).join('\n') : 'No critical issues.'}\n`; }
+function renderMarkdown(summary, issues) { return `# Canonical Career Enrichment Report\n\n- Career cards: ${summary.careerCardCount}\n- Enrichments: ${summary.enrichmentCount}\n- Careers with OPS: ${summary.opsCount}\n- Incomplete batting sources: ${summary.incompleteBattingSourceCount}\n- Inducted Hall of Fame players: ${summary.inductedHallOfFameCount}\n- Critical issues: ${summary.criticalIssueCount}\n\n${issues.length ? issues.map(issue => `- ${issue}`).join('\n') : 'No critical issues.'}\n`; }
