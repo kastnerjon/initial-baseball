@@ -4,6 +4,7 @@ import type {
   CanonicalRevealViewModel,
   RevealStatKind,
 } from '../canonicalRevealViewModel';
+import { normalizeCanonicalRevealViewModel } from '../normalizeCanonicalRevealViewModel';
 
 type PlayerRevealCardProps = {
   reveal: CanonicalRevealViewModel;
@@ -14,24 +15,25 @@ const HITTER_COLUMNS = ['AB', 'H', 'HR', 'BA', 'R', 'RBI', 'SB', 'OBP', 'SLG', '
 const PITCHER_COLUMNS = ['W', 'L', 'SV', 'ERA', 'WHIP', 'K', 'IP'] as const;
 
 export function PlayerRevealCard({ reveal }: PlayerRevealCardProps): JSX.Element {
-  const role = formatRole(reveal.playerType);
-  const meta = [reveal.yearsPlayedDisplay, role, reveal.primaryPosition]
+  const viewModel = normalizeCanonicalRevealViewModel(reveal);
+  const role = formatRole(viewModel.playerType);
+  const meta = [viewModel.yearsPlayedDisplay, role, viewModel.primaryPosition]
     .filter((value) => value !== null)
     .join(' · ') || EMPTY_VALUE;
-  const teamsDisplay = reveal.teamIds.join(', ');
+  const teamsDisplay = viewModel.teamIds.join(', ');
 
   return (
-    <section className="player-reveal-card" aria-label={`Player reveal: ${reveal.displayName}`}>
+    <section className="player-reveal-card" aria-label={`Player reveal: ${viewModel.displayName}`}>
       <div className="player-reveal-heading">
         <span className="player-reveal-kicker">Player Reveal</span>
-        <h2 className="player-reveal-name">{reveal.displayName}</h2>
+        <h2 className="player-reveal-name">{viewModel.displayName}</h2>
         <p className="player-reveal-meta">{meta}</p>
         <p className="player-reveal-teams">
           {teamsDisplay.length === 0 ? 'Teams unavailable' : teamsDisplay}
         </p>
       </div>
-      <CareerStatStrip reveal={reveal} />
-      <SeasonStatsDisclosure reveal={reveal} />
+      <CareerStatStrip reveal={viewModel} />
+      <SeasonStatsDisclosure reveal={viewModel} />
     </section>
   );
 }
