@@ -87,6 +87,8 @@ jobs:
             packages/baseball-data/reports/canonical-runtime-payload/
           if-no-files-found: error
       - name: Verify production package build order
+        env:
+          DAILY_PROGRESSION_SECRET: ci-only-daily-progression-secret-0123456789abcdef
         run: |
           pnpm --filter @initial-baseball/shared build
           pnpm --filter @initial-baseball/engine build

@@ -1,5 +1,10 @@
-import type { DailyGuessResult, DailyPublicPuzzle, DailyRevealCount } from '@initial-baseball/shared';
+import type { DailyGuessResult, DailyPublicPuzzle } from '@initial-baseball/shared';
 import type { CanonicalRevealViewModel } from './canonicalRevealViewModel';
+
+export type DailyBootstrap = {
+  puzzle: DailyPublicPuzzle;
+  progressionToken: string;
+};
 
 export type DailyHintResponse = {
   hint: {
@@ -7,12 +12,11 @@ export type DailyHintResponse = {
     hintLabel: string;
     hintValue: string;
   };
+  progressionToken: string;
 };
+
 export type DailyResolutionRequest = {
-  puzzleDate: string;
-  pitchNumber: number;
-  revealCount: DailyRevealCount;
-  strikeCount: number;
+  progressionToken: string;
   submittedPlayerId?: string;
   giveUp?: boolean;
 };
@@ -20,10 +24,11 @@ export type DailyResolutionRequest = {
 export type DailyResolutionResponse = {
   result: DailyGuessResult;
   reveal: CanonicalRevealViewModel | null;
+  progressionToken: string;
 };
 
 export type DailyRuntimeService = {
-  getPublicPuzzle: (date: string) => DailyPublicPuzzle;
-  revealHint: (date: string, pitchNumber: number, revealCount: number) => DailyHintResponse;
+  getBootstrap: (date: string) => DailyBootstrap;
+  revealHint: (progressionToken: string) => DailyHintResponse;
   resolveAtBat: (request: DailyResolutionRequest) => DailyResolutionResponse;
 };
