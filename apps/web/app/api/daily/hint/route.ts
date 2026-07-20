@@ -3,10 +3,12 @@ import { DailyRuntimeRequestError } from '../../../dailyRuntimeService';
 import { requirePublishedDailyDate } from '../../../requirePublishedDailyDate';
 import { dailyRuntime } from '../../../serverCanonicalRuntime';
 
+export const preferredRegion = 'iad1';
+
 export async function POST(request: Request): Promise<NextResponse> {
   try {
     const body = await request.json() as Record<string, unknown>;
-    return NextResponse.json(dailyRuntime.revealHint({
+    return NextResponse.json(await dailyRuntime.revealHint({
       puzzleDate: requirePublishedDailyDate(body.puzzleDate),
       progressionToken: requireProgressionToken(body.progressionToken),
     }));
