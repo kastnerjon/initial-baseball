@@ -62,6 +62,8 @@ jobs:
         run: pnpm --filter @initial-baseball/baseball-data generate:canonical-season-enrichment:strict
       - name: Generate canonical career enrichment
         run: pnpm --filter @initial-baseball/baseball-data generate:canonical-career-enrichment:strict
+      - name: Generate canonical runtime payload
+        run: pnpm --filter @initial-baseball/baseball-data generate:canonical-runtime-payload:strict
       - name: Upload canonical baseball data pipeline
         if: always()
         uses: actions/upload-artifact@v4
@@ -76,6 +78,7 @@ jobs:
             packages/baseball-data/reports/canonical-career-aggregates/
             packages/baseball-data/reports/canonical-career-cards/
             packages/baseball-data/reports/canonical-career-enrichment/
+            packages/baseball-data/reports/canonical-runtime-payload/
           if-no-files-found: error
       - name: Verify production package build order
         run: |
