@@ -5,6 +5,7 @@ import {
   comparePlayersByRecognizability,
   rankPlayersByRecognizability,
   selectCanonicalDailyPlayersForDate,
+  selectDailyPlayersForDate,
 } from './dailyPuzzleSelection';
 
 describe('recognizability ranking', () => {
@@ -71,6 +72,20 @@ describe('recognizability ranking', () => {
 });
 
 describe('canonical Daily selection compatibility', () => {
+  it('preserves established generated lineups when canonical IDs are one-to-one', () => {
+    for (const date of ['2026-04-27', '2026-07-19', '2026-07-20']) {
+      const legacyPlayerIds = selectDailyPlayersForDate(date, {})
+        .map((player) => player.id);
+      const canonicalPlayerIds = selectCanonicalDailyPlayersForDate(
+        date,
+        {},
+        playerId => `canonical:${playerId}`,
+      ).map(({ player }) => player.id);
+
+      expect(canonicalPlayerIds).toEqual(legacyPlayerIds);
+    }
+  });
+
   it('filters generated candidates without a canonical runtime target', () => {
     const selections = selectCanonicalDailyPlayersForDate('2026-07-20', {}, playerId => (
       playerId === 'chadwick:9b391785' ? null : `canonical:${playerId}`
@@ -81,7 +96,7 @@ describe('canonical Daily selection compatibility', () => {
     expect(selections.some(({ player }) => player.id === 'chadwick:9b391785')).toBe(false);
   });
 
-  it('deduplicates generated candidates by canonical player ID before selection', () => {
+  it('deduplicates selected answers by canonical player ID without changing the hash key', () => {
     const topPoolLegacyIds = new Set(
       rankPlayersByRecognizability(dailyEligiblePlayers)
         .slice(0, 250)
