@@ -15,6 +15,7 @@ Add durable corrections here when product review, QA, or code review catches a m
 - The canonical display name is what the game shows. Longer legal or source names remain aliases unless an auditable display-name decision promotes them.
 - Genuine same-name players remain separate identities. Search and admin surfaces must add career years, position, or team context rather than merging them.
 - A source row is evidence, not automatically a playable player.
+- Redirected Daily candidates and overrides must be deduplicated by canonical ID, not by their legacy source-row IDs.
 
 ## Season and career data
 
@@ -23,6 +24,7 @@ Add durable corrections here when product review, QA, or code review catches a m
 - Never calculate a rate from partially known contributing rows. If one required source-row component is missing, the affected OBP, SLG, or OPS remains `null`.
 - Runtime payloads join validated records. They do not recalculate, estimate, or reinterpret baseball facts.
 - Pitchers may have real batting records. Player type controls presentation; it must not erase valid underlying facts.
+- A two-way presentation must show both canonical batting and pitching lines rather than choosing one and discarding the other.
 
 ## QA and review
 
@@ -31,9 +33,12 @@ Add durable corrections here when product review, QA, or code review catches a m
 - A post-merge review finding should be fixed in the next active data PR and reflected in canonical documentation.
 - Documentation must describe current code and current intent. Remove obsolete plans rather than leaving old and new rules side by side.
 - A browser-safe Daily puzzle is a separate contract from the authoritative server puzzle. Initial props contain only public initials and configuration; hints and canonical reveal records cross the network only when the action permits them.
+- Daily action routes must derive pitch number, hint depth, strike count, and outs from a server-verifiable progression token. They must not trust client claims for those fields.
 - Production bundle inspection is part of answer-leakage QA. A test fixture imported by live client code can silently pull the legacy player universe and its answers into a browser chunk even when page props are safe.
 - Canonical same-name search results must carry only their own accepted ID. Compatibility grouping by visible name belongs only to the legacy search path.
 - Filter legacy Daily candidates through canonical redirect validity before deterministic selection. Missing canonical reveal data is an explicit exclusion, never a guessed identity repair.
+- Incomplete legacy browser saves that cannot prove their current progression state should be invalidated rather than reconstructed with missing hints or invented authorization.
+- Production data builds must start from reviewed, committed source snapshots. Remote source refresh belongs in an explicit update-and-verify workflow, not in a deployment build.
 
 ## Locked product rules
 
