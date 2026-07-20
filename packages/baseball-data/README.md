@@ -8,13 +8,13 @@ The canonical runtime payload supplies live player search, identity resolution, 
 
 The legacy `baseballPlayers` exports remain temporarily for Daily recognizability selection, historical overrides, and hint construction. They are no longer the browser search universe or reveal-stat source. WAR is not included.
 
-The live dataset is being replaced in stages. Until runtime migration is complete, changes to the canonical pipeline do not automatically change the game.
+The live web game consumes the canonical runtime payload. Further data work should improve the canonical pipeline or remove the remaining legacy Daily-selection inputs rather than creating a second runtime dataset.
 
 ## Canonical pipeline
 
-The replacement pipeline now generates these layers in order:
+The replacement pipeline generates these layers in order:
 
-1. canonical identities;
+1. reviewed canonical identity snapshot;
 2. Lahman-first canonical player universe and legacy redirects;
 3. canonical season source facts;
 4. canonical player-season aggregates;
@@ -31,6 +31,21 @@ The runtime payload joins the validated layers into:
 - legacy-ID redirects whose targets have valid runtime reveal records.
 
 The web app consumes the runtime payload through the server-side accessor. Strict generation and consumer QA run before the production web build.
+
+## Reviewed identity inputs
+
+Production and preview builds do not fetch Chadwick data. They materialize the committed reviewed identity snapshot under `data/canonical/identity-snapshot/`, then run the remaining canonical pipeline entirely from repository inputs.
+
+The explicit refresh workflow is:
+
+1. update `data/canonical/chadwick-source.json` to a reviewed Chadwick commit and expected source hashes;
+2. run `pnpm data:identities` to generate identity candidates from that pinned revision;
+3. inspect the identity reports;
+4. run `pnpm --filter @initial-baseball/baseball-data update:canonical-identity-snapshot`;
+5. commit the reviewed source pin and snapshot;
+6. let CI regenerate the pinned identities and verify they exactly match the committed snapshot.
+
+`pnpm data:runtime` consumes the committed snapshot and does not require GitHub or raw Chadwick availability.
 
 ## Data ownership
 
