@@ -49,10 +49,23 @@ export function selectCanonicalDailyPlayersForDate(
 ): CanonicalDailyPlayerSelection[] {
   const overrideEntries = overrides[date];
   if (overrideEntries !== undefined) {
-    return resolveDailyPuzzleOverridePlayers(date, overrideEntries).map((player) => ({
+    const selections = resolveDailyPuzzleOverridePlayers(date, overrideEntries).map((player) => ({
       player,
-      canonicalPlayerId: requireResolvedCanonicalPlayerId(date, player.id, resolveCanonicalPlayerId),
+      canonicalPlayerId: requireResolvedCanonicalPlayerId(
+        date,
+        player.id,
+        resolveCanonicalPlayerId,
+      ),
     }));
+    const duplicateCanonicalId = findFirstDuplicate(
+      selections.map((selection) => selection.canonicalPlayerId),
+    );
+    if (duplicateCanonicalId !== null) {
+      throw new Error(
+        `Daily puzzle override for ${date} resolves duplicate canonical player: ${duplicateCanonicalId}.`,
+      );
+    }
+    return selections;
   }
 
   const candidates = dailyEligiblePlayers.flatMap((player) => {
@@ -62,11 +75,38 @@ export function selectCanonicalDailyPlayersForDate(
   if (candidates.length < DAILY_AT_BAT_COUNT) {
     throw new Error(`Not enough canonically resolvable Daily players for ${date}.`);
   }
-  const canonicalIdByLegacyId = new Map(candidates.map((candidate) => [candidate.player.id, candidate.canonicalPlayerId]));
-  return selectGeneratedDailyPlayers(date, candidates.map((candidate) => candidate.player)).map((player) => ({
-    player,
-    canonicalPlayerId: requireResolvedCanonicalPlayerId(date, player.id, id => canonicalIdByLegacyId.get(id) ?? null),
-  }));
+
+  return selectGeneratedCanonicalDailyPlayers(date, candidates);
+}
+
+function selectGeneratedCanonicalDailyPlayers(
+  date: string,
+  candidates: readonly CanonicalDailyPlayerSelection[],
+): CanonicalDailyPlayerSelection[] {
+  const rankedPlayers = [...candidates].sort((left, right) => (
+    comparePlayersByRecognizability(left.player, right.player)
+  ));
+  const selectedPlayers: CanonicalDailyPlayerSelection[] = [];
+  const selectedCanonicalIds = new Set<string>();
+
+  for (let index = 0; index < RECOGNIZABILITY_POOL_SIZES.length; index += 1) {
+    const poolSize = RECOGNIZABILITY_POOL_SIZES[index] ?? rankedPlayers.length;
+    const pool = rankedPlayers.slice(0, Math.min(poolSize, rankedPlayers.length));
+    const player = selectDeterministicUnusedCanonicalPlayer(
+      pool,
+      selectedCanonicalIds,
+      `${date}:${index + 1}`,
+    );
+
+    if (player === null) {
+      throw new Error(`Could not select a unique canonical player for at bat ${index + 1}.`);
+    }
+
+    selectedPlayers.push(player);
+    selectedCanonicalIds.add(player.canonicalPlayerId);
+  }
+
+  return selectedPlayers;
 }
 
 function selectGeneratedDailyPlayers(date: string, candidates: readonly Player[]): Player[] {
@@ -97,7 +137,9 @@ function requireResolvedCanonicalPlayerId(
 ): string {
   const canonicalPlayerId = resolveCanonicalPlayerId(playerId);
   if (canonicalPlayerId === null) {
-    throw new Error(`Daily puzzle for ${date} could not resolve legacy playerId to canonical runtime data: ${playerId}.`);
+    throw new Error(
+      `Daily puzzle for ${date} could not resolve legacy playerId to canonical runtime data: ${playerId}.`,
+    );
   }
   return canonicalPlayerId;
 }
@@ -156,6 +198,25 @@ function compareNullableYearsDescending(leftYear: number | null, rightYear: numb
   }
 
   return rightYear - leftYear;
+}
+
+function selectDeterministicUnusedCanonicalPlayer(
+  pool: readonly CanonicalDailyPlayerSelection[],
+  selectedCanonicalIds: ReadonlySet<string>,
+  seed: string,
+): CanonicalDailyPlayerSelection | null {
+  const rankedByDate = [...pool].sort((left, right) => (
+    compareHashedValues(
+      `${seed}:${left.player.id}`,
+      `${seed}:${right.player.id}`,
+    )
+    || left.player.displayName.localeCompare(right.player.displayName)
+    || left.player.id.localeCompare(right.player.id)
+  ));
+
+  return rankedByDate.find(
+    (selection) => !selectedCanonicalIds.has(selection.canonicalPlayerId),
+  ) ?? null;
 }
 
 function selectDeterministicUnusedPlayer(
@@ -248,7 +309,9 @@ function resolveOverridePlayerById(
   }
 
   if (entry.name !== undefined && !doesPlayerMatchName(player, entry.name)) {
-    throw new Error(`Daily puzzle override for ${date} playerId ${entry.playerId} does not match name: ${entry.name}.`);
+    throw new Error(
+      `Daily puzzle override for ${date} playerId ${entry.playerId} does not match name: ${entry.name}.`,
+    );
   }
 
   return player;
@@ -304,7 +367,9 @@ function hashString(value: string): number {
 }
 
 function getDaysSinceEpoch(epochDate: string, targetDate: string): number {
-  return Math.floor((parseUtcDate(targetDate).getTime() - parseUtcDate(epochDate).getTime()) / 86400000);
+  return Math.floor(
+    (parseUtcDate(targetDate).getTime() - parseUtcDate(epochDate).getTime()) / 86400000,
+  );
 }
 
 function parseUtcDate(value: string): Date {
