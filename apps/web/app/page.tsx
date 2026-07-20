@@ -6,20 +6,23 @@ import { dailyRuntime } from './serverCanonicalRuntime';
 export const revalidate = 60;
 
 export default function DailyInningHomePage(): JSX.Element {
-  const puzzle = dailyRuntime.getPublicPuzzle(getPacificDailyDateString());
+  const bootstrap = dailyRuntime.getBootstrap(getPacificDailyDateString());
 
   return (
     <main className="page-shell">
       <section className="daily-card">
         <p className="eyebrow">Daily Inning by Initial Baseball</p>
-        <h1>{`Daily Inning #${puzzle.puzzleNumber}`}</h1>
+        <h1>{`Daily Inning #${bootstrap.puzzle.puzzleNumber}`}</h1>
         <section className="daily-instructions" aria-label="How to play">
           <p>
             Guess the player from initials. Reveal hints if stuck; earlier correct guesses score better outcomes.
             Give up records a strikeout. Come back daily after midnight Pacific.
           </p>
         </section>
-        <DailyInningGame puzzle={puzzle} />
+        <DailyInningGame
+          puzzle={bootstrap.puzzle}
+          initialProgressionToken={bootstrap.progressionToken}
+        />
       </section>
     </main>
   );

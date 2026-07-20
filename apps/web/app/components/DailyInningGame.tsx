@@ -32,13 +32,18 @@ import { PitchResultList } from './PitchResultList';
 
 type DailyInningGameProps = {
   puzzle: DailyPublicPuzzle;
+  initialProgressionToken: string;
 };
 
-export function DailyInningGame({ puzzle }: DailyInningGameProps): JSX.Element {
+export function DailyInningGame({
+  puzzle,
+  initialProgressionToken,
+}: DailyInningGameProps): JSX.Element {
   const [gameState, setGameState] = useState<DailyGameState>(() => createInitialDailyGameState(puzzle));
   const [currentPitchIndex, setCurrentPitchIndex] = useState(0);
   const [atBatState, setAtBatState] = useState<DailyAtBatUiState>(() => createInitialAtBatUiState());
   const [pendingAdvance, setPendingAdvance] = useState<PendingAtBatAdvance | null>(null);
+  const [progressionToken, setProgressionToken] = useState(initialProgressionToken);
   const [hasLoadedSavedState, setHasLoadedSavedState] = useState(false);
   const [requestPending, setRequestPending] = useState(false);
   const [requestError, setRequestError] = useState<string | null>(null);
@@ -65,22 +70,24 @@ export function DailyInningGame({ puzzle }: DailyInningGameProps): JSX.Element {
   );
 
   useEffect(() => {
-    const savedGame = loadSavedDailyGame(puzzle);
+    const savedGame = loadSavedDailyGame(puzzle, initialProgressionToken);
 
     if (savedGame !== null) {
       setGameState(savedGame.gameState);
       setCurrentPitchIndex(savedGame.currentPitchIndex);
       setAtBatState(savedGame.atBatState);
       setPendingAdvance(savedGame.pendingAdvance);
+      setProgressionToken(savedGame.progressionToken);
     } else {
       setGameState(createInitialDailyGameState(puzzle));
       setCurrentPitchIndex(0);
       setAtBatState(createInitialAtBatUiState());
       setPendingAdvance(null);
+      setProgressionToken(initialProgressionToken);
     }
 
     setHasLoadedSavedState(true);
-  }, [puzzle]);
+  }, [initialProgressionToken, puzzle]);
 
   useEffect(() => {
     if (!hasLoadedSavedState) {
@@ -92,8 +99,9 @@ export function DailyInningGame({ puzzle }: DailyInningGameProps): JSX.Element {
       gameState,
       atBatState,
       pendingAdvance,
+      progressionToken,
     });
-  }, [atBatState, currentPitchIndex, gameState, hasLoadedSavedState, pendingAdvance, puzzle]);
+  }, [atBatState, currentPitchIndex, gameState, hasLoadedSavedState, pendingAdvance, progressionToken, puzzle]);
 
   if (shareResult !== null) {
     return (
@@ -132,7 +140,7 @@ export function DailyInningGame({ puzzle }: DailyInningGameProps): JSX.Element {
         requestPending={requestPending}
         requestError={requestError}
         onQueryChange={(query) => {
-          setAtBatState((currentState) => ({
+          setAtBatState(currentState => ({
             ...currentState,
             query,
             selectedPlayerId: null,
@@ -141,7 +149,7 @@ export function DailyInningGame({ puzzle }: DailyInningGameProps): JSX.Element {
           setRequestError(null);
         }}
         onSelectPlayer={(result: PlayerSearchResult) => {
-          setAtBatState((currentState) => ({
+          setAtBatState(currentState => ({
             ...currentState,
             query: result.displayName,
             selectedPlayerId: result.playerId,
@@ -169,10 +177,11 @@ export function DailyInningGame({ puzzle }: DailyInningGameProps): JSX.Element {
     }
     const response = await resolveAtBat({ submittedPlayerId: atBatState.selectedPlayerId });
     if (response === null) return;
+    setProgressionToken(response.progressionToken);
     const { result } = response;
 
     if (result.kind === 'incorrect') {
-      setAtBatState((currentState) => ({
+      setAtBatState(currentState => ({
         ...currentState,
         query: '',
         selectedPlayerId: null,
@@ -192,6 +201,7 @@ export function DailyInningGame({ puzzle }: DailyInningGameProps): JSX.Element {
   async function handleGiveUp(): Promise<void> {
     const response = await resolveAtBat({ giveUp: true });
     if (response === null || response.result.kind === 'incorrect') return;
+    setProgressionToken(response.progressionToken);
     resolveTerminalResult(response.result, requireReveal(response.reveal));
   }
 
@@ -205,7 +215,7 @@ export function DailyInningGame({ puzzle }: DailyInningGameProps): JSX.Element {
       result,
       currentPitchIndex,
     }));
-    setAtBatState((currentState) => ({
+    setAtBatState(currentState => ({
       ...currentState,
       strikeCount: result.kind === 'strikeout' ? result.strikeCount : currentState.strikeCount,
       submittedResult: result,
@@ -218,7 +228,7 @@ export function DailyInningGame({ puzzle }: DailyInningGameProps): JSX.Element {
       return;
     }
 
-    setGameState((currentGameState) => ({
+    setGameState(currentGameState => ({
       ...currentGameState,
       status: pendingAdvance.score.completed || pendingAdvance.nextPitchIndex >= puzzle.pitches.length ? 'completed' : 'in_progress',
       inning: pendingAdvance.inning,
@@ -238,6 +248,7 @@ export function DailyInningGame({ puzzle }: DailyInningGameProps): JSX.Element {
     setCurrentPitchIndex(0);
     setAtBatState(createInitialAtBatUiState());
     setPendingAdvance(null);
+    setProgressionToken(initialProgressionToken);
     setRequestError(null);
     setRequestPending(false);
     setHasLoadedSavedState(true);
@@ -245,12 +256,11 @@ export function DailyInningGame({ puzzle }: DailyInningGameProps): JSX.Element {
 
   async function handleRevealHint(): Promise<void> {
     const response = await requestJson<DailyHintResponse>('/api/daily/hint', {
-      puzzleDate: puzzle.puzzleDate,
-      pitchNumber: activePitch.pitchNumber,
-      revealCount: atBatState.revealCount,
+      progressionToken,
     });
     if (response === null) return;
-    setAtBatState((currentState) => ({
+    setProgressionToken(response.progressionToken);
+    setAtBatState(currentState => ({
       ...currentState,
       revealCount: capRevealCount(currentState.revealCount + 1, puzzle.hintConfig.length),
       revealedHints: [...currentState.revealedHints, response.hint],
@@ -262,10 +272,7 @@ export function DailyInningGame({ puzzle }: DailyInningGameProps): JSX.Element {
     action: { submittedPlayerId: string } | { giveUp: true },
   ): Promise<DailyResolutionResponse | null> {
     return requestJson<DailyResolutionResponse>('/api/daily/resolve', {
-      puzzleDate: puzzle.puzzleDate,
-      pitchNumber: activePitch.pitchNumber,
-      revealCount: atBatState.revealCount,
-      strikeCount: atBatState.strikeCount,
+      progressionToken,
       ...action,
     });
   }

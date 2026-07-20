@@ -18,6 +18,9 @@ import {
   createInitialDemoGameState,
 } from './mockDailyPuzzle';
 
+const initialProgressionToken = 'initial-progression-token';
+const savedProgressionToken = 'saved-progression-token';
+
 describe('dailyLocalStorage', () => {
   it('generates a stable key from puzzleDate', () => {
     expect(getDailyStorageKey('2026-05-04')).toBe('initial-baseball:daily:2026-05-04');
@@ -26,48 +29,51 @@ describe('dailyLocalStorage', () => {
   it('returns null for missing state', () => {
     const storage = new FakeStorage();
 
-    expect(loadSavedDailyGame(DEMO_DAILY_PUZZLE, storage)).toBeNull();
+    expect(load(storage)).toBeNull();
   });
 
   it('safely handles invalid JSON', () => {
     const storage = new FakeStorage();
     storage.setItem(getDailyStorageKey(DEMO_DAILY_PUZZLE.puzzleDate), '{bad json');
 
-    expect(loadSavedDailyGame(DEMO_DAILY_PUZZLE, storage)).toBeNull();
+    expect(load(storage)).toBeNull();
   });
 
   it('ignores saved state for the wrong puzzleDate', () => {
     const storage = new FakeStorage();
-    const savedGame = buildSavedGame({
-      puzzleDate: '2026-05-05',
-    });
+    const savedGame = buildSavedGame({ puzzleDate: '2026-05-05' });
     storage.setItem(getDailyStorageKey(DEMO_DAILY_PUZZLE.puzzleDate), JSON.stringify(savedGame));
 
-    expect(loadSavedDailyGame(DEMO_DAILY_PUZZLE, storage)).toBeNull();
+    expect(load(storage)).toBeNull();
   });
 
   it('ignores saved state for the wrong puzzleNumber', () => {
     const storage = new FakeStorage();
-    const savedGame = buildSavedGame({
-      puzzleNumber: DEMO_DAILY_PUZZLE.puzzleNumber + 1,
-    });
+    const savedGame = buildSavedGame({ puzzleNumber: DEMO_DAILY_PUZZLE.puzzleNumber + 1 });
     storage.setItem(getDailyStorageKey(DEMO_DAILY_PUZZLE.puzzleDate), JSON.stringify(savedGame));
 
-    expect(loadSavedDailyGame(DEMO_DAILY_PUZZLE, storage)).toBeNull();
+    expect(load(storage)).toBeNull();
   });
 
-  it('ignores saved state missing required fields', () => {
+  it('ignores current-schema state missing required fields or its progression token', () => {
     const storage = new FakeStorage();
     storage.setItem(getDailyStorageKey(DEMO_DAILY_PUZZLE.puzzleDate), JSON.stringify({
-      schemaVersion: 2,
+      schemaVersion: 3,
+      puzzleId: DEMO_DAILY_PUZZLE.id,
       puzzleDate: DEMO_DAILY_PUZZLE.puzzleDate,
       puzzleNumber: DEMO_DAILY_PUZZLE.puzzleNumber,
     }));
 
-    expect(loadSavedDailyGame(DEMO_DAILY_PUZZLE, storage)).toBeNull();
+    expect(load(storage)).toBeNull();
+
+    const savedGame = buildSavedGame({});
+    delete (savedGame as unknown as { progressionToken?: string }).progressionToken;
+    storage.setItem(getDailyStorageKey(DEMO_DAILY_PUZZLE.puzzleDate), JSON.stringify(savedGame));
+
+    expect(load(storage)).toBeNull();
   });
 
-  it('round-trips a representative saved game state', () => {
+  it('round-trips representative schema-3 state with its opaque progression token', () => {
     const storage = new FakeStorage();
     const gameState: DailyGameState = {
       ...createInitialDemoGameState(DEMO_DAILY_PUZZLE),
@@ -99,10 +105,11 @@ describe('dailyLocalStorage', () => {
       gameState,
       atBatState,
       pendingAdvance,
+      progressionToken: savedProgressionToken,
     }, storage);
 
-    expect(loadSavedDailyGame(DEMO_DAILY_PUZZLE, storage)).toEqual({
-      schemaVersion: 2,
+    expect(load(storage)).toEqual({
+      schemaVersion: 3,
       puzzleId: DEMO_DAILY_PUZZLE.id,
       puzzleDate: DEMO_DAILY_PUZZLE.puzzleDate,
       puzzleNumber: DEMO_DAILY_PUZZLE.puzzleNumber,
@@ -110,10 +117,11 @@ describe('dailyLocalStorage', () => {
       gameState,
       atBatState,
       pendingAdvance,
+      progressionToken: savedProgressionToken,
     });
   });
 
-  it('preserves an unstarted legacy selected player ID for redirect resolution', () => {
+  it('preserves an untouched schema-1 selected player ID and assigns the initial token', () => {
     const storage = new FakeStorage();
     const savedGame = buildSavedGame({
       atBatState: {
@@ -121,60 +129,69 @@ describe('dailyLocalStorage', () => {
         selectedPlayerId: 'player-42',
       },
     });
-    setLegacySchema(savedGame);
+    setPreTokenSchema(savedGame, 1);
     storage.setItem(getDailyStorageKey(DEMO_DAILY_PUZZLE.puzzleDate), JSON.stringify(savedGame));
 
-    expect(loadSavedDailyGame(DEMO_DAILY_PUZZLE, storage)?.atBatState.selectedPlayerId).toBe('player-42');
-    expect(loadSavedDailyGame(DEMO_DAILY_PUZZLE, storage)?.schemaVersion).toBe(2);
+    const restored = load(storage);
+    expect(restored?.atBatState.selectedPlayerId).toBe('player-42');
+    expect(restored?.schemaVersion).toBe(3);
+    expect(restored?.progressionToken).toBe(initialProgressionToken);
   });
 
-  it('sanitizes unstarted legacy saved puzzle answers out of the current storage contract', () => {
+  it('preserves an untouched schema-2 start with the initial token', () => {
     const storage = new FakeStorage();
-    const legacySavedGame = buildSavedGame({
+    const savedGame = buildSavedGame({});
+    setPreTokenSchema(savedGame, 2);
+    storage.setItem(getDailyStorageKey(DEMO_DAILY_PUZZLE.puzzleDate), JSON.stringify(savedGame));
+
+    const restored = load(storage);
+    expect(restored?.currentPitchIndex).toBe(0);
+    expect(restored?.atBatState).toEqual(createInitialAtBatUiState());
+    expect(restored?.progressionToken).toBe(initialProgressionToken);
+  });
+
+  it('sanitizes pre-token saved puzzle answers out of the current storage contract', () => {
+    const storage = new FakeStorage();
+    const savedGame = buildSavedGame({
       gameState: {
         ...createInitialDemoGameState(DEMO_DAILY_PUZZLE),
         puzzle: DEMO_DAILY_PUZZLE,
       } as unknown as DailyGameState,
     });
-    setLegacySchema(legacySavedGame);
-    storage.setItem(getDailyStorageKey(DEMO_DAILY_PUZZLE.puzzleDate), JSON.stringify(legacySavedGame));
+    setPreTokenSchema(savedGame, 1);
+    storage.setItem(getDailyStorageKey(DEMO_DAILY_PUZZLE.puzzleDate), JSON.stringify(savedGame));
 
-    const restored = loadSavedDailyGame(DEMO_DAILY_PUZZLE, storage);
+    const restored = load(storage);
     expect(restored?.gameState.puzzle.pitches[0]).toEqual({ pitchNumber: 1, initials: 'KGJ' });
     expect(JSON.stringify(restored?.gameState.puzzle)).not.toContain('Ken Griffey Jr.');
     expect(JSON.stringify(restored?.gameState.puzzle)).not.toContain('correctPlayerId');
   });
 
-  it('invalidates partial legacy hint progress that lacks revealed hint values', () => {
+  it('invalidates pre-token partial hint or strike progress', () => {
     const storage = new FakeStorage();
-    const savedGame = buildSavedGame({
+    const hintSave = buildSavedGame({
       atBatState: {
         ...createInitialAtBatUiState(),
         revealCount: 2,
         revealedHints: [],
       },
     });
-    setLegacySchema(savedGame);
-    storage.setItem(getDailyStorageKey(DEMO_DAILY_PUZZLE.puzzleDate), JSON.stringify(savedGame));
+    setPreTokenSchema(hintSave, 1);
+    storage.setItem(getDailyStorageKey(DEMO_DAILY_PUZZLE.puzzleDate), JSON.stringify(hintSave));
+    expect(load(storage)).toBeNull();
 
-    expect(loadSavedDailyGame(DEMO_DAILY_PUZZLE, storage)).toBeNull();
-  });
-
-  it('invalidates partial legacy strike progress that cannot be reconstructed safely', () => {
-    const storage = new FakeStorage();
-    const savedGame = buildSavedGame({
+    const strikeSave = buildSavedGame({
       atBatState: {
         ...createInitialAtBatUiState(),
         strikeCount: 1,
       },
     });
-    setLegacySchema(savedGame);
-    storage.setItem(getDailyStorageKey(DEMO_DAILY_PUZZLE.puzzleDate), JSON.stringify(savedGame));
-
-    expect(loadSavedDailyGame(DEMO_DAILY_PUZZLE, storage)).toBeNull();
+    setPreTokenSchema(strikeSave, 2);
+    storage.setItem(getDailyStorageKey(DEMO_DAILY_PUZZLE.puzzleDate), JSON.stringify(strikeSave));
+    expect(load(storage)).toBeNull();
   });
 
-  it('preserves legacy progress at a clean next-at-bat boundary', () => {
+  it('invalidates a pre-token next-at-bat boundary because later authorization cannot be reconstructed', () => {
     const storage = new FakeStorage();
     const initialGameState = createInitialDemoGameState(DEMO_DAILY_PUZZLE);
     const firstPitch = DEMO_DAILY_PUZZLE.pitches[0];
@@ -199,16 +216,13 @@ describe('dailyLocalStorage', () => {
       atBatState: createInitialAtBatUiState(),
       pendingAdvance: null,
     });
-    setLegacySchema(savedGame);
+    setPreTokenSchema(savedGame, 2);
     storage.setItem(getDailyStorageKey(DEMO_DAILY_PUZZLE.puzzleDate), JSON.stringify(savedGame));
 
-    const restored = loadSavedDailyGame(DEMO_DAILY_PUZZLE, storage);
-    expect(restored?.currentPitchIndex).toBe(1);
-    expect(restored?.gameState.completedPitchLines).toEqual(advance.pitchLines);
-    expect(restored?.atBatState).toEqual(createInitialAtBatUiState());
+    expect(load(storage)).toBeNull();
   });
 
-  it('preserves a completed legacy result as read-only history', () => {
+  it('preserves a completed pre-token result as read-only history', () => {
     const storage = new FakeStorage();
     const initialGameState = createInitialDemoGameState(DEMO_DAILY_PUZZLE);
     const savedGame = buildSavedGame({
@@ -222,13 +236,15 @@ describe('dailyLocalStorage', () => {
         },
       },
     });
-    setLegacySchema(savedGame);
+    setPreTokenSchema(savedGame, 1);
     storage.setItem(getDailyStorageKey(DEMO_DAILY_PUZZLE.puzzleDate), JSON.stringify(savedGame));
 
-    expect(loadSavedDailyGame(DEMO_DAILY_PUZZLE, storage)?.gameState.status).toBe('completed');
+    const restored = load(storage);
+    expect(restored?.gameState.status).toBe('completed');
+    expect(restored?.progressionToken).toBe(initialProgressionToken);
   });
 
-  it('normalizes legacy BUNT outcomes to BB when restoring current-schema state', () => {
+  it('normalizes legacy BUNT outcomes while retaining schema-3 authorization', () => {
     const storage = new FakeStorage();
     const savedGame = buildSavedGame({
       gameState: {
@@ -253,11 +269,11 @@ describe('dailyLocalStorage', () => {
     });
     storage.setItem(getDailyStorageKey(DEMO_DAILY_PUZZLE.puzzleDate), JSON.stringify(savedGame));
 
-    const restored = loadSavedDailyGame(DEMO_DAILY_PUZZLE, storage);
-
+    const restored = load(storage);
     expect(restored?.gameState.completedPitchLines).toEqual([{ initials: 'KGJ', outcome: 'BB' }]);
     expect(restored?.atBatState.submittedResult).toMatchObject({ outcome: 'BB' });
     expect(restored?.pendingAdvance?.pitchLines).toEqual([{ initials: 'KGJ', outcome: 'BB' }]);
+    expect(restored?.progressionToken).toBe(savedProgressionToken);
   });
 
   it('clear removes current puzzle storage', () => {
@@ -267,11 +283,12 @@ describe('dailyLocalStorage', () => {
       gameState: createInitialDemoGameState(DEMO_DAILY_PUZZLE),
       atBatState: createInitialAtBatUiState(),
       pendingAdvance: null,
+      progressionToken: savedProgressionToken,
     }, storage);
 
     clearSavedDailyGame(DEMO_DAILY_PUZZLE, storage);
 
-    expect(loadSavedDailyGame(DEMO_DAILY_PUZZLE, storage)).toBeNull();
+    expect(load(storage)).toBeNull();
   });
 });
 
@@ -291,9 +308,13 @@ class FakeStorage {
   }
 }
 
+function load(storage: FakeStorage) {
+  return loadSavedDailyGame(DEMO_DAILY_PUZZLE, initialProgressionToken, storage);
+}
+
 function buildSavedGame(overrides: Partial<SavedDailyGame>): SavedDailyGame {
   return {
-    schemaVersion: 2,
+    schemaVersion: 3,
     puzzleId: DEMO_DAILY_PUZZLE.id,
     puzzleDate: DEMO_DAILY_PUZZLE.puzzleDate,
     puzzleNumber: DEMO_DAILY_PUZZLE.puzzleNumber,
@@ -301,10 +322,13 @@ function buildSavedGame(overrides: Partial<SavedDailyGame>): SavedDailyGame {
     gameState: createInitialDemoGameState(DEMO_DAILY_PUZZLE),
     atBatState: createInitialAtBatUiState(),
     pendingAdvance: null,
+    progressionToken: savedProgressionToken,
     ...overrides,
   };
 }
 
-function setLegacySchema(savedGame: SavedDailyGame): void {
-  (savedGame as unknown as { schemaVersion: number }).schemaVersion = 1;
+function setPreTokenSchema(savedGame: SavedDailyGame, schemaVersion: 1 | 2): void {
+  const preToken = savedGame as unknown as { schemaVersion: number; progressionToken?: string };
+  preToken.schemaVersion = schemaVersion;
+  delete preToken.progressionToken;
 }
