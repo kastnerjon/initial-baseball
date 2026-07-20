@@ -11,3 +11,6 @@ coverage/
 supabase/.branches/
 supabase/.temp/
 .vercel
+.next/
+*.tsbuildinfo
+packages/baseball-data/reports/

@@ -33,8 +33,10 @@ Use this to find the owning file or package before changing behavior.
 | Change needed | Go here |
 |---|---|
 | Daily web routes and components | `apps/web/app/` |
-| Browser persistence and saved-game migration | `apps/web/app/` and the owning web persistence adapter |
-| Web search/reveal data adapter | `apps/web/app/` consuming `packages/baseball-data` accessors |
+| Browser persistence and saved-game migration | `apps/web/app/dailyLocalStorage.ts` |
+| Public Daily puzzle and guarded hint/reveal service | `apps/web/app/dailyRuntimeService.ts` |
+| Web canonical runtime adapter | `apps/web/app/serverCanonicalRuntime.ts` |
+| Search, hint, and resolution routes | `apps/web/app/api/players/` and `apps/web/app/api/daily/` |
 | Admin UI and publication adapters | `apps/web/app/` behind repository/service boundaries |
 | Supabase schema, when persistence is introduced | `supabase/migrations/` |
 | Edge Functions, when a server function is required | `supabase/functions/` |
@@ -56,6 +58,8 @@ Use this to find the owning file or package before changing behavior.
 | Season advanced/enrichment fields | `packages/baseball-data/scripts/generate-canonical-season-enrichment.mjs` |
 | Career advanced/enrichment fields and Hall of Fame | `packages/baseball-data/scripts/generate-canonical-career-enrichment.mjs` |
 | Lightweight runtime index, redirects, and reveal shards | `packages/baseball-data/scripts/generate-canonical-runtime-payload.mjs` |
+| Canonical index, redirect, and reveal-shard access | `packages/baseball-data/src/runtime/` |
+| Runtime consumer regression QA | `packages/baseball-data/scripts/qa-canonical-runtime-consumer.mjs` |
 | Canonical data scripts and current live/shadow distinction | `packages/baseball-data/README.md` |
 | Enrichment contract and missing-data rules | `docs/data/canonical-career-enrichment.md` |
 | Runtime serving contract | `docs/data/canonical-runtime-payload.md` |

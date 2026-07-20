@@ -1,82 +1,48 @@
-'use client';
-
-import { useState, type JSX } from 'react';
-import type {
-  Player,
-  PlayerCareerStatStrip,
-  PlayerRole,
-  PlayerSeasonStatRow,
-} from '@initial-baseball/shared';
-
-export type PlayerRevealCardPlayer = Partial<Pick<
-  Player,
-  | 'id'
-  | 'displayName'
-  | 'fullName'
-  | 'primaryRole'
-  | 'primaryPosition'
-  | 'primaryTeam'
-  | 'teamsDisplay'
-  | 'statsLine'
-  | 'yearsPlayedDisplay'
-  | 'careerStats'
->>;
+import type { JSX } from 'react';
+import type { CanonicalRevealViewModel } from '../canonicalRevealViewModel';
 
 type PlayerRevealCardProps = {
-  player: PlayerRevealCardPlayer;
+  reveal: CanonicalRevealViewModel;
 };
 
 const EMPTY_VALUE = '—';
 const HITTER_COLUMNS = ['AB', 'H', 'HR', 'BA', 'R', 'RBI', 'SB', 'OBP', 'SLG', 'OPS'] as const;
 const PITCHER_COLUMNS = ['W', 'L', 'SV', 'ERA', 'WHIP', 'K', 'IP'] as const;
 
-export function PlayerRevealCard({ player }: PlayerRevealCardProps): JSX.Element {
-  const displayName = cleanValue(player.displayName) ?? cleanValue(player.fullName) ?? EMPTY_VALUE;
-  const role = formatRole(player.primaryRole);
-  const position = cleanValue(player.primaryPosition);
-  const primaryTeam = cleanValue(player.primaryTeam);
-  const yearsPlayed = cleanValue(player.yearsPlayedDisplay);
-  const meta = [yearsPlayed, role, position, primaryTeam].filter((value) => value !== null).join(' · ') || EMPTY_VALUE;
-  const teamsDisplay = cleanValue(player.teamsDisplay);
+export function PlayerRevealCard({ reveal }: PlayerRevealCardProps): JSX.Element {
+  const role = formatRole(reveal.playerType);
+  const meta = [reveal.yearsPlayedDisplay, role, reveal.primaryPosition]
+    .filter((value) => value !== null)
+    .join(' · ') || EMPTY_VALUE;
+  const teamsDisplay = reveal.teamIds.join(', ');
 
   return (
-    <section className="player-reveal-card" aria-label={`Player reveal: ${displayName}`}>
+    <section className="player-reveal-card" aria-label={`Player reveal: ${reveal.displayName}`}>
       <div className="player-reveal-heading">
         <span className="player-reveal-kicker">Player Reveal</span>
-        <h2 className="player-reveal-name">{displayName}</h2>
+        <h2 className="player-reveal-name">{reveal.displayName}</h2>
         <p className="player-reveal-meta">{meta}</p>
-        <p className="player-reveal-teams">{teamsDisplay === null ? 'Teams unavailable' : teamsDisplay}</p>
+        <p className="player-reveal-teams">{teamsDisplay.length === 0 ? 'Teams unavailable' : teamsDisplay}</p>
       </div>
-      <CareerStatStrip careerStats={player.careerStats ?? null} fallbackStatsLine={player.statsLine} />
-      <SeasonStatsDisclosure playerId={player.id} careerStats={player.careerStats ?? null} />
+      <CareerStatStrip reveal={reveal} />
+      <SeasonStatsDisclosure reveal={reveal} />
     </section>
   );
 }
 
 function CareerStatStrip({
-  careerStats,
-  fallbackStatsLine,
+  reveal,
 }: {
-  careerStats: PlayerCareerStatStrip | null;
-  fallbackStatsLine: string | undefined;
+  reveal: CanonicalRevealViewModel;
 }): JSX.Element {
-  if (careerStats === null) {
-    return (
-      <div className="player-reveal-stat-strip player-reveal-stat-strip-fallback">
-        <span className="player-reveal-stat-header">Summary</span>
-        <span className="player-reveal-stat-value">{cleanValue(fallbackStatsLine) ?? EMPTY_VALUE}</span>
-      </div>
-    );
-  }
-
-  if (careerStats.kind === 'pitcher') {
+  if (reveal.career.kind === 'pitcher') {
     return (
       <StatTable
         columns={PITCHER_COLUMNS}
         rows={[{
           key: 'career',
           label: 'Career',
-          values: PITCHER_COLUMNS.map((column) => careerStats.stats[column]),
+          values: PITCHER_COLUMNS.map((column) => reveal.career.stats[column] ?? EMPTY_VALUE),
         }]}
         ariaLabel="Career stat summary"
       />
@@ -87,9 +53,9 @@ function CareerStatStrip({
     <StatTable
       columns={HITTER_COLUMNS}
       rows={[{
-        key: 'career',
-        label: 'Career',
-        values: HITTER_COLUMNS.map((column) => careerStats.stats[column]),
+      key: 'career',
+      label: 'Career',
+      values: HITTER_COLUMNS.map((column) => reveal.career.stats[column] ?? EMPTY_VALUE),
       }]}
       ariaLabel="Career stat summary"
     />
@@ -97,79 +63,32 @@ function CareerStatStrip({
 }
 
 function SeasonStatsDisclosure({
-  playerId,
-  careerStats,
+  reveal,
 }: {
-  playerId: string | undefined;
-  careerStats: PlayerCareerStatStrip | null;
-}): JSX.Element | null {
-  const [seasons, setSeasons] = useState<PlayerSeasonStatRow[] | null>(null);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  if (!playerId || careerStats === null) {
-    return null;
-  }
-
-  async function loadSeasons(): Promise<void> {
-    if (loading || seasons !== null) {
-      return;
-    }
-
-    setLoading(true);
-    setError(null);
-
-    try {
-      const response = await fetch(`/api/player-seasons?playerId=${encodeURIComponent(playerId ?? '')}`);
-
-      if (!response.ok) {
-        throw new Error(`Season request failed with ${response.status}.`);
-      }
-
-      const payload = await response.json() as { seasons?: PlayerSeasonStatRow[] };
-      setSeasons(Array.isArray(payload.seasons) ? payload.seasons : []);
-    } catch {
-      setError('Season stats are temporarily unavailable.');
-    } finally {
-      setLoading(false);
-    }
-  }
-
+  reveal: CanonicalRevealViewModel;
+}): JSX.Element {
   return (
     <details className="player-season-stats">
-      <summary onClick={() => {
-        void loadSeasons();
-      }}>
-        View season-by-season stats
-      </summary>
-      {loading ? <p>Loading season stats…</p> : null}
-      {error === null ? null : <p role="alert">{error}</p>}
-      {seasons !== null && seasons.length === 0 ? <p>No season stats available.</p> : null}
-      {seasons !== null && seasons.length > 0 ? (
-        <SeasonStatTable seasons={seasons} careerKind={careerStats.kind} />
-      ) : null}
+      <summary>View season-by-season stats</summary>
+      {reveal.seasons.length === 0 ? <p>No season stats available.</p> : (
+        <SeasonStatTable reveal={reveal} />
+      )}
     </details>
   );
 }
 
 function SeasonStatTable({
-  seasons,
-  careerKind,
+  reveal,
 }: {
-  seasons: PlayerSeasonStatRow[];
-  careerKind: PlayerCareerStatStrip['kind'];
+  reveal: CanonicalRevealViewModel;
 }): JSX.Element {
-  if (careerKind === 'pitcher') {
-    const pitcherSeasons = seasons.filter((season): season is Extract<PlayerSeasonStatRow, { kind: 'pitcher' }> => (
-      season.kind === 'pitcher'
-    ));
-
+  if (reveal.career.kind === 'pitcher') {
     return (
       <StatTable
         columns={PITCHER_COLUMNS}
-        rows={pitcherSeasons.map((season) => ({
-          key: `${season.year}:${season.teams}`,
-          label: `${season.year} · ${season.teams || EMPTY_VALUE}`,
+        rows={reveal.seasons.map((season) => ({
+          key: `${season.season}:${season.teamIds.join(',')}`,
+          label: `${season.season} · ${season.teamIds.join(', ') || EMPTY_VALUE}`,
           values: PITCHER_COLUMNS.map((column) => season.stats[column]),
         }))}
         ariaLabel="Season-by-season statistics"
@@ -177,16 +96,12 @@ function SeasonStatTable({
     );
   }
 
-  const hitterSeasons = seasons.filter((season): season is Extract<PlayerSeasonStatRow, { kind: 'hitter' }> => (
-    season.kind === 'hitter'
-  ));
-
   return (
     <StatTable
       columns={HITTER_COLUMNS}
-      rows={hitterSeasons.map((season) => ({
-        key: `${season.year}:${season.teams}`,
-        label: `${season.year} · ${season.teams || EMPTY_VALUE}`,
+      rows={reveal.seasons.map((season) => ({
+        key: `${season.season}:${season.teamIds.join(',')}`,
+        label: `${season.season} · ${season.teamIds.join(', ') || EMPTY_VALUE}`,
         values: HITTER_COLUMNS.map((column) => season.stats[column]),
       }))}
       ariaLabel="Season-by-season statistics"
@@ -203,7 +118,7 @@ function StatTable({
   rows: Array<{
     key: string;
     label: string;
-    values: Array<number | string>;
+    values: Array<number | string | undefined>;
   }>;
   ariaLabel: string;
 }): JSX.Element {
@@ -223,7 +138,7 @@ function StatTable({
             <tr key={row.key}>
               <th scope="row">{row.label}</th>
               {row.values.map((value, index) => (
-                <td key={columns[index]}>{value}</td>
+                <td key={columns[index]}>{value ?? EMPTY_VALUE}</td>
               ))}
             </tr>
           ))}
@@ -233,20 +148,13 @@ function StatTable({
   );
 }
 
-function cleanValue(value: string | undefined): string | null {
-  const trimmedValue = value?.trim();
-  return trimmedValue === undefined || trimmedValue.length === 0 ? null : trimmedValue;
-}
-
-function formatRole(role: PlayerRole | undefined): string | null {
+function formatRole(role: CanonicalRevealViewModel['playerType']): string {
   switch (role) {
     case 'hitter':
       return 'Hitter';
     case 'pitcher':
       return 'Pitcher';
-    case 'two_way':
+    case 'two-way':
       return 'Two-way';
-    default:
-      return null;
   }
 }

@@ -3,7 +3,7 @@ import {
   DEFAULT_DAILY_HINT_CONFIG,
   DEFAULT_DAILY_SCORE_SUMMARY,
   type DailyGameState,
-  type DailyPuzzle,
+  type DailyPublicPuzzle,
 } from '@initial-baseball/shared';
 import { applyDailyOutcomeToInning } from './applyDailyOutcomeToInning.js';
 import { createDailyShareResult } from './createDailyShareResult.js';
@@ -42,7 +42,7 @@ it('formats spoiler-safe daily share text with initials and outcomes', () => {
 });
 
 it('formats stable share text from a full inning engine-driven share result', () => {
-  const puzzle: DailyPuzzle = {
+  const puzzle: DailyPublicPuzzle = {
     id: 'puzzle-42',
     puzzleNumber: 42,
     puzzleDate: '2026-04-27',
@@ -55,39 +55,15 @@ it('formats stable share text from a full inning engine-driven share result', ()
     pitches: [
       {
         pitchNumber: 1,
-        player: {
-          playerId: 'kgj',
-          fullName: 'Ken Griffey Jr.',
-          displayName: 'Ken Griffey Jr.',
-          initials: 'KGJ',
-          kind: 'hitter',
-          primaryPosition: 'CF',
-        },
-        hints: {},
+        initials: 'KGJ',
       },
       {
         pitchNumber: 2,
-        player: {
-          playerId: 'dw',
-          fullName: 'David Wright',
-          displayName: 'David Wright',
-          initials: 'DW',
-          kind: 'hitter',
-          primaryPosition: '3B',
-        },
-        hints: {},
+        initials: 'DW',
       },
       {
         pitchNumber: 3,
-        player: {
-          playerId: 'ccs',
-          fullName: 'CC Sabathia',
-          displayName: 'CC Sabathia',
-          initials: 'CCS',
-          kind: 'pitcher',
-          primaryPosition: 'SP',
-        },
-        hints: {},
+        initials: 'CCS',
       },
     ],
   };

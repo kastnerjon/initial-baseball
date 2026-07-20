@@ -5,14 +5,15 @@
   "packageManager": "pnpm@9.15.0",
   "scripts": {
     "build": "turbo build",
-    "build:web": "pnpm --filter @initial-baseball/shared build && pnpm --filter @initial-baseball/engine build && pnpm --filter @initial-baseball/baseball-data build && pnpm --filter @initial-baseball/daily build && pnpm --filter @initial-baseball/web build",
+    "build:web": "pnpm data:runtime && pnpm --filter @initial-baseball/shared build && pnpm --filter @initial-baseball/engine build && pnpm --filter @initial-baseball/baseball-data build && pnpm --filter @initial-baseball/daily build && pnpm --filter @initial-baseball/web build",
     "test": "turbo test",
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",
     "check:file-sizes": "node scripts/check-file-sizes.mjs",
     "data:audit": "pnpm --filter @initial-baseball/baseball-data audit:current",
     "data:identities": "pnpm --filter @initial-baseball/baseball-data generate:canonical-identities",
-    "data:universe": "pnpm data:identities && pnpm --filter @initial-baseball/baseball-data generate:canonical-universe"
+    "data:universe": "pnpm data:identities && pnpm --filter @initial-baseball/baseball-data generate:canonical-universe",
+    "data:runtime": "pnpm data:identities && pnpm --filter @initial-baseball/baseball-data generate:canonical-universe:strict && pnpm --filter @initial-baseball/baseball-data generate:canonical-season-facts:strict && pnpm --filter @initial-baseball/baseball-data generate:canonical-season-aggregates:strict && pnpm --filter @initial-baseball/baseball-data generate:canonical-season-cards:strict && pnpm --filter @initial-baseball/baseball-data generate:canonical-career-aggregates:strict && pnpm --filter @initial-baseball/baseball-data generate:canonical-career-cards:strict && pnpm --filter @initial-baseball/baseball-data generate:canonical-season-enrichment:strict && pnpm --filter @initial-baseball/baseball-data generate:canonical-career-enrichment:strict && pnpm --filter @initial-baseball/baseball-data generate:canonical-runtime-payload:strict"
   },
   "devDependencies": {
     "@types/node": "^22.10.0",

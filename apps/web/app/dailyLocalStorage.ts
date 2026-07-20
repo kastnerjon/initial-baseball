@@ -1,9 +1,9 @@
-import type { DailyGameState, DailyGuessResult, DailyOutcome, DailyPuzzle, DailySharePitchLine } from '@initial-baseball/shared';
+import type { DailyGameState, DailyGuessResult, DailyOutcome, DailyPublicPuzzle, DailyPuzzle, DailySharePitchLine } from '@initial-baseball/shared';
 import type { PendingAtBatAdvance } from './dailyAtBatResolution';
-import type { DemoAtBatUiState } from './mockDailyPuzzle';
+import type { DailyAtBatUiState } from './dailyClientState';
 
 const DAILY_STORAGE_PREFIX = 'initial-baseball:daily';
-const DAILY_STORAGE_SCHEMA_VERSION = 1;
+const DAILY_STORAGE_SCHEMA_VERSION = 2;
 
 type DailyStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 
@@ -14,14 +14,14 @@ export type SavedDailyGame = {
   puzzleNumber: number;
   currentPitchIndex: number;
   gameState: DailyGameState;
-  atBatState: DemoAtBatUiState;
+  atBatState: DailyAtBatUiState;
   pendingAdvance: PendingAtBatAdvance | null;
 };
 
 export type SaveDailyGameInput = {
   currentPitchIndex: number;
   gameState: DailyGameState;
-  atBatState: DemoAtBatUiState;
+  atBatState: DailyAtBatUiState;
   pendingAdvance: PendingAtBatAdvance | null;
 };
 
@@ -30,14 +30,15 @@ export function getDailyStorageKey(puzzleDate: string): string {
 }
 
 export function loadSavedDailyGame(
-  puzzle: DailyPuzzle,
+  puzzle: DailyPublicPuzzle | DailyPuzzle,
   storage: DailyStorage | null = getBrowserDailyStorage(),
 ): SavedDailyGame | null {
   if (storage === null) {
     return null;
   }
 
-  const savedValue = safelyReadStorage(storage, getDailyStorageKey(puzzle.puzzleDate));
+  const publicPuzzle = toPublicPuzzle(puzzle);
+  const savedValue = safelyReadStorage(storage, getDailyStorageKey(publicPuzzle.puzzleDate));
 
   if (savedValue === null) {
     return null;
@@ -45,22 +46,15 @@ export function loadSavedDailyGame(
 
   const parsedValue = parseSavedValue(savedValue);
 
-  if (!isSavedDailyGameForPuzzle(parsedValue, puzzle)) {
+  if (!isSavedDailyGameForPuzzle(parsedValue, publicPuzzle)) {
     return null;
   }
 
-  return normalizeSavedDailyGame({
-    ...parsedValue,
-    atBatState: {
-      ...parsedValue.atBatState,
-      selectedAcceptedPlayerIds: parsedValue.atBatState.selectedAcceptedPlayerIds
-        ?? (parsedValue.atBatState.selectedPlayerId === null ? null : [parsedValue.atBatState.selectedPlayerId]),
-    },
-  });
+  return normalizeSavedDailyGame(parsedValue, publicPuzzle);
 }
 
 export function saveDailyGame(
-  puzzle: DailyPuzzle,
+  puzzle: DailyPublicPuzzle | DailyPuzzle,
   input: SaveDailyGameInput,
   storage: DailyStorage | null = getBrowserDailyStorage(),
 ): void {
@@ -68,22 +62,23 @@ export function saveDailyGame(
     return;
   }
 
+  const publicPuzzle = toPublicPuzzle(puzzle);
   const savedGame: SavedDailyGame = {
     schemaVersion: DAILY_STORAGE_SCHEMA_VERSION,
-    puzzleId: puzzle.id,
-    puzzleDate: puzzle.puzzleDate,
-    puzzleNumber: puzzle.puzzleNumber,
+    puzzleId: publicPuzzle.id,
+    puzzleDate: publicPuzzle.puzzleDate,
+    puzzleNumber: publicPuzzle.puzzleNumber,
     currentPitchIndex: input.currentPitchIndex,
     gameState: input.gameState,
     atBatState: input.atBatState,
     pendingAdvance: input.pendingAdvance,
   };
 
-  safelyWriteStorage(storage, getDailyStorageKey(puzzle.puzzleDate), JSON.stringify(savedGame));
+  safelyWriteStorage(storage, getDailyStorageKey(publicPuzzle.puzzleDate), JSON.stringify(savedGame));
 }
 
 export function clearSavedDailyGame(
-  puzzle: DailyPuzzle,
+  puzzle: DailyPublicPuzzle | DailyPuzzle,
   storage: DailyStorage | null = getBrowserDailyStorage(),
 ): void {
   if (storage === null) {
@@ -91,6 +86,17 @@ export function clearSavedDailyGame(
   }
 
   safelyRemoveStorage(storage, getDailyStorageKey(puzzle.puzzleDate));
+}
+
+function toPublicPuzzle(puzzle: DailyPublicPuzzle | DailyPuzzle): DailyPublicPuzzle {
+  return {
+    ...puzzle,
+    pitches: puzzle.pitches.map((pitch) => (
+      'initials' in pitch
+        ? pitch
+        : { pitchNumber: pitch.pitchNumber, initials: pitch.player.initials }
+    )),
+  };
 }
 
 function getBrowserDailyStorage(): DailyStorage | null {
@@ -133,13 +139,13 @@ function parseSavedValue(value: string): unknown {
   }
 }
 
-function isSavedDailyGameForPuzzle(value: unknown, puzzle: DailyPuzzle): value is SavedDailyGame {
+function isSavedDailyGameForPuzzle(value: unknown, puzzle: DailyPublicPuzzle): value is SavedDailyGame {
   if (!isRecord(value)) {
     return false;
   }
 
   if (
-    value.schemaVersion !== DAILY_STORAGE_SCHEMA_VERSION
+    (value.schemaVersion !== DAILY_STORAGE_SCHEMA_VERSION && value.schemaVersion !== 1)
     || value.puzzleId !== puzzle.id
     || value.puzzleDate !== puzzle.puzzleDate
     || value.puzzleNumber !== puzzle.puzzleNumber
@@ -164,11 +170,6 @@ function isSavedDailyGameForPuzzle(value: unknown, puzzle: DailyPuzzle): value i
     && Array.isArray(gameState.completedPitchLines)
     && typeof atBatState.query === 'string'
     && (typeof atBatState.selectedPlayerId === 'string' || atBatState.selectedPlayerId === null)
-    && (
-      isStringArray(atBatState.selectedAcceptedPlayerIds)
-      || atBatState.selectedAcceptedPlayerIds === null
-      || atBatState.selectedAcceptedPlayerIds === undefined
-    )
     && typeof atBatState.revealCount === 'number'
     && typeof atBatState.strikeCount === 'number'
   );
@@ -178,15 +179,20 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
 
-function isStringArray(value: unknown): value is string[] {
-  return Array.isArray(value) && value.every((item) => typeof item === 'string');
-}
-
-function normalizeSavedDailyGame(savedGame: SavedDailyGame): SavedDailyGame {
+function normalizeSavedDailyGame(
+  savedGame: SavedDailyGame,
+  publicPuzzle: DailyPublicPuzzle,
+): SavedDailyGame {
+  const legacyAtBatState = savedGame.atBatState as DailyAtBatUiState & {
+    revealedHints?: DailyAtBatUiState['revealedHints'];
+    reveal?: DailyAtBatUiState['reveal'];
+  };
   return {
     ...savedGame,
+    schemaVersion: DAILY_STORAGE_SCHEMA_VERSION,
     gameState: {
       ...savedGame.gameState,
+      puzzle: publicPuzzle,
       completedPitchLines: savedGame.gameState.completedPitchLines.map(normalizeSharePitchLine),
       shareResult: savedGame.gameState.shareResult === null
         ? null
@@ -196,7 +202,9 @@ function normalizeSavedDailyGame(savedGame: SavedDailyGame): SavedDailyGame {
           },
     },
     atBatState: {
-      ...savedGame.atBatState,
+      ...legacyAtBatState,
+      revealedHints: legacyAtBatState.revealedHints ?? [],
+      reveal: legacyAtBatState.reveal ?? null,
       submittedResult: normalizeDailyGuessResult(savedGame.atBatState.submittedResult),
     },
     pendingAdvance: savedGame.pendingAdvance === null

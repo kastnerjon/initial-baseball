@@ -3,6 +3,7 @@ import type { Player } from '@initial-baseball/shared';
 import {
   comparePlayersByRecognizability,
   rankPlayersByRecognizability,
+  selectCanonicalDailyPlayersForDate,
 } from './dailyPuzzleSelection';
 
 describe('recognizability ranking', () => {
@@ -65,6 +66,31 @@ describe('recognizability ranking', () => {
       'Alpha',
       'Bravo',
     ]);
+  });
+});
+
+describe('canonical Daily selection compatibility', () => {
+  it('filters generated candidates without a canonical runtime target', () => {
+    const selections = selectCanonicalDailyPlayersForDate('2026-07-20', {}, playerId => (
+      playerId === 'chadwick:9b391785' ? null : `canonical:${playerId}`
+    ));
+
+    expect(selections).toHaveLength(9);
+    expect(selections.every(({ canonicalPlayerId }) => canonicalPlayerId.startsWith('canonical:'))).toBe(true);
+    expect(selections.some(({ player }) => player.id === 'chadwick:9b391785')).toBe(false);
+  });
+
+  it('fails visibly when a historical override has no canonical target', () => {
+    expect(() => selectCanonicalDailyPlayersForDate('2026-07-20', {
+      '2026-07-20': [
+        'Ken Griffey Jr.',
+        'David Wright',
+        'CC Sabathia',
+        'Albert Pujols',
+        'Derek Jeter',
+        'Ichiro Suzuki',
+      ],
+    }, () => null)).toThrow('could not resolve legacy playerId to canonical runtime data');
   });
 });
 

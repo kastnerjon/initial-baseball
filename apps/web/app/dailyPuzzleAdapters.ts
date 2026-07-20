@@ -1,16 +1,6 @@
 import { generateInitials } from '@initial-baseball/engine';
 import type { DailyPuzzle, Player, PlayerIdentity } from '@initial-baseball/shared';
 import { buildDefaultDailyHints } from './buildDefaultDailyHints';
-import type { DemoDailyPitch, DemoPitchHint } from './mockDailyPuzzle';
-
-export function createGamePitchesFromPuzzle(puzzle: DailyPuzzle): DemoDailyPitch[] {
-  return puzzle.pitches.map((pitch) => ({
-    pitchNumber: pitch.pitchNumber,
-    player: pitch.player,
-    hints: buildHintsFromHintSet(pitch.hints),
-    correctPlayerId: pitch.player.playerId,
-  }));
-}
 
 export function createDailyPuzzlePitch(pitchNumber: number, player: Player): DailyPuzzle['pitches'][number] {
   return {
@@ -47,23 +37,4 @@ function buildHintSet(hints: DemoPitchHint[]): DailyPuzzle['pitches'][number]['h
   }, {});
 }
 
-function buildHintsFromHintSet(hints: DailyPuzzle['pitches'][number]['hints']): DemoPitchHint[] {
-  return buildDefaultDailyHints({
-    id: '',
-    fullName: '',
-    displayName: '',
-    primaryRole: 'hitter',
-    primaryPosition: hints.position ?? 'Unknown',
-    mainDecade: hints.main_decade ?? 'Unknown',
-    firstYear: null,
-    lastYear: null,
-    yearsPlayedDisplay: 'Unknown',
-    primaryTeam: '',
-    teamsDisplay: hints.teams ?? '',
-    statsLine: hints.stats ?? '',
-    careerStats: null,
-    dailyEligibilityTier: 'none',
-    dailyEligible: false,
-    aliases: [],
-  });
-}
+type DemoPitchHint = ReturnType<typeof buildDefaultDailyHints>[number];

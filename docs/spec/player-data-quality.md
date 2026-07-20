@@ -169,13 +169,11 @@ The lineup editor must show enough context to avoid selecting the wrong same-nam
 
 ## Current implementation sequence
 
-1. Complete and merge the canonical runtime payload and source-completeness fixes.
-2. Migrate web search, answer resolution, saved state, and historical overrides to canonical IDs and redirects.
-3. Add same-name disambiguation in the consumer UI.
-4. Render canonical career and regular-season reveal records.
-5. Verify Daily generation and historical puzzles after migration.
-6. Add persisted, auditable admin corrections and lineup publication.
-7. Continue adding approved enrichment sources only through the season-first ownership model.
+1. Complete the canonical career and regular-season reveal presentation.
+2. Verify historical puzzles and repeat protection on canonical identity.
+3. Replace the remaining legacy recognizability and hint-construction inputs with canonical contracts.
+4. Add persisted, auditable admin corrections and lineup publication.
+5. Continue adding approved enrichment sources only through the season-first ownership model.
 
 ## Completion criteria
 

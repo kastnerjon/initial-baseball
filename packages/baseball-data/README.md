@@ -2,19 +2,15 @@
 
 Player data ingestion, normalization, canonicalization, enrichment, and serving-artifact generation.
 
-## Current live dataset
+## Current live runtime
 
-`baseballPlayers` is still the dataset consumed by the live game. It is a broad Chadwick-derived search universe enriched from committed Lahman data.
+The canonical runtime payload supplies live player search, identity resolution, and reveal records. `createFileSystemCanonicalRuntimeAccessor` validates the index and redirects, resolves legacy IDs, and lazily loads deterministic reveal shards on the server.
 
-- It supports player-name search and legacy player lookup.
-- It includes generated role, position, decade, team, career statline, and Daily-eligibility fields where source coverage is available.
-- It is primarily built around MLB players with post-1950 played-year coverage, plus inducted Hall of Fame players even when they played before 1950.
-- Some records still use fallback values when matching or Lahman coverage is incomplete.
-- WAR is not included.
+The legacy `baseballPlayers` exports remain temporarily for Daily recognizability selection, historical overrides, and hint construction. They are no longer the browser search universe or reveal-stat source. WAR is not included.
 
 The live dataset is being replaced in stages. Until runtime migration is complete, changes to the canonical pipeline do not automatically change the game.
 
-## Canonical shadow pipeline
+## Canonical pipeline
 
 The replacement pipeline now generates these layers in order:
 
@@ -34,7 +30,7 @@ The runtime payload joins the validated layers into:
 - deterministic reveal shards containing career summaries and one row per regular season;
 - legacy-ID redirects whose targets have valid runtime reveal records.
 
-The runtime payload remains a shadow artifact. The web app does not consume it yet.
+The web app consumes the runtime payload through the server-side accessor. Strict generation and consumer QA run before the production web build.
 
 ## Data ownership
 
@@ -70,7 +66,7 @@ The current `core`, `extended`, and `none` thresholds are product heuristics. Fu
 
 ## Runtime serving design
 
-Canonical reveal records are sharded by canonical player ID. A client can load the lightweight index, read a player's shard path, and fetch only the relevant reveal shard. This keeps initial browser payloads smaller and gives web, mobile, and server consumers the same data contract.
+Canonical reveal records are sharded by canonical player ID. Server consumers load the lightweight index once and only the relevant reveal shard after resolution. Browser clients use guarded web routes rather than downloading the complete index or shards.
 
 See:
 

@@ -1,45 +1,31 @@
 'use client';
 
 import type { JSX } from 'react';
-import { useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import {
-  searchPlayers,
   type PlayerSearchResult,
 } from '@initial-baseball/engine';
-import type { DailyGuessResult, Player } from '@initial-baseball/shared';
-import { PlayerRevealCard, type PlayerRevealCardPlayer } from './PlayerRevealCard';
+import type { DailyGuessResult, DailyPublicPuzzlePitch } from '@initial-baseball/shared';
+import type { CanonicalRevealViewModel } from '../canonicalRevealViewModel';
+import type { DailyHintResponse } from '../dailyRuntimeContracts';
+import { PlayerRevealCard } from './PlayerRevealCard';
 import { ResultDisplay } from './ResultDisplay';
 import { ResultsDropdown } from './ResultsDropdown';
 import { SearchInput } from './SearchInput';
 
-export type AtBatCardPitch = {
-  pitchNumber: number;
-  correctPlayerId: string;
-  player: {
-    playerId: string;
-    initials: string;
-    fullName: string;
-    displayName: string;
-    kind: 'hitter' | 'pitcher';
-    primaryPosition: string;
-  };
-  hints: Array<{
-    hintLabel: string;
-    hintValue: string;
-  }>;
-};
-
 type AtBatCardProps = {
-  atBat: AtBatCardPitch;
-  players: Player[];
+  atBat: DailyPublicPuzzlePitch;
   state: {
     query: string;
     selectedPlayerId: string | null;
-    selectedAcceptedPlayerIds: string[] | null;
     revealCount: 0 | 1 | 2 | 3 | 4;
+    revealedHints: DailyHintResponse['hint'][];
     strikeCount: number;
     submittedResult: DailyGuessResult | null;
+    reveal: CanonicalRevealViewModel | null;
   };
+  requestPending: boolean;
+  requestError: string | null;
   onQueryChange: (query: string) => void;
   onSelectPlayer: (result: PlayerSearchResult) => void;
   onRevealHint: () => void;
@@ -50,8 +36,9 @@ type AtBatCardProps = {
 
 export function AtBatCard({
   atBat,
-  players,
   state,
+  requestPending,
+  requestError,
   onQueryChange,
   onSelectPlayer,
   onRevealHint,
@@ -59,16 +46,35 @@ export function AtBatCard({
   onGiveUp,
   onNextPitch,
 }: AtBatCardProps): JSX.Element {
-  const results = useMemo(() => searchPlayers(state.query, players).slice(0, 5), [players, state.query]);
-  const revealedHints = atBat.hints.slice(0, state.revealCount);
-  const hasRevealedAllHints = state.revealCount >= atBat.hints.length;
-  const revealPlayer = useMemo(
-    () => players.find((player) => player.id === atBat.correctPlayerId) ?? createFallbackRevealPlayer(atBat),
-    [atBat, players],
-  );
+  const [results, setResults] = useState<PlayerSearchResult[]>([]);
+  const hasRevealedAllHints = state.revealCount >= 4;
   const resolvedTerminalResult = state.submittedResult !== null && state.submittedResult.kind !== 'incorrect'
     ? state.submittedResult
     : null;
+
+  useEffect(() => {
+    const query = state.query.trim();
+    if (query.length === 0 || state.selectedPlayerId !== null) {
+      setResults([]);
+      return;
+    }
+    const controller = new AbortController();
+    const timer = globalThis.setTimeout(() => {
+      void fetch(`/api/players/search?q=${encodeURIComponent(query)}`, { signal: controller.signal })
+        .then(async (response) => {
+          if (!response.ok) throw new Error(`Search failed with ${response.status}.`);
+          return response.json() as Promise<{ results?: PlayerSearchResult[] }>;
+        })
+        .then((payload) => setResults(Array.isArray(payload.results) ? payload.results.slice(0, 5) : []))
+        .catch((error: unknown) => {
+          if (!(error instanceof DOMException && error.name === 'AbortError')) setResults([]);
+        });
+    }, 120);
+    return () => {
+      globalThis.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [state.query, state.selectedPlayerId]);
 
   if (resolvedTerminalResult !== null) {
     return (
@@ -78,7 +84,7 @@ export function AtBatCard({
           <CountIndicator label="Strikes" filledCount={state.strikeCount} total={3} />
         </div>
         <ResultDisplay result={resolvedTerminalResult} />
-        <PlayerRevealCard player={revealPlayer} />
+        {state.reveal === null ? null : <PlayerRevealCard reveal={state.reveal} />}
         <OutcomeDistributionPlaceholder />
         <button
           type="button"
@@ -100,18 +106,18 @@ export function AtBatCard({
 
       <div className="initials-block">
         <span className="initials-label">Up Now</span>
-        <strong className="initials-value">{atBat.player.initials}</strong>
+        <strong className="initials-value">{atBat.initials}</strong>
       </div>
 
       <div className="hint-block">
         <div className="hint-list">
-          {revealedHints.length === 0 ? (
+          {state.revealedHints.length === 0 ? (
             <div>
               <span className="hint-label">Hints</span>
               <p className="hint-value">None revealed yet.</p>
             </div>
           ) : (
-            revealedHints.map((hint) => (
+            state.revealedHints.map((hint) => (
               <div key={hint.hintLabel} className="revealed-hint">
                 <span className="hint-label">{hint.hintLabel}</span>
                 <p className="hint-value">{hint.hintValue}</p>
@@ -123,7 +129,7 @@ export function AtBatCard({
           type="button"
           className="button-secondary"
           onClick={onRevealHint}
-          disabled={hasRevealedAllHints}
+          disabled={hasRevealedAllHints || requestPending}
         >
           Reveal Next Hint
         </button>
@@ -145,12 +151,14 @@ export function AtBatCard({
       {state.submittedResult !== null && state.submittedResult.kind === 'incorrect' ? (
         <ResultDisplay result={state.submittedResult} />
       ) : null}
+      {requestError === null ? null : <p role="alert">{requestError}</p>}
 
       <div className="at-bat-actions">
         <button
           type="button"
           className="button-secondary button-give-up"
           onClick={onGiveUp}
+          disabled={requestPending}
         >
           Give up
         </button>
@@ -158,7 +166,7 @@ export function AtBatCard({
           type="button"
           className="button-primary"
           onClick={onSubmit}
-          disabled={state.selectedPlayerId === null}
+          disabled={state.selectedPlayerId === null || requestPending}
         >
           Submit Guess
         </button>
@@ -169,15 +177,6 @@ export function AtBatCard({
   function handleSelect(result: PlayerSearchResult): void {
     onSelectPlayer(result);
   }
-}
-
-function createFallbackRevealPlayer(atBat: AtBatCardPitch): PlayerRevealCardPlayer {
-  return {
-    displayName: atBat.player.displayName,
-    fullName: atBat.player.fullName,
-    primaryRole: atBat.player.kind,
-    primaryPosition: atBat.player.primaryPosition,
-  };
 }
 
 function CountIndicator({

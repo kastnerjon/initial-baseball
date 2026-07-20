@@ -1,11 +1,11 @@
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { baseballPlayers } from '@initial-baseball/baseball-data';
 import { createDailyShareResult, formatDailyShareText, getGuessOutcome } from '@initial-baseball/engine';
 import type { DailyGameState, DailyGuessResult } from '@initial-baseball/shared';
 import { describe, expect, it } from 'vitest';
 import { AtBatCard } from './components/AtBatCard';
 import { PlayerRevealCard } from './components/PlayerRevealCard';
+import type { CanonicalRevealViewModel } from './canonicalRevealViewModel';
 import { createGiveUpResult, resolveDailyTerminalAtBat } from './dailyAtBatResolution';
 import { createDailyShareUrl } from './dailyShareUrl';
 import {
@@ -16,7 +16,7 @@ import {
 } from './mockDailyPuzzle';
 
 const firstPitch = getFirstDemoPitch();
-const firstRevealPlayer = getFirstRevealPlayer();
+const firstReveal = buildReveal('hitter');
 (globalThis as Record<string, unknown>).React = React;
 
 describe('createGiveUpResult', () => {
@@ -124,8 +124,8 @@ describe('AtBatCard terminal output', () => {
     expect(html).not.toContain('Next Pitch');
     expect(html).toContain('K');
     expect(html).toContain('Player Reveal');
-    expect(html).toContain(firstPitch.player.fullName);
-    expect(html).toContain(`${firstRevealPlayer.yearsPlayedDisplay} · Hitter · ${firstRevealPlayer.primaryPosition} · ${firstRevealPlayer.primaryTeam}`);
+    expect(html).toContain(firstReveal.displayName);
+    expect(html).toContain(`${firstReveal.yearsPlayedDisplay} · Hitter · ${firstReveal.primaryPosition}`);
     expect(html).toContain('<th scope="col">Summary</th>');
     expect(html).toContain('<th scope="col">OPS</th>');
     expect(html).toContain('<td>630</td>');
@@ -147,7 +147,7 @@ describe('AtBatCard terminal output', () => {
 
     expect(html).toContain('Strikeout');
     expect(html).toContain('Player Reveal');
-    expect(html).toContain(firstPitch.player.fullName);
+    expect(html).toContain(firstReveal.displayName);
   });
 
   it('reveals the player card after a correct outcome', () => {
@@ -168,8 +168,8 @@ describe('AtBatCard terminal output', () => {
     });
 
     expect(html).toContain('Player Reveal');
-    expect(html).toContain(firstPitch.player.fullName);
-    expect(html).toContain(firstRevealPlayer.yearsPlayedDisplay);
+    expect(html).toContain(firstReveal.displayName);
+    expect(html).toContain(firstReveal.yearsPlayedDisplay);
     expect(html).toContain('Career');
     expect(html).not.toContain(`Answer: ${firstPitch.player.fullName}`);
   });
@@ -177,8 +177,7 @@ describe('AtBatCard terminal output', () => {
 
 describe('PlayerRevealCard', () => {
   it('renders years played and hitter stat strip labels and values', () => {
-    const kenGriffeyJr = requirePlayerByName('Ken Griffey Jr.');
-    const html = renderToStaticMarkup(React.createElement(PlayerRevealCard, { player: kenGriffeyJr }));
+    const html = renderToStaticMarkup(React.createElement(PlayerRevealCard, { reveal: firstReveal }));
 
     expect(html).toContain('1989–2010');
     expect(html).toContain('<th scope="col">Summary</th>');
@@ -190,8 +189,7 @@ describe('PlayerRevealCard', () => {
   });
 
   it('renders pitcher stat strip labels and values', () => {
-    const ccSabathia = requirePlayerByName('CC Sabathia');
-    const html = renderToStaticMarkup(React.createElement(PlayerRevealCard, { player: ccSabathia }));
+    const html = renderToStaticMarkup(React.createElement(PlayerRevealCard, { reveal: buildReveal('pitcher') }));
 
     expect(html).toContain('2001–2019');
     expect(html).toContain('<th scope="col">ERA</th>');
@@ -211,13 +209,15 @@ function renderAtBatCard({
 }): string {
   return renderToStaticMarkup(
     React.createElement(AtBatCard, {
-      atBat: firstPitch,
-      players: baseballPlayers,
+      atBat: { pitchNumber: firstPitch.pitchNumber, initials: firstPitch.player.initials },
       state: {
         ...createInitialAtBatUiState(),
         strikeCount,
         submittedResult,
+        reveal: submittedResult === null || submittedResult.kind === 'incorrect' ? null : firstReveal,
       },
+      requestPending: false,
+      requestError: null,
       onQueryChange: () => undefined,
       onSelectPlayer: () => undefined,
       onRevealHint: () => undefined,
@@ -238,26 +238,36 @@ function getFirstDemoPitch() {
   return pitch;
 }
 
-function getFirstRevealPlayer() {
-  const player = baseballPlayers.find((candidate) => candidate.id === firstPitch.correctPlayerId);
-
-  if (player === undefined) {
-    throw new Error('Expected first Daily pitch player to exist in generated player data.');
-  }
-
-  return player;
-}
-
-function requirePlayerByName(name: string) {
-  const player = baseballPlayers.find((candidate) => (
-    candidate.fullName === name
-    || candidate.displayName === name
-    || candidate.aliases.includes(name)
-  ));
-
-  if (player === undefined) {
-    throw new Error(`Expected ${name} to exist in generated player data.`);
-  }
-
-  return player;
+function buildReveal(kind: 'hitter' | 'pitcher'): CanonicalRevealViewModel {
+  const hitterStats = {
+    AB: 9801,
+    H: 2781,
+    HR: 630,
+    BA: '.284',
+    R: 1662,
+    RBI: 1836,
+    SB: 184,
+    OBP: '.370',
+    SLG: '.538',
+    OPS: '.908',
+  };
+  const pitcherStats = {
+    W: 251,
+    L: 161,
+    SV: 0,
+    ERA: '3.74',
+    WHIP: '1.26',
+    K: 3093,
+    IP: '3577.1',
+  };
+  return {
+    playerId: kind === 'hitter' ? 'ibp_griffey' : 'ibp_sabathia',
+    displayName: kind === 'hitter' ? 'Ken Griffey Jr.' : 'CC Sabathia',
+    playerType: kind,
+    primaryPosition: kind === 'hitter' ? 'CF' : 'P',
+    yearsPlayedDisplay: kind === 'hitter' ? '1989–2010' : '2001–2019',
+    teamIds: kind === 'hitter' ? ['SEA', 'CIN', 'CHA'] : ['CLE', 'MIL', 'NYA'],
+    career: { kind, stats: kind === 'hitter' ? hitterStats : pitcherStats },
+    seasons: [],
+  };
 }

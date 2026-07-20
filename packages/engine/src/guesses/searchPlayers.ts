@@ -8,10 +8,25 @@ export type PlayerSearchResult = {
   fullName: string;
   metadata?: {
     dailyEligibilityTier?: Player['dailyEligibilityTier'];
+    firstYear?: number | null;
+    lastYear?: number | null;
     mainDecade?: string;
     primaryPosition?: string;
+    playerType?: string;
     teamsDisplay?: string;
   };
+};
+
+export type PlayerSearchCandidate = {
+  id: string;
+  displayName: string;
+  fullName?: string;
+  aliases: string[];
+  primaryPosition?: string | null;
+  firstYear?: number | null;
+  lastYear?: number | null;
+  teamsDisplay?: string;
+  playerType?: string;
 };
 
 type RankedPlayerSearchResult = PlayerSearchResult & {
@@ -27,28 +42,52 @@ const ELIGIBILITY_PRIORITIES: Record<Player['dailyEligibilityTier'], number> = {
 };
 
 export function searchPlayers(query: string, players: Player[]): PlayerSearchResult[] {
+  return searchPlayerCandidates(query, players, true);
+}
+
+export function searchCanonicalPlayers(
+  query: string,
+  players: readonly PlayerSearchCandidate[],
+): PlayerSearchResult[] {
+  return searchPlayerCandidates(query, players, false);
+}
+
+function searchPlayerCandidates(
+  query: string,
+  players: readonly PlayerSearchCandidate[],
+  collapseSameVisibleName: boolean,
+): PlayerSearchResult[] {
   const normalizedQuery = normalizeGuess(query);
 
   if (!normalizedQuery) {
     return [];
   }
 
-  const acceptedPlayerIdsByVisibleName = buildAcceptedPlayerIdsByVisibleName(players);
+  const acceptedPlayerIdsByVisibleName = collapseSameVisibleName
+    ? buildAcceptedPlayerIdsByVisibleName(players)
+    : new Map<string, string[]>();
   const rankedResults = players
-    .map((player) => rankPlayerSearchResult(normalizedQuery, player, acceptedPlayerIdsByVisibleName))
+    .map((player) => rankPlayerSearchResult(
+      normalizedQuery,
+      player,
+      acceptedPlayerIdsByVisibleName,
+      collapseSameVisibleName,
+    ))
     .filter((result): result is RankedPlayerSearchResult => result !== null)
     .sort(compareRankedResults);
 
-  return dedupeRankedResults(rankedResults)
+  return dedupeRankedResults(rankedResults, collapseSameVisibleName)
     .slice(0, SEARCH_RESULT_LIMIT);
 }
 
 function rankPlayerSearchResult(
   query: string,
-  player: Player,
+  player: PlayerSearchCandidate,
   acceptedPlayerIdsByVisibleName: Map<string, string[]>,
+  collapseSameVisibleName: boolean,
 ): RankedPlayerSearchResult | null {
-  const searchableFields = [player.fullName, player.displayName, ...player.aliases].map(normalizeGuess);
+  const fullName = player.fullName ?? player.displayName;
+  const searchableFields = [fullName, player.displayName, ...player.aliases].map(normalizeGuess);
   const matchIndexes = searchableFields
     .map((field) => getSearchMatchIndex(query, field))
     .filter((index): index is number => index !== null);
@@ -58,18 +97,26 @@ function rankPlayerSearchResult(
   }
 
   const bestIndex = Math.min(...matchIndexes);
+  const metadata: NonNullable<PlayerSearchResult['metadata']> = {
+    firstYear: player.firstYear ?? null,
+    lastYear: player.lastYear ?? null,
+    primaryPosition: player.primaryPosition ?? 'Unknown',
+  };
+  if (isLegacyPlayer(player)) {
+    metadata.dailyEligibilityTier = player.dailyEligibilityTier;
+    metadata.mainDecade = player.mainDecade;
+  }
+  if (player.playerType !== undefined) metadata.playerType = player.playerType;
+  if (player.teamsDisplay !== undefined) metadata.teamsDisplay = player.teamsDisplay;
 
   return {
     playerId: player.id,
-    acceptedPlayerIds: acceptedPlayerIdsByVisibleName.get(normalizeGuess(player.displayName)) ?? [player.id],
+    acceptedPlayerIds: collapseSameVisibleName
+      ? acceptedPlayerIdsByVisibleName.get(normalizeGuess(player.displayName)) ?? [player.id]
+      : [player.id],
     displayName: player.displayName,
-    fullName: player.fullName,
-    metadata: {
-      dailyEligibilityTier: player.dailyEligibilityTier,
-      mainDecade: player.mainDecade,
-      primaryPosition: player.primaryPosition,
-      teamsDisplay: player.teamsDisplay,
-    },
+    fullName,
+    metadata,
     matchPriority: bestIndex === 0 ? 0 : 1,
     bestIndex,
   };
@@ -116,8 +163,8 @@ function getTokenOrderMatchIndex(query: string, field: string): number | null {
   return firstMatchIndex;
 }
 
-function buildAcceptedPlayerIdsByVisibleName(players: Player[]): Map<string, string[]> {
-  const playersByVisibleName = new Map<string, Player[]>();
+function buildAcceptedPlayerIdsByVisibleName(players: readonly PlayerSearchCandidate[]): Map<string, string[]> {
+  const playersByVisibleName = new Map<string, PlayerSearchCandidate[]>();
 
   for (const player of players) {
     const visibleNameKey = normalizeGuess(player.displayName);
@@ -134,11 +181,11 @@ function buildAcceptedPlayerIdsByVisibleName(players: Player[]): Map<string, str
   ]));
 }
 
-function compareAcceptedPlayerIdCandidates(left: Player, right: Player): number {
+function compareAcceptedPlayerIdCandidates(left: PlayerSearchCandidate, right: PlayerSearchCandidate): number {
   return (
-    ELIGIBILITY_PRIORITIES[left.dailyEligibilityTier] - ELIGIBILITY_PRIORITIES[right.dailyEligibilityTier]
+    getCandidateEligibilityPriority(left) - getCandidateEligibilityPriority(right)
     || left.displayName.localeCompare(right.displayName)
-    || left.fullName.localeCompare(right.fullName)
+    || (left.fullName ?? left.displayName).localeCompare(right.fullName ?? right.displayName)
     || left.id.localeCompare(right.id)
   );
 }
@@ -152,10 +199,17 @@ function compareRankedResults(left: RankedPlayerSearchResult, right: RankedPlaye
   );
 }
 
-function dedupeRankedResults(results: RankedPlayerSearchResult[]): PlayerSearchResult[] {
+function dedupeRankedResults(
+  results: RankedPlayerSearchResult[],
+  collapseSameVisibleName: boolean,
+): PlayerSearchResult[] {
   const playerIdDedupedResults = dedupeBy(results, (result) => result.playerId);
-  const displayNameDedupedResults = dedupeBy(playerIdDedupedResults, (result) => normalizeGuess(result.displayName));
-  const fullNameDedupedResults = dedupeBy(displayNameDedupedResults, (result) => normalizeGuess(result.fullName));
+  const visibleResults = collapseSameVisibleName
+    ? dedupeBy(playerIdDedupedResults, (result) => normalizeGuess(result.displayName))
+    : playerIdDedupedResults;
+  const fullNameDedupedResults = collapseSameVisibleName
+    ? dedupeBy(visibleResults, (result) => normalizeGuess(result.fullName))
+    : visibleResults;
 
   return fullNameDedupedResults
     .sort(compareRankedResults)
@@ -189,4 +243,15 @@ function compareDuplicateCandidates(left: RankedPlayerSearchResult, right: Ranke
 
 function getEligibilityPriority(result: PlayerSearchResult): number {
   return ELIGIBILITY_PRIORITIES[result.metadata?.dailyEligibilityTier ?? 'none'];
+}
+
+function getCandidateEligibilityPriority(player: PlayerSearchCandidate): number {
+  if (!isLegacyPlayer(player)) {
+    return ELIGIBILITY_PRIORITIES.none;
+  }
+  return ELIGIBILITY_PRIORITIES[player.dailyEligibilityTier];
+}
+
+function isLegacyPlayer(player: PlayerSearchCandidate): player is Player {
+  return 'dailyEligibilityTier' in player && 'mainDecade' in player;
 }
