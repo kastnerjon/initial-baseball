@@ -1,12 +1,22 @@
-# Canonical Career Enrichment
+# Canonical Season and Career Enrichment
 
-This layer adds values that are derived or sourced beyond direct career counting stats. It sits after canonical career cards and before runtime serving.
+This layer adds values that are derived or sourced beyond the direct counting statistics already stored in canonical season and career cards. It sits after both card layers and before runtime serving.
 
 ## Current scope
 
-The generator produces one enrichment record per canonical career card.
+The generators produce:
 
-It currently adds:
+- one season-enrichment record per canonical season card; and
+- one career-enrichment record per canonical career card.
+
+Season enrichment currently adds:
+
+- regular-season on-base percentage derived from canonical Lahman season totals;
+- regular-season slugging percentage carried from the validated season card;
+- regular-season OPS as on-base percentage plus slugging percentage;
+- explicit placeholders and provenance for future WAR, OPS+, ERA+, FIP, awards, All-Star selections, voting finishes, and league-leading flags.
+
+Career enrichment currently adds:
 
 - career on-base percentage derived from canonical Lahman career totals;
 - career slugging percentage derived from canonical Lahman career totals;
@@ -26,24 +36,29 @@ The following remain `null` because the repository does not yet contain an appro
 - FIP;
 - player awards;
 - All-Star selections;
+- award-voting finishes;
 - league-leading indicators.
 
-The source manifest records why each field is unavailable. The generator validates that unsupported fields have not been populated accidentally.
+These fields are represented at the season level first because awards, league-leading status, WAR, OPS+, and ERA+ are fundamentally season facts. Career summaries can later aggregate or summarize those validated season records rather than becoming a second source of truth.
 
 ## Architecture
 
 The data flow is:
 
+`canonical season cards -> canonical season enrichment`
+
 `canonical career cards + canonical career aggregates + Lahman Hall of Fame -> canonical career enrichment`
 
-This PR does not change the live game or mutate the direct canonical career totals. A later serving step may join the card and enrichment artifacts into the runtime payload.
+The reveal card can therefore display one row per regular season with configurable columns, while the career line remains a separate summary derived from the same canonical facts. This PR does not change the live game or mutate direct canonical totals.
 
 ## QA
 
 Strict generation checks:
 
-- exactly one enrichment row per career card;
+- exactly one season-enrichment row per season card;
+- exactly one career-enrichment row per career card;
 - stable canonical and Lahman identity joins;
-- OPS reconciliation to OBP plus SLG;
+- OPS reconciliation to OBP plus SLG at both levels;
 - unsupported values remain `null`;
-- regression coverage for David Ortiz, Mariano Rivera, Ken Griffey Jr., and David Wright.
+- season regression coverage for David Ortiz, Ken Griffey Jr., and Shohei Ohtani;
+- career regression coverage for David Ortiz, Mariano Rivera, Ken Griffey Jr., and David Wright.
