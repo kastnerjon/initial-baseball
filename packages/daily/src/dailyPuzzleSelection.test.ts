@@ -1,4 +1,3 @@
-import { dailyEligiblePlayers } from '@initial-baseball/baseball-data';
 import type { Player } from '@initial-baseball/shared';
 import { describe, expect, it } from 'vitest';
 import {
@@ -96,18 +95,26 @@ describe('canonical Daily selection compatibility', () => {
     expect(selections.some(({ player }) => player.id === 'chadwick:9b391785')).toBe(false);
   });
 
-  it('deduplicates selected answers by canonical player ID without changing the hash key', () => {
-    const topPoolLegacyIds = new Set(
-      rankPlayersByRecognizability(dailyEligiblePlayers)
-        .slice(0, 250)
-        .map((player) => player.id),
-    );
-    const selections = selectCanonicalDailyPlayersForDate('2026-07-20', {}, playerId => (
-      topPoolLegacyIds.has(playerId) ? 'canonical:merged-top-pool' : `canonical:${playerId}`
+  it('deduplicates two selected legacy answers that resolve to one canonical player', () => {
+    const date = '2026-07-20';
+    const legacyLineup = selectDailyPlayersForDate(date, {});
+    const firstPlayerId = legacyLineup[0]?.id;
+    const secondPlayerId = legacyLineup[1]?.id;
+    if (firstPlayerId === undefined || secondPlayerId === undefined) {
+      throw new Error('Expected two generated Daily players.');
+    }
+
+    const selections = selectCanonicalDailyPlayersForDate(date, {}, playerId => (
+      playerId === firstPlayerId || playerId === secondPlayerId
+        ? 'canonical:merged-selected-player'
+        : `canonical:${playerId}`
     ));
 
     expect(selections).toHaveLength(9);
     expect(new Set(selections.map(({ canonicalPlayerId }) => canonicalPlayerId)).size).toBe(9);
+    expect(selections.filter(
+      ({ canonicalPlayerId }) => canonicalPlayerId === 'canonical:merged-selected-player',
+    )).toHaveLength(1);
   });
 
   it('rejects overrides that resolve two legacy records to one canonical player', () => {
