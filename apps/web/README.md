@@ -10,8 +10,10 @@ Rules:
 - Same shared engine as the future mobile app.
 - No player names in share text.
 - Results page may reveal player names only after the user completes the puzzle.
-- Initial page props contain only the public Daily puzzle; answer IDs, names, hints, and reveal records remain server-side.
+- Initial page props contain only the public Daily puzzle and an opaque progression token; answer IDs, names, hints, and reveal records remain server-side.
 - Player search uses the canonical index route. Hint and answer resolution use guarded Daily routes, and terminal results return canonical reveal records.
-- Browser persistence stores only the public puzzle contract and gameplay state. Legacy saved IDs are accepted through canonical redirects.
+- Daily action routes verify the current pitch, hint depth, strike count, and outs from the progression token rather than accepting those values from the browser.
+- Browser persistence stores only the public puzzle contract, gameplay state, and opaque progression token. Unstarted legacy saves may migrate; partial legacy progress without verifiable state is discarded.
+- Two-way reveal records preserve and render both canonical batting and pitching lines.
 
 Do not put game-scoring rules in React components. Use `packages/engine`.
