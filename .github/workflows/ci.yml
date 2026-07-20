@@ -31,16 +31,20 @@ jobs:
             packages/baseball-data/reports/current-data-audit.json
             packages/baseball-data/reports/current-data-audit.md
           if-no-files-found: error
-      - name: Generate canonical identity candidates
+      - name: Generate canonical identity candidates from reviewed Chadwick revision
         run: pnpm data:identities
         env:
           GITHUB_TOKEN: ${{ github.token }}
+      - name: Verify generated identities match reviewed snapshot
+        run: pnpm --filter @initial-baseball/baseball-data verify:canonical-identity-snapshot
       - name: Upload canonical identity candidates
         uses: actions/upload-artifact@v4
         with:
           name: canonical-baseball-identities
           path: packages/baseball-data/reports/canonical-identities/
           if-no-files-found: error
+      - name: Materialize reviewed identity snapshot for runtime pipeline
+        run: pnpm --filter @initial-baseball/baseball-data materialize:reviewed-canonical-identities
       - name: Generate Lahman-first canonical universe
         run: pnpm --filter @initial-baseball/baseball-data generate:canonical-universe:strict
       - name: Generate canonical Lahman season facts
