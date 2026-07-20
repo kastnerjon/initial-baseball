@@ -23,6 +23,18 @@ A source row is evidence for a player. It is not automatically a separate playab
 
 Canonical records are joined through canonical and source IDs. Display names are never join keys.
 
+## Reviewed source and reproducibility policy
+
+Canonical identity production is based on a committed, reviewed snapshot rather than a moving external branch.
+
+- `packages/baseball-data/data/canonical/chadwick-source.json` records one reviewed Chadwick commit and expected source checksums.
+- `packages/baseball-data/data/canonical/identity-snapshot/` contains the accepted canonical identities and disposition recommendations, split into deterministic shards with a checksum manifest.
+- Normal local, preview, and production runtime builds materialize this snapshot and perform no Chadwick network fetch.
+- CI separately regenerates identity candidates from the exact source pin, validates the source checksums, and requires exact equality with the committed snapshot.
+- A deliberate refresh requires report inspection and regeneration of the complete snapshot. Generated snapshot shards are never hand-edited.
+
+Therefore the same application commit produces the same canonical identity layer even when Chadwick changes or is unavailable. A source refresh that changes player content or identity dispositions is an explicit data-contract review.
+
 ## Display-name and alias rules
 
 The visible name is the name by which baseball fans commonly know the player.
@@ -117,6 +129,8 @@ A valid reveal record must not be exposed to the browser before it is safe to re
 
 Generation checks include:
 
+- exact equality between pinned-source identity regeneration and the committed reviewed snapshot;
+- snapshot manifest, source checksum, shard count, player count, disposition count, and file checksum validation;
 - one canonical identity per accepted Lahman player;
 - stable canonical and Lahman ID joins;
 - duplicate canonical IDs and source mappings;
@@ -186,8 +200,9 @@ Player-data cleanup is launch-ready when:
 - unsupported or incomplete data remains explicit rather than estimated;
 - every manual correction is centralized, documented, and reproducible;
 - runtime consumers use canonical IDs and do not recalculate baseball facts;
+- normal builds are network-independent for identity inputs;
 - generated artifacts and tests are deterministic.
 
 ## Change rule
 
-This specification and the implementation must be updated together whenever canonical identity, display-name, alias, merge, season/career ownership, missing-data, enrichment, or runtime-serving behavior changes.
+This specification and the implementation must be updated together whenever canonical identity, source policy, display-name, alias, merge, season/career ownership, missing-data, enrichment, or runtime-serving behavior changes.

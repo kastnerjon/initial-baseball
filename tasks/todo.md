@@ -1,9 +1,19 @@
 # Initial Baseball Current Work
 
-Status: Active ordered implementation list
+Status: Active ordered implementation plan
 Last updated: 2026-07-20
 
 Completed work should not remain here as future work. Historical rationale belongs in pull requests, canonical documentation, or `tasks/lessons.md`.
+
+Current execution order: finish the bounded launch answer-integrity decision, then return directly to visible Daily product work. Canonical identity inputs are now pinned and reproducible; no additional foundation work should be inserted unless a concrete roadmap item requires it.
+
+## 0. Complete launch answer-integrity stabilization
+
+- [ ] Approve the anonymous, client-driven launch threat model in issue #91 without claiming tamper-proof scoring.
+- [ ] Implement stateless signed progression authorization in a separate bounded PR.
+- [ ] Prevent arbitrary future-pitch requests while keeping scoring and Daily transitions in their existing portable owners.
+- [ ] Preserve refresh recovery without adding a replay cache, database write per action, durable anonymous server session, or hosting-specific dependency.
+- [ ] Re-run hidden-answer build QA and close recovery issue #86.
 
 ## 1. Complete the reveal experience
 
@@ -18,7 +28,7 @@ Completed work should not remain here as future work. Historical rationale belon
 
 - [ ] Apply the nine-slot recognizability curve: top 250 for at-bats 1-2, top 1,000 for 3-4, top 2,500 for 5-6, and top 5,000 for 7-9.
 - [ ] Avoid recently used players within the approved repeat window, currently 90 days.
-- [ ] Confirm deterministic generation for a date and data version.
+- [ ] Confirm deterministic generation for a date and reviewed data version.
 - [ ] Verify historical overrides and saved references still resolve after runtime migration.
 
 ## 3. Add tomorrow-lineup administration

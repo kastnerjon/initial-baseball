@@ -1,0 +1,8 @@
+{
+  "schemaVersion": 1,
+  "repository": "chadwickbureau/register",
+  "commitSha": "7e23e7dfaff51b3ae72c16393703eda7e5ecad27",
+  "namesSha256": "aca760f81e90efb5e3a8706b1a71a902a58d1caae545d7f137609eefb4a28ba3",
+  "peopleShardsSha256": "6cffa94d318857520e11a5729fa14c509d9d02fabe95fcef346157f26d17599a",
+  "reason": "Reviewed canonical identity input used by PR #84."
+}

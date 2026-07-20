@@ -78,7 +78,9 @@ Dependencies must not point upward.
 The replacement player-data pipeline is ordered by ownership and data grain:
 
 ```text
-canonical identities
+reviewed external identity source pin
+  -> committed checksum-manifested identity snapshot
+  -> materialized canonical identities
   -> Lahman-first canonical universe and legacy redirects
   -> canonical season source facts
   -> canonical player-season aggregates
@@ -93,6 +95,9 @@ canonical identities
 Rules:
 
 - Identity owns the canonical player ID, display name, aliases, and source mappings.
+- Normal production, preview, and local runtime builds materialize the committed reviewed identity snapshot and perform no Chadwick network fetch.
+- External identity refresh is an explicit review workflow pinned to one Chadwick commit and expected source checksums.
+- CI independently regenerates identities from that pin and requires exact equality with the committed snapshot before the downstream pipeline runs.
 - Season cards own regular-season teams, positions, and direct season facts.
 - Season enrichment owns season-level derived or separately sourced values.
 - Career records summarize accepted season data rather than becoming a second source of truth.
@@ -141,7 +146,13 @@ Admin, publication, aggregate results, and accounts should use repository interf
 
 Do not create an abstraction solely for an imagined future mode. Extract a boundary when Daily needs it or when a second concrete consumer exists.
 
-## Current stabilization sequence
+## Current stabilization and product sequence
+
+### 0. Answer-integrity boundary
+
+- Approve the anonymous, client-driven launch threat model before changing authorization.
+- Prevent arbitrary future-pitch access with stateless signed progression.
+- Do not add replay storage, per-action database writes, durable anonymous server sessions, or hosting-specific state for launch.
 
 ### 1. Reveal presentation
 
@@ -160,10 +171,13 @@ Do not create an abstraction solely for an imagined future mode. Extract a bound
 - Store one compact completed-game result.
 - Add field comparison, analytics, error monitoring, payload measurement, legal pages, and canonical domain configuration.
 
+No additional foundation phase should be inserted between these steps unless a concrete correctness or launch blocker requires it.
+
 ## Launch-readiness requirements
 
 Before broad friend distribution:
 
+- The same application commit produces the same canonical identities and runtime payload without requiring an external identity-source fetch.
 - Daily puzzles and historical overrides are deterministic and regression-tested.
 - Tomorrow's lineup is editorially reviewable before publication.
 - Search handles aliases, accents, ordered tokens, and genuine same-name players.

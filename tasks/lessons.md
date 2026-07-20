@@ -8,6 +8,7 @@ Add durable corrections here when product review, QA, or code review catches a m
 - Decide ownership before implementation: product requirement -> source -> data grain -> canonical owner -> derived summary -> runtime consumer.
 - React renders and dispatches. It does not own baseball rules, player corrections, data generation, or persistence semantics.
 - Vercel is a replaceable web host. Domain, data, engine, and persistence contracts must not depend on Vercel-specific behavior.
+- A set of review findings is not one architecture. Recover each valid finding in the narrowest owning layer and make infrastructure or authority changes separate decisions.
 
 ## Player identity
 
@@ -15,6 +16,9 @@ Add durable corrections here when product review, QA, or code review catches a m
 - The canonical display name is what the game shows. Longer legal or source names remain aliases unless an auditable display-name decision promotes them.
 - Genuine same-name players remain separate identities. Search and admin surfaces must add career years, position, or team context rather than merging them.
 - A source row is evidence, not automatically a playable player.
+- A moving external branch is not a production input. Pin one reviewed revision and source checksums, commit the accepted identity snapshot, and verify exact regeneration separately in CI.
+- Production and preview builds should materialize reviewed committed data without depending on the source host being available.
+- Generated identity snapshots are updated through the source and generator workflow, never by hand-editing a shard.
 
 ## Season and career data
 
