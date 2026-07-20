@@ -5,6 +5,7 @@ const DAILY_PROGRESSION_TOKEN_VERSION = 1;
 
 export type DailyProgressionState = {
   version: typeof DAILY_PROGRESSION_TOKEN_VERSION;
+  sessionId: string;
   puzzleId: string;
   puzzleDate: string;
   pitchNumber: number;
@@ -13,7 +14,10 @@ export type DailyProgressionState = {
   outs: number;
 };
 
-export function createInitialDailyProgressionToken(puzzle: DailyPuzzle): string {
+export function createInitialDailyProgressionToken(
+  puzzle: DailyPuzzle,
+  sessionId: string,
+): string {
   const firstPitch = puzzle.pitches[0];
   if (firstPitch === undefined) {
     throw new Error(`Daily puzzle ${puzzle.id} has no pitches.`);
@@ -21,6 +25,7 @@ export function createInitialDailyProgressionToken(puzzle: DailyPuzzle): string 
 
   return signDailyProgressionState(puzzle, {
     version: DAILY_PROGRESSION_TOKEN_VERSION,
+    sessionId,
     puzzleId: puzzle.id,
     puzzleDate: puzzle.puzzleDate,
     pitchNumber: firstPitch.pitchNumber,
@@ -104,6 +109,7 @@ function validateProgressionState(
 ): void {
   if (
     state.version !== DAILY_PROGRESSION_TOKEN_VERSION
+    || state.sessionId.trim().length === 0
     || state.puzzleId !== puzzle.id
     || state.puzzleDate !== puzzle.puzzleDate
     || !puzzle.pitches.some((pitch) => pitch.pitchNumber === state.pitchNumber)
@@ -123,6 +129,7 @@ function isDailyProgressionState(value: unknown): value is DailyProgressionState
   const state = value as Record<string, unknown>;
   return (
     state.version === DAILY_PROGRESSION_TOKEN_VERSION
+    && typeof state.sessionId === 'string'
     && typeof state.puzzleId === 'string'
     && typeof state.puzzleDate === 'string'
     && typeof state.pitchNumber === 'number'
