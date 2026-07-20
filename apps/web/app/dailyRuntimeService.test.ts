@@ -11,10 +11,9 @@ const canonicalPlayerId = 'ibp_ab000000000000000000';
 const legacyPlayerId = 'chadwick:answer';
 const answerName = 'Hidden Answer';
 const fullRevealMarker = 'FULL_REVEAL_MARKER';
-const puzzle = buildPuzzle(1);
 const service = createDailyRuntimeService({
   canonicalRuntime: buildCanonicalRuntime(),
-  createPuzzle: () => puzzle,
+  createPuzzle: (date) => buildPuzzle(1, date),
 });
 
 describe('Daily canonical runtime service', () => {
@@ -147,7 +146,7 @@ describe('Daily canonical runtime service', () => {
   it('cannot advance beyond the third verified out', () => {
     const fourPitchService = createDailyRuntimeService({
       canonicalRuntime: buildCanonicalRuntime(),
-      createPuzzle: () => buildPuzzle(4),
+      createPuzzle: (date) => buildPuzzle(4, date),
     });
     const session = fourPitchService.getPublicSession('2026-07-20');
     const first = fourPitchService.resolveAtBat({
@@ -187,11 +186,11 @@ function requireToken(token: string | null): string {
   return token;
 }
 
-function buildPuzzle(pitchCount: number): DailyPuzzle {
+function buildPuzzle(pitchCount: number, puzzleDate: string): DailyPuzzle {
   return {
-    id: 'daily-2026-07-20',
+    id: `daily-${puzzleDate}`,
     puzzleNumber: 85,
-    puzzleDate: '2026-07-20',
+    puzzleDate,
     status: 'published',
     hintConfig: DEFAULT_DAILY_HINT_CONFIG,
     statsHintConfig: DEFAULT_DAILY_STATS_HINT_CONFIG,
