@@ -3,6 +3,8 @@ import { DailyRuntimeRequestError } from '../../../dailyRuntimeService';
 import { requirePublishedDailyDate } from '../../../requirePublishedDailyDate';
 import { dailyRuntime } from '../../../serverCanonicalRuntime';
 
+export const preferredRegion = 'iad1';
+
 export async function POST(request: Request): Promise<NextResponse> {
   try {
     const body = await request.json() as Record<string, unknown>;
@@ -11,7 +13,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       ? body.submittedPlayerId
       : undefined;
 
-    return NextResponse.json(dailyRuntime.resolveAtBat({
+    return NextResponse.json(await dailyRuntime.resolveAtBat({
       puzzleDate: requirePublishedDailyDate(body.puzzleDate),
       progressionToken: requireProgressionToken(body.progressionToken),
       ...(submittedPlayerId === undefined ? {} : { submittedPlayerId }),
