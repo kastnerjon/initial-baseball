@@ -1,5 +1,6 @@
-import { describe, expect, it } from 'vitest';
+import { dailyEligiblePlayers } from '@initial-baseball/baseball-data';
 import type { Player } from '@initial-baseball/shared';
+import { describe, expect, it } from 'vitest';
 import {
   comparePlayersByRecognizability,
   rankPlayersByRecognizability,
@@ -78,6 +79,33 @@ describe('canonical Daily selection compatibility', () => {
     expect(selections).toHaveLength(9);
     expect(selections.every(({ canonicalPlayerId }) => canonicalPlayerId.startsWith('canonical:'))).toBe(true);
     expect(selections.some(({ player }) => player.id === 'chadwick:9b391785')).toBe(false);
+  });
+
+  it('deduplicates generated candidates by canonical player ID before selection', () => {
+    const topPoolLegacyIds = new Set(
+      rankPlayersByRecognizability(dailyEligiblePlayers)
+        .slice(0, 250)
+        .map((player) => player.id),
+    );
+    const selections = selectCanonicalDailyPlayersForDate('2026-07-20', {}, playerId => (
+      topPoolLegacyIds.has(playerId) ? 'canonical:merged-top-pool' : `canonical:${playerId}`
+    ));
+
+    expect(selections).toHaveLength(9);
+    expect(new Set(selections.map(({ canonicalPlayerId }) => canonicalPlayerId)).size).toBe(9);
+  });
+
+  it('rejects overrides that resolve two legacy records to one canonical player', () => {
+    expect(() => selectCanonicalDailyPlayersForDate('2026-07-20', {
+      '2026-07-20': [
+        'Ken Griffey Jr.',
+        'David Wright',
+        'CC Sabathia',
+        'Albert Pujols',
+        'Derek Jeter',
+        'Ichiro Suzuki',
+      ],
+    }, () => 'canonical:duplicate')).toThrow('duplicate canonical player');
   });
 
   it('fails visibly when a historical override has no canonical target', () => {
