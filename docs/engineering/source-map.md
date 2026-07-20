@@ -8,6 +8,8 @@ Use this to find the owning file or package before changing behavior.
 |---|---|
 | Current product behavior and scope | `docs/product/daily-inning-blueprint.md` |
 | Package ownership and launch architecture | `docs/architecture-and-scale-plan.md` |
+| Daily launch answer-integrity decision | `docs/decisions/0001-daily-answer-integrity.md` |
+| Current Daily route and token contract | `docs/spec/api.md` |
 | Player identity and data-quality rules | `docs/spec/player-data-quality.md` |
 | Documentation maintenance rules | `docs/engineering/documentation-governance.md` |
 | Current ordered implementation plan | `tasks/todo.md` |
@@ -35,6 +37,7 @@ Use this to find the owning file or package before changing behavior.
 | Daily web routes and components | `apps/web/app/` |
 | Browser persistence and saved-game migration | `apps/web/app/dailyLocalStorage.ts` |
 | Public Daily puzzle and guarded hint/reveal service | `apps/web/app/dailyRuntimeService.ts` |
+| Progression-token claims, signing, and verification | `apps/web/app/dailyProgressionToken.ts` |
 | Web canonical runtime adapter | `apps/web/app/serverCanonicalRuntime.ts` |
 | Search, hint, and resolution routes | `apps/web/app/api/players/` and `apps/web/app/api/daily/` |
 | Admin UI and publication adapters | `apps/web/app/` behind repository/service boundaries |

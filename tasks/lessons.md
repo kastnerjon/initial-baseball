@@ -9,6 +9,8 @@ Add durable corrections here when product review, QA, or code review catches a m
 - React renders and dispatches. It does not own baseball rules, player corrections, data generation, or persistence semantics.
 - Vercel is a replaceable web host. Domain, data, engine, and persistence contracts must not depend on Vercel-specific behavior.
 - A set of review findings is not one architecture. Recover each valid finding in the narrowest owning layer and make infrastructure or authority changes separate decisions.
+- Answer leakage and adversarial cheating are different problems. Protect ordinary players and public payloads now; do not imply competitive guarantees the architecture does not provide.
+- A signed stateless token can prevent forged later progression without requiring per-action persistence. Replay prevention is a separate, materially stronger architecture decision.
 
 ## Player identity
 

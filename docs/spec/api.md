@@ -1,87 +1,163 @@
-# API / Edge Function Spec
+# Daily web API specification
 
-All authoritative mutations go through Supabase Edge Functions.
+Status: Living source of truth
+Last updated: 2026-07-20
 
-## Required rules
+Daily Inning is the only committed product. Current routes are thin Next.js transport adapters over canonical baseball data, engine rules, and portable Daily logic. Historical head-to-head, matchmaking, chat, league, and practice endpoint plans are deferred and are not current API contracts.
 
-Every function must:
+The launch answer-integrity rationale is recorded in `docs/decisions/0001-daily-answer-integrity.md`.
 
-1. Authenticate caller.
-2. Validate input.
-3. Check permissions.
-4. Use transactions/row locks where game state can race.
-5. Write `game_events` for meaningful actions.
-6. Return sanitized data.
-7. Never leak hidden answer data to hitter.
+## General rules
 
-## Game settings functions
+Every Daily route must:
 
-| Function | Purpose |
-|---|---|
-| `create-game-proposal` | Create invite/proposal with settings. |
-| `counter-game-proposal` | Edit/counter latest proposal. |
-| `accept-game-proposal` | Accept latest proposal and create/activate game. |
+1. Validate request shape and range constraints.
+2. Return sanitized public data only.
+3. Never expose a hidden answer before a correct guess, third strike, or Give Up.
+4. Resolve players by canonical or validated legacy ID, never display text.
+5. Keep baseball outcomes in `packages/engine` and portable Daily behavior in `packages/daily`.
+6. Avoid per-action database writes or durable anonymous sessions at launch.
+7. Return 4xx responses for invalid caller input and avoid reflecting secrets or hidden data in error messages.
 
-## Gameplay functions
+## Public puzzle bootstrap
 
-| Function | Purpose |
-|---|---|
-| `submit-at-bat` | Pitcher selects canonical player, reviews/edit hints, submits at-bat. |
-| `reveal-hint` | Hitter reveals next configured hint. |
-| `submit-guess` | Hitter submits guess; server resolves strike/hit/out/game state. |
+The Daily page receives:
 
-## Random opponent functions
+- puzzle ID, number, date, and publication status;
+- public hint configuration;
+- the nine pitch numbers and initials;
+- one opaque signed progression token for pitch 1, zero hints, zero strikes, and zero outs.
 
-| Function | Purpose |
-|---|---|
-| `join-matchmaking` | Enter random opponent queue with proposed settings. |
-| `leave-matchmaking` | Exit queue. |
+The token contains only public progression claims and no player answer or hint value. Initial HTML and client bundles must not contain answer IDs, answer names, full hints, or reveal records.
 
-Matchmaking must respect blocks and feature flag `random_opponents_enabled`.
+## Canonical player search
 
-## Chat/safety functions
+### `GET /api/players/search`
 
-| Function | Purpose |
-|---|---|
-| `send-game-message` | Send game-only text message. |
-| `report-message` | Report a specific game message. |
-| `block-user` | Block user and prevent future random matches. |
+Searches the canonical player index and returns sanitized candidate context. Search may use display names and aliases, but the response carries canonical identity and enough context to distinguish genuine same-name players.
 
-Chat must respect:
+Search does not reveal which candidate is the hidden answer.
 
-- `chat_enabled`
-- `chat_links_enabled`
-- `chat_media_enabled`
+## Daily hint route
 
-Alpha should reject links/media.
+### `POST /api/daily/hint`
 
-## League Lite functions
+Request:
 
-| Function | Purpose |
-|---|---|
-| `create-league` | Create private league with invite code/link. |
-| `join-league` | Join league by invite code. |
-| `create-league-game` | Create game that counts toward league standings. |
+```json
+{
+  "progressionToken": "opaque-signed-token"
+}
+```
 
-Alpha league scope: private creation, invite/join, members, games, standings. No playoffs, no league chat, no paid leagues.
+The server verifies the token and derives puzzle date, current pitch, hint depth, strikes, and outs from its claims. The caller does not supply those counters independently.
 
-## Idempotency and race protection
+Response:
 
-Use idempotency keys for user actions that can be double-tapped:
+```json
+{
+  "hint": {
+    "hintType": "teams",
+    "hintLabel": "Teams",
+    "hintValue": "..."
+  },
+  "progressionToken": "next-opaque-signed-token"
+}
+```
 
-- submit guess
-- reveal hint
-- submit at-bat
-- accept proposal
-- send message
+The next token increments hint depth for the same pitch. The route rejects invalid signatures, malformed or unsupported claims, completed tokens, cross-date/cross-puzzle use, and requests beyond the configured hint count.
 
-Game mutations should lock the relevant `games` / `at_bats` rows while resolving state.
+## Daily resolution route
 
-## Practice endpoints
+### `POST /api/daily/resolve`
 
-Practice Mode may start with a simple backend endpoint and evolve later.
+Guess request:
 
-- `start-practice-round`: choose a random canonical player from the seeded database and return safe practice payload.
-- `submit-practice-guess`: optional server-authoritative guess check for practice.
+```json
+{
+  "progressionToken": "opaque-signed-token",
+  "submittedPlayerId": "canonical-or-legacy-player-id"
+}
+```
 
-Practice endpoints must reuse shared engine functions for initials, hint generation, and guess matching. Practice results must not mutate competitive records.
+Give Up request:
+
+```json
+{
+  "progressionToken": "opaque-signed-token",
+  "giveUp": true
+}
+```
+
+The server verifies the token, derives the authorized current pitch and progression, resolves the submitted player through canonical redirects, and uses engine rules for the outcome.
+
+Response:
+
+```json
+{
+  "result": {},
+  "reveal": null,
+  "progressionToken": "next-opaque-signed-token"
+}
+```
+
+Behavior:
+
+- an incorrect guess returns no reveal and a token with one additional strike;
+- a correct guess returns the current player's reveal and a token authorizing the next pitch unless the puzzle is complete;
+- a third strike or Give Up returns the current player's reveal, increments outs, and authorizes the next pitch only while fewer than three outs and scheduled pitches remain;
+- three outs or the ninth resolved pitch returns a completed token that cannot authorize another hint or resolution;
+- browser-supplied pitch number, reveal count, strike count, or out count is ignored because those fields are not part of the request contract.
+
+## Progression-token contract
+
+Claims are versioned and contain only:
+
+- contract version;
+- puzzle ID;
+- puzzle date;
+- current pitch number;
+- reveal count;
+- strike count;
+- out count;
+- completion state.
+
+Signing uses a server-only secret and HMAC. Production and preview use `DAILY_PROGRESSION_SECRET`; it must never use a `NEXT_PUBLIC_*` name or cross into client props or logs.
+
+Verification rejects:
+
+- malformed encoding or JSON;
+- unsupported contract version;
+- invalid signature;
+- invalid puzzle ID/date relationship;
+- pitch, hint, strike, or out values outside legal ranges;
+- a completed token used for an answer action.
+
+Tokens are stateless and replayable. The API does not promise one-time action consumption or tamper-proof anonymous scoring.
+
+## Browser persistence and migration
+
+The browser stores the opaque progression token with public local gameplay state. On refresh, the token remains the server authorization source while local state remains the presentation and scoring source.
+
+A saved state without a compatible token must not invent authorized progression. Migration may restart an unresolved current at-bat or fail safely according to the explicit storage schema decision. Completed historical results remain readable when possible.
+
+## Caching and privacy
+
+- Immutable canonical player data and public puzzle metadata may use CDN-friendly caching.
+- Responses containing a newly signed progression token must not be cached in a way that exposes server secrets; the token itself contains no hidden answer data.
+- Request or application logs must not include signing secrets, answer IDs, hint values, or full reveal payloads.
+- No database, Redis, replay cache, or hosting-specific state is required for these routes.
+
+## Deferred API families
+
+The following require separate product and architecture decisions before implementation:
+
+- accounts and authenticated streaks;
+- authoritative competitive attempts or leaderboards;
+- head-to-head game proposals and gameplay;
+- matchmaking;
+- chat and safety actions;
+- leagues;
+- paid features.
+
+A future competitive model must not silently reuse the anonymous stateless-token guarantees as if they were server-authoritative attempt history.
