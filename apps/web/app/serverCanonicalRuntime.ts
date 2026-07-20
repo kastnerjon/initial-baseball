@@ -3,6 +3,10 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { createFileSystemCanonicalRuntimeAccessor } from '@initial-baseball/baseball-data/runtime';
 import { createCanonicalDailyPuzzleForDate } from './createDailyPuzzleForDate';
+import {
+  createInMemoryDailyProgressionReplayStore,
+  createVercelDailyProgressionReplayStore,
+} from './dailyProgressionReplayStore';
 import { createDailyRuntimeService } from './dailyRuntimeService';
 
 export const canonicalRuntime = createFileSystemCanonicalRuntimeAccessor(findRuntimeDirectory());
@@ -16,8 +20,12 @@ export const canonicalSearchCandidates = canonicalRuntime.getPlayerIndex().map((
   lastYear: player.lastSeason,
   teamsDisplay: player.teamIds.join(', '),
 }));
+const progressionReplayStore = process.env.VERCEL === '1'
+  ? createVercelDailyProgressionReplayStore()
+  : createInMemoryDailyProgressionReplayStore();
 export const dailyRuntime = createDailyRuntimeService({
   canonicalRuntime,
+  progressionReplayStore,
   createPuzzle: date => createCanonicalDailyPuzzleForDate(date, resolveCanonicalPlayerId),
 });
 
