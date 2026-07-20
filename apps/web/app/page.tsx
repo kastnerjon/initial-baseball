@@ -3,10 +3,11 @@ import { DailyInningGame } from './components/DailyInningGame';
 import { getPacificDailyDateString } from './getPacificDailyDateString';
 import { dailyRuntime } from './serverCanonicalRuntime';
 
-export const revalidate = 60;
+export const dynamic = 'force-dynamic';
+export const preferredRegion = 'iad1';
 
-export default function DailyInningHomePage(): JSX.Element {
-  const session = dailyRuntime.getPublicSession(getPacificDailyDateString());
+export default async function DailyInningHomePage(): Promise<JSX.Element> {
+  const session = await dailyRuntime.getPublicSession(getPacificDailyDateString());
 
   return (
     <main className="page-shell">
