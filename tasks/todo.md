@@ -5,15 +5,18 @@ Last updated: 2026-07-20
 
 Completed work should not remain here as future work. Historical rationale belongs in pull requests, canonical documentation, or `tasks/lessons.md`.
 
-Current execution order: implement the accepted bounded launch answer-integrity decision, then return directly to visible Daily product work. Canonical identity inputs are pinned and reproducible; no additional foundation work should be inserted unless a concrete roadmap item requires it.
+Current execution order: configure and verify the Vercel Daily progression secret in issue #97, close the PR #85 recovery, then return directly to the visible reveal experience. Canonical identity inputs are pinned, stateless progression authorization is merged, and no additional foundation phase should be inserted unless a concrete roadmap item requires it.
 
-## 0. Complete launch answer-integrity stabilization
+## 0. Complete launch answer-integrity deployment
 
-- [x] Approve the anonymous, client-driven launch threat model without claiming tamper-proof scoring — ADR 0001.
-- [ ] Implement stateless signed progression authorization in a separate bounded PR.
-- [ ] Prevent arbitrary future-pitch requests while keeping scoring and Daily transitions in their existing portable owners.
-- [ ] Preserve refresh recovery without adding a replay cache, database write per action, durable anonymous server session, or hosting-specific dependency.
-- [ ] Re-run hidden-answer build QA and close issues #91 and #86.
+- [x] Approve the anonymous, client-driven launch threat model without claiming tamper-proof scoring — ADR 0001 / PR #94.
+- [x] Add the provider-neutral HMAC token and production secret primitives — PR #95.
+- [x] Implement stateless signed progression authorization — PR #96.
+- [x] Prevent arbitrary future-pitch requests while keeping scoring and Daily transitions in their existing portable owners.
+- [x] Preserve schema-3 refresh recovery without adding a replay cache, database write per action, durable anonymous server session, or hosting-specific dependency.
+- [x] Re-run typecheck, tests, hidden-answer production build QA, the full canonical pipeline, and runtime-consumer QA.
+- [ ] Configure `DAILY_PROGRESSION_SECRET` for Vercel Preview and Production and verify the deployed flow — issue #97.
+- [ ] Close issues #91 and #86 after deployment verification.
 
 ## 1. Complete the reveal experience
 
