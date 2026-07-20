@@ -5,20 +5,19 @@ import {
   type DailyPuzzle,
 } from '@initial-baseball/shared';
 import { describe, expect, it } from 'vitest';
+import { createInMemoryDailyProgressionReplayStore } from './dailyProgressionReplayStore';
 import { createDailyRuntimeService } from './dailyRuntimeService';
 
 const canonicalPlayerId = 'ibp_ab000000000000000000';
 const legacyPlayerId = 'chadwick:answer';
+const otherPlayerId = 'ibp_cd000000000000000000';
 const answerName = 'Hidden Answer';
 const fullRevealMarker = 'FULL_REVEAL_MARKER';
-const service = createDailyRuntimeService({
-  canonicalRuntime: buildCanonicalRuntime(),
-  createPuzzle: (date) => buildPuzzle(1, date),
-});
+const service = createTestService(1);
 
 describe('Daily canonical runtime service', () => {
-  it('publishes only puzzle metadata, initials, and an opaque progression token', () => {
-    const session = service.getPublicSession('2026-07-20');
+  it('publishes only puzzle metadata, initials, and an opaque progression token', async () => {
+    const session = await service.getPublicSession('2026-07-20');
     const serialized = JSON.stringify(session);
 
     expect(session.puzzle.pitches).toEqual([{ pitchNumber: 1, initials: 'HA' }]);
@@ -30,9 +29,9 @@ describe('Daily canonical runtime service', () => {
     expect(serialized).not.toContain(fullRevealMarker);
   });
 
-  it('releases only the requested hint and advances the signed hint state', () => {
-    const session = service.getPublicSession('2026-07-20');
-    const response = service.revealHint({
+  it('releases only the requested hint and advances the signed hint state', async () => {
+    const session = await service.getPublicSession('2026-07-20');
+    const response = await service.revealHint({
       puzzleDate: '2026-07-20',
       progressionToken: session.progressionToken,
     });
@@ -47,13 +46,13 @@ describe('Daily canonical runtime service', () => {
     expect(JSON.stringify(response)).not.toContain(answerName);
   });
 
-  it('uses server-verified hint depth for the correct outcome', () => {
-    const session = service.getPublicSession('2026-07-20');
-    const hintResponse = service.revealHint({
+  it('uses server-verified hint depth for the correct outcome', async () => {
+    const session = await service.getPublicSession('2026-07-20');
+    const hintResponse = await service.revealHint({
       puzzleDate: '2026-07-20',
       progressionToken: session.progressionToken,
     });
-    const response = service.resolveAtBat({
+    const response = await service.resolveAtBat({
       puzzleDate: '2026-07-20',
       progressionToken: hintResponse.progressionToken,
       submittedPlayerId: canonicalPlayerId,
@@ -62,12 +61,12 @@ describe('Daily canonical runtime service', () => {
     expect(response.result).toMatchObject({ kind: 'correct', outcome: '3B' });
   });
 
-  it('returns no reveal data for an unresolved incorrect guess', () => {
-    const session = service.getPublicSession('2026-07-20');
-    const response = service.resolveAtBat({
+  it('returns no reveal data for an unresolved incorrect guess', async () => {
+    const session = await service.getPublicSession('2026-07-20');
+    const response = await service.resolveAtBat({
       puzzleDate: '2026-07-20',
       progressionToken: session.progressionToken,
-      submittedPlayerId: 'ibp_cd000000000000000000',
+      submittedPlayerId: otherPlayerId,
     });
 
     expect(response.result).toMatchObject({ kind: 'incorrect', strikeCount: 1 });
@@ -77,9 +76,9 @@ describe('Daily canonical runtime service', () => {
     expect(JSON.stringify(response)).not.toContain(fullRevealMarker);
   });
 
-  it('matches canonical identity and loads the reveal only after a correct guess', () => {
-    const session = service.getPublicSession('2026-07-20');
-    const response = service.resolveAtBat({
+  it('matches canonical identity and loads the reveal only after a correct guess', async () => {
+    const session = await service.getPublicSession('2026-07-20');
+    const response = await service.resolveAtBat({
       puzzleDate: '2026-07-20',
       progressionToken: session.progressionToken,
       submittedPlayerId: canonicalPlayerId,
@@ -93,9 +92,9 @@ describe('Daily canonical runtime service', () => {
     expect(response.progressionToken).toBeNull();
   });
 
-  it('accepts a valid legacy selected ID through the explicit redirect boundary', () => {
-    const session = service.getPublicSession('2026-07-20');
-    const response = service.resolveAtBat({
+  it('accepts a valid legacy selected ID through the explicit redirect boundary', async () => {
+    const session = await service.getPublicSession('2026-07-20');
+    const response = await service.resolveAtBat({
       puzzleDate: '2026-07-20',
       progressionToken: session.progressionToken,
       submittedPlayerId: legacyPlayerId,
@@ -104,11 +103,11 @@ describe('Daily canonical runtime service', () => {
     expect(response.result.kind).toBe('correct');
   });
 
-  it('returns the reveal only when three verified incorrect guesses produce a strikeout', () => {
-    const session = service.getPublicSession('2026-07-20');
-    const first = submitIncorrectGuess(session.progressionToken);
-    const second = submitIncorrectGuess(requireToken(first.progressionToken));
-    const third = submitIncorrectGuess(requireToken(second.progressionToken));
+  it('returns the reveal only when three verified incorrect guesses produce a strikeout', async () => {
+    const session = await service.getPublicSession('2026-07-20');
+    const first = await submitIncorrectGuess(session.progressionToken);
+    const second = await submitIncorrectGuess(requireToken(first.progressionToken));
+    const third = await submitIncorrectGuess(requireToken(second.progressionToken));
 
     expect(first.result).toMatchObject({ kind: 'incorrect', strikeCount: 1 });
     expect(second.result).toMatchObject({ kind: 'incorrect', strikeCount: 2 });
@@ -117,9 +116,38 @@ describe('Daily canonical runtime service', () => {
     expect(third.progressionToken).toBeNull();
   });
 
-  it('reveals only when Give Up safely resolves the current at-bat', () => {
-    const session = service.getPublicSession('2026-07-20');
-    const response = service.resolveAtBat({
+  it('returns the same response for an exact retried action', async () => {
+    const session = await service.getPublicSession('2026-07-20');
+    const request = {
+      puzzleDate: '2026-07-20',
+      progressionToken: session.progressionToken,
+      submittedPlayerId: otherPlayerId,
+    };
+
+    const first = await service.resolveAtBat(request);
+    const retry = await service.resolveAtBat(request);
+
+    expect(retry).toEqual(first);
+  });
+
+  it('rejects a different action that reuses a consumed token', async () => {
+    const session = await service.getPublicSession('2026-07-20');
+    await service.resolveAtBat({
+      puzzleDate: '2026-07-20',
+      progressionToken: session.progressionToken,
+      submittedPlayerId: otherPlayerId,
+    });
+
+    await expect(service.resolveAtBat({
+      puzzleDate: '2026-07-20',
+      progressionToken: session.progressionToken,
+      submittedPlayerId: canonicalPlayerId,
+    })).rejects.toThrow('already been consumed');
+  });
+
+  it('reveals only when Give Up safely resolves the current at-bat', async () => {
+    const session = await service.getPublicSession('2026-07-20');
+    const response = await service.resolveAtBat({
       puzzleDate: '2026-07-20',
       progressionToken: session.progressionToken,
       giveUp: true,
@@ -129,37 +157,34 @@ describe('Daily canonical runtime service', () => {
     expect(response.reveal?.displayName).toBe(answerName);
   });
 
-  it('rejects tampered or cross-date progression tokens', () => {
-    const session = service.getPublicSession('2026-07-20');
+  it('rejects tampered or cross-date progression tokens', async () => {
+    const session = await service.getPublicSession('2026-07-20');
 
-    expect(() => service.revealHint({
+    await expect(service.revealHint({
       puzzleDate: '2026-07-20',
       progressionToken: `${session.progressionToken}tampered`,
-    })).toThrow('Invalid or stale Daily progression token');
+    })).rejects.toThrow('Invalid or stale Daily progression token');
 
-    expect(() => service.revealHint({
+    await expect(service.revealHint({
       puzzleDate: '2026-07-21',
       progressionToken: session.progressionToken,
-    })).toThrow('Invalid or stale Daily progression token');
+    })).rejects.toThrow('Invalid or stale Daily progression token');
   });
 
-  it('cannot advance beyond the third verified out', () => {
-    const fourPitchService = createDailyRuntimeService({
-      canonicalRuntime: buildCanonicalRuntime(),
-      createPuzzle: (date) => buildPuzzle(4, date),
-    });
-    const session = fourPitchService.getPublicSession('2026-07-20');
-    const first = fourPitchService.resolveAtBat({
+  it('cannot advance beyond the third verified out', async () => {
+    const fourPitchService = createTestService(4);
+    const session = await fourPitchService.getPublicSession('2026-07-20');
+    const first = await fourPitchService.resolveAtBat({
       puzzleDate: '2026-07-20',
       progressionToken: session.progressionToken,
       giveUp: true,
     });
-    const second = fourPitchService.resolveAtBat({
+    const second = await fourPitchService.resolveAtBat({
       puzzleDate: '2026-07-20',
       progressionToken: requireToken(first.progressionToken),
       giveUp: true,
     });
-    const third = fourPitchService.resolveAtBat({
+    const third = await fourPitchService.resolveAtBat({
       puzzleDate: '2026-07-20',
       progressionToken: requireToken(second.progressionToken),
       giveUp: true,
@@ -171,11 +196,19 @@ describe('Daily canonical runtime service', () => {
   });
 });
 
+function createTestService(pitchCount: number) {
+  return createDailyRuntimeService({
+    canonicalRuntime: buildCanonicalRuntime(),
+    progressionReplayStore: createInMemoryDailyProgressionReplayStore(),
+    createPuzzle: (date) => buildPuzzle(pitchCount, date),
+  });
+}
+
 function submitIncorrectGuess(progressionToken: string) {
   return service.resolveAtBat({
     puzzleDate: '2026-07-20',
     progressionToken,
-    submittedPlayerId: 'ibp_cd000000000000000000',
+    submittedPlayerId: otherPlayerId,
   });
 }
 
@@ -215,7 +248,6 @@ function buildPuzzle(pitchCount: number, puzzleDate: string): DailyPuzzle {
 }
 
 function buildCanonicalRuntime() {
-  const otherPlayerId = 'ibp_cd000000000000000000';
   return createCanonicalRuntimeAccessor({
     playerIndex: {
       schemaVersion: 1,
