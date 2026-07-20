@@ -1,3 +1,4 @@
+import { randomUUID } from 'node:crypto';
 import type { CanonicalRuntimeAccessor } from '@initial-baseball/baseball-data/runtime';
 import { getGuessOutcome } from '@initial-baseball/engine';
 import type {
@@ -8,20 +9,27 @@ import type {
 } from '@initial-baseball/shared';
 import { createCanonicalRevealViewModel } from './canonicalRevealViewModel';
 import {
+  verifyDailyProgressionToken,
   createInitialDailyProgressionToken,
   signDailyProgressionState,
-  verifyDailyProgressionToken,
   type DailyProgressionState,
 } from './dailyProgressionToken';
+import {
+  DailyProgressionReplayError,
+  type DailyProgressionReplayStore,
+} from './dailyProgressionReplayStore';
 import type {
   DailyHintRequest,
+  DailyHintResponse,
   DailyResolutionRequest,
+  DailyResolutionResponse,
   DailyRuntimeService,
 } from './dailyRuntimeContracts';
 
 type CreateDailyRuntimeServiceInput = {
   canonicalRuntime: CanonicalRuntimeAccessor;
   createPuzzle: (date: string) => DailyPuzzle;
+  progressionReplayStore: DailyProgressionReplayStore;
 };
 
 export class DailyRuntimeRequestError extends Error {
@@ -34,75 +42,97 @@ export class DailyRuntimeRequestError extends Error {
 export function createDailyRuntimeService({
   canonicalRuntime,
   createPuzzle,
+  progressionReplayStore,
 }: CreateDailyRuntimeServiceInput): DailyRuntimeService {
   return {
-    getPublicSession(date) {
+    async getPublicSession(date) {
       const puzzle = createCanonicalPuzzle(date);
+      const sessionId = randomUUID();
+      const progressionToken = createInitialDailyProgressionToken(puzzle, sessionId);
+      await progressionReplayStore.initialize({ sessionId, progressionToken });
       return {
         puzzle: toPublicPuzzle(puzzle),
-        progressionToken: createInitialDailyProgressionToken(puzzle),
+        progressionToken,
       };
     },
 
-    revealHint(request) {
+    async revealHint(request) {
       const { puzzle, state } = requireProgression(request);
-      const pitch = requirePitch(puzzle, state.pitchNumber);
-      const hintSlot = puzzle.hintConfig[state.revealCount];
-      if (hintSlot === undefined) {
-        throw new DailyRuntimeRequestError(
-          `No hint ${state.revealCount + 1} exists for pitch ${state.pitchNumber}.`,
-        );
-      }
-
-      const hintValue = pitch.hints[hintSlot.hintType];
-      if (hintValue === undefined) {
-        throw new DailyRuntimeRequestError(
-          `Hint ${hintSlot.hintType} is unavailable for pitch ${state.pitchNumber}.`,
-        );
-      }
-
-      const nextRevealCount = (state.revealCount + 1) as DailyRevealCount;
-      return {
-        hint: {
-          hintType: hintSlot.hintType,
-          hintLabel: hintSlot.displayLabel,
-          hintValue,
-        },
-        progressionToken: signDailyProgressionState(puzzle, {
-          ...state,
-          revealCount: nextRevealCount,
-        }),
-      };
-    },
-
-    resolveAtBat(request) {
-      const { puzzle, state } = requireProgression(request);
-      const pitch = requirePitch(puzzle, state.pitchNumber);
-      const submittedPlayerId = resolveSubmittedPlayerId(request, canonicalRuntime);
-      const isCorrect = submittedPlayerId === pitch.player.playerId;
-      const result = request.giveUp === true
-        ? {
-            kind: 'strikeout' as const,
-            revealedCount: state.revealCount,
-            strikeCount: 3,
-            outcome: 'K' as const,
-            source: 'strikeout' as const,
+      return executeProgressionAction<DailyHintResponse>({
+        state,
+        progressionToken: request.progressionToken,
+        actionKey: `hint:${state.pitchNumber}:${state.revealCount}`,
+        createResponse: () => {
+          const pitch = requirePitch(puzzle, state.pitchNumber);
+          const hintSlot = puzzle.hintConfig[state.revealCount];
+          if (hintSlot === undefined) {
+            throw new DailyRuntimeRequestError(
+              `No hint ${state.revealCount + 1} exists for pitch ${state.pitchNumber}.`,
+            );
           }
-        : getGuessOutcome({
-            isCorrect,
-            revealCount: state.revealCount,
-            strikeCount: state.strikeCount,
-            maxStrikes: 3,
-          });
-      const isTerminal = result.kind === 'correct' || result.kind === 'strikeout';
 
-      return {
-        result,
-        reveal: isTerminal
-          ? createCanonicalRevealViewModel(canonicalRuntime.getReveal(pitch.player.playerId))
-          : null,
-        progressionToken: createNextProgressionToken(puzzle, state, result),
-      };
+          const hintValue = pitch.hints[hintSlot.hintType];
+          if (hintValue === undefined) {
+            throw new DailyRuntimeRequestError(
+              `Hint ${hintSlot.hintType} is unavailable for pitch ${state.pitchNumber}.`,
+            );
+          }
+
+          const nextRevealCount = (state.revealCount + 1) as DailyRevealCount;
+          return {
+            hint: {
+              hintType: hintSlot.hintType,
+              hintLabel: hintSlot.displayLabel,
+              hintValue,
+            },
+            progressionToken: signDailyProgressionState(puzzle, {
+              ...state,
+              revealCount: nextRevealCount,
+            }),
+          };
+        },
+      });
+    },
+
+    async resolveAtBat(request) {
+      const { puzzle, state } = requireProgression(request);
+      const submittedPlayerId = resolveSubmittedPlayerId(request, canonicalRuntime);
+      const actionKey = request.giveUp === true
+        ? `give-up:${state.pitchNumber}`
+        : `guess:${state.pitchNumber}:${submittedPlayerId}`;
+
+      return executeProgressionAction<DailyResolutionResponse>({
+        state,
+        progressionToken: request.progressionToken,
+        actionKey,
+        createResponse: () => {
+          const pitch = requirePitch(puzzle, state.pitchNumber);
+          const isCorrect = submittedPlayerId === pitch.player.playerId;
+          const result = request.giveUp === true
+            ? {
+                kind: 'strikeout' as const,
+                revealedCount: state.revealCount,
+                strikeCount: 3,
+                outcome: 'K' as const,
+                source: 'strikeout' as const,
+              }
+            : getGuessOutcome({
+                isCorrect,
+                revealCount: state.revealCount,
+                strikeCount: state.strikeCount,
+                maxStrikes: 3,
+              });
+          const isTerminal = result.kind === 'correct' || result.kind === 'strikeout';
+
+          return {
+            result,
+            reveal: isTerminal
+              ? createCanonicalRevealViewModel(canonicalRuntime.getReveal(pitch.player.playerId))
+              : null,
+            progressionToken: createNextProgressionToken(puzzle, state, result),
+          };
+        },
+      });
     },
   };
 
@@ -131,6 +161,32 @@ export function createDailyRuntimeService({
       };
     } catch {
       throw new DailyRuntimeRequestError('Invalid or stale Daily progression token.');
+    }
+  }
+
+  async function executeProgressionAction<Response extends DailyHintResponse | DailyResolutionResponse>({
+    state,
+    progressionToken,
+    actionKey,
+    createResponse,
+  }: {
+    state: DailyProgressionState;
+    progressionToken: string;
+    actionKey: string;
+    createResponse: () => Response | Promise<Response>;
+  }): Promise<Response> {
+    try {
+      return await progressionReplayStore.execute({
+        sessionId: state.sessionId,
+        progressionToken,
+        actionKey,
+        createResponse,
+      });
+    } catch (error) {
+      if (error instanceof DailyProgressionReplayError) {
+        throw new DailyRuntimeRequestError(error.message);
+      }
+      throw error;
     }
   }
 }
@@ -196,9 +252,7 @@ function createNextProgressionToken(
   }
 
   return signDailyProgressionState(puzzle, {
-    version: state.version,
-    puzzleId: state.puzzleId,
-    puzzleDate: state.puzzleDate,
+    ...state,
     pitchNumber: nextPitch.pitchNumber,
     revealCount: 0,
     strikeCount: 0,
