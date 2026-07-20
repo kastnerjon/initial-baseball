@@ -5,41 +5,60 @@ import type {
   RevealStatValues,
 } from './canonicalRevealViewModel';
 
-type LegacyRevealSummary = {
-  kind: RevealStatKind;
-  stats: RevealStatValues;
-};
-
-type PossiblyLegacyReveal = Omit<CanonicalRevealViewModel, 'career' | 'seasons'> & {
-  career: CanonicalRevealViewModel['career'] | LegacyRevealSummary;
-  seasons: Array<{
-    season: number;
-    teamIds: string[];
-  } & (CanonicalRevealViewModel['seasons'][number] | LegacyRevealSummary)>;
-};
+type RevealRecord = Record<string, unknown>;
 
 export function normalizeCanonicalRevealViewModel(
   input: CanonicalRevealViewModel,
 ): CanonicalRevealViewModel {
-  const reveal = input as unknown as PossiblyLegacyReveal;
+  const reveal = input as unknown as RevealRecord;
+  const seasons = Array.isArray(reveal.seasons) ? reveal.seasons : [];
+
   return {
-    ...reveal,
+    ...input,
     career: {
       lines: normalizeLines(reveal.career),
     },
-    seasons: reveal.seasons.map((season) => ({
-      season: season.season,
-      teamIds: season.teamIds,
-      lines: normalizeLines(season),
-    })),
+    seasons: seasons.flatMap((value) => {
+      if (!isRecord(value) || typeof value.season !== 'number' || !Array.isArray(value.teamIds)) {
+        return [];
+      }
+      return [{
+        season: value.season,
+        teamIds: value.teamIds.filter((teamId): teamId is string => typeof teamId === 'string'),
+        lines: normalizeLines(value),
+      }];
+    }),
   };
 }
 
-function normalizeLines(
-  summary: CanonicalRevealViewModel['career'] | CanonicalRevealViewModel['seasons'][number] | LegacyRevealSummary,
-): CanonicalRevealStatLine[] {
-  if ('lines' in summary && Array.isArray(summary.lines)) {
-    return summary.lines;
+function normalizeLines(value: unknown): CanonicalRevealStatLine[] {
+  if (!isRecord(value)) {
+    return [];
   }
-  return [{ kind: summary.kind, stats: summary.stats }];
+  if (Array.isArray(value.lines)) {
+    return value.lines.filter(isCanonicalRevealStatLine);
+  }
+  if (isRevealStatKind(value.kind) && isRevealStatValues(value.stats)) {
+    return [{ kind: value.kind, stats: value.stats }];
+  }
+  return [];
+}
+
+function isCanonicalRevealStatLine(value: unknown): value is CanonicalRevealStatLine {
+  return isRecord(value)
+    && isRevealStatKind(value.kind)
+    && isRevealStatValues(value.stats);
+}
+
+function isRevealStatKind(value: unknown): value is RevealStatKind {
+  return value === 'hitter' || value === 'pitcher';
+}
+
+function isRevealStatValues(value: unknown): value is RevealStatValues {
+  return isRecord(value)
+    && Object.values(value).every((stat) => typeof stat === 'number' || typeof stat === 'string');
+}
+
+function isRecord(value: unknown): value is RevealRecord {
+  return typeof value === 'object' && value !== null;
 }
