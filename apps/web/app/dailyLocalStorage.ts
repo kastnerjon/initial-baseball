@@ -1,4 +1,11 @@
-import type { DailyGameState, DailyGuessResult, DailyOutcome, DailyPublicPuzzle, DailyPuzzle, DailySharePitchLine } from '@initial-baseball/shared';
+import type {
+  DailyGameState,
+  DailyGuessResult,
+  DailyOutcome,
+  DailyPublicPuzzle,
+  DailyPuzzle,
+  DailySharePitchLine,
+} from '@initial-baseball/shared';
 import type { PendingAtBatAdvance } from './dailyAtBatResolution';
 import type { DailyAtBatUiState } from './dailyClientState';
 
@@ -16,6 +23,10 @@ export type SavedDailyGame = {
   gameState: DailyGameState;
   atBatState: DailyAtBatUiState;
   pendingAdvance: PendingAtBatAdvance | null;
+};
+
+type PersistedSavedDailyGame = Omit<SavedDailyGame, 'schemaVersion'> & {
+  schemaVersion: 1 | typeof DAILY_STORAGE_SCHEMA_VERSION;
 };
 
 export type SaveDailyGameInput = {
@@ -139,7 +150,10 @@ function parseSavedValue(value: string): unknown {
   }
 }
 
-function isSavedDailyGameForPuzzle(value: unknown, puzzle: DailyPublicPuzzle): value is SavedDailyGame {
+function isSavedDailyGameForPuzzle(
+  value: unknown,
+  puzzle: DailyPublicPuzzle,
+): value is PersistedSavedDailyGame {
   if (!isRecord(value)) {
     return false;
   }
@@ -180,9 +194,13 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function normalizeSavedDailyGame(
-  savedGame: SavedDailyGame,
+  savedGame: PersistedSavedDailyGame,
   publicPuzzle: DailyPublicPuzzle,
-): SavedDailyGame {
+): SavedDailyGame | null {
+  if (savedGame.schemaVersion === 1 && !isSafeLegacySave(savedGame, publicPuzzle)) {
+    return null;
+  }
+
   const legacyAtBatState = savedGame.atBatState as DailyAtBatUiState & {
     revealedHints?: DailyAtBatUiState['revealedHints'];
     reveal?: DailyAtBatUiState['reveal'];
@@ -216,6 +234,49 @@ function normalizeSavedDailyGame(
   };
 }
 
+function isSafeLegacySave(
+  savedGame: PersistedSavedDailyGame,
+  publicPuzzle: DailyPublicPuzzle,
+): boolean {
+  return isCompletedLegacySave(savedGame, publicPuzzle)
+    || isCleanLegacyAtBatBoundary(savedGame, publicPuzzle);
+}
+
+function isCompletedLegacySave(
+  savedGame: PersistedSavedDailyGame,
+  publicPuzzle: DailyPublicPuzzle,
+): boolean {
+  return savedGame.gameState.status === 'completed'
+    || savedGame.gameState.score.completed === true
+    || savedGame.currentPitchIndex >= publicPuzzle.pitches.length;
+}
+
+function isCleanLegacyAtBatBoundary(
+  savedGame: PersistedSavedDailyGame,
+  publicPuzzle: DailyPublicPuzzle,
+): boolean {
+  const atBatState = savedGame.atBatState as DailyAtBatUiState & {
+    revealedHints?: DailyAtBatUiState['revealedHints'];
+    reveal?: DailyAtBatUiState['reveal'];
+  };
+
+  return (
+    Number.isInteger(savedGame.currentPitchIndex)
+    && savedGame.currentPitchIndex >= 0
+    && savedGame.currentPitchIndex < publicPuzzle.pitches.length
+    && savedGame.pendingAdvance === null
+    && savedGame.gameState.status !== 'completed'
+    && savedGame.gameState.score.completed === false
+    && savedGame.gameState.shareResult === null
+    && savedGame.gameState.completedPitchLines.length === savedGame.currentPitchIndex
+    && atBatState.revealCount === 0
+    && atBatState.strikeCount === 0
+    && (atBatState.revealedHints === undefined || atBatState.revealedHints.length === 0)
+    && (atBatState.reveal === undefined || atBatState.reveal === null)
+    && atBatState.submittedResult === null
+  );
+}
+
 function normalizeSharePitchLine(line: DailySharePitchLine): DailySharePitchLine {
   return {
     ...line,
@@ -239,5 +300,7 @@ function normalizeLegacyDailyOutcome(outcome: unknown): DailyOutcome {
 }
 
 function normalizeLegacyCorrectOutcome(outcome: unknown): Exclude<DailyOutcome, 'K'> {
-  return outcome === 'BUNT' || outcome === 'SAC' ? 'BB' : outcome as Exclude<DailyOutcome, 'K'>;
+  return outcome === 'BUNT' || outcome === 'SAC'
+    ? 'BB'
+    : outcome as Exclude<DailyOutcome, 'K'>;
 }
