@@ -11,18 +11,19 @@ const canonicalPlayerId = 'ibp_ab000000000000000000';
 const legacyPlayerId = 'chadwick:answer';
 const answerName = 'Hidden Answer';
 const fullRevealMarker = 'FULL_REVEAL_MARKER';
-const puzzle = buildPuzzle();
+const puzzle = buildPuzzle(1);
 const service = createDailyRuntimeService({
   canonicalRuntime: buildCanonicalRuntime(),
   createPuzzle: () => puzzle,
 });
 
 describe('Daily canonical runtime service', () => {
-  it('publishes only puzzle metadata and initials before resolution', () => {
-    const publicPuzzle = service.getPublicPuzzle('2026-07-20');
-    const serialized = JSON.stringify(publicPuzzle);
+  it('publishes only puzzle metadata, initials, and an opaque progression token', () => {
+    const session = service.getPublicSession('2026-07-20');
+    const serialized = JSON.stringify(session);
 
-    expect(publicPuzzle.pitches).toEqual([{ pitchNumber: 1, initials: 'HA' }]);
+    expect(session.puzzle.pitches).toEqual([{ pitchNumber: 1, initials: 'HA' }]);
+    expect(session.progressionToken).toEqual(expect.any(String));
     expect(serialized).not.toContain(canonicalPlayerId);
     expect(serialized).not.toContain(legacyPlayerId);
     expect(serialized).not.toContain(answerName);
@@ -30,82 +31,163 @@ describe('Daily canonical runtime service', () => {
     expect(serialized).not.toContain(fullRevealMarker);
   });
 
-  it('releases only the requested hint and no answer identity', () => {
-    const response = service.revealHint('2026-07-20', 1, 0);
-    expect(response).toEqual({
-      hint: {
-        hintType: 'main_decade',
-        hintLabel: 'Main decade played in',
-        hintValue: '2000s',
-      },
+  it('releases only the requested hint and advances the signed hint state', () => {
+    const session = service.getPublicSession('2026-07-20');
+    const response = service.revealHint({
+      puzzleDate: '2026-07-20',
+      progressionToken: session.progressionToken,
     });
+
+    expect(response.hint).toEqual({
+      hintType: 'main_decade',
+      hintLabel: 'Main decade played in',
+      hintValue: '2000s',
+    });
+    expect(response.progressionToken).not.toBe(session.progressionToken);
     expect(JSON.stringify(response)).not.toContain(canonicalPlayerId);
     expect(JSON.stringify(response)).not.toContain(answerName);
   });
 
-  it('returns no reveal data for an unresolved incorrect guess', () => {
+  it('uses server-verified hint depth for the correct outcome', () => {
+    const session = service.getPublicSession('2026-07-20');
+    const hintResponse = service.revealHint({
+      puzzleDate: '2026-07-20',
+      progressionToken: session.progressionToken,
+    });
     const response = service.resolveAtBat({
       puzzleDate: '2026-07-20',
-      pitchNumber: 1,
-      revealCount: 0,
-      strikeCount: 0,
+      progressionToken: hintResponse.progressionToken,
+      submittedPlayerId: canonicalPlayerId,
+    });
+
+    expect(response.result).toMatchObject({ kind: 'correct', outcome: '3B' });
+  });
+
+  it('returns no reveal data for an unresolved incorrect guess', () => {
+    const session = service.getPublicSession('2026-07-20');
+    const response = service.resolveAtBat({
+      puzzleDate: '2026-07-20',
+      progressionToken: session.progressionToken,
       submittedPlayerId: 'ibp_cd000000000000000000',
     });
+
     expect(response.result).toMatchObject({ kind: 'incorrect', strikeCount: 1 });
     expect(response.reveal).toBeNull();
+    expect(response.progressionToken).toEqual(expect.any(String));
     expect(JSON.stringify(response)).not.toContain(answerName);
     expect(JSON.stringify(response)).not.toContain(fullRevealMarker);
   });
 
   it('matches canonical identity and loads the reveal only after a correct guess', () => {
+    const session = service.getPublicSession('2026-07-20');
     const response = service.resolveAtBat({
       puzzleDate: '2026-07-20',
-      pitchNumber: 1,
-      revealCount: 1,
-      strikeCount: 0,
+      progressionToken: session.progressionToken,
       submittedPlayerId: canonicalPlayerId,
     });
-    expect(response.result).toMatchObject({ kind: 'correct', outcome: '3B' });
-    expect(response.reveal).toMatchObject({ playerId: canonicalPlayerId, displayName: answerName });
+
+    expect(response.result).toMatchObject({ kind: 'correct', outcome: 'HR' });
+    expect(response.reveal).toMatchObject({
+      playerId: canonicalPlayerId,
+      displayName: answerName,
+    });
+    expect(response.progressionToken).toBeNull();
   });
 
   it('accepts a valid legacy selected ID through the explicit redirect boundary', () => {
+    const session = service.getPublicSession('2026-07-20');
     const response = service.resolveAtBat({
       puzzleDate: '2026-07-20',
-      pitchNumber: 1,
-      revealCount: 0,
-      strikeCount: 0,
+      progressionToken: session.progressionToken,
       submittedPlayerId: legacyPlayerId,
     });
+
     expect(response.result.kind).toBe('correct');
   });
 
-  it('returns the reveal when an incorrect guess becomes the third strike', () => {
-    const response = service.resolveAtBat({
-      puzzleDate: '2026-07-20',
-      pitchNumber: 1,
-      revealCount: 2,
-      strikeCount: 2,
-      submittedPlayerId: 'ibp_cd000000000000000000',
-    });
-    expect(response.result).toMatchObject({ kind: 'strikeout', strikeCount: 3 });
-    expect(response.reveal?.displayName).toBe(answerName);
+  it('returns the reveal only when three verified incorrect guesses produce a strikeout', () => {
+    const session = service.getPublicSession('2026-07-20');
+    const first = submitIncorrectGuess(session.progressionToken);
+    const second = submitIncorrectGuess(requireToken(first.progressionToken));
+    const third = submitIncorrectGuess(requireToken(second.progressionToken));
+
+    expect(first.result).toMatchObject({ kind: 'incorrect', strikeCount: 1 });
+    expect(second.result).toMatchObject({ kind: 'incorrect', strikeCount: 2 });
+    expect(third.result).toMatchObject({ kind: 'strikeout', strikeCount: 3 });
+    expect(third.reveal?.displayName).toBe(answerName);
+    expect(third.progressionToken).toBeNull();
   });
 
-  it('reveals only when Give Up safely resolves the at-bat', () => {
+  it('reveals only when Give Up safely resolves the current at-bat', () => {
+    const session = service.getPublicSession('2026-07-20');
     const response = service.resolveAtBat({
       puzzleDate: '2026-07-20',
-      pitchNumber: 1,
-      revealCount: 2,
-      strikeCount: 0,
+      progressionToken: session.progressionToken,
       giveUp: true,
     });
+
     expect(response.result).toMatchObject({ kind: 'strikeout', outcome: 'K' });
     expect(response.reveal?.displayName).toBe(answerName);
   });
+
+  it('rejects tampered or cross-date progression tokens', () => {
+    const session = service.getPublicSession('2026-07-20');
+
+    expect(() => service.revealHint({
+      puzzleDate: '2026-07-20',
+      progressionToken: `${session.progressionToken}tampered`,
+    })).toThrow('Invalid or stale Daily progression token');
+
+    expect(() => service.revealHint({
+      puzzleDate: '2026-07-21',
+      progressionToken: session.progressionToken,
+    })).toThrow('Invalid or stale Daily progression token');
+  });
+
+  it('cannot advance beyond the third verified out', () => {
+    const fourPitchService = createDailyRuntimeService({
+      canonicalRuntime: buildCanonicalRuntime(),
+      createPuzzle: () => buildPuzzle(4),
+    });
+    const session = fourPitchService.getPublicSession('2026-07-20');
+    const first = fourPitchService.resolveAtBat({
+      puzzleDate: '2026-07-20',
+      progressionToken: session.progressionToken,
+      giveUp: true,
+    });
+    const second = fourPitchService.resolveAtBat({
+      puzzleDate: '2026-07-20',
+      progressionToken: requireToken(first.progressionToken),
+      giveUp: true,
+    });
+    const third = fourPitchService.resolveAtBat({
+      puzzleDate: '2026-07-20',
+      progressionToken: requireToken(second.progressionToken),
+      giveUp: true,
+    });
+
+    expect(first.progressionToken).toEqual(expect.any(String));
+    expect(second.progressionToken).toEqual(expect.any(String));
+    expect(third.progressionToken).toBeNull();
+  });
 });
 
-function buildPuzzle(): DailyPuzzle {
+function submitIncorrectGuess(progressionToken: string) {
+  return service.resolveAtBat({
+    puzzleDate: '2026-07-20',
+    progressionToken,
+    submittedPlayerId: 'ibp_cd000000000000000000',
+  });
+}
+
+function requireToken(token: string | null): string {
+  if (token === null) {
+    throw new Error('Expected a continuation token.');
+  }
+  return token;
+}
+
+function buildPuzzle(pitchCount: number): DailyPuzzle {
   return {
     id: 'daily-2026-07-20',
     puzzleNumber: 85,
@@ -113,14 +195,14 @@ function buildPuzzle(): DailyPuzzle {
     status: 'published',
     hintConfig: DEFAULT_DAILY_HINT_CONFIG,
     statsHintConfig: DEFAULT_DAILY_STATS_HINT_CONFIG,
-    pitches: [{
-      pitchNumber: 1,
+    pitches: Array.from({ length: pitchCount }, (_, index) => ({
+      pitchNumber: index + 1,
       player: {
         playerId: legacyPlayerId,
         fullName: 'Hidden Legal Answer',
         displayName: answerName,
         initials: 'HA',
-        kind: 'hitter',
+        kind: 'hitter' as const,
         primaryPosition: '1B',
       },
       hints: {
@@ -129,7 +211,7 @@ function buildPuzzle(): DailyPuzzle {
         position: '1B',
         stats: 'Career marker',
       },
-    }],
+    })),
   };
 }
 
