@@ -219,7 +219,11 @@ function resolveSubmittedPlayerId(
   if (!submittedPlayerId) {
     throw new DailyRuntimeRequestError('submittedPlayerId is required for a guess.');
   }
-  return canonicalRuntime.requireCanonicalPlayerId(submittedPlayerId);
+  try {
+    return canonicalRuntime.requireCanonicalPlayerId(submittedPlayerId);
+  } catch {
+    throw new DailyRuntimeRequestError('submittedPlayerId does not resolve to a canonical player.');
+  }
 }
 
 function incrementRevealCount(value: DailyProgressionClaims['revealCount']): DailyProgressionClaims['revealCount'] {
