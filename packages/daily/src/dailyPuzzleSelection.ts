@@ -68,29 +68,12 @@ export function selectCanonicalDailyPlayersForDate(
     return selections;
   }
 
-  const candidateByCanonicalId = new Map<string, CanonicalDailyPlayerSelection>();
-  for (const player of dailyEligiblePlayers) {
+  const candidates = dailyEligiblePlayers.flatMap((player) => {
     const canonicalPlayerId = resolveCanonicalPlayerId(player.id);
-    if (canonicalPlayerId === null) {
-      continue;
-    }
-
-    const current = candidateByCanonicalId.get(canonicalPlayerId);
-    if (
-      current === undefined
-      || comparePlayersByRecognizability(player, current.player) < 0
-      || (
-        comparePlayersByRecognizability(player, current.player) === 0
-        && player.id.localeCompare(current.player.id) < 0
-      )
-    ) {
-      candidateByCanonicalId.set(canonicalPlayerId, { player, canonicalPlayerId });
-    }
-  }
-
-  const candidates = [...candidateByCanonicalId.values()];
+    return canonicalPlayerId === null ? [] : [{ player, canonicalPlayerId }];
+  });
   if (candidates.length < DAILY_AT_BAT_COUNT) {
-    throw new Error(`Not enough canonically unique Daily players for ${date}.`);
+    throw new Error(`Not enough canonically resolvable Daily players for ${date}.`);
   }
 
   return selectGeneratedCanonicalDailyPlayers(date, candidates);
@@ -102,7 +85,6 @@ function selectGeneratedCanonicalDailyPlayers(
 ): CanonicalDailyPlayerSelection[] {
   const rankedPlayers = [...candidates].sort((left, right) => (
     comparePlayersByRecognizability(left.player, right.player)
-    || left.canonicalPlayerId.localeCompare(right.canonicalPlayerId)
   ));
   const selectedPlayers: CanonicalDailyPlayerSelection[] = [];
   const selectedCanonicalIds = new Set<string>();
@@ -225,11 +207,11 @@ function selectDeterministicUnusedCanonicalPlayer(
 ): CanonicalDailyPlayerSelection | null {
   const rankedByDate = [...pool].sort((left, right) => (
     compareHashedValues(
-      `${seed}:${left.canonicalPlayerId}`,
-      `${seed}:${right.canonicalPlayerId}`,
+      `${seed}:${left.player.id}`,
+      `${seed}:${right.player.id}`,
     )
     || left.player.displayName.localeCompare(right.player.displayName)
-    || left.canonicalPlayerId.localeCompare(right.canonicalPlayerId)
+    || left.player.id.localeCompare(right.player.id)
   ));
 
   return rankedByDate.find(
