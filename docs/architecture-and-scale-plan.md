@@ -42,7 +42,7 @@ Owns Daily-specific portable application logic: puzzle numbering, deterministic 
 
 ### `apps/web`
 
-Owns Next.js pages, React components, HTTP routes, browser persistence, sharing, and web-specific infrastructure adapters. It renders and transports domain behavior rather than defining it.
+Owns Next.js pages, React components, HTTP routes, browser persistence, sharing, and web-specific infrastructure adapters. It renders and transports domain behavior rather than defining it. Stateless progression-token signing and verification belong here because they authorize web transport rather than define baseball or Daily rules.
 
 ### `apps/mobile`
 
@@ -122,6 +122,20 @@ The canonical serving contract separates lightweight search data from full revea
 
 A valid runtime artifact is not permission to serialize the answer's full reveal record into initial HTML or client props before the at-bat is resolved. Full reveal data is returned only after a correct answer, a third strike, or Give Up.
 
+### Launch progression authorization
+
+ADR 0001 defines the accepted anonymous launch model.
+
+- A server-signed stateless token contains only public progression: contract version, puzzle ID/date, current pitch, hint depth, strikes, outs, and completion state.
+- The server derives those fields from verified claims rather than trusting browser counters.
+- Each valid hint or resolution returns the deterministic successor token.
+- The browser persists the opaque token alongside public local state.
+- The token contains no hidden answer or hint data.
+- Replay of an earlier valid token is accepted as a launch limitation; forging later progression or selecting an arbitrary future pitch is not.
+- Token signing and verification remain a provider-neutral web adapter and use a server-only secret.
+
+This model protects ordinary play and public payloads without claiming tamper-proof anonymous scoring. It adds no replay cache, Redis, per-action database write, durable anonymous session, or Vercel-specific state.
+
 ## Scale target: 10,000+ plays per day
 
 Ten thousand Daily players is modest systems load if the game remains mostly static and client-driven.
@@ -131,14 +145,15 @@ Ten thousand Daily players is modest systems load if the game remains mostly sta
 - Serve immutable player and season data with CDN-friendly caching.
 - Load the lightweight search index once and reveal data on demand.
 - Keep anonymous gameplay state in the client.
+- Verify progression tokens without a persistence round trip.
 - Avoid a database write for every reveal, incorrect guess, or base transition.
 - Submit at most one compact, idempotent result per completed game when aggregate statistics are introduced.
 
 ### Avoid unnecessary infrastructure
 
-The initial launch does not require microservices, queues, a dedicated mobile backend, real-time subscriptions, or server-side game sessions. Vercel plus a small relational database can support expected traffic if routes remain thin and cacheable.
+The initial launch does not require microservices, queues, a dedicated mobile backend, real-time subscriptions, replay storage, or server-side game sessions. Vercel plus a small relational database can support expected traffic if routes remain thin and cacheable.
 
-Vercel is an adapter for hosting and deployment, not the owner of domain behavior, baseball data, persistence contracts, or the public domain.
+Vercel is an adapter for hosting and deployment, not the owner of domain behavior, baseball data, persistence contracts, answer-integrity state, or the public domain.
 
 ### Preserve concrete seams
 
@@ -148,10 +163,11 @@ Do not create an abstraction solely for an imagined future mode. Extract a bound
 
 ## Current stabilization and product sequence
 
-### 0. Answer-integrity boundary
+### 0. Answer-integrity implementation
 
-- Approve the anonymous, client-driven launch threat model before changing authorization.
-- Prevent arbitrary future-pitch access with stateless signed progression.
+- Implement the accepted ADR 0001 stateless signed-progression contract.
+- Prevent arbitrary future-pitch access while preserving client-driven anonymous gameplay.
+- Preserve refresh recovery and run hidden-answer production QA.
 - Do not add replay storage, per-action database writes, durable anonymous server sessions, or hosting-specific state for launch.
 
 ### 1. Reveal presentation
@@ -183,8 +199,9 @@ Before broad friend distribution:
 - Search handles aliases, accents, ordered tokens, and genuine same-name players.
 - Player reveal data is accurate, understandable, and season-complete where sources allow.
 - Hidden answers are absent from initial HTML, serialized props, routes, logs, and share output.
+- Browser counters cannot directly select a future pitch or fabricate server-authorized hint/strike progression.
 - Static and immutable responses use caching.
-- Refresh and ordinary errors do not erase local progress.
+- Refresh and ordinary errors do not erase progress.
 - The full web game is polished at common iPhone and iPad sizes.
 - Share output is reliable and spoiler-safe.
 - One deployment is canonical and observable.
@@ -195,13 +212,13 @@ Before broad friend distribution:
 - Rewriting the engine or application from scratch.
 - Building a native mobile application now.
 - Building head-to-head gameplay, chat, leagues, or matchmaking.
-- Introducing microservices or queues.
-- Persisting every anonymous gameplay action.
+- Introducing microservices, queues, replay caches, or per-action persistence.
+- Claiming tamper-proof anonymous scoring.
 - Adding accounts before the anonymous Daily loop is excellent.
 - Creating abstractions without a concrete upcoming consumer.
 
 ## Decision rule
 
-Architecture cleanup is complete enough when the product team can improve the visible Daily experience without placing game rules, data generation, puzzle lifecycle logic, or persistence logic directly inside React components or Next.js routes.
+Architecture cleanup is complete enough when the product team can improve the visible Daily experience without placing game rules, data generation, puzzle lifecycle logic, persistence logic, or answer-integrity state directly inside React components or Next.js routes.
 
 When a decision changes, implementation and affected canonical documents must change in the same pull request.
