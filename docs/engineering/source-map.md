@@ -23,7 +23,7 @@ Use this to find the owning file or package before changing behavior.
 | Correct outcome by hint count | `packages/engine/src/scoring/getHitResultForRevealCount.ts` |
 | Runner advancement, including walks | `packages/engine/src/scoring/advanceRunners.ts` |
 | Guess matching | `packages/engine/src/guesses/matchGuessToPlayer.ts` |
-| Daily numbering, lineup generation, overrides, and session behavior | `packages/daily/src/` |
+| Daily numbering, lineup generation, canonical deduplication, overrides, and session behavior | `packages/daily/src/` |
 | Interim manual Daily overrides | `apps/web/app/dailyPuzzleOverrides.ts` |
 | Daily product rules | `docs/product/daily-inning-blueprint.md` |
 | Engine rules | `docs/spec/engine.md` |
@@ -34,7 +34,9 @@ Use this to find the owning file or package before changing behavior.
 |---|---|
 | Daily web routes and components | `apps/web/app/` |
 | Browser persistence and saved-game migration | `apps/web/app/dailyLocalStorage.ts` |
-| Public Daily puzzle and guarded hint/reveal service | `apps/web/app/dailyRuntimeService.ts` |
+| Public Daily session and guarded hint/reveal service | `apps/web/app/dailyRuntimeService.ts` |
+| Signed Daily pitch/hint/strike/out progression | `apps/web/app/dailyProgressionToken.ts` |
+| Canonical reveal presentation, including two-way stat lines | `apps/web/app/canonicalRevealViewModel.ts` |
 | Web canonical runtime adapter | `apps/web/app/serverCanonicalRuntime.ts` |
 | Search, hint, and resolution routes | `apps/web/app/api/players/` and `apps/web/app/api/daily/` |
 | Admin UI and publication adapters | `apps/web/app/` behind repository/service boundaries |
@@ -45,7 +47,12 @@ Use this to find the owning file or package before changing behavior.
 
 | Change needed | Go here |
 |---|---|
-| Canonical identity generation | `packages/baseball-data/scripts/generate-canonical-identities.mjs` |
+| Reviewed Chadwick source pin | `packages/baseball-data/data/canonical/chadwick-source.json` |
+| Committed reviewed identity snapshot | `packages/baseball-data/data/canonical/identity-snapshot/` |
+| Pinned identity refresh orchestration | `packages/baseball-data/scripts/generate-reviewed-canonical-identities.mjs` |
+| Identity snapshot update and exact verification | `packages/baseball-data/scripts/update-reviewed-identity-snapshot.mjs` |
+| Offline snapshot materialization for production builds | `packages/baseball-data/scripts/materialize-reviewed-identity-snapshot.mjs` |
+| Canonical identity candidate generation | `packages/baseball-data/scripts/generate-canonical-identities.mjs` |
 | Identity graph and canonical IDs | `packages/baseball-data/scripts/canonical-identity-core.mjs` |
 | Lahman-first player universe and redirects | `packages/baseball-data/scripts/generate-canonical-universe.mjs` |
 | Universe eligibility and identity assembly | `packages/baseball-data/scripts/canonical-universe-core.mjs` |
@@ -60,7 +67,7 @@ Use this to find the owning file or package before changing behavior.
 | Lightweight runtime index, redirects, and reveal shards | `packages/baseball-data/scripts/generate-canonical-runtime-payload.mjs` |
 | Canonical index, redirect, and reveal-shard access | `packages/baseball-data/src/runtime/` |
 | Runtime consumer regression QA | `packages/baseball-data/scripts/qa-canonical-runtime-consumer.mjs` |
-| Canonical data scripts and current live/shadow distinction | `packages/baseball-data/README.md` |
+| Canonical data scripts and current runtime distinction | `packages/baseball-data/README.md` |
 | Enrichment contract and missing-data rules | `docs/data/canonical-career-enrichment.md` |
 | Runtime serving contract | `docs/data/canonical-runtime-payload.md` |
 | Canonical pipeline CI order and artifacts | `.github/workflows/ci.yml` |
