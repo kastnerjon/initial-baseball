@@ -17,6 +17,7 @@
     "@initial-baseball/engine": "workspace:*",
     "@initial-baseball/shared": "workspace:*",
     "@supabase/supabase-js": "^2.47.10",
+    "@vercel/functions": "^3.7.5",
     "next": "^15.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
