@@ -4,6 +4,7 @@ import {
   DailyAdminAuthorizationError,
 } from '../../../dailyAdminAuthorization';
 import { createDailyAdminContext } from '../../../dailyAdminComposition';
+import { isSameOriginDailyAdminMutation } from '../../../dailyAdminRequestSecurity';
 import { createDailyAdminWorkflow } from '../../../dailyAdminWorkflow';
 
 export async function POST(request: Request): Promise<NextResponse> {
@@ -44,9 +45,4 @@ export async function POST(request: Request): Promise<NextResponse> {
       headers: { 'cache-control': 'private, no-store' },
     });
   }
-}
-
-export function isSameOriginDailyAdminMutation(request: Request): boolean {
-  const origin = request.headers.get('origin');
-  return origin === null || origin === new URL(request.url).origin;
 }
