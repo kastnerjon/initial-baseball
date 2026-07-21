@@ -85,30 +85,31 @@ Completed foundation and mechanics include:
 - a server-only Supabase/Postgres `DailyPuzzleRepository` adapter backed by the distinct `daily_editorial_puzzles` table, with strict persisted-row decoding, date-range reads, atomic optimistic revision updates, canonical-ID-only JSONB selections, and a row-level-security-first migration;
 - a server-only single-editor administration boundary using HTTP Basic authentication over HTTPS, a stable actor ID, fail-closed credential configuration, service-role Supabase construction with browser session persistence disabled, and authorization before privileged client/repository composition;
 - an authorized server-rendered `/admin/daily` workflow that reads the upcoming seven-day horizon, displays every approved date/slot review field and validation warning, and manually creates only missing drafts through the portable horizon service;
-- authorized name/alias search over reviewed Daily candidates, genuine same-name disambiguation, exact initials/hints/canonical reveal preview, future-slot replacement through the portable lifecycle/repository service, and automatic post-save validation reruns.
+- authorized name/alias search over reviewed Daily candidates, genuine same-name disambiguation, exact initials/hints/canonical reveal preview, future-slot replacement through the portable lifecycle/repository service, and automatic post-save validation reruns;
+- explicit authorized schedule, publish, and archive actions that use the existing portable lifecycle service, preserve optimistic revisions and audit metadata, enforce same-origin mutation requests, and leave invalid transition order authoritative in `packages/daily`.
 
-Most recent completed product work at this handoff: PR #118, authorized Daily player search, preview, future-slot replacement, and validation reruns.
+Most recent completed product work at this handoff: PR #119, explicit authorized Daily schedule, publish, and archive controls.
 
 ## Deployment state
 
 Merged GitHub code is ahead of the last verified successful Vercel production deployment.
 
-The production deployment attempted for PR #114's merged `main` commit failed during the Next.js build because `DAILY_PROGRESSION_SECRET` remains unset. Remaining operational task: issue #97.
+The Vercel Hobby quota is no longer the active deployment blocker. The latest inspected attempt reached the Next.js build and failed because `DAILY_PROGRESSION_SECRET` remains unset. Remaining progression deployment task: issue #97.
 
 - Configure one stable server-only `DAILY_PROGRESSION_SECRET` for Vercel Preview and Production.
-- Redeploy after the Vercel Hobby deployment quota permits it.
+- Trigger a fresh deployment.
 - Verify hosted hint, guess, strikeout, Give Up, refresh, and completion flows.
 - Close issues #91 and #86 after successful hosted verification.
 
-The `daily_editorial_puzzles` migration is committed but has not yet been applied to a hosted project. `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `DAILY_ADMIN_USERNAME`, and `DAILY_ADMIN_PASSWORD` also remain unconfigured for hosted administration. The server composition and administration workflow exist in code, but no hosted admin workflow is operational yet. The original `daily_puzzles`, `daily_puzzle_pitches`, attempt, result, database-player, and head-to-head tables remain inactive legacy scaffold and are not used by the current Daily repository.
+The `daily_editorial_puzzles` migration is committed but has not yet been applied to a hosted project. `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `DAILY_ADMIN_USERNAME`, and `DAILY_ADMIN_PASSWORD` also remain unconfigured for hosted administration. The server composition and full manual administration workflow exist in code, but no hosted admin workflow is operational yet. The original `daily_puzzles`, `daily_puzzle_pitches`, attempt, result, database-player, and head-to-head tables remain inactive legacy scaffold and are not used by the current Daily repository.
 
 These deployment tasks do not block coding, GitHub CI, tests, or production builds when CI supplies its nonproduction build secret.
 
 ## Current work order
 
 1. Maintain this handoff and reconcile documentation whenever current state or roadmap priority changes.
-2. Add explicit schedule, publish, and archive controls without implicitly settling automatic publication or emergency correction/versioning.
-3. Apply the committed migration and configure hosted Supabase/Vercel environment variables before deploying administration.
+2. Configure `DAILY_PROGRESSION_SECRET`, apply the committed editorial migration, configure the hosted server-only administration variables, and verify the deployed progression and admin workflows.
+3. Make the public Daily runtime consume the approved scheduled or published editorial puzzle for its date, while preserving historical legacy answers and keeping Supabase behind the server repository boundary.
 4. Add aggregate completed-game results, field comparison, monitoring, and remaining launch surfaces.
 5. Apply the approved heritage visual direction after core mechanics and administration are dependable.
 
@@ -125,7 +126,7 @@ These deployment tasks do not block coding, GitHub CI, tests, or production buil
 - Ensuring a horizon is idempotent: existing draft, scheduled, published, or archived records are preserved and only missing dates are generated.
 - Earlier records in the requested horizon contribute to repeat protection for later generated dates.
 - An editor can review and replace any future slot before publication.
-- The first web implementation may use a manual Generate action; cron automation is optional later.
+- The first web implementation uses a manual Generate action; cron automation remains optional later.
 
 ### Puzzle lifecycle
 
@@ -138,7 +139,7 @@ These deployment tasks do not block coding, GitHub CI, tests, or production buil
 - Repository writes use expected revisions so persistence adapters can reject lost updates.
 - Actor IDs and timestamps are supplied by adapters; portable domain code does not read authentication state or clocks.
 - Emergency changes require an explicit editorial/versioning action, not a silent answer replacement.
-- The public game reads the approved scheduled/published puzzle for its date.
+- The public game reads the approved scheduled or published puzzle for its date.
 - Historical dates before the lineup-quality launch remain bound to their legacy generated answers unless an explicit future migration/versioning decision is adopted.
 
 ### Editorial persistence
@@ -174,7 +175,7 @@ For each future date, show:
 - generated/manual selection source;
 - required-data and quality warnings.
 
-The editor can search by name or alias, distinguish genuine same-name players, preview exact initials/hints/canonical reveal data, replace an editable future slot, and receive rerun validation. Explicit schedule, publish, and archive controls remain the next bounded concern.
+The editor can search by name or alias, distinguish genuine same-name players, preview exact initials/hints/canonical reveal data, replace an editable future slot, receive rerun validation, and explicitly schedule, publish, or archive according to the portable lifecycle. These controls do not settle whether publication should later be automated.
 
 ### Admin ownership
 
@@ -209,7 +210,7 @@ The approved direction is heritage baseball rather than polished SaaS: Coopersto
 
 ## Open decisions
 
-- Whether scheduling/publication requires explicit editor action or may auto-publish an approved scheduled puzzle.
+- Whether scheduled puzzles should later publish automatically or continue to require the explicit editor action now available.
 - Exact emergency correction/versioning workflow for a published puzzle.
 - Exact source and maintenance process for recognizability rankings.
 - Whether seven days remains the default generated horizon once operations begin or should be expanded.
@@ -220,13 +221,13 @@ Record a settled answer here and in the appropriate canonical document in the sa
 ## Known issues and follow-ups
 
 - Issue #97: configure and verify the production/preview Daily progression secret.
-- The Daily editorial migration and administration variables still need a hosted Supabase project/application and Vercel configuration.
+- The Daily editorial migration and administration variables still need hosted Supabase/Vercel configuration.
+- The public Daily runtime still uses deterministic generated selection and does not yet read approved editorial records from the repository.
 - Inactive legacy Supabase scaffold remains committed and should be removed only through separate, dependency-aware cleanup.
-- Vercel Hobby deployment quota may temporarily prevent hosted previews; GitHub CI remains available.
 
 ## New-conversation prompt
 
-> Continue work on `kastnerjon/initial-baseball`. First read `AGENTS.md`, `docs/START-HERE.md`, and `tasks/todo.md` from current GitHub `main`. Verify latest merged PRs, open PRs, open issues, CI, and Vercel deployment state before acting. Treat `docs/START-HERE.md` as the durable handoff. The exact next bounded concern is adding explicit authorized schedule, publish, and archive controls to the existing seven-day `/admin/daily` workflow through the portable Daily lifecycle service. Do not implicitly settle automatic publication or emergency published-puzzle correction/versioning; reopen the settled public search-display decision; expose credentials or the service role to the browser; build against inactive legacy Supabase tables; let React or Supabase redefine Daily behavior; silently change published historical answers; or start the heritage redesign before administration is dependable. Keep documentation current in the same PR whenever product behavior, architecture, data contracts, administration, deployment state, or roadmap priority changes.
+> Continue work on `kastnerjon/initial-baseball`. First read `AGENTS.md`, `docs/START-HERE.md`, and `tasks/todo.md` from current GitHub `main`. Verify latest merged PRs, open PRs, open issues, CI, and Vercel deployment state before acting. Treat `docs/START-HERE.md` as the durable handoff. PR #119 completed explicit authorized schedule, publish, and archive controls through the existing portable Daily lifecycle service. The immediate operational work is to configure `DAILY_PROGRESSION_SECRET`, apply the committed `daily_editorial_puzzles` migration, configure the server-only admin variables, and verify the hosted workflows. The next bounded coding concern is making the public Daily runtime consume the approved scheduled or published editorial puzzle for its date while preserving historical legacy answers and keeping Supabase behind the server repository boundary. Do not settle automatic publication or emergency published-puzzle correction/versioning implicitly; reopen the settled public search-display decision; expose credentials or the service role to the browser; build against inactive legacy Supabase tables; let React or Supabase redefine Daily behavior; silently change published historical answers; or begin the heritage redesign before administration is dependable. Keep documentation current in the same PR whenever product behavior, architecture, data contracts, administration, deployment state, or roadmap priority changes.
 
 ## Maintenance rule
 
