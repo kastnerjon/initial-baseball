@@ -2,6 +2,12 @@ import { createHash } from 'node:crypto';
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  auditTeamDisplayIdentityCoverage,
+  buildTeamDisplayIdentityIndex,
+  collapseCareerTeamDisplayIdentities,
+  resolveTeamDisplayIdentities,
+} from './team-display-identities.mjs';
 
 const packageDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const outputDir = resolve(packageDir, 'reports/canonical-runtime-payload');
@@ -16,14 +22,18 @@ const inputs = {
   careerCards: readJson(resolve(packageDir, 'reports/canonical-career-cards/career-cards.json')),
   careerEnrichment: readJson(resolve(packageDir, 'reports/canonical-career-enrichment/career-enrichment.json')),
 };
+const teamDisplaySource = readText(resolve(packageDir, 'data/lahman/Teams.csv'));
+const teamDisplayIndex = buildTeamDisplayIdentityIndex(teamDisplaySource.text);
+const seasonCards = inputs.seasonCards.value.cards ?? [];
+const teamDisplayAudit = auditTeamDisplayIdentityCoverage({ seasons: seasonCards, index: teamDisplayIndex });
 
 const universeById = uniqueIndex(inputs.universe.value.players ?? [], row => row.canonicalId, 'universe player');
 const careerCards = inputs.careerCards.value.cards ?? [];
 const careerById = uniqueIndex(careerCards, row => row.playerId, 'career card');
 const careerEnrichmentById = uniqueIndex(inputs.careerEnrichment.value.enrichments ?? [], row => row.playerId, 'career enrichment');
-const seasonCardsById = group(inputs.seasonCards.value.cards ?? [], row => row.playerId);
+const seasonCardsById = group(seasonCards, row => row.playerId);
 const seasonEnrichmentByKey = uniqueIndex(inputs.seasonEnrichment.value.enrichments ?? [], seasonKey, 'season enrichment');
-const issues = [];
+const issues = teamDisplayAudit.missing.map(key => `Missing team display identity: ${key}`);
 const warnings = [];
 
 const reveals = careerCards
@@ -46,7 +56,10 @@ if (excludedRedirects.length) warnings.push(`${excludedRedirects.length} legacy 
 validate({ reveals, playerIndex, runtimeRedirects, excludedRedirects, issues });
 regression({ reveals, playerIndex, issues });
 
-const sourceManifest = Object.fromEntries(Object.entries(inputs).map(([name, input]) => [name, manifestJson(input)]));
+const sourceManifest = {
+  ...Object.fromEntries(Object.entries(inputs).map(([name, input]) => [name, manifestJson(input)])),
+  teams: manifestText(teamDisplaySource),
+};
 const shards = buildShards(reveals);
 const shardManifest = [];
 
@@ -75,6 +88,9 @@ const summary = {
   universePlayerCount: universeById.size,
   runtimePlayerCount: reveals.length,
   runtimeSeasonCount: reveals.reduce((sum, reveal) => sum + reveal.seasons.length, 0),
+  sourceTeamIdCount: teamDisplayAudit.sourceTeamIdCount,
+  displayAbbreviationCount: teamDisplayAudit.displayAbbreviationCount,
+  missingTeamDisplayIdentityCount: teamDisplayAudit.missing.length,
   shardCount: shardManifest.length,
   runtimeRedirectCount: Object.keys(runtimeRedirects).length,
   excludedRedirectCount: excludedRedirects.length,
@@ -101,6 +117,11 @@ function buildReveal(card) {
       return {
         season: seasonCard.season,
         teamIds: [...(seasonCard.teamIds ?? [])],
+        teamIdentities: resolveTeamDisplayIdentities({
+          season: seasonCard.season,
+          teamIds: seasonCard.teamIds,
+          index: teamDisplayIndex,
+        }),
         positions: clone(seasonCard.positions),
         batting: clone(seasonCard.batting),
         pitching: clone(seasonCard.pitching),
@@ -120,6 +141,7 @@ function buildReveal(card) {
       lastSeason: card.career.lastSeason,
       seasonCount: card.career.seasonCount,
       teamIds: [...(card.career.teamIds ?? [])],
+      teamIdentities: collapseCareerTeamDisplayIdentities(seasons),
       primaryPosition: card.career.primaryPosition,
       batting: clone(card.summary.batting),
       pitching: clone(card.summary.pitching),
@@ -148,6 +170,7 @@ function buildIndexEntry(reveal, universe) {
     lastSeason: reveal.career.lastSeason,
     seasonCount: reveal.career.seasonCount,
     teamIds: [...reveal.career.teamIds],
+    teamIdentities: clone(reveal.career.teamIdentities),
     isHallOfFamer: Boolean(reveal.career.achievements?.hallOfFame?.inducted),
     revealShard: shardPath(reveal.playerId),
   };
@@ -157,7 +180,7 @@ function validate({ reveals, playerIndex, runtimeRedirects, excludedRedirects, i
   if (reveals.length !== careerCards.length) out.push(`Runtime reveal count ${reveals.length} != career card count ${careerCards.length}`);
   if (playerIndex.length !== reveals.length) out.push(`Player index count ${playerIndex.length} != runtime reveal count ${reveals.length}`);
   if (careerEnrichmentById.size !== careerById.size) out.push(`Career enrichment count ${careerEnrichmentById.size} != career card count ${careerById.size}`);
-  if (seasonEnrichmentByKey.size !== (inputs.seasonCards.value.cards ?? []).length) out.push(`Season enrichment count ${seasonEnrichmentByKey.size} != season card count ${(inputs.seasonCards.value.cards ?? []).length}`);
+  if (seasonEnrichmentByKey.size !== seasonCards.length) out.push(`Season enrichment count ${seasonEnrichmentByKey.size} != season card count ${seasonCards.length}`);
 
   const indexById = uniqueIndex(playerIndex, row => row.playerId, 'runtime index', out);
   const seenSeasonKeys = new Set();
@@ -171,16 +194,21 @@ function validate({ reveals, playerIndex, runtimeRedirects, excludedRedirects, i
     if (Object.hasOwn(reveal, 'legalName') || Object.hasOwn(indexById.get(reveal.playerId) ?? {}, 'legalName')) out.push(`Legal name leaked into display payload: ${reveal.playerId}`);
     if (indexById.get(reveal.playerId)?.revealShard !== shardPath(reveal.playerId)) out.push(`Shard path mismatch: ${reveal.playerId}`);
     if (reveal.seasons.length !== card?.seasonRefs.length || reveal.seasons.length !== card?.career.seasonCount) out.push(`Runtime season count mismatch: ${reveal.playerId}`);
+    if (!sameTeamIdentities(indexById.get(reveal.playerId)?.teamIdentities, reveal.career.teamIdentities)) out.push(`Runtime index team identities differ: ${reveal.playerId}`);
     for (const season of reveal.seasons) {
       const key = `${reveal.playerId}:${season.season}`;
       if (seenSeasonKeys.has(key)) out.push(`Duplicate runtime season: ${key}`);
       seenSeasonKeys.add(key);
       const enrichmentRow = seasonEnrichmentByKey.get(key);
       if (!enrichmentRow || enrichmentRow.lahmanPlayerId !== reveal.lahmanPlayerId) out.push(`Missing runtime season enrichment: ${key}`);
+      if (season.teamIds.length !== season.teamIdentities.length) out.push(`Team display identity count mismatch: ${key}`);
+      for (const identity of season.teamIdentities) {
+        if (!season.teamIds.includes(identity.sourceTeamId)) out.push(`Team display source ID mismatch: ${key}:${identity.sourceTeamId}`);
+      }
     }
   }
 
-  const expectedSeasonKeys = new Set((inputs.seasonCards.value.cards ?? []).map(seasonKey));
+  const expectedSeasonKeys = new Set(seasonCards.map(seasonKey));
   if (seenSeasonKeys.size !== expectedSeasonKeys.size) out.push(`Runtime season-key count ${seenSeasonKeys.size} != canonical season-key count ${expectedSeasonKeys.size}`);
   for (const key of expectedSeasonKeys) if (!seenSeasonKeys.has(key)) out.push(`Runtime season missing: ${key}`);
   for (const playerId of Object.values(runtimeRedirects)) if (!revealById.has(playerId)) out.push(`Runtime redirect target missing: ${playerId}`);
@@ -191,19 +219,32 @@ function regression({ reveals, playerIndex, issues: out }) {
   const byLahman = new Map(reveals.map(row => [row.lahmanPlayerId, row]));
   const indexByLahman = new Map(playerIndex.map(row => [row.lahmanPlayerId, row]));
   const tests = [
-    ['ortizda01', 'David Ortiz', 'hitter', 2006],
-    ['riverma01', 'Mariano Rivera', 'pitcher', 1999],
-    ['ohtansh01', 'Shohei Ohtani', 'two-way', 2021],
-    ['griffke02', 'Ken Griffey Jr.', 'hitter', 1997],
-    ['wrighda03', 'David Wright', 'hitter', 2004],
+    ['ortizda01', 'David Ortiz', 'hitter', 2006, 'BOS'],
+    ['riverma01', 'Mariano Rivera', 'pitcher', 1999, 'NYY'],
+    ['ohtansh01', 'Shohei Ohtani', 'two-way', 2021, 'LAA'],
+    ['griffke02', 'Ken Griffey Jr.', 'hitter', 1997, 'SEA'],
+    ['wrighda03', 'David Wright', 'hitter', 2004, 'NYM'],
   ];
-  for (const [lahmanId, displayName, playerType, season] of tests) {
+  for (const [lahmanId, displayName, playerType, season, abbreviation] of tests) {
     const reveal = byLahman.get(lahmanId);
     const index = indexByLahman.get(lahmanId);
     if (!reveal || !index) { out.push(`Runtime regression player missing: ${lahmanId}`); continue; }
     if (reveal.displayName !== displayName || index.displayName !== displayName) out.push(`Runtime regression name mismatch: ${lahmanId}`);
     if (reveal.playerType !== playerType || index.playerType !== playerType) out.push(`Runtime regression type mismatch: ${lahmanId}`);
-    if (!reveal.seasons.some(row => row.season === season)) out.push(`Runtime regression season missing: ${lahmanId}:${season}`);
+    const seasonRow = reveal.seasons.find(row => row.season === season);
+    if (!seasonRow) out.push(`Runtime regression season missing: ${lahmanId}:${season}`);
+    else if (!seasonRow.teamIdentities.some(team => team.abbreviation === abbreviation)) out.push(`Runtime regression team display mismatch: ${lahmanId}:${season}:${abbreviation}`);
+  }
+
+  const historicalCases = [
+    [1955, 'BRO', 'BRO'],
+    [1962, 'LAN', 'LAD'],
+    [1962, 'NYN', 'NYM'],
+    [1962, 'NYA', 'NYY'],
+  ];
+  for (const [season, sourceTeamId, abbreviation] of historicalCases) {
+    const identity = teamDisplayIndex.get(`${season}:${sourceTeamId}`);
+    if (!identity || identity.abbreviation !== abbreviation) out.push(`Historical team display mismatch: ${season}:${sourceTeamId}:${abbreviation}`);
   }
 }
 
@@ -228,7 +269,9 @@ function shardPath(playerId) { return `reveal-shards/${shardIdFor(playerId)}.jso
 function seasonKey(row) { return `${row.playerId}:${row.season}`; }
 function clone(value) { return value == null ? null : JSON.parse(JSON.stringify(value)); }
 function readJson(path) { const text = readFileSync(path, 'utf8'); return { path, text, value: JSON.parse(text) }; }
+function readText(path) { return { path, text: readFileSync(path, 'utf8') }; }
 function manifestJson(input) { return { path: relativePath(input.path), schemaVersion: input.value.schemaVersion ?? null, sha256: sha256(input.text) }; }
+function manifestText(input) { return { path: relativePath(input.path), sha256: sha256(input.text) }; }
 function relativePath(path) { return path.replace(`${resolve(packageDir, '../..')}/`, '').replaceAll('\\', '/'); }
 function jsonText(value) { return `${JSON.stringify(value, null, 2)}\n`; }
 function servingJsonText(value) { return `${JSON.stringify(value)}\n`; }
@@ -237,6 +280,7 @@ function writeServingJson(path, value) { writeFileSync(path, servingJsonText(val
 function sha256(value) { return createHash('sha256').update(value).digest('hex'); }
 function group(rows, fn) { const map = new Map(); for (const row of rows) { const key = fn(row); const list = map.get(key) ?? []; list.push(row); map.set(key, list); } return map; }
 function uniqueIndex(rows, fn, label, out = null) { const map = new Map(); for (const row of rows) { const key = fn(row); if (!key) { if (out) out.push(`Missing ${label} key`); else throw new Error(`Missing ${label} key`); continue; } if (map.has(key)) { if (out) out.push(`Duplicate ${label}: ${key}`); else throw new Error(`Duplicate ${label}: ${key}`); } else map.set(key, row); } return map; }
+function sameTeamIdentities(left, right) { return JSON.stringify(left ?? []) === JSON.stringify(right ?? []); }
 function renderMarkdown(summary, warnings, issues) {
-  return `# Canonical Runtime Payload Report\n\n- Universe players: ${summary.universePlayerCount}\n- Runtime players: ${summary.runtimePlayerCount}\n- Runtime season rows: ${summary.runtimeSeasonCount}\n- Reveal shards: ${summary.shardCount}\n- Runtime redirects: ${summary.runtimeRedirectCount}\n- Excluded redirects: ${summary.excludedRedirectCount}\n- Warnings: ${summary.warningCount}\n- Critical issues: ${summary.criticalIssueCount}\n\n## Warnings\n\n${warnings.length ? warnings.map(item => `- ${item}`).join('\n') : '- None'}\n\n## Critical issues\n\n${issues.length ? issues.map(item => `- ${item}`).join('\n') : '- None'}\n`;
+  return `# Canonical Runtime Payload Report\n\n- Universe players: ${summary.universePlayerCount}\n- Runtime players: ${summary.runtimePlayerCount}\n- Runtime season rows: ${summary.runtimeSeasonCount}\n- Source team IDs audited: ${summary.sourceTeamIdCount}\n- Fan-facing abbreviations: ${summary.displayAbbreviationCount}\n- Missing team display identities: ${summary.missingTeamDisplayIdentityCount}\n- Reveal shards: ${summary.shardCount}\n- Runtime redirects: ${summary.runtimeRedirectCount}\n- Excluded redirects: ${summary.excludedRedirectCount}\n- Warnings: ${summary.warningCount}\n- Critical issues: ${summary.criticalIssueCount}\n\n## Warnings\n\n${warnings.length ? warnings.map(item => `- ${item}`).join('\n') : '- None'}\n\n## Critical issues\n\n${issues.length ? issues.map(item => `- ${item}`).join('\n') : '- None'}\n`;
 }
