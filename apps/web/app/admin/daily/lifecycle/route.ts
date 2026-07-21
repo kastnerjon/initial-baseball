@@ -4,11 +4,9 @@ import {
   DailyAdminAuthorizationError,
 } from '../../../dailyAdminAuthorization';
 import { createDailyAdminContext } from '../../../dailyAdminComposition';
+import { isDailyAdminLifecycleAction } from '../../../dailyAdminLifecycleActions';
 import { isSameOriginDailyAdminMutation } from '../../../dailyAdminRequestSecurity';
-import {
-  createDailyAdminWorkflow,
-  isDailyAdminLifecycleAction,
-} from '../../../dailyAdminWorkflow';
+import { createDailyAdminWorkflow } from '../../../dailyAdminWorkflow';
 
 export async function POST(request: Request): Promise<NextResponse> {
   if (!isSameOriginDailyAdminMutation(request)) {
