@@ -49,7 +49,7 @@ function CareerStatStrip({
   columnOverrides,
 }: {
   reveal: CanonicalRevealViewModel;
-  columnOverrides?: RevealColumnOverrides;
+  columnOverrides: RevealColumnOverrides | undefined;
 }): JSX.Element {
   return (
     <div className="player-reveal-stat-lines">
@@ -81,7 +81,7 @@ function SeasonStatsDisclosure({
   columnOverrides,
 }: {
   reveal: CanonicalRevealViewModel;
-  columnOverrides?: RevealColumnOverrides;
+  columnOverrides: RevealColumnOverrides | undefined;
 }): JSX.Element {
   return (
     <details className="player-season-stats">
@@ -98,7 +98,7 @@ function SeasonStatTables({
   columnOverrides,
 }: {
   reveal: CanonicalRevealViewModel;
-  columnOverrides?: RevealColumnOverrides;
+  columnOverrides: RevealColumnOverrides | undefined;
 }): JSX.Element {
   return (
     <div className="player-reveal-stat-lines">
