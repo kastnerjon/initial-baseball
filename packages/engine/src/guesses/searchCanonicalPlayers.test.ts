@@ -51,7 +51,7 @@ it('uses the complete candidate universe when the other duplicate falls outside 
   const candidates = [
     ...Array.from({ length: 9 }, (_, index) => buildPlayer(
       `before-ben-${index}`,
-      `B${String.fromCharCode(97 + index)} Player`,
+      `Ba${String.fromCharCode(97 + index)} Player`,
       'hitter',
       '1B',
       1900 + index,
