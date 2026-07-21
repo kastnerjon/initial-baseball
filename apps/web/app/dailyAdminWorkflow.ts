@@ -185,17 +185,9 @@ export function createDailyAdminWorkflow(
         occurredAt: input.occurredAt,
       };
 
-      switch (input.action) {
-        case 'schedule':
-          await editorialService.schedule(transitionInput);
-          break;
-        case 'publish':
-          await editorialService.publish(transitionInput);
-          break;
-        case 'archive':
-          await editorialService.archive(transitionInput);
-          break;
-      }
+      if (input.action === 'schedule') await editorialService.schedule(transitionInput);
+      if (input.action === 'publish') await editorialService.publish(transitionInput);
+      if (input.action === 'archive') await editorialService.archive(transitionInput);
 
       const [puzzle] = await horizonService.getHorizon({
         startDate: input.puzzleDate,
