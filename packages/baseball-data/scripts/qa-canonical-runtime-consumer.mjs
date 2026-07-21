@@ -32,28 +32,33 @@ for (const [lahmanId, displayName, playerType, firstSeason, lastSeason] of repre
   check(reveal.career.firstSeason === firstSeason, `${lahmanId} first season mismatch.`);
   check(reveal.career.lastSeason === lastSeason, `${lahmanId} last season mismatch.`);
   check(reveal.seasons.length === reveal.career.seasonCount, `${lahmanId} season count mismatch.`);
-  check(reveal.career.teamIdentities.length > 0, `${lahmanId} career team identities missing.`);
-  check(index.teamIdentities.length === reveal.career.teamIdentities.length, `${lahmanId} index team identities differ.`);
+  check((reveal.career.teamIdentities?.length ?? 0) > 0, `${lahmanId} career team identities missing.`);
+  check(index.teamIdentities?.length === reveal.career.teamIdentities?.length, `${lahmanId} index team identities differ.`);
   check(!Object.hasOwn(reveal, 'legalName'), `${lahmanId} reveal leaks legalName.`);
+  check(reveal.seasons.every(row => row.teamIds.length === row.teamIdentities?.length), `${lahmanId} season team identity coverage mismatch.`);
 }
 
-const benTaylors = ['taylobe02', 'taylobe99', 'taylobe03'].map(id => byLahman.get(id));
+const benTaylorIds = ['taylobe02', 'taylobe99', 'taylobe03'];
+const benTaylors = benTaylorIds.map(id => byLahman.get(id));
 check(benTaylors.every(Boolean), 'One or more Ben Taylor identities are missing.');
-check(new Set(benTaylors.map(player => player?.playerId)).size === 3, 'Ben Taylor identities collapsed.');
+check(new Set(benTaylors.map(player => player?.playerId)).size === benTaylorIds.length, 'Ben Taylor identities collapsed.');
+const benTaylorReveals = benTaylors.filter(Boolean).map(player => accessor.getReveal(player.playerId));
+check(new Set(benTaylorReveals.map(reveal => `${reveal.career.firstSeason}:${reveal.career.lastSeason}`)).size === benTaylorReveals.length, 'Ben Taylor career ranges do not distinguish identities.');
+check(benTaylorReveals.every(reveal => reveal.displayName === 'Ben Taylor'), 'Ben Taylor display names changed unexpectedly.');
 
 const teamCases = [
-  ['riverma01', 1999, 'NYA', 'NYY'],
-  ['ohtansh01', 2021, 'LAA', 'LAA'],
-  ['wrighda03', 2004, 'NYN', 'NYM'],
-  ['mayswi01', 1973, 'NYN', 'NYM'],
+  ['riverma01', 1999, 'NYA', 'NYY', 'New York Yankees'],
+  ['ohtansh01', 2021, 'LAA', 'LAA', 'Los Angeles Angels'],
+  ['wrighda03', 2004, 'NYN', 'NYM', 'New York Mets'],
+  ['mayswi01', 1973, 'NYN', 'NYM', 'New York Mets'],
 ];
-for (const [lahmanId, season, sourceTeamId, abbreviation] of teamCases) {
+for (const [lahmanId, season, sourceTeamId, abbreviation, displayName] of teamCases) {
   const player = byLahman.get(lahmanId);
   if (!player) continue;
   const row = accessor.getReveal(player.playerId).seasons.find(candidate => candidate.season === season);
-  const identity = row?.teamIdentities.find(team => team.sourceTeamId === sourceTeamId);
+  const identity = row?.teamIdentities?.find(team => team.sourceTeamId === sourceTeamId);
   check(identity?.abbreviation === abbreviation, `${lahmanId} ${season} team display mismatch.`);
-  check(Boolean(identity?.displayName), `${lahmanId} ${season} team display name missing.`);
+  check(identity?.displayName === displayName, `${lahmanId} ${season} team display name mismatch.`);
 }
 
 const ortiz = byLahman.get('ortizda01');
@@ -86,7 +91,7 @@ if (issues.length > 0) {
   console.error(issues.join('\n'));
   process.exitCode = 1;
 } else {
-  console.log(`Verified ${players.length} canonical runtime players, representative records, team displays, redirects, and same-name identities.`);
+  console.log(`Verified ${players.length} canonical runtime players, representative records, corrected team displays, redirects, and same-name identities.`);
 }
 
 function check(condition, message) {
