@@ -3,21 +3,28 @@ import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { createFileSystemCanonicalRuntimeAccessor } from '@initial-baseball/baseball-data/runtime';
 
-export const canonicalRuntime = createFileSystemCanonicalRuntimeAccessor(findRuntimeDirectory());
+let cachedCanonicalRuntime: ReturnType<typeof createFileSystemCanonicalRuntimeAccessor> | null = null;
 
-export const canonicalSearchCandidates = canonicalRuntime.getPlayerIndex().map(player => ({
-  id: player.playerId,
-  displayName: player.displayName,
-  aliases: player.aliases,
-  playerType: player.playerType,
-  primaryPosition: player.primaryPosition,
-  firstYear: player.firstSeason,
-  lastYear: player.lastSeason,
-  teamsDisplay: player.teamIds.join(', '),
-}));
+export function getCanonicalRuntime(): ReturnType<typeof createFileSystemCanonicalRuntimeAccessor> {
+  cachedCanonicalRuntime ??= createFileSystemCanonicalRuntimeAccessor(findRuntimeDirectory());
+  return cachedCanonicalRuntime;
+}
+
+export function getCanonicalSearchCandidates() {
+  return getCanonicalRuntime().getPlayerIndex().map(player => ({
+    id: player.playerId,
+    displayName: player.displayName,
+    aliases: player.aliases,
+    playerType: player.playerType,
+    primaryPosition: player.primaryPosition,
+    firstYear: player.firstSeason,
+    lastYear: player.lastSeason,
+    teamsDisplay: player.teamIds.join(', '),
+  }));
+}
 
 export function resolveCanonicalPlayerId(playerId: string): string | null {
-  const resolution = canonicalRuntime.resolvePlayerId(playerId);
+  const resolution = getCanonicalRuntime().resolvePlayerId(playerId);
   return resolution.status === 'canonical' || resolution.status === 'redirected'
     ? resolution.playerId
     : null;
