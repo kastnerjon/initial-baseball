@@ -1,6 +1,6 @@
 import type { DailyPuzzleStatus } from '@initial-baseball/shared';
 import type { JSX } from 'react';
-import type { DailyAdminLifecycleAction } from '../../dailyAdminWorkflow';
+import type { DailyAdminLifecycleAction } from '../../dailyAdminLifecycleActions';
 
 type LifecycleAction = {
   action: DailyAdminLifecycleAction;
