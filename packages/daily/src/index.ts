@@ -30,6 +30,8 @@ export {
   type GenerateDailyLineupInput,
 } from './dailyLineupQuality';
 
+export { createCanonicalDailyLineupCandidates } from './dailyLineupCandidates';
+
 export {
   DAILY_LINEUP_QUALITY_LAUNCH_DATE,
   DAILY_REVIEWED_DATA_VERSION,
