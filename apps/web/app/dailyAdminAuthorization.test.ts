@@ -32,31 +32,39 @@ describe('Daily admin authorization', () => {
     )).toEqual({ actorId: ADMIN_USERNAME });
   });
 
-  it.each([
-    null,
-    'Bearer token',
-    basicAuthorization('wrong-editor', ADMIN_PASSWORD),
-    basicAuthorization(ADMIN_USERNAME, 'wrong-password-that-is-long-enough'),
-  ])('rejects missing, malformed, or incorrect credentials uniformly', authorizationHeader => {
-    expect(() => requireDailyAdminPrincipal(authorizationHeader, ENVIRONMENT)).toThrowError(
-      expect.objectContaining({
-        kind: 'unauthorized',
-        message: 'Daily administration credentials were not accepted.',
-      }),
-    );
+  it('rejects missing, malformed, or incorrect credentials uniformly', () => {
+    const rejectedHeaders: Array<string | null> = [
+      null,
+      'Bearer token',
+      basicAuthorization('wrong-editor', ADMIN_PASSWORD),
+      basicAuthorization(ADMIN_USERNAME, 'wrong-password-that-is-long-enough'),
+    ];
+
+    for (const authorizationHeader of rejectedHeaders) {
+      expect(() => requireDailyAdminPrincipal(authorizationHeader, ENVIRONMENT)).toThrowError(
+        expect.objectContaining({
+          kind: 'unauthorized',
+          message: 'Daily administration credentials were not accepted.',
+        }),
+      );
+    }
   });
 
-  it.each([
-    [{ DAILY_ADMIN_PASSWORD: ADMIN_PASSWORD }, 'DAILY_ADMIN_USERNAME'],
-    [{ DAILY_ADMIN_USERNAME: 'editor:invalid', DAILY_ADMIN_PASSWORD: ADMIN_PASSWORD }, 'DAILY_ADMIN_USERNAME'],
-    [{ DAILY_ADMIN_USERNAME: ADMIN_USERNAME, DAILY_ADMIN_PASSWORD: 'too-short' }, 'DAILY_ADMIN_PASSWORD'],
-  ])('fails closed when server credentials are misconfigured', (environment, variableName) => {
-    expect(() => requireDailyAdminPrincipal(null, environment)).toThrowError(
-      expect.objectContaining({
-        kind: 'misconfigured',
-        message: expect.stringContaining(variableName),
-      }),
-    );
+  it('fails closed when server credentials are misconfigured', () => {
+    const cases: Array<[Record<string, string | undefined>, string]> = [
+      [{ DAILY_ADMIN_PASSWORD: ADMIN_PASSWORD }, 'DAILY_ADMIN_USERNAME'],
+      [{ DAILY_ADMIN_USERNAME: 'editor:invalid', DAILY_ADMIN_PASSWORD: ADMIN_PASSWORD }, 'DAILY_ADMIN_USERNAME'],
+      [{ DAILY_ADMIN_USERNAME: ADMIN_USERNAME, DAILY_ADMIN_PASSWORD: 'too-short' }, 'DAILY_ADMIN_PASSWORD'],
+    ];
+
+    for (const [environment, variableName] of cases) {
+      expect(() => requireDailyAdminPrincipal(null, environment)).toThrowError(
+        expect.objectContaining({
+          kind: 'misconfigured',
+          message: expect.stringContaining(variableName),
+        }),
+      );
+    }
   });
 
   it('exports the Basic challenge future admin routes must return with a 401 response', () => {
