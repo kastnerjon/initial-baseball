@@ -27,6 +27,7 @@ Current execution order: preserve the durable handoff, build the authorized seve
 - [x] Keep WAR, OPS+, ERA+, awards, All-Star selections, voting finishes, and leader flags hidden until approved upstream data exists.
 - [x] Normalize fan-facing team abbreviations through a centralized, season-aware baseball-data mapping — PR #103 / issue #101.
 - [x] Add representative reveal QA and correct duplicate career abbreviations, legacy artifact fallback, and audited Angels display names — issue #104.
+- [x] Keep public guess search name-only for unique players and show career years only for genuine same-name canonical players — PR #116.
 
 ## 2. Finalize Daily lineup quality
 
