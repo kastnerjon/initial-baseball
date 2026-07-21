@@ -75,6 +75,26 @@ describe('Daily puzzle lifecycle', () => {
     })).toThrow('Duplicate canonical Daily player');
   });
 
+  it('rejects nonexistent dates and puzzle numbers inconsistent with the date', () => {
+    expect(() => createDailyPuzzleDraft({
+      id: 'bad-date',
+      puzzleDate: '2026-02-30',
+      puzzleNumber: 1,
+      selections: buildSelections(),
+      actorId: 'editor-1',
+      occurredAt: CREATED_AT,
+    })).toThrow('Invalid Daily puzzle date');
+
+    expect(() => createDailyPuzzleDraft({
+      id: 'bad-number',
+      puzzleDate: '2026-07-29',
+      puzzleNumber: 95,
+      selections: buildSelections(),
+      actorId: 'editor-1',
+      occurredAt: CREATED_AT,
+    })).toThrow('expected 94');
+  });
+
   it('records manual replacements and returns a scheduled puzzle to draft review', () => {
     const scheduled = scheduleDailyPuzzle(buildDraft(), {
       actorId: 'editor-2',
