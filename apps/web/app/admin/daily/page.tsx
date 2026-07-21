@@ -3,10 +3,8 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { DailyAdminAuthorizationError } from '../../dailyAdminAuthorization';
 import { createDailyAdminContext } from '../../dailyAdminComposition';
-import {
-  createDailyAdminWorkflow,
-  isDailyAdminLifecycleAction,
-} from '../../dailyAdminWorkflow';
+import { isDailyAdminLifecycleAction } from '../../dailyAdminLifecycleActions';
+import { createDailyAdminWorkflow } from '../../dailyAdminWorkflow';
 import {
   DailyAdministrationView,
   type DailyAdminEditorSelection,
