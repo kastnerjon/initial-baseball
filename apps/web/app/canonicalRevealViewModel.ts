@@ -65,7 +65,8 @@ function displayTeamIds(
   teamIdentities: Array<{ abbreviation: string }> | undefined,
   sourceTeamIds: string[],
 ): string[] {
-  return teamIdentities?.map((team) => team.abbreviation) ?? sourceTeamIds;
+  const abbreviations = teamIdentities?.map((team) => team.abbreviation);
+  return [...new Set(abbreviations?.length ? abbreviations : sourceTeamIds)];
 }
 
 function buildStatLines({

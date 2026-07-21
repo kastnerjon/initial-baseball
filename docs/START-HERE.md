@@ -12,7 +12,7 @@ Before changing code:
 1. Read `AGENTS.md`.
 2. Read this file.
 3. Read `tasks/todo.md`.
-4. Verify the current GitHub `main`, open pull requests, and relevant open issues.
+4. Verify current GitHub `main`, open pull requests, relevant issues, and CI.
 5. Read only the canonical documents and source files needed for the next bounded task.
 6. Write the repository scope contract before implementation.
 7. Complete one owning concern per pull request unless the user explicitly approves a different scope.
@@ -55,7 +55,7 @@ shared
 - `apps/web`: Next.js pages, React rendering, browser persistence, routes, sharing, admin surfaces, and provider-specific adapters.
 - Database/repository adapters: puzzle publication lifecycle, admin persistence, completed-game results, and eventual accounts.
 
-Rules, baseball facts, puzzle generation, and persistence semantics must not be moved into React components. Vercel is a hosting adapter, not an architectural owner.
+Rules, baseball facts, puzzle generation, and persistence semantics must not be moved into React components. Presentation adapters may format and deduplicate labels but must not reinterpret baseball facts. Vercel is a hosting adapter, not an architectural owner.
 
 Canonical architecture: `docs/architecture-and-scale-plan.md`.
 Source ownership map: `docs/engineering/source-map.md`.
@@ -73,9 +73,11 @@ Completed foundation and mechanics include:
 - safe browser-save migration and schema-3 progression-token persistence;
 - anonymous stateless signed progression authorization;
 - career summaries, regular-season rows, multi-team season representation, two-way batting/pitching display, hitter OPS, pitcher saves, and configurable reveal columns;
-- centralized season-aware team display identities that preserve Lahman source IDs while supplying fan-facing abbreviations and names to all runtime consumers.
+- centralized season-aware team identities preserving source IDs while supplying fan-facing abbreviations and names;
+- executable representative reveal QA for Ortiz, Rivera, Ohtani, Griffey, Wright, Mays, Campanella, and distinct Ben Taylor records;
+- audited 2016-and-later Angels display-name correction, unique rendered career abbreviations, and safe fallback for older schema-1 artifacts.
 
-Most recent completed product PR at this handoff: PR #103, fan-facing team identity normalization.
+Most recent completed product work at this handoff: issue #104 / PR #109, representative reveal QA and corrections.
 
 ## Deployment state
 
@@ -85,7 +87,7 @@ Remaining operational task: issue #97.
 
 - Configure one stable server-only `DAILY_PROGRESSION_SECRET` for Vercel Preview and Production.
 - Redeploy after the Vercel Hobby deployment quota permits it.
-- Verify the hosted hint, guess, strikeout, Give Up, refresh, and completion flows.
+- Verify hosted hint, guess, strikeout, Give Up, refresh, and completion flows.
 - Close issues #91 and #86 after successful hosted verification.
 
 This deployment task does not block coding, GitHub CI, tests, or production builds.
@@ -93,8 +95,7 @@ This deployment task does not block coding, GitHub CI, tests, or production buil
 ## Current work order
 
 1. Maintain this handoff and reconcile documentation whenever current state or roadmap priority changes.
-2. Complete representative reveal QA for David Ortiz, Mariano Rivera, Shohei Ohtani, Ken Griffey Jr., David Wright, Willie Mays, and both Ben Taylor identities.
-3. Finalize lineup mechanics:
+2. Finalize lineup mechanics:
    - at-bats 1–2: top 250 recognizability;
    - at-bats 3–4: top 1,000;
    - at-bats 5–6: top 2,500;
@@ -102,17 +103,16 @@ This deployment task does not block coding, GitHub CI, tests, or production buil
    - no duplicate canonical player;
    - avoid players used in the previous 90 days;
    - deterministic output for date plus reviewed data version;
-   - historical overrides and saved references remain resolvable.
-4. Define and persist the editorial puzzle lifecycle.
-5. Build the lineup administration workflow.
-6. Add aggregate completed-game results, field comparison, monitoring, and remaining launch surfaces.
-7. Apply the approved heritage visual direction after core mechanics and administration are dependable.
+   - historical overrides and saved references remain resolvable;
+   - validation output includes rank band, repeat status, duplicate status, and required reveal-data readiness.
+3. Define and persist the editorial puzzle lifecycle.
+4. Build the seven-day lineup administration workflow.
+5. Add aggregate completed-game results, field comparison, monitoring, and remaining launch surfaces.
+6. Apply the approved heritage visual direction after core mechanics and administration are dependable.
 
 `tasks/todo.md` is the canonical active checklist and must remain consistent with this sequence.
 
 ## Approved decisions not yet fully implemented
-
-These are settled product intentions. Do not drop them merely because implementation is several pull requests away.
 
 ### Lineup editorial horizon
 
@@ -137,66 +137,36 @@ For each future date, show:
 
 - Daily date and puzzle number;
 - lifecycle status;
-- all nine slots;
-- expected recognizability band per slot;
-- canonical player ID and display name;
-- career years;
-- player type and primary position;
-- teams using fan-facing display abbreviations;
-- recognizability rank;
-- most recent Daily usage;
-- whether selection was generated or manual;
+- all nine slots and expected recognizability band;
+- canonical player ID, display name, career years, player type, primary position, and fan-facing teams;
+- recognizability rank and most recent Daily usage;
+- generated/manual selection source;
 - required-data and quality warnings.
 
-The editor must be able to:
-
-- search players by name or alias;
-- distinguish genuine same-name players using career years, positions, and teams;
-- filter or warn based on slot recognizability;
-- preview initials and ordered hints;
-- preview the complete reveal card;
-- replace a slot;
-- rerun duplicate, repeat-window, rank, and required-data validation;
-- approve/schedule future puzzles.
+The editor must be able to search by name or alias, distinguish same-name players, preview initials/hints/reveal, replace a slot, rerun validation, and approve or schedule future puzzles.
 
 ### Admin ownership
 
 - Pure generation and validation remain in `packages/daily`.
 - Canonical player facts remain in `packages/baseball-data`.
 - Persistence sits behind a `DailyPuzzleRepository` or equivalent explicit repository boundary.
-- The database stores canonical player IDs and editorial metadata, not duplicate copies of player statistics.
+- The database stores canonical player IDs and editorial metadata, not duplicate statistics.
 - Admin React components call services/adapters and do not own generation, validation, or persistence rules.
+
+### Reveal behavior and team identity
+
+- Career summary remains separate from one chronological row per regular season.
+- All teams for a multi-team season remain represented.
+- Hitter, pitcher, and two-way presets remain configurable; OPS and saves remain supported.
+- WAR, OPS+, ERA+, awards, All-Star selections, voting finishes, and leader flags remain hidden until reproducible approved upstream sources exist.
+- If Baseball Reference WAR is approved later, label it `bWAR`; never invent generic WAR from Lahman data.
+- Source team IDs and fan-facing identities remain separate.
+- Season-aware team mapping and audited corrections live in baseball-data, not React.
+- Runtime records expose source IDs plus abbreviations and display names; presentation may deduplicate repeated labels.
 
 ### Visual direction
 
-The approved visual direction is heritage baseball rather than polished SaaS:
-
-- Cooperstown and old scorecard character;
-- Shea Stadium / municipal ballpark signage;
-- 1970s Topps card influence;
-- paper, ink, scoreboard, ticket, and scorecard motifs;
-- restrained navy, orange, aged cream, gold, and field green;
-- square borders and utilitarian typography rather than rounded dashboard cards.
-
-The visual redesign is intentionally deferred until lineup mechanics and administration are reliable. Preserve the underlying screen flow: opening, active at-bat, post-at-bat player reveal, and final box score.
-
-### Reveal behavior
-
-- Career summary remains separate from season rows.
-- One chronological row per regular season.
-- All teams for a multi-team season remain represented.
-- Hitter, pitcher, and two-way presets remain configurable.
-- OPS and saves remain supported.
-- WAR, OPS+, ERA+, awards, All-Star selections, voting finishes, and leader flags remain hidden until reproducible approved upstream sources exist.
-- If Baseball Reference WAR is approved later, label it `bWAR`; never invent a generic WAR field from Lahman data.
-
-### Team identity and display
-
-- Source team identifiers and fan-facing abbreviations are separate concepts.
-- Preserve source IDs for traceability.
-- Centralized, season-aware mapping lives in baseball-data rather than React.
-- Runtime season and career records expose source IDs plus fan-facing abbreviations and display names.
-- Web, admin, reveal generation, and future clients consume the same display representation.
+The approved direction is heritage baseball rather than polished SaaS: Cooperstown and old scorecard character, Shea/municipal ballpark signage, 1970s Topps influence, paper/ink/scoreboard/ticket motifs, restrained navy/orange/aged cream/gold/field green, square borders, and utilitarian typography. Preserve the opening, active at-bat, post-at-bat reveal, and final box-score flow. Defer redesign until lineup mechanics and administration are reliable.
 
 ### Launch integrity and results
 
@@ -208,40 +178,25 @@ The visual redesign is intentionally deferred until lineup mechanics and adminis
 
 ## Open decisions
 
-These are genuinely unresolved and should be decided when the related implementation becomes concrete.
-
 - Admin authentication method.
 - Exact relational database/provider for puzzle persistence; Supabase/Postgres is plausible but not selected merely because scaffolding exists.
-- Whether scheduling and publication require an explicit editor action or may auto-publish an already approved scheduled puzzle.
+- Whether scheduling/publication requires explicit editor action or may auto-publish an approved scheduled puzzle.
 - Exact emergency correction/versioning workflow for a published puzzle.
 - Exact source and maintenance process for recognizability rankings.
-- Whether seven days is the default generated horizon or merely the minimum editable horizon.
-- Whether representative UI QA is component/fixture based, browser screenshot based, or both once hosted previews are available.
+- Whether seven days is the default generated horizon or only the minimum editable horizon.
+- Whether representative UI QA should later add browser screenshots once hosted previews are available; executable data/runtime QA is already required.
 
 Record a settled answer here and in the appropriate canonical document in the same PR that adopts it.
 
 ## Known issues and follow-ups
 
 - Issue #97: configure and verify the production/preview Daily progression secret.
-- Representative reveal QA remains incomplete.
-- Vercel Hobby deployment quota temporarily prevents new hosted previews; GitHub CI remains available.
+- Vercel Hobby deployment quota may temporarily prevent hosted previews; GitHub CI remains available.
 
 ## New-conversation prompt
 
-Use this prompt in a new project conversation:
-
-> Continue work on `kastnerjon/initial-baseball`. First read `AGENTS.md`, `docs/START-HERE.md`, and `tasks/todo.md` from the current GitHub `main`. Verify the latest merged PRs, open PRs, open issues, and CI state before acting. Treat `docs/START-HERE.md` as the concise handoff: preserve its approved-but-not-yet-implemented decisions, distinguish them from genuinely open decisions, and correct any drift you find. Continue the exact next bounded item in the documented work order using one owning concern per PR. Do not restart settled architecture discussions, do not insert a new foundation phase without a concrete blocker, and do not begin the heritage visual redesign before lineup mechanics and administration are dependable. Keep documentation current in the same PR whenever product behavior, architecture, data contracts, administration, or roadmap priority changes.
+> Continue work on `kastnerjon/initial-baseball`. First read `AGENTS.md`, `docs/START-HERE.md`, and `tasks/todo.md` from current GitHub `main`. Verify latest merged PRs, open PRs, open issues, and CI before acting. Treat `docs/START-HERE.md` as the durable handoff. Continue the exact next bounded item in the documented work order using one owning concern per PR. Do not restart settled architecture discussions, insert a new foundation phase without a concrete blocker, or begin the heritage redesign before lineup mechanics and administration are dependable. Keep documentation current in the same PR whenever product behavior, architecture, data contracts, administration, or roadmap priority changes.
 
 ## Maintenance rule
 
-Update this file when any of the following changes:
-
-- latest meaningful completed milestone;
-- deployment state;
-- current work order;
-- an approved deferred decision;
-- a genuinely open decision;
-- an operational blocker;
-- the standard new-conversation prompt.
-
-Do not add routine implementation history or duplicate entire canonical specifications. Link to deeper documents and keep this file usable as a fast handoff.
+Update this file when the latest meaningful milestone, deployment state, current work order, approved deferred decisions, open decisions, operational blockers, or standard continuation prompt changes. Do not add routine implementation history or duplicate entire canonical specifications.
