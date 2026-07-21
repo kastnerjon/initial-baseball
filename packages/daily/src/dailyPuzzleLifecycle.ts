@@ -1,5 +1,5 @@
 import type { DailyPuzzleStatus } from '@initial-baseball/shared';
-import { DAILY_AT_BAT_COUNT } from './dailyPuzzleSelection';
+import { DAILY_AT_BAT_COUNT, getDailyPuzzleNumber } from './dailyPuzzleSelection';
 
 export type DailyEditorialSelectionSource = 'generated' | 'manual';
 
@@ -121,6 +121,7 @@ export function createDailyPuzzleDraft(
   input: CreateDailyPuzzleDraftInput,
 ): DailyPuzzleEditorialRecord {
   validateDate(input.puzzleDate);
+  validatePuzzleNumber(input.puzzleDate, input.puzzleNumber);
   validateActorAndTimestamp(input.actorId, input.occurredAt);
   validateSelections(input.selections);
 
@@ -294,9 +295,22 @@ function validateCanonicalPlayerId(canonicalPlayerId: string): void {
   }
 }
 
+function validatePuzzleNumber(puzzleDate: string, puzzleNumber: number): void {
+  const expectedPuzzleNumber = getDailyPuzzleNumber(puzzleDate);
+  if (puzzleNumber !== expectedPuzzleNumber) {
+    throw new Error(
+      `Daily puzzle number ${puzzleNumber} does not match ${puzzleDate}; expected ${expectedPuzzleNumber}.`,
+    );
+  }
+}
+
 function validateDate(value: string): void {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    throw new Error(`Invalid Daily puzzle date: ${value}.`);
+  }
+
   const timestamp = Date.parse(`${value}T00:00:00.000Z`);
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || !Number.isFinite(timestamp)) {
+  if (!Number.isFinite(timestamp) || new Date(timestamp).toISOString().slice(0, 10) !== value) {
     throw new Error(`Invalid Daily puzzle date: ${value}.`);
   }
 }
