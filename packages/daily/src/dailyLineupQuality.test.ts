@@ -32,7 +32,9 @@ describe('Daily lineup quality', () => {
     const lineup = generateDailyLineup({ seed: { dailyDate: '2026-07-21', reviewedDataVersion: 'v1' }, candidates: buildCandidates(5000) });
     expect(new Set(lineup.map(x => x.canonicalPlayerId)).size).toBe(9);
     lineup.forEach((selection, index) => {
-      expect(selection.recognizabilityRank).toBeLessThanOrEqual(DAILY_RECOGNIZABILITY_POLICY[index]?.maximumRank);
+      const policy = DAILY_RECOGNIZABILITY_POLICY[index];
+      if (policy === undefined) throw new Error(`Missing policy for slot ${index + 1}.`);
+      expect(selection.recognizabilityRank).toBeLessThanOrEqual(policy.maximumRank);
     });
   });
 
