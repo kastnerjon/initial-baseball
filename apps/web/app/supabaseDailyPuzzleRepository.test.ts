@@ -30,7 +30,7 @@ describe('Supabase Daily puzzle repository', () => {
     const result = await createSupabaseDailyPuzzleRepository(asClient(from)).getByDate(PUZZLE_DATE);
 
     expect(result).toEqual(record);
-    expect(from).toHaveBeenCalledWith('daily_puzzles');
+    expect(from).toHaveBeenCalledWith('daily_editorial_puzzles');
     expect(select).toHaveBeenCalledWith(COLUMNS);
     expect(eq).toHaveBeenCalledWith('puzzle_date', PUZZLE_DATE);
   });
