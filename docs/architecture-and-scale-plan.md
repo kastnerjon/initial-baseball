@@ -272,3 +272,32 @@ No additional foundation phase should be inserted unless a concrete correctness 
 ## Launch-readiness requirements
 
 Before broad friend distribution:
+
+- The same commit produces the same canonical identities and runtime payload without an external identity-source fetch.
+- Daily puzzles and historical overrides are deterministic and regression-tested.
+- At least the next seven lineups are editorially reviewable before publication.
+- Search handles aliases, accents, ordered tokens, and genuine same-name players.
+- Player reveal data is accurate, season-complete where sources allow, and uses approved public team display identity.
+- Hidden answers are absent from initial HTML, serialized props, routes, logs, and share output.
+- Browser counters cannot select a future pitch or fabricate server-authorized progression.
+- Refresh and ordinary errors do not erase progress.
+- The full web game is polished at common iPhone and iPad sizes.
+- Share output is reliable and spoiler-safe.
+- One deployment is canonical and observable.
+- Repeated play does not require per-action server state.
+
+## Explicit non-goals
+
+- Rewriting the engine or application from scratch.
+- Building a native mobile application now.
+- Building head-to-head gameplay, chat, leagues, or matchmaking.
+- Introducing microservices, queues, replay caches, or per-action persistence.
+- Claiming tamper-proof anonymous scoring.
+- Adding accounts before the anonymous Daily loop is excellent.
+- Creating abstractions without a concrete upcoming consumer.
+
+## Decision rule
+
+Architecture cleanup is complete enough when the team can improve Daily gameplay, lineup quality, administration, and presentation without placing game rules, data generation, puzzle lifecycle logic, persistence logic, or answer-integrity state directly inside React components or Next.js routes.
+
+When a decision changes, implementation, `docs/START-HERE.md`, and affected canonical documents must change together.
