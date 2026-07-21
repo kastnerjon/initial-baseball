@@ -5,7 +5,7 @@ This app is the first playable surface: **Daily Inning by Initial Baseball**.
 ## Product and architecture rules
 
 - Mobile-first responsive web.
-- No login required for launch.
+- No login required for the public Daily launch experience.
 - Same portable engine and Daily packages remain available to a future client without making a native app current scope.
 - No player names in share text.
 - Results may reveal player names only after the applicable at-bat is resolved.
@@ -34,6 +34,24 @@ Rules:
 - Rotating the secret invalidates unfinished saved progression tokens. Treat rotation as a deliberate deployment event and expect active anonymous games to restart.
 
 The token contains only public progression fields and is intentionally stateless and replayable. There is no replay cache, Redis dependency, database write per action, durable anonymous server session, or Vercel-specific state. The accepted guarantees and limitations are documented in `docs/decisions/0001-daily-answer-integrity.md`.
+
+## Daily administration boundary
+
+The current single-editor administration method is HTTP Basic authentication at the Next.js server boundary. It is deliberately smaller than an account system and must be used only over HTTPS.
+
+The server requires `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `DAILY_ADMIN_USERNAME`, and `DAILY_ADMIN_PASSWORD`. The password must contain at least 32 characters.
+
+Rules:
+
+- Never prefix these variables with `NEXT_PUBLIC_` or pass them to client components, props, browser storage, logs, or responses.
+- Future admin routes must authenticate the request before constructing the service-role Supabase client or repository.
+- A rejected request returns HTTP `401` with the exported Basic authentication challenge; it must not instantiate the privileged client.
+- The configured username is the stable actor ID supplied to portable Daily editorial services.
+- The Supabase client disables browser-style session persistence and uses only the server URL plus service-role credential; it does not fall back to public variables.
+- Row-level security remains enabled with no browser policies. The service role is reachable only through the authorized server composition boundary.
+- This does not add public accounts, editor sessions, Supabase Auth, OAuth, password recovery, or multi-editor administration. Those require a separate decision if the product outgrows one editor.
+
+The committed `daily_editorial_puzzles` migration and these deployment variables still need to be applied or configured before the administration workflow is hosted.
 
 ## Saved-game migration
 

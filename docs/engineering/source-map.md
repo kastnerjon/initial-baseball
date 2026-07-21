@@ -41,7 +41,10 @@ Use this to find the owning file or package before changing behavior.
 | Progression-token claims, signing, and verification | `apps/web/app/dailyProgressionToken.ts` |
 | Web canonical runtime adapter | `apps/web/app/serverCanonicalRuntime.ts` |
 | Search, hint, and resolution routes | `apps/web/app/api/players/` and `apps/web/app/api/daily/` |
-| Admin UI and publication application adapters | `apps/web/app/` behind repository/service boundaries |
+| Authorized Daily admin context and repository composition | `apps/web/app/dailyAdminComposition.ts` |
+| Single-editor admin credential verification | `apps/web/app/dailyAdminAuthorization.ts` |
+| Server-only Supabase client construction | `apps/web/app/serverSupabaseClient.ts` |
+| Admin UI and publication application adapters | `apps/web/app/` behind the authorized repository/service boundary |
 | Supabase `DailyPuzzleRepository` implementation | `apps/web/app/supabaseDailyPuzzleRepository.ts` |
 | Supabase persisted-row encoding and validation | `apps/web/app/supabaseDailyPuzzleRowCodec.ts` |
 | Daily editorial Postgres schema and RLS boundary | `supabase/migrations/20260721143000_create_daily_editorial_puzzles.sql` |

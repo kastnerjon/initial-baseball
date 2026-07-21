@@ -42,7 +42,7 @@ Owns Daily-specific portable application logic: puzzle numbering, deterministic 
 
 ### `apps/web`
 
-Owns Next.js pages, React components, HTTP routes, browser persistence, sharing, admin surfaces, and web-specific infrastructure adapters. It renders and transports domain behavior rather than defining it. Stateless progression-token signing and verification belong here because they authorize web transport rather than define baseball or Daily rules. The server-only Supabase repository adapter also belongs here because it implements a web deployment concern behind the portable Daily port.
+Owns Next.js pages, React components, HTTP routes, browser persistence, sharing, admin surfaces, and web-specific infrastructure adapters. It renders and transports domain behavior rather than defining it. Stateless progression-token signing and verification belong here because they authorize web transport rather than define baseball or Daily rules. The server-only Supabase repository adapter also belongs here because it implements a web deployment concern behind the portable Daily port. Single-editor administration authorization and privileged-client composition belong here because they protect a web-only server boundary rather than define editorial lifecycle behavior.
 
 ### `apps/mobile`
 
@@ -78,6 +78,7 @@ Dependencies must not point upward.
 - Baseball-data generation is not owned by `apps/web`.
 - Admin components call services/repositories rather than reading or writing persistence directly.
 - The Supabase service role remains server-only and is never exposed to browser code.
+- Admin requests are authorized before the privileged Supabase client or repository is constructed.
 
 ## Canonical baseball-data architecture
 
@@ -139,7 +140,7 @@ ADR 0001 defines the accepted anonymous launch model, implemented in PRs #95 and
 - Replay of an earlier valid token is an accepted launch limitation; forged later progression or arbitrary future-pitch selection is not.
 - Signing and verification remain provider-neutral web adapters using a server-only secret.
 
-This model adds no replay cache, Redis, per-action database write, durable anonymous session, or Vercel-specific state.
+This model adds no replay cache, Redis, per-action database write, durable anonymous server session, or Vercel-specific state.
 
 ## Future-lineup administration architecture
 
@@ -174,7 +175,7 @@ It validates slot rank bands, canonical duplicates, the repeat window, and revea
 - Emergency correction/versioning is deliberately separate from ordinary editing and remains an explicit future decision.
 - Actor IDs and timestamps are inputs to the portable service; domain code does not read platform clocks or authentication state.
 
-A database adapter implements the repository port and its uniqueness/concurrency guarantees. A web/admin application service supplies authorization context, calls the portable service, joins canonical player display data for review, and formats responses. React renders returned state and dispatches actions; it does not implement lifecycle or persistence rules.
+A database adapter implements the repository port and its uniqueness/concurrency guarantees. A web/admin application service supplies authorization context through the server composition boundary, calls the portable service, joins canonical player display data for review, and formats responses. React renders returned state and dispatches actions; it does not implement lifecycle or persistence rules.
 
 ### Supabase/Postgres editorial persistence
 
@@ -188,9 +189,23 @@ The initial adapter is `apps/web/app/supabaseDailyPuzzleRepository.ts`, backed b
 - Inserts map unique-date or unique-number violations to repository conflicts.
 - Updates filter by both puzzle date and expected revision; no returned row means the optimistic write lost a race.
 - Updates do not rewrite immutable puzzle identity, date, number, version, or creation audit fields.
-- Row-level security is enabled with no browser policy. Until admin authentication is selected, access is limited to a server-side Supabase service-role client.
+- Row-level security is enabled with no browser policy. Access is limited to a server-side Supabase service-role client behind the authorized admin composition boundary.
 - Supabase supplies storage and atomic filtering only. It does not define lifecycle transitions, generation, validation, or publication behavior.
 - The distinct table avoids destructive alteration of the incompatible legacy `daily_puzzles` and `daily_puzzle_pitches` foreign-key graph. Legacy removal or migration is separate dependency-aware cleanup.
+
+### Single-editor authorization and server composition
+
+The initial administration method is per-request HTTP Basic authentication at the Next.js server boundary. This is the smallest method appropriate for one editor and must be used only over HTTPS.
+
+- `DAILY_ADMIN_USERNAME` identifies the single editor and becomes the stable actor ID supplied to portable editorial services.
+- `DAILY_ADMIN_PASSWORD` must contain at least 32 characters and remains server-only.
+- Credential comparison uses fixed-length digests and timing-safe comparison.
+- Missing or incorrect credentials fail uniformly as unauthorized; missing server configuration fails closed as a distinct operational error.
+- Authorization occurs before `createServerSupabaseClient` or `createSupabaseDailyPuzzleRepository` is called.
+- The privileged client reads only `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`, never public `NEXT_PUBLIC_*` values, and disables browser-style session persistence.
+- Future admin routes translate unauthorized errors to HTTP `401` with the exported Basic challenge. They do not return credentials, the Supabase client, or the service-role key.
+- No account records, Supabase Auth integration, OAuth provider, session store, password recovery, or multi-editor authorization model is introduced.
+- If the product needs multiple editors, revocation, individual permissions, or durable editor sessions, replace this boundary through a separate explicit authentication decision rather than extending portable domain packages.
 
 ### Editorial web workflow
 
@@ -202,7 +217,7 @@ The admin workflow must support at least the next seven Daily lineups.
 - The public puzzle for the date becomes `published` and is immutable for ordinary edits.
 - Past puzzles become `archived`.
 - Emergency corrections require an explicit versioned editorial action.
-- The next implementation must select admin authentication and compose a server-only Supabase client before exposing the repository through routes or React.
+- The next implementation should consume the completed authorization/composition boundary to expose the seven-day horizon through thin server routes and an authorized React workflow.
 
 ## Scale target: 10,000+ plays per day
 
@@ -242,8 +257,8 @@ Vercel and Supabase are hosting and persistence adapters, not owners of domain b
 ### 3. Future-lineup administration
 
 - Persist `draft`, `scheduled`, `published`, and `archived` states through the provider-neutral repository contract and Supabase/Postgres adapter.
-- Select admin authentication and compose the server-only repository boundary.
-- Generate, inspect, edit, validate, approve, and schedule at least seven future puzzles.
+- Authorize the single editor and compose the server-only repository boundary.
+- Generate, inspect, edit, validate, approve, and schedule at least seven future puzzles through that boundary.
 - Keep published puzzles immutable absent an explicit versioned editorial action.
 
 ### 4. Aggregate results and launch hardening

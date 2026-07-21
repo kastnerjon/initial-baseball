@@ -5,7 +5,7 @@ Last updated: 2026-07-21
 
 Completed work should not remain here as future work. Historical rationale belongs in pull requests, canonical documentation, or `tasks/lessons.md`. Durable resumption context, approved deferred decisions, and open decisions belong in `docs/START-HERE.md`.
 
-Current execution order: preserve the durable handoff, select admin authentication and compose the server-only Supabase client/repository boundary, then build the authorized seven-day web administration workflow without moving domain rules into React or Supabase. The Vercel deployment task in issue #97 remains operationally required but does not block GitHub development.
+Current execution order: preserve the durable handoff, build the authorized seven-day web administration workflow on the completed single-editor authorization and server-only Supabase composition boundary, then add replacement and lifecycle controls without moving domain rules into React or Supabase. The Vercel deployment task in issue #97 remains operationally required but does not block GitHub development.
 
 ## 0. Complete launch answer-integrity deployment
 
@@ -45,7 +45,7 @@ Current execution order: preserve the durable handoff, select admin authenticati
 - [x] Persist only canonical player IDs and editorial metadata in the repository contract, without duplicating baseball statistics.
 - [x] Build the seven-day application service that generates missing drafts, lists the horizon, joins canonical review data, and returns validation warnings.
 - [x] Choose Supabase/Postgres and implement the smallest relational adapter satisfying the repository contract — PR #114.
-- [ ] Select the admin authentication method and compose a server-only Supabase service-role client/repository boundary.
+- [x] Select per-request HTTP Basic authentication for the single editor and compose a server-only Supabase service-role client/repository boundary — PR #115.
 - [ ] Show each future date, puzzle number, lifecycle status, and all nine slots in one authorized operational workflow.
 - [ ] Show canonical ID, display name, career years, role/position, fan-facing teams, recognizability rank, last Daily usage, selection source, and data-quality warnings.
 - [ ] Allow an authorized editor to search, preview, and replace any future slot through the service boundary.
