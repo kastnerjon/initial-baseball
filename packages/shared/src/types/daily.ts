@@ -2,7 +2,7 @@ import { DEFAULT_ALPHA_SETTINGS, type HintConfigSlot, type HintType } from './ga
 import type { PlayerIdentity } from './player.js';
 import type { StatsHintConfig } from './stats.js';
 
-export type DailyPuzzleStatus = 'draft' | 'published' | 'archived';
+export type DailyPuzzleStatus = 'draft' | 'scheduled' | 'published' | 'archived';
 export type DailyGameStatus = 'not_started' | 'in_progress' | 'completed';
 
 export type DailyOutcome = 'HR' | '3B' | '2B' | '1B' | 'BB' | 'K';
