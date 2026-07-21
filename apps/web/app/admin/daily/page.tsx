@@ -3,7 +3,10 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { DailyAdminAuthorizationError } from '../../dailyAdminAuthorization';
 import { createDailyAdminContext } from '../../dailyAdminComposition';
-import { createDailyAdminWorkflow } from '../../dailyAdminWorkflow';
+import {
+  createDailyAdminWorkflow,
+  isDailyAdminLifecycleAction,
+} from '../../dailyAdminWorkflow';
 import {
   DailyAdministrationView,
   type DailyAdminEditorSelection,
@@ -30,6 +33,7 @@ export default async function DailyAdministrationPage({
     const searchResults = query.length === 0 ? [] : workflow.searchPlayers(query);
     const previewPlayerId = selection === null ? '' : readString(params.playerId);
     const preview = previewPlayerId.length === 0 ? null : workflow.previewPlayer(previewPlayerId);
+    const lifecycleAction = readString(params.lifecycle);
 
     return (
       <DailyAdministrationView
@@ -39,6 +43,7 @@ export default async function DailyAdministrationPage({
         searchResults={searchResults}
         preview={preview}
         replacementComplete={readString(params.updated) === '1'}
+        lifecycleActionComplete={isDailyAdminLifecycleAction(lifecycleAction) ? lifecycleAction : null}
       />
     );
   } catch (error) {
