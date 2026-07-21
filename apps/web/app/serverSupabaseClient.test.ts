@@ -44,15 +44,19 @@ describe('server-only Supabase client', () => {
     expect(createClient).not.toHaveBeenCalled();
   });
 
-  it.each([
-    [{ SUPABASE_SERVICE_ROLE_KEY: SERVICE_ROLE_KEY }, 'SUPABASE_URL'],
-    [{ SUPABASE_URL: 'not-a-url', SUPABASE_SERVICE_ROLE_KEY: SERVICE_ROLE_KEY }, 'SUPABASE_URL'],
-    [{ SUPABASE_URL }, 'SUPABASE_SERVICE_ROLE_KEY'],
-  ])('fails closed for incomplete or invalid server configuration', (environment, variableName) => {
-    expect(() => createServerSupabaseClient(environment)).toThrowError(
-      expect.objectContaining({ message: expect.stringContaining(variableName) }),
-    );
-    expect(createClient).not.toHaveBeenCalled();
+  it('fails closed for incomplete or invalid server configuration', () => {
+    const cases: Array<[Record<string, string | undefined>, string]> = [
+      [{ SUPABASE_SERVICE_ROLE_KEY: SERVICE_ROLE_KEY }, 'SUPABASE_URL'],
+      [{ SUPABASE_URL: 'not-a-url', SUPABASE_SERVICE_ROLE_KEY: SERVICE_ROLE_KEY }, 'SUPABASE_URL'],
+      [{ SUPABASE_URL }, 'SUPABASE_SERVICE_ROLE_KEY'],
+    ];
+
+    for (const [environment, variableName] of cases) {
+      expect(() => createServerSupabaseClient(environment)).toThrowError(
+        expect.objectContaining({ message: expect.stringContaining(variableName) }),
+      );
+      expect(createClient).not.toHaveBeenCalled();
+    }
   });
 
   it('uses a distinct configuration error type', () => {
