@@ -38,11 +38,11 @@ It may generate client-consumable outputs, but web code must not generate, corre
 
 ### `packages/daily`
 
-Owns Daily-specific portable application logic: puzzle numbering, deterministic lineup selection, recognizability ranking, repeat protection, override validation, puzzle construction, editorial validation, editorial lifecycle invariants, the provider-neutral repository port, and Daily session transitions. It may depend on `shared`, `engine`, and `baseball-data` where the package contract permits.
+Owns Daily-specific portable application logic: puzzle numbering, deterministic lineup selection, recognizability ranking, repeat protection, override validation, puzzle construction, editorial validation, editorial lifecycle invariants, the provider-neutral repository port, seven-day editorial orchestration, and Daily session transitions. It may depend on `shared`, `engine`, and `baseball-data` where the package contract permits.
 
 ### `apps/web`
 
-Owns Next.js pages, React components, HTTP routes, browser persistence, sharing, admin surfaces, and web-specific infrastructure adapters. It renders and transports domain behavior rather than defining it. Stateless progression-token signing and verification belong here because they authorize web transport rather than define baseball or Daily rules.
+Owns Next.js pages, React components, HTTP routes, browser persistence, sharing, admin surfaces, and web-specific infrastructure adapters. It renders and transports domain behavior rather than defining it. Stateless progression-token signing and verification belong here because they authorize web transport rather than define baseball or Daily rules. The server-only Supabase repository adapter also belongs here because it implements a web deployment concern behind the portable Daily port.
 
 ### `apps/mobile`
 
@@ -52,7 +52,9 @@ Remains an inactive scaffold. Shared contracts should stay platform-neutral wher
 
 Puzzle publication lifecycle, future-lineup administration, completed-game results, and eventual accounts belong behind explicit repository/service boundaries. Database clients do not belong inside React components, the engine, baseball-data generation, or pure Daily logic.
 
-The puzzle database stores canonical player IDs and editorial metadata. It does not become a second store of player names, statistics, teams, or reveal records.
+Supabase-hosted Postgres is the initial relational provider for editorial Daily puzzles. The current `daily_editorial_puzzles` table stores canonical player IDs and editorial metadata. It does not become a second store of player names, statistics, teams, hints, or reveal records.
+
+The original broad schema in `supabase/migrations/000001_initial_schema.sql` is inactive scaffold from the former head-to-head/social direction. Its database-player, `daily_puzzles`, `daily_puzzle_pitches`, attempt, and result tables do not back the current Daily runtime or editorial repository. Current work must not silently repurpose or extend them.
 
 ## Dependency direction
 
@@ -65,7 +67,7 @@ shared
             \
              web / API / admin adapters
                        \
-                        database adapters
+                        Supabase/Postgres repository adapter
 ```
 
 Dependencies must not point upward.
@@ -75,6 +77,7 @@ Dependencies must not point upward.
 - UI does not own baseball rules, player normalization, puzzle generation, editorial validation, or persistence semantics.
 - Baseball-data generation is not owned by `apps/web`.
 - Admin components call services/repositories rather than reading or writing persistence directly.
+- The Supabase service role remains server-only and is never exposed to browser code.
 
 ## Canonical baseball-data architecture
 
@@ -140,7 +143,7 @@ This model adds no replay cache, Redis, per-action database write, durable anony
 
 ## Future-lineup administration architecture
 
-The editorial system has two separate concerns.
+The editorial system has separate portable, persistence, and web concerns.
 
 ### Portable generation and validation
 
@@ -173,7 +176,23 @@ It validates slot rank bands, canonical duplicates, the repeat window, and revea
 
 A database adapter implements the repository port and its uniqueness/concurrency guarantees. A web/admin application service supplies authorization context, calls the portable service, joins canonical player display data for review, and formats responses. React renders returned state and dispatches actions; it does not implement lifecycle or persistence rules.
 
-### Editorial persistence and web workflow
+### Supabase/Postgres editorial persistence
+
+The initial adapter is `apps/web/app/supabaseDailyPuzzleRepository.ts`, backed by `supabase/migrations/20260721143000_create_daily_editorial_puzzles.sql`.
+
+- One `daily_editorial_puzzles` row represents one puzzle date.
+- Puzzle identity, number, version, revision, status, audit fields, and nine selections are persisted.
+- The selections are one fixed JSONB array of `{slot, canonicalPlayerId, source}` values. This keeps each repository save atomic without adding a provider-specific transaction RPC or duplicating baseball facts.
+- The database enforces unique puzzle dates and puzzle numbers, valid statuses, revision bounds, nine selections, and lifecycle/audit-field coherence.
+- The adapter decodes rows defensively and rejects malformed persisted state rather than manufacturing domain data.
+- Inserts map unique-date or unique-number violations to repository conflicts.
+- Updates filter by both puzzle date and expected revision; no returned row means the optimistic write lost a race.
+- Updates do not rewrite immutable puzzle identity, date, number, version, or creation audit fields.
+- Row-level security is enabled with no browser policy. Until admin authentication is selected, access is limited to a server-side Supabase service-role client.
+- Supabase supplies storage and atomic filtering only. It does not define lifecycle transitions, generation, validation, or publication behavior.
+- The distinct table avoids destructive alteration of the incompatible legacy `daily_puzzles` and `daily_puzzle_pitches` foreign-key graph. Legacy removal or migration is separate dependency-aware cleanup.
+
+### Editorial web workflow
 
 The admin workflow must support at least the next seven Daily lineups.
 
@@ -183,6 +202,7 @@ The admin workflow must support at least the next seven Daily lineups.
 - The public puzzle for the date becomes `published` and is immutable for ordinary edits.
 - Past puzzles become `archived`.
 - Emergency corrections require an explicit versioned editorial action.
+- The next implementation must select admin authentication and compose a server-only Supabase client before exposing the repository through routes or React.
 
 ## Scale target: 10,000+ plays per day
 
@@ -195,9 +215,9 @@ Ten thousand Daily players is modest systems load if the game remains mostly sta
 - Avoid a database write for every hint, incorrect guess, or base transition.
 - Submit at most one compact, idempotent result per completed game when aggregate statistics are introduced.
 
-The initial launch does not require microservices, queues, a dedicated mobile backend, real-time subscriptions, replay storage, or server-side game sessions. Vercel plus one small relational database can support expected traffic if routes remain thin and cacheable.
+The initial launch does not require microservices, queues, a dedicated mobile backend, real-time subscriptions, replay storage, or server-side game sessions. Vercel plus Supabase-hosted Postgres can support expected traffic if routes remain thin, cacheable where safe, and server credentials remain isolated.
 
-Vercel is a hosting and deployment adapter, not the owner of domain behavior, baseball data, persistence contracts, answer-integrity state, or the public domain.
+Vercel and Supabase are hosting and persistence adapters, not owners of domain behavior, baseball data, persistence contracts, answer-integrity state, or the public domain.
 
 ## Current product sequence
 
@@ -221,8 +241,9 @@ Vercel is a hosting and deployment adapter, not the owner of domain behavior, ba
 
 ### 3. Future-lineup administration
 
+- Persist `draft`, `scheduled`, `published`, and `archived` states through the provider-neutral repository contract and Supabase/Postgres adapter.
+- Select admin authentication and compose the server-only repository boundary.
 - Generate, inspect, edit, validate, approve, and schedule at least seven future puzzles.
-- Persist `draft`, `scheduled`, `published`, and `archived` states through the provider-neutral repository contract.
 - Keep published puzzles immutable absent an explicit versioned editorial action.
 
 ### 4. Aggregate results and launch hardening
