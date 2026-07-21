@@ -1,6 +1,34 @@
 import 'server-only';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 
+interface ServerSupabaseClientOptions {
+  auth: {
+    autoRefreshToken: false;
+    detectSessionInUrl: false;
+    persistSession: false;
+  };
+}
+
+type ServerSupabaseClientFactory = (
+  supabaseUrl: string,
+  serviceRoleKey: string,
+  options: ServerSupabaseClientOptions,
+) => SupabaseClient;
+
+const SERVER_SUPABASE_OPTIONS: ServerSupabaseClientOptions = {
+  auth: {
+    autoRefreshToken: false,
+    detectSessionInUrl: false,
+    persistSession: false,
+  },
+};
+
+const createDefaultClient: ServerSupabaseClientFactory = (
+  supabaseUrl,
+  serviceRoleKey,
+  options,
+) => createClient(supabaseUrl, serviceRoleKey, options);
+
 export class ServerSupabaseConfigurationError extends Error {
   constructor(message: string) {
     super(message);
@@ -10,6 +38,7 @@ export class ServerSupabaseConfigurationError extends Error {
 
 export function createServerSupabaseClient(
   environment: Record<string, string | undefined> = process.env,
+  createSupabaseClient: ServerSupabaseClientFactory = createDefaultClient,
 ): SupabaseClient {
   const supabaseUrl = environment.SUPABASE_URL?.trim();
   const serviceRoleKey = environment.SUPABASE_SERVICE_ROLE_KEY?.trim();
@@ -30,13 +59,11 @@ export function createServerSupabaseClient(
     );
   }
 
-  return createClient(supabaseUrl, serviceRoleKey, {
-    auth: {
-      autoRefreshToken: false,
-      detectSessionInUrl: false,
-      persistSession: false,
-    },
-  });
+  return createSupabaseClient(
+    supabaseUrl,
+    serviceRoleKey,
+    SERVER_SUPABASE_OPTIONS,
+  );
 }
 
 function isHttpUrl(value: string): boolean {
