@@ -3,7 +3,6 @@ import type {
   CanonicalBattingLine,
   CanonicalPitchingLine,
   CanonicalPlayerReveal,
-  CanonicalTeamDisplayIdentity,
 } from '@initial-baseball/baseball-data/runtime';
 
 export type RevealStatKind = 'hitter' | 'pitcher';
@@ -63,7 +62,7 @@ export function createCanonicalRevealViewModel(
 }
 
 function displayTeamIds(
-  teamIdentities: CanonicalTeamDisplayIdentity[] | undefined,
+  teamIdentities: Array<{ abbreviation: string }> | undefined,
   sourceTeamIds: string[],
 ): string[] {
   return teamIdentities?.map((team) => team.abbreviation) ?? sourceTeamIds;
