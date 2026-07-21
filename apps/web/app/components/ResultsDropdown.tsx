@@ -24,32 +24,31 @@ export function ResultsDropdown({
 
   return (
     <ul className="results-dropdown" aria-label="Matching players">
-      {results.map((result) => (
-        <li key={result.playerId}>
-          <button
-            type="button"
-            className={result.playerId === selectedPlayerId ? 'result-option selected' : 'result-option'}
-            onClick={() => onSelect(result)}
-          >
-            <span>{result.displayName}</span>
-            {formatContext(result) === null ? null : (
-              <small>{formatContext(result)}</small>
-            )}
-          </button>
-        </li>
-      ))}
+      {results.map((result) => {
+        const context = formatContext(result);
+
+        return (
+          <li key={result.playerId}>
+            <button
+              type="button"
+              className={result.playerId === selectedPlayerId ? 'result-option selected' : 'result-option'}
+              onClick={() => onSelect(result)}
+            >
+              <span>{result.displayName}</span>
+              {context === null ? null : <small>{context}</small>}
+            </button>
+          </li>
+        );
+      })}
     </ul>
   );
 }
 
 function formatContext(result: PlayerSearchResult): string | null {
-  const metadata = result.metadata;
-  if (metadata === undefined) return null;
-  const years = metadata.firstYear === null || metadata.firstYear === undefined
-    ? null
-    : `${metadata.firstYear}–${metadata.lastYear ?? 'present'}`;
-  const role = metadata.playerType ?? metadata.primaryPosition;
-  const teams = metadata.teamsDisplay;
-  const context = [years, role, teams].filter((value): value is string => Boolean(value));
-  return context.length === 0 ? null : context.join(' · ');
+  if (result.requiresYearDisambiguation !== true) return null;
+
+  const firstYear = result.metadata?.firstYear;
+  if (firstYear === null || firstYear === undefined) return null;
+
+  return `${firstYear}–${result.metadata?.lastYear ?? 'present'}`;
 }
