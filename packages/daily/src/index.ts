@@ -29,3 +29,10 @@ export {
   type DailyPlayerUsage,
   type GenerateDailyLineupInput,
 } from './dailyLineupQuality';
+
+export {
+  DAILY_LINEUP_QUALITY_LAUNCH_DATE,
+  DAILY_REVIEWED_DATA_VERSION,
+  createProductionCanonicalDailySelector,
+  type ProductionCanonicalDailySelector,
+} from './productionDailyLineup';

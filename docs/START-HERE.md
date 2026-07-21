@@ -69,15 +69,18 @@ Completed foundation and mechanics include:
 - canonical season facts, season aggregates, season cards, career aggregates, career cards, enrichment, and runtime payloads;
 - canonical server-side search, hint, answer resolution, and terminal reveal delivery;
 - hidden-answer production-build QA;
-- canonical duplicate prevention in Daily lineups;
 - safe browser-save migration and schema-3 progression-token persistence;
 - anonymous stateless signed progression authorization;
 - career summaries, regular-season rows, multi-team season representation, two-way batting/pitching display, hitter OPS, pitcher saves, and configurable reveal columns;
 - centralized season-aware team identities preserving source IDs while supplying fan-facing abbreviations and names;
 - executable representative reveal QA for Ortiz, Rivera, Ohtani, Griffey, Wright, Mays, Campanella, and distinct Ben Taylor records;
-- audited 2016-and-later Angels display-name correction, unique rendered career abbreviations, and safe fallback for older schema-1 artifacts.
+- audited 2016-and-later Angels display-name correction, unique rendered career abbreviations, and safe fallback for older schema-1 artifacts;
+- a portable, versioned nine-slot Daily lineup quality contract with canonical duplicate detection, reveal-readiness validation, and a 90-day repeat window;
+- production canonical selection using non-overlapping recognizability bands: ranks 1-250 for slots 1-2, 251-1,000 for 3-4, 1,001-2,500 for 5-6, and 2,501-5,000 for 7-9;
+- an explicit lineup-quality launch date of `2026-07-22`, with all earlier published dates continuing to reproduce the legacy selector rather than silently changing answers;
+- one server-runtime selector instance that caches canonical candidates, seeded 90-day history, and generated lineups, so hints and guesses do not replay historical generation.
 
-Most recent completed product work at this handoff: issue #104 / PR #109, representative reveal QA and corrections.
+Most recent completed product work at this handoff: issue #61 / PR #111, production Daily lineup quality integration.
 
 ## Deployment state
 
@@ -95,20 +98,10 @@ This deployment task does not block coding, GitHub CI, tests, or production buil
 ## Current work order
 
 1. Maintain this handoff and reconcile documentation whenever current state or roadmap priority changes.
-2. Finalize lineup mechanics:
-   - at-bats 1–2: top 250 recognizability;
-   - at-bats 3–4: top 1,000;
-   - at-bats 5–6: top 2,500;
-   - at-bats 7–9: top 5,000;
-   - no duplicate canonical player;
-   - avoid players used in the previous 90 days;
-   - deterministic output for date plus reviewed data version;
-   - historical overrides and saved references remain resolvable;
-   - validation output includes rank band, repeat status, duplicate status, and required reveal-data readiness.
-3. Define and persist the editorial puzzle lifecycle.
-4. Build the seven-day lineup administration workflow.
-5. Add aggregate completed-game results, field comparison, monitoring, and remaining launch surfaces.
-6. Apply the approved heritage visual direction after core mechanics and administration are dependable.
+2. Define the provider-neutral editorial puzzle lifecycle and repository/service boundary.
+3. Build the seven-day lineup administration workflow.
+4. Add aggregate completed-game results, field comparison, monitoring, and remaining launch surfaces.
+5. Apply the approved heritage visual direction after core mechanics and administration are dependable.
 
 `tasks/todo.md` is the canonical active checklist and must remain consistent with this sequence.
 
@@ -130,6 +123,7 @@ This deployment task does not block coding, GitHub CI, tests, or production buil
 - Published puzzles are immutable for ordinary edits.
 - Emergency changes require an explicit editorial/versioning action, not a silent answer replacement.
 - The public game reads the approved scheduled/published puzzle for its date.
+- Historical dates before the lineup-quality launch remain bound to their legacy generated answers unless an explicit future migration/versioning decision is adopted.
 
 ### Admin lineup screen
 
@@ -195,7 +189,7 @@ Record a settled answer here and in the appropriate canonical document in the sa
 
 ## New-conversation prompt
 
-> Continue work on `kastnerjon/initial-baseball`. First read `AGENTS.md`, `docs/START-HERE.md`, and `tasks/todo.md` from current GitHub `main`. Verify latest merged PRs, open PRs, open issues, and CI before acting. Treat `docs/START-HERE.md` as the durable handoff. Continue the exact next bounded item in the documented work order using one owning concern per PR. Do not restart settled architecture discussions, insert a new foundation phase without a concrete blocker, or begin the heritage redesign before lineup mechanics and administration are dependable. Keep documentation current in the same PR whenever product behavior, architecture, data contracts, administration, or roadmap priority changes.
+> Continue work on `kastnerjon/initial-baseball`. First read `AGENTS.md`, `docs/START-HERE.md`, and `tasks/todo.md` from current GitHub `main`. Verify latest merged PRs, open PRs, open issues, and CI before acting. Treat `docs/START-HERE.md` as the durable handoff. The exact next bounded concern is the provider-neutral editorial puzzle lifecycle and repository/service boundary, followed by the seven-day lineup administration workflow. Do not restart settled lineup architecture, silently change published historical answers, choose a database provider before defining the contract it must satisfy, or begin the heritage redesign before administration is dependable. Keep documentation current in the same PR whenever product behavior, architecture, data contracts, administration, or roadmap priority changes.
 
 ## Maintenance rule
 
