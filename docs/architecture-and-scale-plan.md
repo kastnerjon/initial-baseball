@@ -52,7 +52,9 @@ Remains an inactive scaffold. Shared contracts should stay platform-neutral wher
 
 Puzzle publication lifecycle, future-lineup administration, completed-game results, and eventual accounts belong behind explicit repository/service boundaries. Database clients do not belong inside React components, the engine, baseball-data generation, or pure Daily logic.
 
-Supabase-hosted Postgres is the initial relational provider for editorial Daily puzzles. The puzzle table stores canonical player IDs and editorial metadata. It does not become a second store of player names, statistics, teams, hints, or reveal records.
+Supabase-hosted Postgres is the initial relational provider for editorial Daily puzzles. The current `daily_editorial_puzzles` table stores canonical player IDs and editorial metadata. It does not become a second store of player names, statistics, teams, hints, or reveal records.
+
+The original broad schema in `supabase/migrations/000001_initial_schema.sql` is inactive scaffold from the former head-to-head/social direction. Its database-player, `daily_puzzles`, `daily_puzzle_pitches`, attempt, and result tables do not back the current Daily runtime or editorial repository. Current work must not silently repurpose or extend them.
 
 ## Dependency direction
 
@@ -176,18 +178,19 @@ A database adapter implements the repository port and its uniqueness/concurrency
 
 ### Supabase/Postgres editorial persistence
 
-The initial adapter is `apps/web/app/supabaseDailyPuzzleRepository.ts`, backed by the migration in `supabase/migrations/`.
+The initial adapter is `apps/web/app/supabaseDailyPuzzleRepository.ts`, backed by `supabase/migrations/20260721143000_create_daily_editorial_puzzles.sql`.
 
-- One `daily_puzzles` row represents one puzzle date.
+- One `daily_editorial_puzzles` row represents one puzzle date.
 - Puzzle identity, number, version, revision, status, audit fields, and nine selections are persisted.
 - The selections are one fixed JSONB array of `{slot, canonicalPlayerId, source}` values. This keeps each repository save atomic without adding a provider-specific transaction RPC or duplicating baseball facts.
-- The database enforces unique puzzle dates, valid statuses, revision bounds, nine selections, and lifecycle/audit-field coherence.
+- The database enforces unique puzzle dates and puzzle numbers, valid statuses, revision bounds, nine selections, and lifecycle/audit-field coherence.
 - The adapter decodes rows defensively and rejects malformed persisted state rather than manufacturing domain data.
-- Inserts map unique-date violations to repository conflicts.
+- Inserts map unique-date or unique-number violations to repository conflicts.
 - Updates filter by both puzzle date and expected revision; no returned row means the optimistic write lost a race.
 - Updates do not rewrite immutable puzzle identity, date, number, version, or creation audit fields.
 - Row-level security is enabled with no browser policy. Until admin authentication is selected, access is limited to a server-side Supabase service-role client.
 - Supabase supplies storage and atomic filtering only. It does not define lifecycle transitions, generation, validation, or publication behavior.
+- The distinct table avoids destructive alteration of the incompatible legacy `daily_puzzles` and `daily_puzzle_pitches` foreign-key graph. Legacy removal or migration is separate dependency-aware cleanup.
 
 ### Editorial web workflow
 
