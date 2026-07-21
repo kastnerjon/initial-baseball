@@ -31,6 +31,8 @@ export {
 } from './dailyLineupQuality';
 
 export {
+  DAILY_LINEUP_QUALITY_LAUNCH_DATE,
   DAILY_REVIEWED_DATA_VERSION,
-  selectProductionCanonicalDailyPlayersForDate,
+  createProductionCanonicalDailySelector,
+  type ProductionCanonicalDailySelector,
 } from './productionDailyLineup';
