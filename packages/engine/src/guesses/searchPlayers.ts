@@ -6,6 +6,7 @@ export type PlayerSearchResult = {
   acceptedPlayerIds: string[];
   displayName: string;
   fullName: string;
+  requiresYearDisambiguation?: boolean;
   metadata?: {
     dailyEligibilityTier?: Player['dailyEligibilityTier'];
     firstYear?: number | null;
@@ -66,11 +67,13 @@ function searchPlayerCandidates(
   const acceptedPlayerIdsByVisibleName = collapseSameVisibleName
     ? buildAcceptedPlayerIdsByVisibleName(players)
     : new Map<string, string[]>();
+  const playerCountsByVisibleName = buildPlayerCountsByVisibleName(players);
   const rankedResults = players
     .map((player) => rankPlayerSearchResult(
       normalizedQuery,
       player,
       acceptedPlayerIdsByVisibleName,
+      playerCountsByVisibleName,
       collapseSameVisibleName,
     ))
     .filter((result): result is RankedPlayerSearchResult => result !== null)
@@ -84,6 +87,7 @@ function rankPlayerSearchResult(
   query: string,
   player: PlayerSearchCandidate,
   acceptedPlayerIdsByVisibleName: Map<string, string[]>,
+  playerCountsByVisibleName: Map<string, number>,
   collapseSameVisibleName: boolean,
 ): RankedPlayerSearchResult | null {
   const fullName = player.fullName ?? player.displayName;
@@ -96,6 +100,7 @@ function rankPlayerSearchResult(
     return null;
   }
 
+  const normalizedDisplayName = normalizeGuess(player.displayName);
   const bestIndex = Math.min(...matchIndexes);
   const metadata: NonNullable<PlayerSearchResult['metadata']> = {
     firstYear: player.firstYear ?? null,
@@ -112,10 +117,12 @@ function rankPlayerSearchResult(
   return {
     playerId: player.id,
     acceptedPlayerIds: collapseSameVisibleName
-      ? acceptedPlayerIdsByVisibleName.get(normalizeGuess(player.displayName)) ?? [player.id]
+      ? acceptedPlayerIdsByVisibleName.get(normalizedDisplayName) ?? [player.id]
       : [player.id],
     displayName: player.displayName,
     fullName,
+    requiresYearDisambiguation: !collapseSameVisibleName
+      && (playerCountsByVisibleName.get(normalizedDisplayName) ?? 0) > 1,
     metadata,
     matchPriority: bestIndex === 0 ? 0 : 1,
     bestIndex,
@@ -178,6 +185,24 @@ function buildAcceptedPlayerIdsByVisibleName(players: readonly PlayerSearchCandi
     visibleNamePlayers
       .sort(compareAcceptedPlayerIdCandidates)
       .map((player) => player.id),
+  ]));
+}
+
+function buildPlayerCountsByVisibleName(
+  players: readonly PlayerSearchCandidate[],
+): Map<string, number> {
+  const playerIdsByVisibleName = new Map<string, Set<string>>();
+
+  for (const player of players) {
+    const visibleNameKey = normalizeGuess(player.displayName);
+    const playerIds = playerIdsByVisibleName.get(visibleNameKey) ?? new Set<string>();
+    playerIds.add(player.id);
+    playerIdsByVisibleName.set(visibleNameKey, playerIds);
+  }
+
+  return new Map([...playerIdsByVisibleName.entries()].map(([visibleNameKey, playerIds]) => [
+    visibleNameKey,
+    playerIds.size,
   ]));
 }
 
