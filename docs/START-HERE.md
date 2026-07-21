@@ -45,17 +45,17 @@ shared
             \
              web / API / admin adapters
                        \
-                        database adapters
+                        Supabase/Postgres repository adapter
 ```
 
 - `packages/shared`: stable portable types and contracts.
 - `packages/engine`: pure baseball/game rules, search behavior, scoring, inning transitions, and share calculations.
 - `packages/baseball-data`: committed sources, canonical player identity, aliases, team and position history, season and career records, enrichment, QA, and generated runtime artifacts.
 - `packages/daily`: puzzle numbering, deterministic lineup selection, recognizability, repeat protection, override validation, puzzle construction, editorial lifecycle invariants, repository/service contracts, seven-day editorial orchestration, and portable Daily transitions.
-- `apps/web`: Next.js pages, React rendering, browser persistence, routes, sharing, admin surfaces, and provider-specific adapters.
-- Database/repository adapters: puzzle publication persistence, admin persistence, completed-game results, and eventual accounts.
+- `apps/web`: Next.js pages, React rendering, browser persistence, routes, sharing, admin surfaces, and the server-only Supabase repository adapter.
+- Supabase-hosted Postgres: canonical-ID-only puzzle publication and editorial persistence. It does not own baseball facts or lifecycle behavior.
 
-Rules, baseball facts, puzzle generation, lifecycle invariants, editorial orchestration, and persistence semantics must not be moved into React components. Presentation adapters may format and deduplicate labels but must not reinterpret baseball facts. Vercel is a hosting adapter, not an architectural owner.
+Rules, baseball facts, puzzle generation, lifecycle invariants, editorial orchestration, and persistence semantics must not be moved into React components or database code. Presentation adapters may format and deduplicate labels but must not reinterpret baseball facts. Vercel and Supabase are adapters, not architectural owners.
 
 Canonical architecture: `docs/architecture-and-scale-plan.md`.
 Source ownership map: `docs/engineering/source-map.md`.
@@ -81,9 +81,10 @@ Completed foundation and mechanics include:
 - one server-runtime selector instance that caches canonical candidates, seeded 90-day history, and generated lineups;
 - a provider-neutral Daily editorial record, repository port, and service contract with date-range reads, optimistic revisions, canonical-ID-only selections, explicit audit metadata, and executable lifecycle invariants;
 - explicit `draft` → `scheduled` → `published` → `archived` transitions, with edited scheduled puzzles returning to draft and published/archived puzzles immutable through ordinary replacement;
-- a portable seven-day editorial horizon service that creates only missing drafts, preserves existing editorial records, incorporates earlier horizon dates into repeat protection, joins current canonical review data, and returns validation warnings without selecting a storage provider.
+- a portable seven-day editorial horizon service that creates only missing drafts, preserves existing editorial records, incorporates earlier horizon dates into repeat protection, joins current canonical review data, and returns validation warnings;
+- a server-only Supabase/Postgres `DailyPuzzleRepository` adapter with strict persisted-row decoding, date-range reads, atomic optimistic revision updates, canonical-ID-only JSONB selections, and a row-level-security-first migration.
 
-Most recent completed product work at this handoff: PR #113, seven-day Daily editorial horizon service.
+Most recent completed product work at this handoff: PR #114, Supabase/Postgres Daily puzzle repository adapter.
 
 ## Deployment state
 
@@ -96,16 +97,19 @@ Remaining operational task: issue #97.
 - Verify hosted hint, guess, strikeout, Give Up, refresh, and completion flows.
 - Close issues #91 and #86 after successful hosted verification.
 
-This deployment task does not block coding, GitHub CI, tests, or production builds.
+The Supabase migration is committed but has not yet been applied to a hosted project. No Supabase service-role environment configuration or admin client composition exists yet.
+
+These deployment tasks do not block coding, GitHub CI, tests, or production builds.
 
 ## Current work order
 
 1. Maintain this handoff and reconcile documentation whenever current state or roadmap priority changes.
-2. Select and implement the smallest relational persistence adapter satisfying the existing `DailyPuzzleRepository` contract.
-3. Build the authorized web administration workflow using the completed lifecycle and seven-day horizon services.
+2. Select the admin authentication method and compose the server-only Supabase client/repository boundary.
+3. Build the authorized seven-day web administration workflow using the completed lifecycle, horizon, and persistence services.
 4. Add player search, preview, replacement, validation reruns, and explicit schedule/publish/archive controls through service boundaries.
-5. Add aggregate completed-game results, field comparison, monitoring, and remaining launch surfaces.
-6. Apply the approved heritage visual direction after core mechanics and administration are dependable.
+5. Apply the committed migration and configure hosted Supabase/Vercel environment variables when the first admin workflow is ready for deployment.
+6. Add aggregate completed-game results, field comparison, monitoring, and remaining launch surfaces.
+7. Apply the approved heritage visual direction after core mechanics and administration are dependable.
 
 `tasks/todo.md` is the canonical active checklist and must remain consistent with this sequence.
 
@@ -135,6 +139,16 @@ This deployment task does not block coding, GitHub CI, tests, or production buil
 - Emergency changes require an explicit editorial/versioning action, not a silent answer replacement.
 - The public game reads the approved scheduled/published puzzle for its date.
 - Historical dates before the lineup-quality launch remain bound to their legacy generated answers unless an explicit future migration/versioning decision is adopted.
+
+### Editorial persistence
+
+- Supabase-hosted Postgres is the initial relational provider for editorial Daily puzzles.
+- One `daily_puzzles` row represents one puzzle date and stores puzzle identity, lifecycle state, revision, audit metadata, and exactly nine canonical-ID selections.
+- The fixed selections are stored as one JSONB value so a revision-guarded puzzle update remains atomic without a provider-specific transaction RPC.
+- Names, aliases, teams, statistics, hints, and reveal records remain in baseball-data and are joined at read time.
+- Updates compare both puzzle date and expected revision; a missing returned row is a concurrency conflict.
+- Row-level security is enabled with no browser policies. Until admin authentication is selected, only a server-side service-role client may access the table.
+- The migration lives in `supabase/migrations/`; the adapter lives in `apps/web/app/` and implements the provider-neutral port without redefining transitions.
 
 ### Admin lineup screen
 
@@ -184,7 +198,6 @@ The approved direction is heritage baseball rather than polished SaaS: Coopersto
 ## Open decisions
 
 - Admin authentication method.
-- Exact relational database/provider for puzzle persistence; Supabase/Postgres is plausible but not selected merely because scaffolding exists.
 - Whether scheduling/publication requires explicit editor action or may auto-publish an approved scheduled puzzle.
 - Exact emergency correction/versioning workflow for a published puzzle.
 - Exact source and maintenance process for recognizability rankings.
@@ -196,11 +209,12 @@ Record a settled answer here and in the appropriate canonical document in the sa
 ## Known issues and follow-ups
 
 - Issue #97: configure and verify the production/preview Daily progression secret.
+- The Daily puzzle migration still needs a hosted Supabase project, application, and server-only environment configuration.
 - Vercel Hobby deployment quota may temporarily prevent hosted previews; GitHub CI remains available.
 
 ## New-conversation prompt
 
-> Continue work on `kastnerjon/initial-baseball`. First read `AGENTS.md`, `docs/START-HERE.md`, and `tasks/todo.md` from current GitHub `main`. Verify latest merged PRs, open PRs, open issues, and CI before acting. Treat `docs/START-HERE.md` as the durable handoff. The exact next bounded concern is selecting and implementing the smallest relational persistence adapter satisfying the completed provider-neutral lifecycle/repository and seven-day editorial horizon services, followed by the authorized web administration workflow. Do not restart settled lineup, lifecycle, or horizon architecture; silently change published historical answers; let a database provider redefine domain behavior; or begin the heritage redesign before administration is dependable. Keep documentation current in the same PR whenever product behavior, architecture, data contracts, administration, or roadmap priority changes.
+> Continue work on `kastnerjon/initial-baseball`. First read `AGENTS.md`, `docs/START-HERE.md`, and `tasks/todo.md` from current GitHub `main`. Verify latest merged PRs, open PRs, open issues, and CI before acting. Treat `docs/START-HERE.md` as the durable handoff. The exact next bounded concern is selecting the admin authentication method and composing the server-only Supabase client/repository boundary, followed by the authorized seven-day administration workflow. The provider-neutral lifecycle, horizon service, Supabase/Postgres schema, and repository adapter are complete. Do not restart settled lineup, lifecycle, horizon, or persistence architecture; expose the service role to the browser; let Supabase redefine domain behavior; silently change published historical answers; or begin the heritage redesign before administration is dependable. Keep documentation current in the same PR whenever product behavior, architecture, data contracts, administration, deployment state, or roadmap priority changes.
 
 ## Maintenance rule
 
