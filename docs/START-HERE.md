@@ -51,11 +51,11 @@ shared
 - `packages/shared`: stable portable types and contracts.
 - `packages/engine`: pure baseball/game rules, search behavior, scoring, inning transitions, and share calculations.
 - `packages/baseball-data`: committed sources, canonical player identity, aliases, team and position history, season and career records, enrichment, QA, and generated runtime artifacts.
-- `packages/daily`: puzzle numbering, deterministic lineup selection, recognizability, repeat protection, override validation, puzzle construction, editorial lifecycle invariants, repository/service contracts, and portable Daily transitions.
+- `packages/daily`: puzzle numbering, deterministic lineup selection, recognizability, repeat protection, override validation, puzzle construction, editorial lifecycle invariants, repository/service contracts, seven-day editorial orchestration, and portable Daily transitions.
 - `apps/web`: Next.js pages, React rendering, browser persistence, routes, sharing, admin surfaces, and provider-specific adapters.
 - Database/repository adapters: puzzle publication persistence, admin persistence, completed-game results, and eventual accounts.
 
-Rules, baseball facts, puzzle generation, lifecycle invariants, and persistence semantics must not be moved into React components. Presentation adapters may format and deduplicate labels but must not reinterpret baseball facts. Vercel is a hosting adapter, not an architectural owner.
+Rules, baseball facts, puzzle generation, lifecycle invariants, editorial orchestration, and persistence semantics must not be moved into React components. Presentation adapters may format and deduplicate labels but must not reinterpret baseball facts. Vercel is a hosting adapter, not an architectural owner.
 
 Canonical architecture: `docs/architecture-and-scale-plan.md`.
 Source ownership map: `docs/engineering/source-map.md`.
@@ -78,11 +78,12 @@ Completed foundation and mechanics include:
 - a portable, versioned nine-slot Daily lineup quality contract with canonical duplicate detection, reveal-readiness validation, and a 90-day repeat window;
 - production canonical selection using non-overlapping recognizability bands: ranks 1-250 for slots 1-2, 251-1,000 for 3-4, 1,001-2,500 for 5-6, and 2,501-5,000 for 7-9;
 - an explicit lineup-quality launch date of `2026-07-22`, with all earlier published dates continuing to reproduce the legacy selector rather than silently changing answers;
-- one server-runtime selector instance that caches canonical candidates, seeded 90-day history, and generated lineups, so hints and guesses do not replay historical generation;
+- one server-runtime selector instance that caches canonical candidates, seeded 90-day history, and generated lineups;
 - a provider-neutral Daily editorial record, repository port, and service contract with date-range reads, optimistic revisions, canonical-ID-only selections, explicit audit metadata, and executable lifecycle invariants;
-- explicit `draft` → `scheduled` → `published` → `archived` transitions, with edited scheduled puzzles returning to draft and published/archived puzzles immutable through ordinary replacement.
+- explicit `draft` → `scheduled` → `published` → `archived` transitions, with edited scheduled puzzles returning to draft and published/archived puzzles immutable through ordinary replacement;
+- a portable seven-day editorial horizon service that creates only missing drafts, preserves existing editorial records, incorporates earlier horizon dates into repeat protection, joins current canonical review data, and returns validation warnings without selecting a storage provider.
 
-Most recent completed product work at this handoff: PR #112, provider-neutral Daily editorial lifecycle and repository contract.
+Most recent completed product work at this handoff: PR #113, seven-day Daily editorial horizon service.
 
 ## Deployment state
 
@@ -100,9 +101,9 @@ This deployment task does not block coding, GitHub CI, tests, or production buil
 ## Current work order
 
 1. Maintain this handoff and reconcile documentation whenever current state or roadmap priority changes.
-2. Build the seven-day editorial application service against the lifecycle/repository contract: generate missing drafts, list the horizon, join canonical review data, and return validation warnings.
-3. Select and implement the smallest relational persistence adapter that satisfies the existing contract.
-4. Build the web administration workflow and authorization adapter.
+2. Select and implement the smallest relational persistence adapter satisfying the existing `DailyPuzzleRepository` contract.
+3. Build the authorized web administration workflow using the completed lifecycle and seven-day horizon services.
+4. Add player search, preview, replacement, validation reruns, and explicit schedule/publish/archive controls through service boundaries.
 5. Add aggregate completed-game results, field comparison, monitoring, and remaining launch surfaces.
 6. Apply the approved heritage visual direction after core mechanics and administration are dependable.
 
@@ -115,8 +116,11 @@ This deployment task does not block coding, GitHub CI, tests, or production buil
 - The admin workflow must support viewing and editing at least the next seven Daily lineups, not only tomorrow's lineup.
 - The default operational view should make the upcoming week easy to scan.
 - Draft generation may occur at least seven days ahead.
+- The portable horizon service defaults to seven days but permits an adapter-supplied positive horizon length.
+- Ensuring a horizon is idempotent: existing draft, scheduled, published, or archived records are preserved and only missing dates are generated.
+- Earlier records in the requested horizon contribute to repeat protection for later generated dates.
 - An editor can review and replace any future slot before publication.
-- The first implementation may use a manual Generate action; cron automation is optional later.
+- The first web implementation may use a manual Generate action; cron automation is optional later.
 
 ### Puzzle lifecycle
 
@@ -148,12 +152,12 @@ The editor must be able to search by name or alias, distinguish same-name player
 
 ### Admin ownership
 
-- Pure generation, validation, lifecycle invariants, and the repository/service port remain in `packages/daily`.
+- Pure generation, validation, lifecycle invariants, repository/service ports, and seven-day orchestration remain in `packages/daily`.
 - Canonical player facts remain in `packages/baseball-data`.
 - Persistence adapters implement `DailyPuzzleRepository` without redefining lifecycle rules.
 - The database stores canonical player IDs and editorial metadata, not duplicate statistics.
-- Web/admin services supply authorization and timestamps, join canonical display data, and call the portable service.
-- Admin React components call services/adapters and do not own generation, validation, lifecycle, or persistence rules.
+- Web/admin adapters supply authorization and timestamps, load canonical candidates and usage history, and call portable services.
+- Admin React components render returned state and dispatch actions; they do not own generation, validation, lifecycle, or persistence rules.
 
 ### Reveal behavior and team identity
 
@@ -164,7 +168,6 @@ The editor must be able to search by name or alias, distinguish same-name player
 - If Baseball Reference WAR is approved later, label it `bWAR`; never invent generic WAR from Lahman data.
 - Source team IDs and fan-facing identities remain separate.
 - Season-aware team mapping and audited corrections live in baseball-data, not React.
-- Runtime records expose source IDs plus abbreviations and display names; presentation may deduplicate repeated labels.
 
 ### Visual direction
 
@@ -185,7 +188,7 @@ The approved direction is heritage baseball rather than polished SaaS: Coopersto
 - Whether scheduling/publication requires explicit editor action or may auto-publish an approved scheduled puzzle.
 - Exact emergency correction/versioning workflow for a published puzzle.
 - Exact source and maintenance process for recognizability rankings.
-- Whether seven days is the default generated horizon or only the minimum editable horizon.
+- Whether seven days remains the default generated horizon once operations begin or should be expanded.
 - Whether representative UI QA should later add browser screenshots once hosted previews are available; executable data/runtime QA is already required.
 
 Record a settled answer here and in the appropriate canonical document in the same PR that adopts it.
@@ -197,7 +200,7 @@ Record a settled answer here and in the appropriate canonical document in the sa
 
 ## New-conversation prompt
 
-> Continue work on `kastnerjon/initial-baseball`. First read `AGENTS.md`, `docs/START-HERE.md`, and `tasks/todo.md` from current GitHub `main`. Verify latest merged PRs, open PRs, open issues, and CI before acting. Treat `docs/START-HERE.md` as the durable handoff. The exact next bounded concern is the seven-day editorial application service against the completed provider-neutral lifecycle/repository contract, followed by the smallest relational persistence adapter and web administration workflow. Do not restart settled lineup or lifecycle architecture, silently change published historical answers, let a database provider redefine domain behavior, or begin the heritage redesign before administration is dependable. Keep documentation current in the same PR whenever product behavior, architecture, data contracts, administration, or roadmap priority changes.
+> Continue work on `kastnerjon/initial-baseball`. First read `AGENTS.md`, `docs/START-HERE.md`, and `tasks/todo.md` from current GitHub `main`. Verify latest merged PRs, open PRs, open issues, and CI before acting. Treat `docs/START-HERE.md` as the durable handoff. The exact next bounded concern is selecting and implementing the smallest relational persistence adapter satisfying the completed provider-neutral lifecycle/repository and seven-day editorial horizon services, followed by the authorized web administration workflow. Do not restart settled lineup, lifecycle, or horizon architecture; silently change published historical answers; let a database provider redefine domain behavior; or begin the heritage redesign before administration is dependable. Keep documentation current in the same PR whenever product behavior, architecture, data contracts, administration, or roadmap priority changes.
 
 ## Maintenance rule
 

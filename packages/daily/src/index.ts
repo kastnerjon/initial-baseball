@@ -52,3 +52,13 @@ export {
   type DailyPuzzleRepository,
   type DailyPuzzleRepositorySaveOptions,
 } from './dailyPuzzleLifecycle';
+
+export {
+  DEFAULT_DAILY_EDITORIAL_HORIZON_DAYS,
+  createDailyEditorialHorizonService,
+  type DailyEditorialHorizonInput,
+  type DailyEditorialHorizonPuzzle,
+  type DailyEditorialHorizonService,
+  type DailyEditorialHorizonSlot,
+  type DailyEditorialPlayerReview,
+} from './dailyEditorialHorizon';
