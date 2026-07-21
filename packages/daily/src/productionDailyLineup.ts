@@ -1,10 +1,9 @@
 import { dailyEligiblePlayers } from '@initial-baseball/baseball-data';
-import type { Player } from '@initial-baseball/shared';
+import { createCanonicalDailyLineupCandidates } from './dailyLineupCandidates';
 import {
   DAILY_LINEUP_ALGORITHM_VERSION,
   DAILY_REPEAT_WINDOW_DAYS,
   generateDailyLineup,
-  type DailyLineupCandidate,
   type DailyPlayerUsage,
 } from './dailyLineupQuality';
 import {
@@ -29,7 +28,10 @@ export function createProductionCanonicalDailySelector(
   overrides: DailyPuzzleOverrideMap,
   resolveCanonicalPlayerId: ResolveCanonicalPlayerId,
 ): ProductionCanonicalDailySelector {
-  const candidates = buildCanonicalCandidates(resolveCanonicalPlayerId);
+  const candidates = createCanonicalDailyLineupCandidates(
+    rankPlayersByRecognizability(dailyEligiblePlayers),
+    resolveCanonicalPlayerId,
+  );
   const rankedLegacyCandidates = candidates.map(({ canonicalPlayerId, player }) => ({
     canonicalPlayerId,
     player,
@@ -98,27 +100,6 @@ export function createProductionCanonicalDailySelector(
     }
     return selections;
   };
-}
-
-function buildCanonicalCandidates(
-  resolveCanonicalPlayerId: ResolveCanonicalPlayerId,
-): DailyLineupCandidate[] {
-  const rankedPlayers = rankPlayersByRecognizability(dailyEligiblePlayers);
-  const candidatesByCanonicalId = new Map<string, DailyLineupCandidate>();
-
-  rankedPlayers.forEach((player, index) => {
-    const canonicalPlayerId = resolveCanonicalPlayerId(player.id);
-    if (canonicalPlayerId === null || candidatesByCanonicalId.has(canonicalPlayerId)) return;
-
-    candidatesByCanonicalId.set(canonicalPlayerId, {
-      canonicalPlayerId,
-      player,
-      recognizabilityRank: index + 1,
-      revealReady: isRevealReady(player),
-    });
-  });
-
-  return [...candidatesByCanonicalId.values()];
 }
 
 function seedLegacyUsageHistory(
@@ -242,14 +223,6 @@ function requireCanonicalPlayerId(
     );
   }
   return canonicalPlayerId;
-}
-
-function isRevealReady(player: Player): boolean {
-  return player.displayName.trim().length > 0
-    && player.primaryPosition.trim().length > 0
-    && player.firstYear !== null
-    && player.lastYear !== null
-    && player.careerStats !== null;
 }
 
 function trimUsageHistory(
