@@ -5,6 +5,7 @@ import {
   generateDailyLineup,
   validateDailyLineup,
   type DailyLineupCandidate,
+  type DailyLineupSelection,
 } from './dailyLineupQuality';
 
 describe('Daily lineup quality', () => {
@@ -55,7 +56,7 @@ describe('Daily lineup quality', () => {
   });
 
   it('returns stable structured validation for manual warnings', () => {
-    const candidates = buildCandidates(9).map((candidate, index) => ({ ...candidate, slot: index + 1, source: 'manual' as const }));
+    const candidates = buildManualSelections(9);
     const duplicate = candidates[1];
     const first = candidates[0];
     if (!duplicate || !first) throw new Error('Expected candidates.');
@@ -77,6 +78,20 @@ describe('Daily lineup quality', () => {
     ]));
   });
 
+  it('rejects extra, duplicate, and out-of-range slots', () => {
+    const base = buildManualSelections(9);
+    const extra = { ...base[0]!, slot: 10 };
+    const extraResult = validateDailyLineup('2026-07-21', [...base, extra]);
+    expect(extraResult.valid).toBe(false);
+    expect(extraResult.warnings).toEqual(['incorrect-selection-count', 'out-of-range-slot']);
+
+    const duplicateSlot = base.map(selection => ({ ...selection }));
+    duplicateSlot[8] = { ...duplicateSlot[8]!, slot: 8 };
+    const duplicateResult = validateDailyLineup('2026-07-21', duplicateSlot);
+    expect(duplicateResult.valid).toBe(false);
+    expect(duplicateResult.warnings).toEqual(['duplicate-slot']);
+  });
+
   it('fails clearly when a slot pool is insufficient', () => {
     expect(() => generateDailyLineup({
       seed: { dailyDate: '2026-07-21', reviewedDataVersion: 'v1' },
@@ -84,6 +99,14 @@ describe('Daily lineup quality', () => {
     })).toThrow('Insufficient eligible Daily players for slot 2');
   });
 });
+
+function buildManualSelections(count: number): DailyLineupSelection[] {
+  return buildCandidates(count).map((candidate, index) => ({
+    ...candidate,
+    slot: index + 1,
+    source: 'manual',
+  }));
+}
 
 function buildCandidates(count: number): DailyLineupCandidate[] {
   return Array.from({ length: count }, (_, index) => ({
