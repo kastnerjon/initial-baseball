@@ -12,7 +12,7 @@ import {
   validateDailyPuzzleRevisionTransition,
 } from './supabaseDailyPuzzleRowCodec';
 
-const DAILY_PUZZLES_TABLE = 'daily_puzzles';
+const DAILY_PUZZLES_TABLE = 'daily_editorial_puzzles';
 const DAILY_PUZZLE_COLUMNS = [
   'id',
   'puzzle_date',
