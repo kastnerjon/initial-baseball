@@ -48,6 +48,11 @@ export type DailyLineupWarning =
   | 'recently-used'
   | 'missing-reveal-data';
 
+export type DailyLineupValidationWarning =
+  | 'incorrect-selection-count'
+  | 'duplicate-slot'
+  | 'out-of-range-slot';
+
 export type DailyLineupSlotValidation = {
   slot: number;
   expectedMaximumRank: number;
@@ -63,6 +68,7 @@ export type DailyLineupSlotValidation = {
 
 export type DailyLineupValidation = {
   valid: boolean;
+  warnings: readonly DailyLineupValidationWarning[];
   slots: readonly DailyLineupSlotValidation[];
 };
 
@@ -119,6 +125,7 @@ export function validateDailyLineup(
   selections: readonly DailyLineupSelection[],
   usageHistory: readonly DailyPlayerUsage[] = [],
 ): DailyLineupValidation {
+  const warnings = validateLineupShape(selections);
   const counts = new Map<string, number>();
   for (const selection of selections) {
     counts.set(
@@ -130,10 +137,10 @@ export function validateDailyLineup(
   const latestUsage = getLatestUsageByCanonicalId(dailyDate, usageHistory);
   const slots = DAILY_RECOGNIZABILITY_POLICY.map((policy) => {
     const selection = selections.find(candidate => candidate.slot === policy.slot);
-    const warnings: DailyLineupWarning[] = [];
+    const slotWarnings: DailyLineupWarning[] = [];
 
     if (selection === undefined || selection.canonicalPlayerId.length === 0) {
-      warnings.push('missing-canonical-player');
+      slotWarnings.push('missing-canonical-player');
     }
 
     const canonicalPlayerId = selection?.canonicalPlayerId ?? null;
@@ -143,13 +150,13 @@ export function validateDailyLineup(
     const recentUse = lastDailyUsage !== null;
     const revealReady = selection?.revealReady ?? false;
 
-    if (duplicate) warnings.push('duplicate-canonical-player');
-    if (recognizabilityRank === null) warnings.push('missing-recognizability-rank');
+    if (duplicate) slotWarnings.push('duplicate-canonical-player');
+    if (recognizabilityRank === null) slotWarnings.push('missing-recognizability-rank');
     if (recognizabilityRank !== null && recognizabilityRank > policy.maximumRank) {
-      warnings.push('outside-recognizability-band');
+      slotWarnings.push('outside-recognizability-band');
     }
-    if (recentUse) warnings.push('recently-used');
-    if (!revealReady) warnings.push('missing-reveal-data');
+    if (recentUse) slotWarnings.push('recently-used');
+    if (!revealReady) slotWarnings.push('missing-reveal-data');
 
     return {
       slot: policy.slot,
@@ -161,14 +168,30 @@ export function validateDailyLineup(
       lastDailyUsage,
       source: selection?.source ?? 'manual',
       revealReady,
-      warnings,
+      warnings: slotWarnings,
     } satisfies DailyLineupSlotValidation;
   });
 
   return {
-    valid: slots.every(slot => slot.warnings.length === 0),
+    valid: warnings.length === 0 && slots.every(slot => slot.warnings.length === 0),
+    warnings,
     slots,
   };
+}
+
+function validateLineupShape(
+  selections: readonly DailyLineupSelection[],
+): DailyLineupValidationWarning[] {
+  const warnings: DailyLineupValidationWarning[] = [];
+  if (selections.length !== DAILY_RECOGNIZABILITY_POLICY.length) {
+    warnings.push('incorrect-selection-count');
+  }
+
+  const validSlots = new Set(DAILY_RECOGNIZABILITY_POLICY.map(policy => policy.slot));
+  const selectedSlots = selections.map(selection => selection.slot);
+  if (new Set(selectedSlots).size !== selectedSlots.length) warnings.push('duplicate-slot');
+  if (selectedSlots.some(slot => !validSlots.has(slot as never))) warnings.push('out-of-range-slot');
+  return warnings;
 }
 
 function getRecentCanonicalIds(
