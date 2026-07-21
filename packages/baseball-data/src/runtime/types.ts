@@ -1,5 +1,11 @@
 export type CanonicalPlayerType = 'hitter' | 'pitcher' | 'two-way';
 
+export type CanonicalTeamDisplayIdentity = {
+  sourceTeamId: string;
+  abbreviation: string;
+  displayName: string;
+};
+
 export type CanonicalPlayerIndexEntry = {
   playerId: string;
   lahmanPlayerId: string;
@@ -11,6 +17,7 @@ export type CanonicalPlayerIndexEntry = {
   lastSeason: number;
   seasonCount: number;
   teamIds: string[];
+  teamIdentities?: CanonicalTeamDisplayIdentity[];
   isHallOfFamer: boolean;
   revealShard: string;
 };
@@ -55,6 +62,7 @@ export type CanonicalAdvancedLine = {
 export type CanonicalRevealSeason = {
   season: number;
   teamIds: string[];
+  teamIdentities?: CanonicalTeamDisplayIdentity[];
   positions: Record<string, number | null> | null;
   batting: CanonicalBattingLine | null;
   pitching: CanonicalPitchingLine | null;
@@ -73,6 +81,7 @@ export type CanonicalPlayerReveal = {
     lastSeason: number;
     seasonCount: number;
     teamIds: string[];
+    teamIdentities?: CanonicalTeamDisplayIdentity[];
     primaryPosition: string | null;
     batting: CanonicalBattingLine | null;
     pitching: CanonicalPitchingLine | null;

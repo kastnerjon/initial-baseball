@@ -5,7 +5,7 @@ Last updated: 2026-07-21
 
 Completed work should not remain here as future work. Historical rationale belongs in pull requests, canonical documentation, or `tasks/lessons.md`. Durable resumption context, approved deferred decisions, and open decisions belong in `docs/START-HERE.md`.
 
-Current execution order: preserve the durable handoff, correct fan-facing team identity display, complete representative reveal QA, then finalize lineup mechanics and build a seven-day editorial administration workflow. The Vercel deployment task in issue #97 remains operationally required but does not block GitHub development.
+Current execution order: preserve the durable handoff, complete representative reveal QA, then finalize lineup mechanics and build a seven-day editorial administration workflow. The Vercel deployment task in issue #97 remains operationally required but does not block GitHub development.
 
 ## 0. Complete launch answer-integrity deployment
 
@@ -25,7 +25,7 @@ Current execution order: preserve the durable handoff, correct fan-facing team i
 - [x] Support configurable reveal columns without changing canonical data ownership — PR #100 / issue #99.
 - [x] Display OPS for hitters and saves for pitchers when available — PR #84.
 - [x] Keep WAR, OPS+, ERA+, awards, All-Star selections, voting finishes, and leader flags hidden until approved upstream data exists.
-- [ ] Normalize fan-facing team abbreviations through a centralized baseball-data mapping — issue #101.
+- [x] Normalize fan-facing team abbreviations through a centralized, season-aware baseball-data mapping — PR #103 / issue #101.
 - [ ] Add representative reveal QA for David Ortiz, Mariano Rivera, Shohei Ohtani, Ken Griffey Jr., David Wright, Willie Mays, and the distinct Ben Taylor identities.
 
 ## 2. Finalize Daily lineup quality

@@ -32,12 +32,29 @@ for (const [lahmanId, displayName, playerType, firstSeason, lastSeason] of repre
   check(reveal.career.firstSeason === firstSeason, `${lahmanId} first season mismatch.`);
   check(reveal.career.lastSeason === lastSeason, `${lahmanId} last season mismatch.`);
   check(reveal.seasons.length === reveal.career.seasonCount, `${lahmanId} season count mismatch.`);
+  check(reveal.career.teamIdentities.length > 0, `${lahmanId} career team identities missing.`);
+  check(index.teamIdentities.length === reveal.career.teamIdentities.length, `${lahmanId} index team identities differ.`);
   check(!Object.hasOwn(reveal, 'legalName'), `${lahmanId} reveal leaks legalName.`);
 }
 
 const benTaylors = ['taylobe02', 'taylobe99', 'taylobe03'].map(id => byLahman.get(id));
 check(benTaylors.every(Boolean), 'One or more Ben Taylor identities are missing.');
 check(new Set(benTaylors.map(player => player?.playerId)).size === 3, 'Ben Taylor identities collapsed.');
+
+const teamCases = [
+  ['riverma01', 1999, 'NYA', 'NYY'],
+  ['ohtansh01', 2021, 'LAA', 'LAA'],
+  ['wrighda03', 2004, 'NYN', 'NYM'],
+  ['mayswi01', 1973, 'NYN', 'NYM'],
+];
+for (const [lahmanId, season, sourceTeamId, abbreviation] of teamCases) {
+  const player = byLahman.get(lahmanId);
+  if (!player) continue;
+  const row = accessor.getReveal(player.playerId).seasons.find(candidate => candidate.season === season);
+  const identity = row?.teamIdentities.find(team => team.sourceTeamId === sourceTeamId);
+  check(identity?.abbreviation === abbreviation, `${lahmanId} ${season} team display mismatch.`);
+  check(Boolean(identity?.displayName), `${lahmanId} ${season} team display name missing.`);
+}
 
 const ortiz = byLahman.get('ortizda01');
 if (ortiz) {
@@ -69,7 +86,7 @@ if (issues.length > 0) {
   console.error(issues.join('\n'));
   process.exitCode = 1;
 } else {
-  console.log(`Verified ${players.length} canonical runtime players, representative records, redirects, and same-name identities.`);
+  console.log(`Verified ${players.length} canonical runtime players, representative records, team displays, redirects, and same-name identities.`);
 }
 
 function check(condition, message) {
