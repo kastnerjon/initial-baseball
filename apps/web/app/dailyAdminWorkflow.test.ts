@@ -1,3 +1,4 @@
+import type { CanonicalPlayerReveal } from '@initial-baseball/baseball-data/runtime';
 import type { Player } from '@initial-baseball/shared';
 import {
   createDailyPuzzleDraft,
@@ -12,7 +13,10 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 
 import { isSameOriginDailyAdminMutation } from './dailyAdminRequestSecurity';
-import { createDailyAdminWorkflow, type DailyAdminWorkflowDependencies } from './dailyAdminWorkflow';
+import {
+  createDailyAdminWorkflow,
+  type DailyAdminWorkflowDependencies,
+} from './dailyAdminWorkflow';
 
 const OCCURRED_AT = '2026-07-21T18:00:00.000Z';
 
@@ -29,16 +33,24 @@ function buildBand(startRank: number, count: number): DailyLineupCandidate[] {
   return Array.from({ length: count }, (_, index) => {
     const recognizabilityRank = startRank + index;
     const canonicalPlayerId = `player-${recognizabilityRank}`;
-    return {
-      canonicalPlayerId,
-      player: buildPlayer(canonicalPlayerId),
-      recognizabilityRank,
-      revealReady: true,
-    };
+    return buildCandidate(canonicalPlayerId, recognizabilityRank);
   });
 }
 
-function buildPlayer(id: string): Player {
+function buildCandidate(
+  canonicalPlayerId: string,
+  recognizabilityRank: number,
+  playerOverrides: Partial<Player> = {},
+): DailyLineupCandidate {
+  return {
+    canonicalPlayerId,
+    player: buildPlayer(canonicalPlayerId, playerOverrides),
+    recognizabilityRank,
+    revealReady: true,
+  };
+}
+
+function buildPlayer(id: string, overrides: Partial<Player> = {}): Player {
   return {
     id,
     fullName: id,
@@ -51,11 +63,12 @@ function buildPlayer(id: string): Player {
     yearsPlayedDisplay: '2000–2010',
     primaryTeam: 'NYM',
     teamsDisplay: 'NYM',
-    statsLine: '',
+    statsLine: 'HR 100 / RBI 400 / BA .280 / OBP .350 / SB 20',
     careerStats: null,
     dailyEligibilityTier: 'core',
     dailyEligible: true,
     aliases: [],
+    ...overrides,
   };
 }
 
@@ -68,6 +81,7 @@ function dependencies(candidates = buildCandidates()): DailyAdminWorkflowDepende
       canonicalPlayerId: `${candidate.canonicalPlayerId}-${date}`,
       player: candidate.player,
     })),
+    loadReveal: canonicalPlayerId => buildReveal(canonicalPlayerId, candidates),
   };
 }
 
@@ -117,6 +131,115 @@ describe('Daily admin workflow', () => {
     expect(puzzle?.validation.slots[0]?.lastDailyUsage).toBe(priorDate);
     expect(puzzle?.validation.slots[0]?.warnings).toContain('recently-used');
   });
+
+  it('searches aliases and preserves distinct same-name canonical players for editorial review', () => {
+    const candidates = buildCandidates();
+    candidates[0] = buildCandidate('ben-taylor-old', 1, {
+      fullName: 'Benjamin Taylor',
+      displayName: 'Ben Taylor',
+      aliases: ['Buck Taylor'],
+      firstYear: 1908,
+      lastYear: 1929,
+      yearsPlayedDisplay: '1908–1929',
+      teamsDisplay: 'IND, BIR',
+    });
+    candidates[1] = buildCandidate('ben-taylor-new', 2, {
+      displayName: 'Ben Taylor',
+      aliases: ['Ben Eugene Taylor'],
+      firstYear: 1920,
+      lastYear: 1920,
+      yearsPlayedDisplay: '1920',
+      teamsDisplay: 'PHI',
+    });
+    const workflow = createDailyAdminWorkflow(new InMemoryRepository(), dependencies(candidates));
+
+    expect(workflow.searchPlayers('Buck Taylor').map(result => result.canonicalPlayerId)).toEqual(['ben-taylor-old']);
+    const sameName = workflow.searchPlayers('Ben Taylor');
+    expect(sameName.map(result => result.canonicalPlayerId)).toEqual(['ben-taylor-new', 'ben-taylor-old']);
+    expect(sameName.every(result => result.requiresYearDisambiguation)).toBe(true);
+    expect(sameName.map(result => result.yearsPlayedDisplay)).toEqual(['1920', '1908–1929']);
+  });
+
+  it('previews the exact initials, ordered hints, and canonical reveal selected by the admin', () => {
+    const candidates = buildCandidates();
+    candidates[0] = buildCandidate('griffey', 1, {
+      fullName: 'George Kenneth Griffey Jr.',
+      displayName: 'Ken Griffey Jr.',
+      aliases: ['Junior'],
+      firstYear: 1989,
+      lastYear: 2010,
+      yearsPlayedDisplay: '1989–2010',
+      teamsDisplay: 'SEA, CIN, CWS',
+      statsLine: 'HR 630 / RBI 1836 / BA .284 / OBP .370 / SB 184',
+    });
+    const workflow = createDailyAdminWorkflow(new InMemoryRepository(), dependencies(candidates));
+
+    const preview = workflow.previewPlayer('griffey');
+
+    expect(preview?.initials).toBe('KGJ');
+    expect(preview?.hints.map(hint => [hint.hintType, hint.hintValue])).toEqual([
+      ['main_decade', '2000s'],
+      ['teams', 'SEA, CIN, CWS'],
+      ['position', 'CF'],
+      ['stats', 'HR 630 / RBI 1836 / BA .284 / OBP .370 / SB 184'],
+    ]);
+    expect(preview?.reveal.playerId).toBe('griffey');
+    expect(preview?.reveal.career.firstSeason).toBe(1989);
+  });
+
+  it('replaces a future slot through the portable service and returns rerun validation', async () => {
+    const repository = new InMemoryRepository();
+    const candidates = buildCandidates();
+    const replacement = candidates.find(candidate => candidate.recognizabilityRank === 253)!;
+    const prior = buildDraft('2026-07-21', candidates);
+    repository.seed({
+      ...prior,
+      selections: prior.selections.map(selection => selection.slot === 1
+        ? { ...selection, canonicalPlayerId: replacement.canonicalPlayerId }
+        : selection),
+    });
+    repository.seed(buildDraft('2026-07-22', candidates));
+
+    const puzzle = await createDailyAdminWorkflow(repository, dependencies(candidates)).replaceSelection({
+      puzzleDate: '2026-07-22',
+      slot: 1,
+      canonicalPlayerId: replacement.canonicalPlayerId,
+      actorId: 'daily-editor',
+      occurredAt: '2026-07-21T19:00:00.000Z',
+    });
+
+    expect(puzzle.revision).toBe(1);
+    expect(puzzle.selections[0]?.source).toBe('manual');
+    expect(puzzle.validation.slots[0]?.warnings).toEqual([
+      'outside-recognizability-band',
+      'recently-used',
+    ]);
+    expect((await repository.getByDate('2026-07-22'))?.updatedBy).toBe('daily-editor');
+  });
+
+  it('rejects non-future dates and canonical IDs outside the reviewed candidate universe', async () => {
+    const repository = new InMemoryRepository();
+    const candidates = buildCandidates();
+    repository.seed(buildDraft('2026-07-21', candidates));
+    repository.seed(buildDraft('2026-07-22', candidates));
+    const workflow = createDailyAdminWorkflow(repository, dependencies(candidates));
+
+    await expect(workflow.replaceSelection({
+      puzzleDate: '2026-07-21',
+      slot: 1,
+      canonicalPlayerId: candidates[1]!.canonicalPlayerId,
+      actorId: 'daily-editor',
+      occurredAt: OCCURRED_AT,
+    })).rejects.toMatchObject({ kind: 'not-future-puzzle' });
+
+    await expect(workflow.replaceSelection({
+      puzzleDate: '2026-07-22',
+      slot: 1,
+      canonicalPlayerId: 'unknown-canonical-player',
+      actorId: 'daily-editor',
+      occurredAt: OCCURRED_AT,
+    })).rejects.toMatchObject({ kind: 'unknown-player' });
+  });
 });
 
 describe('Daily admin mutation boundary', () => {
@@ -143,18 +266,74 @@ function buildDraft(
   candidates: readonly DailyLineupCandidate[],
 ): DailyPuzzleEditorialRecord {
   const ranks = [1, 2, 251, 252, 1001, 1002, 2501, 2502, 2503];
+  const selections = ranks.map((rank, index) => ({
+    slot: index + 1,
+    canonicalPlayerId: candidates.find(candidate => candidate.recognizabilityRank === rank)?.canonicalPlayerId
+      ?? candidates[index]!.canonicalPlayerId,
+    source: 'generated' as const,
+  }));
   return createDailyPuzzleDraft({
     id: `daily-${puzzleDate}-v1`,
     puzzleDate,
     puzzleNumber: getDailyPuzzleNumber(puzzleDate),
-    selections: ranks.map((rank, index) => ({
-      slot: index + 1,
-      canonicalPlayerId: candidates.find(candidate => candidate.recognizabilityRank === rank)!.canonicalPlayerId,
-      source: 'generated',
-    })),
+    selections,
     actorId: 'seed-editor',
     occurredAt: OCCURRED_AT,
   });
+}
+
+function buildReveal(
+  canonicalPlayerId: string,
+  candidates: readonly DailyLineupCandidate[],
+): CanonicalPlayerReveal {
+  const candidate = candidates.find(item => item.canonicalPlayerId === canonicalPlayerId);
+  const player = candidate?.player ?? buildPlayer(canonicalPlayerId);
+  return {
+    schemaVersion: 1,
+    playerId: canonicalPlayerId,
+    lahmanPlayerId: `lahman-${canonicalPlayerId}`,
+    displayName: player.displayName,
+    playerType: player.primaryRole === 'two_way' ? 'two-way' : player.primaryRole,
+    career: {
+      firstSeason: player.firstYear ?? 2000,
+      lastSeason: player.lastYear ?? 2000,
+      seasonCount: 1,
+      teamIds: ['NYN'],
+      teamIdentities: [{ sourceTeamId: 'NYN', abbreviation: player.teamsDisplay || 'NYM', displayName: 'New York Mets' }],
+      primaryPosition: player.primaryPosition,
+      batting: {
+        atBats: 100,
+        runs: 20,
+        hits: 28,
+        doubles: 5,
+        triples: 1,
+        homeRuns: 10,
+        runsBattedIn: 40,
+        stolenBases: 2,
+        walks: 10,
+        battingAverage: 0.28,
+        sluggingPercentage: 0.5,
+      },
+      pitching: null,
+      advanced: {
+        onBasePercentage: 0.35,
+        sluggingPercentage: 0.5,
+        ops: 0.85,
+        war: null,
+        opsPlus: null,
+        eraPlus: null,
+        fip: null,
+      },
+      achievements: null,
+    },
+    seasons: [],
+    provenance: {
+      canonicalUniversePresent: true,
+      careerEnrichmentPresent: true,
+      seasonCardCount: 0,
+      legalNameExcludedFromDisplayPayload: true,
+    },
+  };
 }
 
 class InMemoryRepository implements DailyPuzzleRepository {
