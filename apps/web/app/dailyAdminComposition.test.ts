@@ -28,11 +28,7 @@ describe('Daily admin composition', () => {
       dependencies: { createSupabaseClient, createRepository },
     });
 
-    expect(context).toEqual({
-      actorId: ADMIN_USERNAME,
-      principal: { actorId: ADMIN_USERNAME },
-      repository,
-    });
+    expect(context).toEqual({ actorId: ADMIN_USERNAME, repository });
     expect(createSupabaseClient).toHaveBeenCalledWith(ENVIRONMENT);
     expect(createRepository).toHaveBeenCalledWith(client);
   });
