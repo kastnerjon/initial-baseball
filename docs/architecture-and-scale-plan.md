@@ -217,8 +217,10 @@ The admin workflow must support at least the next seven Daily lineups.
 - The public puzzle for the date becomes `published` and is immutable for ordinary edits.
 - Past puzzles become `archived`.
 - Emergency corrections require an explicit versioned editorial action.
-- The authorized `/admin/daily` workflow reads the seven-day horizon, creates only missing drafts, searches reviewed candidates by name or alias, preserves genuine same-name identities, previews exact initials/hints/canonical reveal data, replaces editable future slots through the portable service, and returns rerun validation.
-- The next bounded implementation adds explicit schedule, publish, and archive controls without settling automatic publication or emergency correction/versioning.
+- The authorized `/admin/daily` workflow reads the seven-day horizon, creates only missing drafts, searches reviewed candidates by name or alias, preserves genuine same-name identities, previews exact initials/hints/canonical reveal data, replaces editable future slots through the portable service, returns rerun validation, and exposes explicit schedule, publish, and archive actions.
+- The lifecycle POST route enforces same-origin requests and authorization before privileged repository composition; the portable service remains authoritative for transition order, optimistic revisions, immutability, and audit metadata.
+- Automatic publication, time-based jobs, and emergency correction/versioning remain separate decisions.
+- Hosted configuration and public-runtime consumption of approved editorial records remain the next operational and coding concerns.
 
 ## Scale target: 10,000+ plays per day
 
@@ -240,8 +242,8 @@ Vercel and Supabase are hosting and persistence adapters, not owners of domain b
 ### 0. Operational deployment verification
 
 - Configure `DAILY_PROGRESSION_SECRET` for Vercel Preview and Production.
-- Redeploy and verify the merged signed-progression flow.
-- This does not block GitHub development.
+- Apply the committed `daily_editorial_puzzles` migration and configure the server-only administration variables.
+- Redeploy and verify the merged signed-progression and authorized administration flows.
 
 ### 1. Reveal correctness
 
@@ -258,8 +260,8 @@ Vercel and Supabase are hosting and persistence adapters, not owners of domain b
 ### 3. Future-lineup administration
 
 - Persist `draft`, `scheduled`, `published`, and `archived` states through the provider-neutral repository contract and Supabase/Postgres adapter.
-- Authorize the single editor and expose the seven-day review and missing-draft workflow through the server-only repository boundary.
-- Search, preview, replacement, and validation reruns are complete through that boundary; add explicit schedule/publish/archive controls next.
+- Authorize the single editor and expose generation, seven-day review, search, preview, replacement, validation, schedule, publish, and archive through the server-only repository boundary.
+- Make the public Daily runtime consume the approved scheduled or published editorial record for its date while preserving historical legacy answers and keeping database access server-only.
 - Keep published puzzles immutable absent an explicit versioned editorial action.
 
 ### 4. Aggregate results and launch hardening
