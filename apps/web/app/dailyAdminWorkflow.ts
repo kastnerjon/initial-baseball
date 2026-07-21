@@ -33,42 +33,48 @@ export interface DailyAdminWorkflow {
   }): Promise<readonly DailyEditorialHorizonPuzzle[]>;
 }
 
-const DEFAULT_DEPENDENCIES: DailyAdminWorkflowDependencies = {
-  candidates: buildCanonicalCandidates(),
-  reviewedDataVersion: DAILY_REVIEWED_DATA_VERSION,
-  selectProductionLineup: createProductionCanonicalDailySelector(
-    DAILY_PUZZLE_OVERRIDES,
-    resolveCanonicalPlayerId,
-  ),
-  getCurrentDailyDate: getPacificDailyDateString,
-};
+let defaultDependencies: DailyAdminWorkflowDependencies | null = null;
 
 export function createDailyAdminWorkflow(
   repository: DailyPuzzleRepository,
-  dependencies: DailyAdminWorkflowDependencies = DEFAULT_DEPENDENCIES,
+  dependencies?: DailyAdminWorkflowDependencies,
 ): DailyAdminWorkflow {
+  const resolvedDependencies = dependencies ?? getDefaultDependencies();
   const horizonService = createDailyEditorialHorizonService(repository);
 
   return {
-    async getHorizon(startDate = getDefaultStartDate(dependencies)) {
+    async getHorizon(startDate = getDefaultStartDate(resolvedDependencies)) {
       return horizonService.getHorizon({
         startDate,
-        candidates: dependencies.candidates,
-        usageHistory: await getUsageHistory(repository, startDate, dependencies),
+        candidates: resolvedDependencies.candidates,
+        usageHistory: await getUsageHistory(repository, startDate, resolvedDependencies),
       });
     },
 
-    async ensureHorizon({ actorId, occurredAt, startDate = getDefaultStartDate(dependencies) }) {
+    async ensureHorizon({ actorId, occurredAt, startDate = getDefaultStartDate(resolvedDependencies) }) {
       return horizonService.ensureHorizon({
         startDate,
         actorId,
         occurredAt,
-        reviewedDataVersion: dependencies.reviewedDataVersion,
-        candidates: dependencies.candidates,
-        usageHistory: await getUsageHistory(repository, startDate, dependencies),
+        reviewedDataVersion: resolvedDependencies.reviewedDataVersion,
+        candidates: resolvedDependencies.candidates,
+        usageHistory: await getUsageHistory(repository, startDate, resolvedDependencies),
       });
     },
   };
+}
+
+function getDefaultDependencies(): DailyAdminWorkflowDependencies {
+  defaultDependencies ??= {
+    candidates: buildCanonicalCandidates(),
+    reviewedDataVersion: DAILY_REVIEWED_DATA_VERSION,
+    selectProductionLineup: createProductionCanonicalDailySelector(
+      DAILY_PUZZLE_OVERRIDES,
+      resolveCanonicalPlayerId,
+    ),
+    getCurrentDailyDate: getPacificDailyDateString,
+  };
+  return defaultDependencies;
 }
 
 function buildCanonicalCandidates(): DailyLineupCandidate[] {
