@@ -26,9 +26,9 @@ The runtime generator resolves every `(season, teamID)` through committed Lahman
 
 - `sourceTeamId`: the original Lahman team identifier;
 - `abbreviation`: the fan-facing Baseball Reference abbreviation from `teamIDBR`, with `teamIDretro` and the source ID used only as explicit source fallbacks;
-- `displayName`: the season-specific team name.
+- `displayName`: the season-specific team name after explicit, reviewed corrections for known stale source labels.
 
-Season context is mandatory because the same franchise can have different public identities over time. Career team identities are deduplicated from the ordered season identities. Web, admin, reveal, and future clients consume this common representation rather than patching strings locally.
+Season context is mandatory because the same franchise can have different public identities over time. Corrections are keyed by season and source ID in baseball-data rather than patched in React. Career team identities preserve historically distinct names for data consumers; fan-facing abbreviation lists deduplicate repeated abbreviations at the presentation boundary. Web, admin, reveal, and future clients consume this common representation rather than maintaining independent string maps.
 
 ## Reveal records
 
@@ -42,6 +42,10 @@ Canonical IDs use the form `ibp_<20 hexadecimal characters>`. Reveal records are
 
 The baseball-data runtime accessor loads the index and redirects on the server, validates shard identity, and lazily caches only requested reveal shards. The browser searches through a route and never downloads the complete index or a reveal shard. This avoids loading every player's identity or season history into the initial browser bundle while keeping the underlying contract portable.
 
+## Compatibility
+
+`teamIdentities` remains optional in the TypeScript representation of schema-1 payloads because previously generated schema-1 artifacts did not contain the field. Current generation always emits and validates it. The web view-model boundary falls back to source `teamIds` for an older artifact instead of throwing; current canonical artifacts use fan-facing abbreviations.
+
 ## Redirects
 
 A legacy redirect is published only when its canonical target has a runtime reveal. Redirects without a reveal target are retained in `excludedRedirects` with a reason instead of silently pointing to a missing record.
@@ -50,8 +54,8 @@ A legacy redirect is published only when its canonical target has a runtime reve
 
 Strict generation verifies one index row and one reveal per career card, one runtime season row per canonical season card, exact identity and enrichment joins, stable shard assignment, valid redirect targets, exclusion of legal names from display payloads, complete team-display coverage, and preservation of source team IDs.
 
-Consumer QA covers David Ortiz, Mariano Rivera, Shohei Ohtani, Ken Griffey Jr., David Wright, Willie Mays, Roy Campanella, the distinct Ben Taylor identities, Dodgers/Yankees/Mets/Angels display abbreviations, redirects, and explicit redirect exclusions.
+Consumer QA covers David Ortiz, Mariano Rivera, Shohei Ohtani, Ken Griffey Jr., David Wright, Willie Mays, Roy Campanella, all distinct Ben Taylor records, Dodgers/Yankees/Mets/Angels display identities, the audited 2016-and-later Angels name correction, redirects, and explicit redirect exclusions. Presentation QA additionally requires unique career abbreviations and safe fallback for older schema-1 artifacts.
 
 ## Web serving boundary
 
-The initial Daily page receives a public puzzle containing initials and display configuration only. Search results expose canonical IDs plus disambiguation context. Hint routes return one requested hint. Guess resolution canonicalizes submitted legacy or canonical IDs and returns full reveal data only for a correct answer, third strike, or Give Up. Action routes reject unpublished future Daily dates. The UI may format canonical values, but it does not recalculate or reinterpret baseball facts.
+The initial Daily page receives a public puzzle containing initials and display configuration only. Search results expose canonical IDs plus disambiguation context. Hint routes return one requested hint. Guess resolution canonicalizes submitted legacy or canonical IDs and returns full reveal data only for a correct answer, third strike, or Give Up. Action routes reject unpublished future Daily dates. The UI may format canonical values and deduplicate presentation labels, but it does not recalculate or reinterpret baseball facts.
