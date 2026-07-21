@@ -36,3 +36,19 @@ export {
   createProductionCanonicalDailySelector,
   type ProductionCanonicalDailySelector,
 } from './productionDailyLineup';
+
+export {
+  archiveDailyPuzzle,
+  createDailyPuzzleDraft,
+  createDailyPuzzleEditorialService,
+  publishDailyPuzzle,
+  replaceDailyPuzzleSelection,
+  scheduleDailyPuzzle,
+  type CreateDailyPuzzleDraftInput,
+  type DailyEditorialSelection,
+  type DailyEditorialSelectionSource,
+  type DailyPuzzleEditorialRecord,
+  type DailyPuzzleEditorialService,
+  type DailyPuzzleRepository,
+  type DailyPuzzleRepositorySaveOptions,
+} from './dailyPuzzleLifecycle';

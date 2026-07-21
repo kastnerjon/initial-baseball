@@ -5,7 +5,7 @@ Last updated: 2026-07-21
 
 Completed work should not remain here as future work. Historical rationale belongs in pull requests, canonical documentation, or `tasks/lessons.md`. Durable resumption context, approved deferred decisions, and open decisions belong in `docs/START-HERE.md`.
 
-Current execution order: preserve the durable handoff, define the editorial puzzle lifecycle and repository boundary, then build the seven-day lineup administration workflow. The Vercel deployment task in issue #97 remains operationally required but does not block GitHub development.
+Current execution order: preserve the durable handoff, complete the seven-day editorial administration workflow against the provider-neutral lifecycle/repository contract, then build the persistence and web adapters without moving domain rules into React or a database provider. The Vercel deployment task in issue #97 remains operationally required but does not block GitHub development.
 
 ## 0. Complete launch answer-integrity deployment
 
@@ -39,15 +39,17 @@ Current execution order: preserve the durable handoff, define the editorial puzz
 
 ## 3. Add future-lineup administration
 
-- [ ] Define the provider-neutral puzzle lifecycle and repository/service contract before selecting a database provider.
-- [ ] Support generation, viewing, and editing for at least the next seven Daily lineups.
+- [x] Define the provider-neutral puzzle lifecycle and repository/service contract before selecting a database provider.
+- [x] Define `draft`, `scheduled`, `published`, and `archived` transition invariants with optimistic revision writes.
+- [x] Keep published and archived puzzles immutable for ordinary replacement; return edited scheduled puzzles to draft review.
+- [x] Persist only canonical player IDs and editorial metadata in the repository contract, without duplicating baseball statistics.
+- [ ] Build the seven-day application service that generates missing drafts, lists the horizon, joins canonical review data, and returns validation warnings.
+- [ ] Choose and implement the smallest relational persistence adapter that satisfies the repository contract.
 - [ ] Show each future date, puzzle number, lifecycle status, and all nine slots in one operational workflow.
 - [ ] Show canonical ID, display name, career years, role/position, fan-facing teams, recognizability rank, last Daily usage, selection source, and data-quality warnings.
-- [ ] Allow an authorized editor to search, preview, and replace any future slot through a repository/service boundary.
+- [ ] Allow an authorized editor to search, preview, and replace any future slot through the service boundary.
 - [ ] Validate duplicates, recognizability tier, recent repeats, and required reveal data after generation and replacement.
-- [ ] Support draft, scheduled, published, and archived states.
-- [ ] Keep published puzzles immutable except through an explicit editorial/versioning action.
-- [ ] Persist canonical player IDs and editorial metadata without duplicating baseball statistics.
+- [ ] Add explicit schedule, publish, and archive actions without defining emergency published-puzzle correction implicitly.
 
 ## 4. Complete launch surfaces
 
