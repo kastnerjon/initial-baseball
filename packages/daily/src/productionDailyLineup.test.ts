@@ -11,6 +11,7 @@ import {
 } from './productionDailyLineup';
 
 const resolveCanonicalPlayerId = (playerId: string): string => `canonical:${playerId}`;
+const selectLaunchPlayers = createProductionCanonicalDailySelector({}, resolveCanonicalPlayerId);
 
 describe('production canonical Daily lineup', () => {
   it('preserves published legacy lineups before the quality launch date', () => {
@@ -23,9 +24,8 @@ describe('production canonical Daily lineup', () => {
   });
 
   it('caches deterministic canonical launch selections with nine unique players', () => {
-    const selectPlayers = createProductionCanonicalDailySelector({}, resolveCanonicalPlayerId);
-    const first = selectPlayers(DAILY_LINEUP_QUALITY_LAUNCH_DATE);
-    const second = selectPlayers(DAILY_LINEUP_QUALITY_LAUNCH_DATE);
+    const first = selectLaunchPlayers(DAILY_LINEUP_QUALITY_LAUNCH_DATE);
+    const second = selectLaunchPlayers(DAILY_LINEUP_QUALITY_LAUNCH_DATE);
 
     expect(second).toBe(first);
     expect(first).toHaveLength(9);
@@ -34,8 +34,7 @@ describe('production canonical Daily lineup', () => {
   });
 
   it('uses the approved non-overlapping recognizability bands in production', () => {
-    const selectPlayers = createProductionCanonicalDailySelector({}, resolveCanonicalPlayerId);
-    const selections = selectPlayers(DAILY_LINEUP_QUALITY_LAUNCH_DATE);
+    const selections = selectLaunchPlayers(DAILY_LINEUP_QUALITY_LAUNCH_DATE);
     const globalRanks = new Map(
       rankPlayersByRecognizability(dailyEligiblePlayers)
         .map((player, index) => [player.id, index + 1]),
@@ -53,9 +52,8 @@ describe('production canonical Daily lineup', () => {
   });
 
   it('does not repeat launch players on the following generated date', () => {
-    const selectPlayers = createProductionCanonicalDailySelector({}, resolveCanonicalPlayerId);
-    const launch = selectPlayers(DAILY_LINEUP_QUALITY_LAUNCH_DATE);
-    const following = selectPlayers('2026-07-23');
+    const launch = selectLaunchPlayers(DAILY_LINEUP_QUALITY_LAUNCH_DATE);
+    const following = selectLaunchPlayers('2026-07-23');
     const launchIds = new Set(launch.map(selection => selection.canonicalPlayerId));
 
     expect(following.some(selection => launchIds.has(selection.canonicalPlayerId))).toBe(false);
