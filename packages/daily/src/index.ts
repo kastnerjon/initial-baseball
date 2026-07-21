@@ -12,7 +12,6 @@ export {
   type DailyPuzzleOverrideMap,
   type ResolveCanonicalPlayerId,
 } from './dailyPuzzleSelection';
-
 export {
   DAILY_LINEUP_ALGORITHM_VERSION,
   DAILY_RECOGNIZABILITY_POLICY,
@@ -29,16 +28,13 @@ export {
   type DailyPlayerUsage,
   type GenerateDailyLineupInput,
 } from './dailyLineupQuality';
-
 export { createCanonicalDailyLineupCandidates } from './dailyLineupCandidates';
-
 export {
   DAILY_LINEUP_QUALITY_LAUNCH_DATE,
   DAILY_REVIEWED_DATA_VERSION,
   createProductionCanonicalDailySelector,
   type ProductionCanonicalDailySelector,
 } from './productionDailyLineup';
-
 export {
   archiveDailyPuzzle,
   createDailyPuzzleDraft,
@@ -54,7 +50,10 @@ export {
   type DailyPuzzleRepository,
   type DailyPuzzleRepositorySaveOptions,
 } from './dailyPuzzleLifecycle';
-
+export {
+  resolvePublicDailyPuzzleSelection,
+  type PublicDailyPuzzleSelectionDecision,
+} from './publicDailyPuzzleSelection';
 export {
   DEFAULT_DAILY_EDITORIAL_HORIZON_DAYS,
   createDailyEditorialHorizonService,
