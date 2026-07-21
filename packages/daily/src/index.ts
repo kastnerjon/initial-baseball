@@ -12,3 +12,20 @@ export {
   type DailyPuzzleOverrideMap,
   type ResolveCanonicalPlayerId,
 } from './dailyPuzzleSelection';
+
+export {
+  DAILY_LINEUP_ALGORITHM_VERSION,
+  DAILY_RECOGNIZABILITY_POLICY,
+  DAILY_REPEAT_WINDOW_DAYS,
+  generateDailyLineup,
+  validateDailyLineup,
+  type DailyLineupCandidate,
+  type DailyLineupSeedContext,
+  type DailyLineupSelection,
+  type DailyLineupSelectionSource,
+  type DailyLineupSlotValidation,
+  type DailyLineupValidation,
+  type DailyLineupWarning,
+  type DailyPlayerUsage,
+  type GenerateDailyLineupInput,
+} from './dailyLineupQuality';
