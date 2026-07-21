@@ -20,11 +20,11 @@ Current execution order: configure and verify the Vercel Daily progression secre
 
 ## 1. Complete the reveal experience
 
-- [ ] Show the canonical career summary after each resolved at-bat.
-- [ ] Show one ordered row per regular season, including multiple teams when applicable.
-- [ ] Support configurable reveal columns without changing canonical data ownership.
-- [ ] Display OPS for hitters and saves for pitchers when available.
-- [ ] Keep WAR, OPS+, ERA+, awards, All-Star selections, voting finishes, and leader flags hidden until approved upstream data exists.
+- [x] Show the canonical career summary after each resolved at-bat — PR #84.
+- [x] Show one ordered row per regular season, including multiple teams when applicable — PR #84.
+- [x] Support configurable reveal columns without changing canonical data ownership — issue #99.
+- [x] Display OPS for hitters and saves for pitchers when available — PR #84.
+- [x] Keep WAR, OPS+, ERA+, awards, All-Star selections, voting finishes, and leader flags hidden until approved upstream data exists.
 - [ ] Add representative UI QA for David Ortiz, Mariano Rivera, Shohei Ohtani, Ken Griffey Jr., David Wright, Willie Mays, and the distinct Ben Taylor identities.
 
 ## 2. Finalize Daily lineup quality
