@@ -1,7 +1,7 @@
 # Daily Inning end-to-end blueprint
 
 Status: Living source of truth
-Last updated: 2026-07-20
+Last updated: 2026-07-21
 
 ## 1. Product decision
 
@@ -126,7 +126,7 @@ The accepted launch threat model is recorded in `docs/decisions/0001-daily-answe
 
 - A player answer is identified by canonical `playerId`, not display text.
 - Search aliases do not determine the reveal display name.
-- Genuine same-name players remain separate and receive context such as career years, position, or teams.
+- Genuine same-name players remain separate. Public guess search shows only names for unique visible names and adds career years only when multiple canonical players share the same normalized display name; position and teams are not shown in public guess results.
 - Search remains accent-insensitive and supports ordered token matching.
 - Hidden answers must not leak through initial HTML, serialized props, client bundles, logs, share text, public static data, or prematurely loaded reveal records.
 - Baseball data is generated ahead of time from committed sources; gameplay does not use a live third-party baseball API.
