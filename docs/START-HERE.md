@@ -82,7 +82,7 @@ Completed foundation and mechanics include:
 - a provider-neutral Daily editorial record, repository port, and service contract with date-range reads, optimistic revisions, canonical-ID-only selections, explicit audit metadata, and executable lifecycle invariants;
 - explicit `draft` → `scheduled` → `published` → `archived` transitions, with edited scheduled puzzles returning to draft and published/archived puzzles immutable through ordinary replacement;
 - a portable seven-day editorial horizon service that creates only missing drafts, preserves existing editorial records, incorporates earlier horizon dates into repeat protection, joins current canonical review data, and returns validation warnings;
-- a server-only Supabase/Postgres `DailyPuzzleRepository` adapter with strict persisted-row decoding, date-range reads, atomic optimistic revision updates, canonical-ID-only JSONB selections, and a row-level-security-first migration.
+- a server-only Supabase/Postgres `DailyPuzzleRepository` adapter backed by the distinct `daily_editorial_puzzles` table, with strict persisted-row decoding, date-range reads, atomic optimistic revision updates, canonical-ID-only JSONB selections, and a row-level-security-first migration.
 
 Most recent completed product work at this handoff: PR #114, Supabase/Postgres Daily puzzle repository adapter.
 
@@ -97,7 +97,7 @@ Remaining operational task: issue #97.
 - Verify hosted hint, guess, strikeout, Give Up, refresh, and completion flows.
 - Close issues #91 and #86 after successful hosted verification.
 
-The Supabase migration is committed but has not yet been applied to a hosted project. No Supabase service-role environment configuration or admin client composition exists yet.
+The `daily_editorial_puzzles` migration is committed but has not yet been applied to a hosted project. No Supabase service-role environment configuration or admin client composition exists yet. The original `daily_puzzles`, `daily_puzzle_pitches`, attempt, result, database-player, and head-to-head tables remain inactive legacy scaffold and are not used by the current Daily repository.
 
 These deployment tasks do not block coding, GitHub CI, tests, or production builds.
 
@@ -143,12 +143,13 @@ These deployment tasks do not block coding, GitHub CI, tests, or production buil
 ### Editorial persistence
 
 - Supabase-hosted Postgres is the initial relational provider for editorial Daily puzzles.
-- One `daily_puzzles` row represents one puzzle date and stores puzzle identity, lifecycle state, revision, audit metadata, and exactly nine canonical-ID selections.
+- One `daily_editorial_puzzles` row represents one puzzle date and stores puzzle identity, lifecycle state, revision, audit metadata, and exactly nine canonical-ID selections.
 - The fixed selections are stored as one JSONB value so a revision-guarded puzzle update remains atomic without a provider-specific transaction RPC.
 - Names, aliases, teams, statistics, hints, and reveal records remain in baseball-data and are joined at read time.
 - Updates compare both puzzle date and expected revision; a missing returned row is a concurrency conflict.
 - Row-level security is enabled with no browser policies. Until admin authentication is selected, only a server-side service-role client may access the table.
 - The migration lives in `supabase/migrations/`; the adapter lives in `apps/web/app/` and implements the provider-neutral port without redefining transitions.
+- The distinct table intentionally avoids destructive migration of the incompatible inactive `daily_puzzles` and `daily_puzzle_pitches` scaffold. Legacy cleanup is separate work, not part of administration implementation.
 
 ### Admin lineup screen
 
@@ -209,12 +210,13 @@ Record a settled answer here and in the appropriate canonical document in the sa
 ## Known issues and follow-ups
 
 - Issue #97: configure and verify the production/preview Daily progression secret.
-- The Daily puzzle migration still needs a hosted Supabase project, application, and server-only environment configuration.
+- The Daily editorial migration still needs a hosted Supabase project, application, and server-only environment configuration.
+- Inactive legacy Supabase scaffold remains committed and should be removed only through separate, dependency-aware cleanup.
 - Vercel Hobby deployment quota may temporarily prevent hosted previews; GitHub CI remains available.
 
 ## New-conversation prompt
 
-> Continue work on `kastnerjon/initial-baseball`. First read `AGENTS.md`, `docs/START-HERE.md`, and `tasks/todo.md` from current GitHub `main`. Verify latest merged PRs, open PRs, open issues, and CI before acting. Treat `docs/START-HERE.md` as the durable handoff. The exact next bounded concern is selecting the admin authentication method and composing the server-only Supabase client/repository boundary, followed by the authorized seven-day administration workflow. The provider-neutral lifecycle, horizon service, Supabase/Postgres schema, and repository adapter are complete. Do not restart settled lineup, lifecycle, horizon, or persistence architecture; expose the service role to the browser; let Supabase redefine domain behavior; silently change published historical answers; or begin the heritage redesign before administration is dependable. Keep documentation current in the same PR whenever product behavior, architecture, data contracts, administration, deployment state, or roadmap priority changes.
+> Continue work on `kastnerjon/initial-baseball`. First read `AGENTS.md`, `docs/START-HERE.md`, and `tasks/todo.md` from current GitHub `main`. Verify latest merged PRs, open PRs, open issues, and CI before acting. Treat `docs/START-HERE.md` as the durable handoff. The exact next bounded concern is selecting the admin authentication method and composing the server-only Supabase client/repository boundary, followed by the authorized seven-day administration workflow. The provider-neutral lifecycle, horizon service, `daily_editorial_puzzles` schema, and Supabase repository adapter are complete. Do not restart settled lineup, lifecycle, horizon, or persistence architecture; expose the service role to the browser; build current features against inactive legacy Supabase tables; let Supabase redefine domain behavior; silently change published historical answers; or begin the heritage redesign before administration is dependable. Keep documentation current in the same PR whenever product behavior, architecture, data contracts, administration, deployment state, or roadmap priority changes.
 
 ## Maintenance rule
 
