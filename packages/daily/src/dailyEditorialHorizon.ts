@@ -64,6 +64,9 @@ export function createDailyEditorialHorizonService(
       const dates = getHorizonDates(input.startDate, input.days);
       const existing = await repository.listByDateRange(dates[0]!, dates.at(-1)!);
       const existingByDate = new Map(existing.map(record => [record.puzzleDate, record]));
+      const reservedCanonicalIds = new Set(existing.flatMap(record => (
+        record.selections.map(selection => selection.canonicalPlayerId)
+      )));
       const usageHistory = [...(input.usageHistory ?? []), ...toUsageHistory(existing)];
 
       for (const puzzleDate of dates) {
@@ -74,7 +77,7 @@ export function createDailyEditorialHorizonService(
             dailyDate: puzzleDate,
             reviewedDataVersion: input.reviewedDataVersion,
           },
-          candidates: input.candidates,
+          candidates: input.candidates.filter(candidate => !reservedCanonicalIds.has(candidate.canonicalPlayerId)),
           usageHistory,
         });
         const record = await editorialService.createDraft({
@@ -95,8 +98,12 @@ export function createDailyEditorialHorizonService(
     async getHorizon(input) {
       const dates = getHorizonDates(input.startDate, input.days);
       const records = await repository.listByDateRange(dates[0]!, dates.at(-1)!);
+      const recordsByDate = new Map(records.map(record => [record.puzzleDate, record]));
       const usageHistory = [...(input.usageHistory ?? []), ...toUsageHistory(records)];
-      return records.map(record => buildHorizonPuzzle(record, input.candidates, usageHistory));
+      return dates.flatMap((date) => {
+        const record = recordsByDate.get(date);
+        return record === undefined ? [] : [buildHorizonPuzzle(record, input.candidates, usageHistory)];
+      });
     },
   };
 }
