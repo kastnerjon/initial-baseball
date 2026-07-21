@@ -1,18 +1,18 @@
 import type { Player } from '@initial-baseball/shared';
 
-export const DAILY_LINEUP_ALGORITHM_VERSION = 'lineup-quality-v1';
+export const DAILY_LINEUP_ALGORITHM_VERSION = 'lineup-quality-v2';
 export const DAILY_REPEAT_WINDOW_DAYS = 90;
 
 export const DAILY_RECOGNIZABILITY_POLICY = [
-  { slot: 1, maximumRank: 250 },
-  { slot: 2, maximumRank: 250 },
-  { slot: 3, maximumRank: 1000 },
-  { slot: 4, maximumRank: 1000 },
-  { slot: 5, maximumRank: 2500 },
-  { slot: 6, maximumRank: 2500 },
-  { slot: 7, maximumRank: 5000 },
-  { slot: 8, maximumRank: 5000 },
-  { slot: 9, maximumRank: 5000 },
+  { slot: 1, minimumRank: 1, maximumRank: 250 },
+  { slot: 2, minimumRank: 1, maximumRank: 250 },
+  { slot: 3, minimumRank: 251, maximumRank: 1000 },
+  { slot: 4, minimumRank: 251, maximumRank: 1000 },
+  { slot: 5, minimumRank: 1001, maximumRank: 2500 },
+  { slot: 6, minimumRank: 1001, maximumRank: 2500 },
+  { slot: 7, minimumRank: 2501, maximumRank: 5000 },
+  { slot: 8, minimumRank: 2501, maximumRank: 5000 },
+  { slot: 9, minimumRank: 2501, maximumRank: 5000 },
 ] as const;
 
 export type DailyLineupSelectionSource = 'generated' | 'manual';
@@ -55,6 +55,7 @@ export type DailyLineupValidationWarning =
 
 export type DailyLineupSlotValidation = {
   slot: number;
+  expectedMinimumRank: number;
   expectedMaximumRank: number;
   canonicalPlayerId: string | null;
   recognizabilityRank: number | null;
@@ -90,6 +91,7 @@ export function generateDailyLineup({
   for (const policy of DAILY_RECOGNIZABILITY_POLICY) {
     const eligible = candidates.filter(candidate => (
       candidate.recognizabilityRank !== null
+      && candidate.recognizabilityRank >= policy.minimumRank
       && candidate.recognizabilityRank <= policy.maximumRank
       && !selectedCanonicalIds.has(candidate.canonicalPlayerId)
       && !recentCanonicalIds.has(candidate.canonicalPlayerId)
@@ -97,7 +99,7 @@ export function generateDailyLineup({
 
     if (eligible.length === 0) {
       throw new Error(
-        `Insufficient eligible Daily players for slot ${policy.slot} (top ${policy.maximumRank}).`,
+        `Insufficient eligible Daily players for slot ${policy.slot} (ranks ${policy.minimumRank}-${policy.maximumRank}).`,
       );
     }
 
@@ -152,7 +154,10 @@ export function validateDailyLineup(
 
     if (duplicate) slotWarnings.push('duplicate-canonical-player');
     if (recognizabilityRank === null) slotWarnings.push('missing-recognizability-rank');
-    if (recognizabilityRank !== null && recognizabilityRank > policy.maximumRank) {
+    if (
+      recognizabilityRank !== null
+      && (recognizabilityRank < policy.minimumRank || recognizabilityRank > policy.maximumRank)
+    ) {
       slotWarnings.push('outside-recognizability-band');
     }
     if (recentUse) slotWarnings.push('recently-used');
@@ -160,6 +165,7 @@ export function validateDailyLineup(
 
     return {
       slot: policy.slot,
+      expectedMinimumRank: policy.minimumRank,
       expectedMaximumRank: policy.maximumRank,
       canonicalPlayerId,
       recognizabilityRank,
