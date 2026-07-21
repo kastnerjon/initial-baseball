@@ -24,6 +24,8 @@ import { DAILY_PUZZLE_OVERRIDES } from './dailyPuzzleOverrides';
 import { getPacificDailyDateString } from './getPacificDailyDateString';
 import { getCanonicalRuntime, resolveCanonicalPlayerId } from './serverCanonicalData';
 
+export type { DailyAdminLifecycleAction } from './dailyAdminLifecycleActions';
+
 export interface DailyAdminWorkflowDependencies {
   candidates: readonly DailyLineupCandidate[];
   reviewedDataVersion: string;
@@ -183,9 +185,17 @@ export function createDailyAdminWorkflow(
         occurredAt: input.occurredAt,
       };
 
-      if (input.action === 'schedule') await editorialService.schedule(transitionInput);
-      if (input.action === 'publish') await editorialService.publish(transitionInput);
-      if (input.action === 'archive') await editorialService.archive(transitionInput);
+      switch (input.action) {
+        case 'schedule':
+          await editorialService.schedule(transitionInput);
+          break;
+        case 'publish':
+          await editorialService.publish(transitionInput);
+          break;
+        case 'archive':
+          await editorialService.archive(transitionInput);
+          break;
+      }
 
       const [puzzle] = await horizonService.getHorizon({
         startDate: input.puzzleDate,
