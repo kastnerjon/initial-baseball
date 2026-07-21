@@ -2,9 +2,9 @@ import { expect, it } from 'vitest';
 import { searchCanonicalPlayers, type PlayerSearchCandidate } from './searchPlayers.js';
 
 const benTaylors: PlayerSearchCandidate[] = [
-  buildPlayer('ibp_hitter', 'hitter', '1B', 1951, 1955, 'DET, ML1, SLA'),
-  buildPlayer('ibp_hof', 'two-way', '1B', 1910, 1929, 'ABC, WBS'),
-  buildPlayer('ibp_pitcher', 'pitcher', 'P', 2017, 2018, 'BOS, CLE'),
+  buildPlayer('ibp_hitter', 'Ben Taylor', 'hitter', '1B', 1951, 1955, 'DET, ML1, SLA'),
+  buildPlayer('ibp_hof', 'Ben Taylor', 'two-way', '1B', 1910, 1929, 'ABC, WBS'),
+  buildPlayer('ibp_pitcher', 'Ben Taylor', 'pitcher', 'P', 2017, 2018, 'BOS, CLE'),
 ];
 
 it('keeps genuine same-name canonical players as distinct search results', () => {
@@ -21,18 +21,58 @@ it('keeps genuine same-name canonical players as distinct search results', () =>
   ]);
 });
 
-it('returns career, role, position, and team context for disambiguation', () => {
-  expect(searchCanonicalPlayers('ben taylor', benTaylors)[2]?.metadata).toMatchObject({
-    firstYear: 2017,
-    lastYear: 2018,
-    playerType: 'pitcher',
-    primaryPosition: 'P',
-    teamsDisplay: 'BOS, CLE',
+it('requests year disambiguation for every distinct canonical player sharing a visible name', () => {
+  const results = searchCanonicalPlayers('ben taylor', benTaylors);
+
+  expect(results.every((result) => result.requiresYearDisambiguation)).toBe(true);
+  expect(results.map((result) => [
+    result.metadata?.firstYear,
+    result.metadata?.lastYear,
+  ])).toEqual([
+    [1951, 1955],
+    [1910, 1929],
+    [2017, 2018],
+  ]);
+});
+
+it('does not request year disambiguation for a unique visible name', () => {
+  const results = searchCanonicalPlayers('burnett', [
+    buildPlayer('burneaj01', 'A. J. Burnett', 'pitcher', 'P', 1999, 2015, 'FLO, NYA, PHI, PIT, TOR'),
+  ]);
+
+  expect(results[0]).toMatchObject({
+    playerId: 'burneaj01',
+    requiresYearDisambiguation: false,
+    metadata: { firstYear: 1999, lastYear: 2015 },
   });
+});
+
+it('uses the complete candidate universe when the other duplicate falls outside the result limit', () => {
+  const candidates = [
+    ...Array.from({ length: 9 }, (_, index) => buildPlayer(
+      `before-ben-${index}`,
+      `B${String.fromCharCode(97 + index)} Player`,
+      'hitter',
+      '1B',
+      1900 + index,
+      1901 + index,
+      'TST',
+    )),
+    buildPlayer('ben-taylor-first', 'Ben Taylor', 'hitter', '1B', 1898, 1901, 'NYG'),
+    buildPlayer('ben-taylor-second', 'Ben Taylor', 'hitter', '1B', 1912, 1929, 'ABC'),
+  ];
+
+  const results = searchCanonicalPlayers('b', candidates);
+  const visibleBenTaylorResults = results.filter((result) => result.displayName === 'Ben Taylor');
+
+  expect(results).toHaveLength(10);
+  expect(visibleBenTaylorResults).toHaveLength(1);
+  expect(visibleBenTaylorResults[0]?.requiresYearDisambiguation).toBe(true);
 });
 
 function buildPlayer(
   id: string,
+  displayName: string,
   playerType: string,
   primaryPosition: string,
   firstYear: number,
@@ -41,7 +81,7 @@ function buildPlayer(
 ): PlayerSearchCandidate {
   return {
     id,
-    displayName: 'Ben Taylor',
+    displayName,
     aliases: [],
     playerType,
     primaryPosition,
