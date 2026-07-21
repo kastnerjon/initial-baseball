@@ -7,6 +7,13 @@ import { createDailyAdminContext } from '../../../dailyAdminComposition';
 import { createDailyAdminWorkflow } from '../../../dailyAdminWorkflow';
 
 export async function POST(request: Request): Promise<NextResponse> {
+  if (!isSameOriginDailyAdminMutation(request)) {
+    return new NextResponse('Cross-origin Daily administration requests are not accepted.', {
+      status: 403,
+      headers: { 'cache-control': 'private, no-store' },
+    });
+  }
+
   try {
     const { actorId, repository } = createDailyAdminContext({
       authorizationHeader: request.headers.get('authorization'),
@@ -37,4 +44,9 @@ export async function POST(request: Request): Promise<NextResponse> {
       headers: { 'cache-control': 'private, no-store' },
     });
   }
+}
+
+export function isSameOriginDailyAdminMutation(request: Request): boolean {
+  const origin = request.headers.get('origin');
+  return origin === null || origin === new URL(request.url).origin;
 }
