@@ -25,7 +25,7 @@ export function ResultsDropdown({
   return (
     <ul className="results-dropdown" aria-label="Matching players">
       {results.map((result) => {
-        const context = formatContext(result);
+        const context = formatSearchResultContext(result);
 
         return (
           <li key={result.playerId}>
@@ -44,7 +44,7 @@ export function ResultsDropdown({
   );
 }
 
-function formatContext(result: PlayerSearchResult): string | null {
+export function formatSearchResultContext(result: PlayerSearchResult): string | null {
   if (result.requiresYearDisambiguation !== true) return null;
 
   const firstYear = result.metadata?.firstYear;
