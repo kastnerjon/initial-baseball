@@ -51,6 +51,7 @@ export {
   type DailyPuzzleRepositorySaveOptions,
 } from './dailyPuzzleLifecycle';
 export {
+  createEditorialDailyPuzzleId,
   resolvePublicDailyPuzzleSelection,
   type PublicDailyPuzzleSelectionDecision,
 } from './publicDailyPuzzleSelection';

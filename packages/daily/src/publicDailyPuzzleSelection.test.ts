@@ -1,5 +1,5 @@
 import { createDailyPuzzleDraft, publishDailyPuzzle, scheduleDailyPuzzle, archiveDailyPuzzle } from './dailyPuzzleLifecycle';
-import { resolvePublicDailyPuzzleSelection } from './publicDailyPuzzleSelection';
+import { createEditorialDailyPuzzleId, resolvePublicDailyPuzzleSelection } from './publicDailyPuzzleSelection';
 import { describe, expect, it } from 'vitest';
 
 const date = '2026-07-22';
@@ -25,7 +25,7 @@ describe('public Daily editorial selection', () => {
     expect(resolvePublicDailyPuzzleSelection('2026-07-21', published)).toEqual({ kind: 'deterministic-fallback' });
   });
 
-  it('uses only scheduled or published editorial selections', () => {
+  it('uses only approved scheduled or published editorial selections', () => {
     expect(resolvePublicDailyPuzzleSelection(date, draft)).toEqual({ kind: 'deterministic-fallback' });
     expect(resolvePublicDailyPuzzleSelection(date, scheduled)).toEqual({
       kind: 'editorial', canonicalPlayerIds: selections.map(selection => selection.canonicalPlayerId),
@@ -35,5 +35,12 @@ describe('public Daily editorial selection', () => {
 
   it('does not silently replace an archived historical answer with a deterministic lineup', () => {
     expect(resolvePublicDailyPuzzleSelection(date, archived)).toEqual({ kind: 'archived-unavailable' });
+  });
+
+  it('binds editorial progression to the ordered lineup but not to lifecycle-only revision changes', () => {
+    const playerIds = selections.map(selection => selection.canonicalPlayerId);
+    expect(createEditorialDailyPuzzleId(date, playerIds)).toBe(createEditorialDailyPuzzleId(date, playerIds));
+    expect(createEditorialDailyPuzzleId(date, playerIds)).not.toBe(`daily-${date}`);
+    expect(createEditorialDailyPuzzleId(date, [...playerIds].reverse())).not.toBe(createEditorialDailyPuzzleId(date, playerIds));
   });
 });

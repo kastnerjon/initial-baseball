@@ -9,21 +9,27 @@ Define how the public Daily game chooses its nine answers when editorial records
 
 ## Ownership
 
-`packages/daily` owns the public-eligibility decision. `apps/web` reads the provider-neutral `DailyPuzzleRepository`, joins approved canonical IDs to reviewed baseball data, constructs the existing `DailyPuzzle`, and transports only spoiler-safe public state. Supabase stores records but does not decide which lifecycle states are public.
+`packages/daily` owns public eligibility and editorial selection identity. `apps/web` reads the provider-neutral `DailyPuzzleRepository`, joins approved canonical IDs to reviewed baseball data, constructs the existing `DailyPuzzle`, and transports only spoiler-safe public state. Supabase stores records but does not decide which lifecycle states are public.
 
 ## Selection rules
 
 1. Dates before the lineup-quality launch date `2026-07-22` always use the legacy deterministic selector and historical override path. Editorial rows cannot rewrite those answers.
-2. On or after launch, a `scheduled` or `published` record supplies the public canonical player IDs in slot order.
+2. On or after launch, a `scheduled` or `published` record supplies the public canonical player IDs in slot order. Scheduled is already editorially approved; published remains the explicit immutable publication milestone.
 3. A missing record, a date-mismatched record, or a `draft` record uses the deterministic quality-selector fallback.
 4. An `archived` record does not fall back to a newly generated answer. Public replay fails closed until an explicit archived-history or versioning policy is adopted.
 5. An approved record referencing an unavailable canonical player fails closed. The adapter does not substitute another player.
+
+## Puzzle identity and active tokens
+
+Deterministic fallback retains the established `daily-{date}` ID. An editorial puzzle receives an opaque stable ID derived from the date and the ordered canonical selection.
+
+This prevents a progression token issued for fallback from silently switching to a later approved editorial lineup. The same ordered lineup keeps the same identity when it moves from scheduled to published. Any ordered selection change produces a different identity, so an old token is rejected instead of being graded against different answers. The fingerprint exposes no canonical IDs or answer data.
 
 ## Security and transport
 
 The repository client and service-role credentials are server-only. The initial browser payload remains limited to puzzle identity, date/number/status, public hint configuration, initials, and an opaque signed progression token. It contains no canonical answer IDs, answer names, hint values, reveal data, database credentials, or repository state.
 
-Hint and resolution requests verify the progression token, reload the same date through the server puzzle source, and release only the hint or terminal reveal authorized by that action. The move to an asynchronous repository-backed source does not change scoring, runner advancement, browser persistence, or progression-token claims.
+Hint and resolution requests verify the progression token, reload the same date through the server puzzle source, and release only the hint or terminal reveal authorized by that action. The move to an asynchronous repository-backed source does not change scoring, runner advancement, browser persistence, or progression claims.
 
 ## Configuration behavior
 

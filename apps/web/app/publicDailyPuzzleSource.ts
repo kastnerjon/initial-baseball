@@ -2,6 +2,7 @@ import 'server-only';
 import { dailyEligiblePlayers } from '@initial-baseball/baseball-data';
 import {
   createCanonicalDailyLineupCandidates,
+  createEditorialDailyPuzzleId,
   rankPlayersByRecognizability,
   resolvePublicDailyPuzzleSelection,
   type DailyPuzzleRepository,
@@ -37,7 +38,7 @@ export function createPublicDailyPuzzleSource(input: {
       throw new Error(`Daily puzzle ${date} is archived and has no settled public replay policy.`);
     }
     return {
-      id: `daily-${date}`,
+      id: createEditorialDailyPuzzleId(date, decision.canonicalPlayerIds),
       puzzleNumber: record?.puzzleNumber ?? 0,
       puzzleDate: date,
       status: record?.status ?? 'published',
