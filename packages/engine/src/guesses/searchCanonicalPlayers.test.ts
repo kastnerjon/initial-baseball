@@ -35,16 +35,16 @@ it('requests year disambiguation for every distinct canonical player sharing a v
   ]);
 });
 
-it('does not request year disambiguation for a unique visible name', () => {
+it('does not alter the payload shape for a unique visible name', () => {
   const results = searchCanonicalPlayers('burnett', [
     buildPlayer('burneaj01', 'A. J. Burnett', 'pitcher', 'P', 1999, 2015, 'FLO, NYA, PHI, PIT, TOR'),
   ]);
 
   expect(results[0]).toMatchObject({
     playerId: 'burneaj01',
-    requiresYearDisambiguation: false,
     metadata: { firstYear: 1999, lastYear: 2015 },
   });
+  expect(results[0]?.requiresYearDisambiguation).toBeUndefined();
 });
 
 it('uses the complete candidate universe when the other duplicate falls outside the result limit', () => {
