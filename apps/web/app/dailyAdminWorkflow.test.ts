@@ -7,7 +7,10 @@ import {
   type DailyPuzzleRepository,
   type DailyPuzzleRepositorySaveOptions,
 } from '@initial-baseball/daily';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+
+vi.mock('server-only', () => ({}));
+
 import { isSameOriginDailyAdminMutation } from './dailyAdminRequestSecurity';
 import { createDailyAdminWorkflow, type DailyAdminWorkflowDependencies } from './dailyAdminWorkflow';
 
