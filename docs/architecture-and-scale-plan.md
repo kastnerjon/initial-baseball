@@ -1,7 +1,7 @@
 # Architecture and launch-scale plan
 
 Status: Living source of truth
-Last updated: 2026-07-20
+Last updated: 2026-07-21
 
 ## Product goal
 
@@ -9,16 +9,16 @@ Initial Baseball should first become a polished, fast Daily game that is easy to
 
 A future native client or head-to-head game remains possible, not active scope. The architecture target is a browser-first codebase that supports rapid product iteration, reliable Daily gameplay, and at least 10,000 plays per day without requiring a rewrite.
 
-The end-to-end product behavior is defined in `docs/product/daily-inning-blueprint.md`. Documentation rules are defined in `docs/engineering/documentation-governance.md`.
+The end-to-end product behavior is defined in `docs/product/daily-inning-blueprint.md`. Documentation rules are defined in `docs/engineering/documentation-governance.md`. Current resumption state and approved deferred decisions are summarized in `docs/START-HERE.md`.
 
 ## Operating principles
 
-Every change should answer two questions:
+Every change should answer:
 
-1. Does it improve or protect the product behavior?
+1. Does it improve or protect product behavior?
 2. Does it preserve clear ownership, portability, testability, and maintainability?
 
-Architecture work remains behavior-preserving unless a PR explicitly changes product behavior. Large rewrites, speculative infrastructure, and duplicated rules are out of scope.
+Large rewrites, speculative infrastructure, duplicated rules, and undocumented architectural drift are out of scope.
 
 ## Package ownership
 
@@ -32,17 +32,17 @@ Owns pure baseball and game rules: guess evaluation, outcomes, runner advancemen
 
 ### `packages/baseball-data`
 
-Owns committed baseball sources, canonical identity, aliases, source mappings, normalization, season facts, season and career aggregates, reveal cards, enrichment, data-quality reports, and generated runtime-serving artifacts.
+Owns committed baseball sources, canonical identity, aliases, source mappings, team identity and fan-facing display metadata, normalization, season facts, season and career aggregates, reveal cards, enrichment, data-quality reports, and generated runtime-serving artifacts.
 
-It may generate browser-consumable outputs, but web code must not generate, correct, or reinterpret baseball facts.
+It may generate client-consumable outputs, but web code must not generate, correct, or reinterpret baseball facts. Raw source identifiers may be retained for provenance while public display fields are supplied through the canonical data layer.
 
 ### `packages/daily`
 
-Owns Daily-specific portable application logic: puzzle numbering, deterministic lineup selection, recognizability ranking, override validation, puzzle construction, and Daily session transitions. It may depend on `shared`, `engine`, and `baseball-data` where the package contract permits.
+Owns Daily-specific portable application logic: puzzle numbering, deterministic lineup selection, recognizability ranking, repeat protection, override validation, puzzle construction, editorial validation, and Daily session transitions. It may depend on `shared`, `engine`, and `baseball-data` where the package contract permits.
 
 ### `apps/web`
 
-Owns Next.js pages, React components, HTTP routes, browser persistence, sharing, and web-specific infrastructure adapters. It renders and transports domain behavior rather than defining it. Stateless progression-token signing and verification belong here because they authorize web transport rather than define baseball or Daily rules.
+Owns Next.js pages, React components, HTTP routes, browser persistence, sharing, admin surfaces, and web-specific infrastructure adapters. It renders and transports domain behavior rather than defining it. Stateless progression-token signing and verification belong here because they authorize web transport rather than define baseball or Daily rules.
 
 ### `apps/mobile`
 
@@ -50,7 +50,9 @@ Remains an inactive scaffold. Shared contracts should stay platform-neutral wher
 
 ### Database and repository adapters
 
-Publication lifecycle, admin persistence, completed-game results, and eventual accounts belong behind explicit repository/service boundaries. Database clients do not belong inside React components, the engine, or pure Daily logic.
+Puzzle publication lifecycle, future-lineup administration, completed-game results, and eventual accounts belong behind explicit repository/service boundaries. Database clients do not belong inside React components, the engine, baseball-data generation, or pure Daily logic.
+
+The puzzle database stores canonical player IDs and editorial metadata. It does not become a second store of player names, statistics, teams, or reveal records.
 
 ## Dependency direction
 
@@ -70,12 +72,11 @@ Dependencies must not point upward.
 
 - React and Next.js are absent from domain packages.
 - Database and network clients are absent from `engine` and pure Daily behavior.
-- UI does not own baseball rules, player normalization, puzzle generation, or persistence semantics.
+- UI does not own baseball rules, player normalization, puzzle generation, editorial validation, or persistence semantics.
 - Baseball-data generation is not owned by `apps/web`.
+- Admin components call services/repositories rather than reading or writing persistence directly.
 
 ## Canonical baseball-data architecture
-
-The replacement player-data pipeline is ordered by ownership and data grain:
 
 ```text
 reviewed external identity source pin
@@ -88,119 +89,144 @@ reviewed external identity source pin
   -> canonical career aggregates
   -> canonical career cards
   -> canonical season and career enrichment
+  -> canonical team display identity
   -> canonical runtime player index, reveal shards, and valid redirects
   -> server-side web runtime accessor and safe transport routes
 ```
 
 Rules:
 
-- Identity owns the canonical player ID, display name, aliases, and source mappings.
-- Normal production, preview, and local runtime builds materialize the committed reviewed identity snapshot and perform no Chadwick network fetch.
-- External identity refresh is an explicit review workflow pinned to one Chadwick commit and expected source checksums.
-- CI independently regenerates identities from that pin and requires exact equality with the committed snapshot before the downstream pipeline runs.
+- Identity owns canonical player IDs, display names, aliases, and source mappings.
+- Source team IDs and public display abbreviations are separate fields when necessary.
+- Normal local, preview, and production builds materialize committed reviewed inputs without a Chadwick network fetch.
+- CI independently regenerates identities from the reviewed pin and requires exact equality.
 - Season cards own regular-season teams, positions, and direct season facts.
 - Season enrichment owns season-level derived or separately sourced values.
 - Career records summarize accepted season data rather than becoming a second source of truth.
 - Runtime artifacts join validated records; they do not calculate baseball facts.
 - Names are never join keys.
 - Known zero and unavailable data remain distinct.
-- A rate statistic is not published from partially known contributing source rows.
+- A rate statistic is not published from partially known contributing rows.
 
-The canonical pipeline is the live identity, search, answer-resolution, and reveal source. Legacy player objects remain a temporary input to recognizability selection and hint construction until those inputs receive their own canonical contract.
+The canonical pipeline is the live identity, search, answer-resolution, and reveal source. Legacy player objects remain temporary inputs only where recognizability or hint construction has not yet received a canonical contract.
 
 ## Runtime serving and answer protection
 
-The canonical serving contract separates lightweight search data from full reveal history.
+The serving contract separates lightweight search data from full reveal history.
 
 - The initial index contains identity, aliases, classification, career context, and a reveal-shard path.
 - Full career and regular-season reveal records are split into deterministic shards.
-- The server accessor loads only the shard needed for a safely revealed player and caches it for later requests.
-- Legacy IDs resolve through validated redirects whose targets actually have runtime records.
-- Legal/source names remain searchable aliases but are excluded from the display payload.
-- Initial page props contain public puzzle metadata and initials, not answer IDs, names, hint values, or reveal records.
-- Browser search uses a thin route over the canonical index. Hint and resolution routes release only the data authorized by the current action.
+- The server accessor loads only the shard needed for a safely revealed player.
+- Legacy IDs resolve through validated redirects.
+- Legal/source names may remain searchable aliases but are excluded from public display payloads.
+- Initial page props contain public puzzle metadata, initials, and an opaque progression token—not answers, hint values, or reveal records.
+- Search, hint, and resolution routes release only data authorized by the current action.
 
-A valid runtime artifact is not permission to serialize the answer's full reveal record into initial HTML or client props before the at-bat is resolved. Full reveal data is returned only after a correct answer, a third strike, or Give Up.
+Full reveal data is returned only after a correct answer, third strike, or Give Up.
 
 ### Launch progression authorization
 
-ADR 0001 defines the accepted anonymous launch model.
+ADR 0001 defines the accepted anonymous launch model, implemented in PRs #95 and #96.
 
-- A server-signed stateless token contains only public progression: contract version, puzzle ID/date, current pitch, hint depth, strikes, outs, and completion state.
-- The server derives those fields from verified claims rather than trusting browser counters.
-- Each valid hint or resolution returns the deterministic successor token.
+- A server-signed stateless token contains only public progression claims.
+- The server derives current pitch, hint depth, strikes, outs, and completion from verified claims rather than browser counters.
+- Each valid action returns a deterministic successor token.
 - The browser persists the opaque token alongside public local state.
 - The token contains no hidden answer or hint data.
-- Replay of an earlier valid token is accepted as a launch limitation; forging later progression or selecting an arbitrary future pitch is not.
-- Token signing and verification remain a provider-neutral web adapter and use a server-only secret.
+- Replay of an earlier valid token is an accepted launch limitation; forged later progression or arbitrary future-pitch selection is not.
+- Signing and verification remain provider-neutral web adapters using a server-only secret.
 
-This model protects ordinary play and public payloads without claiming tamper-proof anonymous scoring. It adds no replay cache, Redis, per-action database write, durable anonymous session, or Vercel-specific state.
+This model adds no replay cache, Redis, per-action database write, durable anonymous session, or Vercel-specific state.
+
+## Future-lineup administration architecture
+
+The editorial system has two separate concerns.
+
+### Portable generation and validation
+
+`packages/daily` generates a deterministic proposal from:
+
+- puzzle date;
+- reviewed data version;
+- recognizability rankings;
+- recent Daily usage;
+- eligibility and required-data rules.
+
+It validates slot rank bands, canonical duplicates, the repeat window, and reveal readiness without React or database dependencies.
+
+### Editorial persistence and web workflow
+
+The admin workflow must support at least the next seven Daily lineups.
+
+- A generated lineup begins as `draft`.
+- An editor may replace any future slot.
+- Approved future puzzles become `scheduled`.
+- The public puzzle for the date becomes `published` and is immutable for ordinary edits.
+- Past puzzles become `archived`.
+- Emergency corrections require an explicit versioned editorial action.
+
+A repository boundary such as `DailyPuzzleRepository` owns persistence. React renders returned state and dispatches actions; it does not implement generation, validation, or lifecycle rules.
 
 ## Scale target: 10,000+ plays per day
 
 Ten thousand Daily players is modest systems load if the game remains mostly static and client-driven.
 
-### Keep the hot path cheap
-
 - Serve immutable player and season data with CDN-friendly caching.
 - Load the lightweight search index once and reveal data on demand.
 - Keep anonymous gameplay state in the client.
 - Verify progression tokens without a persistence round trip.
-- Avoid a database write for every reveal, incorrect guess, or base transition.
+- Avoid a database write for every hint, incorrect guess, or base transition.
 - Submit at most one compact, idempotent result per completed game when aggregate statistics are introduced.
 
-### Avoid unnecessary infrastructure
+The initial launch does not require microservices, queues, a dedicated mobile backend, real-time subscriptions, replay storage, or server-side game sessions. Vercel plus one small relational database can support expected traffic if routes remain thin and cacheable.
 
-The initial launch does not require microservices, queues, a dedicated mobile backend, real-time subscriptions, replay storage, or server-side game sessions. Vercel plus a small relational database can support expected traffic if routes remain thin and cacheable.
+Vercel is a hosting and deployment adapter, not the owner of domain behavior, baseball data, persistence contracts, answer-integrity state, or the public domain.
 
-Vercel is an adapter for hosting and deployment, not the owner of domain behavior, baseball data, persistence contracts, answer-integrity state, or the public domain.
+## Current product sequence
 
-### Preserve concrete seams
+### 0. Operational deployment verification
 
-Admin, publication, aggregate results, and accounts should use repository interfaces so the persistence provider can be replaced without moving database behavior into React or game rules.
+- Configure `DAILY_PROGRESSION_SECRET` for Vercel Preview and Production.
+- Redeploy and verify the merged signed-progression flow.
+- This does not block GitHub development.
 
-Do not create an abstraction solely for an imagined future mode. Extract a boundary when Daily needs it or when a second concrete consumer exists.
+### 1. Reveal correctness
 
-## Current stabilization and product sequence
+- Normalize fan-facing team display metadata centrally.
+- Complete representative reveal QA across hitters, pitchers, two-way players, historical players, and same-name identities.
 
-### 0. Answer-integrity implementation
+### 2. Lineup quality
 
-- Implement the accepted ADR 0001 stateless signed-progression contract.
-- Prevent arbitrary future-pitch access while preserving client-driven anonymous gameplay.
-- Preserve refresh recovery and run hidden-answer production QA.
-- Do not add replay storage, per-action database writes, durable anonymous server sessions, or hosting-specific state for launch.
+- Enforce the nine-slot recognizability curve.
+- Enforce the approved 90-day repeat window.
+- Preserve deterministic output for date plus reviewed data version.
+- Produce editorial validation details.
 
-### 1. Reveal presentation
+### 3. Future-lineup administration
 
-- Render a career summary plus one ordered row per regular season.
-- Use hitter, pitcher, and two-way display presets.
-- Keep unsupported fields hidden until upstream canonical data supplies them.
+- Generate, inspect, edit, validate, approve, and schedule at least seven future puzzles.
+- Persist `draft`, `scheduled`, `published`, and `archived` states behind a repository boundary.
+- Keep published puzzles immutable absent an explicit versioned editorial action.
 
-### 2. Lineup quality and administration
-
-- Enforce the nine-slot recognizability curve and repeat protection.
-- Make tomorrow's generated lineup reviewable and replaceable.
-- Persist draft, scheduled, published, and archived states behind a repository boundary.
-
-### 3. Aggregate results and launch hardening
+### 4. Aggregate results and launch hardening
 
 - Store one compact completed-game result.
 - Add field comparison, analytics, error monitoring, payload measurement, legal pages, and canonical domain configuration.
+- Apply the approved heritage visual system after mechanics and administration are dependable.
 
-No additional foundation phase should be inserted between these steps unless a concrete correctness or launch blocker requires it.
+No additional foundation phase should be inserted unless a concrete correctness or launch blocker requires it.
 
 ## Launch-readiness requirements
 
 Before broad friend distribution:
 
-- The same application commit produces the same canonical identities and runtime payload without requiring an external identity-source fetch.
+- The same commit produces the same canonical identities and runtime payload without an external identity-source fetch.
 - Daily puzzles and historical overrides are deterministic and regression-tested.
-- Tomorrow's lineup is editorially reviewable before publication.
+- At least the next seven lineups are editorially reviewable before publication.
 - Search handles aliases, accents, ordered tokens, and genuine same-name players.
-- Player reveal data is accurate, understandable, and season-complete where sources allow.
+- Player reveal data is accurate, season-complete where sources allow, and uses approved public team display identity.
 - Hidden answers are absent from initial HTML, serialized props, routes, logs, and share output.
-- Browser counters cannot directly select a future pitch or fabricate server-authorized hint/strike progression.
-- Static and immutable responses use caching.
+- Browser counters cannot select a future pitch or fabricate server-authorized progression.
 - Refresh and ordinary errors do not erase progress.
 - The full web game is polished at common iPhone and iPad sizes.
 - Share output is reliable and spoiler-safe.
@@ -219,6 +245,6 @@ Before broad friend distribution:
 
 ## Decision rule
 
-Architecture cleanup is complete enough when the product team can improve the visible Daily experience without placing game rules, data generation, puzzle lifecycle logic, persistence logic, or answer-integrity state directly inside React components or Next.js routes.
+Architecture cleanup is complete enough when the team can improve Daily gameplay, lineup quality, administration, and presentation without placing game rules, data generation, puzzle lifecycle logic, persistence logic, or answer-integrity state directly inside React components or Next.js routes.
 
-When a decision changes, implementation and affected canonical documents must change in the same pull request.
+When a decision changes, implementation, `docs/START-HERE.md`, and affected canonical documents must change together.
