@@ -8,7 +8,7 @@ import {
   type DailyPuzzleRepositorySaveOptions,
 } from '@initial-baseball/daily';
 import { describe, expect, it } from 'vitest';
-import { isSameOriginDailyAdminMutation } from './admin/daily/generate/route';
+import { isSameOriginDailyAdminMutation } from './dailyAdminRequestSecurity';
 import { createDailyAdminWorkflow, type DailyAdminWorkflowDependencies } from './dailyAdminWorkflow';
 
 const OCCURRED_AT = '2026-07-21T18:00:00.000Z';
