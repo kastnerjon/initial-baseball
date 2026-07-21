@@ -5,16 +5,22 @@ import type {
   RevealStatKind,
 } from '../canonicalRevealViewModel';
 import { normalizeCanonicalRevealViewModel } from '../normalizeCanonicalRevealViewModel';
+import {
+  getRevealColumns,
+  type RevealColumnOverrides,
+} from '../revealPresentationConfig';
 
 type PlayerRevealCardProps = {
   reveal: CanonicalRevealViewModel;
+  columns?: RevealColumnOverrides;
 };
 
 const EMPTY_VALUE = '—';
-const HITTER_COLUMNS = ['AB', 'H', 'HR', 'BA', 'R', 'RBI', 'SB', 'OBP', 'SLG', 'OPS'] as const;
-const PITCHER_COLUMNS = ['W', 'L', 'SV', 'ERA', 'WHIP', 'K', 'IP'] as const;
 
-export function PlayerRevealCard({ reveal }: PlayerRevealCardProps): JSX.Element {
+export function PlayerRevealCard({
+  reveal,
+  columns,
+}: PlayerRevealCardProps): JSX.Element {
   const viewModel = normalizeCanonicalRevealViewModel(reveal);
   const role = formatRole(viewModel.playerType);
   const meta = [viewModel.yearsPlayedDisplay, role, viewModel.primaryPosition]
@@ -32,48 +38,56 @@ export function PlayerRevealCard({ reveal }: PlayerRevealCardProps): JSX.Element
           {teamsDisplay.length === 0 ? 'Teams unavailable' : teamsDisplay}
         </p>
       </div>
-      <CareerStatStrip reveal={viewModel} />
-      <SeasonStatsDisclosure reveal={viewModel} />
+      <CareerStatStrip reveal={viewModel} columnOverrides={columns} />
+      <SeasonStatsDisclosure reveal={viewModel} columnOverrides={columns} />
     </section>
   );
 }
 
 function CareerStatStrip({
   reveal,
+  columnOverrides,
 }: {
   reveal: CanonicalRevealViewModel;
+  columnOverrides?: RevealColumnOverrides;
 }): JSX.Element {
   return (
     <div className="player-reveal-stat-lines">
-      {reveal.career.lines.map((line) => (
-        <StatLineGroup
-          key={line.kind}
-          line={line}
-          showHeading={reveal.career.lines.length > 1}
-          rows={[{
-            key: `career:${line.kind}`,
-            label: 'Career',
-            values: getColumns(line.kind).map(
-              (column) => line.stats[column] ?? EMPTY_VALUE,
-            ),
-          }]}
-          ariaLabel={`Career ${getStatLineLabel(line.kind).toLowerCase()} summary`}
-        />
-      ))}
+      {reveal.career.lines.map((line) => {
+        const columns = getRevealColumns(line.kind, columnOverrides);
+        return (
+          <StatLineGroup
+            key={line.kind}
+            line={line}
+            columns={columns}
+            showHeading={reveal.career.lines.length > 1}
+            rows={[{
+              key: `career:${line.kind}`,
+              label: 'Career',
+              values: columns.map(
+                (column) => line.stats[column] ?? EMPTY_VALUE,
+              ),
+            }]}
+            ariaLabel={`Career ${getStatLineLabel(line.kind).toLowerCase()} summary`}
+          />
+        );
+      })}
     </div>
   );
 }
 
 function SeasonStatsDisclosure({
   reveal,
+  columnOverrides,
 }: {
   reveal: CanonicalRevealViewModel;
+  columnOverrides?: RevealColumnOverrides;
 }): JSX.Element {
   return (
     <details className="player-season-stats">
       <summary>View season-by-season stats</summary>
       {reveal.seasons.length === 0 ? <p>No season stats available.</p> : (
-        <SeasonStatTables reveal={reveal} />
+        <SeasonStatTables reveal={reveal} columnOverrides={columnOverrides} />
       )}
     </details>
   );
@@ -81,17 +95,20 @@ function SeasonStatsDisclosure({
 
 function SeasonStatTables({
   reveal,
+  columnOverrides,
 }: {
   reveal: CanonicalRevealViewModel;
+  columnOverrides?: RevealColumnOverrides;
 }): JSX.Element {
   return (
     <div className="player-reveal-stat-lines">
       {reveal.career.lines.map((careerLine) => {
-        const columns = getColumns(careerLine.kind);
+        const columns = getRevealColumns(careerLine.kind, columnOverrides);
         return (
           <StatLineGroup
             key={careerLine.kind}
             line={careerLine}
+            columns={columns}
             showHeading={reveal.career.lines.length > 1}
             rows={reveal.seasons.map((season) => {
               const line = season.lines.find(
@@ -113,11 +130,13 @@ function SeasonStatTables({
 
 function StatLineGroup({
   line,
+  columns,
   showHeading,
   rows,
   ariaLabel,
 }: {
   line: CanonicalRevealStatLine;
+  columns: readonly string[];
   showHeading: boolean;
   rows: StatTableRow[];
   ariaLabel: string;
@@ -126,7 +145,7 @@ function StatLineGroup({
     <section aria-label={showHeading ? getStatLineLabel(line.kind) : undefined}>
       {showHeading ? <h3>{getStatLineLabel(line.kind)}</h3> : null}
       <StatTable
-        columns={getColumns(line.kind)}
+        columns={columns}
         rows={rows}
         ariaLabel={ariaLabel}
       />
@@ -173,10 +192,6 @@ function StatTable({
       </table>
     </div>
   );
-}
-
-function getColumns(kind: RevealStatKind): readonly string[] {
-  return kind === 'pitcher' ? PITCHER_COLUMNS : HITTER_COLUMNS;
 }
 
 function getStatLineLabel(kind: RevealStatKind): string {
