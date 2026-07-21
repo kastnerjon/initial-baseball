@@ -84,9 +84,10 @@ Completed foundation and mechanics include:
 - a portable seven-day editorial horizon service that creates only missing drafts, preserves existing editorial records, incorporates earlier horizon dates into repeat protection, joins current canonical review data, and returns validation warnings;
 - a server-only Supabase/Postgres `DailyPuzzleRepository` adapter backed by the distinct `daily_editorial_puzzles` table, with strict persisted-row decoding, date-range reads, atomic optimistic revision updates, canonical-ID-only JSONB selections, and a row-level-security-first migration;
 - a server-only single-editor administration boundary using HTTP Basic authentication over HTTPS, a stable actor ID, fail-closed credential configuration, service-role Supabase construction with browser session persistence disabled, and authorization before privileged client/repository composition;
-- an authorized server-rendered `/admin/daily` workflow that reads the upcoming seven-day horizon, displays every approved date/slot review field and validation warning, and manually creates only missing drafts through the portable horizon service.
+- an authorized server-rendered `/admin/daily` workflow that reads the upcoming seven-day horizon, displays every approved date/slot review field and validation warning, and manually creates only missing drafts through the portable horizon service;
+- authorized name/alias search over reviewed Daily candidates, genuine same-name disambiguation, exact initials/hints/canonical reveal preview, future-slot replacement through the portable lifecycle/repository service, and automatic post-save validation reruns.
 
-Most recent completed product work at this handoff: PR #117, authorized seven-day Daily admin review and missing-draft generation.
+Most recent completed product work at this handoff: PR #118, authorized Daily player search, preview, future-slot replacement, and validation reruns.
 
 ## Deployment state
 
@@ -99,18 +100,17 @@ The production deployment attempted for PR #114's merged `main` commit failed du
 - Verify hosted hint, guess, strikeout, Give Up, refresh, and completion flows.
 - Close issues #91 and #86 after successful hosted verification.
 
-The `daily_editorial_puzzles` migration is committed but has not yet been applied to a hosted project. `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `DAILY_ADMIN_USERNAME`, and `DAILY_ADMIN_PASSWORD` also remain unconfigured for hosted administration. The server composition and review workflow exist in code, but no hosted admin workflow is operational yet. The original `daily_puzzles`, `daily_puzzle_pitches`, attempt, result, database-player, and head-to-head tables remain inactive legacy scaffold and are not used by the current Daily repository.
+The `daily_editorial_puzzles` migration is committed but has not yet been applied to a hosted project. `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `DAILY_ADMIN_USERNAME`, and `DAILY_ADMIN_PASSWORD` also remain unconfigured for hosted administration. The server composition and administration workflow exist in code, but no hosted admin workflow is operational yet. The original `daily_puzzles`, `daily_puzzle_pitches`, attempt, result, database-player, and head-to-head tables remain inactive legacy scaffold and are not used by the current Daily repository.
 
 These deployment tasks do not block coding, GitHub CI, tests, or production builds when CI supplies its nonproduction build secret.
 
 ## Current work order
 
 1. Maintain this handoff and reconcile documentation whenever current state or roadmap priority changes.
-2. Add authorized player search, preview, slot replacement, and validation reruns through existing service boundaries.
-3. Add explicit schedule, publish, and archive controls without implicitly settling automatic publication or emergency correction/versioning.
-4. Apply the committed migration and configure hosted Supabase/Vercel environment variables before deploying administration.
-5. Add aggregate completed-game results, field comparison, monitoring, and remaining launch surfaces.
-6. Apply the approved heritage visual direction after core mechanics and administration are dependable.
+2. Add explicit schedule, publish, and archive controls without implicitly settling automatic publication or emergency correction/versioning.
+3. Apply the committed migration and configure hosted Supabase/Vercel environment variables before deploying administration.
+4. Add aggregate completed-game results, field comparison, monitoring, and remaining launch surfaces.
+5. Apply the approved heritage visual direction after core mechanics and administration are dependable.
 
 `tasks/todo.md` is the canonical active checklist and must remain consistent with this sequence.
 
@@ -174,7 +174,7 @@ For each future date, show:
 - generated/manual selection source;
 - required-data and quality warnings.
 
-The review-only portion above is implemented. The editor must still be able to search by name or alias, distinguish same-name players, preview initials/hints/reveal, replace a slot, rerun validation, and approve or schedule future puzzles.
+The editor can search by name or alias, distinguish genuine same-name players, preview exact initials/hints/canonical reveal data, replace an editable future slot, and receive rerun validation. Explicit schedule, publish, and archive controls remain the next bounded concern.
 
 ### Admin ownership
 
@@ -226,7 +226,7 @@ Record a settled answer here and in the appropriate canonical document in the sa
 
 ## New-conversation prompt
 
-> Continue work on `kastnerjon/initial-baseball`. First read `AGENTS.md`, `docs/START-HERE.md`, and `tasks/todo.md` from current GitHub `main`. Verify latest merged PRs, open PRs, open issues, CI, and Vercel deployment state before acting. Treat `docs/START-HERE.md` as the durable handoff. The exact next bounded concern is adding authorized player search, preview, slot replacement, and validation reruns to the existing seven-day `/admin/daily` review workflow through the portable Daily service boundaries. Keep schedule/publish/archive controls as the subsequent bounded concern. Do not reopen the settled public search-display decision; expose credentials or the service role to the browser; build against inactive legacy Supabase tables; let React or Supabase redefine Daily behavior; silently change published historical answers; begin emergency correction/versioning implicitly; or start the heritage redesign before administration is dependable. Keep documentation current in the same PR whenever product behavior, architecture, data contracts, administration, deployment state, or roadmap priority changes.
+> Continue work on `kastnerjon/initial-baseball`. First read `AGENTS.md`, `docs/START-HERE.md`, and `tasks/todo.md` from current GitHub `main`. Verify latest merged PRs, open PRs, open issues, CI, and Vercel deployment state before acting. Treat `docs/START-HERE.md` as the durable handoff. The exact next bounded concern is adding explicit authorized schedule, publish, and archive controls to the existing seven-day `/admin/daily` workflow through the portable Daily lifecycle service. Do not implicitly settle automatic publication or emergency published-puzzle correction/versioning; reopen the settled public search-display decision; expose credentials or the service role to the browser; build against inactive legacy Supabase tables; let React or Supabase redefine Daily behavior; silently change published historical answers; or start the heritage redesign before administration is dependable. Keep documentation current in the same PR whenever product behavior, architecture, data contracts, administration, deployment state, or roadmap priority changes.
 
 ## Maintenance rule
 

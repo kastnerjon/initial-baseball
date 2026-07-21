@@ -161,6 +161,41 @@ describe('Daily editorial horizon service', () => {
     ]);
   });
 
+  it('replaces an editable selection and reruns portable validation on the saved revision', async () => {
+    const repository = new InMemoryDailyPuzzleRepository();
+    const candidates = buildCandidates();
+    const scheduled = scheduleDailyPuzzle(createDraftFromCandidates(START_DATE, candidates), {
+      actorId: 'editor-2',
+      occurredAt: OCCURRED_AT,
+    });
+    const replacement = candidates.find(candidate => candidate.recognizabilityRank === 253)!;
+    repository.seed(scheduled);
+
+    const puzzle = await createDailyEditorialHorizonService(repository).replaceSelection({
+      puzzleDate: START_DATE,
+      slot: 1,
+      canonicalPlayerId: replacement.canonicalPlayerId,
+      actorId: 'editor-3',
+      occurredAt: '2026-07-22T14:00:00.000Z',
+      candidates,
+      usageHistory: [{
+        canonicalPlayerId: replacement.canonicalPlayerId,
+        dailyDate: '2026-07-31',
+      }],
+    });
+
+    expect(puzzle.status).toBe('draft');
+    expect(puzzle.revision).toBe(2);
+    expect(puzzle.selections[0]?.source).toBe('manual');
+    expect(puzzle.validation.slots[0]?.warnings).toEqual([
+      'outside-recognizability-band',
+      'recently-used',
+    ]);
+    const saved = await repository.getByDate(START_DATE);
+    expect(saved?.scheduledAt).toBeNull();
+    expect(saved?.selections[0]?.canonicalPlayerId).toBe(replacement.canonicalPlayerId);
+  });
+
   it('rejects invalid horizon dates and lengths', async () => {
     const service = createDailyEditorialHorizonService(new InMemoryDailyPuzzleRepository());
     await expect(service.ensureHorizon({ ...createInput(), startDate: '2026-02-30' })).rejects.toThrow('Invalid Daily editorial horizon date');

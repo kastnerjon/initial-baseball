@@ -49,9 +49,20 @@ export type DailyEditorialHorizonInput = {
   days?: number;
 };
 
+export type DailyEditorialReplacementInput = {
+  puzzleDate: string;
+  slot: number;
+  canonicalPlayerId: string;
+  actorId: string;
+  occurredAt: string;
+  candidates: readonly DailyLineupCandidate[];
+  usageHistory?: readonly DailyPlayerUsage[];
+};
+
 export type DailyEditorialHorizonService = {
   ensureHorizon(input: DailyEditorialHorizonInput): Promise<readonly DailyEditorialHorizonPuzzle[]>;
   getHorizon(input: Omit<DailyEditorialHorizonInput, 'actorId' | 'occurredAt' | 'reviewedDataVersion'>): Promise<readonly DailyEditorialHorizonPuzzle[]>;
+  replaceSelection(input: DailyEditorialReplacementInput): Promise<DailyEditorialHorizonPuzzle>;
 };
 
 export function createDailyEditorialHorizonService(
@@ -104,6 +115,17 @@ export function createDailyEditorialHorizonService(
         const record = recordsByDate.get(date);
         return record === undefined ? [] : [buildHorizonPuzzle(record, input.candidates, usageHistory)];
       });
+    },
+
+    async replaceSelection(input) {
+      const record = await editorialService.replaceSelection({
+        puzzleDate: input.puzzleDate,
+        slot: input.slot,
+        canonicalPlayerId: input.canonicalPlayerId,
+        actorId: input.actorId,
+        occurredAt: input.occurredAt,
+      });
+      return buildHorizonPuzzle(record, input.candidates, input.usageHistory ?? []);
     },
   };
 }
