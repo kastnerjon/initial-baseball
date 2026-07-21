@@ -94,10 +94,10 @@ Most recent completed product work at this handoff: PR #119, explicit authorized
 
 Merged GitHub code is ahead of the last verified successful Vercel production deployment.
 
-The Vercel Hobby quota is no longer the active deployment blocker. The latest inspected attempt reached the Next.js build and failed because `DAILY_PROGRESSION_SECRET` remains unset. Remaining progression deployment task: issue #97.
+The newest Vercel preview attempts are being rejected by the Hobby plan's rolling 100-deployment limit. A prior attempt that was admitted to the build independently reached Next.js page-data collection and failed because `DAILY_PROGRESSION_SECRET` remains unset. Both operational conditions must be cleared before hosted verification: allow the rolling deployment window to recover and configure issue #97's server-only secret.
 
 - Configure one stable server-only `DAILY_PROGRESSION_SECRET` for Vercel Preview and Production.
-- Trigger a fresh deployment.
+- After the rolling deployment limit permits it, trigger one deliberate fresh deployment rather than repeated retries.
 - Verify hosted hint, guess, strikeout, Give Up, refresh, and completion flows.
 - Close issues #91 and #86 after successful hosted verification.
 
@@ -108,7 +108,7 @@ These deployment tasks do not block coding, GitHub CI, tests, or production buil
 ## Current work order
 
 1. Maintain this handoff and reconcile documentation whenever current state or roadmap priority changes.
-2. Configure `DAILY_PROGRESSION_SECRET`, apply the committed editorial migration, configure the hosted server-only administration variables, and verify the deployed progression and admin workflows.
+2. Configure `DAILY_PROGRESSION_SECRET`, apply the committed editorial migration, configure the hosted server-only administration variables, and verify the deployed progression and admin workflows once the rolling Vercel limit permits a fresh deployment.
 3. Make the public Daily runtime consume the approved scheduled or published editorial puzzle for its date, while preserving historical legacy answers and keeping Supabase behind the server repository boundary.
 4. Add aggregate completed-game results, field comparison, monitoring, and remaining launch surfaces.
 5. Apply the approved heritage visual direction after core mechanics and administration are dependable.
@@ -221,13 +221,14 @@ Record a settled answer here and in the appropriate canonical document in the sa
 ## Known issues and follow-ups
 
 - Issue #97: configure and verify the production/preview Daily progression secret.
+- Vercel's rolling free-plan deployment limit is currently rejecting fresh preview attempts; avoid repeated retries until capacity returns.
 - The Daily editorial migration and administration variables still need hosted Supabase/Vercel configuration.
 - The public Daily runtime still uses deterministic generated selection and does not yet read approved editorial records from the repository.
 - Inactive legacy Supabase scaffold remains committed and should be removed only through separate, dependency-aware cleanup.
 
 ## New-conversation prompt
 
-> Continue work on `kastnerjon/initial-baseball`. First read `AGENTS.md`, `docs/START-HERE.md`, and `tasks/todo.md` from current GitHub `main`. Verify latest merged PRs, open PRs, open issues, CI, and Vercel deployment state before acting. Treat `docs/START-HERE.md` as the durable handoff. PR #119 completed explicit authorized schedule, publish, and archive controls through the existing portable Daily lifecycle service. The immediate operational work is to configure `DAILY_PROGRESSION_SECRET`, apply the committed `daily_editorial_puzzles` migration, configure the server-only admin variables, and verify the hosted workflows. The next bounded coding concern is making the public Daily runtime consume the approved scheduled or published editorial puzzle for its date while preserving historical legacy answers and keeping Supabase behind the server repository boundary. Do not settle automatic publication or emergency published-puzzle correction/versioning implicitly; reopen the settled public search-display decision; expose credentials or the service role to the browser; build against inactive legacy Supabase tables; let React or Supabase redefine Daily behavior; silently change published historical answers; or begin the heritage redesign before administration is dependable. Keep documentation current in the same PR whenever product behavior, architecture, data contracts, administration, deployment state, or roadmap priority changes.
+> Continue work on `kastnerjon/initial-baseball`. First read `AGENTS.md`, `docs/START-HERE.md`, and `tasks/todo.md` from current GitHub `main`. Verify latest merged PRs, open PRs, open issues, CI, and Vercel deployment state before acting. Treat `docs/START-HERE.md` as the durable handoff. PR #119 completed explicit authorized schedule, publish, and archive controls through the existing portable Daily lifecycle service. The immediate operational work is to configure `DAILY_PROGRESSION_SECRET`, apply the committed `daily_editorial_puzzles` migration, configure the server-only admin variables, and verify the hosted workflows after Vercel's rolling deployment capacity returns. The next bounded coding concern is making the public Daily runtime consume the approved scheduled or published editorial puzzle for its date while preserving historical legacy answers and keeping Supabase behind the server repository boundary. Do not settle automatic publication or emergency published-puzzle correction/versioning implicitly; reopen the settled public search-display decision; expose credentials or the service role to the browser; build against inactive legacy Supabase tables; let React or Supabase redefine Daily behavior; silently change published historical answers; or begin the heritage redesign before administration is dependable. Keep documentation current in the same PR whenever product behavior, architecture, data contracts, administration, deployment state, or roadmap priority changes.
 
 ## Maintenance rule
 
