@@ -1,9 +1,14 @@
 import type { DailyEditorialHorizonPuzzle, DailyEditorialHorizonSlot } from '@initial-baseball/daily';
 import type { JSX } from 'react';
 import type {
+  DailyAdminLifecycleAction,
   DailyAdminPlayerPreview,
   DailyAdminPlayerSearchResult,
 } from '../../dailyAdminWorkflow';
+import {
+  DailyLifecycleActionForm,
+  getDailyLifecycleSuccessMessage,
+} from './DailyLifecycleControls';
 
 export type DailyAdminEditorSelection = {
   puzzleDate: string;
@@ -17,6 +22,7 @@ type DailyAdministrationViewProps = {
   searchResults: readonly DailyAdminPlayerSearchResult[];
   preview: DailyAdminPlayerPreview | null;
   replacementComplete: boolean;
+  lifecycleActionComplete: DailyAdminLifecycleAction | null;
 };
 
 export function DailyAdministrationView({
@@ -26,6 +32,7 @@ export function DailyAdministrationView({
   searchResults,
   preview,
   replacementComplete,
+  lifecycleActionComplete,
 }: DailyAdministrationViewProps): JSX.Element {
   const selectedPuzzle = selection === null
     ? undefined
@@ -38,7 +45,7 @@ export function DailyAdministrationView({
         <div>
           <p className="eyebrow">Authorized operations</p>
           <h1 style={{ marginBottom: 8 }}>Daily lineup administration</h1>
-          <p style={{ margin: 0 }}>Review and edit the next seven Daily lineups. Replacements remain subject to the portable Daily validation rules.</p>
+          <p style={{ margin: 0 }}>Review, edit, approve, publish, and archive Daily lineups through the portable editorial lifecycle.</p>
         </div>
         <form action="/admin/daily/generate" method="post">
           <button type="submit" style={buttonStyle}>Generate missing drafts</button>
@@ -47,6 +54,10 @@ export function DailyAdministrationView({
 
       {replacementComplete ? (
         <p role="status" style={successStyle}>Replacement saved. Duplicate, rank-band, 90-day repeat, and reveal-readiness validation ran again.</p>
+      ) : null}
+
+      {lifecycleActionComplete !== null ? (
+        <p role="status" style={successStyle}>{getDailyLifecycleSuccessMessage(lifecycleActionComplete)}</p>
       ) : null}
 
       {selectedPuzzle !== undefined && selectedSlot !== undefined ? (
@@ -177,14 +188,17 @@ function PuzzleCard({
 }): JSX.Element {
   return (
     <article style={cardStyle}>
-      <header style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'baseline', flexWrap: 'wrap' }}>
+      <header style={{ display: 'flex', justifyContent: 'space-between', gap: 16, alignItems: 'center', flexWrap: 'wrap' }}>
         <div>
           <p className="eyebrow" style={{ marginBottom: 6 }}>{puzzle.puzzleDate}</p>
           <h2 style={{ margin: 0 }}>Daily Inning #{puzzle.puzzleNumber}</h2>
         </div>
-        <div style={{ textAlign: 'right' }}>
-          <strong>{puzzle.status.toUpperCase()}</strong>
-          <div style={{ fontSize: 14, opacity: 0.7 }}>Revision {puzzle.revision} · {puzzle.validation.valid ? 'Valid' : 'Needs review'}</div>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: 14, flexWrap: 'wrap' }}>
+          <div style={{ textAlign: 'right' }}>
+            <strong>{puzzle.status.toUpperCase()}</strong>
+            <div style={{ fontSize: 14, opacity: 0.7 }}>Revision {puzzle.revision} · {puzzle.validation.valid ? 'Valid' : 'Needs review'}</div>
+          </div>
+          <DailyLifecycleActionForm puzzleDate={puzzle.puzzleDate} status={puzzle.status} />
         </div>
       </header>
 

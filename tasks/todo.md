@@ -5,7 +5,7 @@ Last updated: 2026-07-21
 
 Completed work should not remain here as future work. Historical rationale belongs in pull requests, canonical documentation, or `tasks/lessons.md`. Durable resumption context, approved deferred decisions, and open decisions belong in `docs/START-HERE.md`.
 
-Current execution order: preserve the durable handoff, add explicit schedule/publish/archive controls through the completed authorized search/preview/replacement workflow, then configure hosted administration without moving domain rules into React or Supabase. The Vercel deployment task in issue #97 remains operationally required but does not block GitHub development.
+Current execution order: preserve the durable handoff, complete hosted progression and administration configuration, then make the public Daily runtime consume the approved editorial puzzle for its date without moving domain rules into React or Supabase. The Vercel deployment task in issue #97 is now an active operational blocker rather than a code blocker.
 
 ## 0. Complete launch answer-integrity deployment
 
@@ -51,8 +51,9 @@ Current execution order: preserve the durable handoff, add explicit schedule/pub
 - [x] Show canonical ID, display name, career years, role/position, fan-facing teams, recognizability rank, last Daily usage, selection source, and data-quality warnings — PR #117.
 - [x] Allow an authorized editor to search, preview, and replace any future slot through the service boundary — PR #118.
 - [x] Validate duplicates, recognizability tier, recent repeats, and required reveal data after generation and replacement — PR #118.
-- [ ] Add explicit schedule, publish, and archive actions without defining emergency published-puzzle correction implicitly.
+- [x] Add explicit authorized schedule, publish, and archive actions through the existing portable lifecycle service — PR #119.
 - [ ] Apply the committed migration and configure hosted Supabase/Vercel variables before deploying the admin workflow.
+- [ ] Make the public Daily runtime read the approved scheduled or published editorial puzzle for its date, while preserving historical legacy answers and keeping database access server-only.
 
 ## 4. Complete launch surfaces
 

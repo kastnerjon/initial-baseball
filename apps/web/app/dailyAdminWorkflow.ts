@@ -6,6 +6,7 @@ import {
   DAILY_REVIEWED_DATA_VERSION,
   createCanonicalDailyLineupCandidates,
   createDailyEditorialHorizonService,
+  createDailyPuzzleEditorialService,
   createProductionCanonicalDailySelector,
   rankPlayersByRecognizability,
   type DailyEditorialHorizonPuzzle,
@@ -17,10 +18,13 @@ import {
 import { normalizeGuess, searchCanonicalPlayers } from '@initial-baseball/engine';
 import type { Player } from '@initial-baseball/shared';
 import { buildDefaultDailyHints, type DefaultDailyHint } from './buildDefaultDailyHints';
+import type { DailyAdminLifecycleAction } from './dailyAdminLifecycleActions';
 import { createPlayerIdentity } from './dailyPuzzleAdapters';
 import { DAILY_PUZZLE_OVERRIDES } from './dailyPuzzleOverrides';
 import { getPacificDailyDateString } from './getPacificDailyDateString';
 import { getCanonicalRuntime, resolveCanonicalPlayerId } from './serverCanonicalData';
+
+export type { DailyAdminLifecycleAction } from './dailyAdminLifecycleActions';
 
 export interface DailyAdminWorkflowDependencies {
   candidates: readonly DailyLineupCandidate[];
@@ -76,6 +80,12 @@ export interface DailyAdminWorkflow {
     actorId: string;
     occurredAt: string;
   }): Promise<DailyEditorialHorizonPuzzle>;
+  transitionLifecycle(input: {
+    puzzleDate: string;
+    action: DailyAdminLifecycleAction;
+    actorId: string;
+    occurredAt: string;
+  }): Promise<DailyEditorialHorizonPuzzle>;
 }
 
 let defaultDependencies: DailyAdminWorkflowDependencies | null = null;
@@ -86,6 +96,7 @@ export function createDailyAdminWorkflow(
 ): DailyAdminWorkflow {
   const resolvedDependencies = dependencies ?? getDefaultDependencies();
   const horizonService = createDailyEditorialHorizonService(repository);
+  const editorialService = createDailyPuzzleEditorialService(repository);
   const candidatesById = new Map(
     resolvedDependencies.candidates.map(candidate => [candidate.canonicalPlayerId, candidate]),
   );
@@ -165,6 +176,29 @@ export function createDailyAdminWorkflow(
         candidates: resolvedDependencies.candidates,
         usageHistory: await getUsageHistory(repository, input.puzzleDate, resolvedDependencies),
       });
+    },
+
+    async transitionLifecycle(input) {
+      const transitionInput = {
+        puzzleDate: input.puzzleDate,
+        actorId: input.actorId,
+        occurredAt: input.occurredAt,
+      };
+
+      if (input.action === 'schedule') await editorialService.schedule(transitionInput);
+      if (input.action === 'publish') await editorialService.publish(transitionInput);
+      if (input.action === 'archive') await editorialService.archive(transitionInput);
+
+      const [puzzle] = await horizonService.getHorizon({
+        startDate: input.puzzleDate,
+        days: 1,
+        candidates: resolvedDependencies.candidates,
+        usageHistory: await getUsageHistory(repository, input.puzzleDate, resolvedDependencies),
+      });
+      if (puzzle === undefined) {
+        throw new Error(`Daily puzzle not available for ${input.puzzleDate}.`);
+      }
+      return puzzle;
     },
   };
 }
