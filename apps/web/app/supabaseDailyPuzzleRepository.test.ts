@@ -146,6 +146,22 @@ describe('Supabase Daily puzzle repository', () => {
     });
   });
 
+  it('rejects incomplete lifecycle audit pairs', async () => {
+    const row = toRow(buildDraft());
+    row.scheduled_at = SCHEDULED_AT;
+    row.scheduled_by = null;
+    const maybeSingle = vi.fn().mockResolvedValue({ data: row, error: null });
+    const eq = vi.fn().mockReturnValue({ maybeSingle });
+    const select = vi.fn().mockReturnValue({ eq });
+
+    await expect(createSupabaseDailyPuzzleRepository(asClient(
+      vi.fn().mockReturnValue({ select }),
+    )).getByDate(PUZZLE_DATE)).rejects.toMatchObject({
+      kind: 'invalid-row',
+      message: expect.stringContaining('must both be present or absent'),
+    });
+  });
+
   it('rejects skipped revisions before issuing a database query', async () => {
     const from = vi.fn();
     const skippedRevision = { ...buildDraft(), revision: 2 };
