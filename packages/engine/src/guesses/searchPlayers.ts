@@ -102,6 +102,8 @@ function rankPlayerSearchResult(
 
   const normalizedDisplayName = normalizeGuess(player.displayName);
   const bestIndex = Math.min(...matchIndexes);
+  const requiresYearDisambiguation = !collapseSameVisibleName
+    && (playerCountsByVisibleName.get(normalizedDisplayName) ?? 0) > 1;
   const metadata: NonNullable<PlayerSearchResult['metadata']> = {
     firstYear: player.firstYear ?? null,
     lastYear: player.lastYear ?? null,
@@ -121,8 +123,7 @@ function rankPlayerSearchResult(
       : [player.id],
     displayName: player.displayName,
     fullName,
-    requiresYearDisambiguation: !collapseSameVisibleName
-      && (playerCountsByVisibleName.get(normalizedDisplayName) ?? 0) > 1,
+    ...(requiresYearDisambiguation ? { requiresYearDisambiguation: true } : {}),
     metadata,
     matchPriority: bestIndex === 0 ? 0 : 1,
     bestIndex,
