@@ -72,9 +72,10 @@ Completed foundation and mechanics include:
 - canonical duplicate prevention in Daily lineups;
 - safe browser-save migration and schema-3 progression-token persistence;
 - anonymous stateless signed progression authorization;
-- career summaries, regular-season rows, multi-team season representation, two-way batting/pitching display, hitter OPS, pitcher saves, and configurable reveal columns.
+- career summaries, regular-season rows, multi-team season representation, two-way batting/pitching display, hitter OPS, pitcher saves, and configurable reveal columns;
+- centralized season-aware team display identities that preserve Lahman source IDs while supplying fan-facing abbreviations and names to all runtime consumers.
 
-Most recent completed product PR at this handoff: PR #100, configurable reveal columns.
+Most recent completed product PR at this handoff: PR #103, fan-facing team identity normalization.
 
 ## Deployment state
 
@@ -92,9 +93,8 @@ This deployment task does not block coding, GitHub CI, tests, or production buil
 ## Current work order
 
 1. Maintain this handoff and reconcile documentation whenever current state or roadmap priority changes.
-2. Correct team display abbreviations centrally in baseball-data; raw Lahman identifiers such as `LAN`, `NYA`, and `NYN` must not leak into fan-facing display where `LAD`, `NYY`, and `NYM` are appropriate.
-3. Complete representative reveal QA for David Ortiz, Mariano Rivera, Shohei Ohtani, Ken Griffey Jr., David Wright, Willie Mays, and both Ben Taylor identities.
-4. Finalize lineup mechanics:
+2. Complete representative reveal QA for David Ortiz, Mariano Rivera, Shohei Ohtani, Ken Griffey Jr., David Wright, Willie Mays, and both Ben Taylor identities.
+3. Finalize lineup mechanics:
    - at-bats 1–2: top 250 recognizability;
    - at-bats 3–4: top 1,000;
    - at-bats 5–6: top 2,500;
@@ -103,10 +103,10 @@ This deployment task does not block coding, GitHub CI, tests, or production buil
    - avoid players used in the previous 90 days;
    - deterministic output for date plus reviewed data version;
    - historical overrides and saved references remain resolvable.
-5. Define and persist the editorial puzzle lifecycle.
-6. Build the lineup administration workflow.
-7. Add aggregate completed-game results, field comparison, monitoring, and remaining launch surfaces.
-8. Apply the approved heritage visual direction after core mechanics and administration are dependable.
+4. Define and persist the editorial puzzle lifecycle.
+5. Build the lineup administration workflow.
+6. Add aggregate completed-game results, field comparison, monitoring, and remaining launch surfaces.
+7. Apply the approved heritage visual direction after core mechanics and administration are dependable.
 
 `tasks/todo.md` is the canonical active checklist and must remain consistent with this sequence.
 
@@ -194,9 +194,9 @@ The visual redesign is intentionally deferred until lineup mechanics and adminis
 
 - Source team identifiers and fan-facing abbreviations are separate concepts.
 - Preserve source IDs for traceability.
-- Add a centralized baseball-data display mapping rather than patching strings in React.
-- Mapping must account for historical team identity and season context where necessary.
-- Web, admin, reveal generation, and future clients should consume the same display representation.
+- Centralized, season-aware mapping lives in baseball-data rather than React.
+- Runtime season and career records expose source IDs plus fan-facing abbreviations and display names.
+- Web, admin, reveal generation, and future clients consume the same display representation.
 
 ### Launch integrity and results
 
@@ -215,7 +215,6 @@ These are genuinely unresolved and should be decided when the related implementa
 - Whether scheduling and publication require an explicit editor action or may auto-publish an already approved scheduled puzzle.
 - Exact emergency correction/versioning workflow for a published puzzle.
 - Exact source and maintenance process for recognizability rankings.
-- Exact historical team-display data model where one source identifier spans multiple public identities or abbreviations.
 - Whether seven days is the default generated horizon or merely the minimum editable horizon.
 - Whether representative UI QA is component/fixture based, browser screenshot based, or both once hosted previews are available.
 
@@ -224,7 +223,6 @@ Record a settled answer here and in the appropriate canonical document in the sa
 ## Known issues and follow-ups
 
 - Issue #97: configure and verify the production/preview Daily progression secret.
-- Team abbreviations currently leak Lahman-style IDs in reveal displays (`LAN`, `NYA`, `NYN`, and likely others). Fix centrally in baseball-data after a full mapping audit.
 - Representative reveal QA remains incomplete.
 - Vercel Hobby deployment quota temporarily prevents new hosted previews; GitHub CI remains available.
 
