@@ -217,7 +217,8 @@ The admin workflow must support at least the next seven Daily lineups.
 - The public puzzle for the date becomes `published` and is immutable for ordinary edits.
 - Past puzzles become `archived`.
 - Emergency corrections require an explicit versioned editorial action.
-- The next implementation should consume the completed authorization/composition boundary to expose the seven-day horizon through thin server routes and an authorized React workflow.
+- The authorized `/admin/daily` workflow now reads the seven-day horizon and manually creates only missing drafts through the completed server composition and portable horizon boundaries.
+- The next bounded implementation adds player search, preview, slot replacement, and validation reruns; lifecycle controls follow separately.
 
 ## Scale target: 10,000+ plays per day
 
@@ -257,8 +258,8 @@ Vercel and Supabase are hosting and persistence adapters, not owners of domain b
 ### 3. Future-lineup administration
 
 - Persist `draft`, `scheduled`, `published`, and `archived` states through the provider-neutral repository contract and Supabase/Postgres adapter.
-- Authorize the single editor and compose the server-only repository boundary.
-- Generate, inspect, edit, validate, approve, and schedule at least seven future puzzles through that boundary.
+- Authorize the single editor and expose the seven-day review and missing-draft workflow through the server-only repository boundary.
+- Add search, preview, replacement, validation reruns, and then explicit schedule/publish/archive controls through that boundary.
 - Keep published puzzles immutable absent an explicit versioned editorial action.
 
 ### 4. Aggregate results and launch hardening
