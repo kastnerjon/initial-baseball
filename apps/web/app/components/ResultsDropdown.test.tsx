@@ -9,7 +9,6 @@ it('renders only the name for a unique player even when other metadata is availa
     acceptedPlayerIds: ['burneaj01'],
     displayName: 'A. J. Burnett',
     fullName: 'A. J. Burnett',
-    requiresYearDisambiguation: false,
     metadata: {
       firstYear: 1999,
       lastYear: 2015,
