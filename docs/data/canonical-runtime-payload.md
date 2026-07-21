@@ -1,6 +1,6 @@
 # Canonical Runtime Payload
 
-The canonical runtime payload is the live serving contract between the baseball-data pipeline and server consumers. It joins canonical identity, season cards, career cards, and enrichment without asking the UI to recompute baseball facts.
+The canonical runtime payload is the live serving contract between the baseball-data pipeline and server consumers. It joins canonical identity, season cards, career cards, enrichment, and team display identity without asking the UI to recompute baseball facts.
 
 ## Generated files
 
@@ -14,13 +14,25 @@ The generator writes `packages/baseball-data/reports/canonical-runtime-payload/`
 
 ## Player index
 
-Each index row contains the canonical ID, Lahman ID, canonical display name, search aliases, player type, primary position, career range, season count, team IDs, Hall of Fame status, and reveal-shard path.
+Each index row contains the canonical ID, Lahman ID, canonical display name, search aliases, player type, primary position, career range, season count, source team IDs, fan-facing team identities, Hall of Fame status, and reveal-shard path.
 
 Longer source names remain search aliases. The display payload deliberately excludes `legalName`, preventing a longer source name from replacing the intended display name. The reveal therefore shows `David Ortiz`, while longer names can still match in search.
 
+## Team identity and display
+
+Lahman `teamID` values remain in `teamIds` for provenance and source joins. They are not assumed to be public abbreviations.
+
+The runtime generator resolves every `(season, teamID)` through committed Lahman `Teams.csv` and adds `teamIdentities` containing:
+
+- `sourceTeamId`: the original Lahman team identifier;
+- `abbreviation`: the fan-facing Baseball Reference abbreviation from `teamIDBR`, with `teamIDretro` and the source ID used only as explicit source fallbacks;
+- `displayName`: the season-specific team name.
+
+Season context is mandatory because the same franchise can have different public identities over time. Career team identities are deduplicated from the ordered season identities. Web, admin, reveal, and future clients consume this common representation rather than patching strings locally.
+
 ## Reveal records
 
-Each reveal record contains a career summary and one ordered row per regular season. Career and season rows include the applicable batting, pitching, advanced, achievement, team, and position fields.
+Each reveal record contains a career summary and one ordered row per regular season. Career and season rows include the applicable batting, pitching, advanced, achievement, source-team, fan-facing team, and position fields.
 
 The runtime generator only joins validated canonical records. It does not derive statistics. Unsupported fields remain `null` until their upstream enrichment is populated.
 
@@ -36,9 +48,9 @@ A legacy redirect is published only when its canonical target has a runtime reve
 
 ## QA contract
 
-Strict generation verifies one index row and one reveal per career card, one runtime season row per canonical season card, exact identity and enrichment joins, stable shard assignment, valid redirect targets, and exclusion of legal names from display payloads.
+Strict generation verifies one index row and one reveal per career card, one runtime season row per canonical season card, exact identity and enrichment joins, stable shard assignment, valid redirect targets, exclusion of legal names from display payloads, complete team-display coverage, and preservation of source team IDs.
 
-Consumer QA covers David Ortiz, Mariano Rivera, Shohei Ohtani, Ken Griffey Jr., David Wright, Willie Mays, Roy Campanella, the distinct Ben Taylor identities, redirects, and explicit redirect exclusions.
+Consumer QA covers David Ortiz, Mariano Rivera, Shohei Ohtani, Ken Griffey Jr., David Wright, Willie Mays, Roy Campanella, the distinct Ben Taylor identities, Dodgers/Yankees/Mets/Angels display abbreviations, redirects, and explicit redirect exclusions.
 
 ## Web serving boundary
 
