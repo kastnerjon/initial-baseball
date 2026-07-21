@@ -3,6 +3,7 @@ import type {
   CanonicalBattingLine,
   CanonicalPitchingLine,
   CanonicalPlayerReveal,
+  CanonicalTeamDisplayIdentity,
 } from '@initial-baseball/baseball-data/runtime';
 
 export type RevealStatKind = 'hitter' | 'pitcher';
@@ -39,7 +40,7 @@ export function createCanonicalRevealViewModel(
     playerType: reveal.playerType,
     primaryPosition: reveal.career.primaryPosition,
     yearsPlayedDisplay: `${reveal.career.firstSeason}–${reveal.career.lastSeason}`,
-    teamIds: reveal.career.teamIdentities.map((team) => team.abbreviation),
+    teamIds: displayTeamIds(reveal.career.teamIdentities, reveal.career.teamIds),
     career: {
       lines: buildStatLines({
         playerType: reveal.playerType,
@@ -50,7 +51,7 @@ export function createCanonicalRevealViewModel(
     },
     seasons: reveal.seasons.map((season) => ({
       season: season.season,
-      teamIds: season.teamIdentities.map((team) => team.abbreviation),
+      teamIds: displayTeamIds(season.teamIdentities, season.teamIds),
       lines: buildStatLines({
         playerType: reveal.playerType,
         batting: season.batting,
@@ -59,6 +60,13 @@ export function createCanonicalRevealViewModel(
       }),
     })),
   };
+}
+
+function displayTeamIds(
+  teamIdentities: CanonicalTeamDisplayIdentity[] | undefined,
+  sourceTeamIds: string[],
+): string[] {
+  return teamIdentities?.map((team) => team.abbreviation) ?? sourceTeamIds;
 }
 
 function buildStatLines({
