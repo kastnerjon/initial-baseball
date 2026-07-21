@@ -18,9 +18,13 @@ const ENVIRONMENT = {
 describe('Daily admin composition', () => {
   it('authorizes first, then composes the service-role client and repository', () => {
     const client = {} as SupabaseClient;
-    const repository = createRepositoryStub();
-    const createSupabaseClient = vi.fn().mockReturnValue(client);
-    const createRepository = vi.fn().mockReturnValue(repository);
+    const repository = {} as DailyPuzzleRepository;
+    const createSupabaseClient = vi.fn(
+      (_environment: Record<string, string | undefined>): SupabaseClient => client,
+    );
+    const createRepository = vi.fn(
+      (_client: SupabaseClient): DailyPuzzleRepository => repository,
+    );
 
     const context = createDailyAdminContext({
       authorizationHeader: basicAuthorization(ADMIN_USERNAME, ADMIN_PASSWORD),
@@ -34,8 +38,14 @@ describe('Daily admin composition', () => {
   });
 
   it('never constructs or exposes the service-role client for an unauthorized request', () => {
-    const createSupabaseClient = vi.fn();
-    const createRepository = vi.fn();
+    const client = {} as SupabaseClient;
+    const repository = {} as DailyPuzzleRepository;
+    const createSupabaseClient = vi.fn(
+      (_environment: Record<string, string | undefined>): SupabaseClient => client,
+    );
+    const createRepository = vi.fn(
+      (_client: SupabaseClient): DailyPuzzleRepository => repository,
+    );
 
     expect(() => createDailyAdminContext({
       authorizationHeader: null,
@@ -50,12 +60,4 @@ describe('Daily admin composition', () => {
 
 function basicAuthorization(username: string, password: string): string {
   return `Basic ${Buffer.from(`${username}:${password}`, 'utf8').toString('base64')}`;
-}
-
-function createRepositoryStub(): DailyPuzzleRepository {
-  return {
-    getByDate: vi.fn(),
-    listByDateRange: vi.fn(),
-    save: vi.fn(),
-  };
 }
