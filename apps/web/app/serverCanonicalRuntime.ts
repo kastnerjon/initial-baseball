@@ -2,7 +2,9 @@ import 'server-only';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { createFileSystemCanonicalRuntimeAccessor } from '@initial-baseball/baseball-data/runtime';
+import { createProductionCanonicalDailySelector } from '@initial-baseball/daily';
 import { createCanonicalDailyPuzzleForDate } from './createDailyPuzzleForDate';
+import { DAILY_PUZZLE_OVERRIDES } from './dailyPuzzleOverrides';
 import { createDailyProgressionTokenCodec } from './dailyProgressionToken';
 import { getDailyProgressionSecret } from './dailyProgressionSecret';
 import { createDailyRuntimeService } from './dailyRuntimeService';
@@ -18,9 +20,13 @@ export const canonicalSearchCandidates = canonicalRuntime.getPlayerIndex().map(p
   lastYear: player.lastSeason,
   teamsDisplay: player.teamIds.join(', '),
 }));
+const selectCanonicalDailyPlayers = createProductionCanonicalDailySelector(
+  DAILY_PUZZLE_OVERRIDES,
+  resolveCanonicalPlayerId,
+);
 export const dailyRuntime = createDailyRuntimeService({
   canonicalRuntime,
-  createPuzzle: date => createCanonicalDailyPuzzleForDate(date, resolveCanonicalPlayerId),
+  createPuzzle: date => createCanonicalDailyPuzzleForDate(date, selectCanonicalDailyPlayers),
   progressionTokens: createDailyProgressionTokenCodec(getDailyProgressionSecret()),
 });
 
