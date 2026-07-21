@@ -11,8 +11,8 @@ import {
   rankPlayersByRecognizability,
   resolveDailyPuzzleOverridePlayers,
   selectDailyPlayersForDate,
-  selectProductionCanonicalDailyPlayersForDate,
   type DailyPuzzleOverrideMap,
+  type ProductionCanonicalDailySelector,
 } from '@initial-baseball/daily';
 import { createDailyPuzzlePitch } from './dailyPuzzleAdapters';
 import { DAILY_PUZZLE_OVERRIDES } from './dailyPuzzleOverrides';
@@ -49,13 +49,9 @@ export function createDailyPuzzleForDateWithOverrides(
 
 export function createCanonicalDailyPuzzleForDate(
   date: string,
-  resolveCanonicalPlayerId: (playerId: string) => string | null,
+  selectPlayers: ProductionCanonicalDailySelector,
 ): DailyPuzzle {
-  const selectedPlayers = selectProductionCanonicalDailyPlayersForDate(
-    date,
-    DAILY_PUZZLE_OVERRIDES,
-    resolveCanonicalPlayerId,
-  );
+  const selectedPlayers = selectPlayers(date);
 
   return {
     id: `daily-${date}`,
