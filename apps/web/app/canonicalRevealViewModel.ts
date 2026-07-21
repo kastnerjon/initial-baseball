@@ -39,7 +39,7 @@ export function createCanonicalRevealViewModel(
     playerType: reveal.playerType,
     primaryPosition: reveal.career.primaryPosition,
     yearsPlayedDisplay: `${reveal.career.firstSeason}–${reveal.career.lastSeason}`,
-    teamIds: reveal.career.teamIds,
+    teamIds: reveal.career.teamIdentities.map((team) => team.abbreviation),
     career: {
       lines: buildStatLines({
         playerType: reveal.playerType,
@@ -50,7 +50,7 @@ export function createCanonicalRevealViewModel(
     },
     seasons: reveal.seasons.map((season) => ({
       season: season.season,
-      teamIds: season.teamIds,
+      teamIds: season.teamIdentities.map((team) => team.abbreviation),
       lines: buildStatLines({
         playerType: reveal.playerType,
         batting: season.batting,
