@@ -25,7 +25,7 @@ Use this to find the owning file or package before changing behavior.
 | Correct outcome by hint count | `packages/engine/src/scoring/getHitResultForRevealCount.ts` |
 | Runner advancement, including walks | `packages/engine/src/scoring/advanceRunners.ts` |
 | Guess matching | `packages/engine/src/guesses/matchGuessToPlayer.ts` |
-| Daily numbering, lineup generation, overrides, and session behavior | `packages/daily/src/` |
+| Daily numbering, lineup generation, overrides, lifecycle, horizon, and session behavior | `packages/daily/src/` |
 | Interim manual Daily overrides | `apps/web/app/dailyPuzzleOverrides.ts` |
 | Daily product rules | `docs/product/daily-inning-blueprint.md` |
 | Engine rules | `docs/spec/engine.md` |
@@ -40,9 +40,11 @@ Use this to find the owning file or package before changing behavior.
 | Progression-token claims, signing, and verification | `apps/web/app/dailyProgressionToken.ts` |
 | Web canonical runtime adapter | `apps/web/app/serverCanonicalRuntime.ts` |
 | Search, hint, and resolution routes | `apps/web/app/api/players/` and `apps/web/app/api/daily/` |
-| Admin UI and publication adapters | `apps/web/app/` behind repository/service boundaries |
-| Supabase schema, when persistence is introduced | `supabase/migrations/` |
-| Edge Functions, when a server function is required | `supabase/functions/` |
+| Admin UI and publication application adapters | `apps/web/app/` behind repository/service boundaries |
+| Supabase `DailyPuzzleRepository` implementation | `apps/web/app/supabaseDailyPuzzleRepository.ts` |
+| Supabase persisted-row encoding and validation | `apps/web/app/supabaseDailyPuzzleRowCodec.ts` |
+| Daily editorial Postgres schema and RLS boundary | `supabase/migrations/20260721143000_create_daily_puzzles.sql` |
+| Edge Functions, only when a server function is explicitly required | `supabase/functions/` |
 
 ## Canonical baseball data
 
@@ -76,4 +78,4 @@ Use this to find the owning file or package before changing behavior.
 
 ## Boundary rule
 
-Fix a wrong baseball fact in source data, normalization, or an auditable correction. Do not patch generated artifacts, React components, routes, or reveal formatting to make one player look correct.
+Fix a wrong baseball fact in source data, normalization, or an auditable correction. Do not patch generated artifacts, React components, routes, database rows, or reveal formatting to make one player look correct.
