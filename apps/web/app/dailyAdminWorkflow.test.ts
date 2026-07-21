@@ -8,6 +8,7 @@ import {
   type DailyPuzzleRepositorySaveOptions,
 } from '@initial-baseball/daily';
 import { describe, expect, it } from 'vitest';
+import { isSameOriginDailyAdminMutation } from './admin/daily/generate/route';
 import { createDailyAdminWorkflow, type DailyAdminWorkflowDependencies } from './dailyAdminWorkflow';
 
 const OCCURRED_AT = '2026-07-21T18:00:00.000Z';
@@ -112,6 +113,25 @@ describe('Daily admin workflow', () => {
 
     expect(puzzle?.validation.slots[0]?.lastDailyUsage).toBe(priorDate);
     expect(puzzle?.validation.slots[0]?.warnings).toContain('recently-used');
+  });
+});
+
+describe('Daily admin mutation boundary', () => {
+  it('accepts same-origin browser submissions and non-browser requests without Origin', () => {
+    expect(isSameOriginDailyAdminMutation(new Request('https://initial.example/admin/daily/generate', {
+      method: 'POST',
+      headers: { origin: 'https://initial.example' },
+    }))).toBe(true);
+    expect(isSameOriginDailyAdminMutation(new Request('https://initial.example/admin/daily/generate', {
+      method: 'POST',
+    }))).toBe(true);
+  });
+
+  it('rejects cross-origin browser submissions', () => {
+    expect(isSameOriginDailyAdminMutation(new Request('https://initial.example/admin/daily/generate', {
+      method: 'POST',
+      headers: { origin: 'https://attacker.example' },
+    }))).toBe(false);
   });
 });
 
