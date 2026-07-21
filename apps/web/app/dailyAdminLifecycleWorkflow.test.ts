@@ -11,9 +11,9 @@ import { describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 
+import { isDailyAdminLifecycleAction } from './dailyAdminLifecycleActions';
 import {
   createDailyAdminWorkflow,
-  isDailyAdminLifecycleAction,
   type DailyAdminWorkflowDependencies,
 } from './dailyAdminWorkflow';
 
