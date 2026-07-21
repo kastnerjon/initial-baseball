@@ -18,6 +18,7 @@ import {
 import { normalizeGuess, searchCanonicalPlayers } from '@initial-baseball/engine';
 import type { Player } from '@initial-baseball/shared';
 import { buildDefaultDailyHints, type DefaultDailyHint } from './buildDefaultDailyHints';
+import type { DailyAdminLifecycleAction } from './dailyAdminLifecycleActions';
 import { createPlayerIdentity } from './dailyPuzzleAdapters';
 import { DAILY_PUZZLE_OVERRIDES } from './dailyPuzzleOverrides';
 import { getPacificDailyDateString } from './getPacificDailyDateString';
@@ -29,13 +30,6 @@ export interface DailyAdminWorkflowDependencies {
   selectProductionLineup: ProductionCanonicalDailySelector;
   getCurrentDailyDate: () => string;
   loadReveal: (canonicalPlayerId: string) => CanonicalPlayerReveal;
-}
-
-export const DAILY_ADMIN_LIFECYCLE_ACTIONS = ['schedule', 'publish', 'archive'] as const;
-export type DailyAdminLifecycleAction = typeof DAILY_ADMIN_LIFECYCLE_ACTIONS[number];
-
-export function isDailyAdminLifecycleAction(value: string): value is DailyAdminLifecycleAction {
-  return DAILY_ADMIN_LIFECYCLE_ACTIONS.some(action => action === value);
 }
 
 export type DailyAdminPlayerSearchResult = {
