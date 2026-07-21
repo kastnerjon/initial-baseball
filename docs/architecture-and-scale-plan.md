@@ -38,7 +38,7 @@ It may generate client-consumable outputs, but web code must not generate, corre
 
 ### `packages/daily`
 
-Owns Daily-specific portable application logic: puzzle numbering, deterministic lineup selection, recognizability ranking, repeat protection, override validation, puzzle construction, editorial validation, and Daily session transitions. It may depend on `shared`, `engine`, and `baseball-data` where the package contract permits.
+Owns Daily-specific portable application logic: puzzle numbering, deterministic lineup selection, recognizability ranking, repeat protection, override validation, puzzle construction, editorial validation, editorial lifecycle invariants, the provider-neutral repository port, and Daily session transitions. It may depend on `shared`, `engine`, and `baseball-data` where the package contract permits.
 
 ### `apps/web`
 
@@ -154,6 +154,25 @@ The editorial system has two separate concerns.
 
 It validates slot rank bands, canonical duplicates, the repeat window, and reveal readiness without React or database dependencies.
 
+### Editorial lifecycle and repository contract
+
+`packages/daily` defines the provider-neutral editorial record, lifecycle rules, service boundary, and `DailyPuzzleRepository` port.
+
+- Records contain puzzle identity, date, number, explicit version and revision, nine canonical player IDs, generated/manual selection source, lifecycle status, and editorial audit metadata.
+- Records do not duplicate player names, teams, statistics, hints, or reveal cards.
+- Repository reads support one date and an inclusive date range for the seven-day workflow.
+- Repository writes use an expected revision so adapters can reject lost updates.
+- A deterministic proposal is created as `draft`.
+- Only a `draft` may become `scheduled`.
+- Editing a `scheduled` puzzle records the replacement as manual and returns the puzzle to `draft`, requiring fresh approval.
+- Only a `scheduled` puzzle may become `published`.
+- Only a `published` puzzle may become `archived`.
+- Published and archived puzzles reject ordinary slot replacement.
+- Emergency correction/versioning is deliberately separate from ordinary editing and remains an explicit future decision.
+- Actor IDs and timestamps are inputs to the portable service; domain code does not read platform clocks or authentication state.
+
+A database adapter implements the repository port and its uniqueness/concurrency guarantees. A web/admin application service supplies authorization context, calls the portable service, joins canonical player display data for review, and formats responses. React renders returned state and dispatches actions; it does not implement lifecycle or persistence rules.
+
 ### Editorial persistence and web workflow
 
 The admin workflow must support at least the next seven Daily lineups.
@@ -164,8 +183,6 @@ The admin workflow must support at least the next seven Daily lineups.
 - The public puzzle for the date becomes `published` and is immutable for ordinary edits.
 - Past puzzles become `archived`.
 - Emergency corrections require an explicit versioned editorial action.
-
-A repository boundary such as `DailyPuzzleRepository` owns persistence. React renders returned state and dispatches actions; it does not implement generation, validation, or lifecycle rules.
 
 ## Scale target: 10,000+ plays per day
 
@@ -205,7 +222,7 @@ Vercel is a hosting and deployment adapter, not the owner of domain behavior, ba
 ### 3. Future-lineup administration
 
 - Generate, inspect, edit, validate, approve, and schedule at least seven future puzzles.
-- Persist `draft`, `scheduled`, `published`, and `archived` states behind a repository boundary.
+- Persist `draft`, `scheduled`, `published`, and `archived` states through the provider-neutral repository contract.
 - Keep published puzzles immutable absent an explicit versioned editorial action.
 
 ### 4. Aggregate results and launch hardening
