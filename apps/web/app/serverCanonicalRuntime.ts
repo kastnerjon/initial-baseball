@@ -5,9 +5,14 @@ import { DAILY_PUZZLE_OVERRIDES } from './dailyPuzzleOverrides';
 import { createDailyProgressionTokenCodec } from './dailyProgressionToken';
 import { getDailyProgressionSecret } from './dailyProgressionSecret';
 import { createDailyRuntimeService } from './dailyRuntimeService';
-import { canonicalRuntime, resolveCanonicalPlayerId } from './serverCanonicalData';
+import {
+  getCanonicalRuntime,
+  getCanonicalSearchCandidates,
+  resolveCanonicalPlayerId,
+} from './serverCanonicalData';
 
-export { canonicalRuntime, canonicalSearchCandidates } from './serverCanonicalData';
+export const canonicalRuntime = getCanonicalRuntime();
+export const canonicalSearchCandidates = getCanonicalSearchCandidates();
 
 const selectCanonicalDailyPlayers = createProductionCanonicalDailySelector(
   DAILY_PUZZLE_OVERRIDES,
