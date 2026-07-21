@@ -6,6 +6,7 @@ import {
   DAILY_REVIEWED_DATA_VERSION,
   createCanonicalDailyLineupCandidates,
   createDailyEditorialHorizonService,
+  createDailyPuzzleEditorialService,
   createProductionCanonicalDailySelector,
   rankPlayersByRecognizability,
   type DailyEditorialHorizonPuzzle,
@@ -28,6 +29,13 @@ export interface DailyAdminWorkflowDependencies {
   selectProductionLineup: ProductionCanonicalDailySelector;
   getCurrentDailyDate: () => string;
   loadReveal: (canonicalPlayerId: string) => CanonicalPlayerReveal;
+}
+
+export const DAILY_ADMIN_LIFECYCLE_ACTIONS = ['schedule', 'publish', 'archive'] as const;
+export type DailyAdminLifecycleAction = typeof DAILY_ADMIN_LIFECYCLE_ACTIONS[number];
+
+export function isDailyAdminLifecycleAction(value: string): value is DailyAdminLifecycleAction {
+  return DAILY_ADMIN_LIFECYCLE_ACTIONS.some(action => action === value);
 }
 
 export type DailyAdminPlayerSearchResult = {
@@ -76,6 +84,12 @@ export interface DailyAdminWorkflow {
     actorId: string;
     occurredAt: string;
   }): Promise<DailyEditorialHorizonPuzzle>;
+  transitionLifecycle(input: {
+    puzzleDate: string;
+    action: DailyAdminLifecycleAction;
+    actorId: string;
+    occurredAt: string;
+  }): Promise<DailyEditorialHorizonPuzzle>;
 }
 
 let defaultDependencies: DailyAdminWorkflowDependencies | null = null;
@@ -86,6 +100,7 @@ export function createDailyAdminWorkflow(
 ): DailyAdminWorkflow {
   const resolvedDependencies = dependencies ?? getDefaultDependencies();
   const horizonService = createDailyEditorialHorizonService(repository);
+  const editorialService = createDailyPuzzleEditorialService(repository);
   const candidatesById = new Map(
     resolvedDependencies.candidates.map(candidate => [candidate.canonicalPlayerId, candidate]),
   );
@@ -165,6 +180,29 @@ export function createDailyAdminWorkflow(
         candidates: resolvedDependencies.candidates,
         usageHistory: await getUsageHistory(repository, input.puzzleDate, resolvedDependencies),
       });
+    },
+
+    async transitionLifecycle(input) {
+      const transitionInput = {
+        puzzleDate: input.puzzleDate,
+        actorId: input.actorId,
+        occurredAt: input.occurredAt,
+      };
+
+      if (input.action === 'schedule') await editorialService.schedule(transitionInput);
+      if (input.action === 'publish') await editorialService.publish(transitionInput);
+      if (input.action === 'archive') await editorialService.archive(transitionInput);
+
+      const [puzzle] = await horizonService.getHorizon({
+        startDate: input.puzzleDate,
+        days: 1,
+        candidates: resolvedDependencies.candidates,
+        usageHistory: await getUsageHistory(repository, input.puzzleDate, resolvedDependencies),
+      });
+      if (puzzle === undefined) {
+        throw new Error(`Daily puzzle not available for ${input.puzzleDate}.`);
+      }
+      return puzzle;
     },
   };
 }
