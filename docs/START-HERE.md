@@ -52,7 +52,7 @@ shared
 - `packages/engine`: pure baseball/game rules, search behavior, scoring, inning transitions, and share calculations.
 - `packages/baseball-data`: committed sources, canonical player identity, aliases, team and position history, season and career records, enrichment, QA, and generated runtime artifacts.
 - `packages/daily`: puzzle numbering, deterministic lineup selection, recognizability, repeat protection, override validation, puzzle construction, editorial lifecycle invariants, repository/service contracts, seven-day editorial orchestration, and portable Daily transitions.
-- `apps/web`: Next.js pages, React rendering, browser persistence, routes, sharing, admin surfaces, and the server-only Supabase repository adapter.
+- `apps/web`: Next.js pages, React rendering, browser persistence, routes, sharing, admin surfaces, server-only authorization/composition, and the Supabase repository adapter.
 - Supabase-hosted Postgres: canonical-ID-only puzzle publication and editorial persistence. It does not own baseball facts or lifecycle behavior.
 
 Rules, baseball facts, puzzle generation, lifecycle invariants, editorial orchestration, and persistence semantics must not be moved into React components or database code. Presentation adapters may format and deduplicate labels but must not reinterpret baseball facts. Vercel and Supabase are adapters, not architectural owners.
@@ -82,34 +82,34 @@ Completed foundation and mechanics include:
 - a provider-neutral Daily editorial record, repository port, and service contract with date-range reads, optimistic revisions, canonical-ID-only selections, explicit audit metadata, and executable lifecycle invariants;
 - explicit `draft` → `scheduled` → `published` → `archived` transitions, with edited scheduled puzzles returning to draft and published/archived puzzles immutable through ordinary replacement;
 - a portable seven-day editorial horizon service that creates only missing drafts, preserves existing editorial records, incorporates earlier horizon dates into repeat protection, joins current canonical review data, and returns validation warnings;
-- a server-only Supabase/Postgres `DailyPuzzleRepository` adapter backed by the distinct `daily_editorial_puzzles` table, with strict persisted-row decoding, date-range reads, atomic optimistic revision updates, canonical-ID-only JSONB selections, and a row-level-security-first migration.
+- a server-only Supabase/Postgres `DailyPuzzleRepository` adapter backed by the distinct `daily_editorial_puzzles` table, with strict persisted-row decoding, date-range reads, atomic optimistic revision updates, canonical-ID-only JSONB selections, and a row-level-security-first migration;
+- a server-only single-editor administration boundary using HTTP Basic authentication over HTTPS, a stable actor ID, fail-closed credential configuration, service-role Supabase construction with browser session persistence disabled, and authorization before privileged client/repository composition.
 
-Most recent completed product work at this handoff: PR #114, Supabase/Postgres Daily puzzle repository adapter.
+Most recent completed product work at this handoff: PR #115, Daily admin authorization and server-only repository composition.
 
 ## Deployment state
 
-Merged GitHub code is ahead of the last verified Vercel production deployment.
+Merged GitHub code is ahead of the last verified successful Vercel production deployment.
 
-Remaining operational task: issue #97.
+The production deployment attempted for PR #114's merged `main` commit failed during the Next.js build because `DAILY_PROGRESSION_SECRET` remains unset. Remaining operational task: issue #97.
 
 - Configure one stable server-only `DAILY_PROGRESSION_SECRET` for Vercel Preview and Production.
 - Redeploy after the Vercel Hobby deployment quota permits it.
 - Verify hosted hint, guess, strikeout, Give Up, refresh, and completion flows.
 - Close issues #91 and #86 after successful hosted verification.
 
-The `daily_editorial_puzzles` migration is committed but has not yet been applied to a hosted project. No Supabase service-role environment configuration or admin client composition exists yet. The original `daily_puzzles`, `daily_puzzle_pitches`, attempt, result, database-player, and head-to-head tables remain inactive legacy scaffold and are not used by the current Daily repository.
+The `daily_editorial_puzzles` migration is committed but has not yet been applied to a hosted project. `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `DAILY_ADMIN_USERNAME`, and `DAILY_ADMIN_PASSWORD` also remain unconfigured for hosted administration. The server composition boundary exists, but no hosted admin workflow consumes it yet. The original `daily_puzzles`, `daily_puzzle_pitches`, attempt, result, database-player, and head-to-head tables remain inactive legacy scaffold and are not used by the current Daily repository.
 
-These deployment tasks do not block coding, GitHub CI, tests, or production builds.
+These deployment tasks do not block coding, GitHub CI, tests, or production builds when CI supplies its nonproduction build secret.
 
 ## Current work order
 
 1. Maintain this handoff and reconcile documentation whenever current state or roadmap priority changes.
-2. Select the admin authentication method and compose the server-only Supabase client/repository boundary.
-3. Build the authorized seven-day web administration workflow using the completed lifecycle, horizon, and persistence services.
-4. Add player search, preview, replacement, validation reruns, and explicit schedule/publish/archive controls through service boundaries.
-5. Apply the committed migration and configure hosted Supabase/Vercel environment variables when the first admin workflow is ready for deployment.
-6. Add aggregate completed-game results, field comparison, monitoring, and remaining launch surfaces.
-7. Apply the approved heritage visual direction after core mechanics and administration are dependable.
+2. Build the authorized seven-day web administration workflow using the completed authentication, lifecycle, horizon, and persistence boundaries.
+3. Add player search, preview, replacement, validation reruns, and explicit schedule/publish/archive controls through service boundaries.
+4. Apply the committed migration and configure hosted Supabase/Vercel environment variables when the first admin workflow is ready for deployment.
+5. Add aggregate completed-game results, field comparison, monitoring, and remaining launch surfaces.
+6. Apply the approved heritage visual direction after core mechanics and administration are dependable.
 
 `tasks/todo.md` is the canonical active checklist and must remain consistent with this sequence.
 
@@ -147,9 +147,19 @@ These deployment tasks do not block coding, GitHub CI, tests, or production buil
 - The fixed selections are stored as one JSONB value so a revision-guarded puzzle update remains atomic without a provider-specific transaction RPC.
 - Names, aliases, teams, statistics, hints, and reveal records remain in baseball-data and are joined at read time.
 - Updates compare both puzzle date and expected revision; a missing returned row is a concurrency conflict.
-- Row-level security is enabled with no browser policies. Until admin authentication is selected, only a server-side service-role client may access the table.
+- Row-level security is enabled with no browser policies. Only the authorized server-side service-role client may access the table.
 - The migration lives in `supabase/migrations/`; the adapter lives in `apps/web/app/` and implements the provider-neutral port without redefining transitions.
 - The distinct table intentionally avoids destructive migration of the incompatible inactive `daily_puzzles` and `daily_puzzle_pitches` scaffold. Legacy cleanup is separate work, not part of administration implementation.
+
+### Admin authentication and composition
+
+- The current single-editor method is per-request HTTP Basic authentication at the Next.js server boundary and must be used only over HTTPS.
+- `DAILY_ADMIN_USERNAME` is the stable editorial actor ID; `DAILY_ADMIN_PASSWORD` must contain at least 32 characters.
+- Missing server configuration fails closed. Missing, malformed, or incorrect credentials fail uniformly as unauthorized.
+- Future admin routes must authorize before constructing the Supabase service-role client or `DailyPuzzleRepository`.
+- The privileged client uses only server-side `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`, disables browser-style session persistence, and never falls back to public variables.
+- The service role, credentials, client, and repository must never be serialized to client components, browser storage, logs, or responses.
+- This decision does not add public accounts, Supabase Auth, OAuth, editor sessions, password recovery, or multi-editor permissions. Those require a separate decision if the operational need changes.
 
 ### Admin lineup screen
 
@@ -198,7 +208,6 @@ The approved direction is heritage baseball rather than polished SaaS: Coopersto
 
 ## Open decisions
 
-- Admin authentication method.
 - Whether scheduling/publication requires explicit editor action or may auto-publish an approved scheduled puzzle.
 - Exact emergency correction/versioning workflow for a published puzzle.
 - Exact source and maintenance process for recognizability rankings.
@@ -210,13 +219,13 @@ Record a settled answer here and in the appropriate canonical document in the sa
 ## Known issues and follow-ups
 
 - Issue #97: configure and verify the production/preview Daily progression secret.
-- The Daily editorial migration still needs a hosted Supabase project, application, and server-only environment configuration.
+- The Daily editorial migration and administration variables still need a hosted Supabase project/application and Vercel configuration.
 - Inactive legacy Supabase scaffold remains committed and should be removed only through separate, dependency-aware cleanup.
 - Vercel Hobby deployment quota may temporarily prevent hosted previews; GitHub CI remains available.
 
 ## New-conversation prompt
 
-> Continue work on `kastnerjon/initial-baseball`. First read `AGENTS.md`, `docs/START-HERE.md`, and `tasks/todo.md` from current GitHub `main`. Verify latest merged PRs, open PRs, open issues, and CI before acting. Treat `docs/START-HERE.md` as the durable handoff. The exact next bounded concern is selecting the admin authentication method and composing the server-only Supabase client/repository boundary, followed by the authorized seven-day administration workflow. The provider-neutral lifecycle, horizon service, `daily_editorial_puzzles` schema, and Supabase repository adapter are complete. Do not restart settled lineup, lifecycle, horizon, or persistence architecture; expose the service role to the browser; build current features against inactive legacy Supabase tables; let Supabase redefine domain behavior; silently change published historical answers; or begin the heritage redesign before administration is dependable. Keep documentation current in the same PR whenever product behavior, architecture, data contracts, administration, deployment state, or roadmap priority changes.
+> Continue work on `kastnerjon/initial-baseball`. First read `AGENTS.md`, `docs/START-HERE.md`, and `tasks/todo.md` from current GitHub `main`. Verify latest merged PRs, open PRs, open issues, CI, and Vercel deployment state before acting. Treat `docs/START-HERE.md` as the durable handoff. The exact next bounded concern is building the authorized seven-day web administration workflow on the completed HTTP Basic authorization boundary, portable lifecycle/horizon services, `daily_editorial_puzzles` schema, and server-only Supabase repository composition. Do not restart settled lineup, lifecycle, horizon, persistence, or single-editor authentication architecture; expose credentials or the service role to the browser; build current features against inactive legacy Supabase tables; let Supabase redefine domain behavior; silently change published historical answers; begin emergency correction/versioning implicitly; or start the heritage redesign before administration is dependable. Keep documentation current in the same PR whenever product behavior, architecture, data contracts, administration, deployment state, or roadmap priority changes.
 
 ## Maintenance rule
 
