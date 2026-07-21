@@ -5,20 +5,13 @@ import {
 } from './index';
 import { selectProductionCanonicalDailyPlayersForDate } from './productionDailyLineup';
 
+const TEST_DATE = '2026-04-27';
 const resolveCanonicalPlayerId = (playerId: string): string => `canonical:${playerId}`;
 
 describe('production canonical Daily lineup', () => {
   it('is deterministic, canonical, unique, and nine players long', () => {
-    const first = selectProductionCanonicalDailyPlayersForDate(
-      '2026-07-20',
-      {},
-      resolveCanonicalPlayerId,
-    );
-    const second = selectProductionCanonicalDailyPlayersForDate(
-      '2026-07-20',
-      {},
-      resolveCanonicalPlayerId,
-    );
+    const first = selectProductionCanonicalDailyPlayersForDate(TEST_DATE, {}, resolveCanonicalPlayerId);
+    const second = selectProductionCanonicalDailyPlayersForDate(TEST_DATE, {}, resolveCanonicalPlayerId);
 
     expect(second).toEqual(first);
     expect(first).toHaveLength(9);
@@ -27,11 +20,7 @@ describe('production canonical Daily lineup', () => {
   });
 
   it('uses the approved recognizability curve in the live selector', () => {
-    const selections = selectProductionCanonicalDailyPlayersForDate(
-      '2026-07-20',
-      {},
-      resolveCanonicalPlayerId,
-    );
+    const selections = selectProductionCanonicalDailyPlayersForDate(TEST_DATE, {}, resolveCanonicalPlayerId);
     const ranks = new Map(
       rankPlayersByRecognizability(selections.map(selection => selection.player))
         .map((player, index) => [player.id, index + 1]),
@@ -46,7 +35,7 @@ describe('production canonical Daily lineup', () => {
 
   it('keeps exact manual override order and canonicalizes every answer', () => {
     const overrides = {
-      '2026-07-20': [
+      [TEST_DATE]: [
         'Ken Griffey Jr.',
         'David Wright',
         'CC Sabathia',
@@ -56,12 +45,12 @@ describe('production canonical Daily lineup', () => {
       ],
     } as const;
     const selections = selectProductionCanonicalDailyPlayersForDate(
-      '2026-07-20',
+      TEST_DATE,
       overrides,
       resolveCanonicalPlayerId,
     );
 
-    expect(selections.map(selection => selection.player.displayName)).toEqual(overrides['2026-07-20']);
+    expect(selections.map(selection => selection.player.displayName)).toEqual(overrides[TEST_DATE]);
     expect(selections.every(selection => selection.canonicalPlayerId.startsWith('canonical:'))).toBe(true);
   });
 });
