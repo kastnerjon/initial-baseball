@@ -1,9 +1,6 @@
 import type { Player } from '@initial-baseball/shared';
 import { describe, expect, it } from 'vitest';
-import {
-  createDailyEditorialHorizonService,
-  type DailyEditorialHorizonPuzzle,
-} from './dailyEditorialHorizon';
+import { createDailyEditorialHorizonService } from './dailyEditorialHorizon';
 import { type DailyLineupCandidate } from './dailyLineupQuality';
 import {
   createDailyPuzzleDraft,
@@ -73,9 +70,7 @@ function createInput(candidates = buildCandidates()) {
 describe('Daily editorial horizon service', () => {
   it('creates and returns seven ordered draft puzzles with validated canonical review data', async () => {
     const repository = new InMemoryDailyPuzzleRepository();
-    const service = createDailyEditorialHorizonService(repository);
-
-    const horizon = await service.ensureHorizon(createInput());
+    const horizon = await createDailyEditorialHorizonService(repository).ensureHorizon(createInput());
 
     expect(horizon).toHaveLength(7);
     expect(horizon.map(puzzle => puzzle.puzzleDate)).toEqual([
@@ -91,11 +86,10 @@ describe('Daily editorial horizon service', () => {
   it('preserves existing scheduled puzzles and creates only missing dates', async () => {
     const repository = new InMemoryDailyPuzzleRepository();
     const candidates = buildCandidates();
-    const existing = scheduleDailyPuzzle(createDraftFromCandidates(START_DATE, candidates), {
+    repository.seed(scheduleDailyPuzzle(createDraftFromCandidates(START_DATE, candidates), {
       actorId: 'editor-2',
       occurredAt: OCCURRED_AT,
-    });
-    repository.seed(existing);
+    }));
 
     const horizon = await createDailyEditorialHorizonService(repository).ensureHorizon(createInput(candidates));
 
@@ -104,8 +98,29 @@ describe('Daily editorial horizon service', () => {
     expect(repository.createCount).toBe(6);
   });
 
-  it('does not regenerate records when reading an existing horizon', async () => {
+  it('reserves players from fixed later puzzles while filling earlier gaps', async () => {
     const repository = new InMemoryDailyPuzzleRepository();
+    const candidates = buildCandidates();
+    const laterDate = '2026-08-02';
+    const later = scheduleDailyPuzzle(createDraftFromCandidates(laterDate, candidates), {
+      actorId: 'editor-2',
+      occurredAt: OCCURRED_AT,
+    });
+    repository.seed(later);
+
+    const horizon = await createDailyEditorialHorizonService(repository).ensureHorizon({
+      ...createInput(candidates),
+      days: 2,
+    });
+    const earlierIds = new Set(horizon[0]!.selections.map(slot => slot.player?.canonicalPlayerId));
+    const laterIds = new Set(later.selections.map(selection => selection.canonicalPlayerId));
+
+    expect([...earlierIds].some(id => id !== undefined && laterIds.has(id))).toBe(false);
+    expect(horizon[1]?.validation.valid).toBe(true);
+  });
+
+  it('does not regenerate records and returns dates in horizon order', async () => {
+    const repository = new InMemoryDailyPuzzleRepository(true);
     const service = createDailyEditorialHorizonService(repository);
     await service.ensureHorizon(createInput());
     const createCount = repository.createCount;
@@ -115,7 +130,10 @@ describe('Daily editorial horizon service', () => {
       candidates: buildCandidates(),
     });
 
-    expect(horizon).toHaveLength(7);
+    expect(horizon.map(puzzle => puzzle.puzzleDate)).toEqual([
+      '2026-08-01', '2026-08-02', '2026-08-03', '2026-08-04',
+      '2026-08-05', '2026-08-06', '2026-08-07',
+    ]);
     expect(repository.createCount).toBe(createCount);
   });
 
@@ -173,6 +191,8 @@ class InMemoryDailyPuzzleRepository implements DailyPuzzleRepository {
   private readonly byDate = new Map<string, DailyPuzzleEditorialRecord>();
   createCount = 0;
 
+  constructor(private readonly reverseRangeResults = false) {}
+
   get records(): readonly DailyPuzzleEditorialRecord[] {
     return [...this.byDate.values()];
   }
@@ -186,9 +206,10 @@ class InMemoryDailyPuzzleRepository implements DailyPuzzleRepository {
   }
 
   async listByDateRange(startDate: string, endDate: string): Promise<readonly DailyPuzzleEditorialRecord[]> {
-    return [...this.byDate.values()]
+    const records = [...this.byDate.values()]
       .filter(record => record.puzzleDate >= startDate && record.puzzleDate <= endDate)
       .sort((left, right) => left.puzzleDate.localeCompare(right.puzzleDate));
+    return this.reverseRangeResults ? records.reverse() : records;
   }
 
   async save(record: DailyPuzzleEditorialRecord, options: DailyPuzzleRepositorySaveOptions): Promise<DailyPuzzleEditorialRecord> {
