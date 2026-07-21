@@ -8,6 +8,7 @@ Use this to find the owning file or package before changing behavior.
 |---|---|
 | Current product behavior and scope | `docs/product/daily-inning-blueprint.md` |
 | Package ownership and launch architecture | `docs/architecture-and-scale-plan.md` |
+| Current persistence contract | `docs/spec/data-model.md` |
 | Daily launch answer-integrity decision | `docs/decisions/0001-daily-answer-integrity.md` |
 | Current Daily route and token contract | `docs/spec/api.md` |
 | Player identity and data-quality rules | `docs/spec/player-data-quality.md` |
@@ -43,7 +44,8 @@ Use this to find the owning file or package before changing behavior.
 | Admin UI and publication application adapters | `apps/web/app/` behind repository/service boundaries |
 | Supabase `DailyPuzzleRepository` implementation | `apps/web/app/supabaseDailyPuzzleRepository.ts` |
 | Supabase persisted-row encoding and validation | `apps/web/app/supabaseDailyPuzzleRowCodec.ts` |
-| Daily editorial Postgres schema and RLS boundary | `supabase/migrations/20260721143000_create_daily_puzzles.sql` |
+| Daily editorial Postgres schema and RLS boundary | `supabase/migrations/20260721143000_create_daily_editorial_puzzles.sql` |
+| Inactive original Supabase scaffold | `supabase/migrations/000001_initial_schema.sql` |
 | Edge Functions, only when a server function is explicitly required | `supabase/functions/` |
 
 ## Canonical baseball data
