@@ -136,9 +136,9 @@ function requireSelections(value: unknown): readonly DailyEditorialSelection[] {
 }
 
 function validateLifecycleAudit(record: DailyPuzzleEditorialRecord): void {
-  const scheduled = record.scheduledAt !== null && record.scheduledBy !== null;
-  const published = record.publishedAt !== null && record.publishedBy !== null;
-  const archived = record.archivedAt !== null && record.archivedBy !== null;
+  const scheduled = requireAuditPair(record.scheduledAt, record.scheduledBy, 'scheduled');
+  const published = requireAuditPair(record.publishedAt, record.publishedBy, 'published');
+  const archived = requireAuditPair(record.archivedAt, record.archivedBy, 'archived');
   const valid = (
     (record.status === 'draft' && !scheduled && !published && !archived)
     || (record.status === 'scheduled' && scheduled && !published && !archived)
@@ -146,6 +146,17 @@ function validateLifecycleAudit(record: DailyPuzzleEditorialRecord): void {
     || (record.status === 'archived' && scheduled && published && archived)
   );
   if (!valid) throwInvalidRow(`lifecycle audit metadata is inconsistent with status ${record.status}`);
+}
+
+function requireAuditPair(
+  occurredAt: string | null,
+  actorId: string | null,
+  field: string,
+): boolean {
+  if ((occurredAt === null) !== (actorId === null)) {
+    throwInvalidRow(`${field} audit timestamp and actor must both be present or absent`);
+  }
+  return occurredAt !== null;
 }
 
 function requireStatus(value: unknown): DailyPuzzleEditorialRecord['status'] {
