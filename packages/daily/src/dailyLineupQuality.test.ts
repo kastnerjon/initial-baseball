@@ -9,9 +9,10 @@ import {
 } from './dailyLineupQuality';
 
 describe('Daily lineup quality', () => {
-  it('defines the approved nine-slot recognizability policy', () => {
-    expect(DAILY_RECOGNIZABILITY_POLICY.map(({ maximumRank }) => maximumRank)).toEqual([
-      250, 250, 1000, 1000, 2500, 2500, 5000, 5000, 5000,
+  it('defines the approved nine-slot recognizability policy as sustainable bands', () => {
+    expect(DAILY_RECOGNIZABILITY_POLICY.map(({ minimumRank, maximumRank }) => [minimumRank, maximumRank])).toEqual([
+      [1, 250], [1, 250], [251, 1000], [251, 1000], [1001, 2500], [1001, 2500],
+      [2501, 5000], [2501, 5000], [2501, 5000],
     ]);
   });
 
@@ -29,12 +30,13 @@ describe('Daily lineup quality', () => {
     expect(changedVersion.map(x => x.canonicalPlayerId)).not.toEqual(base.map(x => x.canonicalPlayerId));
   });
 
-  it('honors exact rank thresholds and canonical uniqueness', () => {
+  it('honors exact rank bands and canonical uniqueness', () => {
     const lineup = generateDailyLineup({ seed: { dailyDate: '2026-07-21', reviewedDataVersion: 'v1' }, candidates: buildCandidates(5000) });
     expect(new Set(lineup.map(x => x.canonicalPlayerId)).size).toBe(9);
     lineup.forEach((selection, index) => {
       const policy = DAILY_RECOGNIZABILITY_POLICY[index];
       if (policy === undefined) throw new Error(`Missing policy for slot ${index + 1}.`);
+      expect(selection.recognizabilityRank).toBeGreaterThanOrEqual(policy.minimumRank);
       expect(selection.recognizabilityRank).toBeLessThanOrEqual(policy.maximumRank);
     });
   });
@@ -56,7 +58,7 @@ describe('Daily lineup quality', () => {
   });
 
   it('returns stable structured validation for manual warnings', () => {
-    const candidates = buildManualSelections(9);
+    const candidates = buildManualSelections();
     const duplicate = candidates[1];
     const first = candidates[0];
     if (!duplicate || !first) throw new Error('Expected candidates.');
@@ -79,7 +81,7 @@ describe('Daily lineup quality', () => {
   });
 
   it('rejects extra, duplicate, and out-of-range slots', () => {
-    const base = buildManualSelections(9);
+    const base = buildManualSelections();
     const extra = { ...base[0]!, slot: 10 };
     const extraResult = validateDailyLineup('2026-07-21', [...base, extra]);
     expect(extraResult.valid).toBe(false);
@@ -100,10 +102,13 @@ describe('Daily lineup quality', () => {
   });
 });
 
-function buildManualSelections(count: number): DailyLineupSelection[] {
-  return buildCandidates(count).map((candidate, index) => ({
-    ...candidate,
-    slot: index + 1,
+function buildManualSelections(): DailyLineupSelection[] {
+  return DAILY_RECOGNIZABILITY_POLICY.map((policy, index) => ({
+    canonicalPlayerId: `canonical:${index + 1}`,
+    player: buildPlayer(index + 1),
+    recognizabilityRank: policy.minimumRank,
+    revealReady: true,
+    slot: policy.slot,
     source: 'manual',
   }));
 }
