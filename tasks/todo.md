@@ -5,7 +5,7 @@ Last updated: 2026-07-21
 
 Completed work should not remain here as future work. Historical rationale belongs in pull requests, canonical documentation, or `tasks/lessons.md`. Durable resumption context, approved deferred decisions, and open decisions belong in `docs/START-HERE.md`.
 
-Current execution order: preserve the durable handoff, finalize lineup mechanics, then build a seven-day editorial administration workflow. The Vercel deployment task in issue #97 remains operationally required but does not block GitHub development.
+Current execution order: preserve the durable handoff, define the editorial puzzle lifecycle and repository boundary, then build the seven-day lineup administration workflow. The Vercel deployment task in issue #97 remains operationally required but does not block GitHub development.
 
 ## 0. Complete launch answer-integrity deployment
 
@@ -30,14 +30,16 @@ Current execution order: preserve the durable handoff, finalize lineup mechanics
 
 ## 2. Finalize Daily lineup quality
 
-- [ ] Apply the nine-slot recognizability curve: top 250 for at-bats 1-2, top 1,000 for 3-4, top 2,500 for 5-6, and top 5,000 for 7-9.
-- [ ] Avoid recently used players within the approved repeat window, currently 90 days.
-- [ ] Confirm deterministic generation for a date and reviewed data version.
-- [ ] Verify historical overrides and saved references still resolve after runtime migration.
-- [ ] Produce validation details suitable for editorial review: rank band, recent usage, duplicate status, and required reveal-data readiness.
+- [x] Apply a sustainable nine-slot recognizability curve: ranks 1-250 for at-bats 1-2, 251-1,000 for 3-4, 1,001-2,500 for 5-6, and 2,501-5,000 for 7-9.
+- [x] Avoid canonically repeated players within the approved 90-day window.
+- [x] Make generation deterministic for puzzle date, reviewed data version, and algorithm version.
+- [x] Preserve published legacy lineups before the explicit quality-algorithm launch date and keep historical overrides resolvable.
+- [x] Produce portable validation details for rank band, recent usage, duplicate status, lineup shape, and required reveal-data readiness.
+- [x] Cache candidates, seeded usage history, and generated lineups in the server runtime instead of replaying all history on every action.
 
 ## 3. Add future-lineup administration
 
+- [ ] Define the provider-neutral puzzle lifecycle and repository/service contract before selecting a database provider.
 - [ ] Support generation, viewing, and editing for at least the next seven Daily lineups.
 - [ ] Show each future date, puzzle number, lifecycle status, and all nine slots in one operational workflow.
 - [ ] Show canonical ID, display name, career years, role/position, fan-facing teams, recognizability rank, last Daily usage, selection source, and data-quality warnings.
