@@ -63,4 +63,5 @@ export {
   type DailyEditorialHorizonService,
   type DailyEditorialHorizonSlot,
   type DailyEditorialPlayerReview,
+  type DailyEditorialReplacementInput,
 } from './dailyEditorialHorizon';
