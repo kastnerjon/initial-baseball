@@ -1,4 +1,3 @@
-import type { CanonicalPlayerReveal } from '@initial-baseball/baseball-data/runtime';
 import {
   createDailyPuzzleDraft,
   getDailyPuzzleNumber,
@@ -177,5 +176,3 @@ class InMemoryRepository implements DailyPuzzleRepository {
     return record;
   }
 }
-
-void (null as CanonicalPlayerReveal | null);
