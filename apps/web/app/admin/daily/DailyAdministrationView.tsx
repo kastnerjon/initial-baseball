@@ -1,11 +1,14 @@
 import type { DailyEditorialHorizonPuzzle, DailyEditorialHorizonSlot } from '@initial-baseball/daily';
-import type { DailyPuzzleStatus } from '@initial-baseball/shared';
 import type { JSX } from 'react';
 import type {
   DailyAdminLifecycleAction,
   DailyAdminPlayerPreview,
   DailyAdminPlayerSearchResult,
 } from '../../dailyAdminWorkflow';
+import {
+  DailyLifecycleActionForm,
+  getDailyLifecycleSuccessMessage,
+} from './DailyLifecycleControls';
 
 export type DailyAdminEditorSelection = {
   puzzleDate: string;
@@ -54,7 +57,7 @@ export function DailyAdministrationView({
       ) : null}
 
       {lifecycleActionComplete !== null ? (
-        <p role="status" style={successStyle}>{getLifecycleSuccessMessage(lifecycleActionComplete)}</p>
+        <p role="status" style={successStyle}>{getDailyLifecycleSuccessMessage(lifecycleActionComplete)}</p>
       ) : null}
 
       {selectedPuzzle !== undefined && selectedSlot !== undefined ? (
@@ -195,7 +198,7 @@ function PuzzleCard({
             <strong>{puzzle.status.toUpperCase()}</strong>
             <div style={{ fontSize: 14, opacity: 0.7 }}>Revision {puzzle.revision} · {puzzle.validation.valid ? 'Valid' : 'Needs review'}</div>
           </div>
-          <LifecycleActionForm puzzleDate={puzzle.puzzleDate} status={puzzle.status} />
+          <DailyLifecycleActionForm puzzleDate={puzzle.puzzleDate} status={puzzle.status} />
         </div>
       </header>
 
@@ -210,19 +213,6 @@ function PuzzleCard({
         </table>
       </div>
     </article>
-  );
-}
-
-function LifecycleActionForm({ puzzleDate, status }: { puzzleDate: string; status: DailyPuzzleStatus }): JSX.Element | null {
-  const action = getLifecycleAction(status);
-  if (action === null) return null;
-
-  return (
-    <form action="/admin/daily/lifecycle" method="post">
-      <input type="hidden" name="puzzleDate" value={puzzleDate} />
-      <input type="hidden" name="action" value={action.action} />
-      <button type="submit" style={buttonStyle}>{action.label}</button>
-    </form>
   );
 }
 
@@ -248,19 +238,6 @@ function SlotRow({ puzzle, slot, selected }: { puzzle: DailyEditorialHorizonPuzz
       <td style={bodyCellStyle}>{editable ? <a href={buildEditorHref(puzzle.puzzleDate, slot.slot)} style={textLinkStyle}>Search / replace</a> : 'Locked'}</td>
     </tr>
   );
-}
-
-function getLifecycleAction(status: DailyPuzzleStatus): { action: DailyAdminLifecycleAction; label: string } | null {
-  if (status === 'draft') return { action: 'schedule', label: 'Approve & schedule' };
-  if (status === 'scheduled') return { action: 'publish', label: 'Publish' };
-  if (status === 'published') return { action: 'archive', label: 'Archive' };
-  return null;
-}
-
-function getLifecycleSuccessMessage(action: DailyAdminLifecycleAction): string {
-  if (action === 'schedule') return 'Puzzle scheduled. Its revision and scheduling audit metadata were saved.';
-  if (action === 'publish') return 'Puzzle published. Ordinary player replacement is now locked.';
-  return 'Puzzle archived. Its published selections remain immutable.';
 }
 
 function buildCareerLines(preview: DailyAdminPlayerPreview): string[] {
