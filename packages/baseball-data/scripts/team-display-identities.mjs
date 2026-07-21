@@ -1,3 +1,16 @@
+const TEAM_DISPLAY_NAME_CORRECTIONS = new Map([
+  ['2016:LAA', 'Los Angeles Angels'],
+  ['2017:LAA', 'Los Angeles Angels'],
+  ['2018:LAA', 'Los Angeles Angels'],
+  ['2019:LAA', 'Los Angeles Angels'],
+  ['2020:LAA', 'Los Angeles Angels'],
+  ['2021:LAA', 'Los Angeles Angels'],
+  ['2022:LAA', 'Los Angeles Angels'],
+  ['2023:LAA', 'Los Angeles Angels'],
+  ['2024:LAA', 'Los Angeles Angels'],
+  ['2025:LAA', 'Los Angeles Angels'],
+]);
+
 export function buildTeamDisplayIdentityIndex(csvText) {
   const rows = parseCsv(csvText);
   const index = new Map();
@@ -11,7 +24,7 @@ export function buildTeamDisplayIdentityIndex(csvText) {
     const identity = {
       sourceTeamId,
       abbreviation: clean(row.teamIDBR) || clean(row.teamIDretro) || sourceTeamId,
-      displayName: clean(row.name) || sourceTeamId,
+      displayName: TEAM_DISPLAY_NAME_CORRECTIONS.get(key) || clean(row.name) || sourceTeamId,
     };
 
     const existing = index.get(key);
