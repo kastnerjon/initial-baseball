@@ -3,38 +3,23 @@
 Status: Active project handoff
 Last updated: 2026-07-21
 
-Use this file to resume work in a new conversation or by a new contributor. It records current state, approved future decisions, unresolved decisions, and the exact next work. It is not a history log. Pull requests and `tasks/lessons.md` retain historical rationale.
+Use this file to resume work. It records current state, settled future requirements, unresolved decisions, and exact next work. Pull requests and `tasks/lessons.md` retain history.
 
 ## Resume protocol
-
-Before changing code:
 
 1. Read `AGENTS.md`.
 2. Read this file.
 3. Read `tasks/todo.md`.
-4. Verify current GitHub `main`, open pull requests, relevant issues, and CI.
+4. Verify current GitHub `main`, open pull requests, relevant issues, CI, Vercel, and hosted configuration.
 5. Read only the canonical documents and source files needed for the next bounded task.
 6. Write the repository scope contract before implementation.
-7. Complete one owning concern per pull request unless the user explicitly approves a different scope.
+7. Complete one owning concern per pull request.
 
-Do not restart settled architecture discussions merely because the conversation changed. If this file conflicts with code or a canonical document, inspect the latest merged pull requests and correct the drift before proceeding.
+Do not restart settled architecture discussions because the conversation changed. If this handoff conflicts with code or another canonical document, inspect the latest merged PRs and correct the drift first.
 
-## Current product
+## Product and architecture
 
-Initial Baseball currently means one committed product: **Daily Inning**, a browser-first daily baseball guessing game.
-
-- Everyone receives the same nine-player puzzle for the Daily date.
-- Each at-bat begins with initials and supports up to four ordered hints.
-- Correct answers yield HR, 3B, 2B, 1B, or BB based on hints used.
-- Three incorrect guesses or Give Up produces a strikeout.
-- The engine advances runners, outs, hits, walks, and runs.
-- A resolved at-bat shows a canonical career summary and expandable regular-season statistics.
-- The completed game produces spoiler-safe share output.
-- Accounts, streaks, native apps, and head-to-head play are deferred.
-
-Canonical product behavior: `docs/product/daily-inning-blueprint.md`.
-
-## Current architecture
+Initial Baseball currently means one committed product: **Daily Inning**, a browser-first daily baseball guessing game. Everyone receives the same nine-player puzzle for the date. Each at-bat begins with initials and up to four ordered hints. Correct answers yield HR, 3B, 2B, 1B, or BB based on hints used; three wrong guesses or Give Up produces a strikeout. The pure engine owns runner advancement, outs, hits, walks, and runs. A resolved at-bat shows canonical career and regular-season data; completion produces spoiler-safe share output. Accounts, streaks, native apps, and head-to-head play remain deferred.
 
 ```text
 shared
@@ -48,188 +33,128 @@ shared
                         Supabase/Postgres repository adapter
 ```
 
-- `packages/shared`: stable portable types and contracts.
+- `packages/shared`: stable portable contracts.
 - `packages/engine`: pure baseball/game rules, search behavior, scoring, inning transitions, and share calculations.
-- `packages/baseball-data`: committed sources, canonical player identity, aliases, team and position history, season and career records, enrichment, QA, and generated runtime artifacts.
-- `packages/daily`: puzzle numbering, deterministic lineup selection, recognizability, repeat protection, override validation, puzzle construction, editorial lifecycle invariants, repository/service contracts, seven-day editorial orchestration, and portable Daily transitions.
-- `apps/web`: Next.js pages, React rendering, browser persistence, routes, sharing, admin surfaces, server-only authorization/composition, and the Supabase repository adapter.
-- Supabase-hosted Postgres: canonical-ID-only puzzle publication and editorial persistence. It does not own baseball facts or lifecycle behavior.
+- `packages/baseball-data`: canonical identity, aliases, baseball facts, recognizability inputs, career/season records, enrichment, QA, and generated runtime artifacts.
+- `packages/daily`: puzzle numbering, deterministic selection, lineup quality, repeat protection, editorial public-eligibility policy, lifecycle invariants, repository/service contracts, seven-day orchestration, and portable Daily transitions.
+- `apps/web`: Next.js/React rendering, browser persistence, routes, sharing, server-only authorization/composition, public runtime composition, and the Supabase repository adapter.
+- Supabase/Postgres stores canonical-ID-only editorial records and metadata. It does not own baseball facts, selection policy, or lifecycle behavior.
 
-Rules, baseball facts, puzzle generation, lifecycle invariants, editorial orchestration, and persistence semantics must not be moved into React components or database code. Presentation adapters may format and deduplicate labels but must not reinterpret baseball facts. Vercel and Supabase are adapters, not architectural owners.
+React and routes do not define baseball, puzzle-selection, lifecycle, or persistence rules. Service-role credentials remain server-only. Vercel and Supabase are adapters, not architectural owners.
 
+Canonical product behavior: `docs/product/daily-inning-blueprint.md`.
 Canonical architecture: `docs/architecture-and-scale-plan.md`.
+Public editorial runtime contract: `docs/spec/public-daily-editorial-runtime.md`.
 Source ownership map: `docs/engineering/source-map.md`.
 
 ## Current verified implementation state
 
-Completed foundation and mechanics include:
+The repository now includes:
 
-- canonical player identity and legacy redirects;
-- pinned, checksum-verified identity inputs for reproducible local, preview, production, and CI builds;
-- canonical season facts, season aggregates, season cards, career aggregates, career cards, enrichment, and runtime payloads;
-- canonical server-side search, hint, answer resolution, and terminal reveal delivery;
-- hidden-answer production-build QA;
-- safe browser-save migration and schema-3 progression-token persistence;
-- anonymous stateless signed progression authorization;
-- career summaries, regular-season rows, multi-team season representation, two-way batting/pitching display, hitter OPS, pitcher saves, and configurable reveal columns;
-- centralized season-aware team identities preserving source IDs while supplying fan-facing abbreviations and names;
-- executable representative reveal QA for Ortiz, Rivera, Ohtani, Griffey, Wright, Mays, Campanella, and distinct Ben Taylor records;
-- audited 2016-and-later Angels display-name correction, unique rendered career abbreviations, and safe fallback for older schema-1 artifacts;
-- a portable, versioned nine-slot Daily lineup quality contract with canonical duplicate detection, reveal-readiness validation, and a 90-day repeat window;
-- production canonical selection using non-overlapping recognizability bands: ranks 1-250 for slots 1-2, 251-1,000 for 3-4, 1,001-2,500 for 5-6, and 2,501-5,000 for 7-9;
-- an explicit lineup-quality launch date of `2026-07-22`, with all earlier published dates continuing to reproduce the legacy selector rather than silently changing answers;
-- one server-runtime selector instance that caches canonical candidates, seeded 90-day history, and generated lineups;
-- a provider-neutral Daily editorial record, repository port, and service contract with date-range reads, optimistic revisions, canonical-ID-only selections, explicit audit metadata, and executable lifecycle invariants;
-- explicit `draft` → `scheduled` → `published` → `archived` transitions, with edited scheduled puzzles returning to draft and published/archived puzzles immutable through ordinary replacement;
-- a portable seven-day editorial horizon service that creates only missing drafts, preserves existing editorial records, incorporates earlier horizon dates into repeat protection, joins current canonical review data, and returns validation warnings;
-- a server-only Supabase/Postgres `DailyPuzzleRepository` adapter backed by the distinct `daily_editorial_puzzles` table, with strict persisted-row decoding, date-range reads, atomic optimistic revision updates, canonical-ID-only JSONB selections, and a row-level-security-first migration;
-- a server-only single-editor administration boundary using HTTP Basic authentication over HTTPS, a stable actor ID, fail-closed credential configuration, service-role Supabase construction with browser session persistence disabled, and authorization before privileged client/repository composition;
-- an authorized server-rendered `/admin/daily` workflow that reads the upcoming seven-day horizon, displays every approved date/slot review field and validation warning, and manually creates only missing drafts through the portable horizon service;
-- authorized name/alias search over reviewed Daily candidates, genuine same-name disambiguation, exact initials/hints/canonical reveal preview, future-slot replacement through the portable lifecycle/repository service, and automatic post-save validation reruns;
-- explicit authorized schedule, publish, and archive actions that use the existing portable lifecycle service, preserve optimistic revisions and audit metadata, enforce same-origin mutation requests, and leave invalid transition order authoritative in `packages/daily`.
+- canonical player identity, redirects, pinned reproducible source inputs, season/career facts, reveal cards, enrichment, runtime payloads, and representative data QA;
+- canonical server-side name search, guarded hints, answer resolution, terminal reveal delivery, and hidden-answer production-build QA;
+- schema-3 browser-save recovery and anonymous stateless signed progression authorization;
+- career summaries, chronological regular-season rows, multi-team seasons, two-way display, hitter OPS, pitcher saves, configurable reveal columns, and season-aware fan-facing team identity;
+- a versioned nine-slot lineup-quality contract with canonical duplicate detection, required-data validation, non-overlapping recognizability bands, and a 90-day repeat window;
+- lineup-quality launch date `2026-07-22`; dates before it continue reproducing the legacy selector and historical overrides;
+- a provider-neutral editorial record and repository port with optimistic revisions, canonical-ID-only selections, explicit audit metadata, and `draft` → `scheduled` → `published` → `archived` lifecycle invariants;
+- a seven-day editorial horizon service that creates only missing drafts, preserves existing records, includes earlier horizon dates in repeat protection, joins review data, and returns validation warnings;
+- a server-only Supabase adapter backed by `daily_editorial_puzzles`, strict row decoding, atomic revision-guarded writes, and RLS-first migration;
+- fail-closed single-editor HTTP Basic authorization, stable actor ID, server-only service-role composition, and authorization before privileged client/repository construction;
+- authorized `/admin/daily` generation, seven-day review, player search, same-name disambiguation, exact preview, future-slot replacement, validation reruns, and explicit schedule/publish/archive controls;
+- a public Daily selection policy in `packages/daily` and server composition in `apps/web` that read the editorial repository by date, use only `scheduled` or `published` canonical selections, retain deterministic fallback when no approved record exists, preserve all pre-launch legacy answers, exclude drafts, and refuse to reinterpret archived records until a replay/versioning policy is settled;
+- an unchanged browser bootstrap contract containing only public puzzle metadata, initials, and an opaque progression token. Hidden IDs, answers, hints, reveal data, and credentials remain server-side.
 
-Most recent completed product work at this handoff: PR #119, explicit authorized Daily schedule, publish, and archive controls.
+Most recent completed product work on `main`: PR #119, explicit authorized lifecycle controls.
+Current in-flight work: public editorial Daily runtime PR from branch `agent/public-editorial-daily-runtime`.
 
-## Deployment state
+## Deployment and hosted configuration
 
-Merged GitHub code is ahead of the last verified successful Vercel production deployment.
+GitHub `main` is ahead of the last verified successful Vercel production deployment.
 
-The newest Vercel preview attempts are being rejected by the Hobby plan's rolling 100-deployment limit. A prior attempt that was admitted to the build independently reached Next.js page-data collection and failed because `DAILY_PROGRESSION_SECRET` remains unset. Both operational conditions must be cleared before hosted verification: allow the rolling deployment window to recover and configure issue #97's server-only secret.
+Vercel deployment capacity has recovered: a fresh preview for the public-runtime branch was accepted, compiled successfully, and passed Next.js type checking. It then failed during page-data collection because `DAILY_PROGRESSION_SECRET` is still unset. Issue #97 remains the operational blocker.
 
-- Configure one stable server-only `DAILY_PROGRESSION_SECRET` for Vercel Preview and Production.
-- After the rolling deployment limit permits it, trigger one deliberate fresh deployment rather than repeated retries.
-- Verify hosted hint, guess, strikeout, Give Up, refresh, and completion flows.
-- Close issues #91 and #86 after successful hosted verification.
+Required hosted work:
 
-The `daily_editorial_puzzles` migration is committed but has not yet been applied to a hosted project. `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `DAILY_ADMIN_USERNAME`, and `DAILY_ADMIN_PASSWORD` also remain unconfigured for hosted administration. The server composition and full manual administration workflow exist in code, but no hosted admin workflow is operational yet. The original `daily_puzzles`, `daily_puzzle_pitches`, attempt, result, database-player, and head-to-head tables remain inactive legacy scaffold and are not used by the current Daily repository.
+- configure one stable server-only `DAILY_PROGRESSION_SECRET` for Preview and Production;
+- apply `supabase/migrations/20260721143000_create_daily_editorial_puzzles.sql` to the hosted Supabase project;
+- configure server-only `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `DAILY_ADMIN_USERNAME`, and a `DAILY_ADMIN_PASSWORD` of at least 32 characters;
+- trigger one deliberate deployment after configuration;
+- verify hosted bootstrap, hint, correct guess, third strike, Give Up, refresh, completion, editorial fallback, scheduled/published selection, and `/admin/daily` workflows;
+- close issues #91 and #86 only after successful hosted verification.
 
-These deployment tasks do not block coding, GitHub CI, tests, or production builds when CI supplies its nonproduction build secret.
+The available connected tools have not verified or configured the hosted Supabase migration or required environment variables. Do not infer that they exist. The original `daily_puzzles`, `daily_puzzle_pitches`, attempt, result, database-player, and head-to-head tables remain inactive legacy scaffold.
 
 ## Current work order
 
-1. Maintain this handoff and reconcile documentation whenever current state or roadmap priority changes.
-2. Configure `DAILY_PROGRESSION_SECRET`, apply the committed editorial migration, configure the hosted server-only administration variables, and verify the deployed progression and admin workflows once the rolling Vercel limit permits a fresh deployment.
-3. Make the public Daily runtime consume the approved scheduled or published editorial puzzle for its date, while preserving historical legacy answers and keeping Supabase behind the server repository boundary.
-4. Add aggregate completed-game results, field comparison, monitoring, and remaining launch surfaces.
-5. Apply the approved heritage visual direction after core mechanics and administration are dependable.
+1. Complete and merge the bounded public editorial Daily runtime PR after focused review and full CI.
+2. Configure the progression secret, apply the hosted editorial migration, configure all server-only administration variables, deploy once, and verify signed gameplay plus `/admin/daily` end to end.
+3. Add aggregate completed-game results, field comparison, monitoring, and remaining launch surfaces.
+4. Apply the approved heritage visual direction after mechanics, administration, and hosted operation are dependable.
 
 `tasks/todo.md` is the canonical active checklist and must remain consistent with this sequence.
 
-## Approved decisions not yet fully implemented
+## Settled requirements to preserve
 
-### Lineup editorial horizon
+### Editorial horizon and lifecycle
 
-- The admin workflow must support viewing and editing at least the next seven Daily lineups, not only tomorrow's lineup.
-- The default operational view should make the upcoming week easy to scan.
-- Draft generation may occur at least seven days ahead.
-- The portable horizon service defaults to seven days but permits an adapter-supplied positive horizon length.
-- Ensuring a horizon is idempotent: existing draft, scheduled, published, or archived records are preserved and only missing dates are generated.
-- Earlier records in the requested horizon contribute to repeat protection for later generated dates.
-- An editor can review and replace any future slot before publication.
-- The first web implementation uses a manual Generate action; cron automation remains optional later.
+- The admin workflow covers at least the next seven lineups; the default horizon is seven but adapters may supply another positive length.
+- Horizon generation is idempotent: only missing dates become drafts; existing records are preserved; earlier horizon dates contribute to repeat protection.
+- Editors may replace future slots before publication. Manual replacements are marked manual.
+- Only drafts schedule, only scheduled records publish, and only published records archive.
+- Editing a scheduled record returns it to draft and clears scheduling approval.
+- Published and archived records are immutable through ordinary replacement.
+- Repository writes use expected revisions. Adapters supply actor IDs and timestamps.
+- Emergency changes require an explicit future correction/versioning action.
 
-### Puzzle lifecycle
+### Public puzzle selection
 
-- Puzzle states are `draft`, `scheduled`, `published`, and `archived`.
-- The generator proposes a deterministic draft.
-- Manual edits record that a slot was editorially selected rather than generated.
-- Only drafts may be scheduled, only scheduled puzzles may be published, and only published puzzles may be archived.
-- Editing a scheduled puzzle returns it to draft and clears prior scheduling approval.
-- Published and archived puzzles are immutable for ordinary edits.
-- Repository writes use expected revisions so persistence adapters can reject lost updates.
-- Actor IDs and timestamps are supplied by adapters; portable domain code does not read authentication state or clocks.
-- Emergency changes require an explicit editorial/versioning action, not a silent answer replacement.
-- The public game reads the approved scheduled or published puzzle for its date.
-- Historical dates before the lineup-quality launch remain bound to their legacy generated answers unless an explicit future migration/versioning decision is adopted.
+- Dates before `2026-07-22` always use the legacy deterministic selector/override path, even if an editorial row exists.
+- On or after launch, only `scheduled` and `published` editorial rows may define public answers.
+- Draft, missing, or date-mismatched rows use the deterministic quality-selector fallback.
+- Archived rows do not silently fall back or redefine history; public replay remains unavailable until an explicit archived-history/versioning policy is adopted.
+- Persisted canonical IDs are joined to current canonical baseball data on the server. Missing referenced players fail closed.
+- The repository read and service-role client remain server-only. Public bootstrap and action responses retain existing spoiler-safe contracts.
 
-### Editorial persistence
+### Persistence and authorization
 
-- Supabase-hosted Postgres is the initial relational provider for editorial Daily puzzles.
-- One `daily_editorial_puzzles` row represents one puzzle date and stores puzzle identity, lifecycle state, revision, audit metadata, and exactly nine canonical-ID selections.
-- The fixed selections are stored as one JSONB value so a revision-guarded puzzle update remains atomic without a provider-specific transaction RPC.
-- Names, aliases, teams, statistics, hints, and reveal records remain in baseball-data and are joined at read time.
-- Updates compare both puzzle date and expected revision; a missing returned row is a concurrency conflict.
-- Row-level security is enabled with no browser policies. Only the authorized server-side service-role client may access the table.
-- The migration lives in `supabase/migrations/`; the adapter lives in `apps/web/app/` and implements the provider-neutral port without redefining transitions.
-- The distinct table intentionally avoids destructive migration of the incompatible inactive `daily_puzzles` and `daily_puzzle_pitches` scaffold. Legacy cleanup is separate work, not part of administration implementation.
+- One `daily_editorial_puzzles` row represents one date and stores puzzle identity, lifecycle state, revision, audit metadata, and exactly nine canonical-ID selections in one JSONB value.
+- Names, aliases, teams, stats, hints, and reveals remain in baseball-data and are joined at read time.
+- RLS remains enabled with no browser policies; only the server-side service role may access the table.
+- `DAILY_ADMIN_USERNAME` is the stable actor ID. Missing configuration fails closed; malformed or wrong credentials fail uniformly as unauthorized.
+- Authorization occurs before constructing the privileged client/repository. Credentials, keys, clients, and repository objects are never serialized, logged, or stored in the browser.
+- No Supabase Auth, OAuth, editor sessions, password recovery, public accounts, or multi-editor permissions are introduced without a separate decision.
 
-### Admin authentication and composition
+### Reveal, data, and visual direction
 
-- The current single-editor method is per-request HTTP Basic authentication at the Next.js server boundary and must be used only over HTTPS.
-- `DAILY_ADMIN_USERNAME` is the stable editorial actor ID; `DAILY_ADMIN_PASSWORD` must contain at least 32 characters.
-- Missing server configuration fails closed. Missing, malformed, or incorrect credentials fail uniformly as unauthorized.
-- Future admin routes must authorize before constructing the Supabase service-role client or `DailyPuzzleRepository`.
-- The privileged client uses only server-side `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY`, disables browser-style session persistence, and never falls back to public variables.
-- The service role, credentials, client, and repository must never be serialized to client components, browser storage, logs, or responses.
-- This decision does not add public accounts, Supabase Auth, OAuth, editor sessions, password recovery, or multi-editor permissions. Those require a separate decision if the operational need changes.
-
-### Admin lineup screen
-
-For each future date, show:
-
-- Daily date and puzzle number;
-- lifecycle status;
-- all nine slots and expected recognizability band;
-- canonical player ID, display name, career years, player type, primary position, and fan-facing teams;
-- recognizability rank and most recent Daily usage;
-- generated/manual selection source;
-- required-data and quality warnings.
-
-The editor can search by name or alias, distinguish genuine same-name players, preview exact initials/hints/canonical reveal data, replace an editable future slot, receive rerun validation, and explicitly schedule, publish, or archive according to the portable lifecycle. These controls do not settle whether publication should later be automated.
-
-### Admin ownership
-
-- Pure generation, validation, lifecycle invariants, repository/service ports, and seven-day orchestration remain in `packages/daily`.
-- Canonical player facts remain in `packages/baseball-data`.
-- Persistence adapters implement `DailyPuzzleRepository` without redefining lifecycle rules.
-- The database stores canonical player IDs and editorial metadata, not duplicate statistics.
-- Web/admin adapters supply authorization and timestamps, load canonical candidates and usage history, and call portable services.
-- Admin React components render returned state and dispatch actions; they do not own generation, validation, lifecycle, or persistence rules.
-
-### Reveal behavior and team identity
-
-- Career summary remains separate from one chronological row per regular season.
-- All teams for a multi-team season remain represented.
+- Career summary remains separate from one chronological row per regular season; all teams for multi-team seasons remain represented.
 - Hitter, pitcher, and two-way presets remain configurable; OPS and saves remain supported.
-- WAR, OPS+, ERA+, awards, All-Star selections, voting finishes, and leader flags remain hidden until reproducible approved upstream sources exist.
-- If Baseball Reference WAR is approved later, label it `bWAR`; never invent generic WAR from Lahman data.
-- Source team IDs and fan-facing identities remain separate.
-- Season-aware team mapping and audited corrections live in baseball-data, not React.
-
-### Visual direction
-
-The approved direction is heritage baseball rather than polished SaaS: Cooperstown and old scorecard character, Shea/municipal ballpark signage, 1970s Topps influence, paper/ink/scoreboard/ticket motifs, restrained navy/orange/aged cream/gold/field green, square borders, and utilitarian typography. Preserve the opening, active at-bat, post-at-bat reveal, and final box-score flow. Defer redesign until lineup mechanics and administration are reliable.
+- WAR, OPS+, ERA+, awards, All-Star selections, voting finishes, and leader flags remain hidden until reproducible approved sources exist. Any future Baseball Reference WAR must be labeled `bWAR`.
+- Source team IDs and fan-facing identities remain separate; corrections belong in baseball-data, not React.
+- The approved visual direction is heritage baseball—scorecard, municipal ballpark signage, and 1970s card character—not polished SaaS. Redesign remains deferred.
 
 ### Launch integrity and results
 
-- Launch remains anonymous and client-driven.
-- Signed progression blocks ordinary forged future progression but does not claim tamper-proof anonymous scoring.
-- Do not add Redis, replay caches, per-action database writes, or durable anonymous sessions without a separate decision.
-- Aggregate results should use at most one compact, idempotent completed-game submission.
-- Raw completed-game outcomes should remain sufficient to recalculate aggregates later.
+- Launch remains anonymous and client-driven. Signed progression blocks ordinary forged future progression but does not claim tamper-proof scoring.
+- Do not add Redis, replay caches, durable anonymous sessions, or per-action database writes without a separate decision.
+- Aggregate results should use at most one compact idempotent completed-game submission and preserve raw outcomes sufficient to recalculate aggregates.
 
 ## Open decisions
 
-- Whether scheduled puzzles should later publish automatically or continue to require the explicit editor action now available.
+- Whether scheduled puzzles should later publish automatically or continue to require explicit editor action.
 - Exact emergency correction/versioning workflow for a published puzzle.
+- Exact public replay policy for archived editorial puzzles.
 - Exact source and maintenance process for recognizability rankings.
-- Whether seven days remains the default generated horizon once operations begin or should be expanded.
-- Whether representative UI QA should later add browser screenshots once hosted previews are available; executable data/runtime QA is already required.
+- Whether the generated horizon should remain seven days once operations begin.
+- Whether representative UI QA should add browser screenshots after hosted previews are operational.
 
-Record a settled answer here and in the appropriate canonical document in the same PR that adopts it.
+## Known issues
 
-## Known issues and follow-ups
-
-- Issue #97: configure and verify the production/preview Daily progression secret.
-- Vercel's rolling free-plan deployment limit is currently rejecting fresh preview attempts; avoid repeated retries until capacity returns.
-- The Daily editorial migration and administration variables still need hosted Supabase/Vercel configuration.
-- The public Daily runtime still uses deterministic generated selection and does not yet read approved editorial records from the repository.
-- Inactive legacy Supabase scaffold remains committed and should be removed only through separate, dependency-aware cleanup.
-
-## New-conversation prompt
-
-> Continue work on `kastnerjon/initial-baseball`. First read `AGENTS.md`, `docs/START-HERE.md`, and `tasks/todo.md` from current GitHub `main`. Verify latest merged PRs, open PRs, open issues, CI, and Vercel deployment state before acting. Treat `docs/START-HERE.md` as the durable handoff. PR #119 completed explicit authorized schedule, publish, and archive controls through the existing portable Daily lifecycle service. The immediate operational work is to configure `DAILY_PROGRESSION_SECRET`, apply the committed `daily_editorial_puzzles` migration, configure the server-only admin variables, and verify the hosted workflows after Vercel's rolling deployment capacity returns. The next bounded coding concern is making the public Daily runtime consume the approved scheduled or published editorial puzzle for its date while preserving historical legacy answers and keeping Supabase behind the server repository boundary. Do not settle automatic publication or emergency published-puzzle correction/versioning implicitly; reopen the settled public search-display decision; expose credentials or the service role to the browser; build against inactive legacy Supabase tables; let React or Supabase redefine Daily behavior; silently change published historical answers; or begin the heritage redesign before administration is dependable. Keep documentation current in the same PR whenever product behavior, architecture, data contracts, administration, deployment state, or roadmap priority changes.
+- Issue #97: configure and verify the Preview/Production progression secret.
+- Hosted editorial migration and administration variables remain unverified/unconfigured.
+- Hosted signed progression and admin workflows remain unverified.
+- Inactive legacy Supabase scaffold remains committed and should be removed only through separate dependency-aware cleanup.
 
 ## Maintenance rule
 
-Update this file when the latest meaningful milestone, deployment state, current work order, approved deferred decisions, open decisions, operational blockers, or standard continuation prompt changes. Do not add routine implementation history or duplicate entire canonical specifications.
+Update this file when the latest milestone, deployment state, work order, settled deferred decisions, open decisions, operational blockers, or continuation prompt changes. Do not add routine implementation history or duplicate entire specifications.

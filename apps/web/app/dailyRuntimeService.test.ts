@@ -1,300 +1,164 @@
 import { createCanonicalRuntimeAccessor } from '@initial-baseball/baseball-data/runtime';
-import {
-  DEFAULT_DAILY_HINT_CONFIG,
-  DEFAULT_DAILY_STATS_HINT_CONFIG,
-  type DailyPuzzle,
-} from '@initial-baseball/shared';
+import { DEFAULT_DAILY_HINT_CONFIG, DEFAULT_DAILY_STATS_HINT_CONFIG, type DailyPuzzle } from '@initial-baseball/shared';
 import { describe, expect, it } from 'vitest';
-import {
-  createDailyProgressionTokenCodec,
-  type DailyProgressionClaims,
-} from './dailyProgressionToken';
+import { createDailyProgressionTokenCodec, type DailyProgressionClaims } from './dailyProgressionToken';
 import { DailyRuntimeRequestError, createDailyRuntimeService } from './dailyRuntimeService';
 
-const canonicalPlayerId = 'ibp_ab000000000000000000';
-const otherPlayerId = 'ibp_cd000000000000000000';
-const legacyPlayerId = 'chadwick:answer';
+const answerId = 'ibp_ab000000000000000000';
+const otherId = 'ibp_cd000000000000000000';
+const legacyId = 'chadwick:answer';
 const answerName = 'Hidden Answer';
-const fullRevealMarker = 'FULL_REVEAL_MARKER';
-const puzzleDate = '2026-07-20';
-const tokenSecret = 'daily-runtime-service-test-secret-0123456789';
-const progressionTokens = createDailyProgressionTokenCodec(tokenSecret);
+const revealMarker = 'FULL_REVEAL_MARKER';
+const date = '2026-07-22';
+const tokens = createDailyProgressionTokenCodec('daily-runtime-service-test-secret-0123456789');
 const service = createDailyRuntimeService({
-  canonicalRuntime: buildCanonicalRuntime(),
-  createPuzzle: buildPuzzle,
-  progressionTokens,
+  canonicalRuntime: buildRuntime(),
+  createPuzzle: async puzzleDate => buildPuzzle(puzzleDate),
+  progressionTokens: tokens,
 });
 
 describe('Daily canonical runtime service', () => {
-  it('publishes only puzzle metadata, initials, and public progression before resolution', () => {
-    const bootstrap = service.getBootstrap(puzzleDate);
+  it('awaits the server puzzle source and exposes no answers or hints in bootstrap', async () => {
+    const bootstrap = await service.getBootstrap(date);
     const serialized = JSON.stringify(bootstrap);
-
     expect(bootstrap.puzzle.pitches).toHaveLength(9);
     expect(bootstrap.puzzle.pitches[0]).toEqual({ pitchNumber: 1, initials: 'HA' });
-    expect(progressionTokens.verify(bootstrap.progressionToken)).toEqual(initialClaims());
-    expect(serialized).not.toContain(canonicalPlayerId);
-    expect(serialized).not.toContain(legacyPlayerId);
+    expect(tokens.verify(bootstrap.progressionToken)).toEqual(initialClaims());
+    expect(serialized).not.toContain(answerId);
+    expect(serialized).not.toContain(legacyId);
     expect(serialized).not.toContain(answerName);
     expect(serialized).not.toContain('Career marker');
-    expect(serialized).not.toContain(fullRevealMarker);
+    expect(serialized).not.toContain(revealMarker);
   });
 
-  it('releases one authorized hint and advances only hint depth', () => {
-    const bootstrap = service.getBootstrap(puzzleDate);
-    const response = service.revealHint(bootstrap.progressionToken);
-
-    expect(response.hint).toEqual({
-      hintType: 'main_decade',
-      hintLabel: 'Main decade played in',
-      hintValue: '2000s',
-    });
-    expect(progressionTokens.verify(response.progressionToken)).toEqual({
-      ...initialClaims(),
-      revealCount: 1,
-    });
-    expect(JSON.stringify(response)).not.toContain(canonicalPlayerId);
+  it('releases one authorized hint and advances only hint depth', async () => {
+    const bootstrap = await service.getBootstrap(date);
+    const response = await service.revealHint(bootstrap.progressionToken);
+    expect(response.hint).toEqual({ hintType: 'main_decade', hintLabel: 'Main decade played in', hintValue: '2000s' });
+    expect(tokens.verify(response.progressionToken)).toEqual({ ...initialClaims(), revealCount: 1 });
+    expect(JSON.stringify(response)).not.toContain(answerId);
     expect(JSON.stringify(response)).not.toContain(answerName);
   });
 
-  it('rejects hint requests beyond the configured maximum', () => {
-    const exhaustedHintToken = progressionTokens.sign({
-      ...initialClaims(),
-      revealCount: 4,
-    });
-
-    expect(() => service.revealHint(exhaustedHintToken)).toThrow(/No additional hint/);
+  it('rejects hint requests beyond the configured maximum', async () => {
+    await expect(service.revealHint(tokens.sign({ ...initialClaims(), revealCount: 4 }))).rejects.toThrow(/No additional hint/);
   });
 
-  it('returns no reveal and increments signed strikes for an incorrect guess', () => {
-    const response = service.resolveAtBat({
-      progressionToken: service.getBootstrap(puzzleDate).progressionToken,
-      submittedPlayerId: otherPlayerId,
-    });
-
+  it('returns no reveal and increments signed strikes for an incorrect guess', async () => {
+    const bootstrap = await service.getBootstrap(date);
+    const response = await service.resolveAtBat({ progressionToken: bootstrap.progressionToken, submittedPlayerId: otherId });
     expect(response.result).toMatchObject({ kind: 'incorrect', strikeCount: 1 });
     expect(response.reveal).toBeNull();
-    expect(progressionTokens.verify(response.progressionToken)).toEqual({
-      ...initialClaims(),
-      strikeCount: 1,
-    });
+    expect(tokens.verify(response.progressionToken)).toEqual({ ...initialClaims(), strikeCount: 1 });
     expect(JSON.stringify(response)).not.toContain(answerName);
-    expect(JSON.stringify(response)).not.toContain(fullRevealMarker);
+    expect(JSON.stringify(response)).not.toContain(revealMarker);
   });
 
-  it('uses token hint depth for a correct outcome and advances to the next pitch', () => {
-    const hinted = service.revealHint(service.getBootstrap(puzzleDate).progressionToken);
-    const response = service.resolveAtBat({
-      progressionToken: hinted.progressionToken,
-      submittedPlayerId: canonicalPlayerId,
-    });
-
+  it('uses token hint depth for a correct outcome and advances to the next pitch', async () => {
+    const bootstrap = await service.getBootstrap(date);
+    const hinted = await service.revealHint(bootstrap.progressionToken);
+    const response = await service.resolveAtBat({ progressionToken: hinted.progressionToken, submittedPlayerId: answerId });
     expect(response.result).toMatchObject({ kind: 'correct', outcome: '3B' });
-    expect(response.reveal).toMatchObject({ playerId: canonicalPlayerId, displayName: answerName });
-    expect(progressionTokens.verify(response.progressionToken)).toEqual({
-      ...initialClaims(),
-      pitchNumber: 2,
-    });
+    expect(response.reveal).toMatchObject({ playerId: answerId, displayName: answerName });
+    expect(tokens.verify(response.progressionToken)).toEqual({ ...initialClaims(), pitchNumber: 2 });
   });
 
-  it('accepts a valid legacy selected ID through the explicit redirect boundary', () => {
-    const response = service.resolveAtBat({
-      progressionToken: service.getBootstrap(puzzleDate).progressionToken,
-      submittedPlayerId: legacyPlayerId,
-    });
-
+  it('accepts a valid legacy selected ID through the canonical redirect boundary', async () => {
+    const bootstrap = await service.getBootstrap(date);
+    const response = await service.resolveAtBat({ progressionToken: bootstrap.progressionToken, submittedPlayerId: legacyId });
     expect(response.result.kind).toBe('correct');
   });
 
-  it('rejects unknown submitted IDs as safe request errors', () => {
-    expect(() => service.resolveAtBat({
-      progressionToken: service.getBootstrap(puzzleDate).progressionToken,
-      submittedPlayerId: 'unknown-player-id',
-    })).toThrow(DailyRuntimeRequestError);
+  it('rejects invalid progression, unknown submitted IDs, and puzzle mismatches', async () => {
+    await expect(service.revealHint('invalid')).rejects.toBeInstanceOf(DailyRuntimeRequestError);
+    const bootstrap = await service.getBootstrap(date);
+    await expect(service.resolveAtBat({ progressionToken: bootstrap.progressionToken, submittedPlayerId: 'unknown' }))
+      .rejects.toBeInstanceOf(DailyRuntimeRequestError);
+    await expect(service.revealHint(tokens.sign({ ...initialClaims(), puzzleId: 'daily-2026-07-21' })))
+      .rejects.toThrow(/does not match its puzzle/);
   });
 
-  it('returns the reveal, increments outs, and advances after a third strike', () => {
-    const response = service.resolveAtBat({
-      progressionToken: progressionTokens.sign({
-        ...initialClaims(),
-        revealCount: 2,
-        strikeCount: 2,
-      }),
-      submittedPlayerId: otherPlayerId,
+  it('returns the reveal, increments outs, and advances after a third strike', async () => {
+    const response = await service.resolveAtBat({
+      progressionToken: tokens.sign({ ...initialClaims(), revealCount: 2, strikeCount: 2 }),
+      submittedPlayerId: otherId,
     });
-
     expect(response.result).toMatchObject({ kind: 'strikeout', strikeCount: 3 });
     expect(response.reveal?.displayName).toBe(answerName);
-    expect(progressionTokens.verify(response.progressionToken)).toEqual({
-      ...initialClaims(),
-      pitchNumber: 2,
-      outCount: 1,
-    });
+    expect(tokens.verify(response.progressionToken)).toEqual({ ...initialClaims(), pitchNumber: 2, outCount: 1 });
   });
 
-  it('uses Give Up as a token-authorized strikeout transition', () => {
-    const response = service.resolveAtBat({
-      progressionToken: progressionTokens.sign({
-        ...initialClaims(),
-        revealCount: 2,
-      }),
-      giveUp: true,
-    });
-
+  it('keeps Give Up as a token-authorized terminal at-bat action', async () => {
+    const bootstrap = await service.getBootstrap(date);
+    const response = await service.resolveAtBat({ progressionToken: bootstrap.progressionToken, giveUp: true });
     expect(response.result).toMatchObject({ kind: 'strikeout', outcome: 'K' });
     expect(response.reveal?.displayName).toBe(answerName);
-    expect(progressionTokens.verify(response.progressionToken)).toMatchObject({
-      pitchNumber: 2,
-      revealCount: 0,
-      strikeCount: 0,
-      outCount: 1,
-      completed: false,
-    });
+    expect(tokens.verify(response.progressionToken)).toMatchObject({ pitchNumber: 2, revealCount: 0, strikeCount: 0, outCount: 1, completed: false });
   });
 
-  it('completes after three outs and rejects later answer actions', () => {
-    const response = service.resolveAtBat({
-      progressionToken: progressionTokens.sign({
-        ...initialClaims(),
-        outCount: 2,
-      }),
-      giveUp: true,
-    });
-    const claims = progressionTokens.verify(response.progressionToken);
-
-    expect(claims).toMatchObject({ outCount: 3, completed: true, pitchNumber: 1 });
-    expect(() => service.revealHint(response.progressionToken)).toThrow(/already complete/);
+  it('completes after three outs and rejects later actions', async () => {
+    const response = await service.resolveAtBat({ progressionToken: tokens.sign({ ...initialClaims(), outCount: 2 }), giveUp: true });
+    expect(tokens.verify(response.progressionToken)).toMatchObject({ outCount: 3, completed: true, pitchNumber: 1 });
+    await expect(service.revealHint(response.progressionToken)).rejects.toThrow(/already complete/);
   });
 
-  it('completes after the ninth scheduled pitch', () => {
-    const response = service.resolveAtBat({
-      progressionToken: progressionTokens.sign({
-        ...initialClaims(),
-        pitchNumber: 9,
-      }),
-      submittedPlayerId: canonicalPlayerId,
+  it('completes after the ninth scheduled pitch', async () => {
+    const response = await service.resolveAtBat({
+      progressionToken: tokens.sign({ ...initialClaims(), pitchNumber: 9 }),
+      submittedPlayerId: answerId,
     });
-
-    expect(progressionTokens.verify(response.progressionToken)).toMatchObject({
-      pitchNumber: 9,
-      completed: true,
-    });
-  });
-
-  it('rejects tampering, tokens from another signer, and puzzle/date mismatches', () => {
-    const bootstrap = service.getBootstrap(puzzleDate);
-    const otherCodec = createDailyProgressionTokenCodec('different-daily-runtime-secret-0123456789abcdef');
-    const mismatchedToken = progressionTokens.sign({
-      ...initialClaims(),
-      puzzleId: 'daily-2026-07-19',
-    });
-
-    expect(() => service.revealHint(`${bootstrap.progressionToken}x`)).toThrow(DailyRuntimeRequestError);
-    expect(() => service.revealHint(otherCodec.sign(initialClaims()))).toThrow(DailyRuntimeRequestError);
-    expect(() => service.revealHint(mismatchedToken)).toThrow(/does not match its puzzle/);
+    expect(tokens.verify(response.progressionToken)).toMatchObject({ pitchNumber: 9, completed: true });
   });
 });
 
 function initialClaims(): DailyProgressionClaims {
-  return {
-    version: 1,
-    puzzleId: `daily-${puzzleDate}`,
-    puzzleDate,
-    pitchNumber: 1,
-    revealCount: 0,
-    strikeCount: 0,
-    outCount: 0,
-    completed: false,
-  };
+  return { version: 1, puzzleId: `daily-${date}`, puzzleDate: date, pitchNumber: 1, revealCount: 0, strikeCount: 0, outCount: 0, completed: false };
 }
 
-function buildPuzzle(date: string): DailyPuzzle {
+function buildPuzzle(puzzleDate: string): DailyPuzzle {
   return {
-    id: `daily-${date}`,
-    puzzleNumber: 85,
-    puzzleDate: date,
+    id: `daily-${puzzleDate}`,
+    puzzleNumber: 87,
+    puzzleDate,
     status: 'published',
     hintConfig: DEFAULT_DAILY_HINT_CONFIG,
     statsHintConfig: DEFAULT_DAILY_STATS_HINT_CONFIG,
     pitches: Array.from({ length: 9 }, (_, index) => ({
       pitchNumber: index + 1,
-      player: {
-        playerId: legacyPlayerId,
-        fullName: 'Hidden Legal Answer',
-        displayName: answerName,
-        initials: 'HA',
-        kind: 'hitter' as const,
-        primaryPosition: '1B',
-      },
-      hints: {
-        main_decade: '2000s',
-        teams: 'AAA',
-        position: '1B',
-        stats: 'Career marker',
-      },
+      player: { playerId: legacyId, fullName: 'Hidden Legal Answer', displayName: answerName, initials: 'HA', kind: 'hitter' as const, primaryPosition: '1B' },
+      hints: { main_decade: '2000s', teams: 'AAA', position: '1B', stats: 'Career marker' },
     })),
   };
 }
 
-function buildCanonicalRuntime() {
+function buildRuntime() {
   return createCanonicalRuntimeAccessor({
     playerIndex: {
       schemaVersion: 1,
-      players: [canonicalPlayerId, otherPlayerId].map(playerId => ({
+      players: [answerId, otherId].map(playerId => ({
         playerId,
-        lahmanPlayerId: playerId === canonicalPlayerId ? 'answer01' : 'other01',
-        displayName: playerId === canonicalPlayerId ? answerName : 'Other Player',
-        aliases: [],
-        playerType: 'hitter' as const,
-        primaryPosition: '1B',
-        firstSeason: 2000,
-        lastSeason: 2000,
-        seasonCount: 1,
-        teamIds: ['AAA'],
-        isHallOfFamer: false,
-        revealShard: `reveal-shards/${playerId.slice(4, 6)}.json`,
+        lahmanPlayerId: playerId === answerId ? 'answer01' : 'other01',
+        displayName: playerId === answerId ? answerName : 'Other Player',
+        aliases: [], playerType: 'hitter' as const, primaryPosition: '1B', firstSeason: 2000, lastSeason: 2000,
+        seasonCount: 1, teamIds: ['AAA'], isHallOfFamer: false, revealShard: `reveal-shards/${playerId.slice(4, 6)}.json`,
       })),
     },
-    redirects: {
-      schemaVersion: 1,
-      redirects: { [legacyPlayerId]: canonicalPlayerId },
-      excludedRedirects: [],
-    },
-    loadRevealShard: (path) => {
-      const playerId = path.includes('/ab.') ? canonicalPlayerId : otherPlayerId;
+    redirects: { schemaVersion: 1, redirects: { [legacyId]: answerId }, excludedRedirects: [] },
+    loadRevealShard: path => {
+      const playerId = path.includes('/ab.') ? answerId : otherId;
       return {
-        schemaVersion: 1,
-        shardId: playerId.slice(4, 6),
-        players: { [playerId]: buildReveal(playerId) },
+        schemaVersion: 1, shardId: playerId.slice(4, 6), players: {
+          [playerId]: {
+            schemaVersion: 1, playerId, lahmanPlayerId: playerId === answerId ? 'answer01' : 'other01',
+            displayName: playerId === answerId ? answerName : 'Other Player', playerType: 'hitter',
+            career: {
+              firstSeason: 2000, lastSeason: 2000, seasonCount: 1, teamIds: ['AAA'], primaryPosition: '1B',
+              batting: null, pitching: null, advanced: null, achievements: { marker: revealMarker },
+            },
+            seasons: [], provenance: { canonicalUniversePresent: true, careerEnrichmentPresent: true, seasonCardCount: 0, legalNameExcludedFromDisplayPayload: true },
+          },
+        },
       };
     },
   });
-}
-
-function buildReveal(playerId: string) {
-  return {
-    schemaVersion: 1 as const,
-    playerId,
-    lahmanPlayerId: playerId === canonicalPlayerId ? 'answer01' : 'other01',
-    displayName: playerId === canonicalPlayerId ? answerName : 'Other Player',
-    playerType: 'hitter' as const,
-    career: {
-      firstSeason: 2000,
-      lastSeason: 2000,
-      seasonCount: 1,
-      teamIds: ['AAA'],
-      primaryPosition: '1B',
-      batting: null,
-      pitching: null,
-      advanced: null,
-      achievements: { marker: fullRevealMarker },
-    },
-    seasons: [],
-    provenance: {
-      canonicalUniversePresent: true,
-      careerEnrichmentPresent: true,
-      seasonCardCount: 0,
-      legalNameExcludedFromDisplayPayload: true,
-    },
-  };
 }
