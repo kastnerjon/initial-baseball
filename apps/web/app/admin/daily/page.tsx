@@ -46,7 +46,7 @@ export default async function DailyAdministrationPage({
     );
   } catch (error) {
     if (error instanceof DailyAdminAuthorizationError && error.kind === 'unauthorized') {
-      redirect('/admin/daily/auth');
+      redirect('/admin/auth');
     }
 
     return (
