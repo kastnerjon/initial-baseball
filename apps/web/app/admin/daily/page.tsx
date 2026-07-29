@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { DailyAdminAuthorizationError } from '../../dailyAdminAuthorization';
 import { createDailyAdminContext } from '../../dailyAdminComposition';
 import { isDailyAdminLifecycleAction } from '../../dailyAdminLifecycleActions';
+import { DAILY_ADMIN_AUTH_PATH } from '../../dailyAdminPaths';
 import { createDailyAdminWorkflow } from '../../dailyAdminWorkflow';
 import {
   DailyAdministrationView,
@@ -46,7 +47,7 @@ export default async function DailyAdministrationPage({
     );
   } catch (error) {
     if (error instanceof DailyAdminAuthorizationError && error.kind === 'unauthorized') {
-      redirect('/admin/auth');
+      redirect(DAILY_ADMIN_AUTH_PATH);
     }
 
     return (
