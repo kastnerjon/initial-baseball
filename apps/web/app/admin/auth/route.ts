@@ -4,11 +4,12 @@ import {
   DailyAdminAuthorizationError,
   requireDailyAdminPrincipal,
 } from '../../dailyAdminAuthorization';
+import { DAILY_ADMIN_PATH } from '../../dailyAdminPaths';
 
 export function GET(request: Request): NextResponse {
   try {
     requireDailyAdminPrincipal(request.headers.get('authorization'));
-    return NextResponse.redirect(new URL('/admin/daily', request.url));
+    return NextResponse.redirect(new URL(DAILY_ADMIN_PATH, request.url));
   } catch (error) {
     if (error instanceof DailyAdminAuthorizationError && error.kind === 'unauthorized') {
       return new NextResponse('Daily administration credentials are required.', {
