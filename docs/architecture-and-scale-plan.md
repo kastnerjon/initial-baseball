@@ -113,9 +113,9 @@ Dependencies do not point upward. Rules are centralized once at their owning lay
 
 ### Stable facts, replaceable interpretation
 
-Each completed at-bat should retain stable raw facts:
+Native Daily state records stable raw completed-at-bat facts:
 
-- puzzle and slot;
+- pitch/slot and initials;
 - HR/3B/2B/1B/BB/K outcome;
 - hints revealed;
 - wrong guesses;
@@ -123,7 +123,11 @@ Each completed at-bat should retain stable raw facts:
 
 A versioned ruleset interprets those facts.
 
-Provisional `points-v1` is `5/4/3/2/1/0` with all nine at-bats. A future `baseball-inning-v1` may reuse runner advancement and three-out completion. The UI consumes a ruleset result rather than embedding one permanent formula.
+Current Standard Daily uses `points-v1`: `5/4/3/2/1/0` with all scheduled at-bats. `legacy-inning-v1` preserves compatible pre-ruleset signed/saved sessions and the existing runner advancement plus three-out completion behavior.
+
+The shared game state, pure engine, stateless signed progression, browser persistence, final result, and share contract carry the same ruleset boundary. New scoring weights require a new version rather than reinterpretation of old results.
+
+The points policy may continue recording spoiler-safe outcomes after baseball inning state has reached three outs; the base/runner state is retained for reuse but no longer controls Standard Daily completion.
 
 Do not build a generic plugin platform. Use explicit small versioned policies with focused consumers.
 
@@ -143,7 +147,9 @@ The exact serialized bundle is implementation detail. No-visible-wait is the pro
 
 ### Completed results
 
-One idempotent completed-game write may contain raw per-at-bat facts, puzzle identity, and ruleset version. Do not persist every hint or guess. Aggregates and percentiles are derived from the compact records and compare identical puzzle/ruleset cohorts.
+One idempotent completed-game write may contain the natively recorded raw per-at-bat facts, puzzle identity, and ruleset version. Do not persist every hint or guess. Aggregates and percentiles are derived from compact records and compare identical puzzle/ruleset cohorts.
+
+Legacy lines reconstructed for local compatibility are not automatically treated as analytics-quality native facts.
 
 ## Canonical player and lineup-content architecture
 
@@ -180,6 +186,7 @@ The recipe creates a proposal. The scheduled/published puzzle stores the exact o
 ## Runtime serving and answer protection
 
 - Initial browser state contains public puzzle metadata, initials, and opaque authorization state.
+- New signed progression includes `points-v1`; pre-ruleset valid tokens normalize to `legacy-inning-v1`.
 - Search is lightweight and spoiler-safe.
 - Full reveal shards load only after terminal resolution.
 - Current-at-bat hints may be preauthorized locally; unrelated future answers/reveals remain unavailable.
@@ -230,10 +237,10 @@ Controls:
 
 ## Current sequence
 
-1. Complete hosted editorial/public-runtime verification and resolve the date/cache issue.
-2. Add versioned scoring/completion and provisional all-nine points.
+1. Verify the merged `points-v1` production deployment, all-nine gameplay, refresh behavior, and midnight-Pacific rollover.
+2. Complete the authenticated hosted editorial/public-runtime checklist.
 3. Add immediate active-at-bat hints.
-4. Add compact results and percentile comparison.
+4. Add compact completed-result persistence and percentile comparison.
 5. Add gameplay-profile and recipe contracts plus a conservative Standard Daily recipe.
 6. Continue launch hardening and heritage presentation.
 

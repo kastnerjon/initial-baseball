@@ -2,6 +2,10 @@ import { DEFAULT_ALPHA_SETTINGS, type HintConfigSlot, type HintType } from './ga
 import type { PlayerIdentity } from './player.js';
 import type { StatsHintConfig } from './stats.js';
 
+export const LEGACY_DAILY_RULESET_VERSION = 'legacy-inning-v1' as const;
+export const POINTS_V1_DAILY_RULESET_VERSION = 'points-v1' as const;
+
+export type DailyRulesetVersion = typeof LEGACY_DAILY_RULESET_VERSION | typeof POINTS_V1_DAILY_RULESET_VERSION;
 export type DailyPuzzleStatus = 'draft' | 'scheduled' | 'published' | 'archived';
 export type DailyGameStatus = 'not_started' | 'in_progress' | 'completed';
 
@@ -9,12 +13,22 @@ export type DailyOutcome = 'HR' | '3B' | '2B' | '1B' | 'BB' | 'K';
 export type DailyRevealCount = 0 | HintConfigSlot['slot'];
 export type DailyGuessSource = 'initials' | HintConfigSlot['slot'] | 'strikeout';
 export type DailyHintConfig = HintConfigSlot[];
+export type DailyAtBatResolution = 'correct' | 'strikeout' | 'give_up';
 
 export type DailyScoringMapping = Record<DailyGuessSource, DailyOutcome>;
 
 export type DailySharePitchLine = {
   initials: string;
   outcome: DailyOutcome;
+};
+
+export type DailyCompletedAtBat = {
+  pitchNumber: number;
+  initials: string;
+  outcome: DailyOutcome;
+  hintsRevealed: DailyRevealCount;
+  wrongGuesses: number;
+  resolution: DailyAtBatResolution;
 };
 
 export type DailyScoreSummary = {
@@ -25,8 +39,18 @@ export type DailyScoreSummary = {
   completed: boolean;
 };
 
+export type DailyPointsSummary = {
+  points: number;
+  maximumPoints: number;
+  atBatsCompleted: number;
+  totalAtBats: number;
+  completed: boolean;
+};
+
 export type DailyShareResult = {
+  rulesetVersion: DailyRulesetVersion;
   summary: DailyScoreSummary;
+  points: DailyPointsSummary;
   puzzleNumber: number;
   pitchLines: DailySharePitchLine[];
   url: string;
@@ -135,9 +159,12 @@ export type DailyInningState = {
 export type DailyGameState = {
   anonymousPlayerId: string;
   status: DailyGameStatus;
+  rulesetVersion: DailyRulesetVersion;
   puzzle: DailyPublicPuzzle;
   inning: DailyInningState;
   score: DailyScoreSummary;
+  points: DailyPointsSummary;
+  completedAtBats: DailyCompletedAtBat[];
   completedPitchLines: DailySharePitchLine[];
   shareResult: DailyShareResult | null;
 };
@@ -163,6 +190,14 @@ export const DEFAULT_DAILY_SCORE_SUMMARY: DailyScoreSummary = {
   hits: 0,
   outs: 0,
   strikeouts: 0,
+  completed: false,
+};
+
+export const DEFAULT_DAILY_POINTS_SUMMARY: DailyPointsSummary = {
+  points: 0,
+  maximumPoints: 45,
+  atBatsCompleted: 0,
+  totalAtBats: 9,
   completed: false,
 };
 

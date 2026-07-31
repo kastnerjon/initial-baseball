@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import type { DailyInningState, DailyScoreSummary } from '@initial-baseball/shared';
+import {
+  LEGACY_DAILY_RULESET_VERSION,
+  POINTS_V1_DAILY_RULESET_VERSION,
+  type DailyInningState,
+  type DailyScoreSummary,
+} from '@initial-baseball/shared';
 import { applyDailyOutcomeToInning } from './applyDailyOutcomeToInning.js';
+import { applyDailyOutcomeForRuleset, createDailyPointsSummary } from './applyDailyRuleset.js';
 
 const baseInning = (bases: DailyInningState['bases'], outs = 0): DailyInningState => ({
   inningNumber: 1,
@@ -166,5 +172,78 @@ describe('applyDailyOutcomeToInning', () => {
         completed: true,
       },
     });
+  });
+});
+
+describe('applyDailyOutcomeForRuleset', () => {
+  it('keeps points-v1 active after three strikeouts and continues scoring later at-bats', () => {
+    let state = {
+      inning: baseInning({ first: false, second: false, third: false }),
+      score: baseScore(),
+      points: createDailyPointsSummary(POINTS_V1_DAILY_RULESET_VERSION, 9),
+    };
+
+    for (let index = 0; index < 3; index += 1) {
+      state = applyDailyOutcomeForRuleset({
+        ...state,
+        rulesetVersion: POINTS_V1_DAILY_RULESET_VERSION,
+        outcome: 'K',
+        totalAtBats: 9,
+      });
+    }
+
+    expect(state.inning.outs).toBe(3);
+    expect(state.score).toMatchObject({ strikeouts: 3, completed: false });
+    expect(state.points).toMatchObject({ points: 0, atBatsCompleted: 3, completed: false });
+
+    state = applyDailyOutcomeForRuleset({
+      ...state,
+      rulesetVersion: POINTS_V1_DAILY_RULESET_VERSION,
+      outcome: 'HR',
+      totalAtBats: 9,
+    });
+
+    expect(state.points).toMatchObject({ points: 5, maximumPoints: 45, atBatsCompleted: 4, completed: false });
+    expect(state.score.completed).toBe(false);
+  });
+
+  it('completes points-v1 only after the ninth scheduled at-bat', () => {
+    let state = {
+      inning: baseInning({ first: false, second: false, third: false }),
+      score: baseScore(),
+      points: createDailyPointsSummary(POINTS_V1_DAILY_RULESET_VERSION, 9),
+    };
+
+    for (let index = 0; index < 9; index += 1) {
+      state = applyDailyOutcomeForRuleset({
+        ...state,
+        rulesetVersion: POINTS_V1_DAILY_RULESET_VERSION,
+        outcome: index === 8 ? 'BB' : 'HR',
+        totalAtBats: 9,
+      });
+    }
+
+    expect(state.points).toEqual({
+      points: 41,
+      maximumPoints: 45,
+      atBatsCompleted: 9,
+      totalAtBats: 9,
+      completed: true,
+    });
+    expect(state.score.completed).toBe(true);
+  });
+
+  it('preserves legacy three-out completion as a separate versioned policy', () => {
+    const state = applyDailyOutcomeForRuleset({
+      inning: baseInning({ first: false, second: false, third: false }, 2),
+      score: baseScore({ outs: 2 }),
+      points: createDailyPointsSummary(LEGACY_DAILY_RULESET_VERSION, 9),
+      rulesetVersion: LEGACY_DAILY_RULESET_VERSION,
+      outcome: 'K',
+      totalAtBats: 9,
+    });
+
+    expect(state.score.completed).toBe(true);
+    expect(state.points).toMatchObject({ points: 0, maximumPoints: 0, atBatsCompleted: 1, completed: true });
   });
 });

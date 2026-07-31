@@ -20,9 +20,11 @@ Use this map to find the owning document or code layer before changing behavior.
 
 | Change needed | Go here |
 |---|---|
-| Shared serialized game/result types | `packages/shared/src/types/` |
+| Shared serialized game/result/ruleset types | `packages/shared/src/types/daily.ts` |
 | Outcome by hint depth | `packages/engine/src/scoring/getHitResultForRevealCount.ts` |
-| Daily outcome application and current inning state | `packages/engine/src/daily/applyDailyOutcomeToInning.ts` |
+| Versioned Daily scoring and completion | `packages/engine/src/daily/applyDailyRuleset.ts` |
+| Baseball inning outcome application | `packages/engine/src/daily/applyDailyOutcomeToInning.ts` |
+| Spoiler-safe Daily result/share calculation | `packages/engine/src/daily/createDailyShareResult.ts` and `formatDailyShareText.ts` |
 | Runner/base advancement | `packages/engine/src/scoring/advanceRunners.ts` |
 | Guess evaluation/search behavior | `packages/engine/src/guesses/` |
 | Engine contract | `docs/spec/engine.md` |
@@ -34,9 +36,12 @@ Use this map to find the owning document or code layer before changing behavior.
 | Change needed | Go here |
 |---|---|
 | Daily pages/components | `apps/web/app/` |
+| Initial game/ruleset state | `apps/web/app/dailyClientState.ts` |
+| Terminal at-bat facts and pending advance | `apps/web/app/dailyAtBatResolution.ts` |
 | Browser persistence/migration | `apps/web/app/dailyLocalStorage.ts` |
 | Guarded bootstrap, hints, and resolution | `apps/web/app/dailyRuntimeService.ts` |
-| Signed progression | `apps/web/app/dailyProgressionToken.ts` |
+| Signed ruleset progression | `apps/web/app/dailyProgressionToken.ts` |
+| Daily route contract | `docs/spec/api.md` |
 | Canonical runtime composition | `apps/web/app/serverCanonicalRuntime.ts` |
 | Search/hint/resolution routes | `apps/web/app/api/players/` and `apps/web/app/api/daily/` |
 | Admin composition | `apps/web/app/dailyAdminComposition.ts` |

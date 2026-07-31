@@ -1,4 +1,9 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
+import {
+  LEGACY_DAILY_RULESET_VERSION,
+  POINTS_V1_DAILY_RULESET_VERSION,
+  type DailyRulesetVersion,
+} from '@initial-baseball/shared';
 
 const TOKEN_PREFIX = 'v1';
 const MINIMUM_SECRET_LENGTH = 32;
@@ -6,6 +11,7 @@ const DAILY_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
 
 export type DailyProgressionClaims = {
   version: 1;
+  rulesetVersion: DailyRulesetVersion;
   puzzleId: string;
   puzzleDate: string;
   pitchNumber: number;
@@ -74,8 +80,12 @@ function requireDailyProgressionClaims(value: unknown): DailyProgressionClaims {
   }
 
   const claims = value as Record<string, unknown>;
+  const rulesetVersion = claims.rulesetVersion === undefined
+    ? LEGACY_DAILY_RULESET_VERSION
+    : claims.rulesetVersion;
   if (
     claims.version !== 1
+    || !isDailyRulesetVersion(rulesetVersion)
     || typeof claims.puzzleId !== 'string'
     || claims.puzzleId.length === 0
     || claims.puzzleId.length > 200
@@ -86,13 +96,13 @@ function requireDailyProgressionClaims(value: unknown): DailyProgressionClaims {
     || !isRangeInteger(claims.strikeCount, 0, 2)
     || !isRangeInteger(claims.outCount, 0, 3)
     || typeof claims.completed !== 'boolean'
-    || (!claims.completed && claims.outCount === 3)
   ) {
     throw new DailyProgressionTokenError('Daily progression token claims are invalid.');
   }
 
   return {
     version: 1,
+    rulesetVersion,
     puzzleId: claims.puzzleId,
     puzzleDate: claims.puzzleDate,
     pitchNumber: claims.pitchNumber,
@@ -101,6 +111,10 @@ function requireDailyProgressionClaims(value: unknown): DailyProgressionClaims {
     outCount: claims.outCount as DailyProgressionClaims['outCount'],
     completed: claims.completed,
   };
+}
+
+function isDailyRulesetVersion(value: unknown): value is DailyRulesetVersion {
+  return value === LEGACY_DAILY_RULESET_VERSION || value === POINTS_V1_DAILY_RULESET_VERSION;
 }
 
 function sign(input: string, secret: string): string {

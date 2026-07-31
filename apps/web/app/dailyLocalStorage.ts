@@ -1,10 +1,18 @@
-import type {
-  DailyGameState,
-  DailyGuessResult,
-  DailyOutcome,
-  DailyPublicPuzzle,
-  DailyPuzzle,
-  DailySharePitchLine,
+import { createDailyPointsSummary, getDailyOutcomePoints } from '@initial-baseball/engine';
+import {
+  LEGACY_DAILY_RULESET_VERSION,
+  POINTS_V1_DAILY_RULESET_VERSION,
+  type DailyAtBatResolution,
+  type DailyCompletedAtBat,
+  type DailyGameState,
+  type DailyGuessResult,
+  type DailyOutcome,
+  type DailyPublicPuzzle,
+  type DailyPuzzle,
+  type DailyRevealCount,
+  type DailyRulesetVersion,
+  type DailySharePitchLine,
+  type DailyShareResult,
 } from '@initial-baseball/shared';
 import type { PendingAtBatAdvance } from './dailyAtBatResolution';
 import type { DailyAtBatUiState } from './dailyClientState';
@@ -205,6 +213,20 @@ function normalizeSavedDailyGame(
     revealedHints?: DailyAtBatUiState['revealedHints'];
     reveal?: DailyAtBatUiState['reveal'];
   };
+  const pitchLines = savedGame.gameState.completedPitchLines.map(normalizeSharePitchLine);
+  const rulesetVersion = normalizeRulesetVersion(
+    savedGame.gameState.rulesetVersion,
+    savedGame.gameState.score.completed,
+    savedGame.schemaVersion,
+  );
+  const completedAtBats = normalizeCompletedAtBats(savedGame.gameState.completedAtBats, pitchLines);
+  const points = buildNormalizedPoints(
+    rulesetVersion,
+    publicPuzzle.pitches.length,
+    completedAtBats,
+    savedGame.gameState.score.completed,
+  );
+
   return {
     ...savedGame,
     schemaVersion: DAILY_STORAGE_SCHEMA_VERSION,
@@ -213,14 +235,12 @@ function normalizeSavedDailyGame(
       : initialProgressionToken,
     gameState: {
       ...savedGame.gameState,
+      rulesetVersion,
       puzzle: publicPuzzle,
-      completedPitchLines: savedGame.gameState.completedPitchLines.map(normalizeSharePitchLine),
-      shareResult: savedGame.gameState.shareResult === null
-        ? null
-        : {
-            ...savedGame.gameState.shareResult,
-            pitchLines: savedGame.gameState.shareResult.pitchLines.map(normalizeSharePitchLine),
-          },
+      points,
+      completedAtBats,
+      completedPitchLines: pitchLines,
+      shareResult: normalizeShareResult(savedGame.gameState.shareResult, rulesetVersion, points),
     },
     atBatState: {
       ...legacyAtBatState,
@@ -230,11 +250,139 @@ function normalizeSavedDailyGame(
     },
     pendingAdvance: savedGame.pendingAdvance === null
       ? null
-      : {
-          ...savedGame.pendingAdvance,
-          pitchLines: savedGame.pendingAdvance.pitchLines.map(normalizeSharePitchLine),
-        },
+      : normalizePendingAdvance(savedGame.pendingAdvance, rulesetVersion, publicPuzzle.pitches.length),
   };
+}
+
+function normalizePendingAdvance(
+  pendingAdvance: PendingAtBatAdvance,
+  rulesetVersion: DailyRulesetVersion,
+  totalAtBats: number,
+): PendingAtBatAdvance {
+  const pitchLines = pendingAdvance.pitchLines.map(normalizeSharePitchLine);
+  const completedAtBats = normalizeCompletedAtBats(pendingAdvance.completedAtBats, pitchLines);
+  return {
+    ...pendingAdvance,
+    points: buildNormalizedPoints(
+      rulesetVersion,
+      totalAtBats,
+      completedAtBats,
+      pendingAdvance.score.completed,
+    ),
+    completedAtBats,
+    pitchLines,
+  };
+}
+
+function normalizeShareResult(
+  shareResult: DailyShareResult | null,
+  rulesetVersion: DailyRulesetVersion,
+  points: DailyGameState['points'],
+): DailyShareResult | null {
+  if (shareResult === null) {
+    return null;
+  }
+  return {
+    ...shareResult,
+    rulesetVersion,
+    points,
+    pitchLines: shareResult.pitchLines.map(normalizeSharePitchLine),
+  };
+}
+
+function normalizeRulesetVersion(
+  value: unknown,
+  completed: boolean,
+  schemaVersion: PersistedSavedDailyGame['schemaVersion'],
+): DailyRulesetVersion {
+  if (value === LEGACY_DAILY_RULESET_VERSION || value === POINTS_V1_DAILY_RULESET_VERSION) {
+    return value;
+  }
+  if (completed || schemaVersion === DAILY_STORAGE_SCHEMA_VERSION) {
+    return LEGACY_DAILY_RULESET_VERSION;
+  }
+  return POINTS_V1_DAILY_RULESET_VERSION;
+}
+
+function normalizeCompletedAtBats(
+  value: unknown,
+  pitchLines: DailySharePitchLine[],
+): DailyCompletedAtBat[] {
+  if (Array.isArray(value) && value.length === pitchLines.length && value.every(isDailyCompletedAtBat)) {
+    return value.map(atBat => ({ ...atBat }));
+  }
+  return pitchLines.map((line, index) => deriveLegacyCompletedAtBat(line, index + 1));
+}
+
+function deriveLegacyCompletedAtBat(
+  line: DailySharePitchLine,
+  pitchNumber: number,
+): DailyCompletedAtBat {
+  return {
+    pitchNumber,
+    initials: line.initials,
+    outcome: line.outcome,
+    hintsRevealed: revealCountForOutcome(line.outcome),
+    wrongGuesses: line.outcome === 'K' ? 3 : 0,
+    resolution: line.outcome === 'K' ? 'strikeout' : 'correct',
+  };
+}
+
+function buildNormalizedPoints(
+  rulesetVersion: DailyRulesetVersion,
+  totalAtBats: number,
+  completedAtBats: DailyCompletedAtBat[],
+  scoreCompleted: boolean,
+): DailyGameState['points'] {
+  const base = createDailyPointsSummary(rulesetVersion, totalAtBats);
+  const atBatsCompleted = Math.min(completedAtBats.length, totalAtBats);
+  return {
+    ...base,
+    points: completedAtBats.reduce(
+      (total, atBat) => total + getDailyOutcomePoints(rulesetVersion, atBat.outcome),
+      0,
+    ),
+    atBatsCompleted,
+    completed: scoreCompleted || atBatsCompleted >= totalAtBats,
+  };
+}
+
+function isDailyCompletedAtBat(value: unknown): value is DailyCompletedAtBat {
+  if (!isRecord(value)) {
+    return false;
+  }
+  return Number.isInteger(value.pitchNumber)
+    && (value.pitchNumber as number) >= 1
+    && (value.pitchNumber as number) <= 9
+    && typeof value.initials === 'string'
+    && isDailyOutcome(value.outcome)
+    && isRevealCount(value.hintsRevealed)
+    && Number.isInteger(value.wrongGuesses)
+    && (value.wrongGuesses as number) >= 0
+    && isDailyAtBatResolution(value.resolution);
+}
+
+function isDailyOutcome(value: unknown): value is DailyOutcome {
+  return value === 'HR' || value === '3B' || value === '2B' || value === '1B' || value === 'BB' || value === 'K';
+}
+
+function isRevealCount(value: unknown): value is DailyRevealCount {
+  return Number.isInteger(value) && (value as number) >= 0 && (value as number) <= 4;
+}
+
+function isDailyAtBatResolution(value: unknown): value is DailyAtBatResolution {
+  return value === 'correct' || value === 'strikeout' || value === 'give_up';
+}
+
+function revealCountForOutcome(outcome: DailyOutcome): DailyRevealCount {
+  switch (outcome) {
+    case 'HR': return 0;
+    case '3B': return 1;
+    case '2B': return 2;
+    case '1B': return 3;
+    case 'BB': return 4;
+    case 'K': return 0;
+  }
 }
 
 function isSafePreTokenSave(
@@ -307,5 +455,5 @@ function isValidProgressionToken(value: unknown): value is string {
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
 }

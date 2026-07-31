@@ -39,7 +39,7 @@ shared
                         Supabase/Postgres adapters
 ```
 
-- `packages/shared`: stable portable contracts.
+- `packages/shared`: stable portable contracts and ruleset identifiers.
 - `packages/engine`: pure outcomes, scoring/completion policies, baseball advancement, search behavior, and result calculations.
 - `packages/baseball-data`: one canonical player system containing identity, aliases, factual baseball data, enrichment, source provenance, QA, and generated runtime artifacts.
 - `packages/daily`: puzzle numbering, lineup recipes, selection, difficulty policy, repeat protection, lifecycle, repository/service contracts, and portable Daily transitions.
@@ -55,41 +55,35 @@ Documentation rules: `docs/engineering/documentation-governance.md`.
 
 - PR #120 merged: the public runtime reads approved editorial puzzles through the server repository boundary.
 - PR #121 merged: the Daily admin HTTP Basic challenge moved to `/admin/auth`, fixing the hosted redirect loop.
-- PR #122 establishes repository continuity controls and records the approved scoring, hint, recognizability, and recipe-driven lineup direction.
-- Production deployment `dpl_DuUXDL6pBSG4aCG7iniDHn97vQGE` is `READY` for the current application behavior.
+- PR #122 merged: repository continuity controls and the approved scoring, hint, recognizability, and recipe-driven lineup direction are canonical.
 - Canonical production alias: `https://initial-baseball-web.vercel.app`.
 - `DAILY_PROGRESSION_SECRET`, Supabase credentials, and Daily admin credentials are configured for Preview and Production.
 - The `daily_editorial_puzzles` migration has been applied to the hosted Supabase project.
 - Hosted table/RLS verification passed: browser roles have no CRUD access; the server service role has the intended read/write boundary and no ordinary delete path.
 - Unauthenticated `/admin/daily` reaches the Basic-auth challenge, and the editor successfully authenticated into the hosted admin page.
+- The latest verified production build completed hidden-answer QA for initial payloads and client chunks.
+- Vercel reported no production runtime errors in the prior 24-hour window at the start of the points implementation.
+- The public root correctly showed the July 30 puzzle before midnight Pacific on July 31 Eastern; an automated check is scheduled to verify rollover without a redeploy after midnight Pacific.
 
-Hosted verification is **not yet complete**. The exact seven-day horizon, draft generation, replacement, validation, scheduling, public consumption, fallback, gameplay progression, refresh recovery, and leakage/runtime-error checks still require one deliberate end-to-end pass. The public root also showed a stale Daily date/cache discrepancy that must be understood before relying on publication behavior.
+Hosted editorial verification is **not yet complete**. The exact seven-day horizon, draft generation, replacement, validation, scheduling, public consumption, fallback, action-network leakage checks, refresh recovery, and full browser gameplay pass still require one deliberate authenticated pass.
 
 ## Implemented gameplay state
 
-The current production implementation still:
+New Standard Daily sessions use explicit `points-v1` behavior:
 
-- maps zero through four revealed hints to HR, 3B, 2B, 1B, and BB;
-- gives three strikes or Give Up a K;
-- advances runners and tracks runs, hits, outs, and strikeouts;
-- may complete after three outs;
-- fetches each hint through a server request at button press.
+- zero through four revealed hints map to HR, 3B, 2B, 1B, and BB;
+- three wrong guesses or Give Up produces K;
+- HR/3B/2B/1B/BB/K score `5/4/3/2/1/0`;
+- all scheduled at-bats are played, even after three strikeouts;
+- nine standard at-bats have a maximum score of 45;
+- spoiler-safe raw facts preserve slot, outcome, hint count, wrong guesses, and correct/strikeout/Give Up resolution;
+- signed progression, local state, final results, and share output carry the ruleset boundary.
 
-Those facts describe current code, not the approved next direction below.
+Already-started saved/token sessions that predate ruleset versioning normalize to `legacy-inning-v1`, preserving their prior three-out behavior rather than silently changing an in-progress game. The existing base/runner engine remains available but does not control completion for new `points-v1` games.
+
+Hints are still fetched through a server request at button press. Immediate active-at-bat hint bundles are the next gameplay implementation concern.
 
 ## Settled next-direction requirements
-
-### Flexible scoring and completion
-
-Scoring weights and completion behavior are product-tuning choices, not permanent assumptions embedded throughout the application.
-
-- Preserve stable raw at-bat facts: slot, outcome, hints revealed, wrong guesses, correct/strikeout/give-up resolution, and puzzle identity.
-- Apply a versioned scoring/completion policy to those facts.
-- Provisional alpha policy: HR/3B/2B/1B/BB/K = `5/4/3/2/1/0`, and every player completes all nine at-bats.
-- A future baseball-inning policy may reuse runner advancement and three-out completion without rewriting unrelated UI, data, or results systems.
-- Percentile comparisons must compare the same puzzle under the same ruleset version.
-
-Exact point weights remain tunable after playtesting.
 
 ### Immediate hints
 
@@ -130,14 +124,14 @@ The generator produces a proposal. The authorized editor can review, replace, va
 
 ### Completed results
 
-Future aggregate results use one compact idempotent submission per completed game, not one write per action. Preserve raw per-at-bat facts and ruleset version so alternative score formulas can be evaluated or historical aggregates recalculated. Intended results include total score, average, outcome distribution, solve depth, K/Give Up rates, and understandable percentile language such as “You scored higher than X% of players today.”
+Future aggregate results use one compact idempotent submission per completed game, not one write per action. Native `points-v1` game state now preserves the raw per-at-bat facts and ruleset version needed for that later submission. Intended results include total score, average, outcome distribution, solve depth, K/Give Up rates, and understandable percentile language such as “You scored higher than X% of players today.”
 
 ## Exact next work order
 
-1. Complete hosted admin and public-runtime verification, including the public date/cache discrepancy.
-2. Add the versioned scoring/completion boundary and provisional all-nine points policy.
+1. Verify the merged `points-v1` production deployment, ordinary all-nine gameplay, refresh recovery, and the scheduled midnight-Pacific rollover check.
+2. Complete the authenticated hosted admin/public-runtime checklist that requires the editor session.
 3. Replace per-click hint fetching with active-at-bat hint bundles.
-4. Define and persist the compact completed-game facts needed for score and percentile comparison.
+4. Define and persist the compact completed-game submission needed for score and percentile comparison.
 5. Define gameplay-profile and lineup-recipe contracts, then establish a conservative Standard Daily pool/recipe.
 6. Continue results UI, analytics, monitoring, mobile polish, legal/domain basics, and heritage presentation.
 
@@ -145,7 +139,7 @@ Future aggregate results use one compact idempotent submission per completed gam
 
 ## Open decisions
 
-- Final point weights and whether wrong guesses ever receive a separate penalty.
+- Final point weights and whether wrong guesses ever receive a separate penalty; any change requires a new ruleset version.
 - Exact Standard Daily slot recipe after playtesting; the recognizability principle is settled even though the thresholds are not.
 - Exact approved sources and maintenance workflows for All-Star selections, awards, and bWAR.
 - Exact persistence and admin UX for gameplay profiles and reusable recipes.
@@ -160,6 +154,7 @@ Repository documentation is the system of record, not chat history.
 
 - Every pull request must include a `Documentation impact` section.
 - CI runs `scripts/check-docs-impact.mjs`; material code or infrastructure changes must update a canonical document or state a specific reviewable exception.
-- Hosted configuration, migration, deployment, or operational verification is not complete until `docs/START-HERE.md` and `tasks/todo.md` reflect the verified result.
+- The documentation-impact check currently runs but is not configured as a mandatory branch-ruleset check; issue #123 remains open after the owner chose not to activate an uncertain ruleset configuration.
+- Hosted configuration, migration, deployment, or operational verification is not complete until this file and `tasks/todo.md` reflect the verified result.
 - Before beginning the next product PR, re-read the final merged diff and verify this handoff against GitHub and production.
 - Periodic documentation-gardening reviews should compare code, tasks, issues, deployment, and canonical docs and open a focused correction PR when drift appears.

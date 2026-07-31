@@ -11,8 +11,10 @@ export type CreateDailyShareResultInput = {
 
 export function createDailyShareResult(input: CreateDailyShareResultInput): DailyShareResult {
   return {
+    rulesetVersion: input.gameState.rulesetVersion,
     puzzleNumber: input.gameState.puzzle.puzzleNumber,
     summary: input.gameState.score,
+    points: input.gameState.points,
     pitchLines: input.gameState.completedPitchLines.map(toSharePitchLine),
     url: input.url,
   };

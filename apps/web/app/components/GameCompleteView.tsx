@@ -1,5 +1,5 @@
 import type { JSX } from 'react';
-import type { DailyShareResult } from '@initial-baseball/shared';
+import { POINTS_V1_DAILY_RULESET_VERSION, type DailyShareResult } from '@initial-baseball/shared';
 import { PitchResultList } from './PitchResultList';
 import { ScoreLine } from './ScoreLine';
 
@@ -14,7 +14,15 @@ export function GameCompleteView({ shareResult, shareText, onResetToday }: GameC
     <div className="game-shell">
       <section className="complete-card">
         <h2>Game Complete</h2>
-        <ScoreLine summary={shareResult.summary} />
+        {shareResult.rulesetVersion === POINTS_V1_DAILY_RULESET_VERSION ? (
+          <div className="score-line" aria-label="Final Daily score">
+            <span>{`${shareResult.points.points}/${shareResult.points.maximumPoints} PTS`}</span>
+            <span>{`${shareResult.points.atBatsCompleted}/${shareResult.points.totalAtBats} AB`}</span>
+            <span>{`${shareResult.summary.strikeouts} K`}</span>
+          </div>
+        ) : (
+          <ScoreLine summary={shareResult.summary} />
+        )}
       </section>
       <PitchResultList
         pitchLines={shareResult.pitchLines}

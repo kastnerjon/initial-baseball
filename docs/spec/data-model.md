@@ -62,7 +62,19 @@ Approved scheduled or published IDs are joined to canonical runtime data on the 
 
 At launch, ordinary gameplay is client-driven.
 
-The browser persists compatible public state and an opaque signed token. The token authorizes progression but does not own or store the visible score, bases, answers, or reveal data.
+The browser persists compatible public state and an opaque signed token. The token authorizes progression but does not own or store the visible point total, baseball display state, answers, or reveal data.
+
+Current browser state includes:
+
+- puzzle identity and public initials;
+- ruleset version;
+- current at-bat and local UI state;
+- point total, maximum, at-bats completed, and completion state;
+- baseball runs/hits/outs/bases retained for legacy compatibility and possible alternate display;
+- ordered spoiler-safe raw completed-at-bat facts: pitch number, initials, outcome, hints revealed, wrong guesses, and correct/strikeout/Give Up resolution;
+- opaque signed progression token.
+
+New games use `points-v1`. Compatible pre-ruleset schema-3 saves and signed tokens normalize to `legacy-inning-v1` so an already-started game is not silently changed from three-out completion to all-scheduled-at-bats completion.
 
 No Redis, replay cache, durable anonymous server session, or database write per hint/guess is part of the accepted launch model.
 
@@ -108,7 +120,7 @@ The future raw contract should preserve:
 
 - puzzle identity;
 - ruleset version;
-- nine ordered at-bat facts;
+- nine ordered native at-bat facts;
 - outcome;
 - hints revealed;
 - wrong guesses;
@@ -116,6 +128,8 @@ The future raw contract should preserve:
 - derived score for convenience;
 - anonymous idempotency key;
 - completion timestamp/server receipt metadata as needed.
+
+The browser now records the native raw facts needed to form that later submission. No relational results table or submission API exists yet. Legacy facts reconstructed from old local pitch lines are compatibility display data and should not be treated as analytics-quality native submissions without an explicit migration rule.
 
 Percentiles compare the same puzzle and ruleset version. Raw facts are retained so formulas and aggregates can be recalculated.
 

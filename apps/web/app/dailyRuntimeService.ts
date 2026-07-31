@@ -1,6 +1,12 @@
 import type { CanonicalRuntimeAccessor } from '@initial-baseball/baseball-data/runtime';
 import { getGuessOutcome } from '@initial-baseball/engine';
-import type { DailyGuessResult, DailyPuzzle, DailyPublicPuzzle } from '@initial-baseball/shared';
+import {
+  LEGACY_DAILY_RULESET_VERSION,
+  POINTS_V1_DAILY_RULESET_VERSION,
+  type DailyGuessResult,
+  type DailyPuzzle,
+  type DailyPublicPuzzle,
+} from '@initial-baseball/shared';
 import { createCanonicalRevealViewModel } from './canonicalRevealViewModel';
 import { DailyProgressionTokenError, type DailyProgressionClaims, type DailyProgressionTokenCodec } from './dailyProgressionToken';
 import type { DailyResolutionRequest, DailyRuntimeService } from './dailyRuntimeContracts';
@@ -63,8 +69,15 @@ export function createDailyRuntimeService({ canonicalRuntime, createPuzzle, prog
       return {
         puzzle: toPublicPuzzle(puzzle),
         progressionToken: progressionTokens.sign({
-          version: 1, puzzleId: puzzle.id, puzzleDate: puzzle.puzzleDate,
-          pitchNumber: firstPitch.pitchNumber, revealCount: 0, strikeCount: 0, outCount: 0, completed: false,
+          version: 1,
+          rulesetVersion: POINTS_V1_DAILY_RULESET_VERSION,
+          puzzleId: puzzle.id,
+          puzzleDate: puzzle.puzzleDate,
+          pitchNumber: firstPitch.pitchNumber,
+          revealCount: 0,
+          strikeCount: 0,
+          outCount: 0,
+          completed: false,
         }),
       };
     },
@@ -111,11 +124,18 @@ function createSuccessorClaims(authorized: AuthorizedProgression, result: DailyG
   const nextOutCount = result.kind === 'strikeout' ? incrementOutCount(authorized.claims.outCount) : authorized.claims.outCount;
   const currentPitchIndex = authorized.puzzle.pitches.findIndex(candidate => candidate.pitchNumber === authorized.claims.pitchNumber);
   const nextPitch = authorized.puzzle.pitches[currentPitchIndex + 1];
-  const completed = nextOutCount === 3 || nextPitch === undefined;
+  const completedByLegacyOuts = authorized.claims.rulesetVersion === LEGACY_DAILY_RULESET_VERSION && nextOutCount === 3;
+  const completed = completedByLegacyOuts || nextPitch === undefined;
   return {
-    version: 1, puzzleId: authorized.claims.puzzleId, puzzleDate: authorized.claims.puzzleDate,
+    version: 1,
+    rulesetVersion: authorized.claims.rulesetVersion,
+    puzzleId: authorized.claims.puzzleId,
+    puzzleDate: authorized.claims.puzzleDate,
     pitchNumber: completed ? authorized.claims.pitchNumber : nextPitch.pitchNumber,
-    revealCount: 0, strikeCount: 0, outCount: nextOutCount, completed,
+    revealCount: 0,
+    strikeCount: 0,
+    outCount: nextOutCount,
+    completed,
   };
 }
 
@@ -137,6 +157,7 @@ function incrementRevealCount(value: DailyProgressionClaims['revealCount']): Dai
   if (value >= 4) throw new DailyRuntimeRequestError('All Daily hints are already revealed.');
   return (value + 1) as DailyProgressionClaims['revealCount'];
 }
+
 function incrementOutCount(value: DailyProgressionClaims['outCount']): DailyProgressionClaims['outCount'] {
   return Math.min(value + 1, 3) as DailyProgressionClaims['outCount'];
 }

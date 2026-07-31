@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import type { DailyGameState } from '@initial-baseball/shared';
+import {
+  LEGACY_DAILY_RULESET_VERSION,
+  POINTS_V1_DAILY_RULESET_VERSION,
+  type DailyGameState,
+} from '@initial-baseball/shared';
 import {
   createGiveUpResult,
   resolveDailyTerminalAtBat,
@@ -73,17 +77,32 @@ describe('dailyLocalStorage', () => {
     expect(load(storage)).toBeNull();
   });
 
-  it('round-trips representative schema-3 state with its opaque progression token', () => {
+  it('round-trips representative schema-3 points-v1 state with its opaque progression token', () => {
     const storage = new FakeStorage();
     const gameState: DailyGameState = {
       ...createInitialDemoGameState(DEMO_DAILY_PUZZLE),
       completedPitchLines: [{ initials: 'KGJ', outcome: 'HR' }],
+      completedAtBats: [{
+        pitchNumber: 1,
+        initials: 'KGJ',
+        outcome: 'HR',
+        hintsRevealed: 0,
+        wrongGuesses: 0,
+        resolution: 'correct',
+      }],
       status: 'in_progress',
       score: {
         runs: 1,
         hits: 1,
         outs: 0,
         strikeouts: 0,
+        completed: false,
+      },
+      points: {
+        points: 5,
+        maximumPoints: 30,
+        atBatsCompleted: 1,
+        totalAtBats: 6,
         completed: false,
       },
     };
@@ -96,6 +115,8 @@ describe('dailyLocalStorage', () => {
     const pendingAdvance: PendingAtBatAdvance = {
       inning: gameState.inning,
       score: gameState.score,
+      points: gameState.points,
+      completedAtBats: gameState.completedAtBats,
       pitchLines: gameState.completedPitchLines,
       nextPitchIndex: 1,
     };
@@ -121,7 +142,35 @@ describe('dailyLocalStorage', () => {
     });
   });
 
-  it('preserves an untouched schema-1 selected player ID and assigns the initial token', () => {
+  it('normalizes pre-ruleset schema-3 state to legacy inning behavior', () => {
+    const storage = new FakeStorage();
+    const savedGame = buildSavedGame({
+      gameState: {
+        ...createInitialDemoGameState(DEMO_DAILY_PUZZLE),
+        completedPitchLines: [{ initials: 'KGJ', outcome: '3B' }],
+      },
+      currentPitchIndex: 1,
+    });
+    const legacyGameState = savedGame.gameState as unknown as Record<string, unknown>;
+    delete legacyGameState.rulesetVersion;
+    delete legacyGameState.points;
+    delete legacyGameState.completedAtBats;
+    storage.setItem(getDailyStorageKey(DEMO_DAILY_PUZZLE.puzzleDate), JSON.stringify(savedGame));
+
+    const restored = load(storage);
+    expect(restored?.gameState.rulesetVersion).toBe(LEGACY_DAILY_RULESET_VERSION);
+    expect(restored?.gameState.points).toMatchObject({ points: 0, maximumPoints: 0, atBatsCompleted: 1 });
+    expect(restored?.gameState.completedAtBats).toEqual([{
+      pitchNumber: 1,
+      initials: 'KGJ',
+      outcome: '3B',
+      hintsRevealed: 1,
+      wrongGuesses: 0,
+      resolution: 'correct',
+    }]);
+  });
+
+  it('preserves an untouched schema-1 selected player ID and assigns the points-v1 initial token', () => {
     const storage = new FakeStorage();
     const savedGame = buildSavedGame({
       atBatState: {
@@ -129,6 +178,10 @@ describe('dailyLocalStorage', () => {
         selectedPlayerId: 'player-42',
       },
     });
+    const legacyGameState = savedGame.gameState as unknown as Record<string, unknown>;
+    delete legacyGameState.rulesetVersion;
+    delete legacyGameState.points;
+    delete legacyGameState.completedAtBats;
     setPreTokenSchema(savedGame, 1);
     storage.setItem(getDailyStorageKey(DEMO_DAILY_PUZZLE.puzzleDate), JSON.stringify(savedGame));
 
@@ -136,6 +189,7 @@ describe('dailyLocalStorage', () => {
     expect(restored?.atBatState.selectedPlayerId).toBe('player-42');
     expect(restored?.schemaVersion).toBe(3);
     expect(restored?.progressionToken).toBe(initialProgressionToken);
+    expect(restored?.gameState.rulesetVersion).toBe(POINTS_V1_DAILY_RULESET_VERSION);
   });
 
   it('preserves an untouched schema-2 start with the initial token', () => {
@@ -202,6 +256,8 @@ describe('dailyLocalStorage', () => {
       gameState: initialGameState,
       pitch: firstPitch,
       result: createGiveUpResult(0, 3),
+      resolution: 'give_up',
+      wrongGuesses: 0,
       currentPitchIndex: 0,
     });
     const savedGame = buildSavedGame({
@@ -211,6 +267,8 @@ describe('dailyLocalStorage', () => {
         status: 'in_progress',
         inning: advance.inning,
         score: advance.score,
+        points: advance.points,
+        completedAtBats: advance.completedAtBats,
         completedPitchLines: advance.pitchLines,
       },
       atBatState: createInitialAtBatUiState(),
@@ -234,6 +292,10 @@ describe('dailyLocalStorage', () => {
           ...initialGameState.score,
           completed: true,
         },
+        points: {
+          ...initialGameState.points,
+          completed: true,
+        },
       },
     });
     setPreTokenSchema(savedGame, 1);
@@ -246,10 +308,12 @@ describe('dailyLocalStorage', () => {
 
   it('normalizes legacy BUNT outcomes while retaining schema-3 authorization', () => {
     const storage = new FakeStorage();
+    const initialGameState = createInitialDemoGameState(DEMO_DAILY_PUZZLE);
     const savedGame = buildSavedGame({
       gameState: {
-        ...createInitialDemoGameState(DEMO_DAILY_PUZZLE),
+        ...initialGameState,
         completedPitchLines: [{ initials: 'KGJ', outcome: 'BUNT' }],
+        completedAtBats: [],
       } as unknown as DailyGameState,
       atBatState: {
         ...createInitialAtBatUiState(),
@@ -261,8 +325,10 @@ describe('dailyLocalStorage', () => {
         },
       } as unknown as SavedDailyGame['atBatState'],
       pendingAdvance: {
-        inning: createInitialDemoGameState(DEMO_DAILY_PUZZLE).inning,
-        score: createInitialDemoGameState(DEMO_DAILY_PUZZLE).score,
+        inning: initialGameState.inning,
+        score: initialGameState.score,
+        points: initialGameState.points,
+        completedAtBats: [],
         pitchLines: [{ initials: 'KGJ', outcome: 'BUNT' }],
         nextPitchIndex: 1,
       } as unknown as PendingAtBatAdvance,
@@ -271,6 +337,7 @@ describe('dailyLocalStorage', () => {
 
     const restored = load(storage);
     expect(restored?.gameState.completedPitchLines).toEqual([{ initials: 'KGJ', outcome: 'BB' }]);
+    expect(restored?.gameState.completedAtBats).toMatchObject([{ outcome: 'BB', hintsRevealed: 4 }]);
     expect(restored?.atBatState.submittedResult).toMatchObject({ outcome: 'BB' });
     expect(restored?.pendingAdvance?.pitchLines).toEqual([{ initials: 'KGJ', outcome: 'BB' }]);
     expect(restored?.progressionToken).toBe(savedProgressionToken);
