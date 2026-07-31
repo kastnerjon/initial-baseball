@@ -221,9 +221,11 @@ export function DailyInningGame({
     reveal: CanonicalRevealViewModel,
     resolution: DailyAtBatResolution,
   ): void {
-    const wrongGuesses = resolution === 'strikeout'
-      ? result.strikeCount
-      : atBatState.strikeCount;
+    const wrongGuesses = resolution === 'give_up'
+      ? atBatState.strikeCount
+      : result.kind === 'strikeout'
+        ? result.strikeCount
+        : atBatState.strikeCount;
     setPendingAdvance(resolveDailyTerminalAtBat({
       gameState,
       pitch: {
