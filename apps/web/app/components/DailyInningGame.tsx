@@ -7,7 +7,12 @@ import {
   formatDailyShareText,
   type PlayerSearchResult,
 } from '@initial-baseball/engine';
-import type { DailyGameState, DailyGuessResult, DailyPublicPuzzle } from '@initial-baseball/shared';
+import type {
+  DailyAtBatResolution,
+  DailyGameState,
+  DailyGuessResult,
+  DailyPublicPuzzle,
+} from '@initial-baseball/shared';
 import {
   type PendingAtBatAdvance,
   resolveDailyTerminalAtBat,
@@ -50,7 +55,7 @@ export function DailyInningGame({
 
   const currentPitch = puzzle.pitches[currentPitchIndex] ?? null;
   const isPuzzleComplete = currentPitchIndex >= puzzle.pitches.length;
-  const isGameComplete = gameState.score.completed || isPuzzleComplete;
+  const isGameComplete = gameState.points.completed || gameState.score.completed || isPuzzleComplete;
 
   const shareResult = useMemo(
     () => (isGameComplete
@@ -60,6 +65,10 @@ export function DailyInningGame({
             status: 'completed',
             score: {
               ...gameState.score,
+              completed: true,
+            },
+            points: {
+              ...gameState.points,
               completed: true,
             },
           },
@@ -122,7 +131,9 @@ export function DailyInningGame({
     <div className="game-shell">
       <DailyScorebug
         puzzleNumber={puzzle.puzzleNumber}
+        rulesetVersion={gameState.rulesetVersion}
         summary={gameState.score}
+        points={gameState.points}
         bases={gameState.inning.bases}
         currentStrikeCount={atBatState.strikeCount}
       />
@@ -192,9 +203,9 @@ export function DailyInningGame({
     }
 
     if (result.kind === 'correct') {
-      resolveTerminalResult(result, requireReveal(response.reveal));
+      resolveTerminalResult(result, requireReveal(response.reveal), 'correct');
     } else if (result.kind === 'strikeout') {
-      resolveTerminalResult(result, requireReveal(response.reveal));
+      resolveTerminalResult(result, requireReveal(response.reveal), 'strikeout');
     }
   }
 
@@ -202,17 +213,26 @@ export function DailyInningGame({
     const response = await resolveAtBat({ giveUp: true });
     if (response === null || response.result.kind === 'incorrect') return;
     setProgressionToken(response.progressionToken);
-    resolveTerminalResult(response.result, requireReveal(response.reveal));
+    resolveTerminalResult(response.result, requireReveal(response.reveal), 'give_up');
   }
 
   function resolveTerminalResult(
     result: Extract<DailyGuessResult, { kind: 'correct' | 'strikeout' }>,
     reveal: CanonicalRevealViewModel,
+    resolution: DailyAtBatResolution,
   ): void {
+    const wrongGuesses = resolution === 'strikeout'
+      ? result.strikeCount
+      : atBatState.strikeCount;
     setPendingAdvance(resolveDailyTerminalAtBat({
       gameState,
-      pitch: { player: { initials: activePitch.initials } },
+      pitch: {
+        pitchNumber: activePitch.pitchNumber,
+        player: { initials: activePitch.initials },
+      },
       result,
+      resolution,
+      wrongGuesses,
       currentPitchIndex,
     }));
     setAtBatState(currentState => ({
@@ -230,9 +250,11 @@ export function DailyInningGame({
 
     setGameState(currentGameState => ({
       ...currentGameState,
-      status: pendingAdvance.score.completed || pendingAdvance.nextPitchIndex >= puzzle.pitches.length ? 'completed' : 'in_progress',
+      status: pendingAdvance.points.completed || pendingAdvance.nextPitchIndex >= puzzle.pitches.length ? 'completed' : 'in_progress',
       inning: pendingAdvance.inning,
       score: pendingAdvance.score,
+      points: pendingAdvance.points,
+      completedAtBats: pendingAdvance.completedAtBats,
       completedPitchLines: pendingAdvance.pitchLines,
       shareResult: null,
     }));

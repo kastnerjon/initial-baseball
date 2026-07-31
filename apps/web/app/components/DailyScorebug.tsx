@@ -1,20 +1,33 @@
 import type { JSX } from 'react';
-import type { DailyBaseState, DailyPuzzle, DailyScoreSummary } from '@initial-baseball/shared';
+import {
+  POINTS_V1_DAILY_RULESET_VERSION,
+  type DailyBaseState,
+  type DailyPointsSummary,
+  type DailyPuzzle,
+  type DailyRulesetVersion,
+  type DailyScoreSummary,
+} from '@initial-baseball/shared';
 import { ScorebugShell } from './ScorebugShell';
 
 type DailyScorebugProps = {
   puzzleNumber: DailyPuzzle['puzzleNumber'];
+  rulesetVersion: DailyRulesetVersion;
   summary: DailyScoreSummary;
+  points: DailyPointsSummary;
   bases: DailyBaseState;
   currentStrikeCount: number;
 };
 
 export function DailyScorebug({
   puzzleNumber,
+  rulesetVersion,
   summary,
+  points,
   bases,
   currentStrikeCount,
 }: DailyScorebugProps): JSX.Element {
+  const isPointsGame = rulesetVersion === POINTS_V1_DAILY_RULESET_VERSION;
+
   return (
     <ScorebugShell
       left={(
@@ -23,7 +36,12 @@ export function DailyScorebug({
           <p className="scorebug-title">{`#${puzzleNumber}`}</p>
         </div>
       )}
-      middle={(
+      middle={isPointsGame ? (
+        <div className="scorebug-metrics">
+          <ScorebugMetric label="PTS" value={`${points.points}/${points.maximumPoints}`} />
+          <ScorebugMetric label="AB" value={`${points.atBatsCompleted}/${points.totalAtBats}`} />
+        </div>
+      ) : (
         <div className="scorebug-metrics">
           <ScorebugMetric label="R" value={summary.runs} />
           <ScorebugMetric label="H" value={summary.hits} />
@@ -32,7 +50,9 @@ export function DailyScorebug({
       )}
       right={(
         <div className="count-panel">
-          <CountIndicator label="Outs" filledCount={Math.min(summary.outs, 2)} total={2} />
+          {isPointsGame
+            ? <ScorebugMetric label="K" value={summary.strikeouts} />
+            : <CountIndicator label="Outs" filledCount={Math.min(summary.outs, 2)} total={2} />}
           <CountIndicator label="Strikes" filledCount={Math.min(currentStrikeCount, 3)} total={3} />
         </div>
       )}

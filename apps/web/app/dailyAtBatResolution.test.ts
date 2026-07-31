@@ -32,20 +32,32 @@ describe('createGiveUpResult', () => {
 });
 
 describe('resolveDailyTerminalAtBat', () => {
-  it('increments outs and does not add a hit for Give Up', () => {
+  it('records Give Up as a zero-point raw at-bat fact without ending points-v1', () => {
     const advance = resolveDailyTerminalAtBat({
       gameState: createInitialDemoGameState(DEMO_DAILY_PUZZLE),
       pitch: firstPitch,
       result: createGiveUpResult(0, 3),
+      resolution: 'give_up',
+      wrongGuesses: 0,
       currentPitchIndex: 0,
     });
 
     expect(advance.score.outs).toBe(1);
     expect(advance.score.hits).toBe(0);
+    expect(advance.score.completed).toBe(false);
+    expect(advance.points).toMatchObject({ points: 0, maximumPoints: 30, atBatsCompleted: 1, completed: false });
+    expect(advance.completedAtBats).toEqual([{
+      pitchNumber: firstPitch.pitchNumber,
+      initials: firstPitch.player.initials,
+      outcome: 'K',
+      hintsRevealed: 0,
+      wrongGuesses: 0,
+      resolution: 'give_up',
+    }]);
     expect(advance.pitchLines).toEqual([{ initials: firstPitch.player.initials, outcome: 'K' }]);
   });
 
-  it('keeps normal correct-guess scoring unchanged', () => {
+  it('awards five points for an initials-only correct guess', () => {
     const correctResult = getGuessOutcome({
       isCorrect: true,
       revealCount: 0,
@@ -61,21 +73,32 @@ describe('resolveDailyTerminalAtBat', () => {
       gameState: createInitialDemoGameState(DEMO_DAILY_PUZZLE),
       pitch: firstPitch,
       result: correctResult,
+      resolution: 'correct',
+      wrongGuesses: 0,
       currentPitchIndex: 0,
     });
 
     expect(advance.score.runs).toBe(1);
     expect(advance.score.hits).toBe(1);
     expect(advance.score.outs).toBe(0);
+    expect(advance.points.points).toBe(5);
+    expect(advance.completedAtBats[0]).toMatchObject({
+      outcome: 'HR',
+      hintsRevealed: 0,
+      wrongGuesses: 0,
+      resolution: 'correct',
+    });
     expect(advance.pitchLines).toEqual([{ initials: firstPitch.player.initials, outcome: 'HR' }]);
   });
 
-  it('keeps share output to initials and outcome after Give Up', () => {
+  it('keeps share output to initials, outcomes, and spoiler-safe point totals', () => {
     const initialGameState = createInitialDemoGameState(DEMO_DAILY_PUZZLE);
     const advance = resolveDailyTerminalAtBat({
       gameState: initialGameState,
       pitch: firstPitch,
       result: createGiveUpResult(0, 3),
+      resolution: 'give_up',
+      wrongGuesses: 0,
       currentPitchIndex: 0,
     });
     const gameState: DailyGameState = {
@@ -86,6 +109,11 @@ describe('resolveDailyTerminalAtBat', () => {
         ...advance.score,
         completed: true,
       },
+      points: {
+        ...advance.points,
+        completed: true,
+      },
+      completedAtBats: advance.completedAtBats,
       completedPitchLines: advance.pitchLines,
     };
     const shareText = formatDailyShareText(createDailyShareResult({
@@ -94,6 +122,7 @@ describe('resolveDailyTerminalAtBat', () => {
     }));
 
     expect(shareText).toContain(`Daily Inning #${DEMO_DAILY_PUZZLE.puzzleNumber}`);
+    expect(shareText).toContain('0/30 PTS');
     expect(shareText).toContain(`${firstPitch.player.initials}: K`);
     expect(shareText).not.toContain(firstPitch.player.fullName);
     expect(shareText).not.toContain('initialbaseball.com');

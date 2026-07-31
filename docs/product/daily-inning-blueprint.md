@@ -34,29 +34,33 @@ Detailed direction: `docs/product/lineup-content-system.md`.
 3. Each at-bat begins with the hidden player's initials.
 4. The player may guess immediately or reveal hints in fixed order.
 5. Correct answers map by hint depth:
-   - 0 hints: HR
-   - 1 hint: 3B
-   - 2 hints: 2B
-   - 3 hints: 1B
-   - 4 hints: BB
-6. An incorrect guess consumes a strike. Three strikes or Give Up produces a K.
-7. The current engine advances runners and tracks runs, hits, walks, outs, and strikeouts.
+   - 0 hints: HR and 5 points
+   - 1 hint: 3B and 4 points
+   - 2 hints: 2B and 3 points
+   - 3 hints: 1B and 2 points
+   - 4 hints: BB and 1 point
+6. An incorrect guess consumes a strike. Three strikes or Give Up produces a K and 0 points.
+7. The client records the spoiler-safe raw at-bat facts independently from the point total.
 8. A resolved at-bat reveals a canonical career summary and expandable regular-season statistics.
-9. Current completion may occur after three outs or after all scheduled at-bats.
-10. Completion produces spoiler-safe share output.
+9. `points-v1` continues through all nine scheduled at-bats; three strikeouts do not end the game.
+10. Completion produces a score out of 45 and spoiler-safe share output.
 
-## Approved gameplay evolution
+The existing runner/base engine remains available as `legacy-inning-v1` compatibility behavior and a possible future alternate policy. It no longer controls completion for new Standard Daily sessions.
 
-The exact score formula and completion policy remain tunable, but they must be modular.
+## Current scoring and completion policy
 
-- Stable raw at-bat facts remain independent from their score interpretation.
-- Scoring and completion are versioned policies.
-- Provisional alpha policy: HR/3B/2B/1B/BB/K score `5/4/3/2/1/0`.
-- Under that provisional policy, every player plays all nine at-bats.
-- The existing baseball runner-advancement engine remains reusable for a future baseball-inning policy.
-- Results and percentile comparisons never mix different puzzle identities or ruleset versions.
+Scoring and completion are explicit versioned policies rather than permanent assumptions spread through the UI.
 
-These changes are approved next direction but are not yet implemented on production `main`.
+Current Standard Daily uses `points-v1`:
+
+- HR/3B/2B/1B/BB/K score `5/4/3/2/1/0`;
+- every player completes all nine at-bats;
+- the maximum score is 45;
+- stable raw facts preserve slot, outcome, hint count, wrong guesses, and correct/strikeout/Give Up resolution;
+- saved pre-ruleset sessions remain on `legacy-inning-v1` so their existing signed progression and three-out behavior are not silently reinterpreted;
+- results and percentile comparisons never mix different puzzle identities or ruleset versions.
+
+Exact point weights remain provisional product tuning and may change only through a new ruleset version.
 
 ## Interaction quality
 
@@ -67,6 +71,8 @@ Visible game actions should respond immediately.
 - The prior at-bat’s mandatory resolution response may prepare the next at-bat.
 - Answers, canonical answer IDs, future reveal records, and unrelated future-player data remain server-side.
 - Search and guess submission may require network access, but loading states must not disrupt the main game rhythm.
+
+This no-visible-wait hint transport remains the next gameplay implementation concern.
 
 ## Daily puzzle lifecycle
 
@@ -104,14 +110,14 @@ The current recognizability weighted-stat ranking is not an acceptable final mea
 ### Current
 
 - Daily game page;
-- compact scorebug;
+- points-focused scorebug for new `points-v1` sessions;
 - name search and canonical guess submission;
 - ordered hints;
 - post-at-bat reveal;
 - career and season statistics;
 - completed-at-bat history;
-- spoiler-safe share output;
-- local recovery/reset;
+- spoiler-safe point share output;
+- local recovery/reset with legacy-session compatibility;
 - authorized seven-day editorial administration.
 
 ### Required before broad launch
@@ -119,7 +125,6 @@ The current recognizability weighted-stat ranking is not an acceptable final mea
 - clear first-play instructions;
 - reliable refresh/already-played behavior;
 - immediate hint interaction;
-- final points/result presentation under the chosen ruleset;
 - same-puzzle/same-ruleset field comparison and percentile;
 - calibrated recognizable lineups;
 - analytics and error monitoring;
@@ -140,7 +145,9 @@ The current recognizability weighted-stat ranking is not an acceptable final mea
 
 ## State and persistence
 
-Anonymous gameplay remains client-driven at launch. Local persistence restores compatible public game state and the opaque signed progression token.
+Anonymous gameplay remains client-driven at launch. Local persistence restores compatible public game state, ruleset version, raw completed-at-bat facts, point summary, and the opaque signed progression token.
+
+Pre-ruleset signed sessions normalize to `legacy-inning-v1`; new bootstraps use `points-v1`. This avoids silently changing the completion rule inside an already-started anonymous game.
 
 Future aggregate results use at most one compact idempotent completed-game submission. The submission preserves raw per-at-bat facts and ruleset version so score formulas and aggregates can be recalculated without per-action writes.
 
@@ -168,9 +175,15 @@ Career and season statistics are reveal content, not answer-validation logic.
 
 ## Results
 
-Intended completed-game results include:
+Current local results include:
 
-- total score and maximum;
+- point total and maximum;
+- all nine spoiler-safe initials/outcomes;
+- strikeout count;
+- ruleset version in the result contract.
+
+Intended aggregate results additionally include:
+
 - understandable percentile language;
 - comparison sample size;
 - average score;

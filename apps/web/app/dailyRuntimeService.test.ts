@@ -1,5 +1,11 @@
 import { createCanonicalRuntimeAccessor } from '@initial-baseball/baseball-data/runtime';
-import { DEFAULT_DAILY_HINT_CONFIG, DEFAULT_DAILY_STATS_HINT_CONFIG, type DailyPuzzle } from '@initial-baseball/shared';
+import {
+  DEFAULT_DAILY_HINT_CONFIG,
+  DEFAULT_DAILY_STATS_HINT_CONFIG,
+  LEGACY_DAILY_RULESET_VERSION,
+  POINTS_V1_DAILY_RULESET_VERSION,
+  type DailyPuzzle,
+} from '@initial-baseball/shared';
 import { describe, expect, it } from 'vitest';
 import { createDailyProgressionTokenCodec, type DailyProgressionClaims } from './dailyProgressionToken';
 import { DailyRuntimeRequestError, createDailyRuntimeService } from './dailyRuntimeService';
@@ -96,9 +102,34 @@ describe('Daily canonical runtime service', () => {
     expect(tokens.verify(response.progressionToken)).toMatchObject({ pitchNumber: 2, revealCount: 0, strikeCount: 0, outCount: 1, completed: false });
   });
 
-  it('completes after three outs and rejects later actions', async () => {
-    const response = await service.resolveAtBat({ progressionToken: tokens.sign({ ...initialClaims(), outCount: 2 }), giveUp: true });
-    expect(tokens.verify(response.progressionToken)).toMatchObject({ outCount: 3, completed: true, pitchNumber: 1 });
+  it('continues points-v1 after a third recorded out', async () => {
+    const response = await service.resolveAtBat({
+      progressionToken: tokens.sign({ ...initialClaims(), outCount: 2 }),
+      giveUp: true,
+    });
+    expect(tokens.verify(response.progressionToken)).toMatchObject({
+      rulesetVersion: POINTS_V1_DAILY_RULESET_VERSION,
+      outCount: 3,
+      completed: false,
+      pitchNumber: 2,
+    });
+  });
+
+  it('preserves legacy three-out completion for pre-migration sessions', async () => {
+    const response = await service.resolveAtBat({
+      progressionToken: tokens.sign({
+        ...initialClaims(),
+        rulesetVersion: LEGACY_DAILY_RULESET_VERSION,
+        outCount: 2,
+      }),
+      giveUp: true,
+    });
+    expect(tokens.verify(response.progressionToken)).toMatchObject({
+      rulesetVersion: LEGACY_DAILY_RULESET_VERSION,
+      outCount: 3,
+      completed: true,
+      pitchNumber: 1,
+    });
     await expect(service.revealHint(response.progressionToken)).rejects.toThrow(/already complete/);
   });
 
@@ -112,7 +143,17 @@ describe('Daily canonical runtime service', () => {
 });
 
 function initialClaims(): DailyProgressionClaims {
-  return { version: 1, puzzleId: `daily-${date}`, puzzleDate: date, pitchNumber: 1, revealCount: 0, strikeCount: 0, outCount: 0, completed: false };
+  return {
+    version: 1,
+    rulesetVersion: POINTS_V1_DAILY_RULESET_VERSION,
+    puzzleId: `daily-${date}`,
+    puzzleDate: date,
+    pitchNumber: 1,
+    revealCount: 0,
+    strikeCount: 0,
+    outCount: 0,
+    completed: false,
+  };
 }
 
 function buildPuzzle(puzzleDate: string): DailyPuzzle {

@@ -1,4 +1,8 @@
 import { createHmac } from 'node:crypto';
+import {
+  LEGACY_DAILY_RULESET_VERSION,
+  POINTS_V1_DAILY_RULESET_VERSION,
+} from '@initial-baseball/shared';
 import { describe, expect, it } from 'vitest';
 import {
   DailyProgressionTokenError,
@@ -9,6 +13,7 @@ import {
 const secret = 'daily-progression-test-secret-0123456789abcdef';
 const claims: DailyProgressionClaims = {
   version: 1,
+  rulesetVersion: POINTS_V1_DAILY_RULESET_VERSION,
   puzzleId: 'daily-2026-07-20',
   puzzleDate: '2026-07-20',
   pitchNumber: 3,
@@ -29,6 +34,23 @@ describe('Daily progression token codec', () => {
     expect(token).not.toContain(secret);
   });
 
+  it('normalizes signed pre-ruleset claims to the legacy inning policy', () => {
+    const codec = createDailyProgressionTokenCodec(secret);
+    const { rulesetVersion: _rulesetVersion, ...legacyClaims } = claims;
+
+    expect(codec.verify(signRaw(legacyClaims))).toEqual({
+      ...claims,
+      rulesetVersion: LEGACY_DAILY_RULESET_VERSION,
+    });
+  });
+
+  it('allows points-v1 progression to remain incomplete at three recorded outs', () => {
+    const codec = createDailyProgressionTokenCodec(secret);
+    const threeOutClaims = { ...claims, outCount: 3 as const, completed: false };
+
+    expect(codec.verify(codec.sign(threeOutClaims))).toEqual(threeOutClaims);
+  });
+
   it('rejects payload and signature tampering', () => {
     const codec = createDailyProgressionTokenCodec(secret);
     const token = codec.sign(claims);
@@ -46,7 +68,7 @@ describe('Daily progression token codec', () => {
     expect(() => codec.verify('not-a-token')).toThrow(DailyProgressionTokenError);
     expect(() => codec.verify('v2.payload.signature')).toThrow(DailyProgressionTokenError);
     expect(() => codec.verify(signRaw({ ...claims, pitchNumber: 10 }))).toThrow(DailyProgressionTokenError);
-    expect(() => codec.verify(signRaw({ ...claims, completed: false, outCount: 3 }))).toThrow(DailyProgressionTokenError);
+    expect(() => codec.verify(signRaw({ ...claims, rulesetVersion: 'unknown-ruleset' }))).toThrow(DailyProgressionTokenError);
   });
 
   it('requires a sufficiently strong injected secret', () => {
