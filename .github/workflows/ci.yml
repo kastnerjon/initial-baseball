@@ -16,6 +16,8 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Test documentation-impact gate
+        run: node --test scripts/check-docs-impact.test.mjs
       - name: Verify documentation impact
         env:
           BASE_SHA: ${{ github.event.pull_request.base.sha }}
