@@ -5,93 +5,39 @@ Last updated: 2026-07-31
 
 ## Product goal
 
-Build a polished, fast Daily game that can support at least 10,000 plays per day without a rewrite. Daily Inning is the only committed product, while inexpensive seams may support future themed or alternate games.
+Build a polished Daily baseball guessing game that supports at least 10,000 plays per day without a rewrite. Daily Inning is the only committed product; inexpensive reuse seams may later support themed or alternate experiences.
 
 Product behavior: `docs/product/daily-inning-blueprint.md`.  
-Lineup content system: `docs/product/lineup-content-system.md`.  
-Current handoff: `docs/START-HERE.md`.  
-Documentation governance: `docs/engineering/documentation-governance.md`.
+Lineup content: `docs/product/lineup-content-system.md`.  
+Current handoff: `docs/START-HERE.md`.
 
 ## Operating principles
 
-- Humans decide product intent and acceptance criteria; agents execute bounded work.
-- Repository-local, versioned knowledge is the system of record.
-- Establish stable contracts for facts, outcomes, recipes, and persistence; keep tuning choices replaceable.
-- Enforce ownership and dependency direction mechanically where practical.
-- Prefer small reviewed PRs, focused tests, observable browser QA, and explicit operational verification.
-- Do not add infrastructure solely for hypothetical products.
+- Repository-local versioned knowledge is the system of record.
+- Stable facts/contracts remain durable; scoring, difficulty, and presentation may be tuned through versions.
+- Ownership and dependency direction are explicit and tested.
+- Each PR has one bounded concern, focused tests, full CI, review, deployment verification, and documentation reconciliation.
+- Do not add speculative infrastructure.
 
-## Package ownership
+## Ownership
 
 ### `packages/shared`
-
-Stable cross-platform types, schemas, settings, version identifiers, and serialization contracts. No React, Next.js, browser APIs, databases, generated artifacts, or network access.
+Stable portable types, schemas, settings, ruleset identifiers, and serialization contracts.
 
 ### `packages/engine`
-
-Pure game rules:
-
-- guess outcomes;
-- scoring and completion policies;
-- runner/base advancement for baseball-inning policies;
-- search behavior;
-- result/share calculations.
-
-It depends only on `shared`.
+Pure outcomes, versioned scoring/completion, runner advancement, search behavior, and result/share calculations. Depends only on shared.
 
 ### `packages/baseball-data`
-
-One canonical player fact system:
-
-- identity, aliases, redirects, and source mappings;
-- teams, positions, seasons, career facts, and rate-stat semantics;
-- approved Hall of Fame, All-Star, award, and WAR enrichment;
-- source provenance, release versioning, QA, and generated runtime artifacts;
-- factual inputs usable by gameplay profiles and lineup recipes.
-
-Web code does not calculate, correct, or reinterpret baseball facts.
+Canonical identity, aliases, teams, seasons, career facts, enrichment, provenance, QA, and generated runtime artifacts. Web code does not reinterpret facts.
 
 ### `packages/daily`
-
-Portable Daily application logic:
-
-- puzzle numbering and identity;
-- gameplay-profile and lineup-recipe contracts;
-- deterministic candidate selection;
-- recognizability/difficulty policy;
-- repeat protection and diversity constraints;
-- lineup validation and qualification explanations;
-- editorial lifecycle and repository ports;
-- public editorial eligibility;
-- seven-day orchestration;
-- portable Daily transitions.
-
-It does not import React, Next.js, Supabase, clocks, authentication state, or network clients.
+Puzzle identity/numbering, future gameplay profiles and lineup recipes, selection, recognizability/difficulty policy, repeat/diversity constraints, validation, editorial lifecycle, repository ports, public eligibility, and seven-day orchestration.
 
 ### `apps/web`
-
-Next.js/React and web adapters:
-
-- pages and components;
-- browser persistence and migration;
-- search, hint, guess, result, and admin routes;
-- signed-token transport authorization;
-- server-only canonical runtime composition;
-- HTTP Basic editor boundary;
-- Supabase adapters;
-- mobile/browser QA and sharing.
-
-It renders and transports domain behavior rather than defining it.
+Next.js/React rendering, browser persistence, search/hint/resolve/admin routes, signed-token authorization, current-batter hint bundles, server-only canonical runtime, sharing, HTTP Basic editor boundary, and Supabase adapters.
 
 ### Supabase/Postgres
-
-Initial relational provider for operational data behind provider-neutral ports:
-
-- editorial puzzle records;
-- future gameplay profiles and saved recipes;
-- future compact completed-game results.
-
-Supabase does not own baseball facts, recipe semantics, scoring, completion, lifecycle, or answer integrity. The inactive original social/head-to-head schema remains non-authoritative.
+Operational persistence behind provider-neutral ports: current editorial puzzles and future profiles, recipes, and compact completed results. It does not own baseball facts, scoring, recipe semantics, or lifecycle rules.
 
 ## Dependency direction
 
@@ -107,153 +53,120 @@ shared
                         persistence providers
 ```
 
-Dependencies do not point upward. Rules are centralized once at their owning layer.
+Dependencies do not point upward. React and routes transport/render domain behavior rather than define it.
 
-## Flexible gameplay architecture
+## Versioned gameplay
 
-### Stable facts, replaceable interpretation
+Native completed-at-bat facts preserve slot, initials, HR/3B/2B/1B/BB/K, hints revealed, wrong guesses, and correct/strikeout/Give Up resolution.
 
-Native Daily state records stable raw completed-at-bat facts:
+- `points-v1`: `5/4/3/2/1/0`, all scheduled at-bats, maximum 45 for nine.
+- `legacy-inning-v1`: runner advancement and three-out completion for compatible pre-ruleset sessions.
 
-- pitch/slot and initials;
-- HR/3B/2B/1B/BB/K outcome;
-- hints revealed;
-- wrong guesses;
-- correct, strikeout, or Give Up resolution.
+Ruleset version flows through shared state, engine, signed progression, local persistence, final result, and share output. Do not build a generic plugin framework.
 
-A versioned ruleset interprets those facts.
+## Immediate active-at-bat hint architecture
 
-Current Standard Daily uses `points-v1`: `5/4/3/2/1/0` with all scheduled at-bats. `legacy-inning-v1` preserves compatible pre-ruleset signed/saved sessions and the existing runner advancement plus three-out completion behavior.
+The former per-click `/api/daily/hint` client path caused visible latency. The active design is:
 
-The shared game state, pure engine, stateless signed progression, browser persistence, final result, and share contract carry the same ruleset boundary. New scoring weights require a new version rather than reinterpretation of old results.
+```text
+verified current progression
+  -> server joins only current pitch hints
+  -> browser receives four-hint active bundle
+  -> local Hint click selects next value + signed checkpoint
+  -> guess/Give Up resolution verifies checkpoint
+  -> response supplies refreshed same-pitch or next-pitch bundle
+```
 
-The points policy may continue recording spoiler-safe outcomes after baseball inning state has reached three outs; the base/runner state is retained for reuse but no longer controls Standard Daily completion.
+### Bundle contract
 
-Do not build a generic plugin platform. Use explicit small versioned policies with focused consumers.
+A bundle contains:
 
-### Hint delivery
+- current pitch number;
+- already revealed depth;
+- all four current-batter hint labels/values;
+- signed checkpoints only for later reveal depths still available.
 
-The current per-click uncached hint route creates visible latency.
+It contains no answer ID/name, reveal record, credentials, or future-batter hints.
 
-The approved transport boundary is:
+### Delivery paths
 
-- current-at-bat hints are authorized and locally available before the at-bat appears;
-- Hint clicks are local state transitions;
-- mandatory resolution may deliver the next at-bat bundle;
-- answer IDs and reveal data remain server-side until terminal authorization;
-- progression tokens/checkpoints preserve the recorded hint depth used for scoring.
+- Bootstrap includes batter one’s bundle.
+- Incorrect resolution returns the same pitch’s bundle with updated strike claims.
+- Correct/K/Give Up returns the next pitch’s bundle unless complete.
+- `/api/daily/hints` hydrates only the bundle authorized by a compatible saved token.
+- The legacy one-hint route remains server-compatible but is absent from active client chunks.
 
-The exact serialized bundle is implementation detail. No-visible-wait is the product invariant.
+### Integrity consequences
 
-### Completed results
+The browser can inspect all current-batter hints and still holds the current signed token. That is accepted under the anonymous noncompetitive threat model. The architecture prevents accidental answer/future-pitch leakage, not adversarial score claims. Stronger incentives require server-authoritative attempts.
 
-One idempotent completed-game write may contain the natively recorded raw per-at-bat facts, puzzle identity, and ruleset version. Do not persist every hint or guess. Aggregates and percentiles are derived from compact records and compare identical puzzle/ruleset cohorts.
-
-Legacy lines reconstructed for local compatibility are not automatically treated as analytics-quality native facts.
+No browser encryption, all-nine hint preload, Redis, replay cache, durable anonymous session, or per-Hint database write is introduced.
 
 ## Canonical player and lineup-content architecture
 
 ```text
 versioned factual sources
-  -> canonical player facts and enrichment
-  -> gameplay profiles
+  -> canonical player facts/enrichment
+  -> separate gameplay profiles
   -> versioned lineup recipe
-  -> portable candidate generation and validation
+  -> portable candidate generation/validation
   -> editor review/replacement
-  -> exact scheduled/published nine-player puzzle
+  -> exact scheduled/published nine
   -> observed solve data
-  -> later profile/recipe calibration
+  -> later calibration
 ```
 
-### Facts versus gameplay judgments
+Facts and editorial judgments remain separate. Standard Daily is one recipe, not the only selector. A finalized puzzle stores exact ordered canonical IDs; later profile/recipe changes do not alter it.
 
-Objective facts remain reproducible baseball-data outputs. Gameplay profiles are editorial/product inputs such as recognizability, expected difficulty, Standard Daily eligibility, expert-only status, manual promotion/exclusion, and eventual observed solve rates.
+## Runtime and answer protection
 
-A fact refresh does not overwrite an editorial judgment. An editorial judgment does not mutate a fact.
-
-### Recipes
-
-A recipe contains named/versioned slot groups, factual filters, gameplay-profile filters, repeat policy, reveal readiness, and optional diversity constraints.
-
-“Standard Daily” is one recipe. Future 2000s, team, All-Star, WAR-threshold, expert, or user-selected games reuse the same contract only when product scope approves them.
-
-`packages/daily` owns recipe evaluation. Supabase may persist recipe/profile records through adapters. React provides a builder and review UI but does not interpret the recipe independently.
-
-### Exact puzzle identity
-
-The recipe creates a proposal. The scheduled/published puzzle stores the exact ordered nine canonical IDs. Recipe or profile changes affect later proposals and do not alter an already finalized date.
-
-## Runtime serving and answer protection
-
-- Initial browser state contains public puzzle metadata, initials, and opaque authorization state.
-- New signed progression includes `points-v1`; pre-ruleset valid tokens normalize to `legacy-inning-v1`.
+- Public puzzle metadata/initials and the active batter’s hints may reach the browser.
+- Answer IDs/names and canonical reveal data remain server-side until terminal resolution.
+- Unrelated future-batter hints remain server-side.
+- Signed claims control puzzle, ruleset, pitch, reveal depth, strikes, outs, and completion.
 - Search is lightweight and spoiler-safe.
-- Full reveal shards load only after terminal resolution.
-- Current-at-bat hints may be preauthorized locally; unrelated future answers/reveals remain unavailable.
-- Legacy IDs resolve through canonical redirects.
+- Full reveal shards load only after terminal authorization.
 - Service-role credentials remain server-only.
-- Replay of an earlier valid anonymous token is an accepted launch limitation.
-- No Redis, replay cache, per-action database write, or durable anonymous server session is introduced.
+- Replay is an accepted anonymous limitation.
 
 ## Editorial persistence
 
-`daily_editorial_puzzles` remains the current authoritative operational table for editorial dates:
-
-- one row per date;
-- exact nine selections stored atomically;
-- draft/scheduled/published/archived lifecycle;
-- optimistic revisions and audit metadata;
-- RLS with server service-role access;
-- no duplicate player facts.
-
-Gameplay profiles, recipes, and completed results require separate migrations and provider-neutral contracts before persistence.
+`daily_editorial_puzzles` remains authoritative for editorial dates: one row/date, atomic exact-nine JSONB selection, lifecycle status, optimistic revision, audit metadata, RLS, and server-only service role. Future profiles/recipes/results require separate portable contracts and migrations.
 
 ## Scale target
 
-At 10,000+ plays per day:
+At 10,000+ plays/day:
 
-- serve immutable player artifacts with cache-friendly delivery;
-- keep anonymous visible game state client-side;
-- perform stateless progression verification;
-- read at most the date’s editorial record during actions;
-- avoid per-hint database writes;
+- serve immutable baseball artifacts cacheably;
+- keep visible anonymous state client-side;
+- verify stateless progression;
+- perform no database write per hint/guess;
+- hydrate at most one active hint bundle on saved refresh;
 - submit at most one compact completed result;
 - keep routes thin and credentials isolated.
 
-Vercel and Supabase are replaceable adapters.
+Vercel and Supabase remain replaceable adapters.
 
-## Documentation and agent continuity
+## Continuity controls
 
-`AGENTS.md` is a map and operating contract, not the sole encyclopedia. Structured canonical docs contain product, architecture, data, and execution truth.
-
-Controls:
-
-- PRs use an explicit Documentation impact section.
-- CI checks material diffs for canonical-doc updates or a specific exception.
-- Hosted operational changes require a handoff update before the next product PR.
-- Large changes begin with a plan and one bounded scope contract.
-- Periodic documentation gardening compares code, issues, deployment, and docs.
-- Codex review supplements, not replaces, human product judgment and final verification.
+- `AGENTS.md` is a map; structured docs own deeper truth.
+- PRs include Documentation impact.
+- CI requires canonical-doc updates or a specific exception for material diffs.
+- Hosted work is incomplete until START-HERE/todo are reconciled.
+- Repeated review findings become tests/scripts/rules.
 
 ## Current sequence
 
-1. Verify the merged `points-v1` production deployment, all-nine gameplay, refresh behavior, and midnight-Pacific rollover.
-2. Complete the authenticated hosted editorial/public-runtime checklist.
-3. Add immediate active-at-bat hints.
-4. Add compact completed-result persistence and percentile comparison.
-5. Add gameplay-profile and recipe contracts plus a conservative Standard Daily recipe.
-6. Continue launch hardening and heritage presentation.
+1. Verify instant-hint production payload, restored-session hydration, and no active per-click client route.
+2. Complete authenticated admin and real-browser all-nine/refresh QA when the editor is available.
+3. Add compact completed-result persistence and same-puzzle/same-ruleset percentile comparison.
+4. Add gameplay-profile and recipe contracts plus a conservative recognizable Standard Daily recipe.
+5. Continue analytics, monitoring, mobile polish, legal/domain basics, and heritage presentation.
 
-## Explicit non-goals
+## Non-goals
 
-- Rewriting the application.
-- Moving factual baseball ownership into Supabase or React.
-- Building every possible themed mode now.
-- A generic plugin framework for rules or recipes.
-- Tamper-proof anonymous competition.
-- Microservices, queues, replay caches, or per-action persistence.
-- Accounts before the core Daily loop is excellent.
+Rewriting the app; moving facts into Supabase/React; building all themed modes; generic rules plugins; tamper-proof anonymous competition; microservices/queues/replay caches; accounts before the Daily loop is excellent.
 
 ## Decision rule
 
-Architecture is sufficient when scoring weights, completion behavior, hint transport, player profiles, and lineup recipes can evolve without duplicating rules, corrupting historical facts, or rewriting unrelated UI and persistence. When a decision changes, code, tests, `docs/START-HERE.md`, `tasks/todo.md`, and the affected canonical document change together.
+Architecture is sufficient when scoring, completion, hint transport, player profiles, and lineup recipes can evolve without duplicating rules, corrupting facts/history, or rewriting unrelated UI/persistence. Code, tests, handoff, todo, and canonical docs change together.

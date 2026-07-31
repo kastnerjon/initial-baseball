@@ -3,77 +3,75 @@
 Status: Living source of truth  
 Last updated: 2026-07-31
 
-Daily Inning is the only committed product. Current routes are thin Next.js transport adapters over canonical baseball data, engine rules, and portable Daily logic. Historical head-to-head, matchmaking, chat, league, and practice endpoint plans are deferred and are not current API contracts.
-
-The launch answer-integrity rationale is recorded in `docs/decisions/0001-daily-answer-integrity.md`.
+Daily routes are thin Next.js adapters over canonical baseball data, engine rules, and portable Daily logic. Answer-integrity rationale is in `docs/decisions/0001-daily-answer-integrity.md`.
 
 ## General rules
 
-Every Daily route must:
+Every route must validate input, return sanitized data, resolve players by canonical/validated legacy ID, keep rules in their owning packages, avoid per-action persistence, and never reflect secrets or hidden answer data in errors.
 
-1. Validate request shape and range constraints.
-2. Return sanitized public data only.
-3. Never expose a hidden answer before a correct guess, third strike, or Give Up.
-4. Resolve players by canonical or validated legacy ID, never display text.
-5. Keep baseball outcomes and ruleset interpretation in `packages/engine` and portable Daily behavior in `packages/daily`.
-6. Avoid per-action database writes or durable anonymous sessions at launch.
-7. Return 4xx responses for invalid caller input and avoid reflecting secrets or hidden data in error messages.
-
-## Public puzzle bootstrap
+## Public bootstrap
 
 The Daily page receives:
 
-- puzzle ID, number, date, and publication status;
-- public hint configuration;
-- the scheduled pitch numbers and initials;
-- one opaque signed progression token for pitch 1, zero hints, zero strikes, zero outs, and the active ruleset version.
+- puzzle ID, number, date, status, hint configuration, and nine public initials;
+- one opaque signed progression token for the first pitch;
+- one authorized hint bundle for the first pitch only.
 
-New Standard Daily bootstraps use `points-v1`. The token contains only public progression claims and no player answer or hint value. Initial HTML and client bundles must not contain answer IDs, answer names, full hints, or reveal records.
+The active hint bundle contains:
+
+- current pitch number and already revealed depth;
+- all four current-batter hint labels/values;
+- signed checkpoints for only the later reveal depths still available from the current claims.
+
+It contains no answer ID, answer name, reveal record, or future-batter hint. New games use `points-v1`.
 
 ## Canonical player search
 
 ### `GET /api/players/search`
 
-Searches the canonical player index and returns sanitized candidate context. Search may use display names and aliases, but the response carries canonical identity and enough context to distinguish genuine same-name players.
+Returns sanitized canonical candidates. Search aliases help retrieval but do not define reveal names. Genuine duplicate visible names receive career years only; teams and positions are not shown in public guess results.
 
-Search does not reveal which candidate is the hidden answer.
+## Active hint-bundle restoration
 
-## Daily hint route
-
-### `POST /api/daily/hint`
+### `POST /api/daily/hints`
 
 Request:
 
 ```json
-{
-  "progressionToken": "opaque-signed-token"
-}
+{ "progressionToken": "opaque-signed-token" }
 ```
 
-The server verifies the token and derives ruleset version, puzzle date, current pitch, hint depth, strikes, and recorded outs from its claims. The caller does not supply those values independently.
-
-Response:
+The server verifies the token and returns the bundle for exactly the authorized current pitch, strike count, and reveal depth.
 
 ```json
 {
-  "hint": {
-    "hintType": "teams",
-    "hintLabel": "Teams",
-    "hintValue": "..."
-  },
-  "progressionToken": "next-opaque-signed-token"
+  "hintBundle": {
+    "pitchNumber": 3,
+    "revealedCount": 2,
+    "hints": [
+      { "slot": 1, "hintType": "main_decade", "hintLabel": "Main decade played in", "hintValue": "2000s" }
+    ],
+    "checkpoints": [
+      { "revealedCount": 3, "progressionToken": "opaque-token" },
+      { "revealedCount": 4, "progressionToken": "opaque-token" }
+    ]
+  }
 }
 ```
 
-The next token increments hint depth for the same pitch. The route rejects invalid signatures, malformed or unsupported claims, completed tokens, cross-date/cross-puzzle use, and requests beyond the configured hint count.
+The response is `private, no-store`. It is used only to restore a compatible saved at-bat whose current bundle is no longer in memory. It rejects invalid, completed, cross-date, cross-puzzle, or arbitrary-future claims.
 
-This route remains the current transport. The approved next implementation replaces visible per-click latency with an authorized active-at-bat hint bundle while preserving the same scoring depth and answer-integrity boundary.
+## Legacy one-hint route
 
-## Daily resolution route
+### `POST /api/daily/hint`
+
+This compatibility route still verifies one token and returns one hint plus one successor token. The active web client no longer calls it when the player presses Hint. Production build QA rejects the exact legacy route string from client chunks.
+
+## Daily resolution
 
 ### `POST /api/daily/resolve`
 
-Guess request:
+Guess:
 
 ```json
 {
@@ -82,7 +80,7 @@ Guess request:
 }
 ```
 
-Give Up request:
+Give Up:
 
 ```json
 {
@@ -91,98 +89,53 @@ Give Up request:
 }
 ```
 
-The server verifies the token, derives the authorized current pitch and progression, resolves the submitted player through canonical redirects, and uses engine rules for the outcome.
-
 Response:
 
 ```json
 {
   "result": {},
   "reveal": null,
-  "progressionToken": "next-opaque-signed-token"
+  "progressionToken": "next-opaque-token",
+  "hintBundle": null
 }
 ```
 
-Behavior common to all rulesets:
+Behavior:
 
-- an incorrect guess returns no reveal and a token with one additional strike;
-- a correct guess returns the current player's reveal and a successor token;
-- a third strike or Give Up returns the current player's reveal, records one additional out up to the public claim maximum, and returns a successor token;
-- browser-supplied pitch number, reveal count, strike count, out count, or ruleset version is ignored because those fields are not part of the request contract.
+- incorrect guess: no reveal, successor token with one additional strike, refreshed bundle for the same pitch and strike count;
+- correct guess: current reveal, successor token, next-pitch bundle unless complete;
+- third strike/Give Up: current reveal, recorded out, successor token, next-pitch bundle unless complete;
+- final pitch or legacy three-out completion: completed token and `hintBundle: null`.
 
-`points-v1` behavior:
+The browser does not submit pitch, hint depth, strike count, out count, or ruleset version independently.
 
-- a third recorded out does not complete the game;
-- the successor token advances through every scheduled pitch;
-- only resolution of the final scheduled pitch returns a completed token.
+## Local Hint action
 
-`legacy-inning-v1` behavior:
+The active client performs no HTTP request on Hint click. It:
 
-- three recorded outs or the final scheduled pitch returns a completed token;
-- the policy exists for compatible pre-ruleset signed sessions rather than new Standard Daily bootstraps.
+1. finds the next current-batter hint in the already authorized bundle;
+2. reveals it locally;
+3. replaces the current progression token with the matching signed checkpoint.
 
-A completed token cannot authorize another hint or resolution.
+Scoring therefore still uses server-verifiable reveal depth on the later resolution request.
 
-## Progression-token contract
+## Token contract
 
-Claims are versioned and contain only:
+Claims contain only contract/ruleset version, puzzle ID/date, current pitch, reveal count, strike count, recorded outs, and completion. Tokens contain no hints or answers.
 
-- contract version;
-- ruleset version;
-- puzzle ID;
-- puzzle date;
-- current pitch number;
-- reveal count;
-- strike count;
-- recorded out count;
-- completion state.
+Valid pre-ruleset tokens normalize to `legacy-inning-v1`. Tokens are stateless and replayable; anonymous scoring is not tamper-proof.
 
-Signing uses a server-only secret and HMAC. Production and preview use `DAILY_PROGRESSION_SECRET`; it must never use a `NEXT_PUBLIC_*` name or cross into client props or logs.
+## Browser persistence
 
-Verification rejects:
-
-- malformed encoding or JSON;
-- unsupported contract or ruleset version;
-- invalid signature;
-- invalid puzzle ID/date relationship;
-- pitch, hint, strike, or out values outside legal ranges;
-- a completed token used for an answer action.
-
-Valid pre-ruleset tokens whose signed payload omitted `rulesetVersion` normalize to `legacy-inning-v1`. They retain the prior three-out completion rule instead of being silently reinterpreted as `points-v1`.
-
-Tokens are stateless and replayable. The API does not promise one-time action consumption or tamper-proof anonymous scoring.
-
-## Browser persistence and migration
-
-The browser stores the opaque progression token with public local gameplay state. On refresh, the token remains the server authorization source while local state owns visible points, baseball display state, and spoiler-safe raw completed-at-bat facts.
-
-Current local state carries:
-
-- ruleset version;
-- point total, maximum, and at-bat progress;
-- ordered initials/outcomes;
-- slot, hint depth, wrong guesses, and correct/strikeout/Give Up resolution for native completed at-bats.
-
-A saved state without a compatible token must not invent authorized progression. Compatible pre-ruleset schema-3 sessions normalize to `legacy-inning-v1`; untouched older starts may restart under the current bootstrap; completed historical results remain readable when possible.
+The browser persists public gameplay state and the current opaque token, not the full authorized hint bundle. On ordinary transitions, the server response supplies the next bundle. On refresh, `/api/daily/hints` hydrates the bundle before the restored at-bat becomes interactive.
 
 ## Caching and privacy
 
-- Immutable canonical player data and public puzzle metadata may use CDN-friendly caching.
-- Responses containing a newly signed progression token must not be cached in a way that exposes server secrets; the token itself contains no hidden answer data.
-- Request or application logs must not include signing secrets, answer IDs, hint values, or full reveal payloads.
-- No database, Redis, replay cache, or hosting-specific state is required for these routes.
+- Bootstrap/public page data may use safe revalidation.
+- Hint-bundle, one-hint, and resolution responses are `private, no-store`.
+- Logs must not include signing secrets, answer IDs, credentials, or full reveals.
+- No Redis, replay cache, per-action database write, or durable anonymous session is required.
 
-## Deferred API families
+## Deferred APIs
 
-The following require separate product and architecture decisions before implementation:
-
-- compact completed-game submission and percentile reads;
-- accounts and authenticated streaks;
-- authoritative competitive attempts or leaderboards;
-- head-to-head game proposals and gameplay;
-- matchmaking;
-- chat and safety actions;
-- leagues;
-- paid features.
-
-A future competitive model must not silently reuse the anonymous stateless-token guarantees as if they were server-authoritative attempt history.
+Compact completed-game submission/percentile reads, accounts, authoritative streaks/leaderboards, and head-to-head/social APIs require separate decisions.
