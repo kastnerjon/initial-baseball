@@ -196,7 +196,7 @@ export function DailyInningGame({
     );
   }
 
-  if (currentPitch === null || hintBundle === null) {
+  if (currentPitch === null || (hintBundle === null && pendingAdvance === null)) {
     return <div className="game-shell" />;
   }
   const activePitch = currentPitch;
