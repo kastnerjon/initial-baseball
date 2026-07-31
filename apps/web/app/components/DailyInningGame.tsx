@@ -106,7 +106,10 @@ export function DailyInningGame({
 
     const savedGameComplete = savedGame.gameState.points.completed
       || savedGame.gameState.score.completed
-      || savedGame.currentPitchIndex >= puzzle.pitches.length;
+      || savedGame.currentPitchIndex >= puzzle.pitches.length
+      || savedGame.pendingAdvance?.points.completed === true
+      || savedGame.pendingAdvance?.score.completed === true
+      || (savedGame.pendingAdvance?.nextPitchIndex ?? 0) >= puzzle.pitches.length;
     const canReuseInitialBundle = savedGame.currentPitchIndex === 0
       && savedGame.progressionToken === initialProgressionToken;
 
@@ -126,19 +129,13 @@ export function DailyInningGame({
       };
     }
 
-    const savedProgressionToken = savedGame.progressionToken;
     setHintBundle(null);
     setBundlePending(true);
-    void fetchHintBundle(savedProgressionToken)
+    void fetchHintBundle(savedGame.progressionToken)
       .then((response) => {
         if (!cancelled) {
-          setProgressionToken(currentToken => {
-            if (currentToken === savedProgressionToken) {
-              setHintBundle(response.hintBundle);
-              setRequestError(null);
-            }
-            return currentToken;
-          });
+          setHintBundle(response.hintBundle);
+          setRequestError(null);
         }
       })
       .catch(() => {
