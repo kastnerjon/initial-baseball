@@ -5,7 +5,7 @@ Last updated: 2026-07-31
 
 Completed history belongs in PRs, canonical docs, or `tasks/lessons.md`. Durable resumption context belongs in `docs/START-HERE.md`.
 
-Current order: build compact completed-result contracts and persistence, finish hosted browser/admin verification, then build the lineup-content system.
+Current order: finish hosted browser/admin verification, then build compact completed-result contracts and persistence, then build the lineup-content system.
 
 ## 0. Continuity
 
