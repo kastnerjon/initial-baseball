@@ -55,7 +55,7 @@ Answer integrity: `docs/decisions/0001-daily-answer-integrity.md`.
 
 - PRs #120–#122 are merged; editorial public consumption, hosted Basic auth, and repository continuity controls are established.
 - PR #124 introduced versioned `points-v1`; PR #125 reconciled its verified production deployment.
-- PR #126 is merged at main SHA `e525bcfebd9da3928a56a0a03c733b96af0f7bc4`; active-batter hints are preauthorized and Hint clicks are local.
+- PR #126 is merged at main SHA `e5f5a37ca7e21df8abfa93f9559eae27921567fc`; active-batter hints are preauthorized and Hint clicks are local.
 - Production deployment `dpl_DLPirNAwyebFCmyD7cf6xU4MPBnJ` is `READY` and canonically aliased to `https://initial-baseball-web.vercel.app`.
 - Production HTML was verified to show `0/45 PTS`, `0/9 AB`, a signed `points-v1` base token, exactly one active four-hint bundle, and signed reveal-depth checkpoints.
 - The production initial payload contained no answer ID/name, canonical reveal record, credential, service-role data, or unrelated future-batter hint bundle.
@@ -114,10 +114,10 @@ These require a real browser and/or authenticated editor session and must not be
 
 ## Exact next work order
 
-1. Define the compact completed-game submission, validation, idempotent repository port, and derived-score contract in portable layers.
-2. Add a separate Supabase migration/adapter and public submission route only after that contract is reviewed.
-3. Add same-puzzle/same-ruleset aggregates and percentile UI.
-4. Complete the authenticated admin and full browser checklist when the editor is available.
+1. Complete the authenticated admin and full real-browser checklist when the editor is available.
+2. Define the compact completed-game submission, validation, idempotent repository port, and derived-score contract in portable layers.
+3. Add a separate Supabase migration/adapter and public submission route only after that contract is reviewed.
+4. Add same-puzzle/same-ruleset aggregates and percentile UI.
 5. Define gameplay-profile and lineup-recipe contracts, then establish a conservative recognizable Standard Daily pool/recipe.
 6. Continue analytics, monitoring, mobile polish, legal/domain basics, and heritage presentation.
 
