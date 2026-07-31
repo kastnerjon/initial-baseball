@@ -15,7 +15,11 @@ export default async function DailyInningHomePage(): Promise<JSX.Element> {
         <section className="daily-instructions" aria-label="How to play">
           <p>Guess the player from initials. Reveal hints if stuck; earlier correct guesses score better outcomes. Give up records a strikeout. Come back daily after midnight Pacific.</p>
         </section>
-        <DailyInningGame puzzle={bootstrap.puzzle} initialProgressionToken={bootstrap.progressionToken} />
+        <DailyInningGame
+          puzzle={bootstrap.puzzle}
+          initialProgressionToken={bootstrap.progressionToken}
+          initialHintBundle={bootstrap.hintBundle}
+        />
       </section>
     </main>
   );

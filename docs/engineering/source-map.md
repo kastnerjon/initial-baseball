@@ -6,49 +6,48 @@ Use this map to find the owning document or code layer before changing behavior.
 
 | Change needed | Go here |
 |---|---|
-| Resume project accurately | `docs/START-HERE.md` |
-| Daily product behavior and launch promise | `docs/product/daily-inning-blueprint.md` |
-| Recognizability, gameplay profiles, themes, and recipes | `docs/product/lineup-content-system.md` |
-| Package ownership and launch architecture | `docs/architecture-and-scale-plan.md` |
+| Resume accurately | `docs/START-HERE.md` |
+| Daily behavior and launch promise | `docs/product/daily-inning-blueprint.md` |
+| Recognizability, profiles, themes, recipes | `docs/product/lineup-content-system.md` |
+| Package ownership and architecture | `docs/architecture-and-scale-plan.md` |
 | Active ordered work | `tasks/todo.md` |
-| Durable mistakes/corrections | `tasks/lessons.md` |
-| Documentation/continuity controls | `docs/engineering/documentation-governance.md` |
-| PR checklist | `.github/pull_request_template.md` |
-| Documentation-impact gate | `scripts/check-docs-impact.mjs` and `.github/workflows/ci.yml` |
+| Durable corrections | `tasks/lessons.md` |
+| Documentation controls | `docs/engineering/documentation-governance.md` |
+| Answer-integrity decision | `docs/decisions/0001-daily-answer-integrity.md` |
 
 ## Game and Daily logic
 
 | Change needed | Go here |
 |---|---|
-| Shared serialized game/result/ruleset types | `packages/shared/src/types/daily.ts` |
+| Shared game/result/ruleset types | `packages/shared/src/types/daily.ts` |
 | Outcome by hint depth | `packages/engine/src/scoring/getHitResultForRevealCount.ts` |
-| Versioned Daily scoring and completion | `packages/engine/src/daily/applyDailyRuleset.ts` |
-| Baseball inning outcome application | `packages/engine/src/daily/applyDailyOutcomeToInning.ts` |
-| Spoiler-safe Daily result/share calculation | `packages/engine/src/daily/createDailyShareResult.ts` and `formatDailyShareText.ts` |
-| Runner/base advancement | `packages/engine/src/scoring/advanceRunners.ts` |
-| Guess evaluation/search behavior | `packages/engine/src/guesses/` |
+| Versioned scoring/completion | `packages/engine/src/daily/applyDailyRuleset.ts` |
+| Legacy inning application | `packages/engine/src/daily/applyDailyOutcomeToInning.ts` |
+| Result/share calculation | `packages/engine/src/daily/createDailyShareResult.ts` and `formatDailyShareText.ts` |
+| Guess/search behavior | `packages/engine/src/guesses/` |
+| Puzzle recipes/selection/lifecycle/horizon | `packages/daily/src/` |
 | Engine contract | `docs/spec/engine.md` |
-| Puzzle selection, recipes, validation, lifecycle, and horizon | `packages/daily/src/` |
-| Public editorial selection contract | `docs/spec/public-daily-editorial-runtime.md` |
 
 ## Web runtime
 
 | Change needed | Go here |
 |---|---|
-| Daily pages/components | `apps/web/app/` |
-| Initial game/ruleset state | `apps/web/app/dailyClientState.ts` |
-| Terminal at-bat facts and pending advance | `apps/web/app/dailyAtBatResolution.ts` |
+| Daily page/components | `apps/web/app/` |
+| Initial game state | `apps/web/app/dailyClientState.ts` |
+| Terminal raw facts | `apps/web/app/dailyAtBatResolution.ts` |
+| Local Hint transition | `apps/web/app/dailyHintBundle.ts` |
+| Active hint-bundle contract | `apps/web/app/dailyRuntimeContracts.ts` |
+| Bootstrap/bundle/resolve authorization | `apps/web/app/dailyRuntimeService.ts` |
+| Saved-token bundle hydration route | `apps/web/app/api/daily/hints/route.ts` |
+| Legacy one-hint compatibility route | `apps/web/app/api/daily/hint/route.ts` |
+| Resolution route | `apps/web/app/api/daily/resolve/route.ts` |
+| Signed progression | `apps/web/app/dailyProgressionToken.ts` |
 | Browser persistence/migration | `apps/web/app/dailyLocalStorage.ts` |
-| Guarded bootstrap, hints, and resolution | `apps/web/app/dailyRuntimeService.ts` |
-| Signed ruleset progression | `apps/web/app/dailyProgressionToken.ts` |
-| Daily route contract | `docs/spec/api.md` |
+| API contract | `docs/spec/api.md` |
+| Hidden-answer/client-route build QA | `apps/web/scripts/qa-hidden-answer-build.mjs` |
 | Canonical runtime composition | `apps/web/app/serverCanonicalRuntime.ts` |
-| Search/hint/resolution routes | `apps/web/app/api/players/` and `apps/web/app/api/daily/` |
-| Admin composition | `apps/web/app/dailyAdminComposition.ts` |
-| Admin authorization | `apps/web/app/dailyAdminAuthorization.ts` and `apps/web/app/dailyAdminPaths.ts` |
-| Supabase client | `apps/web/app/serverSupabaseClient.ts` |
-| Editorial repository adapter | `apps/web/app/supabaseDailyPuzzleRepository.ts` |
-| Editorial row codec | `apps/web/app/supabaseDailyPuzzleRowCodec.ts` |
+| Admin composition/authorization | `apps/web/app/dailyAdminComposition.ts`, `dailyAdminAuthorization.ts`, `dailyAdminPaths.ts` |
+| Supabase editorial adapter | `apps/web/app/supabaseDailyPuzzleRepository.ts` |
 
 ## Persistence
 
@@ -57,25 +56,15 @@ Use this map to find the owning document or code layer before changing behavior.
 | Current data model | `docs/spec/data-model.md` |
 | Editorial migration | `supabase/migrations/20260721143000_create_daily_editorial_puzzles.sql` |
 | Inactive legacy scaffold | `supabase/migrations/000001_initial_schema.sql` |
-| Future gameplay-profile/recipe/result tables | Define provider-neutral contracts first, then add separate migrations |
+| Future profile/recipe/result tables | Define portable contracts first, then separate migrations |
 
 ## Canonical baseball data
 
-| Change needed | Go here |
-|---|---|
-| Reviewed source pins/checksums | `packages/baseball-data/data/canonical/` |
-| Identity/canonical universe generation | `packages/baseball-data/scripts/` canonical identity/universe modules |
-| Season facts and aggregates | canonical season generation scripts |
-| Career facts and enrichment | canonical career generation scripts |
-| Runtime index/reveal shards | `packages/baseball-data/src/runtime/` and runtime generation scripts |
-| Runtime QA | `packages/baseball-data/scripts/qa-canonical-runtime-consumer.mjs` |
-| Pipeline overview | `packages/baseball-data/README.md` |
-| Enrichment rules | `docs/data/canonical-career-enrichment.md` |
-| Runtime payload contract | `docs/data/canonical-runtime-payload.md` |
+Reviewed source pins/checksums live under `packages/baseball-data/data/canonical/`; generation and QA live under `packages/baseball-data/scripts/`; runtime index/reveal access lives under `packages/baseball-data/src/runtime/`; pipeline rules live in `packages/baseball-data/README.md` and `docs/data/`.
 
 ## Boundary rules
 
-- Fix factual baseball errors in source, normalization, or auditable corrections.
-- Put scoring/completion in the engine, recipe evaluation in Daily, and rendering/transport in web.
-- Store operational inputs behind repository ports; do not make Supabase rows the owner of domain meaning.
-- Do not patch generated artifacts or React to make one player or one lineup appear correct.
+- Fix baseball facts in source/normalization/auditable correction.
+- Put scoring in engine, recipe evaluation in Daily, and rendering/transport in web.
+- Supabase stores operational inputs behind ports; it does not define meaning.
+- Do not patch generated artifacts or React to make one player/lineup appear correct.

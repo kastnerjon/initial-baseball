@@ -5,220 +5,105 @@ Last updated: 2026-07-31
 
 ## Product decision
 
-Initial Baseball currently has one committed product: **Daily Inning**, a browser-first daily baseball guessing game.
-
-Future themed, decade, team, custom, native, or head-to-head experiences may reuse the same player and rules systems, but they are not committed launch scope.
+Initial Baseball currently has one committed product: **Daily Inning**, a browser-first daily baseball guessing game. Future themed, decade, team, custom, native, or head-to-head experiences may reuse the same systems but are not committed launch scope.
 
 ## Core promise
 
-A player should be able to open the site, understand the game quickly, complete a nine-player game in a few minutes, learn something about each revealed player, compare the result, and share spoiler-safe output.
+A player should understand the game quickly, complete nine players in a few minutes, learn from canonical reveals, compare the result, and share spoiler-safe output. Baseball knowledge should matter more than luck. The game should feel immediate, accurate, clean, and recognizably baseball.
 
-Baseball knowledge should matter more than luck. The game should feel immediate, accurate, clean, and recognizably baseball.
+### Recognizability
 
-### Recognizability is a gameplay requirement
+Standard Daily should not create difficulty through arbitrary obscurity. Except for a possible final deep-challenge slot, a reveal should normally prompt: **“I could have gotten that.”** Challenge should come from recall, initials, hint timing, and uncertainty.
 
-Standard Daily should not create difficulty by selecting players the target audience never had a realistic chance to know.
+Detailed content direction: `docs/product/lineup-content-system.md`.
 
-Except for a possible final deep-challenge slot, a revealed player should normally trigger:
+## Implemented gameplay loop
 
-> I could have gotten that.
+1. Everyone receives the same nine-player puzzle for the Pacific Daily date.
+2. Each at-bat starts with initials.
+3. All four hints for the active batter are already authorized and local before the at-bat appears.
+4. Pressing Hint reveals the next local value immediately and adopts its signed reveal-depth checkpoint; it does not call the network.
+5. Correct outcomes and points are:
+   - initials: HR, 5;
+   - hint 1: 3B, 4;
+   - hint 2: 2B, 3;
+   - hint 3: 1B, 2;
+   - hint 4: BB, 1.
+6. Three wrong guesses or Give Up produces K and 0.
+7. Resolution reveals the canonical current player and supplies the next batter’s authorized hint bundle.
+8. `points-v1` continues through all nine scheduled at-bats.
+9. Completion produces a score out of 45 and spoiler-safe initials/outcome sharing.
 
-This does not mean every player must be universally obvious. It means the challenge should come from recall, initials, hint timing, and uncertainty—not arbitrary obscurity. Recognizability, expected solve difficulty, and Standard Daily eligibility are first-class product data and must be calibrated through editorial judgment and eventual play results.
+Compatible pre-ruleset sessions remain `legacy-inning-v1` and retain their prior three-out behavior.
 
-Detailed direction: `docs/product/lineup-content-system.md`.
+## Hint and answer boundary
 
-## Current implemented gameplay loop
+Current-batter hints are gameplay inputs, not answers, and may be present in browser memory/initial props. The browser must not receive:
 
-1. The player opens today's Daily Inning without signing in.
-2. Everyone receives the same nine-player puzzle for the date.
-3. Each at-bat begins with the hidden player's initials.
-4. The player may guess immediately or reveal hints in fixed order.
-5. Correct answers map by hint depth:
-   - 0 hints: HR and 5 points
-   - 1 hint: 3B and 4 points
-   - 2 hints: 2B and 3 points
-   - 3 hints: 1B and 2 points
-   - 4 hints: BB and 1 point
-6. An incorrect guess consumes a strike. Three strikes or Give Up produces a K and 0 points.
-7. The client records the spoiler-safe raw at-bat facts independently from the point total.
-8. A resolved at-bat reveals a canonical career summary and expandable regular-season statistics.
-9. `points-v1` continues through all nine scheduled at-bats; three strikeouts do not end the game.
-10. Completion produces a score out of 45 and spoiler-safe share output.
+- canonical answer IDs or names before terminal resolution;
+- canonical reveal records before terminal resolution;
+- unrelated future-batter hints;
+- credentials or service-role data.
 
-The existing runner/base engine remains available as `legacy-inning-v1` compatibility behavior and a possible future alternate policy. It no longer controls completion for new Standard Daily sessions.
+Bootstrap contains only batter one’s bundle. Incorrect guesses refresh the same-pitch bundle with updated signed strike claims. Correct/K/Give Up responses may provide only the next pitch’s bundle. Saved progression hydrates only its verified current pitch.
 
-## Current scoring and completion policy
+A technical user can inspect all current hints before clicking them. This is accepted for the anonymous noncompetitive launch model; stronger competition requires a new architecture decision.
 
-Scoring and completion are explicit versioned policies rather than permanent assumptions spread through the UI.
+## Scoring and result facts
 
-Current Standard Daily uses `points-v1`:
-
-- HR/3B/2B/1B/BB/K score `5/4/3/2/1/0`;
-- every player completes all nine at-bats;
-- the maximum score is 45;
-- stable raw facts preserve slot, outcome, hint count, wrong guesses, and correct/strikeout/Give Up resolution;
-- saved pre-ruleset sessions remain on `legacy-inning-v1` so their existing signed progression and three-out behavior are not silently reinterpreted;
-- results and percentile comparisons never mix different puzzle identities or ruleset versions.
-
-Exact point weights remain provisional product tuning and may change only through a new ruleset version.
-
-## Interaction quality
-
-Visible game actions should respond immediately.
-
-- All four authorized hints for the active at-bat should be locally available before that at-bat appears.
-- Pressing Hint should reveal local data without a normal network wait.
-- The prior at-bat’s mandatory resolution response may prepare the next at-bat.
-- Answers, canonical answer IDs, future reveal records, and unrelated future-player data remain server-side.
-- Search and guess submission may require network access, but loading states must not disrupt the main game rhythm.
-
-This no-visible-wait hint transport remains the next gameplay implementation concern.
+`points-v1` maps HR/3B/2B/1B/BB/K to `5/4/3/2/1/0`. Stable raw at-bat facts preserve slot, initials, outcome, hints revealed, wrong guesses, and correct/strikeout/Give Up resolution. Ruleset version flows through token, browser state, result, and share contracts. New scoring requires a new version.
 
 ## Daily puzzle lifecycle
 
-Each editorial puzzle has a lifecycle:
-
-- `draft`: generated and reviewable;
-- `scheduled`: editorially approved for a future date;
-- `published`: explicit immutable publication milestone;
-- `archived`: retained historical puzzle.
-
-The final puzzle is the exact ordered nine canonical player IDs. An editor may replace future draft/scheduled players through the lifecycle rules. Published and archived puzzles do not change through ordinary editing.
-
-Archive/replay behavior remains a separate future surface; the fact that a date is past does not make its final lineup mutable.
+Editorial records move through `draft`, `scheduled`, `published`, and `archived`. The final puzzle is the exact ordered nine canonical IDs. Ordinary editing cannot change published/archived answers. Archive/replay remains a future surface.
 
 ## Lineup content model
 
-Lineup generation is recipe-driven.
+Lineups are recipe-driven. A recipe combines slot groups, sourced factual filters, gameplay-profile filters, repeat protection, duplicate prevention, reveal readiness, and optional diversity constraints. Standard Daily is one recipe. The generator proposes; the editor reviews, replaces, validates, and schedules the exact nine.
 
-A recipe combines:
+Statistical accomplishment is not recognizability. The current weighted-stat ranking is not an acceptable final Standard Daily content system.
 
-- slot groups;
-- factual filters such as years, teams, positions, Hall of Fame status, approved All-Star counts/years, awards, or sourced WAR thresholds;
-- gameplay-profile filters such as recognizability and expected difficulty;
-- repeat protection;
-- duplicate prevention;
-- reveal readiness;
-- optional diversity constraints.
+## Current surfaces
 
-“Standard Daily” is one recipe. The authorized editor can generate a proposal, inspect qualification reasons, replace players, validate, and schedule the exact nine.
-
-The current recognizability weighted-stat ranking is not an acceptable final measure. Statistical value and modern fan recognizability are different concepts.
-
-## User-facing surfaces
-
-### Current
-
-- Daily game page;
-- points-focused scorebug for new `points-v1` sessions;
-- name search and canonical guess submission;
-- ordered hints;
-- post-at-bat reveal;
-- career and season statistics;
-- completed-at-bat history;
-- spoiler-safe point share output;
-- local recovery/reset with legacy-session compatibility;
+- point-focused Daily scorebug and all-nine game;
+- local, immediate active-batter Hint actions;
+- canonical search/guess flow;
+- post-at-bat career and season reveal;
+- completed-at-bat history and spoiler-safe point share;
+- local refresh recovery with token-authorized hint hydration;
 - authorized seven-day editorial administration.
 
-### Required before broad launch
+## Required before broad launch
 
-- clear first-play instructions;
-- reliable refresh/already-played behavior;
-- immediate hint interaction;
-- same-puzzle/same-ruleset field comparison and percentile;
+- full authenticated admin/public-runtime production QA;
+- real-browser all-nine and refresh QA on common iPhone/iPad sizes;
+- compact completed-result persistence and same-puzzle/same-ruleset percentile;
 - calibrated recognizable lineups;
-- analytics and error monitoring;
-- common iPhone/iPad QA;
-- privacy policy and terms/disclaimer;
-- canonical domain and social metadata.
+- analytics/error monitoring;
+- privacy/terms, canonical domain, and social metadata.
 
-### Deferred
+## Deferred
 
-- required accounts;
-- streaks and cross-device history;
-- public leaderboards;
-- user-created games;
-- exposed themed/decade/team libraries;
-- native clients;
-- head-to-head, chat, leagues, or matchmaking;
-- payments.
+Accounts, streaks/cross-device history, public leaderboards, user-created or exposed theme libraries, native clients, head-to-head/social features, and payments.
 
 ## State and persistence
 
-Anonymous gameplay remains client-driven at launch. Local persistence restores compatible public game state, ruleset version, raw completed-at-bat facts, point summary, and the opaque signed progression token.
+Anonymous visible state remains client-driven. Local storage restores puzzle/ruleset, at-bat state, raw facts, score, and opaque token. The hint bundle is not required as durable state; a verified saved token may hydrate the exact current bundle before interaction.
 
-Pre-ruleset signed sessions normalize to `legacy-inning-v1`; new bootstraps use `points-v1`. This avoids silently changing the completion rule inside an already-started anonymous game.
+Future aggregate results use one compact idempotent completed-game write, not per-action writes.
 
-Future aggregate results use at most one compact idempotent completed-game submission. The submission preserves raw per-at-bat facts and ruleset version so score formulas and aggregates can be recalculated without per-action writes.
+## Statistics and reveal
 
-## Data and answer integrity
-
-- Canonical `playerId`, not display text, identifies the answer.
-- Genuine same-name players remain separate.
-- Public search shows names only for unique visible names and career years only for genuine duplicates.
-- Hidden answers, canonical IDs, reveal records, credentials, and unrelated future-player data must not leak through initial HTML, client bundles, logs, share text, or premature responses.
-- Baseball facts are generated from committed/reproducible sources; gameplay does not call a live third-party baseball API.
-- Signed stateless progression prevents ordinary forged future progression but does not claim tamper-proof anonymous scoring.
-- Accounts, prizes, authoritative streaks, or public competitive leaderboards require a separate stronger-integrity decision.
-
-## Statistics and reveal contract
-
-Career and season statistics are reveal content, not answer-validation logic.
-
-- Career summary remains separate from chronological regular-season rows.
-- Multi-team seasons retain every team.
-- Hitter, pitcher, and two-way presets remain configurable.
-- Known zero remains zero; unavailable remains `null`.
-- Rate statistics are not estimated from partial source components.
-- WAR, All-Star selections, awards, voting finishes, and leader flags require approved reproducible sources before display or recipe use.
-- Baseball Reference WAR, if approved, is labeled `bWAR`.
-
-## Results
-
-Current local results include:
-
-- point total and maximum;
-- all nine spoiler-safe initials/outcomes;
-- strikeout count;
-- ruleset version in the result contract.
-
-Intended aggregate results additionally include:
-
-- understandable percentile language;
-- comparison sample size;
-- average score;
-- outcome distribution by at-bat;
-- solve rate by hint depth;
-- K and Give Up rates;
-- raw facts sufficient for recalculation.
-
-Percentiles compare only the same puzzle and ruleset version.
+Career summary remains separate from chronological regular-season rows. Multi-team seasons retain every team. Known zero and unavailable remain distinct. Rate statistics are not inferred from partial components. WAR, All-Star selections, awards, voting, and leaders require reproducible approved sources; approved Baseball Reference WAR is labeled `bWAR`.
 
 ## Architecture constraints
 
-- Portable rules and Daily logic stay outside React and routes.
-- Baseball facts and enrichment stay in `packages/baseball-data`.
-- Scoring/completion stays in the engine/shared contracts.
-- Recipe generation and validation stay in `packages/daily`.
-- Web code renders, transports, authorizes, and adapts persistence.
-- Supabase is a provider, not the owner of facts or product policy.
-- No microservices, queues, replay caches, or per-action database sessions for launch.
+Rules stay outside React/routes; facts stay in baseball-data; scoring stays in engine/shared; recipes stay in Daily; web owns transport, authorization, browser state, and adapters; Supabase is a provider, not a rule owner. No microservices, queues, replay caches, or per-action persistence for launch.
 
-## Definition of launch-ready
+## Launch-ready definition
 
-Daily Inning is ready for broad friend distribution when:
-
-- lineups are recognizable, challenging, and editorially reviewable;
-- Hint actions feel immediate;
-- the chosen scoring/completion policy is coherent and versioned;
-- refreshes and ordinary errors do not erase progress;
-- search and reveal data are accurate;
-- results and sharing are reliable and spoiler-safe;
-- field comparison works without per-action database writes;
-- answer-integrity boundaries hold;
-- common mobile layouts are polished;
-- analytics, monitoring, deployment, legal, domain, and social basics are in place.
+Lineups are recognizable and editorially reviewable; Hint feels instantaneous; scoring/versioning is coherent; refresh is reliable; search/reveals are accurate; results and sharing are spoiler-safe; comparison works without per-action writes; answer boundaries hold; mobile layouts are polished; deployment/legal/domain/monitoring basics are complete.
 
 ## Change rule
 
-When product behavior changes, implementation and the relevant canonical documents change together. Approved but not yet implemented decisions must be labeled as such rather than presented as live behavior.
+Implementation and canonical docs change together. Approved future behavior must be labeled rather than presented as live.

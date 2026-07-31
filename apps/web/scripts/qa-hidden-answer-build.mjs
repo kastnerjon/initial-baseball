@@ -10,6 +10,7 @@ const clientChunkPaths = walkFiles(resolve(buildDirectory, 'static/chunks'))
   .filter((path) => path.endsWith('.js'));
 const canonicalIdPattern = /ibp_[0-9a-f]{20}/;
 const legacyIdPattern = /chadwick:[0-9a-f]{8}/;
+const legacyPerClickHintRoutePattern = /["']\/api\/daily\/hint["']/;
 
 if (initialPayloadPaths.length === 0) {
   throw new Error('Could not find the built initial page payload for hidden-answer QA.');
@@ -28,6 +29,7 @@ for (const path of clientChunkPaths) {
   const content = readFileSync(path, 'utf8');
   assertAbsent(path, content, canonicalIdPattern, 'embedded canonical player ID');
   assertAbsent(path, content, legacyIdPattern, 'embedded legacy player ID');
+  assertAbsent(path, content, legacyPerClickHintRoutePattern, 'active per-click hint request');
 }
 
 const clientBytes = clientChunkPaths.reduce((total, path) => total + statSync(path).size, 0);

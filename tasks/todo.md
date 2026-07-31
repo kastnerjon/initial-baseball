@@ -3,87 +3,75 @@
 Status: Active ordered implementation plan  
 Last updated: 2026-07-31
 
-Completed history belongs in pull requests, canonical documentation, or `tasks/lessons.md`. Durable resumption context and approved deferred decisions belong in `docs/START-HERE.md`.
+Completed history belongs in PRs, canonical docs, or `tasks/lessons.md`. Durable resumption context belongs in `docs/START-HERE.md`.
 
-Current execution order: make hints immediate, finish hosted browser/admin verification, then build compact results and the lineup-content system.
+Current order: verify instant hints and hosted operations, then build compact results and the lineup-content system.
 
-## 0. Preserve verified continuity
+## 0. Continuity
 
-- [x] Reconcile hosted configuration, deployment state, scoring, hint, and lineup-content direction in canonical docs.
-- [x] Add a tested CI documentation-impact gate and explicit PR checklist.
-- [ ] Decide and test a safe branch-ruleset configuration before making documentation-impact mandatory; issue #123 tracks this.
+- [x] Reconcile hosted configuration, scoring, hints, and lineup-content direction in canonical docs.
+- [x] Add tested documentation-impact CI and PR checklist.
+- [ ] Decide/test a safe branch-ruleset configuration before making the check mandatory; issue #123.
 
 ## 1. Production and hosted verification
 
-- [x] Configure `DAILY_PROGRESSION_SECRET`, Supabase credentials, and Daily admin credentials for Vercel Preview and Production.
-- [x] Apply `supabase/migrations/20260721143000_create_daily_editorial_puzzles.sql` and verify RLS/service-role boundaries.
-- [x] Verify unauthenticated admin challenge and successful editor authentication.
-- [x] Merge PR #124 and verify production deployment `dpl_GcC8FtpbPnk2mUAzNVuNvo683wmN` is `READY` and canonically aliased.
-- [x] Verify production public HTML shows `0/45 PTS`, `0/9 AB`, and a signed `points-v1` token.
-- [x] Verify the points deployment passed hidden-answer build QA and the complete test/data/build pipeline.
-- [x] Check recent production runtime errors; none were reported during the scoring verification window.
-- [ ] Verify the public Daily rolls over after midnight Pacific without a redeploy.
-- [ ] Verify the seven-day Supabase-backed horizon and generate only missing drafts.
-- [ ] Preview, search, replace, and revalidate one future slot.
-- [ ] Schedule one future puzzle and verify scheduled/published public consumption.
-- [ ] Verify deterministic fallback for a missing/draft record.
-- [ ] Verify hint, correct guess, incorrect guesses, third strike, Give Up, all-nine continuation, refresh recovery, and completion in a real browser.
-- [ ] Check action-network responses and production logs for answer/credential leakage.
-- [ ] Reconcile issues #97, #91, and #86 after the full hosted checklist passes.
+- [x] Configure progression, Supabase, and admin secrets for Preview/Production.
+- [x] Apply editorial migration and verify RLS/service-role boundaries.
+- [x] Verify admin challenge and prior successful editor authentication.
+- [x] Merge points-v1 and verify production READY/aliased with `0/45 PTS`, `0/9 AB`, signed ruleset token, hidden-answer QA, full CI/data/build, and no recent runtime errors.
+- [ ] Verify midnight-Pacific rollover without redeploy.
+- [ ] Verify instant-hint production payload contains only batter one’s hints and no answer/future-batter data.
+- [ ] Verify active client chunks contain no exact `/api/daily/hint` request.
+- [ ] Verify saved-session `/api/daily/hints` hydration and refresh recovery.
+- [ ] Verify seven-day Supabase horizon and missing-draft generation.
+- [ ] Preview/search/replace/revalidate one future slot.
+- [ ] Schedule one future puzzle and verify public scheduled/published consumption.
+- [ ] Verify deterministic fallback for missing/draft records.
+- [ ] Verify correct guess, wrong guesses, third strike, Give Up, all-nine continuation, completion, action responses/logs, and common iPhone/iPad behavior.
+- [ ] Reconcile issues #97, #91, and #86 after the full hosted checklist.
 
-## 2. Versioned scoring and completion
+## 2. Versioned scoring/completion
 
-- [x] Define `points-v1` and `legacy-inning-v1` at the shared boundary.
-- [x] Preserve spoiler-safe raw at-bat facts independently of final score.
-- [x] Implement `5/4/3/2/1/0` scoring and all-scheduled-at-bats completion for new Standard Daily sessions.
-- [x] Preserve runner advancement and three-out completion as explicit legacy compatibility behavior.
-- [x] Carry ruleset version through signed progression, browser state, results, and share output.
-- [x] Normalize compatible old signed/saved sessions without silently changing their policy.
-- [x] Add focused progression, completion, persistence, raw-fact, and spoiler-safe tests.
+- [x] `points-v1` and `legacy-inning-v1` contracts.
+- [x] Native raw at-bat facts independent of final score.
+- [x] `5/4/3/2/1/0`, all scheduled at-bats, legacy compatibility, token/persistence/result/share versioning, focused tests.
 
-## 3. Make Hint actions immediate
+## 3. Immediate active-batter hints
 
-- [ ] Define one authorized active-at-bat hint-bundle contract containing all four current hints and signed reveal-depth checkpoints.
-- [ ] Include the first bundle in bootstrap without exposing an answer ID, answer name, reveal record, or future-batter data.
-- [ ] Return an updated same-pitch bundle after an incorrect guess and the next-pitch bundle after a terminal resolution.
-- [ ] Hydrate the current bundle from a compatible saved progression token before showing an interactive restored at-bat.
-- [ ] Reveal hints locally with no network request on Hint click.
-- [ ] Prevent checkpoint use from reducing strike count or resetting already revealed hint depth.
-- [ ] Keep `/api/daily/hint` only if required for compatibility; remove it from the active client path.
-- [ ] Add focused bootstrap, bundle, token, refresh, client, leakage, and latency tests.
-- [ ] Verify preview initial HTML contains only the active batter’s authorized hints and no future-batter/answer data.
+- [x] Define an authorized four-hint current-batter bundle with signed later-depth checkpoints.
+- [x] Include batter one’s bundle in bootstrap without answer/reveal/future-batter data.
+- [x] Return refreshed same-pitch bundle after wrong guesses and next-pitch bundle after terminal resolution.
+- [x] Hydrate only the verified current bundle for compatible saved progress.
+- [x] Reveal hints locally with no network request on Hint click.
+- [x] Prevent returned checkpoints from reducing strike count or reveal depth.
+- [x] Keep the legacy one-hint route server-compatible while removing it from the active client path.
+- [x] Amend answer-integrity/product/API/architecture docs for the active-hint threat model.
+- [ ] Pass focused bundle/checkpoint/client/restore/leakage tests, full CI, preview, review, merge, and production verification.
 
-## 4. Add completed-game comparison
+## 4. Completed-game comparison
 
-- [ ] Define one compact idempotent completed-game submission from native raw facts.
-- [ ] Persist puzzle identity, ruleset version, ordered at-bat facts, and score; do not write every hint or guess.
-- [ ] Add same-puzzle/same-ruleset percentile comparison.
-- [ ] Add completion count, average score, outcome distribution, solve depth, K rate, and Give Up rate.
-- [ ] Show sample size and understandable percentile copy.
-- [ ] Preserve recalculation from raw facts when formulas change.
+- [ ] Define one compact idempotent submission from native raw facts.
+- [ ] Persist puzzle identity, ruleset version, ordered facts, and score; no per-action writes.
+- [ ] Add same-puzzle/same-ruleset percentile, sample size, average, outcome distribution, solve depth, K and Give Up rates.
+- [ ] Preserve recalculation from raw facts.
 
-## 5. Build the lineup-content system
+## 5. Lineup-content system
 
-- [ ] Define gameplay-profile contracts separately from objective baseball facts.
-- [ ] Define a versioned lineup-recipe contract with slot groups, filters, difficulty, repeats, and diversity constraints.
-- [ ] Make Standard Daily one saved recipe rather than the only hardcoded selector.
-- [ ] Establish a conservative pool whose normal reveals produce “I could have gotten that.”
-- [ ] Treat only the final slot as a possible deliberate deep challenge unless playtesting supports otherwise.
-- [ ] Add approved All-Star, award, and bWAR sources only through reproducible enrichment.
-- [ ] Add provider-neutral persistence/admin editing for profiles and recipes in bounded follow-up PRs.
-- [ ] Preserve manual review/replacement of the exact generated nine.
+- [ ] Define gameplay-profile contracts separately from facts.
+- [ ] Define versioned lineup recipes with slot groups, filters, difficulty, repeats, and diversity constraints.
+- [ ] Make Standard Daily one saved recipe.
+- [ ] Establish a conservative “I could have gotten that” pool; only final slot may be deliberate deep challenge.
+- [ ] Add reproducible All-Star/award/bWAR enrichment.
+- [ ] Add provider-neutral profile/recipe persistence/admin editing in bounded PRs.
+- [ ] Preserve manual review/replacement of exact generated nine.
 
-## 6. Complete launch surfaces
+## 6. Launch surfaces
 
-- [ ] Add analytics and error monitoring.
-- [ ] Verify common iPhone and iPad layouts and measure initial payload size.
-- [ ] Apply the approved heritage ballpark / scorecard / 1970s-card visual direction after mechanics are dependable.
-- [ ] Add privacy policy, terms/disclaimer, canonical domain, and social metadata.
+- [ ] Analytics/error monitoring.
+- [ ] iPhone/iPad polish and payload measurement.
+- [ ] Heritage ballpark/scorecard/1970s-card presentation after mechanics.
+- [ ] Privacy, terms, canonical domain, social metadata.
 
 ## Deferred public products
 
-- Accounts, streaks, and cross-device history.
-- Native iOS or Android clients.
-- Head-to-head play, chat, leagues, and matchmaking.
-- Public user-created games or exposed decade/team/theme libraries before the core Daily loop proves itself.
-- Payments before demand is demonstrated.
+Accounts/streaks/cross-device history; native clients; head-to-head/social; public custom/theme libraries before core Daily proves itself; payments before demand.

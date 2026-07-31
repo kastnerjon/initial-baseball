@@ -17,6 +17,7 @@ import {
   type PendingAtBatAdvance,
   resolveDailyTerminalAtBat,
 } from '../dailyAtBatResolution';
+import { revealNextHintFromBundle } from '../dailyHintBundle';
 import {
   clearSavedDailyGame,
   loadSavedDailyGame,
@@ -29,7 +30,11 @@ import {
   createInitialAtBatUiState,
   createInitialDailyGameState,
 } from '../dailyClientState';
-import type { DailyHintResponse, DailyResolutionResponse } from '../dailyRuntimeContracts';
+import type {
+  DailyHintBundle,
+  DailyHintBundleResponse,
+  DailyResolutionResponse,
+} from '../dailyRuntimeContracts';
 import { AtBatCard } from './AtBatCard';
 import { DailyScorebug } from './DailyScorebug';
 import { GameCompleteView } from './GameCompleteView';
@@ -38,24 +43,32 @@ import { PitchResultList } from './PitchResultList';
 type DailyInningGameProps = {
   puzzle: DailyPublicPuzzle;
   initialProgressionToken: string;
+  initialHintBundle: DailyHintBundle;
 };
 
 export function DailyInningGame({
   puzzle,
   initialProgressionToken,
+  initialHintBundle,
 }: DailyInningGameProps): JSX.Element {
   const [gameState, setGameState] = useState<DailyGameState>(() => createInitialDailyGameState(puzzle));
   const [currentPitchIndex, setCurrentPitchIndex] = useState(0);
   const [atBatState, setAtBatState] = useState<DailyAtBatUiState>(() => createInitialAtBatUiState());
   const [pendingAdvance, setPendingAdvance] = useState<PendingAtBatAdvance | null>(null);
   const [progressionToken, setProgressionToken] = useState(initialProgressionToken);
+  const [hintBundle, setHintBundle] = useState<DailyHintBundle | null>(initialHintBundle);
   const [hasLoadedSavedState, setHasLoadedSavedState] = useState(false);
+  const [bundlePending, setBundlePending] = useState(false);
   const [requestPending, setRequestPending] = useState(false);
   const [requestError, setRequestError] = useState<string | null>(null);
 
   const currentPitch = puzzle.pitches[currentPitchIndex] ?? null;
   const isPuzzleComplete = currentPitchIndex >= puzzle.pitches.length;
   const isGameComplete = gameState.points.completed || gameState.score.completed || isPuzzleComplete;
+  const isRestoringActiveHints = hasLoadedSavedState
+    && hintBundle === null
+    && pendingAdvance === null
+    && !isGameComplete;
 
   const shareResult = useMemo(
     () => (isGameComplete
@@ -63,14 +76,8 @@ export function DailyInningGame({
           gameState: {
             ...gameState,
             status: 'completed',
-            score: {
-              ...gameState.score,
-              completed: true,
-            },
-            points: {
-              ...gameState.points,
-              completed: true,
-            },
+            score: { ...gameState.score, completed: true },
+            points: { ...gameState.points, completed: true },
           },
           url: createDailyShareUrl(),
         })
@@ -79,24 +86,73 @@ export function DailyInningGame({
   );
 
   useEffect(() => {
+    let cancelled = false;
     const savedGame = loadSavedDailyGame(puzzle, initialProgressionToken);
 
-    if (savedGame !== null) {
-      setGameState(savedGame.gameState);
-      setCurrentPitchIndex(savedGame.currentPitchIndex);
-      setAtBatState(savedGame.atBatState);
-      setPendingAdvance(savedGame.pendingAdvance);
-      setProgressionToken(savedGame.progressionToken);
-    } else {
-      setGameState(createInitialDailyGameState(puzzle));
-      setCurrentPitchIndex(0);
-      setAtBatState(createInitialAtBatUiState());
-      setPendingAdvance(null);
-      setProgressionToken(initialProgressionToken);
+    if (savedGame === null) {
+      resetToInitialState();
+      setHasLoadedSavedState(true);
+      return () => {
+        cancelled = true;
+      };
     }
 
+    setGameState(savedGame.gameState);
+    setCurrentPitchIndex(savedGame.currentPitchIndex);
+    setAtBatState(savedGame.atBatState);
+    setPendingAdvance(savedGame.pendingAdvance);
+    setProgressionToken(savedGame.progressionToken);
     setHasLoadedSavedState(true);
-  }, [initialProgressionToken, puzzle]);
+
+    const savedGameComplete = savedGame.gameState.points.completed
+      || savedGame.gameState.score.completed
+      || savedGame.currentPitchIndex >= puzzle.pitches.length
+      || savedGame.pendingAdvance?.points.completed === true
+      || savedGame.pendingAdvance?.score.completed === true
+      || (savedGame.pendingAdvance?.nextPitchIndex ?? 0) >= puzzle.pitches.length;
+    const canReuseInitialBundle = savedGame.currentPitchIndex === 0
+      && savedGame.progressionToken === initialProgressionToken;
+
+    if (savedGameComplete) {
+      setHintBundle(null);
+      setBundlePending(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    if (canReuseInitialBundle) {
+      setHintBundle(initialHintBundle);
+      setBundlePending(false);
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    setHintBundle(null);
+    setBundlePending(true);
+    void fetchHintBundle(savedGame.progressionToken)
+      .then((response) => {
+        if (!cancelled) {
+          setHintBundle(response.hintBundle);
+          setRequestError(null);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setRequestError('The saved at-bat could not be restored. Reset today’s game to continue.');
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setBundlePending(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [initialHintBundle, initialProgressionToken, puzzle]);
 
   useEffect(() => {
     if (!hasLoadedSavedState) {
@@ -122,7 +178,22 @@ export function DailyInningGame({
     );
   }
 
-  if (currentPitch === null) {
+  if (isRestoringActiveHints) {
+    return (
+      <div className="game-shell">
+        <section className="at-bat-card" aria-live="polite">
+          <p>{bundlePending ? 'Restoring today’s at-bat…' : requestError ?? 'The saved at-bat could not be restored.'}</p>
+          {!bundlePending ? (
+            <button type="button" className="button-secondary" onClick={handleResetToday}>
+              Reset today’s game
+            </button>
+          ) : null}
+        </section>
+      </div>
+    );
+  }
+
+  if (currentPitch === null || (hintBundle === null && pendingAdvance === null)) {
     return <div className="game-shell" />;
   }
   const activePitch = currentPitch;
@@ -167,16 +238,12 @@ export function DailyInningGame({
             submittedResult: null,
           }));
         }}
-        onRevealHint={() => { void handleRevealHint(); }}
+        onRevealHint={handleRevealHint}
         onSubmit={() => { void handleSubmit(); }}
         onGiveUp={() => { void handleGiveUp(); }}
         onNextPitch={handleNextPitch}
       />
-      <button
-        type="button"
-        className="reset-local-result-button"
-        onClick={handleResetToday}
-      >
+      <button type="button" className="reset-local-result-button" onClick={handleResetToday}>
         Reset today's local result
       </button>
     </div>
@@ -192,6 +259,7 @@ export function DailyInningGame({
     const { result } = response;
 
     if (result.kind === 'incorrect') {
+      setHintBundle(requireHintBundle(response.hintBundle));
       setAtBatState(currentState => ({
         ...currentState,
         query: '',
@@ -202,6 +270,7 @@ export function DailyInningGame({
       return;
     }
 
+    setHintBundle(response.hintBundle);
     if (result.kind === 'correct') {
       resolveTerminalResult(result, requireReveal(response.reveal), 'correct');
     } else if (result.kind === 'strikeout') {
@@ -213,6 +282,7 @@ export function DailyInningGame({
     const response = await resolveAtBat({ giveUp: true });
     if (response === null || response.result.kind === 'incorrect') return;
     setProgressionToken(response.progressionToken);
+    setHintBundle(response.hintBundle);
     resolveTerminalResult(response.result, requireReveal(response.reveal), 'give_up');
   }
 
@@ -252,7 +322,9 @@ export function DailyInningGame({
 
     setGameState(currentGameState => ({
       ...currentGameState,
-      status: pendingAdvance.points.completed || pendingAdvance.nextPitchIndex >= puzzle.pitches.length ? 'completed' : 'in_progress',
+      status: pendingAdvance.points.completed || pendingAdvance.nextPitchIndex >= puzzle.pitches.length
+        ? 'completed'
+        : 'in_progress',
       inning: pendingAdvance.inning,
       score: pendingAdvance.score,
       points: pendingAdvance.points,
@@ -268,28 +340,39 @@ export function DailyInningGame({
 
   function handleResetToday(): void {
     clearSavedDailyGame(puzzle);
+    resetToInitialState();
+    setRequestPending(false);
+    setBundlePending(false);
+    setHasLoadedSavedState(true);
+  }
+
+  function resetToInitialState(): void {
     setGameState(createInitialDailyGameState(puzzle));
     setCurrentPitchIndex(0);
     setAtBatState(createInitialAtBatUiState());
     setPendingAdvance(null);
     setProgressionToken(initialProgressionToken);
+    setHintBundle(initialHintBundle);
     setRequestError(null);
-    setRequestPending(false);
-    setHasLoadedSavedState(true);
   }
 
-  async function handleRevealHint(): Promise<void> {
-    const response = await requestJson<DailyHintResponse>('/api/daily/hint', {
-      progressionToken,
-    });
-    if (response === null) return;
-    setProgressionToken(response.progressionToken);
-    setAtBatState(currentState => ({
-      ...currentState,
-      revealCount: capRevealCount(currentState.revealCount + 1, puzzle.hintConfig.length),
-      revealedHints: [...currentState.revealedHints, response.hint],
-      submittedResult: null,
-    }));
+  function handleRevealHint(): void {
+    try {
+      const nextReveal = revealNextHintFromBundle(
+        requireHintBundle(hintBundle),
+        atBatState.revealCount,
+      );
+      setProgressionToken(nextReveal.progressionToken);
+      setAtBatState(currentState => ({
+        ...currentState,
+        revealCount: nextReveal.revealedCount,
+        revealedHints: [...currentState.revealedHints, nextReveal.hint],
+        submittedResult: null,
+      }));
+      setRequestError(null);
+    } catch {
+      setRequestError('The next hint is unavailable. Reset today’s game if this continues.');
+    }
   }
 
   async function resolveAtBat(
@@ -325,24 +408,29 @@ export function DailyInningGame({
   }
 }
 
+async function fetchHintBundle(progressionToken: string): Promise<DailyHintBundleResponse> {
+  const response = await fetch('/api/daily/hints', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ progressionToken }),
+  });
+  const payload = await response.json() as DailyHintBundleResponse & { error?: string };
+  if (!response.ok) {
+    throw new Error(payload.error ?? `Hint restoration failed with ${response.status}.`);
+  }
+  return payload;
+}
+
+function requireHintBundle(bundle: DailyHintBundle | null): DailyHintBundle {
+  if (bundle === null) {
+    throw new Error('An active Daily result did not include an authorized hint bundle.');
+  }
+  return bundle;
+}
+
 function requireReveal(reveal: CanonicalRevealViewModel | null): CanonicalRevealViewModel {
   if (reveal === null) {
     throw new Error('A terminal Daily result did not include canonical reveal data.');
   }
   return reveal;
-}
-
-function capRevealCount(value: number, maxHints: number): DailyAtBatUiState['revealCount'] {
-  switch (Math.min(value, maxHints)) {
-    case 0:
-      return 0;
-    case 1:
-      return 1;
-    case 2:
-      return 2;
-    case 3:
-      return 3;
-    default:
-      return 4;
-  }
 }
