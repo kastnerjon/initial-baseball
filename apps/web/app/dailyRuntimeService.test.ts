@@ -150,7 +150,12 @@ describe('Daily canonical runtime service', () => {
     expect(response.hintBundle).toMatchObject({
       pitchNumber: 2,
       revealedCount: 0,
-      hints: [{ hintValue: secondHintMarker }],
+    });
+    expect(response.hintBundle?.hints).toHaveLength(4);
+    expect(response.hintBundle?.hints[0]).toMatchObject({
+      slot: 1,
+      hintType: 'main_decade',
+      hintValue: secondHintMarker,
     });
   });
 
