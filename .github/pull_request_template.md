@@ -1,58 +1,65 @@
+## Scope contract
+
+- **Goal:**
+- **Owning layer:**
+- **In scope:**
+- **Out of scope:**
+- **Acceptance checks:**
+- **Stop conditions:**
+
 ## Plain-English summary
 
 <!-- In no more than three paragraphs: what does this PR do, why does it matter, and what does it deliberately not change? -->
 
-## Why now
-
-<!-- Explain the problem and why this is the appropriate next change. -->
-
-## Architecture check
-
-- [ ] **One source of truth:** I identified the canonical owner of every baseball fact changed here and did not create an unexplained duplicate.
-- [ ] **Reproducible:** Generated outputs can be rebuilt from versioned sources, deterministic code, and explicit overrides; no generated data was hand-edited.
-- [ ] **Baseball/game separation:** Baseball interpretation remains in `packages/baseball-data`; gameplay logic remains in the game layer.
-- [ ] **Explicit overrides:** Any editorial or admin decision is represented as a separate, documented override rather than a raw-data mutation.
-- [ ] **Simpler system:** This PR reduces or does not increase duplicated logic, hidden exceptions, or unclear ownership.
-
 ## Architecture impact
 
-- **Owning layer:**
-- **Input layer:**
-- **Output layer:**
 - **Dependency impact:**
-- **Canonical keys or identifiers:**
-- **Null/missing-data behavior:**
-- **Known source limitations:**
+- **Boundary check:**
+- **Duplication check:**
+- **Portability impact:**
+- **Scope check:**
+- **Review disposition:**
 
-If the change has no architectural or data-contract impact, explain briefly why.
+## Documentation impact
+
+<!-- Check the applicable lines and name the files. -->
+
+- [ ] Product behavior or game rules changed; the blueprint/spec was updated.
+- [ ] Architecture, persistence, data, or API contracts changed; canonical architecture/spec docs were updated.
+- [ ] Roadmap, deployment, hosted configuration, or resumption state changed; `docs/START-HERE.md` and/or `tasks/todo.md` were updated.
+- [ ] A new durable decision or open question was recorded for future sessions.
+- [ ] No canonical documentation change is required for this material diff.
+
+Documentation exception: <!-- Required only when no canonical doc changes. Give a specific reason; “none,” “N/A,” or “no impact” is invalid. -->
+
+After the final diff, state whether a new conversation can resume correctly from `AGENTS.md`, `docs/START-HERE.md`, and `tasks/todo.md`.
 
 ## Data and answer integrity
 
-- [ ] No hidden player answer leaks through HTML, payloads, APIs, logs, or share output.
-- [ ] Player identity and statistical corrections are implemented in `packages/baseball-data`, not UI code.
-- [ ] Career and serving values derive from canonical season records rather than competing calculations.
-- [ ] Generated artifacts were regenerated from source and normalization code rather than hand-edited.
-- [ ] Any overrides introduced below include a reason.
+- [ ] No hidden answer, canonical answer ID, hint, reveal, credential, or service-role data leaks through public HTML, payloads, bundles, APIs, logs, or share output.
+- [ ] Player facts and corrections remain in `packages/baseball-data`, not UI or operational rows.
+- [ ] Generated artifacts were rebuilt rather than hand-edited.
 - [ ] Not applicable; explained below.
 
 ## Validation
 
 - [ ] Focused tests at the behavior-owning layer.
-- [ ] Upstream-to-downstream reconciliation checks.
 - [ ] Full test suite.
 - [ ] Typecheck.
-- [ ] Lint.
-- [ ] Build.
+- [ ] Lint, where applicable.
+- [ ] Production build.
 - [ ] File-size check.
-- [ ] Mobile web check for user-facing changes.
-- [ ] Relevant canonical documentation updated.
+- [ ] Data/runtime QA, where applicable.
+- [ ] Mobile/browser check for user-facing changes.
+- [ ] Documentation-impact check.
+- [ ] One bounded review.
 
-List commands run and any checks that remain pending.
+List commands, hosted checks, and anything still pending.
 
 ## Overrides introduced or changed
 
-<!-- List each override and its reason, or write “None.” -->
+<!-- List each override and reason, or write “None.” -->
 
-## Scope boundaries and follow-up work
+## Follow-up work
 
-<!-- State what deliberately did not change and identify intentionally deferred work. -->
+<!-- Record findings deliberately excluded from this PR. -->

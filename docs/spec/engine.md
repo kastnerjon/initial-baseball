@@ -1,111 +1,118 @@
 # Game Engine Spec
 
+Status: Current implemented rules plus approved policy boundary  
+Last updated: 2026-07-31
+
 ## Principle
 
-The engine is pure TypeScript. It contains no React, Supabase, storage, network, time, randomness, or platform APIs.
+The engine is pure TypeScript. It contains no React, Next.js, Supabase, storage, network, time, randomness, or platform APIs.
 
-The engine answers deterministic rule questions:
+It owns deterministic game questions:
 
-- What initials should be shown?
-- What hint text should be generated from player data/settings?
-- What hit result corresponds to the number of revealed hints?
-- How do runners advance?
-- Does a run score?
-- Does a half-inning/game end?
+- What outcome follows a correct answer at a given hint depth?
+- What happens after an incorrect guess?
+- How are points or baseball state calculated under a named ruleset?
+- How do runners advance under baseball-inning rules?
+- When is a game complete?
+- What raw result facts and spoiler-safe share facts are produced?
 
-## Hit results
+## Stable Daily outcomes
 
-| Correct guess timing | Result |
+| Correct timing | Outcome |
 |---|---|
-| Initials only | Home Run |
-| After hint slot 1 | Triple |
-| After hint slot 2 | Double |
-| After hint slot 3 | Single |
-| After hint slot 4 | Sacrifice |
+| Initials only | HR |
+| After hint 1 | 3B |
+| After hint 2 | 2B |
+| After hint 3 | 1B |
+| After hint 4 | BB |
 
-The hint type does not determine the result. The slot does.
+The hint type does not determine the outcome. The revealed slot count does.
 
-## SAC rule
+Three wrong guesses or Give Up produces `K`.
 
-SAC is not a hit.
+These outcomes are the stable vocabulary. Scoring and completion policies interpret them.
 
-SAC always creates exactly 1 out.
+## Current implemented Daily policy
 
-- Batter is out.
-- All existing baserunners advance exactly one base.
-- Runner on 3rd scores.
-- Batter does not reach base.
+Production `main` currently applies outcomes to baseball inning state:
 
-SAC is strictly worse than a single because it costs an out and the batter never reaches base.
+- HR, 3B, 2B, and 1B advance runners;
+- BB applies force advancement;
+- K adds an out and strikeout;
+- runs, hits, outs, strikeouts, and bases are tracked;
+- completion may occur at three outs or puzzle end.
 
-## Strikes
+This describes current implementation.
 
-Wrong guess = strike.
+## Approved versioned-policy direction
 
-Default: 3 strikes per at-bat, configurable 1–5.
+The next gameplay architecture separates:
 
-When strike count reaches `strikesPerAtBat`, batter is out.
+1. raw at-bat facts;
+2. scoring policy;
+3. completion policy.
 
-## Extra innings
+Provisional `points-v1`:
 
-If tied after scheduled innings, play extras.
+| Outcome | Points |
+|---|---:|
+| HR | 5 |
+| 3B | 4 |
+| 2B | 3 |
+| 1B | 2 |
+| BB | 1 |
+| K | 0 |
 
-If `extrasGhostRunner = true`, each half-inning in extras starts with runner on second.
+`points-v1` completes after all nine at-bats.
 
-## Walk-off
+A future `baseball-inning-v1` may reuse the existing base/runner functions and three-out completion. Do not delete the baseball engine merely because Standard Daily adopts points.
 
-In the bottom half of the final scheduled inning or extra inning, if home team takes the lead, the game ends immediately.
+Do not create a broad plugin framework. Use explicit small versioned policies and stable shared contracts.
+
+## Raw result facts
+
+A completed at-bat/result contract should preserve enough information to reinterpret scoring later:
+
+- puzzle identity and ruleset version;
+- slot;
+- outcome;
+- revealed hint count;
+- wrong-guess count;
+- correct, strikeout, or Give Up resolution.
+
+A final numeric score alone is insufficient.
 
 ## Hints
 
-Pitcher-selected player generates pre-populated hints from the player database. Pitcher may edit hint text before submission. The submitted/edited hint text is what the hitter sees.
+Hint text is generated from canonical player data/settings. The engine may build and validate hint values, but network authorization and delivery belong to web adapters.
 
-The canonical answer remains the selected `player_id`.
+The product invariant is that current-at-bat Hint presses are immediate. The engine must not depend on whether hints arrived individually or as an authorized bundle.
 
-## Guessing UX
+## Guessing
 
-Players do not submit free-text guesses.
+Players select canonical search results. Correctness is exact canonical `playerId` equality after approved redirects. No fuzzy string comparison occurs at evaluation time.
 
-Flow:
+## Share boundary
 
-- User types into a search box.
-- App returns matching players using substring search over normalized names and aliases.
-- User selects a player from results.
-- App submits canonical `player_id`.
-
-Engine rule:
-
-- Guess correctness is determined by exact `player_id` equality.
-- No fuzzy matching.
-- No string comparison at evaluation time.
-
-## Share Boundary
-
-- `createDailyShareResult` builds spoiler-safe share data from `DailyGameState`.
-- `formatDailyShareText` converts `DailyShareResult` into copyable text.
-- Share output must use final engine score totals.
-- Share output must include initials and outcomes only.
-- Share output must never include player names.
+- Share output contains puzzle/result metadata, initials, and spoiler-safe outcomes.
+- It never contains player names or hidden answer IDs.
+- Share/result totals come from the selected ruleset.
+- Different ruleset versions must not be compared as the same score distribution.
 
 ## Required tests
 
-- Initials: Ken Griffey Jr., CC Sabathia, J.D. Martinez, Ichiro, Elly De La Cruz.
-- Hit result by reveal count.
-- Sacrifice with 0, 1, 2 outs.
-- Base advancement for single/double/triple/HR.
-- Ghost runner on/off.
-- Walk-off.
-- Settings validation.
-- Stats hint building with configurable fields and bWAR label.
+- outcome by hint count;
+- three-strike and Give Up behavior;
+- walk force advancement;
+- single/double/triple/HR advancement;
+- current baseball completion;
+- provisional points mapping and all-nine completion when implemented;
+- ruleset-version serialization;
+- raw-fact preservation;
+- settings validation;
+- spoiler-safe share output;
+- representative initials and hint generation.
 
-## Practice Mode engine reuse
+## Reuse
 
-Practice Mode must reuse the same engine functions as multiplayer:
-
-- initials generation
-- hint generation
-- stats hint rendering
-- guess matching
-- hit-result mapping by reveal count
-
-Do not create separate practice-only scoring logic.
+Practice or future modes reuse the same outcome, hint, search, and policy functions. Do not create separate UI-owned scoring logic.

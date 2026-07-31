@@ -1,25 +1,31 @@
 # Initial Baseball — Start Here
 
-Status: Active project handoff
-Last updated: 2026-07-21
+Status: Active project handoff  
+Last updated: 2026-07-31
 
-Use this file to resume work. It records current state, settled future requirements, unresolved decisions, and exact next work. Pull requests and `tasks/lessons.md` retain history.
+Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
 ## Resume protocol
 
 1. Read `AGENTS.md`.
 2. Read this file.
 3. Read `tasks/todo.md`.
-4. Verify current GitHub `main`, open pull requests, relevant issues, CI, Vercel, and hosted configuration.
+4. Verify current GitHub `main`, open pull requests, relevant issues, CI, Vercel, Supabase configuration, and production behavior.
 5. Read only the canonical documents and source files needed for the next bounded task.
 6. Write the repository scope contract before implementation.
 7. Complete one owning concern per pull request.
 
-Do not restart settled architecture discussions because the conversation changed. If this handoff conflicts with code or another canonical document, inspect the latest merged PRs and correct the drift first.
+Do not restart settled product or architecture discussions because the conversation changed. If this handoff conflicts with code, deployment state, or another canonical document, correct the drift before new implementation.
 
-## Product and architecture
+## Product promise
 
-Initial Baseball currently means one committed product: **Daily Inning**, a browser-first daily baseball guessing game. Everyone receives the same nine-player puzzle for the date. Each at-bat begins with initials and up to four ordered hints. Correct answers yield HR, 3B, 2B, 1B, or BB based on hints used; three wrong guesses or Give Up produces a strikeout. The pure engine owns runner advancement, outs, hits, walks, and runs. A resolved at-bat shows canonical career and regular-season data; completion produces spoiler-safe share output. Accounts, streaks, native apps, and head-to-head play remain deferred.
+Initial Baseball currently means one committed product: **Daily Inning**, a browser-first daily baseball guessing game with the same nine-player puzzle for everyone on a date.
+
+Standard Daily must be challenging because recall and hints are challenging, not because the lineup is full of obscure players. Except for a possible final deep-challenge slot, a revealed answer should normally produce the reaction: **“I could have gotten that.”** A player who was never realistically recognizable to the target baseball audience is generally not appropriate for Standard Daily.
+
+The game should feel fast, immediate, accurate, and recognizably baseball. Pressing a visible gameplay control—especially **Hint**—should not wait for ordinary network latency.
+
+## Architecture map
 
 ```text
 shared
@@ -30,131 +36,130 @@ shared
             \
              web / API / admin adapters
                        \
-                        Supabase/Postgres repository adapter
+                        Supabase/Postgres adapters
 ```
 
 - `packages/shared`: stable portable contracts.
-- `packages/engine`: pure baseball/game rules, search behavior, scoring, inning transitions, and share calculations.
-- `packages/baseball-data`: canonical identity, aliases, baseball facts, recognizability inputs, career/season records, enrichment, QA, and generated runtime artifacts.
-- `packages/daily`: puzzle numbering, deterministic selection, lineup quality, repeat protection, editorial public-eligibility policy, lifecycle invariants, repository/service contracts, seven-day orchestration, and portable Daily transitions.
-- `apps/web`: Next.js/React rendering, browser persistence, routes, sharing, server-only authorization/composition, public runtime composition, and the Supabase repository adapter.
-- Supabase/Postgres stores canonical-ID-only editorial records and metadata. It does not own baseball facts, selection policy, or lifecycle behavior.
+- `packages/engine`: pure outcomes, scoring/completion policies, baseball advancement, search behavior, and result calculations.
+- `packages/baseball-data`: one canonical player system containing identity, aliases, factual baseball data, enrichment, source provenance, QA, and generated runtime artifacts.
+- `packages/daily`: puzzle numbering, lineup recipes, selection, difficulty policy, repeat protection, lifecycle, repository/service contracts, and portable Daily transitions.
+- `apps/web`: rendering, browser persistence, routes, sharing, signed-token transport, admin surfaces, server-only composition, and persistence adapters.
+- Supabase/Postgres: operational persistence behind provider-neutral ports. It does not define baseball facts, scoring rules, lineup recipes, or lifecycle policy.
 
-React and routes do not define baseball, puzzle-selection, lifecycle, or persistence rules. Service-role credentials remain server-only. Vercel and Supabase are adapters, not architectural owners.
+Canonical product behavior: `docs/product/daily-inning-blueprint.md`.  
+Canonical lineup-content direction: `docs/product/lineup-content-system.md`.  
+Canonical architecture: `docs/architecture-and-scale-plan.md`.  
+Documentation rules: `docs/engineering/documentation-governance.md`.
 
-Canonical product behavior: `docs/product/daily-inning-blueprint.md`.
-Canonical architecture: `docs/architecture-and-scale-plan.md`.
-Public editorial runtime contract: `docs/spec/public-daily-editorial-runtime.md`.
-Source ownership map: `docs/engineering/source-map.md`.
+## Current verified state
 
-## Current verified implementation state
+- PR #120 merged: the public runtime reads approved editorial puzzles through the server repository boundary.
+- PR #121 merged: the Daily admin HTTP Basic challenge moved to `/admin/auth`, fixing the hosted redirect loop.
+- PR #122 establishes repository continuity controls and records the approved scoring, hint, recognizability, and recipe-driven lineup direction.
+- Production deployment `dpl_DuUXDL6pBSG4aCG7iniDHn97vQGE` is `READY` for the current application behavior.
+- Canonical production alias: `https://initial-baseball-web.vercel.app`.
+- `DAILY_PROGRESSION_SECRET`, Supabase credentials, and Daily admin credentials are configured for Preview and Production.
+- The `daily_editorial_puzzles` migration has been applied to the hosted Supabase project.
+- Hosted table/RLS verification passed: browser roles have no CRUD access; the server service role has the intended read/write boundary and no ordinary delete path.
+- Unauthenticated `/admin/daily` reaches the Basic-auth challenge, and the editor successfully authenticated into the hosted admin page.
 
-The repository now includes:
+Hosted verification is **not yet complete**. The exact seven-day horizon, draft generation, replacement, validation, scheduling, public consumption, fallback, gameplay progression, refresh recovery, and leakage/runtime-error checks still require one deliberate end-to-end pass. The public root also showed a stale Daily date/cache discrepancy that must be understood before relying on publication behavior.
 
-- canonical player identity, redirects, pinned reproducible source inputs, season/career facts, reveal cards, enrichment, runtime payloads, and representative data QA;
-- canonical server-side name search, guarded hints, answer resolution, terminal reveal delivery, and hidden-answer production-build QA;
-- schema-3 browser-save recovery and anonymous stateless signed progression authorization;
-- career summaries, chronological regular-season rows, multi-team seasons, two-way display, hitter OPS, pitcher saves, configurable reveal columns, and season-aware fan-facing team identity;
-- a versioned nine-slot lineup-quality contract with canonical duplicate detection, required-data validation, non-overlapping recognizability bands, and a 90-day repeat window;
-- lineup-quality launch date `2026-07-22`; dates before it continue reproducing the legacy selector and historical overrides;
-- a provider-neutral editorial record and repository port with optimistic revisions, canonical-ID-only selections, explicit audit metadata, and `draft` → `scheduled` → `published` → `archived` lifecycle invariants;
-- a seven-day editorial horizon service that creates only missing drafts, preserves existing records, includes earlier horizon dates in repeat protection, joins review data, and returns validation warnings;
-- a server-only Supabase adapter backed by `daily_editorial_puzzles`, strict row decoding, atomic revision-guarded writes, and RLS-first migration;
-- fail-closed single-editor HTTP Basic authorization, stable actor ID, server-only service-role composition, and authorization before privileged client/repository construction;
-- authorized `/admin/daily` generation, seven-day review, player search, same-name disambiguation, exact preview, future-slot replacement, validation reruns, and explicit schedule/publish/archive controls;
-- a public Daily selection policy in `packages/daily` and server composition in `apps/web` that read the editorial repository by date, use only `scheduled` or `published` canonical selections, retain deterministic fallback when no approved record exists, preserve all pre-launch legacy answers, exclude drafts, and refuse to reinterpret archived records until a replay/versioning policy is settled;
-- an unchanged browser bootstrap contract containing only public puzzle metadata, initials, and an opaque progression token. Hidden IDs, answers, hints, reveal data, and credentials remain server-side.
+## Implemented gameplay state
 
-Most recent completed product work on `main`: PR #119, explicit authorized lifecycle controls.
-Current in-flight work: public editorial Daily runtime PR from branch `agent/public-editorial-daily-runtime`.
+The current production implementation still:
 
-## Deployment and hosted configuration
+- maps zero through four revealed hints to HR, 3B, 2B, 1B, and BB;
+- gives three strikes or Give Up a K;
+- advances runners and tracks runs, hits, outs, and strikeouts;
+- may complete after three outs;
+- fetches each hint through a server request at button press.
 
-GitHub `main` is ahead of the last verified successful Vercel production deployment.
+Those facts describe current code, not the approved next direction below.
 
-Vercel deployment capacity has recovered: a fresh preview for the public-runtime branch was accepted, compiled successfully, and passed Next.js type checking. It then failed during page-data collection because `DAILY_PROGRESSION_SECRET` is still unset. Issue #97 remains the operational blocker.
+## Settled next-direction requirements
 
-Required hosted work:
+### Flexible scoring and completion
 
-- configure one stable server-only `DAILY_PROGRESSION_SECRET` for Preview and Production;
-- apply `supabase/migrations/20260721143000_create_daily_editorial_puzzles.sql` to the hosted Supabase project;
-- configure server-only `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `DAILY_ADMIN_USERNAME`, and a `DAILY_ADMIN_PASSWORD` of at least 32 characters;
-- trigger one deliberate deployment after configuration;
-- verify hosted bootstrap, hint, correct guess, third strike, Give Up, refresh, completion, editorial fallback, scheduled/published selection, and `/admin/daily` workflows;
-- close issues #91 and #86 only after successful hosted verification.
+Scoring weights and completion behavior are product-tuning choices, not permanent assumptions embedded throughout the application.
 
-The available connected tools have not verified or configured the hosted Supabase migration or required environment variables. Do not infer that they exist. The original `daily_puzzles`, `daily_puzzle_pitches`, attempt, result, database-player, and head-to-head tables remain inactive legacy scaffold.
+- Preserve stable raw at-bat facts: slot, outcome, hints revealed, wrong guesses, correct/strikeout/give-up resolution, and puzzle identity.
+- Apply a versioned scoring/completion policy to those facts.
+- Provisional alpha policy: HR/3B/2B/1B/BB/K = `5/4/3/2/1/0`, and every player completes all nine at-bats.
+- A future baseball-inning policy may reuse runner advancement and three-out completion without rewriting unrelated UI, data, or results systems.
+- Percentile comparisons must compare the same puzzle under the same ruleset version.
 
-## Current work order
+Exact point weights remain tunable after playtesting.
 
-1. Complete and merge the bounded public editorial Daily runtime PR after focused review and full CI.
-2. Configure the progression secret, apply the hosted editorial migration, configure all server-only administration variables, deploy once, and verify signed gameplay plus `/admin/daily` end to end.
-3. Add aggregate completed-game results, field comparison, monitoring, and remaining launch surfaces.
-4. Apply the approved heritage visual direction after mechanics, administration, and hosted operation are dependable.
+### Immediate hints
 
-`tasks/todo.md` is the canonical active checklist and must remain consistent with this sequence.
+No visible Hint action should incur a normal network round trip.
 
-## Settled requirements to preserve
+The preferred simple boundary is:
 
-### Editorial horizon and lifecycle
+- all four hints for the active at-bat are locally available before that at-bat appears;
+- Hint presses reveal local data immediately;
+- the mandatory resolution response for one at-bat may provide the next at-bat’s authorized hint bundle;
+- answers, canonical answer IDs, future reveal records, and unrelated future-player data remain server-side.
 
-- The admin workflow covers at least the next seven lineups; the default horizon is seven but adapters may supply another positive length.
-- Horizon generation is idempotent: only missing dates become drafts; existing records are preserved; earlier horizon dates contribute to repeat protection.
-- Editors may replace future slots before publication. Manual replacements are marked manual.
-- Only drafts schedule, only scheduled records publish, and only published records archive.
-- Editing a scheduled record returns it to draft and clears scheduling approval.
-- Published and archived records are immutable through ordinary replacement.
-- Repository writes use expected revisions. Adapters supply actor IDs and timestamps.
-- Emergency changes require an explicit future correction/versioning action.
+The exact transport/token representation remains an implementation detail, but the no-visible-wait product requirement is settled.
 
-### Public puzzle selection
+### Canonical player system and gameplay profiles
 
-- Dates before `2026-07-22` always use the legacy deterministic selector/override path, even if an editorial row exists.
-- On or after launch, only `scheduled` and `published` editorial rows may define public answers.
-- Draft, missing, or date-mismatched rows use the deterministic quality-selector fallback.
-- Archived rows do not silently fall back or redefine history; public replay remains unavailable until an explicit archived-history/versioning policy is adopted.
-- Persisted canonical IDs are joined to current canonical baseball data on the server. Missing referenced players fail closed.
-- The repository read and service-role client remain server-only. Public bootstrap and action responses retain existing spoiler-safe contracts.
+Initial Baseball should have one authoritative canonical player system, enriched over time with reproducibly sourced facts such as seasons, teams, statistics, Hall of Fame status, All-Star selections, awards, and approved WAR.
 
-### Persistence and authorization
+Objective baseball facts and product judgments remain distinct:
 
-- One `daily_editorial_puzzles` row represents one date and stores puzzle identity, lifecycle state, revision, audit metadata, and exactly nine canonical-ID selections in one JSONB value.
-- Names, aliases, teams, stats, hints, and reveals remain in baseball-data and are joined at read time.
-- RLS remains enabled with no browser policies; only the server-side service role may access the table.
-- `DAILY_ADMIN_USERNAME` is the stable actor ID. Missing configuration fails closed; malformed or wrong credentials fail uniformly as unauthorized.
-- Authorization occurs before constructing the privileged client/repository. Credentials, keys, clients, and repository objects are never serialized, logged, or stored in the browser.
-- No Supabase Auth, OAuth, editor sessions, password recovery, public accounts, or multi-editor permissions are introduced without a separate decision.
+- factual attributes belong to the canonical baseball-data pipeline;
+- gameplay profiles describe recognizability, expected difficulty, Standard Daily eligibility, expert-only status, manual inclusion/exclusion, notes, and eventually observed solve rates;
+- gameplay profiles must be editable through a provider-neutral administration boundary rather than hardcoded into React or inferred only from counting statistics.
 
-### Reveal, data, and visual direction
+### Recipe-driven lineups
 
-- Career summary remains separate from one chronological row per regular season; all teams for multi-team seasons remain represented.
-- Hitter, pitcher, and two-way presets remain configurable; OPS and saves remain supported.
-- WAR, OPS+, ERA+, awards, All-Star selections, voting finishes, and leader flags remain hidden until reproducible approved sources exist. Any future Baseball Reference WAR must be labeled `bWAR`.
-- Source team IDs and fan-facing identities remain separate; corrections belong in baseball-data, not React.
-- The approved visual direction is heritage baseball—scorecard, municipal ballpark signage, and 1970s card character—not polished SaaS. Redesign remains deferred.
+“Standard Daily” is one lineup recipe, not the only hardcoded selector.
 
-### Launch integrity and results
+A recipe can define slot groups with filters and constraints, for example:
 
-- Launch remains anonymous and client-driven. Signed progression blocks ordinary forged future progression but does not claim tamper-proof scoring.
-- Do not add Redis, replay caches, durable anonymous sessions, or per-action database writes without a separate decision.
-- Aggregate results should use at most one compact idempotent completed-game submission and preserve raw outcomes sufficient to recalculate aggregates.
+- slots 1–4: 2010–2020 era and at least five All-Star selections;
+- slots 5–7: 1990s/2000s and at least five All-Star selections;
+- slots 8–9: 1980s and at least seven All-Star selections.
+
+Recipes may filter by sourced era, team, position, Hall of Fame status, All-Star counts/years, awards, WAR thresholds, gameplay difficulty, or other approved canonical fields. They also apply repeat protection, duplicate prevention, reveal readiness, and optional diversity constraints.
+
+The generator produces a proposal. The authorized editor can review, replace, validate, and schedule the exact nine players. Future decade, team, themed, expert, or user-selectable games may reuse the same recipe engine, but those additional public modes are not committed launch scope.
+
+### Completed results
+
+Future aggregate results use one compact idempotent submission per completed game, not one write per action. Preserve raw per-at-bat facts and ruleset version so alternative score formulas can be evaluated or historical aggregates recalculated. Intended results include total score, average, outcome distribution, solve depth, K/Give Up rates, and understandable percentile language such as “You scored higher than X% of players today.”
+
+## Exact next work order
+
+1. Complete hosted admin and public-runtime verification, including the public date/cache discrepancy.
+2. Add the versioned scoring/completion boundary and provisional all-nine points policy.
+3. Replace per-click hint fetching with active-at-bat hint bundles.
+4. Define and persist the compact completed-game facts needed for score and percentile comparison.
+5. Define gameplay-profile and lineup-recipe contracts, then establish a conservative Standard Daily pool/recipe.
+6. Continue results UI, analytics, monitoring, mobile polish, legal/domain basics, and heritage presentation.
+
+`tasks/todo.md` is the active ordered checklist and must remain consistent with this sequence.
 
 ## Open decisions
 
-- Whether scheduled puzzles should later publish automatically or continue to require explicit editor action.
-- Exact emergency correction/versioning workflow for a published puzzle.
-- Exact public replay policy for archived editorial puzzles.
-- Exact source and maintenance process for recognizability rankings.
-- Whether the generated horizon should remain seven days once operations begin.
-- Whether representative UI QA should add browser screenshots after hosted previews are operational.
+- Final point weights and whether wrong guesses ever receive a separate penalty.
+- Exact Standard Daily slot recipe after playtesting; the recognizability principle is settled even though the thresholds are not.
+- Exact approved sources and maintenance workflows for All-Star selections, awards, and bWAR.
+- Exact persistence and admin UX for gameplay profiles and reusable recipes.
+- Whether scheduled puzzles later publish automatically.
+- Emergency correction/versioning for an already published puzzle.
+- Public archive/replay behavior.
+- Whether additional themed/custom game modes are eventually exposed to users.
 
-## Known issues
+## Continuity control
 
-- Issue #97: configure and verify the Preview/Production progression secret.
-- Hosted editorial migration and administration variables remain unverified/unconfigured.
-- Hosted signed progression and admin workflows remain unverified.
-- Inactive legacy Supabase scaffold remains committed and should be removed only through separate dependency-aware cleanup.
+Repository documentation is the system of record, not chat history.
 
-## Maintenance rule
-
-Update this file when the latest milestone, deployment state, work order, settled deferred decisions, open decisions, operational blockers, or continuation prompt changes. Do not add routine implementation history or duplicate entire specifications.
+- Every pull request must include a `Documentation impact` section.
+- CI runs `scripts/check-docs-impact.mjs`; material code or infrastructure changes must update a canonical document or state a specific reviewable exception.
+- Hosted configuration, migration, deployment, or operational verification is not complete until `docs/START-HERE.md` and `tasks/todo.md` reflect the verified result.
+- Before beginning the next product PR, re-read the final merged diff and verify this handoff against GitHub and production.
+- Periodic documentation-gardening reviews should compare code, tasks, issues, deployment, and canonical docs and open a focused correction PR when drift appears.
