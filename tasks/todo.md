@@ -5,7 +5,7 @@ Last updated: 2026-07-31
 
 Completed history belongs in PRs, canonical docs, or `tasks/lessons.md`. Durable resumption context belongs in `docs/START-HERE.md`.
 
-Current order: verify instant hints and hosted operations, then build compact results and the lineup-content system.
+Current order: build compact completed-result contracts and persistence, finish hosted browser/admin verification, then build the lineup-content system.
 
 ## 0. Continuity
 
@@ -18,16 +18,17 @@ Current order: verify instant hints and hosted operations, then build compact re
 - [x] Configure progression, Supabase, and admin secrets for Preview/Production.
 - [x] Apply editorial migration and verify RLS/service-role boundaries.
 - [x] Verify admin challenge and prior successful editor authentication.
-- [x] Merge points-v1 and verify production READY/aliased with `0/45 PTS`, `0/9 AB`, signed ruleset token, hidden-answer QA, full CI/data/build, and no recent runtime errors.
+- [x] Merge/verify `points-v1` production with `0/45 PTS`, `0/9 AB`, signed ruleset token, hidden-answer QA, full CI/data/build, and no runtime errors.
+- [x] Merge PR #126 and verify production deployment `dpl_DLPirNAwyebFCmyD7cf6xU4MPBnJ` is READY/canonically aliased.
+- [x] Verify production initial payload contains exactly one active four-hint bundle with signed checkpoints and no answer/reveal/future-batter bundle.
+- [x] Verify active client chunks contain no exact `/api/daily/hint` request and production runtime errors are empty.
 - [ ] Verify midnight-Pacific rollover without redeploy.
-- [ ] Verify instant-hint production payload contains only batter one’s hints and no answer/future-batter data.
-- [ ] Verify active client chunks contain no exact `/api/daily/hint` request.
-- [ ] Verify saved-session `/api/daily/hints` hydration and refresh recovery.
+- [ ] Verify saved-session `/api/daily/hints` hydration and refresh recovery in a real browser.
 - [ ] Verify seven-day Supabase horizon and missing-draft generation.
 - [ ] Preview/search/replace/revalidate one future slot.
 - [ ] Schedule one future puzzle and verify public scheduled/published consumption.
 - [ ] Verify deterministic fallback for missing/draft records.
-- [ ] Verify correct guess, wrong guesses, third strike, Give Up, all-nine continuation, completion, action responses/logs, and common iPhone/iPad behavior.
+- [ ] Verify correct guess, wrong guesses, third strike, Give Up, all-nine continuation, final reveal/completion, action responses/logs, and common iPhone/iPad behavior.
 - [ ] Reconcile issues #97, #91, and #86 after the full hosted checklist.
 
 ## 2. Versioned scoring/completion
@@ -38,22 +39,37 @@ Current order: verify instant hints and hosted operations, then build compact re
 
 ## 3. Immediate active-batter hints
 
-- [x] Define an authorized four-hint current-batter bundle with signed later-depth checkpoints.
-- [x] Include batter one’s bundle in bootstrap without answer/reveal/future-batter data.
-- [x] Return refreshed same-pitch bundle after wrong guesses and next-pitch bundle after terminal resolution.
-- [x] Hydrate only the verified current bundle for compatible saved progress.
-- [x] Reveal hints locally with no network request on Hint click.
-- [x] Prevent returned checkpoints from reducing strike count or reveal depth.
-- [x] Keep the legacy one-hint route server-compatible while removing it from the active client path.
-- [x] Amend answer-integrity/product/API/architecture docs for the active-hint threat model.
-- [ ] Pass focused bundle/checkpoint/client/restore/leakage tests, full CI, preview, review, merge, and production verification.
+- [x] Authorized four-hint current-batter bundle with signed later-depth checkpoints.
+- [x] First bundle in bootstrap; refreshed same-pitch/next-pitch bundles after resolution.
+- [x] Verified-current saved hydration route and local no-network Hint transitions.
+- [x] Legacy one-hint route removed from active client path.
+- [x] Answer-integrity/product/API/architecture docs amended.
+- [x] Focused tests, full CI, preview, P1 review fixes, merge, production payload/build QA, and runtime-error verification.
+- [ ] Real-browser saved hydration and interaction QA remains under hosted verification.
 
 ## 4. Completed-game comparison
 
-- [ ] Define one compact idempotent submission from native raw facts.
-- [ ] Persist puzzle identity, ruleset version, ordered facts, and score; no per-action writes.
-- [ ] Add same-puzzle/same-ruleset percentile, sample size, average, outcome distribution, solve depth, K and Give Up rates.
-- [ ] Preserve recalculation from raw facts.
+### 4A. Portable result contract
+
+- [ ] Define a compact transport submission using puzzle identity, ruleset version, client-generated idempotency ID, and nine ordered native at-bat facts.
+- [ ] Validate exact puzzle/date/number, pitch order/initials, outcome-to-hint consistency, wrong-guess/resolution consistency, and supported ruleset.
+- [ ] Derive score and maximum from engine rules; never trust a submitted total.
+- [ ] Define an atomic idempotent repository port: same ID/same payload returns the existing record; same ID/different payload conflicts.
+- [ ] Add focused valid, malformed, spoofed-puzzle, inconsistent-fact, retry, and conflict tests.
+
+### 4B. Provider and submission API
+
+- [ ] Add a separate current-results migration rather than reusing inactive legacy attempt/result tables.
+- [ ] Add server-only Supabase codec/adapter with RLS and least-privilege grants.
+- [ ] Add one public completed-game POST route and generate/persist a stable client submission ID.
+- [ ] Submit at most once after completion and retry idempotently after ordinary failures/refresh.
+- [ ] Verify no per-action writes and no answer/credential leakage.
+
+### 4C. Aggregate comparison
+
+- [ ] Add same-puzzle/same-ruleset completion count, average score, score distribution, outcome/hint-depth/K/Give Up aggregates.
+- [ ] Settle percentile tie treatment and minimum sample copy.
+- [ ] Add understandable percentile/sample-size UI and preserve raw-fact recalculation.
 
 ## 5. Lineup-content system
 
