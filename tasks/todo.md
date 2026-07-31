@@ -1,74 +1,88 @@
 # Initial Baseball Current Work
 
-Status: Active ordered implementation plan
-Last updated: 2026-07-21
+Status: Active ordered implementation plan  
+Last updated: 2026-07-31
 
-Completed work should not remain here as future work. Historical rationale belongs in pull requests, canonical documentation, or `tasks/lessons.md`. Durable resumption context, approved deferred decisions, and open decisions belong in `docs/START-HERE.md`.
+Completed history belongs in pull requests, canonical documentation, or `tasks/lessons.md`. Durable resumption context and approved deferred decisions belong in `docs/START-HERE.md`.
 
-Current execution order: complete the public editorial Daily runtime PR, then finish hosted progression and administration configuration and verification. The Vercel deployment quota has recovered; missing secrets and hosted Supabase setup are now the active operational blockers.
+Current execution order: complete hosted end-to-end verification, establish flexible gameplay/content sockets, then build results and launch surfaces.
 
-## 0. Complete launch answer-integrity deployment
+## 0. Restore verified continuity
 
-- [x] Approve the anonymous, client-driven launch threat model without claiming tamper-proof scoring — ADR 0001 / PR #94.
-- [x] Add the provider-neutral HMAC token and production secret primitives — PR #95.
-- [x] Implement stateless signed progression authorization — PR #96.
-- [x] Prevent arbitrary future-pitch requests while keeping scoring and Daily transitions in their existing portable owners.
-- [x] Preserve schema-3 refresh recovery without adding a replay cache, database write per action, durable anonymous server session, or hosting-specific dependency.
-- [x] Re-run typecheck, tests, hidden-answer production build QA, the full canonical pipeline, and runtime-consumer QA.
-- [ ] Configure `DAILY_PROGRESSION_SECRET` for Vercel Preview and Production and verify the deployed flow — issue #97.
-- [ ] Close issues #91 and #86 after deployment verification.
+- [x] Reconcile PRs #120–#121, hosted configuration, current deployment state, and the new scoring/hint/lineup-content direction in canonical docs.
+- [x] Add a CI documentation-impact gate and explicit PR checklist.
+- [ ] Ensure the documentation-impact status is treated as required before merge.
 
-## 1. Finish reveal correctness
+## 1. Complete hosted operational verification
 
-- [x] Show the canonical career summary after each resolved at-bat — PR #84.
-- [x] Show one ordered row per regular season, including multiple teams when applicable — PR #84.
-- [x] Support configurable reveal columns without changing canonical data ownership — PR #100 / issue #99.
-- [x] Display OPS for hitters and saves for pitchers when available — PR #84.
-- [x] Keep WAR, OPS+, ERA+, awards, All-Star selections, voting finishes, and leader flags hidden until approved upstream data exists.
-- [x] Normalize fan-facing team abbreviations through a centralized, season-aware baseball-data mapping — PR #103 / issue #101.
-- [x] Add representative reveal QA and correct duplicate career abbreviations, legacy artifact fallback, and audited Angels display names — issue #104.
-- [x] Keep public guess search name-only for unique players and show career years only for genuine same-name canonical players — PR #116.
+- [x] Configure `DAILY_PROGRESSION_SECRET` for Vercel Preview and Production.
+- [x] Apply `supabase/migrations/20260721143000_create_daily_editorial_puzzles.sql`.
+- [x] Configure `SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY`, `DAILY_ADMIN_USERNAME`, and `DAILY_ADMIN_PASSWORD`.
+- [x] Deploy current `main`; production deployment is `READY`.
+- [x] Verify unauthenticated admin challenge and successful editor authentication.
+- [ ] Verify the seven-day Supabase-backed horizon and generate only missing drafts.
+- [ ] Preview, search, replace, and revalidate one future slot.
+- [ ] Schedule one future puzzle and verify public scheduled/published consumption.
+- [ ] Verify deterministic fallback for a missing/draft record.
+- [ ] Verify hint, correct guess, incorrect guesses, third strike, Give Up, refresh recovery, and completion.
+- [ ] Check initial HTML, network responses, client chunks, and logs for answer/credential leakage.
+- [ ] Check production runtime errors.
+- [ ] Investigate and resolve the public Daily date/cache discrepancy.
+- [ ] Reconcile issues #97, #91, and #86 after the full hosted checklist passes.
 
-## 2. Finalize Daily lineup quality
+## 2. Establish flexible gameplay sockets
 
-- [x] Apply a sustainable nine-slot recognizability curve: ranks 1-250 for at-bats 1-2, 251-1,000 for 3-4, 1,001-2,500 for 5-6, and 2,501-5,000 for 7-9.
-- [x] Avoid canonically repeated players within the approved 90-day window.
-- [x] Make generation deterministic for puzzle date, reviewed data version, and algorithm version.
-- [x] Preserve published legacy lineups before the explicit quality-algorithm launch date and keep historical overrides resolvable.
-- [x] Produce portable validation details for rank band, recent usage, duplicate status, lineup shape, and required reveal-data readiness.
-- [x] Cache candidates, seeded usage history, and generated lineups in the server runtime instead of replaying all history on every action.
+- [ ] Define a versioned scoring and completion policy at the owning portable layer.
+- [ ] Preserve raw at-bat facts independently of final score: outcome, hints revealed, wrong guesses, correct/K/Give Up resolution, slot, puzzle ID, and ruleset version.
+- [ ] Implement provisional `points-v1`: HR/3B/2B/1B/BB/K = `5/4/3/2/1/0`.
+- [ ] Make Standard Daily complete all nine at-bats under `points-v1`.
+- [ ] Preserve the existing runner-advancement/baseball-inning engine for a future alternate policy.
+- [ ] Update share/result contracts and browser-save migration safely.
+- [ ] Add focused progression, completion, persistence, and spoiler-safe tests.
 
-## 3. Add future-lineup administration and public consumption
+## 3. Make gameplay interactions immediate
 
-- [x] Define the provider-neutral puzzle lifecycle and repository/service contract before selecting a database provider.
-- [x] Define `draft`, `scheduled`, `published`, and `archived` transition invariants with optimistic revision writes.
-- [x] Keep published and archived puzzles immutable for ordinary replacement; return edited scheduled puzzles to draft review.
-- [x] Persist only canonical player IDs and editorial metadata in the repository contract, without duplicating baseball statistics.
-- [x] Build the seven-day application service that generates missing drafts, lists the horizon, joins canonical review data, and returns validation warnings.
-- [x] Choose Supabase/Postgres and implement the smallest relational adapter satisfying the repository contract — PR #114.
-- [x] Select per-request HTTP Basic authentication for the single editor and compose a server-only Supabase service-role client/repository boundary — PR #115.
-- [x] Show each future date, puzzle number, lifecycle status, and all nine slots in one authorized operational workflow — PR #117.
-- [x] Show canonical ID, display name, career years, role/position, fan-facing teams, recognizability rank, last Daily usage, selection source, and data-quality warnings — PR #117.
-- [x] Allow an authorized editor to search, preview, and replace any future slot through the service boundary — PR #118.
-- [x] Validate duplicates, recognizability tier, recent repeats, and required reveal data after generation and replacement — PR #118.
-- [x] Add explicit authorized schedule, publish, and archive actions through the existing portable lifecycle service — PR #119.
-- [x] Make the public Daily runtime read approved scheduled or published editorial selections through the server repository boundary, retain deterministic fallback for missing/draft dates, preserve pre-launch legacy answers, and fail closed for archived records pending an explicit replay policy — current PR.
-- [ ] Apply the committed migration and configure hosted Supabase/Vercel variables before deploying the admin and editorial public-runtime workflows.
-- [ ] Verify hosted scheduled/published consumption, deterministic fallback, signed progression, and `/admin/daily` end to end.
+- [ ] Deliver all four authorized hints for the active at-bat before that at-bat appears.
+- [ ] Reveal hints locally with no visible network wait.
+- [ ] Use the prior at-bat’s mandatory resolution response to prepare the next at-bat where practical.
+- [ ] Keep answers, canonical answer IDs, future reveal records, and unrelated future-player data server-side.
+- [ ] Measure interaction latency on common mobile connections and devices.
 
-## 4. Complete launch surfaces
+## 4. Build the lineup-content system
 
-- [ ] Add the field-comparison results screen from one compact completed-game submission.
-- [ ] Add analytics and error monitoring.
+- [ ] Define the canonical gameplay-profile contract separately from objective baseball facts.
+- [ ] Define a versioned lineup-recipe contract with slot groups, filters, difficulty requirements, repeat policy, and diversity constraints.
+- [ ] Make “Standard Daily” one saved recipe rather than the only hardcoded selector.
+- [ ] Establish a conservative provisional Standard Daily pool whose normal reveals produce “I could have gotten that.”
+- [ ] Treat only the final slot as a possible deliberate deep challenge unless later playtesting supports otherwise.
+- [ ] Generate and inspect representative lineups across many dates before activating a new policy.
+- [ ] Add approved All-Star, award, and bWAR sources only through reproducible versioned enrichment.
+- [ ] Add provider-neutral persistence and admin editing for gameplay profiles and reusable recipes in later bounded PRs.
+- [ ] Preserve manual review/replacement of the exact generated nine players.
+
+## 5. Add completed-game comparison
+
+- [ ] Define one compact idempotent completed-game submission.
+- [ ] Store raw per-at-bat facts plus ruleset version; do not write every hint or guess.
+- [ ] Add total score and same-puzzle/same-ruleset percentile comparison.
+- [ ] Add completion count, average score, outcome distribution, solve depth, K rate, and Give Up rate.
+- [ ] Show sample size and use understandable percentile copy.
+- [ ] Preserve recalculation from raw outcomes when formulas change.
+
+## 6. Complete launch surfaces
+
 - [ ] Verify refresh recovery and already-played behavior.
-- [ ] Measure initial payload size and interaction latency.
-- [ ] Verify common iPhone and iPad web layouts.
-- [ ] Apply the approved heritage ballpark / scorecard / 1970s-card visual direction after mechanics and administration are dependable.
+- [ ] Add analytics and error monitoring.
+- [ ] Verify common iPhone and iPad layouts.
+- [ ] Measure initial payload size.
+- [ ] Apply the approved heritage ballpark / scorecard / 1970s-card visual direction after mechanics are dependable.
 - [ ] Add privacy policy, terms/disclaimer, canonical domain, and social metadata.
 
-## Deferred
+## Deferred public products
 
 - Accounts, streaks, and cross-device history.
 - Native iOS or Android clients.
 - Head-to-head play, chat, leagues, and matchmaking.
-- Payments or other monetization work before the Daily loop proves demand.
+- Public user-created games.
+- Exposed decade/team/theme libraries until the core Daily loop proves itself.
+- Payments or monetization before demand is demonstrated.

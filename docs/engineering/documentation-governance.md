@@ -1,127 +1,152 @@
 # Documentation governance
 
-Status: Active engineering rule
-Last updated: 2026-07-21
+Status: Active engineering rule  
+Last updated: 2026-07-31
 
 ## Purpose
 
-Project documentation describes the current product, architecture, roadmap, and durable handoff state. It is not a frozen historical specification and must not become a second contradictory version of the codebase.
+Repository-local, versioned documentation is the system of record for product intent, architecture, operational state, and resumption context. Chat history, deployment dashboards, and human memory are inputs to documentation—not substitutes for it.
+
+A new conversation or Codex task must be able to resume accurately from the repository.
 
 ## Canonical documents
 
-- `docs/START-HERE.md`: concise resumption state, approved deferred decisions, genuinely open decisions, operational blockers, and new-conversation protocol
-- `docs/product/daily-inning-blueprint.md`: product behavior, scope, lifecycle, launch requirements, and deferred work
-- `docs/architecture-and-scale-plan.md`: package ownership, system boundaries, scale assumptions, administration architecture, and current implementation sequence
-- `docs/spec/data-model.md`: persisted entities, fields, relationships, and data-retention rules
-- `docs/spec/engine.md`: baseball outcomes and runner/inning rules
-- `docs/spec/api.md`: external and internal API contracts
-- `tasks/todo.md`: current ordered implementation work only
-- `tasks/lessons.md`: durable corrections and mistakes that should not recur
+- `AGENTS.md`: short operating map, ownership constraints, PR protocol, and required checks.
+- `docs/START-HERE.md`: verified current state, approved deferred decisions, open decisions, blockers, and exact next work.
+- `docs/product/daily-inning-blueprint.md`: product behavior and launch requirements.
+- `docs/product/lineup-content-system.md`: recognizability, gameplay profiles, recipes, and content workflow.
+- `docs/architecture-and-scale-plan.md`: package ownership, dependency direction, scale, and implementation sequence.
+- `docs/spec/data-model.md`: persisted entities, fields, and retention.
+- `docs/spec/engine.md`: implemented game-rule contracts.
+- `docs/spec/api.md`: route and transport contracts.
+- `tasks/todo.md`: active ordered work only.
+- `tasks/lessons.md`: durable mistakes and corrections.
 
-Supporting documents may add detail but must not override these sources.
+Supporting documents add detail but do not override these sources.
 
-## Handoff document contract
+## Handoff contract
 
-`docs/START-HERE.md` exists so a new conversation can resume without copying a long chat transcript.
+`docs/START-HERE.md` must distinguish:
 
-It must distinguish:
+1. **Verified current facts** — merged code, live deployment, configured infrastructure, incomplete verification, and active blockers.
+2. **Approved but not yet implemented decisions** — durable product/architecture directions that future sessions must preserve.
+3. **Open decisions** — questions that genuinely remain unsettled.
 
-1. **Current verified facts** — what is merged, live, blocked, or actively next.
-2. **Approved but not yet implemented decisions** — settled product intentions that may be many pull requests away and must not be dropped.
-3. **Open decisions** — questions that remain genuinely unresolved.
+Do not paste chat transcripts into the handoff. Translate discussion into precise decisions, implementation status, and ownership.
 
-Do not place routine pull-request history in the handoff. Link to canonical documents and issues instead. Update the handoff whenever current work order, deployment state, approved deferred behavior, open decisions, or the standard resume prompt changes.
+## Why drift occurred in July 2026
 
-A new conversation should read `AGENTS.md`, `docs/START-HERE.md`, and `tasks/todo.md`, verify current GitHub state, and continue the exact next bounded item. It should not restart settled architecture discussions merely because conversational context changed.
+The repository already required documentation updates, but the rule was primarily procedural.
+
+PR #120 merged, hosted secrets and the Supabase migration were configured, production was deployed, and PR #121 fixed authentication. Those operational facts occurred after the previous canonical-doc update. No final reconciliation PR updated `docs/START-HERE.md` or `tasks/todo.md`, and CI had no semantic documentation-impact check.
+
+The lesson is that a written expectation without a merge gate or post-deployment completion step is not sufficient.
+
+## Required PR documentation section
+
+Every pull request must contain a `## Documentation impact` section that states:
+
+- product documents changed;
+- architecture/data/API documents changed;
+- handoff/todo changes;
+- operational state checked;
+- or a specific reason no canonical document is required.
+
+“None,” “N/A,” or “no impact” without explanation is not a valid exception for a material change.
+
+## Mechanical documentation-impact gate
+
+CI runs `scripts/check-docs-impact.mjs` on pull requests.
+
+The gate:
+
+- requires the `## Documentation impact` section;
+- identifies material product, domain, web-runtime, migration, and workflow changes;
+- requires at least one canonical document to change for material diffs;
+- permits a specific `Documentation exception: ...` line when a change truly restores already documented behavior;
+- requires `docs/START-HERE.md` or `tasks/todo.md` for operationally sensitive workflow/migration/deployment changes unless the exception explains why current state is unaffected.
+
+The gate cannot prove semantic accuracy. It forces an explicit reviewable decision and prevents documentation from being silently omitted.
+
+The documentation-impact check should be configured as a required status check for `main`. Until repository rules are verified, do not merge a PR with this check missing or failing.
+
+## Operational completion rule
+
+External operational work can change reality without changing a source file. Therefore:
+
+- configuring secrets;
+- applying a hosted migration;
+- changing a domain;
+- deploying or rolling back;
+- completing production QA;
+- discovering a production blocker;
+
+is not considered complete until a focused PR updates `docs/START-HERE.md` and `tasks/todo.md`.
+
+Before starting the next product PR after operational work, verify the handoff against GitHub, Vercel, Supabase, and relevant issues.
 
 ## Change classification
 
-### Documentation required
-
-Update the relevant canonical documents in the same pull request when a change affects:
+Update canonical docs in the same PR when a change affects:
 
 - product scope or user flow;
-- game rules or scoring;
-- package ownership or architectural boundaries;
-- database tables, stored events, or retention;
-- API contracts;
-- puzzle generation, publication, or administration;
-- answer integrity, security, privacy, or authentication;
-- launch requirements or roadmap priority;
-- supported player data or stat definitions;
-- an approved deferred decision recorded in `docs/START-HERE.md`;
-- operational state material to resuming work.
+- game rules, scoring, completion, or hints;
+- player-data definitions or source policy;
+- lineup generation, recipes, recognizability, publication, or administration;
+- package ownership or dependency boundaries;
+- database tables, stored records, or retention;
+- API/transport contracts;
+- answer integrity, security, authentication, or privacy;
+- launch requirements or roadmap order;
+- deployment/configuration facts needed to resume work.
 
-### Documentation usually not required
-
-A documentation update is normally unnecessary for:
-
-- isolated visual spacing or typography changes;
-- a bug fix that restores already documented behavior;
-- test-only refactoring;
-- internal renaming that does not alter ownership or contracts.
-
-If a supposedly minor change reveals inaccurate documentation, correct the documentation.
+Documentation is usually unnecessary for an isolated style adjustment, test-only refactor, or bug fix that exactly restores already documented behavior. The PR must still state the exception.
 
 ## Pull request completion rule
 
-A material change is not complete until:
+A material PR is complete only when:
 
-1. Code and tests implement the decision.
-2. Relevant canonical documentation reflects the resulting state.
-3. Obsolete statements are removed rather than left beside the new rule.
-4. `tasks/todo.md` reflects what remains, not completed work.
-5. `docs/START-HERE.md` is updated when the handoff state or a durable future decision changed.
-6. The pull request explains any intentional documentation exception.
+1. Code and tests implement one bounded decision.
+2. The final diff matches the scope contract.
+3. Relevant canonical docs reflect the resulting code and approved future direction.
+4. Obsolete statements are removed.
+5. `tasks/todo.md` lists remaining work rather than completed history.
+6. `docs/START-HERE.md` reflects changed handoff or operational state.
+7. Documentation-impact CI passes.
+8. One bounded review checks intent against the diff.
+9. User-facing changes receive browser/mobile verification when applicable.
+10. Outside-scope findings become follow-up work.
 
-## Contradictory decisions
+## Codex operating practices
 
-A later decision may replace an earlier one. When that happens:
+For large changes:
 
-- update the current-state document directly;
-- preserve rationale in the pull request or an architecture decision record when useful;
-- add compatibility or migration notes when stored data or public contracts are affected;
-- do not preserve obsolete rules merely because they were previously documented.
+- begin in analysis/Ask mode with an implementation plan;
+- structure the task like a GitHub issue with goal, owner, paths, constraints, acceptance checks, and stop conditions;
+- keep work to a small reviewable PR rather than an open-ended mission;
+- provide a configured environment and deterministic tests;
+- use `AGENTS.md` as a map to deeper docs;
+- let Codex inspect the app, screenshots, logs, and test evidence where possible;
+- use Codex review as an additional reviewer, not as the sole product approver;
+- capture repeated review feedback as a doc rule, test, lint, or script.
 
-The product may evolve. Documentation drift is not acceptable.
+## Documentation gardening
 
-## Decision records
+At each major milestone, and periodically during active development:
 
-Use an architecture decision record only for choices whose rationale remains useful after implementation changes, such as database strategy, client/server authority, data-source policy, and package boundaries.
+1. compare `docs/START-HERE.md` with current `main`, open PRs/issues, CI, Vercel, and hosted persistence;
+2. compare product docs with actual UI and engine tests;
+3. compare architecture docs with package imports and persistence adapters;
+4. compare `tasks/todo.md` with completed PRs;
+5. remove obsolete statements rather than appending contradictions;
+6. open one focused correction PR.
 
-A decision record should contain:
+A future scheduled Codex task may automate the comparison and open a proposed PR, but it should not silently rewrite product decisions.
 
-- decision;
-- context;
-- alternatives considered;
-- consequences;
-- replacement status if superseded.
+## Review question
 
-Decision records explain why. Canonical specifications describe what is currently true. Approved deferred product details belong in `docs/START-HERE.md` until their implementation makes them part of a deeper canonical contract.
+Before merge, ask:
 
-## Review checklist
+> Could a new conversation read `AGENTS.md`, `docs/START-HERE.md`, and `tasks/todo.md` and continue correctly without this chat?
 
-Every material pull request should answer:
-
-- Which canonical documents are affected?
-- Does code still match documented product and game rules?
-- Did completed work remain incorrectly listed as future work?
-- Did a new dependency cross an ownership boundary?
-- Does persisted or generated data require migration or regeneration notes?
-- Did the pull request settle or change an open decision?
-- Could a future contributor read the docs and implement obsolete behavior?
-- Could a new conversation resume from `docs/START-HERE.md` without relying on chat history?
-
-## Maintenance sweep
-
-Before a public launch or major milestone, compare:
-
-- product copy and actual UI;
-- engine rules and tests;
-- generated data fields and specifications;
-- routes and API documentation;
-- database migrations and data-model documentation;
-- completed pull requests and the active task list;
-- `docs/START-HERE.md` against current GitHub, deployment, and roadmap state.
-
-Correct drift directly; do not delay valid product work merely to preserve prior wording.
+If not, the PR is not complete.
