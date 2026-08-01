@@ -104,25 +104,40 @@ Standard Daily is one versioned recipe, not the only selector. Recipes may defin
 
 Future aggregation uses one compact idempotent completed-game submission from native raw facts and ruleset version. The server validates puzzle identity and internal fact consistency and derives the score rather than trusting a submitted total. Percentiles compare the same puzzle and ruleset. No per-action database writes.
 
-## Remaining hosted verification
+## Remaining verification
 
-These require a real browser and/or authenticated editor session and must not be inferred from CI or HTML inspection:
+### Public real-browser gameplay
 
-- resolved `points-v2` outcome/point presentation through an actual browser action;
-- saved-session `/api/daily/hints` hydration and refresh recovery through an actual browser lifecycle;
+These require an actual browser lifecycle but no editor credentials:
+
+- resolved `points-v2` outcome/point presentation;
+- saved-session `/api/daily/hints` hydration and refresh recovery;
 - correct guess, wrong guesses, third strike, Give Up, all-nine continuation, final reveal/completion, and mobile interaction;
-- seven-day Supabase horizon, missing-draft generation, player preview/search/replacement, validation, scheduling, public consumption, and deterministic fallback;
-- action-level network/log inspection during those flows;
-- midnight-Pacific rollover without a coincident redeploy.
+- action-level network/log inspection during those flows.
+
+### Authenticated editorial workflow
+
+These require the editor's authenticated session:
+
+- seven-day Supabase horizon and missing-draft generation;
+- player preview/search/replacement and validation;
+- scheduling one future puzzle and verifying public scheduled/published consumption;
+- deterministic fallback for missing/draft records.
+
+### Timed production observation
+
+- Verify midnight-Pacific rollover by fetching production HTML before and after the boundary while confirming the production deployment ID did not change.
 
 ## Exact next work order
 
-1. Complete the authenticated admin and full real-browser checklist when the editor is available.
-2. In parallel when editor access is unavailable, define the compact completed-game submission, validation, idempotent repository port, and derived-score contract in portable layers.
-3. Add a separate Supabase migration/adapter and public submission route only after that contract is reviewed.
-4. Add same-puzzle/same-ruleset aggregates and percentile UI.
-5. Define gameplay-profile and lineup-recipe contracts, then establish a conservative recognizable Standard Daily pool/recipe.
-6. Continue analytics, monitoring, mobile polish, legal/domain basics, and heritage presentation.
+1. Complete the public real-browser gameplay, refresh, completion, and mobile checklist.
+2. Complete the authenticated admin checklist when the editor is available.
+3. Complete the timed rollover observation at the next suitable Pacific boundary.
+4. Define the compact completed-game submission, validation, idempotent repository port, and derived-score contract in portable layers.
+5. Add a separate Supabase migration/adapter and public submission route only after that contract is reviewed.
+6. Add same-puzzle/same-ruleset aggregates and percentile UI.
+7. Define gameplay-profile and lineup-recipe contracts, then establish a conservative recognizable Standard Daily pool/recipe.
+8. Continue analytics, monitoring, mobile polish, legal/domain basics, and heritage presentation.
 
 ## Open decisions
 

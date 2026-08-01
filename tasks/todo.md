@@ -5,7 +5,7 @@ Last updated: 2026-08-01
 
 Completed history belongs in PRs, canonical docs, or `tasks/lessons.md`. Durable resumption context belongs in `docs/START-HERE.md`.
 
-Current order: finish hosted browser/admin verification when the editor is available; otherwise build compact completed-result contracts and persistence, then the lineup-content system.
+Current order: finish public real-browser gameplay QA, then authenticated admin QA when the editor is available, then completed-result contracts and persistence, then the lineup-content system.
 
 ## 0. Continuity
 
@@ -22,15 +22,24 @@ Current order: finish hosted browser/admin verification when the editor is avail
 - [x] Merge PR #126 and verify instant-hint production payload/build boundaries.
 - [x] Merge PR #128 and verify production deployment from merge SHA `9ba0a44198799fe71b0520d5245b16b39e056fc2` is READY/canonically aliased.
 - [x] Verify production bootstrap shows `0/36 PTS`, `0/9 AB`, a signed `points-v2` token, one current-batter hint bundle, no answer/reveal/future-batter bundle, and no recent runtime errors.
-- [ ] Verify resolved `points-v2` outcome plus awarded-point presentation through a real browser action.
-- [ ] Verify midnight-Pacific rollover without a coincident redeploy.
-- [ ] Verify saved-session `/api/daily/hints` hydration and refresh recovery in a real browser.
+
+### Public real-browser gameplay
+
+- [ ] Verify resolved `points-v2` outcome plus awarded-point presentation.
+- [ ] Verify saved-session `/api/daily/hints` hydration and refresh recovery.
+- [ ] Verify correct guess, wrong guesses, third strike, Give Up, all-nine continuation, final reveal/completion, action responses/logs, and common iPhone/iPad behavior.
+
+### Authenticated editorial workflow
+
 - [ ] Verify seven-day Supabase horizon and missing-draft generation.
 - [ ] Preview/search/replace/revalidate one future slot.
 - [ ] Schedule one future puzzle and verify public scheduled/published consumption.
 - [ ] Verify deterministic fallback for missing/draft records.
-- [ ] Verify correct guess, wrong guesses, third strike, Give Up, all-nine continuation, final reveal/completion, action responses/logs, and common iPhone/iPad behavior.
 - [ ] Reconcile issues #97, #91, and #86 after the full hosted checklist.
+
+### Timed production observation
+
+- [ ] Verify midnight-Pacific rollover without a coincident redeploy by comparing production HTML and deployment ID across the boundary.
 
 ## 2. Versioned scoring/completion
 
