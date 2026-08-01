@@ -1,7 +1,7 @@
 # Architecture and launch-scale plan
 
 Status: Living architecture source of truth  
-Last updated: 2026-07-31
+Last updated: 2026-08-01
 
 ## Product goal
 
@@ -59,10 +59,11 @@ Dependencies do not point upward. React and routes transport/render domain behav
 
 Native completed-at-bat facts preserve slot, initials, HR/3B/2B/1B/BB/K, hints revealed, wrong guesses, and correct/strikeout/Give Up resolution.
 
-- `points-v1`: `5/4/3/2/1/0`, all scheduled at-bats, maximum 45 for nine.
+- `points-v2`: current Standard Daily policy, `4/3/2/1/0.5/0`, all scheduled at-bats, maximum 36 for nine.
+- `points-v1`: compatibility policy, `5/4/3/2/1/0`, all scheduled at-bats, maximum 45 for nine.
 - `legacy-inning-v1`: runner advancement and three-out completion for compatible pre-ruleset sessions.
 
-Ruleset version flows through shared state, engine, signed progression, local persistence, final result, and share output. Do not build a generic plugin framework.
+Ruleset version flows through shared state, engine, signed progression, local persistence, final result, and share output. Point totals and resolved-result copy are derived from the engine policy rather than duplicated in React. Do not build a generic plugin framework.
 
 ## Immediate active-at-bat hint architecture
 
@@ -157,11 +158,10 @@ Vercel and Supabase remain replaceable adapters.
 
 ## Current sequence
 
-1. Verify instant-hint production payload, restored-session hydration, and no active per-click client route.
-2. Complete authenticated admin and real-browser all-nine/refresh QA when the editor is available.
-3. Add compact completed-result persistence and same-puzzle/same-ruleset percentile comparison.
-4. Add gameplay-profile and recipe contracts plus a conservative recognizable Standard Daily recipe.
-5. Continue analytics, monitoring, mobile polish, legal/domain basics, and heritage presentation.
+1. Verify `points-v2`, restored-session hydration, and authenticated admin/all-nine behavior in production.
+2. Add compact completed-result persistence and same-puzzle/same-ruleset percentile comparison.
+3. Add gameplay-profile and recipe contracts plus a conservative recognizable Standard Daily recipe.
+4. Continue analytics, monitoring, mobile polish, legal/domain basics, and heritage presentation.
 
 ## Non-goals
 
