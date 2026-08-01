@@ -59,6 +59,7 @@ Answer integrity: `docs/decisions/0001-daily-answer-integrity.md`.
 - PR #128 merged as `9ba0a44198799fe71b0520d5245b16b39e056fc2` and made `points-v2` the current Standard Daily policy.
 - Production deployment for that exact merge SHA is `READY` and canonically aliased to `https://initial-baseball-web.vercel.app`.
 - Production HTML was verified to show Daily #96, `0/36 PTS`, `0/9 AB`, and a signed `points-v2` bootstrap.
+- The scheduled August 1 rollover observation verified that production advanced from July 31, 2026 / Daily #96 to August 1, 2026 / Daily #97 after midnight Pacific without a coincident redeploy. Deployment `dpl_Bp2gX76FqxQXpjCgAbMY76nUyqwC` remained current, and the post-boundary response served the correct puzzle through Vercel revalidation.
 - The initial production payload retained exactly one current-batter four-hint bundle and contained no answer ID/name, canonical reveal record, credential, service-role data, or unrelated future-batter hint bundle.
 - PR #128 passed typecheck, all tests, file-size checks, the complete canonical data/runtime pipeline, production build, Vercel preview, and three bounded review passes. Four findings were fixed before merge.
 - Production runtime-error checks after deployment reported no errors.
@@ -124,20 +125,15 @@ These require the editor's authenticated session:
 - scheduling one future puzzle and verifying public scheduled/published consumption;
 - deterministic fallback for missing/draft records.
 
-### Timed production observation
-
-- Verify midnight-Pacific rollover by fetching production HTML before and after the boundary while confirming the production deployment ID did not change.
-
 ## Exact next work order
 
 1. Complete the public real-browser gameplay, refresh, completion, and mobile checklist.
 2. Complete the authenticated admin checklist when the editor is available.
-3. Complete the timed rollover observation at the next suitable Pacific boundary.
-4. Define the compact completed-game submission, validation, idempotent repository port, and derived-score contract in portable layers.
-5. Add a separate Supabase migration/adapter and public submission route only after that contract is reviewed.
-6. Add same-puzzle/same-ruleset aggregates and percentile UI.
-7. Define gameplay-profile and lineup-recipe contracts, then establish a conservative recognizable Standard Daily pool/recipe.
-8. Continue analytics, monitoring, mobile polish, legal/domain basics, and heritage presentation.
+3. Define the compact completed-game submission, validation, idempotent repository port, and derived-score contract in portable layers.
+4. Add a separate Supabase migration/adapter and public submission route only after that contract is reviewed.
+5. Add same-puzzle/same-ruleset aggregates and percentile UI.
+6. Define gameplay-profile and lineup-recipe contracts, then establish a conservative recognizable Standard Daily pool/recipe.
+7. Continue analytics, monitoring, mobile polish, legal/domain basics, and heritage presentation.
 
 ## Open decisions
 
