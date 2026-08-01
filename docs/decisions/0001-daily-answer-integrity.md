@@ -1,6 +1,6 @@
 # ADR 0001: Daily launch answer integrity
 
-Status: Accepted, amended 2026-07-31  
+Status: Accepted, amended 2026-08-01  
 Original date: 2026-07-20
 
 ## Decision
@@ -42,7 +42,8 @@ The server derives puzzle, ruleset, pitch, hint depth, strikes, outs, and comple
 - An incorrect guess increases strikes for the same pitch and returns no reveal.
 - A correct guess returns only the authorized current reveal and advances to the next scheduled pitch.
 - Third strike or Give Up returns only the authorized current reveal and records an out.
-- `points-v1` continues through all scheduled at-bats even after three recorded outs.
+- `points-v2` is the current bootstrap policy and continues through all scheduled at-bats even after three recorded outs.
+- Compatible `points-v1` sessions also continue through all scheduled at-bats even after three recorded outs.
 - `legacy-inning-v1` completes at three outs or puzzle exhaustion for compatible pre-ruleset sessions.
 - A completed token authorizes no later hint bundle or answer action.
 
@@ -86,7 +87,7 @@ The browser may persist the opaque token with public local gameplay state. Token
 
 ## Secret and versioning policy
 
-Production and preview use server-only `DAILY_PROGRESSION_SECRET`. It must not cross `NEXT_PUBLIC_*`, props, logs, or client bundles. Token and ruleset formats are versioned so compatible saved sessions can coexist during migration.
+Production and preview use server-only `DAILY_PROGRESSION_SECRET`. It must not cross `NEXT_PUBLIC_*`, props, logs, or client bundles. Token and ruleset formats are versioned so compatible `points-v2`, `points-v1`, and legacy sessions can coexist during migration.
 
 Verification rejects malformed encoding/JSON, unsupported versions, invalid signatures or ranges, cross-date/puzzle use, and completed tokens used for later actions.
 
