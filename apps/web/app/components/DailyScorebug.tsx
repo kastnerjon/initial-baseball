@@ -1,6 +1,6 @@
 import type { JSX } from 'react';
 import {
-  POINTS_V1_DAILY_RULESET_VERSION,
+  isDailyPointsRulesetVersion,
   type DailyBaseState,
   type DailyPointsSummary,
   type DailyPuzzle,
@@ -26,7 +26,7 @@ export function DailyScorebug({
   bases,
   currentStrikeCount,
 }: DailyScorebugProps): JSX.Element {
-  const isPointsGame = rulesetVersion === POINTS_V1_DAILY_RULESET_VERSION;
+  const isPointsGame = isDailyPointsRulesetVersion(rulesetVersion);
 
   return (
     <ScorebugShell

@@ -1,6 +1,7 @@
 import {
   LEGACY_DAILY_RULESET_VERSION,
   POINTS_V1_DAILY_RULESET_VERSION,
+  POINTS_V2_DAILY_RULESET_VERSION,
   type DailyInningState,
   type DailyOutcome,
   type DailyPointsSummary,
@@ -15,6 +16,15 @@ export const POINTS_V1_OUTCOME_POINTS: Readonly<Record<DailyOutcome, number>> = 
   '2B': 3,
   '1B': 2,
   BB: 1,
+  K: 0,
+};
+
+export const POINTS_V2_OUTCOME_POINTS: Readonly<Record<DailyOutcome, number>> = {
+  HR: 4,
+  '3B': 3,
+  '2B': 2,
+  '1B': 1,
+  BB: 0.5,
   K: 0,
 };
 
@@ -36,9 +46,7 @@ export function createDailyPointsSummary(
 ): DailyPointsSummary {
   return {
     points: 0,
-    maximumPoints: rulesetVersion === POINTS_V1_DAILY_RULESET_VERSION
-      ? totalAtBats * POINTS_V1_OUTCOME_POINTS.HR
-      : 0,
+    maximumPoints: getDailyMaximumPoints(rulesetVersion, totalAtBats),
     atBatsCompleted: 0,
     totalAtBats,
     completed: false,
@@ -49,9 +57,14 @@ export function getDailyOutcomePoints(
   rulesetVersion: DailyRulesetVersion,
   outcome: DailyOutcome,
 ): number {
-  return rulesetVersion === POINTS_V1_DAILY_RULESET_VERSION
-    ? POINTS_V1_OUTCOME_POINTS[outcome]
-    : 0;
+  return getOutcomePointsMapping(rulesetVersion)?.[outcome] ?? 0;
+}
+
+export function getDailyMaximumPoints(
+  rulesetVersion: DailyRulesetVersion,
+  totalAtBats: number,
+): number {
+  return totalAtBats * getDailyOutcomePoints(rulesetVersion, 'HR');
 }
 
 export function applyDailyOutcomeForRuleset(
@@ -100,10 +113,22 @@ export function applyDailyOutcomeForRuleset(
     },
     points: {
       points: input.points.points + getDailyOutcomePoints(input.rulesetVersion, input.outcome),
-      maximumPoints: input.totalAtBats * POINTS_V1_OUTCOME_POINTS.HR,
+      maximumPoints: getDailyMaximumPoints(input.rulesetVersion, input.totalAtBats),
       atBatsCompleted,
       totalAtBats: input.totalAtBats,
       completed,
     },
   };
+}
+
+function getOutcomePointsMapping(
+  rulesetVersion: DailyRulesetVersion,
+): Readonly<Record<DailyOutcome, number>> | null {
+  if (rulesetVersion === POINTS_V1_DAILY_RULESET_VERSION) {
+    return POINTS_V1_OUTCOME_POINTS;
+  }
+  if (rulesetVersion === POINTS_V2_DAILY_RULESET_VERSION) {
+    return POINTS_V2_OUTCOME_POINTS;
+  }
+  return null;
 }

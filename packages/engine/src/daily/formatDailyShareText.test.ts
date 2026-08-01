@@ -4,13 +4,33 @@ import {
   DEFAULT_DAILY_SCORE_SUMMARY,
   LEGACY_DAILY_RULESET_VERSION,
   POINTS_V1_DAILY_RULESET_VERSION,
+  POINTS_V2_DAILY_RULESET_VERSION,
   type DailyCompletedAtBat,
   type DailyGameState,
+  type DailyOutcome,
   type DailyPublicPuzzle,
+  type DailyRulesetVersion,
 } from '@initial-baseball/shared';
 import { applyDailyOutcomeForRuleset, createDailyPointsSummary } from './applyDailyRuleset.js';
 import { createDailyShareResult } from './createDailyShareResult.js';
 import { formatDailyShareText } from './formatDailyShareText.js';
+
+const puzzle: DailyPublicPuzzle = {
+  id: 'puzzle-42',
+  puzzleNumber: 42,
+  puzzleDate: '2026-04-27',
+  status: 'published',
+  hintConfig: DEFAULT_DAILY_HINT_CONFIG,
+  statsHintConfig: {
+    hitter: ['bwar', 'hr'],
+    pitcher: ['bwar', 'era'],
+  },
+  pitches: [
+    { pitchNumber: 1, initials: 'KGJ' },
+    { pitchNumber: 2, initials: 'DW' },
+    { pitchNumber: 3, initials: 'CCS' },
+  ],
+};
 
 it('formats a compatible legacy result with baseball totals', () => {
   expect(formatDailyShareText({
@@ -53,56 +73,12 @@ it('formats a compatible legacy result with baseball totals', () => {
 });
 
 it('formats stable spoiler-safe points-v1 share text from engine state', () => {
-  const puzzle: DailyPublicPuzzle = {
-    id: 'puzzle-42',
-    puzzleNumber: 42,
-    puzzleDate: '2026-04-27',
-    status: 'published',
-    hintConfig: DEFAULT_DAILY_HINT_CONFIG,
-    statsHintConfig: {
-      hitter: ['bwar', 'hr'],
-      pitcher: ['bwar', 'era'],
-    },
-    pitches: [
-      { pitchNumber: 1, initials: 'KGJ' },
-      { pitchNumber: 2, initials: 'DW' },
-      { pitchNumber: 3, initials: 'CCS' },
-    ],
-  };
-
-  let gameState: DailyGameState = {
-    anonymousPlayerId: 'anon-1',
-    status: 'in_progress',
-    rulesetVersion: POINTS_V1_DAILY_RULESET_VERSION,
-    puzzle,
-    inning: {
-      inningNumber: 1,
-      outs: 0,
-      maxOuts: 3,
-      bases: { first: false, second: false, third: false },
-      completedAtBats: [],
-      currentAtBat: null,
-    },
-    score: DEFAULT_DAILY_SCORE_SUMMARY,
-    points: createDailyPointsSummary(POINTS_V1_DAILY_RULESET_VERSION, puzzle.pitches.length),
-    completedAtBats: [],
-    completedPitchLines: [],
-    shareResult: null,
-  };
-
+  let gameState = createPointsGameState(POINTS_V1_DAILY_RULESET_VERSION);
   gameState = applyOutcome(gameState, 'HR', 'KGJ', 1);
   gameState = applyOutcome(gameState, '2B', 'DW', 2);
   gameState = applyOutcome(gameState, 'K', 'CCS', 3);
 
-  const shareText = formatDailyShareText(createDailyShareResult({
-    gameState: {
-      ...gameState,
-      status: 'completed',
-      score: { ...gameState.score, completed: true },
-      points: { ...gameState.points, completed: true },
-    },
-    url: 'https://dailyinning.com',
-  }));
+  const shareText = formatCompletedShare(gameState);
 
   expect(shareText).toBe([
     'Daily Inning #42',
@@ -117,14 +93,70 @@ it('formats stable spoiler-safe points-v1 share text from engine state', () => {
     'https://dailyinning.com',
   ].join('\n'));
 
-  expect(shareText).not.toContain('Ken Griffey Jr.');
-  expect(shareText).not.toContain('David Wright');
-  expect(shareText).not.toContain('CC Sabathia');
+  expectSpoilerSafe(shareText);
 });
+
+it('formats points-v2 fractional scoring without falling back to legacy totals', () => {
+  let gameState = createPointsGameState(POINTS_V2_DAILY_RULESET_VERSION);
+  gameState = applyOutcome(gameState, 'HR', 'KGJ', 1);
+  gameState = applyOutcome(gameState, 'BB', 'DW', 2);
+  gameState = applyOutcome(gameState, 'K', 'CCS', 3);
+
+  const shareText = formatCompletedShare(gameState);
+
+  expect(shareText).toBe([
+    'Daily Inning #42',
+    'by Initial Baseball',
+    '',
+    '4.5/12 PTS · 1 K',
+    '',
+    'KGJ: HR',
+    'DW: BB',
+    'CCS: K',
+    '',
+    'https://dailyinning.com',
+  ].join('\n'));
+  expect(shareText).not.toContain(' R / ');
+  expectSpoilerSafe(shareText);
+});
+
+function createPointsGameState(rulesetVersion: DailyRulesetVersion): DailyGameState {
+  return {
+    anonymousPlayerId: 'anon-1',
+    status: 'in_progress',
+    rulesetVersion,
+    puzzle,
+    inning: {
+      inningNumber: 1,
+      outs: 0,
+      maxOuts: 3,
+      bases: { first: false, second: false, third: false },
+      completedAtBats: [],
+      currentAtBat: null,
+    },
+    score: DEFAULT_DAILY_SCORE_SUMMARY,
+    points: createDailyPointsSummary(rulesetVersion, puzzle.pitches.length),
+    completedAtBats: [],
+    completedPitchLines: [],
+    shareResult: null,
+  };
+}
+
+function formatCompletedShare(gameState: DailyGameState): string {
+  return formatDailyShareText(createDailyShareResult({
+    gameState: {
+      ...gameState,
+      status: 'completed',
+      score: { ...gameState.score, completed: true },
+      points: { ...gameState.points, completed: true },
+    },
+    url: 'https://dailyinning.com',
+  }));
+}
 
 function applyOutcome(
   gameState: DailyGameState,
-  outcome: 'HR' | '2B' | 'K',
+  outcome: DailyOutcome,
   initials: string,
   pitchNumber: number,
 ): DailyGameState {
@@ -140,7 +172,7 @@ function applyOutcome(
     pitchNumber,
     initials,
     outcome,
-    hintsRevealed: outcome === 'HR' ? 0 : outcome === '2B' ? 2 : 0,
+    hintsRevealed: revealCountForOutcome(outcome),
     wrongGuesses: outcome === 'K' ? 3 : 0,
     resolution: outcome === 'K' ? 'strikeout' : 'correct',
   };
@@ -153,4 +185,21 @@ function applyOutcome(
     completedAtBats: [...gameState.completedAtBats, completedAtBat],
     completedPitchLines: [...gameState.completedPitchLines, { initials, outcome }],
   };
+}
+
+function revealCountForOutcome(outcome: DailyOutcome): 0 | 1 | 2 | 3 | 4 {
+  switch (outcome) {
+    case 'HR': return 0;
+    case '3B': return 1;
+    case '2B': return 2;
+    case '1B': return 3;
+    case 'BB': return 4;
+    case 'K': return 0;
+  }
+}
+
+function expectSpoilerSafe(shareText: string): void {
+  expect(shareText).not.toContain('Ken Griffey Jr.');
+  expect(shareText).not.toContain('David Wright');
+  expect(shareText).not.toContain('CC Sabathia');
 }

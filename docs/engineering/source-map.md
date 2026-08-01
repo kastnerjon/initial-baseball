@@ -21,7 +21,7 @@ Use this map to find the owning document or code layer before changing behavior.
 |---|---|
 | Shared game/result/ruleset types | `packages/shared/src/types/daily.ts` |
 | Outcome by hint depth | `packages/engine/src/scoring/getHitResultForRevealCount.ts` |
-| Versioned scoring/completion | `packages/engine/src/daily/applyDailyRuleset.ts` |
+| Versioned scoring/completion and point weights | `packages/engine/src/daily/applyDailyRuleset.ts` |
 | Legacy inning application | `packages/engine/src/daily/applyDailyOutcomeToInning.ts` |
 | Result/share calculation | `packages/engine/src/daily/createDailyShareResult.ts` and `formatDailyShareText.ts` |
 | Guess/search behavior | `packages/engine/src/guesses/` |
@@ -33,8 +33,9 @@ Use this map to find the owning document or code layer before changing behavior.
 | Change needed | Go here |
 |---|---|
 | Daily page/components | `apps/web/app/` |
-| Initial game state | `apps/web/app/dailyClientState.ts` |
+| Initial game state and current ruleset selection | `apps/web/app/dailyClientState.ts` |
 | Terminal raw facts | `apps/web/app/dailyAtBatResolution.ts` |
+| Resolved outcome and awarded-point presentation | `apps/web/app/components/ResultDisplay.tsx` and `formatDailyAwardedPoints.ts` |
 | Local Hint transition | `apps/web/app/dailyHintBundle.ts` |
 | Active hint-bundle contract | `apps/web/app/dailyRuntimeContracts.ts` |
 | Bootstrap/bundle/resolve authorization | `apps/web/app/dailyRuntimeService.ts` |

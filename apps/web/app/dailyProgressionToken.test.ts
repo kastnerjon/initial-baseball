@@ -2,6 +2,7 @@ import { createHmac } from 'node:crypto';
 import {
   LEGACY_DAILY_RULESET_VERSION,
   POINTS_V1_DAILY_RULESET_VERSION,
+  POINTS_V2_DAILY_RULESET_VERSION,
 } from '@initial-baseball/shared';
 import { describe, expect, it } from 'vitest';
 import {
@@ -34,6 +35,16 @@ describe('Daily progression token codec', () => {
     expect(token).not.toContain(secret);
   });
 
+  it('round-trips points-v2 progression claims', () => {
+    const codec = createDailyProgressionTokenCodec(secret);
+    const pointsV2Claims = {
+      ...claims,
+      rulesetVersion: POINTS_V2_DAILY_RULESET_VERSION,
+    };
+
+    expect(codec.verify(codec.sign(pointsV2Claims))).toEqual(pointsV2Claims);
+  });
+
   it('normalizes signed pre-ruleset claims to the legacy inning policy', () => {
     const codec = createDailyProgressionTokenCodec(secret);
     const { rulesetVersion: _rulesetVersion, ...legacyClaims } = claims;
@@ -44,9 +55,14 @@ describe('Daily progression token codec', () => {
     });
   });
 
-  it('allows points-v1 progression to remain incomplete at three recorded outs', () => {
+  it('allows points progression to remain incomplete at three recorded outs', () => {
     const codec = createDailyProgressionTokenCodec(secret);
-    const threeOutClaims = { ...claims, outCount: 3 as const, completed: false };
+    const threeOutClaims = {
+      ...claims,
+      rulesetVersion: POINTS_V2_DAILY_RULESET_VERSION,
+      outCount: 3 as const,
+      completed: false,
+    };
 
     expect(codec.verify(codec.sign(threeOutClaims))).toEqual(threeOutClaims);
   });

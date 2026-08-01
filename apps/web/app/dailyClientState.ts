@@ -1,8 +1,8 @@
 import { createDailyPointsSummary } from '@initial-baseball/engine';
 import {
+  CURRENT_DAILY_RULESET_VERSION,
   DEFAULT_DAILY_BASE_STATE,
   DEFAULT_DAILY_SCORE_SUMMARY,
-  POINTS_V1_DAILY_RULESET_VERSION,
   type DailyGameState,
   type DailyGuessResult,
   type DailyInningState,
@@ -36,11 +36,11 @@ export function createInitialDailyGameState(puzzle: DailyPublicPuzzle): DailyGam
   return {
     anonymousPlayerId: 'anon-demo',
     status: 'in_progress',
-    rulesetVersion: POINTS_V1_DAILY_RULESET_VERSION,
+    rulesetVersion: CURRENT_DAILY_RULESET_VERSION,
     puzzle,
     inning: createInitialDailyInningState(),
     score: { ...DEFAULT_DAILY_SCORE_SUMMARY },
-    points: createDailyPointsSummary(POINTS_V1_DAILY_RULESET_VERSION, puzzle.pitches.length),
+    points: createDailyPointsSummary(CURRENT_DAILY_RULESET_VERSION, puzzle.pitches.length),
     completedAtBats: [],
     completedPitchLines: [],
     shareResult: null,

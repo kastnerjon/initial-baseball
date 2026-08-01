@@ -218,6 +218,7 @@ export function DailyInningGame({
       ) : null}
       <AtBatCard
         atBat={activePitch}
+        rulesetVersion={gameState.rulesetVersion}
         state={atBatState}
         requestPending={requestPending}
         requestError={requestError}

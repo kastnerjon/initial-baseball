@@ -2,11 +2,18 @@ import { describe, expect, it } from 'vitest';
 import {
   LEGACY_DAILY_RULESET_VERSION,
   POINTS_V1_DAILY_RULESET_VERSION,
+  POINTS_V2_DAILY_RULESET_VERSION,
   type DailyInningState,
+  type DailyOutcome,
   type DailyScoreSummary,
 } from '@initial-baseball/shared';
 import { applyDailyOutcomeToInning } from './applyDailyOutcomeToInning.js';
-import { applyDailyOutcomeForRuleset, createDailyPointsSummary } from './applyDailyRuleset.js';
+import {
+  applyDailyOutcomeForRuleset,
+  createDailyPointsSummary,
+  getDailyMaximumPoints,
+  getDailyOutcomePoints,
+} from './applyDailyRuleset.js';
 
 const baseInning = (bases: DailyInningState['bases'], outs = 0): DailyInningState => ({
   inningNumber: 1,
@@ -175,18 +182,36 @@ describe('applyDailyOutcomeToInning', () => {
   });
 });
 
-describe('applyDailyOutcomeForRuleset', () => {
-  it('keeps points-v1 active after three strikeouts and continues scoring later at-bats', () => {
+describe('Daily point policies', () => {
+  it.each([
+    ['HR', 4],
+    ['3B', 3],
+    ['2B', 2],
+    ['1B', 1],
+    ['BB', 0.5],
+    ['K', 0],
+  ] as const)('awards %s as %s points in points-v2', (outcome, expectedPoints) => {
+    expect(getDailyOutcomePoints(POINTS_V2_DAILY_RULESET_VERSION, outcome)).toBe(expectedPoints);
+  });
+
+  it('keeps points-v1 values available for compatible saved games', () => {
+    const outcomes: DailyOutcome[] = ['HR', '3B', '2B', '1B', 'BB', 'K'];
+    expect(outcomes.map(outcome => getDailyOutcomePoints(POINTS_V1_DAILY_RULESET_VERSION, outcome)))
+      .toEqual([5, 4, 3, 2, 1, 0]);
+    expect(getDailyMaximumPoints(POINTS_V1_DAILY_RULESET_VERSION, 9)).toBe(45);
+  });
+
+  it('keeps points-v2 active after three strikeouts and continues scoring later at-bats', () => {
     let state = {
       inning: baseInning({ first: false, second: false, third: false }),
       score: baseScore(),
-      points: createDailyPointsSummary(POINTS_V1_DAILY_RULESET_VERSION, 9),
+      points: createDailyPointsSummary(POINTS_V2_DAILY_RULESET_VERSION, 9),
     };
 
     for (let index = 0; index < 3; index += 1) {
       state = applyDailyOutcomeForRuleset({
         ...state,
-        rulesetVersion: POINTS_V1_DAILY_RULESET_VERSION,
+        rulesetVersion: POINTS_V2_DAILY_RULESET_VERSION,
         outcome: 'K',
         totalAtBats: 9,
       });
@@ -198,34 +223,34 @@ describe('applyDailyOutcomeForRuleset', () => {
 
     state = applyDailyOutcomeForRuleset({
       ...state,
-      rulesetVersion: POINTS_V1_DAILY_RULESET_VERSION,
+      rulesetVersion: POINTS_V2_DAILY_RULESET_VERSION,
       outcome: 'HR',
       totalAtBats: 9,
     });
 
-    expect(state.points).toMatchObject({ points: 5, maximumPoints: 45, atBatsCompleted: 4, completed: false });
+    expect(state.points).toMatchObject({ points: 4, maximumPoints: 36, atBatsCompleted: 4, completed: false });
     expect(state.score.completed).toBe(false);
   });
 
-  it('completes points-v1 only after the ninth scheduled at-bat', () => {
+  it('completes points-v2 only after the ninth scheduled at-bat and preserves half points', () => {
     let state = {
       inning: baseInning({ first: false, second: false, third: false }),
       score: baseScore(),
-      points: createDailyPointsSummary(POINTS_V1_DAILY_RULESET_VERSION, 9),
+      points: createDailyPointsSummary(POINTS_V2_DAILY_RULESET_VERSION, 9),
     };
 
     for (let index = 0; index < 9; index += 1) {
       state = applyDailyOutcomeForRuleset({
         ...state,
-        rulesetVersion: POINTS_V1_DAILY_RULESET_VERSION,
+        rulesetVersion: POINTS_V2_DAILY_RULESET_VERSION,
         outcome: index === 8 ? 'BB' : 'HR',
         totalAtBats: 9,
       });
     }
 
     expect(state.points).toEqual({
-      points: 41,
-      maximumPoints: 45,
+      points: 32.5,
+      maximumPoints: 36,
       atBatsCompleted: 9,
       totalAtBats: 9,
       completed: true,

@@ -1,7 +1,13 @@
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { createDailyShareResult, formatDailyShareText, getGuessOutcome } from '@initial-baseball/engine';
-import type { DailyGameState, DailyGuessResult } from '@initial-baseball/shared';
+import {
+  CURRENT_DAILY_RULESET_VERSION,
+  LEGACY_DAILY_RULESET_VERSION,
+  type DailyGameState,
+  type DailyGuessResult,
+  type DailyRulesetVersion,
+} from '@initial-baseball/shared';
 import { describe, expect, it } from 'vitest';
 import { AtBatCard } from './components/AtBatCard';
 import { PlayerRevealCard } from './components/PlayerRevealCard';
@@ -32,7 +38,7 @@ describe('createGiveUpResult', () => {
 });
 
 describe('resolveDailyTerminalAtBat', () => {
-  it('records Give Up as a zero-point raw at-bat fact without ending points-v1', () => {
+  it('records Give Up as a zero-point raw at-bat fact without ending points-v2', () => {
     const advance = resolveDailyTerminalAtBat({
       gameState: createInitialDemoGameState(DEMO_DAILY_PUZZLE),
       pitch: firstPitch,
@@ -45,7 +51,7 @@ describe('resolveDailyTerminalAtBat', () => {
     expect(advance.score.outs).toBe(1);
     expect(advance.score.hits).toBe(0);
     expect(advance.score.completed).toBe(false);
-    expect(advance.points).toMatchObject({ points: 0, maximumPoints: 30, atBatsCompleted: 1, completed: false });
+    expect(advance.points).toMatchObject({ points: 0, maximumPoints: 24, atBatsCompleted: 1, completed: false });
     expect(advance.completedAtBats).toEqual([{
       pitchNumber: firstPitch.pitchNumber,
       initials: firstPitch.player.initials,
@@ -57,7 +63,7 @@ describe('resolveDailyTerminalAtBat', () => {
     expect(advance.pitchLines).toEqual([{ initials: firstPitch.player.initials, outcome: 'K' }]);
   });
 
-  it('awards five points for an initials-only correct guess', () => {
+  it('awards four points for an initials-only correct guess', () => {
     const correctResult = getGuessOutcome({
       isCorrect: true,
       revealCount: 0,
@@ -81,7 +87,7 @@ describe('resolveDailyTerminalAtBat', () => {
     expect(advance.score.runs).toBe(1);
     expect(advance.score.hits).toBe(1);
     expect(advance.score.outs).toBe(0);
-    expect(advance.points.points).toBe(5);
+    expect(advance.points.points).toBe(4);
     expect(advance.completedAtBats[0]).toMatchObject({
       outcome: 'HR',
       hintsRevealed: 0,
@@ -122,7 +128,7 @@ describe('resolveDailyTerminalAtBat', () => {
     }));
 
     expect(shareText).toContain(`Daily Inning #${DEMO_DAILY_PUZZLE.puzzleNumber}`);
-    expect(shareText).toContain('0/30 PTS');
+    expect(shareText).toContain('0/24 PTS');
     expect(shareText).toContain(`${firstPitch.player.initials}: K`);
     expect(shareText).not.toContain(firstPitch.player.fullName);
     expect(shareText).not.toContain('initialbaseball.com');
@@ -142,7 +148,7 @@ describe('AtBatCard terminal output', () => {
     expect(html).toContain('Guess the player');
   });
 
-  it('reveals the correct answer after Give Up and waits for the next at-bat', () => {
+  it('reveals the correct answer and zero points after Give Up', () => {
     const html = renderAtBatCard({
       submittedResult: createGiveUpResult(0, 3),
       strikeCount: 3,
@@ -152,6 +158,7 @@ describe('AtBatCard terminal output', () => {
     expect(html).toContain('Next At Bat');
     expect(html).not.toContain('Next Pitch');
     expect(html).toContain('K');
+    expect(html).toContain('Strikeout · 0 points');
     expect(html).toContain('Player Reveal');
     expect(html).toContain(firstReveal.displayName);
     expect(html).toContain(`${firstReveal.yearsPlayedDisplay} · Hitter · ${firstReveal.primaryPosition}`);
@@ -174,12 +181,12 @@ describe('AtBatCard terminal output', () => {
       strikeCount: 3,
     });
 
-    expect(html).toContain('Strikeout');
+    expect(html).toContain('Strikeout · 0 points');
     expect(html).toContain('Player Reveal');
     expect(html).toContain(firstReveal.displayName);
   });
 
-  it('reveals the player card after a correct outcome', () => {
+  it('shows both a correct baseball outcome and awarded points', () => {
     const correctResult = getGuessOutcome({
       isCorrect: true,
       revealCount: 1,
@@ -196,11 +203,41 @@ describe('AtBatCard terminal output', () => {
       strikeCount: 0,
     });
 
+    expect(html).toContain('3B');
+    expect(html).toContain('3 points');
     expect(html).toContain('Player Reveal');
     expect(html).toContain(firstReveal.displayName);
     expect(html).toContain(firstReveal.yearsPlayedDisplay);
     expect(html).toContain('Career');
     expect(html).not.toContain(`Answer: ${firstPitch.player.fullName}`);
+  });
+
+  it('preserves outcome-only result copy for legacy inning games', () => {
+    const correctResult = getGuessOutcome({
+      isCorrect: true,
+      revealCount: 0,
+      strikeCount: 0,
+      maxStrikes: 3,
+    });
+    if (correctResult.kind !== 'correct') {
+      throw new Error('Expected a correct result.');
+    }
+
+    const correctHtml = renderAtBatCard({
+      submittedResult: correctResult,
+      strikeCount: 0,
+      rulesetVersion: LEGACY_DAILY_RULESET_VERSION,
+    });
+    const strikeoutHtml = renderAtBatCard({
+      submittedResult: createGiveUpResult(0, 3),
+      strikeCount: 3,
+      rulesetVersion: LEGACY_DAILY_RULESET_VERSION,
+    });
+
+    expect(correctHtml).toContain('HR');
+    expect(correctHtml).not.toContain('points');
+    expect(strikeoutHtml).toContain('Strikeout');
+    expect(strikeoutHtml).not.toContain('0 points');
   });
 });
 
@@ -232,13 +269,16 @@ describe('PlayerRevealCard', () => {
 function renderAtBatCard({
   submittedResult,
   strikeCount,
+  rulesetVersion = CURRENT_DAILY_RULESET_VERSION,
 }: {
   submittedResult: DailyGuessResult | null;
   strikeCount: number;
+  rulesetVersion?: DailyRulesetVersion;
 }): string {
   return renderToStaticMarkup(
     React.createElement(AtBatCard, {
       atBat: { pitchNumber: firstPitch.pitchNumber, initials: firstPitch.player.initials },
+      rulesetVersion,
       state: {
         ...createInitialAtBatUiState(),
         strikeCount,

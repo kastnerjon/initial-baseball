@@ -23,7 +23,7 @@ The active hint bundle contains:
 - all four current-batter hint labels/values;
 - signed checkpoints for only the later reveal depths still available from the current claims.
 
-It contains no answer ID, answer name, reveal record, or future-batter hint. New games use `points-v1`.
+It contains no answer ID, answer name, reveal record, or future-batter hint. New games use `points-v2`. Existing valid `points-v1` and `legacy-inning-v1` tokens retain their own policies.
 
 ## Canonical player search
 
@@ -107,7 +107,7 @@ Behavior:
 - third strike/Give Up: current reveal, recorded out, successor token, next-pitch bundle unless complete;
 - final pitch or legacy three-out completion: completed token and `hintBundle: null`.
 
-The browser does not submit pitch, hint depth, strike count, out count, or ruleset version independently.
+The browser does not submit pitch, hint depth, strike count, out count, or ruleset version independently. After a terminal response, the browser derives the awarded point display from the engine mapping for the verified ruleset and returned outcome. The route does not duplicate a client-trusted point value.
 
 ## Local Hint action
 
@@ -123,7 +123,7 @@ Scoring therefore still uses server-verifiable reveal depth on the later resolut
 
 Claims contain only contract/ruleset version, puzzle ID/date, current pitch, reveal count, strike count, recorded outs, and completion. Tokens contain no hints or answers.
 
-Valid pre-ruleset tokens normalize to `legacy-inning-v1`. Tokens are stateless and replayable; anonymous scoring is not tamper-proof.
+Valid pre-ruleset tokens normalize to `legacy-inning-v1`. Valid `points-v1` and `points-v2` claims round-trip without reinterpretation. Tokens are stateless and replayable; anonymous scoring is not tamper-proof.
 
 ## Browser persistence
 

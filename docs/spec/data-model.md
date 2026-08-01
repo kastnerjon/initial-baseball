@@ -1,7 +1,7 @@
 # Data Model Spec
 
 Status: Current persistence contract and approved next entities  
-Last updated: 2026-07-31
+Last updated: 2026-08-01
 
 ## Ownership
 
@@ -74,7 +74,7 @@ Current browser state includes:
 - ordered spoiler-safe raw completed-at-bat facts: pitch number, initials, outcome, hints revealed, wrong guesses, and correct/strikeout/Give Up resolution;
 - opaque signed progression token.
 
-New games use `points-v1`. Compatible pre-ruleset schema-3 saves and signed tokens normalize to `legacy-inning-v1` so an already-started game is not silently changed from three-out completion to all-scheduled-at-bats completion.
+New games use `points-v2` with `4/3/2/1/0.5/0` and a 36-point maximum. Compatible `points-v1` saves and signed tokens retain `5/4/3/2/1/0` and a 45-point maximum. Compatible pre-ruleset saves and signed tokens normalize to `legacy-inning-v1` so an already-started game is not silently changed from three-out completion to all-scheduled-at-bats completion.
 
 No Redis, replay cache, durable anonymous server session, or database write per hint/guess is part of the accepted launch model.
 
@@ -131,7 +131,7 @@ The future raw contract should preserve:
 
 The browser now records the native raw facts needed to form that later submission. No relational results table or submission API exists yet. Legacy facts reconstructed from old local pitch lines are compatibility display data and should not be treated as analytics-quality native submissions without an explicit migration rule.
 
-Percentiles compare the same puzzle and ruleset version. Raw facts are retained so formulas and aggregates can be recalculated.
+Percentiles compare the same puzzle and ruleset version. Raw facts are retained so formulas and aggregates can be recalculated. `points-v1` and `points-v2` results must remain in separate comparison populations.
 
 Do not reuse inactive legacy attempt/result tables by default and do not introduce per-action writes.
 

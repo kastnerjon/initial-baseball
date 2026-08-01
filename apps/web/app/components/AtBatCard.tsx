@@ -5,7 +5,11 @@ import { useEffect, useState } from 'react';
 import {
   type PlayerSearchResult,
 } from '@initial-baseball/engine';
-import type { DailyGuessResult, DailyPublicPuzzlePitch } from '@initial-baseball/shared';
+import type {
+  DailyGuessResult,
+  DailyPublicPuzzlePitch,
+  DailyRulesetVersion,
+} from '@initial-baseball/shared';
 import type { CanonicalRevealViewModel } from '../canonicalRevealViewModel';
 import type { DailyHintResponse } from '../dailyRuntimeContracts';
 import { PlayerRevealCard } from './PlayerRevealCard';
@@ -15,6 +19,7 @@ import { SearchInput } from './SearchInput';
 
 type AtBatCardProps = {
   atBat: DailyPublicPuzzlePitch;
+  rulesetVersion: DailyRulesetVersion;
   state: {
     query: string;
     selectedPlayerId: string | null;
@@ -36,6 +41,7 @@ type AtBatCardProps = {
 
 export function AtBatCard({
   atBat,
+  rulesetVersion,
   state,
   requestPending,
   requestError,
@@ -83,7 +89,7 @@ export function AtBatCard({
           <span className="pitch-number">{`At Bat ${atBat.pitchNumber}`}</span>
           <CountIndicator label="Strikes" filledCount={state.strikeCount} total={3} />
         </div>
-        <ResultDisplay result={resolvedTerminalResult} />
+        <ResultDisplay result={resolvedTerminalResult} rulesetVersion={rulesetVersion} />
         {state.reveal === null ? null : <PlayerRevealCard reveal={state.reveal} />}
         <OutcomeDistributionPlaceholder />
         <button
@@ -149,7 +155,7 @@ export function AtBatCard({
       </div>
 
       {state.submittedResult !== null && state.submittedResult.kind === 'incorrect' ? (
-        <ResultDisplay result={state.submittedResult} />
+        <ResultDisplay result={state.submittedResult} rulesetVersion={rulesetVersion} />
       ) : null}
       {requestError === null ? null : <p role="alert">{requestError}</p>}
 
