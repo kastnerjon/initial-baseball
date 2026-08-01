@@ -3,8 +3,10 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { createDailyShareResult, formatDailyShareText, getGuessOutcome } from '@initial-baseball/engine';
 import {
   CURRENT_DAILY_RULESET_VERSION,
+  LEGACY_DAILY_RULESET_VERSION,
   type DailyGameState,
   type DailyGuessResult,
+  type DailyRulesetVersion,
 } from '@initial-baseball/shared';
 import { describe, expect, it } from 'vitest';
 import { AtBatCard } from './components/AtBatCard';
@@ -209,6 +211,34 @@ describe('AtBatCard terminal output', () => {
     expect(html).toContain('Career');
     expect(html).not.toContain(`Answer: ${firstPitch.player.fullName}`);
   });
+
+  it('preserves outcome-only result copy for legacy inning games', () => {
+    const correctResult = getGuessOutcome({
+      isCorrect: true,
+      revealCount: 0,
+      strikeCount: 0,
+      maxStrikes: 3,
+    });
+    if (correctResult.kind !== 'correct') {
+      throw new Error('Expected a correct result.');
+    }
+
+    const correctHtml = renderAtBatCard({
+      submittedResult: correctResult,
+      strikeCount: 0,
+      rulesetVersion: LEGACY_DAILY_RULESET_VERSION,
+    });
+    const strikeoutHtml = renderAtBatCard({
+      submittedResult: createGiveUpResult(0, 3),
+      strikeCount: 3,
+      rulesetVersion: LEGACY_DAILY_RULESET_VERSION,
+    });
+
+    expect(correctHtml).toContain('HR');
+    expect(correctHtml).not.toContain('points');
+    expect(strikeoutHtml).toContain('Strikeout');
+    expect(strikeoutHtml).not.toContain('0 points');
+  });
 });
 
 describe('PlayerRevealCard', () => {
@@ -239,14 +269,16 @@ describe('PlayerRevealCard', () => {
 function renderAtBatCard({
   submittedResult,
   strikeCount,
+  rulesetVersion = CURRENT_DAILY_RULESET_VERSION,
 }: {
   submittedResult: DailyGuessResult | null;
   strikeCount: number;
+  rulesetVersion?: DailyRulesetVersion;
 }): string {
   return renderToStaticMarkup(
     React.createElement(AtBatCard, {
       atBat: { pitchNumber: firstPitch.pitchNumber, initials: firstPitch.player.initials },
-      rulesetVersion: CURRENT_DAILY_RULESET_VERSION,
+      rulesetVersion,
       state: {
         ...createInitialAtBatUiState(),
         strikeCount,
