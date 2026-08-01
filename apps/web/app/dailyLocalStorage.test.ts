@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+  CURRENT_DAILY_RULESET_VERSION,
   LEGACY_DAILY_RULESET_VERSION,
   POINTS_V1_DAILY_RULESET_VERSION,
   type DailyGameState,
@@ -81,6 +82,7 @@ describe('dailyLocalStorage', () => {
     const storage = new FakeStorage();
     const gameState: DailyGameState = {
       ...createInitialDemoGameState(DEMO_DAILY_PUZZLE),
+      rulesetVersion: POINTS_V1_DAILY_RULESET_VERSION,
       completedPitchLines: [{ initials: 'KGJ', outcome: 'HR' }],
       completedAtBats: [{
         pitchNumber: 1,
@@ -142,6 +144,42 @@ describe('dailyLocalStorage', () => {
     });
   });
 
+  it('round-trips current points-v2 state with half points', () => {
+    const storage = new FakeStorage();
+    const gameState: DailyGameState = {
+      ...createInitialDemoGameState(DEMO_DAILY_PUZZLE),
+      completedPitchLines: [{ initials: 'KGJ', outcome: 'BB' }],
+      completedAtBats: [{
+        pitchNumber: 1,
+        initials: 'KGJ',
+        outcome: 'BB',
+        hintsRevealed: 4,
+        wrongGuesses: 0,
+        resolution: 'correct',
+      }],
+      points: {
+        points: 0.5,
+        maximumPoints: 24,
+        atBatsCompleted: 1,
+        totalAtBats: 6,
+        completed: false,
+      },
+    };
+
+    saveDailyGame(DEMO_DAILY_PUZZLE, {
+      currentPitchIndex: 1,
+      gameState,
+      atBatState: createInitialAtBatUiState(),
+      pendingAdvance: null,
+      progressionToken: savedProgressionToken,
+    }, storage);
+
+    expect(load(storage)?.gameState).toMatchObject({
+      rulesetVersion: CURRENT_DAILY_RULESET_VERSION,
+      points: { points: 0.5, maximumPoints: 24, atBatsCompleted: 1 },
+    });
+  });
+
   it('normalizes pre-ruleset schema-3 state to legacy inning behavior', () => {
     const storage = new FakeStorage();
     const savedGame = buildSavedGame({
@@ -170,7 +208,7 @@ describe('dailyLocalStorage', () => {
     }]);
   });
 
-  it('preserves an untouched schema-1 selected player ID and assigns the points-v1 initial token', () => {
+  it('preserves an untouched schema-1 selected player ID and assigns the current initial token', () => {
     const storage = new FakeStorage();
     const savedGame = buildSavedGame({
       atBatState: {
@@ -189,7 +227,7 @@ describe('dailyLocalStorage', () => {
     expect(restored?.atBatState.selectedPlayerId).toBe('player-42');
     expect(restored?.schemaVersion).toBe(3);
     expect(restored?.progressionToken).toBe(initialProgressionToken);
-    expect(restored?.gameState.rulesetVersion).toBe(POINTS_V1_DAILY_RULESET_VERSION);
+    expect(restored?.gameState.rulesetVersion).toBe(CURRENT_DAILY_RULESET_VERSION);
   });
 
   it('preserves an untouched schema-2 start with the initial token', () => {

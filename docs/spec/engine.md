@@ -34,24 +34,35 @@ These outcomes are the stable vocabulary. Scoring and completion policies interp
 
 ## Versioned Daily policies
 
-### `points-v1` — current Standard Daily
+### `points-v2` — current Standard Daily
 
 | Outcome | Points |
 |---|---:|
-| HR | 5 |
-| 3B | 4 |
-| 2B | 3 |
-| 1B | 2 |
-| BB | 1 |
+| HR | 4 |
+| 3B | 3 |
+| 2B | 2 |
+| 1B | 1 |
+| BB | 0.5 |
 | K | 0 |
 
 Rules:
 
 - all scheduled at-bats are played;
 - a third strikeout does not complete the game;
-- nine standard at-bats produce a maximum of 45 points;
+- nine standard at-bats produce a maximum of 36 points;
+- the resolved at-bat UI derives and displays the awarded points from this engine policy beside the baseball outcome;
 - point completion, signed server progression, browser state, result formatting, and share output carry the same ruleset version;
-- baseball inning state may stop advancing after three outs, but it does not control `points-v1` completion.
+- baseball inning state may stop advancing after three outs, but it does not control `points-v2` completion.
+
+### `points-v1` — compatibility policy
+
+The first points policy remains valid for compatible signed tokens and saved games:
+
+- HR/3B/2B/1B/BB/K = `5/4/3/2/1/0`;
+- nine at-bats produce a 45-point maximum;
+- existing results are displayed and recalculated under `points-v1`, not silently converted to `points-v2`.
+
+New Standard Daily bootstraps do not use this policy.
 
 ### `legacy-inning-v1` — compatibility policy
 
@@ -69,7 +80,7 @@ Do not create a broad plugin framework. Use explicit small versioned policies an
 
 ## Raw result facts
 
-Each resolved at-bat now preserves spoiler-safe stable facts independently from the numeric point total:
+Each resolved at-bat preserves spoiler-safe stable facts independently from the numeric point total:
 
 - pitch/slot number;
 - initials;
@@ -106,11 +117,13 @@ Players select canonical search results. Correctness is exact canonical `playerI
 - walk force advancement;
 - single/double/triple/HR advancement;
 - legacy three-out completion;
-- `points-v1` mapping and all-scheduled-at-bats completion;
-- continuation after a third recorded out under `points-v1`;
+- `points-v2` mapping, fractional walks, 36-point maximum, and all-scheduled-at-bats completion;
+- `points-v1` compatibility mapping and 45-point maximum;
+- continuation after a third recorded out under both points policies;
 - ruleset-version token serialization and legacy normalization;
 - raw-fact preservation;
 - local saved-state compatibility;
+- resolved outcome plus awarded-point presentation;
 - settings validation;
 - spoiler-safe share output;
 - representative initials and hint generation.

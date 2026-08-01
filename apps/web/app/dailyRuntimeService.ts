@@ -1,8 +1,8 @@
 import type { CanonicalRuntimeAccessor } from '@initial-baseball/baseball-data/runtime';
 import { getGuessOutcome } from '@initial-baseball/engine';
 import {
+  CURRENT_DAILY_RULESET_VERSION,
   LEGACY_DAILY_RULESET_VERSION,
-  POINTS_V1_DAILY_RULESET_VERSION,
   type DailyGuessResult,
   type DailyPuzzle,
   type DailyPublicPuzzle,
@@ -128,7 +128,7 @@ export function createDailyRuntimeService({
       }
       const claims: DailyProgressionClaims = {
         version: 1,
-        rulesetVersion: POINTS_V1_DAILY_RULESET_VERSION,
+        rulesetVersion: CURRENT_DAILY_RULESET_VERSION,
         puzzleId: puzzle.id,
         puzzleDate: puzzle.puzzleDate,
         pitchNumber: firstPitch.pitchNumber,

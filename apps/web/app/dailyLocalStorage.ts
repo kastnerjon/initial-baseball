@@ -1,7 +1,8 @@
 import { createDailyPointsSummary, getDailyOutcomePoints } from '@initial-baseball/engine';
 import {
+  CURRENT_DAILY_RULESET_VERSION,
   LEGACY_DAILY_RULESET_VERSION,
-  POINTS_V1_DAILY_RULESET_VERSION,
+  isDailyRulesetVersion,
   type DailyAtBatResolution,
   type DailyCompletedAtBat,
   type DailyGameState,
@@ -295,13 +296,13 @@ function normalizeRulesetVersion(
   completed: boolean,
   schemaVersion: PersistedSavedDailyGame['schemaVersion'],
 ): DailyRulesetVersion {
-  if (value === LEGACY_DAILY_RULESET_VERSION || value === POINTS_V1_DAILY_RULESET_VERSION) {
+  if (isDailyRulesetVersion(value)) {
     return value;
   }
   if (completed || schemaVersion === DAILY_STORAGE_SCHEMA_VERSION) {
     return LEGACY_DAILY_RULESET_VERSION;
   }
-  return POINTS_V1_DAILY_RULESET_VERSION;
+  return CURRENT_DAILY_RULESET_VERSION;
 }
 
 function normalizeCompletedAtBats(

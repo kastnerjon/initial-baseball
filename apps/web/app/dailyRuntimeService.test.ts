@@ -1,5 +1,6 @@
 import { createCanonicalRuntimeAccessor } from '@initial-baseball/baseball-data/runtime';
 import {
+  CURRENT_DAILY_RULESET_VERSION,
   DEFAULT_DAILY_HINT_CONFIG,
   DEFAULT_DAILY_STATS_HINT_CONFIG,
   LEGACY_DAILY_RULESET_VERSION,
@@ -220,9 +221,27 @@ describe('Daily canonical runtime service', () => {
     expect(response.hintBundle?.pitchNumber).toBe(2);
   });
 
-  it('continues points-v1 after a third recorded out', async () => {
+  it('continues the current points policy after a third recorded out', async () => {
     const response = await service.resolveAtBat({
       progressionToken: tokens.sign({ ...initialClaims(), outCount: 2 }),
+      giveUp: true,
+    });
+    expect(tokens.verify(response.progressionToken)).toMatchObject({
+      rulesetVersion: CURRENT_DAILY_RULESET_VERSION,
+      outCount: 3,
+      completed: false,
+      pitchNumber: 2,
+    });
+    expect(response.hintBundle?.pitchNumber).toBe(2);
+  });
+
+  it('preserves points-v1 continuation for existing signed sessions', async () => {
+    const response = await service.resolveAtBat({
+      progressionToken: tokens.sign({
+        ...initialClaims(),
+        rulesetVersion: POINTS_V1_DAILY_RULESET_VERSION,
+        outCount: 2,
+      }),
       giveUp: true,
     });
     expect(tokens.verify(response.progressionToken)).toMatchObject({
@@ -231,7 +250,6 @@ describe('Daily canonical runtime service', () => {
       completed: false,
       pitchNumber: 2,
     });
-    expect(response.hintBundle?.pitchNumber).toBe(2);
   });
 
   it('preserves legacy three-out completion and returns no future bundle', async () => {
@@ -271,7 +289,7 @@ describe('Daily canonical runtime service', () => {
 function initialClaims(): DailyProgressionClaims {
   return {
     version: 1,
-    rulesetVersion: POINTS_V1_DAILY_RULESET_VERSION,
+    rulesetVersion: CURRENT_DAILY_RULESET_VERSION,
     puzzleId: `daily-${date}`,
     puzzleDate: date,
     pitchNumber: 1,

@@ -1,7 +1,7 @@
 import { createHmac, timingSafeEqual } from 'node:crypto';
 import {
   LEGACY_DAILY_RULESET_VERSION,
-  POINTS_V1_DAILY_RULESET_VERSION,
+  isDailyRulesetVersion,
   type DailyRulesetVersion,
 } from '@initial-baseball/shared';
 
@@ -111,10 +111,6 @@ function requireDailyProgressionClaims(value: unknown): DailyProgressionClaims {
     outCount: claims.outCount as DailyProgressionClaims['outCount'],
     completed: claims.completed,
   };
-}
-
-function isDailyRulesetVersion(value: unknown): value is DailyRulesetVersion {
-  return value === LEGACY_DAILY_RULESET_VERSION || value === POINTS_V1_DAILY_RULESET_VERSION;
 }
 
 function sign(input: string, secret: string): string {

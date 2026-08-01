@@ -1,11 +1,11 @@
 # Initial Baseball Current Work
 
 Status: Active ordered implementation plan  
-Last updated: 2026-07-31
+Last updated: 2026-08-01
 
 Completed history belongs in PRs, canonical docs, or `tasks/lessons.md`. Durable resumption context belongs in `docs/START-HERE.md`.
 
-Current order: finish hosted browser/admin verification, then build compact completed-result contracts and persistence, then build the lineup-content system.
+Current order: verify `points-v2` and finish hosted browser/admin verification, then build compact completed-result contracts and persistence, then build the lineup-content system.
 
 ## 0. Continuity
 
@@ -19,9 +19,8 @@ Current order: finish hosted browser/admin verification, then build compact comp
 - [x] Apply editorial migration and verify RLS/service-role boundaries.
 - [x] Verify admin challenge and prior successful editor authentication.
 - [x] Merge/verify `points-v1` production with `0/45 PTS`, `0/9 AB`, signed ruleset token, hidden-answer QA, full CI/data/build, and no runtime errors.
-- [x] Merge PR #126 and verify production deployment `dpl_DLPirNAwyebFCmyD7cf6xU4MPBnJ` is READY/canonically aliased.
-- [x] Verify production initial payload contains exactly one active four-hint bundle with signed checkpoints and no answer/reveal/future-batter bundle.
-- [x] Verify active client chunks contain no exact `/api/daily/hint` request and production runtime errors are empty.
+- [x] Merge PR #126 and verify instant-hint production payload/build boundaries.
+- [ ] Verify `points-v2` production shows `0/36 PTS`, a signed `points-v2` token, and resolved outcome plus awarded points.
 - [ ] Verify midnight-Pacific rollover without redeploy.
 - [ ] Verify saved-session `/api/daily/hints` hydration and refresh recovery in a real browser.
 - [ ] Verify seven-day Supabase horizon and missing-draft generation.
@@ -33,9 +32,13 @@ Current order: finish hosted browser/admin verification, then build compact comp
 
 ## 2. Versioned scoring/completion
 
-- [x] `points-v1` and `legacy-inning-v1` contracts.
+- [x] `legacy-inning-v1` compatibility contract.
+- [x] `points-v1` compatibility contract: `5/4/3/2/1/0`, 45-point maximum.
+- [x] `points-v2` current contract: `4/3/2/1/0.5/0`, 36-point maximum.
 - [x] Native raw at-bat facts independent of final score.
-- [x] `5/4/3/2/1/0`, all scheduled at-bats, legacy compatibility, token/persistence/result/share versioning, focused tests.
+- [x] Ruleset versioning through signed tokens, local persistence, results, and sharing.
+- [x] Resolved at-bat display derives and shows awarded points beside the baseball outcome.
+- [ ] Pass focused tests, full CI, preview, bounded review, merge, and production verification for `points-v2`.
 
 ## 3. Immediate active-batter hints
 
