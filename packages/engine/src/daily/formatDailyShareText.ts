@@ -1,7 +1,10 @@
-import { POINTS_V1_DAILY_RULESET_VERSION, type DailyShareResult } from '@initial-baseball/shared';
+import {
+  isDailyPointsRulesetVersion,
+  type DailyShareResult,
+} from '@initial-baseball/shared';
 
 export function formatDailyShareText(result: DailyShareResult): string {
-  const scoreLine = result.rulesetVersion === POINTS_V1_DAILY_RULESET_VERSION
+  const scoreLine = isDailyPointsRulesetVersion(result.rulesetVersion)
     ? `${result.points.points}/${result.points.maximumPoints} PTS · ${result.summary.strikeouts} K`
     : `${result.summary.runs} R / ${result.summary.hits} H / ${result.summary.outs} OUT`;
   const lines = [
