@@ -39,7 +39,7 @@ Current order: finish public real-browser gameplay QA, then authenticated admin 
 
 ### Timed production observation
 
-- [ ] Verify midnight-Pacific rollover without a coincident redeploy by comparing production HTML and deployment ID across the boundary.
+- [x] Verify midnight-Pacific rollover without a coincident redeploy: production advanced from July 31, 2026 / Daily #96 to August 1, 2026 / Daily #97 while deployment `dpl_Bp2gX76FqxQXpjCgAbMY76nUyqwC` remained current.
 
 ## 2. Versioned scoring/completion
 
