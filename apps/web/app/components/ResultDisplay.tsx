@@ -3,6 +3,7 @@ import { getDailyOutcomePoints } from '@initial-baseball/engine';
 import {
   isDailyPointsRulesetVersion,
   type DailyGuessResult,
+  type DailyOutcome,
   type DailyRulesetVersion,
 } from '@initial-baseball/shared';
 import { formatDailyAwardedPoints } from './formatDailyAwardedPoints';
@@ -20,11 +21,8 @@ export function ResultDisplay({
   correctAnswer,
   revealAnswer = false,
 }: ResultDisplayProps): JSX.Element {
-  const awardedPoints = isDailyPointsRulesetVersion(rulesetVersion)
-    ? formatDailyAwardedPoints(getDailyOutcomePoints(rulesetVersion, result.kind === 'incorrect' ? 'K' : result.outcome))
-    : null;
-
   if (result.kind === 'correct') {
+    const awardedPoints = getAwardedPointsCopy(rulesetVersion, result.outcome);
     return (
       <div className="result-card">
         <span className="result-label">Outcome</span>
@@ -38,6 +36,7 @@ export function ResultDisplay({
   }
 
   if (result.kind === 'strikeout') {
+    const awardedPoints = getAwardedPointsCopy(rulesetVersion, result.outcome);
     return (
       <div className="result-card">
         <span className="result-label">Outcome</span>
@@ -59,4 +58,13 @@ export function ResultDisplay({
       <p className="result-note">{`${result.remainingStrikes} strike${result.remainingStrikes === 1 ? '' : 's'} left in full game rules.`}</p>
     </div>
   );
+}
+
+function getAwardedPointsCopy(
+  rulesetVersion: DailyRulesetVersion,
+  outcome: DailyOutcome,
+): string | null {
+  return isDailyPointsRulesetVersion(rulesetVersion)
+    ? formatDailyAwardedPoints(getDailyOutcomePoints(rulesetVersion, outcome))
+    : null;
 }
