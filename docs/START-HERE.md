@@ -1,7 +1,7 @@
 # Initial Baseball — Start Here
 
 Status: Active project handoff  
-Last updated: 2026-07-31
+Last updated: 2026-08-01
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
