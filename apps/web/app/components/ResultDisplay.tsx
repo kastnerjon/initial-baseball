@@ -1,6 +1,10 @@
 import type { JSX } from 'react';
 import { getDailyOutcomePoints } from '@initial-baseball/engine';
-import type { DailyGuessResult, DailyRulesetVersion } from '@initial-baseball/shared';
+import {
+  isDailyPointsRulesetVersion,
+  type DailyGuessResult,
+  type DailyRulesetVersion,
+} from '@initial-baseball/shared';
 import { formatDailyAwardedPoints } from './formatDailyAwardedPoints';
 
 type ResultDisplayProps = {
@@ -16,14 +20,16 @@ export function ResultDisplay({
   correctAnswer,
   revealAnswer = false,
 }: ResultDisplayProps): JSX.Element {
+  const awardedPoints = isDailyPointsRulesetVersion(rulesetVersion)
+    ? formatDailyAwardedPoints(getDailyOutcomePoints(rulesetVersion, result.kind === 'incorrect' ? 'K' : result.outcome))
+    : null;
+
   if (result.kind === 'correct') {
     return (
       <div className="result-card">
         <span className="result-label">Outcome</span>
         <strong className="result-value">{result.outcome}</strong>
-        <p className="result-note">
-          {formatDailyAwardedPoints(getDailyOutcomePoints(rulesetVersion, result.outcome))}
-        </p>
+        {awardedPoints === null ? null : <p className="result-note">{awardedPoints}</p>}
         {correctAnswer !== undefined ? (
           <p className="result-note">{`Answer: ${correctAnswer}`}</p>
         ) : null}
@@ -37,7 +43,7 @@ export function ResultDisplay({
         <span className="result-label">Outcome</span>
         <strong className="result-value">{result.outcome}</strong>
         <p className="result-note">
-          {`Strikeout · ${formatDailyAwardedPoints(getDailyOutcomePoints(rulesetVersion, result.outcome))}`}
+          {awardedPoints === null ? 'Strikeout' : `Strikeout · ${awardedPoints}`}
         </p>
         {revealAnswer && correctAnswer !== undefined ? (
           <p className="result-note">{`Answer: ${correctAnswer}`}</p>
