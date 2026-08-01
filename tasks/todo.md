@@ -5,7 +5,7 @@ Last updated: 2026-08-01
 
 Completed history belongs in PRs, canonical docs, or `tasks/lessons.md`. Durable resumption context belongs in `docs/START-HERE.md`.
 
-Current order: verify `points-v2` and finish hosted browser/admin verification, then build compact completed-result contracts and persistence, then build the lineup-content system.
+Current order: finish hosted browser/admin verification when the editor is available; otherwise build compact completed-result contracts and persistence, then the lineup-content system.
 
 ## 0. Continuity
 
@@ -20,8 +20,10 @@ Current order: verify `points-v2` and finish hosted browser/admin verification, 
 - [x] Verify admin challenge and prior successful editor authentication.
 - [x] Merge/verify `points-v1` production with `0/45 PTS`, `0/9 AB`, signed ruleset token, hidden-answer QA, full CI/data/build, and no runtime errors.
 - [x] Merge PR #126 and verify instant-hint production payload/build boundaries.
-- [ ] Verify `points-v2` production shows `0/36 PTS`, a signed `points-v2` token, and resolved outcome plus awarded points.
-- [ ] Verify midnight-Pacific rollover without redeploy.
+- [x] Merge PR #128 and verify production deployment from merge SHA `9ba0a44198799fe71b0520d5245b16b39e056fc2` is READY/canonically aliased.
+- [x] Verify production bootstrap shows `0/36 PTS`, `0/9 AB`, a signed `points-v2` token, one current-batter hint bundle, no answer/reveal/future-batter bundle, and no recent runtime errors.
+- [ ] Verify resolved `points-v2` outcome plus awarded-point presentation through a real browser action.
+- [ ] Verify midnight-Pacific rollover without a coincident redeploy.
 - [ ] Verify saved-session `/api/daily/hints` hydration and refresh recovery in a real browser.
 - [ ] Verify seven-day Supabase horizon and missing-draft generation.
 - [ ] Preview/search/replace/revalidate one future slot.
@@ -37,8 +39,8 @@ Current order: verify `points-v2` and finish hosted browser/admin verification, 
 - [x] `points-v2` current contract: `4/3/2/1/0.5/0`, 36-point maximum.
 - [x] Native raw at-bat facts independent of final score.
 - [x] Ruleset versioning through signed tokens, local persistence, results, and sharing.
-- [x] Resolved at-bat display derives and shows awarded points beside the baseball outcome.
-- [ ] Pass focused tests, full CI, preview, bounded review, merge, and production verification for `points-v2`.
+- [x] Resolved at-bat display derives and shows awarded points beside the baseball outcome for point rulesets only.
+- [x] Focused tests, full CI, preview, three review passes, merge, production bootstrap verification, and runtime-error verification for `points-v2`.
 
 ## 3. Immediate active-batter hints
 

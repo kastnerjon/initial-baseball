@@ -55,15 +55,16 @@ Answer integrity: `docs/decisions/0001-daily-answer-integrity.md`.
 
 - PRs #120–#122 are merged; editorial public consumption, hosted Basic auth, and repository continuity controls are established.
 - PR #124 introduced versioned `points-v1`; PR #125 reconciled its verified production deployment.
-- PR #126 is merged at main SHA `e5f5a37ca7e21df8abfa93f9559eae27921567fc`; active-batter hints are preauthorized and Hint clicks are local.
-- PR #127 reconciled the verified instant-hint production state and restored the hosted-verification-first work order.
-- The last verified production deployment before `points-v2` showed `0/45 PTS`, `0/9 AB`, a signed `points-v1` token, exactly one current-batter four-hint bundle, and no answer/reveal/future-batter bundle.
-- Hidden-answer build QA passed and recent production runtime-error checks reported no errors.
+- PR #126 introduced immediate active-batter hints; PR #127 reconciled that production state.
+- PR #128 merged as `9ba0a44198799fe71b0520d5245b16b39e056fc2` and made `points-v2` the current Standard Daily policy.
+- Production deployment for that exact merge SHA is `READY` and canonically aliased to `https://initial-baseball-web.vercel.app`.
+- Production HTML was verified to show Daily #96, `0/36 PTS`, `0/9 AB`, and a signed `points-v2` bootstrap.
+- The initial production payload retained exactly one current-batter four-hint bundle and contained no answer ID/name, canonical reveal record, credential, service-role data, or unrelated future-batter hint bundle.
+- PR #128 passed typecheck, all tests, file-size checks, the complete canonical data/runtime pipeline, production build, Vercel preview, and three bounded review passes. Four findings were fixed before merge.
+- Production runtime-error checks after deployment reported no errors.
 - `DAILY_PROGRESSION_SECRET`, Supabase credentials, and Daily admin credentials are configured for Preview/Production.
 - `daily_editorial_puzzles` migration and RLS/service-role checks passed.
 - Unauthenticated `/admin/daily` reaches the challenge and the editor previously authenticated.
-
-The current code changes Standard Daily bootstrap to `points-v2`; production verification must confirm `0/36 PTS`, a signed `points-v2` token, and unchanged hint/answer boundaries after deployment.
 
 ## Implemented gameplay
 
@@ -75,7 +76,7 @@ New Standard Daily sessions use `points-v2`:
 - raw facts preserve slot, initials, outcome, hints revealed, wrong guesses, and correct/K/Give Up resolution;
 - ruleset version flows through token, local state, result, and share output;
 - compatible `points-v1` sessions retain `5/4/3/2/1/0` and a 45-point maximum;
-- compatible old sessions remain `legacy-inning-v1` with prior three-out behavior.
+- compatible old sessions remain `legacy-inning-v1` with prior three-out behavior and no misleading point copy.
 
 ### Immediate active-batter hints
 
@@ -107,16 +108,17 @@ Future aggregation uses one compact idempotent completed-game submission from na
 
 These require a real browser and/or authenticated editor session and must not be inferred from CI or HTML inspection:
 
-- `points-v2` production bootstrap, scorebug, token, and resolved outcome/point display;
+- resolved `points-v2` outcome/point presentation through an actual browser action;
 - saved-session `/api/daily/hints` hydration and refresh recovery through an actual browser lifecycle;
 - correct guess, wrong guesses, third strike, Give Up, all-nine continuation, final reveal/completion, and mobile interaction;
 - seven-day Supabase horizon, missing-draft generation, player preview/search/replacement, validation, scheduling, public consumption, and deterministic fallback;
-- action-level network/log inspection during those flows.
+- action-level network/log inspection during those flows;
+- midnight-Pacific rollover without a coincident redeploy.
 
 ## Exact next work order
 
-1. Verify `points-v2` after merge/deployment, then complete the authenticated admin and full real-browser checklist when the editor is available.
-2. Define the compact completed-game submission, validation, idempotent repository port, and derived-score contract in portable layers.
+1. Complete the authenticated admin and full real-browser checklist when the editor is available.
+2. In parallel when editor access is unavailable, define the compact completed-game submission, validation, idempotent repository port, and derived-score contract in portable layers.
 3. Add a separate Supabase migration/adapter and public submission route only after that contract is reviewed.
 4. Add same-puzzle/same-ruleset aggregates and percentile UI.
 5. Define gameplay-profile and lineup-recipe contracts, then establish a conservative recognizable Standard Daily pool/recipe.
