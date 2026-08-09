@@ -2,6 +2,7 @@ import 'server-only';
 import type { DailyPuzzleRepository } from '@initial-baseball/daily';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { requireDailyAdminPrincipal } from './dailyAdminAuthorization';
+import { createPublicDailyPuzzleCacheInvalidatingRepository } from './publicDailyPuzzleCache';
 import { createServerSupabaseClient } from './serverSupabaseClient';
 import { createSupabaseDailyPuzzleRepository } from './supabaseDailyPuzzleRepository';
 
@@ -25,7 +26,9 @@ interface CreateDailyAdminContextOptions {
 
 const DEFAULT_DEPENDENCIES: DailyAdminCompositionDependencies = {
   createSupabaseClient: createServerSupabaseClient,
-  createRepository: createSupabaseDailyPuzzleRepository,
+  createRepository: client => createPublicDailyPuzzleCacheInvalidatingRepository(
+    createSupabaseDailyPuzzleRepository(client),
+  ),
 };
 
 export function createDailyAdminContext({

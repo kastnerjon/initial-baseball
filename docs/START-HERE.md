@@ -1,7 +1,7 @@
 # Initial Baseball — Start Here
 
 Status: Active project handoff  
-Last updated: 2026-08-01
+Last updated: 2026-08-09
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
@@ -91,6 +91,13 @@ New Standard Daily sessions use `points-v2`:
 
 A technical user may inspect all current-batter hints and replay a prior valid token. That remains within the accepted anonymous noncompetitive model; stronger competition requires server-authoritative attempts.
 
+### Resolution responsiveness
+
+- Give Up immediately changes to `Revealing…` while the existing authorized resolution request completes.
+- Repeated public editorial puzzle reads are cached server-side in Next's Data Cache, keyed by puzzle date, with a 300-second safety revalidation window.
+- Successful authenticated admin saves invalidate that public-read cache so schedule/publish/archive changes do not wait for the safety window.
+- This changes transport latency only: Supabase remains authoritative and answers/reveal records remain server-side until terminal resolution.
+
 ## Settled future systems
 
 ### Canonical player facts versus gameplay profiles
@@ -113,7 +120,7 @@ These require an actual browser lifecycle but no editor credentials:
 
 - resolved `points-v2` outcome/point presentation;
 - saved-session `/api/daily/hints` hydration and refresh recovery;
-- correct guess, wrong guesses, third strike, Give Up, all-nine continuation, final reveal/completion, and mobile interaction;
+- correct guess, wrong guesses, third strike, Give Up responsiveness/reveal, all-nine continuation, final reveal/completion, and mobile interaction;
 - action-level network/log inspection during those flows.
 
 ### Authenticated editorial workflow

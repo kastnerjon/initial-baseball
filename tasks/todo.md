@@ -1,7 +1,7 @@
 # Initial Baseball Current Work
 
 Status: Active ordered implementation plan  
-Last updated: 2026-08-01
+Last updated: 2026-08-09
 
 Completed history belongs in PRs, canonical docs, or `tasks/lessons.md`. Durable resumption context belongs in `docs/START-HERE.md`.
 
@@ -25,9 +25,10 @@ Current order: finish public real-browser gameplay QA, then authenticated admin 
 
 ### Public real-browser gameplay
 
+- [x] Add immediate Give Up pending feedback and server-side editorial-read caching before hosted QA.
 - [ ] Verify resolved `points-v2` outcome plus awarded-point presentation.
 - [ ] Verify saved-session `/api/daily/hints` hydration and refresh recovery.
-- [ ] Verify correct guess, wrong guesses, third strike, Give Up, all-nine continuation, final reveal/completion, action responses/logs, and common iPhone/iPad behavior.
+- [ ] Verify correct guess, wrong guesses, third strike, Give Up responsiveness/reveal, all-nine continuation, final reveal/completion, action responses/logs, and common iPhone/iPad behavior.
 
 ### Authenticated editorial workflow
 

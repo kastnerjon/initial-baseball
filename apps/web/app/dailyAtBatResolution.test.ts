@@ -286,6 +286,7 @@ function renderAtBatCard({
         reveal: submittedResult === null || submittedResult.kind === 'incorrect' ? null : firstReveal,
       },
       requestPending: false,
+      giveUpPending: false,
       requestError: null,
       onQueryChange: () => undefined,
       onSelectPlayer: () => undefined,

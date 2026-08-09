@@ -30,6 +30,7 @@ type AtBatCardProps = {
     reveal: CanonicalRevealViewModel | null;
   };
   requestPending: boolean;
+  giveUpPending: boolean;
   requestError: string | null;
   onQueryChange: (query: string) => void;
   onSelectPlayer: (result: PlayerSearchResult) => void;
@@ -44,6 +45,7 @@ export function AtBatCard({
   rulesetVersion,
   state,
   requestPending,
+  giveUpPending,
   requestError,
   onQueryChange,
   onSelectPlayer,
@@ -165,8 +167,9 @@ export function AtBatCard({
           className="button-secondary button-give-up"
           onClick={onGiveUp}
           disabled={requestPending}
+          aria-busy={giveUpPending}
         >
-          Give up
+          {giveUpPending ? 'Revealing…' : 'Give up'}
         </button>
         <button
           type="button"
