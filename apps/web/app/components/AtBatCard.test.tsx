@@ -1,6 +1,9 @@
+import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { AtBatCard } from './AtBatCard';
+
+(globalThis as Record<string, unknown>).React = React;
 
 describe('AtBatCard pending resolution feedback', () => {
   it('acknowledges Give Up immediately while the reveal request is pending', () => {
