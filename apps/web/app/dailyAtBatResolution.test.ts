@@ -1,219 +1,247 @@
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it } from 'vitest';
-import { DEMO_DAILY_PITCHES } from '@initial-baseball/baseball-data';
+import { createDailyShareResult, formatDailyShareText, getGuessOutcome } from '@initial-baseball/engine';
 import {
   CURRENT_DAILY_RULESET_VERSION,
   LEGACY_DAILY_RULESET_VERSION,
-  POINTS_V1_DAILY_RULESET_VERSION,
   type DailyGameState,
   type DailyGuessResult,
   type DailyRulesetVersion,
 } from '@initial-baseball/shared';
+import { describe, expect, it } from 'vitest';
 import { AtBatCard } from './components/AtBatCard';
 import { PlayerRevealCard } from './components/PlayerRevealCard';
-import { ResultDisplay } from './components/ResultDisplay';
 import type { CanonicalRevealViewModel } from './canonicalRevealViewModel';
-import { createInitialAtBatUiState, createInitialDailyGameState } from './dailyClientState';
-import { resolveDailyTerminalAtBat } from './dailyAtBatResolution';
+import { createGiveUpResult, resolveDailyTerminalAtBat } from './dailyAtBatResolution';
+import { createDailyShareUrl } from './dailyShareUrl';
+import {
+  DEMO_DAILY_PITCHES,
+  DEMO_DAILY_PUZZLE,
+  createInitialAtBatUiState,
+  createInitialDemoGameState,
+} from './mockDailyPuzzle';
 
 const firstPitch = getFirstDemoPitch();
 const firstReveal = buildReveal('hitter');
+(globalThis as Record<string, unknown>).React = React;
 
-function createGameState(rulesetVersion: DailyRulesetVersion): DailyGameState {
-  return createInitialDailyGameState({
-    id: 'daily-2026-08-01-test',
-    puzzleNumber: 97,
-    puzzleDate: '2026-08-01',
-    status: 'published',
-    hintConfig: [],
-    statsHintConfig: [],
-    pitches: [{ pitchNumber: firstPitch.pitchNumber, initials: firstPitch.player.initials }],
-  }, rulesetVersion);
-}
-
-describe('resolveDailyTerminalAtBat', () => {
-  it('resolves a correct current-ruleset at-bat into point-native raw facts', () => {
-    const gameState = createGameState(CURRENT_DAILY_RULESET_VERSION);
-    const result: DailyGuessResult = {
-      kind: 'correct',
-      revealedCount: 1,
-      strikeCount: 0,
-      outcome: '3B',
-      source: 'correct_guess',
-    };
-
-    const pending = resolveDailyTerminalAtBat({
-      gameState,
-      pitch: {
-        pitchNumber: firstPitch.pitchNumber,
-        player: { initials: firstPitch.player.initials },
-      },
-      result,
-      resolution: 'correct',
-      wrongGuesses: 0,
-      currentPitchIndex: 0,
-    });
-
-    expect(pending.completedAtBats).toEqual([{
-      pitchNumber: firstPitch.pitchNumber,
-      initials: firstPitch.player.initials,
-      outcome: '3B',
-      revealedCount: 1,
-      wrongGuesses: 0,
-      resolution: 'correct',
-    }]);
-    expect(pending.points.total).toBe(3);
-    expect(pending.points.completed).toBe(true);
-    expect(pending.score.completed).toBe(false);
-  });
-
-  it('preserves wrong guesses when Give Up converts the at-bat to a strikeout', () => {
-    const gameState = createGameState(CURRENT_DAILY_RULESET_VERSION);
-    const result: DailyGuessResult = {
+describe('createGiveUpResult', () => {
+  it('resolves Give Up as a strikeout', () => {
+    expect(createGiveUpResult(2, 3)).toEqual({
       kind: 'strikeout',
       revealedCount: 2,
       strikeCount: 3,
       outcome: 'K',
       source: 'strikeout',
-    };
+    });
+  });
+});
 
-    const pending = resolveDailyTerminalAtBat({
-      gameState,
-      pitch: {
-        pitchNumber: firstPitch.pitchNumber,
-        player: { initials: firstPitch.player.initials },
-      },
-      result,
+describe('resolveDailyTerminalAtBat', () => {
+  it('records Give Up as a zero-point raw at-bat fact without ending points-v2', () => {
+    const advance = resolveDailyTerminalAtBat({
+      gameState: createInitialDemoGameState(DEMO_DAILY_PUZZLE),
+      pitch: firstPitch,
+      result: createGiveUpResult(0, 3),
       resolution: 'give_up',
-      wrongGuesses: 1,
+      wrongGuesses: 0,
       currentPitchIndex: 0,
     });
 
-    expect(pending.completedAtBats[0]).toMatchObject({
+    expect(advance.score.outs).toBe(1);
+    expect(advance.score.hits).toBe(0);
+    expect(advance.score.completed).toBe(false);
+    expect(advance.points).toMatchObject({ points: 0, maximumPoints: 24, atBatsCompleted: 1, completed: false });
+    expect(advance.completedAtBats).toEqual([{
+      pitchNumber: firstPitch.pitchNumber,
+      initials: firstPitch.player.initials,
       outcome: 'K',
-      revealedCount: 2,
-      wrongGuesses: 1,
+      hintsRevealed: 0,
+      wrongGuesses: 0,
       resolution: 'give_up',
-    });
-    expect(pending.points.total).toBe(0);
+    }]);
+    expect(advance.pitchLines).toEqual([{ initials: firstPitch.player.initials, outcome: 'K' }]);
   });
 
-  it('keeps legacy scoring native to inning/base advancement', () => {
-    const gameState = createGameState(LEGACY_DAILY_RULESET_VERSION);
-    const result: DailyGuessResult = {
-      kind: 'correct',
-      revealedCount: 0,
+  it('awards four points for an initials-only correct guess', () => {
+    const correctResult = getGuessOutcome({
+      isCorrect: true,
+      revealCount: 0,
       strikeCount: 0,
-      outcome: 'HR',
-      source: 'correct_guess',
-    };
+      maxStrikes: 3,
+    });
 
-    const pending = resolveDailyTerminalAtBat({
-      gameState,
-      pitch: {
-        pitchNumber: firstPitch.pitchNumber,
-        player: { initials: firstPitch.player.initials },
-      },
-      result,
+    if (correctResult.kind !== 'correct') {
+      throw new Error('Expected a correct result.');
+    }
+
+    const advance = resolveDailyTerminalAtBat({
+      gameState: createInitialDemoGameState(DEMO_DAILY_PUZZLE),
+      pitch: firstPitch,
+      result: correctResult,
       resolution: 'correct',
       wrongGuesses: 0,
       currentPitchIndex: 0,
     });
 
-    expect(pending.score.runs).toBe(1);
-    expect(pending.points.total).toBe(0);
-    expect(pending.points.max).toBe(0);
+    expect(advance.score.runs).toBe(1);
+    expect(advance.score.hits).toBe(1);
+    expect(advance.score.outs).toBe(0);
+    expect(advance.points.points).toBe(4);
+    expect(advance.completedAtBats[0]).toMatchObject({
+      outcome: 'HR',
+      hintsRevealed: 0,
+      wrongGuesses: 0,
+      resolution: 'correct',
+    });
+    expect(advance.pitchLines).toEqual([{ initials: firstPitch.player.initials, outcome: 'HR' }]);
+  });
+
+  it('keeps share output to initials, outcomes, and spoiler-safe point totals', () => {
+    const initialGameState = createInitialDemoGameState(DEMO_DAILY_PUZZLE);
+    const advance = resolveDailyTerminalAtBat({
+      gameState: initialGameState,
+      pitch: firstPitch,
+      result: createGiveUpResult(0, 3),
+      resolution: 'give_up',
+      wrongGuesses: 0,
+      currentPitchIndex: 0,
+    });
+    const gameState: DailyGameState = {
+      ...initialGameState,
+      status: 'completed',
+      inning: advance.inning,
+      score: {
+        ...advance.score,
+        completed: true,
+      },
+      points: {
+        ...advance.points,
+        completed: true,
+      },
+      completedAtBats: advance.completedAtBats,
+      completedPitchLines: advance.pitchLines,
+    };
+    const shareText = formatDailyShareText(createDailyShareResult({
+      gameState,
+      url: createDailyShareUrl(),
+    }));
+
+    expect(shareText).toContain(`Daily Inning #${DEMO_DAILY_PUZZLE.puzzleNumber}`);
+    expect(shareText).toContain('0/24 PTS');
+    expect(shareText).toContain(`${firstPitch.player.initials}: K`);
+    expect(shareText).not.toContain(firstPitch.player.fullName);
+    expect(shareText).not.toContain('initialbaseball.com');
   });
 });
 
-describe('resolved at-bat presentation', () => {
-  it('renders point value beside a current-ruleset correct outcome', () => {
+describe('AtBatCard terminal output', () => {
+  it('renders At Bat language and a Give up action while active', () => {
     const html = renderAtBatCard({
-      submittedResult: {
-        kind: 'correct',
-        revealedCount: 1,
-        strikeCount: 0,
-        outcome: '3B',
-        source: 'correct_guess',
-      },
+      submittedResult: null,
       strikeCount: 0,
     });
 
-    expect(html).toContain('Triple');
-    expect(html).toContain('3 pts');
+    expect(html).toContain(`At Bat ${firstPitch.pitchNumber}`);
+    expect(html).not.toContain(`Pitch ${firstPitch.pitchNumber}`);
+    expect(html).toContain('Give up');
+    expect(html).toContain('Guess the player');
   });
 
-  it('renders 0 points beside a strikeout', () => {
+  it('reveals the correct answer and zero points after Give Up', () => {
     const html = renderAtBatCard({
-      submittedResult: {
-        kind: 'strikeout',
-        revealedCount: 4,
-        strikeCount: 3,
-        outcome: 'K',
-        source: 'strikeout',
-      },
+      submittedResult: createGiveUpResult(0, 3),
       strikeCount: 3,
     });
 
-    expect(html).toContain('Strikeout');
-    expect(html).toContain('0 pts');
+    expect(html).toContain(`At Bat ${firstPitch.pitchNumber}`);
+    expect(html).toContain('Next At Bat');
+    expect(html).not.toContain('Next Pitch');
+    expect(html).toContain('K');
+    expect(html).toContain('Strikeout · 0 points');
+    expect(html).toContain('Player Reveal');
+    expect(html).toContain(firstReveal.displayName);
+    expect(html).toContain(`${firstReveal.yearsPlayedDisplay} · Hitter · ${firstReveal.primaryPosition}`);
+    expect(html).toContain('<th scope="col">Summary</th>');
+    expect(html).toContain('<th scope="col">OPS</th>');
+    expect(html).toContain('<td>630</td>');
+    expect(html).toContain('Outcome distribution will appear once public results are collected.');
   });
 
-  it('keeps point copy absent for legacy results', () => {
+  it('reveals the correct answer after a normal strikeout', () => {
+    const strikeoutResult: DailyGuessResult = {
+      kind: 'strikeout',
+      revealedCount: 1,
+      strikeCount: 3,
+      outcome: 'K',
+      source: 'strikeout',
+    };
     const html = renderAtBatCard({
-      submittedResult: {
-        kind: 'correct',
-        revealedCount: 0,
-        strikeCount: 0,
-        outcome: 'HR',
-        source: 'correct_guess',
-      },
+      submittedResult: strikeoutResult,
+      strikeCount: 3,
+    });
+
+    expect(html).toContain('Strikeout · 0 points');
+    expect(html).toContain('Player Reveal');
+    expect(html).toContain(firstReveal.displayName);
+  });
+
+  it('shows both a correct baseball outcome and awarded points', () => {
+    const correctResult = getGuessOutcome({
+      isCorrect: true,
+      revealCount: 1,
+      strikeCount: 0,
+      maxStrikes: 3,
+    });
+
+    if (correctResult.kind !== 'correct') {
+      throw new Error('Expected a correct result.');
+    }
+
+    const html = renderAtBatCard({
+      submittedResult: correctResult,
+      strikeCount: 0,
+    });
+
+    expect(html).toContain('3B');
+    expect(html).toContain('3 points');
+    expect(html).toContain('Player Reveal');
+    expect(html).toContain(firstReveal.displayName);
+    expect(html).toContain(firstReveal.yearsPlayedDisplay);
+    expect(html).toContain('Career');
+    expect(html).not.toContain(`Answer: ${firstPitch.player.fullName}`);
+  });
+
+  it('preserves outcome-only result copy for legacy inning games', () => {
+    const correctResult = getGuessOutcome({
+      isCorrect: true,
+      revealCount: 0,
+      strikeCount: 0,
+      maxStrikes: 3,
+    });
+    if (correctResult.kind !== 'correct') {
+      throw new Error('Expected a correct result.');
+    }
+
+    const correctHtml = renderAtBatCard({
+      submittedResult: correctResult,
       strikeCount: 0,
       rulesetVersion: LEGACY_DAILY_RULESET_VERSION,
     });
-
-    expect(html).toContain('Home Run');
-    expect(html).not.toContain('pts');
-  });
-
-  it('keeps points-v1 result copy on its compatibility weights', () => {
-    const html = renderAtBatCard({
-      submittedResult: {
-        kind: 'correct',
-        revealedCount: 0,
-        strikeCount: 0,
-        outcome: 'HR',
-        source: 'correct_guess',
-      },
-      strikeCount: 0,
-      rulesetVersion: POINTS_V1_DAILY_RULESET_VERSION,
+    const strikeoutHtml = renderAtBatCard({
+      submittedResult: createGiveUpResult(0, 3),
+      strikeCount: 3,
+      rulesetVersion: LEGACY_DAILY_RULESET_VERSION,
     });
 
-    expect(html).toContain('Home Run');
-    expect(html).toContain('5 pts');
+    expect(correctHtml).toContain('HR');
+    expect(correctHtml).not.toContain('points');
+    expect(strikeoutHtml).toContain('Strikeout');
+    expect(strikeoutHtml).not.toContain('0 points');
   });
 });
 
-describe('canonical reveal presentation', () => {
-  it('renders the canonical player identity, career summary, and season rows after resolution', () => {
-    const html = renderAtBatCard({
-      submittedResult: {
-        kind: 'correct',
-        revealedCount: 0,
-        strikeCount: 0,
-        outcome: 'HR',
-        source: 'correct_guess',
-      },
-      strikeCount: 0,
-    });
-
-    expect(html).toContain('Ken Griffey Jr.');
-    expect(html).toContain('1989–2010');
-    expect(html).toContain('Career');
-    expect(html).toContain('SEA');
-  });
-
+describe('PlayerRevealCard', () => {
   it('renders years played and hitter stat strip labels and values', () => {
     const html = renderToStaticMarkup(React.createElement(PlayerRevealCard, { reveal: firstReveal }));
 
@@ -281,61 +309,37 @@ function getFirstDemoPitch() {
 }
 
 function buildReveal(kind: 'hitter' | 'pitcher'): CanonicalRevealViewModel {
-  return kind === 'hitter'
-    ? {
-        player: {
-          playerId: 'griffke02',
-          fullName: 'Ken Griffey Jr.',
-          firstName: 'Ken',
-          lastName: 'Griffey',
-          primaryPosition: 'CF',
-          bats: 'L',
-          throws: 'L',
-          activeStartYear: 1989,
-          activeEndYear: 2010,
-        },
-        career: {
-          playerId: 'griffke02',
-          role: 'hitter',
-          summary: { games: 2671, plateAppearances: 11304, atBats: 9801, hits: 2781, homeRuns: 630, battingAverage: 0.284, onBasePercentage: 0.37, sluggingPercentage: 0.538, ops: 0.908 },
-          teams: [{ teamId: 'SEA', games: 1685 }, { teamId: 'CIN', games: 945 }, { teamId: 'CHW', games: 41 }],
-        },
-        seasons: [
-          {
-            playerId: 'griffke02',
-            season: 1989,
-            role: 'hitter',
-            teams: ['SEA'],
-            summary: { games: 127, plateAppearances: 506, atBats: 455, hits: 120, homeRuns: 16, battingAverage: 0.264, onBasePercentage: 0.329, sluggingPercentage: 0.42, ops: 0.749 },
-          },
-        ],
-      }
-    : {
-        player: {
-          playerId: 'sabacca01',
-          fullName: 'CC Sabathia',
-          firstName: 'CC',
-          lastName: 'Sabathia',
-          primaryPosition: 'P',
-          bats: 'L',
-          throws: 'L',
-          activeStartYear: 2001,
-          activeEndYear: 2019,
-        },
-        career: {
-          playerId: 'sabacca01',
-          role: 'pitcher',
-          summary: { games: 561, gamesStarted: 560, wins: 251, losses: 161, earnedRunAverage: 3.74, whip: 1.259, inningsPitched: 3093, strikeouts: 3093, saves: 0 },
-          teams: [{ teamId: 'NYY', games: 307 }, { teamId: 'CLE', games: 237 }, { teamId: 'MIL', games: 17 }],
-        },
-        seasons: [
-          {
-            playerId: 'sabacca01',
-            season: 2001,
-            role: 'pitcher',
-            teams: ['CLE'],
-            summary: { games: 33, gamesStarted: 33, wins: 17, losses: 5, earnedRunAverage: 4.39, whip: 1.353, inningsPitched: 180.1, strikeouts: 171, saves: 0 },
-          },
-        ],
-      };
+  const hitterStats = {
+    AB: 9801,
+    H: 2781,
+    HR: 630,
+    BA: '.284',
+    R: 1662,
+    RBI: 1836,
+    SB: 184,
+    OBP: '.370',
+    SLG: '.538',
+    OPS: '.908',
+  };
+  const pitcherStats = {
+    W: 251,
+    L: 161,
+    SV: 0,
+    ERA: '3.74',
+    WHIP: '1.26',
+    K: 3093,
+    IP: '3577.1',
+  };
+  return {
+    playerId: kind === 'hitter' ? 'ibp_griffey' : 'ibp_sabathia',
+    displayName: kind === 'hitter' ? 'Ken Griffey Jr.' : 'CC Sabathia',
+    playerType: kind,
+    primaryPosition: kind === 'hitter' ? 'CF' : 'P',
+    yearsPlayedDisplay: kind === 'hitter' ? '1989–2010' : '2001–2019',
+    teamIds: kind === 'hitter' ? ['SEA', 'CIN', 'CHA'] : ['CLE', 'MIL', 'NYA'],
+    career: {
+      lines: [{ kind, stats: kind === 'hitter' ? hitterStats : pitcherStats }],
+    },
+    seasons: [],
+  };
 }
