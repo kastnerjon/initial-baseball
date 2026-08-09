@@ -1,7 +1,7 @@
 # Architecture and launch-scale plan
 
 Status: Living architecture source of truth  
-Last updated: 2026-08-01
+Last updated: 2026-08-09
 
 ## Product goal
 
@@ -130,6 +130,12 @@ Facts and editorial judgments remain separate. Standard Daily is one recipe, not
 - Service-role credentials remain server-only.
 - Replay is an accepted anonymous limitation.
 
+### Public editorial read performance
+
+The web runtime caches the server-only `daily_editorial_puzzles` `getByDate` read in Next's Data Cache before puzzle construction. The cache is keyed by puzzle date, has a 300-second safety revalidation window, and is invalidated after every successful write through the authenticated web admin repository. This keeps repeated guess/Give Up resolution from requiring the same Supabase round trip while preserving Supabase as the authority.
+
+The cache is a web transport optimization only. It does not change the provider-neutral Daily repository port, scoring, lifecycle rules, progression claims, or public payloads. Answer IDs, names, reveal records, and credentials remain server-only. Out-of-band database edits that bypass the authenticated admin path may remain cached until the safety revalidation window expires.
+
 ## Editorial persistence
 
 `daily_editorial_puzzles` remains authoritative for editorial dates: one row/date, atomic exact-nine JSONB selection, lifecycle status, optimistic revision, audit metadata, RLS, and server-only service role. Future profiles/recipes/results require separate portable contracts and migrations.
@@ -139,6 +145,7 @@ Facts and editorial judgments remain separate. Standard Daily is one recipe, not
 At 10,000+ plays/day:
 
 - serve immutable baseball artifacts cacheably;
+- cache authoritative public editorial reads at the web transport layer rather than re-querying them on every resolution;
 - keep visible anonymous state client-side;
 - verify stateless progression;
 - perform no database write per hint/guess;

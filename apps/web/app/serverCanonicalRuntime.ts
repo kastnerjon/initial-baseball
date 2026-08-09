@@ -3,6 +3,9 @@ import { createProductionCanonicalDailySelector } from '@initial-baseball/daily'
 import { DAILY_PUZZLE_OVERRIDES } from './dailyPuzzleOverrides';
 import { createDailyProgressionTokenCodec } from './dailyProgressionToken';
 import { getDailyProgressionSecret } from './dailyProgressionSecret';
+import {
+  createCachedPublicDailyPuzzleReader,
+} from './publicDailyPuzzleCache';
 import { createDailyRuntimeService } from './dailyRuntimeService';
 import { createPublicDailyPuzzleSource } from './publicDailyPuzzleSource';
 import { getCanonicalRuntime, getCanonicalSearchCandidates, resolveCanonicalPlayerId } from './serverCanonicalData';
@@ -17,11 +20,14 @@ const selectCanonicalDailyPlayers = createProductionCanonicalDailySelector(
   resolveCanonicalPlayerId,
 );
 const publicDailyRepository = createOptionalPublicDailyRepository();
+const publicDailyReader = publicDailyRepository === null
+  ? null
+  : createCachedPublicDailyPuzzleReader(publicDailyRepository);
 
 export const dailyRuntime = createDailyRuntimeService({
   canonicalRuntime,
   createPuzzle: createPublicDailyPuzzleSource({
-    repository: publicDailyRepository,
+    repository: publicDailyReader,
     selectDeterministicPlayers: selectCanonicalDailyPlayers,
   }),
   progressionTokens: createDailyProgressionTokenCodec(getDailyProgressionSecret()),

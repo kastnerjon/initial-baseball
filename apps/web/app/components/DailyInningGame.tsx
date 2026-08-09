@@ -46,6 +46,8 @@ type DailyInningGameProps = {
   initialHintBundle: DailyHintBundle;
 };
 
+type PendingResolutionAction = 'guess' | 'give_up';
+
 export function DailyInningGame({
   puzzle,
   initialProgressionToken,
@@ -59,12 +61,13 @@ export function DailyInningGame({
   const [hintBundle, setHintBundle] = useState<DailyHintBundle | null>(initialHintBundle);
   const [hasLoadedSavedState, setHasLoadedSavedState] = useState(false);
   const [bundlePending, setBundlePending] = useState(false);
-  const [requestPending, setRequestPending] = useState(false);
+  const [pendingResolutionAction, setPendingResolutionAction] = useState<PendingResolutionAction | null>(null);
   const [requestError, setRequestError] = useState<string | null>(null);
 
   const currentPitch = puzzle.pitches[currentPitchIndex] ?? null;
   const isPuzzleComplete = currentPitchIndex >= puzzle.pitches.length;
   const isGameComplete = gameState.points.completed || gameState.score.completed || isPuzzleComplete;
+  const requestPending = pendingResolutionAction !== null;
   const isRestoringActiveHints = hasLoadedSavedState
     && hintBundle === null
     && pendingAdvance === null
@@ -221,6 +224,7 @@ export function DailyInningGame({
         rulesetVersion={gameState.rulesetVersion}
         state={atBatState}
         requestPending={requestPending}
+        giveUpPending={pendingResolutionAction === 'give_up'}
         requestError={requestError}
         onQueryChange={(query) => {
           setAtBatState(currentState => ({
@@ -342,7 +346,7 @@ export function DailyInningGame({
   function handleResetToday(): void {
     clearSavedDailyGame(puzzle);
     resetToInitialState();
-    setRequestPending(false);
+    setPendingResolutionAction(null);
     setBundlePending(false);
     setHasLoadedSavedState(true);
   }
@@ -379,15 +383,23 @@ export function DailyInningGame({
   async function resolveAtBat(
     action: { submittedPlayerId: string } | { giveUp: true },
   ): Promise<DailyResolutionResponse | null> {
-    return requestJson<DailyResolutionResponse>('/api/daily/resolve', {
-      progressionToken,
-      ...action,
-    });
+    return requestJson<DailyResolutionResponse>(
+      '/api/daily/resolve',
+      {
+        progressionToken,
+        ...action,
+      },
+      'giveUp' in action ? 'give_up' : 'guess',
+    );
   }
 
-  async function requestJson<T>(path: string, body: Record<string, unknown>): Promise<T | null> {
-    if (requestPending) return null;
-    setRequestPending(true);
+  async function requestJson<T>(
+    path: string,
+    body: Record<string, unknown>,
+    pendingAction: PendingResolutionAction,
+  ): Promise<T | null> {
+    if (pendingResolutionAction !== null) return null;
+    setPendingResolutionAction(pendingAction);
     setRequestError(null);
     try {
       const response = await fetch(path, {
@@ -404,7 +416,7 @@ export function DailyInningGame({
       setRequestError('The Daily game could not complete that action. Please try again.');
       return null;
     } finally {
-      setRequestPending(false);
+      setPendingResolutionAction(null);
     }
   }
 }
