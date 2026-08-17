@@ -1,16 +1,40 @@
 import 'server-only';
 import { existsSync } from 'node:fs';
 import { resolve } from 'node:path';
-import { createFileSystemCanonicalRuntimeAccessor } from '@initial-baseball/baseball-data/runtime';
+import {
+  createFileSystemCanonicalRevealReader,
+  createFileSystemCanonicalRuntimeAccessor,
+  type CanonicalRevealReader,
+  type CanonicalRuntimeAccessor,
+} from '@initial-baseball/baseball-data/runtime';
 
-let cachedCanonicalRuntime: ReturnType<typeof createFileSystemCanonicalRuntimeAccessor> | null = null;
+let cachedCanonicalRuntime: CanonicalRuntimeAccessor | null = null;
+let cachedCanonicalRevealReader: CanonicalRevealReader | null = null;
+let cachedCanonicalSearchCandidates: ReturnType<typeof buildCanonicalSearchCandidates> | null = null;
 
-export function getCanonicalRuntime(): ReturnType<typeof createFileSystemCanonicalRuntimeAccessor> {
+export function getCanonicalRuntime(): CanonicalRuntimeAccessor {
   cachedCanonicalRuntime ??= createFileSystemCanonicalRuntimeAccessor(findRuntimeDirectory());
   return cachedCanonicalRuntime;
 }
 
+export function getCanonicalRevealReader(): CanonicalRevealReader {
+  cachedCanonicalRevealReader ??= createFileSystemCanonicalRevealReader(findRuntimeDirectory());
+  return cachedCanonicalRevealReader;
+}
+
 export function getCanonicalSearchCandidates() {
+  cachedCanonicalSearchCandidates ??= buildCanonicalSearchCandidates();
+  return cachedCanonicalSearchCandidates;
+}
+
+export function resolveCanonicalPlayerId(playerId: string): string | null {
+  const resolution = getCanonicalRuntime().resolvePlayerId(playerId);
+  return resolution.status === 'canonical' || resolution.status === 'redirected'
+    ? resolution.playerId
+    : null;
+}
+
+function buildCanonicalSearchCandidates() {
   return getCanonicalRuntime().getPlayerIndex().map(player => ({
     id: player.playerId,
     displayName: player.displayName,
@@ -21,13 +45,6 @@ export function getCanonicalSearchCandidates() {
     lastYear: player.lastSeason,
     teamsDisplay: player.teamIds.join(', '),
   }));
-}
-
-export function resolveCanonicalPlayerId(playerId: string): string | null {
-  const resolution = getCanonicalRuntime().resolvePlayerId(playerId);
-  return resolution.status === 'canonical' || resolution.status === 'redirected'
-    ? resolution.playerId
-    : null;
 }
 
 function findRuntimeDirectory(): string {

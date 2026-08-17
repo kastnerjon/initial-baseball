@@ -9,12 +9,26 @@ import type {
 
 const CANONICAL_ID_PATTERN = /^ibp_([0-9a-f]{2})[0-9a-f]{18}$/;
 
+export function isCanonicalPlayerIdFormat(playerId: string): boolean {
+  return CANONICAL_ID_PATTERN.test(playerId);
+}
+
+export function getCanonicalPlayerIdShardId(playerId: string): string {
+  const match = CANONICAL_ID_PATTERN.exec(playerId);
+  const shardId = match?.[1];
+  if (shardId === undefined) {
+    throw new CanonicalRuntimeDataError(`Invalid canonical player ID: ${playerId}.`);
+  }
+  return shardId;
+}
+
 export class CanonicalRuntimeDataError extends Error {
   constructor(message: string) {
     super(message);
     this.name = 'CanonicalRuntimeDataError';
   }
 }
+
 export type CanonicalRuntimeAccessor = {
   getPlayerIndex: () => readonly CanonicalPlayerIndexEntry[];
   getPlayer: (playerId: string) => CanonicalPlayerIndexEntry | null;
@@ -85,35 +99,12 @@ export function createCanonicalRuntimeAccessor({
       if (indexEntry === undefined) {
         throw new CanonicalRuntimeDataError(`Missing player index entry: ${canonicalPlayerId}.`);
       }
-
-      const shard = loadRevealShard(indexEntry.revealShard);
-      assertSchemaVersion(shard.schemaVersion, `reveal shard ${indexEntry.revealShard}`);
-      const expectedShardId = getShardId(canonicalPlayerId);
-      if (shard.shardId !== expectedShardId) {
-        throw new CanonicalRuntimeDataError(
-          `Reveal shard ${indexEntry.revealShard} identifies itself as ${shard.shardId}, expected ${expectedShardId}.`,
-        );
-      }
-
-      const reveal = shard.players[canonicalPlayerId];
-      if (reveal === undefined) {
-        throw new CanonicalRuntimeDataError(
-          `Reveal shard ${indexEntry.revealShard} does not contain ${canonicalPlayerId}.`,
-        );
-      }
-      if (reveal.playerId !== canonicalPlayerId) {
-        throw new CanonicalRuntimeDataError(
-          `Reveal record ID ${reveal.playerId} does not match requested ID ${canonicalPlayerId}.`,
-        );
-      }
-      return reveal;
+      return readCanonicalReveal(canonicalPlayerId, indexEntry.revealShard, loadRevealShard);
     },
   };
 
   function resolvePlayerId(playerId: string): CanonicalIdResolution {
-    if (playerById.has(playerId)) {
-      return { status: 'canonical', playerId };
-    }
+    if (playerById.has(playerId)) return { status: 'canonical', playerId };
     const redirectedPlayerId = redirects.redirects[playerId];
     if (redirectedPlayerId !== undefined) {
       return { status: 'redirected', playerId: redirectedPlayerId, legacyPlayerId: playerId };
@@ -131,22 +122,48 @@ export function createCanonicalRuntimeAccessor({
   }
 }
 
+export function readCanonicalReveal(
+  canonicalPlayerId: string,
+  revealShardPath: string,
+  loadRevealShard: (path: string) => CanonicalRevealShardPayload,
+): CanonicalPlayerReveal {
+  const expectedShardId = getCanonicalPlayerIdShardId(canonicalPlayerId);
+  const expectedPath = `reveal-shards/${expectedShardId}.json`;
+  if (revealShardPath !== expectedPath) {
+    throw new CanonicalRuntimeDataError(
+      `Player ${canonicalPlayerId} points to ${revealShardPath}, expected ${expectedPath}.`,
+    );
+  }
+
+  const shard = loadRevealShard(revealShardPath);
+  assertSchemaVersion(shard.schemaVersion, `reveal shard ${revealShardPath}`);
+  if (shard.shardId !== expectedShardId) {
+    throw new CanonicalRuntimeDataError(
+      `Reveal shard ${revealShardPath} identifies itself as ${shard.shardId}, expected ${expectedShardId}.`,
+    );
+  }
+
+  const reveal = shard.players[canonicalPlayerId];
+  if (reveal === undefined) {
+    throw new CanonicalRuntimeDataError(
+      `Reveal shard ${revealShardPath} does not contain ${canonicalPlayerId}.`,
+    );
+  }
+  if (reveal.playerId !== canonicalPlayerId) {
+    throw new CanonicalRuntimeDataError(
+      `Reveal record ID ${reveal.playerId} does not match requested ID ${canonicalPlayerId}.`,
+    );
+  }
+  return reveal;
+}
+
 function assertCanonicalPlayerIndexEntry(player: CanonicalPlayerIndexEntry): void {
-  const expectedShard = `reveal-shards/${getShardId(player.playerId)}.json`;
+  const expectedShard = `reveal-shards/${getCanonicalPlayerIdShardId(player.playerId)}.json`;
   if (player.revealShard !== expectedShard) {
     throw new CanonicalRuntimeDataError(
       `Player ${player.playerId} points to ${player.revealShard}, expected ${expectedShard}.`,
     );
   }
-}
-
-function getShardId(playerId: string): string {
-  const match = CANONICAL_ID_PATTERN.exec(playerId);
-  const shardId = match?.[1];
-  if (shardId === undefined) {
-    throw new CanonicalRuntimeDataError(`Invalid canonical player ID: ${playerId}.`);
-  }
-  return shardId;
 }
 
 function assertSchemaVersion(schemaVersion: number, label: string): void {

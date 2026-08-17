@@ -1,9 +1,16 @@
 export {
   CanonicalRuntimeDataError,
   createCanonicalRuntimeAccessor,
+  getCanonicalPlayerIdShardId,
+  isCanonicalPlayerIdFormat,
+  readCanonicalReveal,
   type CanonicalRuntimeAccessor,
 } from './createCanonicalRuntimeAccessor.js';
-export { createFileSystemCanonicalRuntimeAccessor } from './createFileSystemCanonicalRuntimeAccessor.js';
+export {
+  createFileSystemCanonicalRevealReader,
+  createFileSystemCanonicalRuntimeAccessor,
+  type CanonicalRevealReader,
+} from './createFileSystemCanonicalRuntimeAccessor.js';
 export type {
   CanonicalAdvancedLine,
   CanonicalBattingLine,

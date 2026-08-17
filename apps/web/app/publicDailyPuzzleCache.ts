@@ -1,27 +1,25 @@
-import type {
-  DailyPuzzleEditorialRecord,
-  DailyPuzzleRepository,
-} from '@initial-baseball/daily';
+import type { DailyPuzzleRepository } from '@initial-baseball/daily';
+import type { DailyPuzzle } from '@initial-baseball/shared';
 import { revalidateTag, unstable_cache } from 'next/cache';
 
-const PUBLIC_DAILY_PUZZLE_CACHE_TAG = 'public-daily-editorial-puzzles-v1';
+const PUBLIC_DAILY_PUZZLE_CACHE_TAG = 'public-daily-materialized-puzzles-v2';
 const PUBLIC_DAILY_PUZZLE_REVALIDATE_SECONDS = 300;
 
-export type PublicDailyPuzzleReader = Pick<DailyPuzzleRepository, 'getByDate'>;
+export type PublicDailyPuzzleSource = (puzzleDate: string) => Promise<DailyPuzzle>;
 
-export function createCachedPublicDailyPuzzleReader(
-  repository: PublicDailyPuzzleReader,
-): PublicDailyPuzzleReader {
+export function createCachedPublicDailyPuzzleSource(
+  source: PublicDailyPuzzleSource,
+): PublicDailyPuzzleSource {
   const getByDate = unstable_cache(
-    (puzzleDate: string): Promise<DailyPuzzleEditorialRecord | null> => repository.getByDate(puzzleDate),
-    ['public-daily-editorial-puzzles-v1'],
+    (puzzleDate: string): Promise<DailyPuzzle> => source(puzzleDate),
+    ['public-daily-materialized-puzzles-v2'],
     {
       revalidate: PUBLIC_DAILY_PUZZLE_REVALIDATE_SECONDS,
       tags: [PUBLIC_DAILY_PUZZLE_CACHE_TAG],
     },
   );
 
-  return { getByDate };
+  return puzzleDate => getByDate(puzzleDate);
 }
 
 export function createPublicDailyPuzzleCacheInvalidatingRepository(

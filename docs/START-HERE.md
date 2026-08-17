@@ -57,12 +57,11 @@ Answer integrity: `docs/decisions/0001-daily-answer-integrity.md`.
 - PR #124 introduced versioned `points-v1`; PR #125 reconciled its verified production deployment.
 - PR #126 introduced immediate active-batter hints; PR #127 reconciled that production state.
 - PR #128 merged as `9ba0a44198799fe71b0520d5245b16b39e056fc2` and made `points-v2` the current Standard Daily policy.
-- Production deployment for that exact merge SHA is `READY` and canonically aliased to `https://initial-baseball-web.vercel.app`.
-- Production HTML was verified to show Daily #96, `0/36 PTS`, `0/9 AB`, and a signed `points-v2` bootstrap.
+- PR #131 added immediate Give Up feedback plus server-side editorial-read caching.
+- PR #132 merged as `a942bab74a68077a1c6ed1aff37b16af45ccc685`; Submit Guess now immediately shows `Checking…`, and production deployment `dpl_3nzwTjS5qfuB84fXEGeHYqvykb6t` is `READY` on that exact SHA at `https://initial-baseball-web.vercel.app`.
+- Real-device QA on August 16 observed that Submit Guess still took roughly two seconds end-to-end despite the immediate pending label. Production logs showed successful 200 resolution requests rather than retries/errors. That observation is treated as an unresolved performance defect until the hot-path optimization is merged and retested on the phone.
 - The scheduled August 1 rollover observation verified that production advanced from July 31, 2026 / Daily #96 to August 1, 2026 / Daily #97 after midnight Pacific without a coincident redeploy. Deployment `dpl_Bp2gX76FqxQXpjCgAbMY76nUyqwC` remained current, and the post-boundary response served the correct puzzle through Vercel revalidation.
-- The initial production payload retained exactly one current-batter four-hint bundle and contained no answer ID/name, canonical reveal record, credential, service-role data, or unrelated future-batter hint bundle.
-- PR #128 passed typecheck, all tests, file-size checks, the complete canonical data/runtime pipeline, production build, Vercel preview, and three bounded review passes. Four findings were fixed before merge.
-- Production runtime-error checks after deployment reported no errors.
+- The initial production payload retains exactly one current-batter four-hint bundle and contains no answer ID/name, canonical reveal record, credential, service-role data, or unrelated future-batter hint bundle.
 - `DAILY_PROGRESSION_SECRET`, Supabase credentials, and Daily admin credentials are configured for Preview/Production.
 - `daily_editorial_puzzles` migration and RLS/service-role checks passed.
 - Unauthenticated `/admin/daily` reaches the challenge and the editor previously authenticated.
@@ -95,10 +94,14 @@ A technical user may inspect all current-batter hints and replay a prior valid t
 
 - Give Up immediately changes to `Revealing…` while the existing authorized resolution request completes.
 - Submit Guess immediately changes to `Checking…` while its authorized resolution request completes; the correctness decision remains server-side.
-- `POST /api/daily/resolve` includes a `Server-Timing: daily-resolve;dur=...` response header so hosted QA can distinguish server processing time from end-to-end network latency without logging answer data.
-- Repeated public editorial puzzle reads are cached server-side in Next's Data Cache, keyed by puzzle date, with a 300-second safety revalidation window.
-- Successful authenticated admin saves invalidate that public-read cache so schedule/publish/archive changes do not wait for the safety window.
-- These changes affect transport latency/feedback only: Supabase remains authoritative and answers/reveal records remain server-side until terminal resolution.
+- `POST /api/daily/resolve` retains its handler-level `Server-Timing` duration; comparing it with the phone's end-to-end latency helps identify remaining browser/network/platform-startup overhead.
+- The server caches the fully materialized public `DailyPuzzle` by date, with a 300-second safety revalidation window. Successful authenticated admin saves invalidate that cache.
+- On a materialized-puzzle cache hit, resolution does not re-query Supabase, rebuild the nine-player puzzle, rank the Daily candidate universe, or initialize the public lineup source.
+- Player-search candidates are constructed only on the search path rather than during resolve runtime composition.
+- Ordinary canonical-format guesses compare directly with the server-only canonical answer ID. Legacy/noncanonical guesses still cross the canonical redirect boundary.
+- Terminal correct/K/Give Up resolution reads only the deterministic reveal shard for the answer instead of loading the full canonical player index solely to locate the reveal.
+- These are server/runtime optimizations only: Supabase remains editorial authority, progression/scoring rules are unchanged, and answers/reveal records remain server-side until terminal resolution.
+- Production mobile latency improvement remains unverified until the optimization is merged and the same real-device flow is repeated.
 
 ## Settled future systems
 
@@ -120,6 +123,7 @@ Future aggregation uses one compact idempotent completed-game submission from na
 
 These require an actual browser lifecycle but no editor credentials:
 
+- re-test Submit Guess and Give Up latency on production after the hot-path optimization, inspecting handler-level server timing against end-to-end phone timing;
 - resolved `points-v2` outcome/point presentation;
 - saved-session `/api/daily/hints` hydration and refresh recovery;
 - correct guess, wrong guesses, third strike, Give Up responsiveness/reveal, all-nine continuation, final reveal/completion, and mobile interaction;
@@ -136,7 +140,7 @@ These require the editor's authenticated session:
 
 ## Exact next work order
 
-1. Complete the public real-browser gameplay, refresh, completion, and mobile checklist.
+1. Merge/deploy the bounded resolution hot-path optimization after CI/review, then repeat the same production iPhone Submit Guess/Give Up timing check and complete the remaining public browser/refresh/completion/mobile checklist.
 2. Complete the authenticated admin checklist when the editor is available.
 3. Define the compact completed-game submission, validation, idempotent repository port, and derived-score contract in portable layers.
 4. Add a separate Supabase migration/adapter and public submission route only after that contract is reviewed.

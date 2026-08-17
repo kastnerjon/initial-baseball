@@ -1,7 +1,7 @@
 # Architecture and launch-scale plan
 
 Status: Living architecture source of truth  
-Last updated: 2026-08-09
+Last updated: 2026-08-16
 
 ## Product goal
 
@@ -28,13 +28,13 @@ Stable portable types, schemas, settings, ruleset identifiers, and serialization
 Pure outcomes, versioned scoring/completion, runner advancement, search behavior, and result/share calculations. Depends only on shared.
 
 ### `packages/baseball-data`
-Canonical identity, aliases, teams, seasons, career facts, enrichment, provenance, QA, and generated runtime artifacts. Web code does not reinterpret facts.
+Canonical identity, aliases, teams, seasons, career facts, enrichment, provenance, QA, generated runtime artifacts, canonical-ID format validation, and deterministic reveal-shard access. Web code does not reinterpret facts.
 
 ### `packages/daily`
 Puzzle identity/numbering, future gameplay profiles and lineup recipes, selection, recognizability/difficulty policy, repeat/diversity constraints, validation, editorial lifecycle, repository ports, public eligibility, and seven-day orchestration.
 
 ### `apps/web`
-Next.js/React rendering, browser persistence, search/hint/resolve/admin routes, signed-token authorization, current-batter hint bundles, server-only canonical runtime, sharing, HTTP Basic editor boundary, and Supabase adapters.
+Next.js/React rendering, browser persistence, search/hint/resolve/admin routes, signed-token authorization, current-batter hint bundles, server-only canonical runtime composition, sharing, HTTP Basic editor boundary, and Supabase adapters.
 
 ### Supabase/Postgres
 Operational persistence behind provider-neutral ports: current editorial puzzles and future profiles, recipes, and compact completed results. It does not own baseball facts, scoring, recipe semantics, or lifecycle rules.
@@ -125,16 +125,24 @@ Facts and editorial judgments remain separate. Standard Daily is one recipe, not
 - Answer IDs/names and canonical reveal data remain server-side until terminal resolution.
 - Unrelated future-batter hints remain server-side.
 - Signed claims control puzzle, ruleset, pitch, reveal depth, strikes, outs, and completion.
-- Search is lightweight and spoiler-safe.
-- Full reveal shards load only after terminal authorization.
+- Search is spoiler-safe and initializes its full candidate set only on the search path.
+- Ordinary canonical-format guesses compare directly with the server-only canonical answer ID and do not require full-universe identity initialization.
+- Legacy/noncanonical submitted IDs cross the canonical redirect boundary only when used.
+- Terminal reveal reads the deterministic answer shard directly; full canonical search/index state is not required solely to locate a reveal.
 - Service-role credentials remain server-only.
 - Replay is an accepted anonymous limitation.
 
-### Public editorial read performance
+### Public Daily resolution performance
 
-The web runtime caches the server-only `daily_editorial_puzzles` `getByDate` read in Next's Data Cache before puzzle construction. The cache is keyed by puzzle date, has a 300-second safety revalidation window, and is invalidated after every successful write through the authenticated web admin repository. This keeps repeated guess/Give Up resolution from requiring the same Supabase round trip while preserving Supabase as the authority.
+The public web runtime caches the fully materialized server-only `DailyPuzzle` by puzzle date in Next's Data Cache. Materialization includes the authoritative editorial/fallback selection, exact canonical IDs, hints, and puzzle metadata needed by signed resolution. The cache has a 300-second safety revalidation window and is invalidated after every successful write through the authenticated web admin repository.
 
-The cache is a web transport optimization only. It does not change the provider-neutral Daily repository port, scoring, lifecycle rules, progression claims, or public payloads. Answer IDs, names, reveal records, and credentials remain server-only. Out-of-band database edits that bypass the authenticated admin path may remain cached until the safety revalidation window expires.
+This final-puzzle cache replaces the narrower row-only cache. On a cache hit, `/api/daily/resolve` does not need to query Supabase, rebuild the nine-player puzzle, rank the Daily candidate universe, or initialize the public lineup source. The heavyweight Daily lineup/public-source and Supabase modules are loaded only when a materialized-puzzle cache miss requires reconstruction.
+
+Search-candidate construction is separated from the resolve composition. The full canonical player index remains available for search and legacy-ID resolution, but it is not loaded merely to process a normal canonical-format guess. Terminal reveal uses deterministic shard addressing from the canonical player ID so a correct guess, third strike, or Give Up can load only the needed reveal shard.
+
+`POST /api/daily/resolve` retains its `daily-resolve` `Server-Timing` duration. Because that metric begins inside the route handler, comparing it with real-browser end-to-end latency helps identify any remaining browser/network/platform-startup component after the hot path is reduced; it contains no answer data.
+
+These are web/server runtime optimizations only. They do not change scoring, lifecycle rules, progression claims, publication authority, or public payloads. Supabase remains authoritative for editorial records. A syntactically valid but nonexistent canonical submitted ID is treated as an incorrect anonymous guess rather than forcing a full player-index validation; legacy/noncanonical IDs remain explicitly validated. Out-of-band database edits that bypass the authenticated admin path may remain cached until the safety revalidation window expires.
 
 ## Editorial persistence
 
@@ -145,7 +153,9 @@ The cache is a web transport optimization only. It does not change the provider-
 At 10,000+ plays/day:
 
 - serve immutable baseball artifacts cacheably;
-- cache authoritative public editorial reads at the web transport layer rather than re-querying them on every resolution;
+- cache the fully materialized authoritative public puzzle instead of rebuilding it on every resolution;
+- keep heavyweight lineup/search initialization off unrelated request paths;
+- use deterministic reveal shards so terminal resolution reads only the answer shard;
 - keep visible anonymous state client-side;
 - verify stateless progression;
 - perform no database write per hint/guess;
@@ -153,7 +163,7 @@ At 10,000+ plays/day:
 - submit at most one compact completed result;
 - keep routes thin and credentials isolated.
 
-Vercel and Supabase remain replaceable adapters.
+Vercel and Supabase remain replaceable adapters. No new cache service, queue, database, or hosting-specific compute mode is required for the current optimization.
 
 ## Continuity controls
 
@@ -165,7 +175,7 @@ Vercel and Supabase remain replaceable adapters.
 
 ## Current sequence
 
-1. Verify `points-v2`, restored-session hydration, and authenticated admin/all-nine behavior in production.
+1. Re-test resolution latency on production mobile after the hot-path optimization, then complete `points-v2`, restored-session hydration, all-nine, and authenticated admin behavior verification.
 2. Add compact completed-result persistence and same-puzzle/same-ruleset percentile comparison.
 3. Add gameplay-profile and recipe contracts plus a conservative recognizable Standard Daily recipe.
 4. Continue analytics, monitoring, mobile polish, legal/domain basics, and heritage presentation.
