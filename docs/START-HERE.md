@@ -1,7 +1,7 @@
 # Initial Baseball — Start Here
 
 Status: Active project handoff  
-Last updated: 2026-08-09
+Last updated: 2026-08-16
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
@@ -94,9 +94,11 @@ A technical user may inspect all current-batter hints and replay a prior valid t
 ### Resolution responsiveness
 
 - Give Up immediately changes to `Revealing…` while the existing authorized resolution request completes.
+- Submit Guess immediately changes to `Checking…` while its authorized resolution request completes; the correctness decision remains server-side.
+- `POST /api/daily/resolve` includes a `Server-Timing: daily-resolve;dur=...` response header so hosted QA can distinguish server processing time from end-to-end network latency without logging answer data.
 - Repeated public editorial puzzle reads are cached server-side in Next's Data Cache, keyed by puzzle date, with a 300-second safety revalidation window.
 - Successful authenticated admin saves invalidate that public-read cache so schedule/publish/archive changes do not wait for the safety window.
-- This changes transport latency only: Supabase remains authoritative and answers/reveal records remain server-side until terminal resolution.
+- These changes affect transport latency/feedback only: Supabase remains authoritative and answers/reveal records remain server-side until terminal resolution.
 
 ## Settled future systems
 

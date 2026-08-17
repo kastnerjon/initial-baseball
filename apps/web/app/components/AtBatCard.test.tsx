@@ -11,24 +11,49 @@ describe('AtBatCard pending resolution feedback', () => {
 
     expect(html).toContain('Revealing…');
     expect(html).toContain('aria-busy="true"');
+    expect(html).toContain('Submit Guess');
+    expect(html).not.toContain('Checking…');
   });
 
-  it('does not show Give Up reveal copy for another pending resolution', () => {
-    const html = renderCard({ requestPending: true, giveUpPending: false });
+  it('acknowledges Submit Guess immediately while guess resolution is pending', () => {
+    const html = renderCard({
+      requestPending: true,
+      giveUpPending: false,
+      selectedPlayerId: 'player-id',
+    });
 
+    expect(html).toContain('Checking…');
+    expect(html).toContain('aria-busy="true"');
     expect(html).toContain('Give up');
     expect(html).not.toContain('Revealing…');
   });
+
+  it('keeps ordinary action copy when no resolution is pending', () => {
+    const html = renderCard({
+      requestPending: false,
+      giveUpPending: false,
+      selectedPlayerId: 'player-id',
+    });
+
+    expect(html).toContain('Give up');
+    expect(html).toContain('Submit Guess');
+    expect(html).not.toContain('Revealing…');
+    expect(html).not.toContain('Checking…');
+  });
 });
 
-function renderCard(input: { requestPending: boolean; giveUpPending: boolean }): string {
+function renderCard(input: {
+  requestPending: boolean;
+  giveUpPending: boolean;
+  selectedPlayerId?: string | null;
+}): string {
   return renderToStaticMarkup(
     <AtBatCard
       atBat={{ pitchNumber: 1, initials: 'JR' }}
       rulesetVersion="points-v2"
       state={{
         query: '',
-        selectedPlayerId: null,
+        selectedPlayerId: input.selectedPlayerId ?? null,
         revealCount: 0,
         revealedHints: [],
         strikeCount: 0,

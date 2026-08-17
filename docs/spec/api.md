@@ -1,7 +1,7 @@
 # Daily web API specification
 
 Status: Living source of truth  
-Last updated: 2026-07-31
+Last updated: 2026-08-16
 
 Daily routes are thin Next.js adapters over canonical baseball data, engine rules, and portable Daily logic. Answer-integrity rationale is in `docs/decisions/0001-daily-answer-integrity.md`.
 
@@ -100,6 +100,14 @@ Response:
 }
 ```
 
+Every resolution response, including rejected requests, also includes a diagnostic `Server-Timing` header of the form:
+
+```text
+Server-Timing: daily-resolve;dur=<milliseconds>
+```
+
+`daily-resolve` measures server processing for the route only. It is intended for hosted QA to distinguish backend processing time from browser/network latency. It does not change the JSON contract, does not make the response cacheable, and contains no puzzle, player, answer, reveal, credential, or signing data.
+
 Behavior:
 
 - incorrect guess: no reveal, successor token with one additional strike, refreshed bundle for the same pitch and strike count;
@@ -133,6 +141,7 @@ The browser persists public gameplay state and the current opaque token, not the
 
 - Bootstrap/public page data may use safe revalidation.
 - Hint-bundle, one-hint, and resolution responses are `private, no-store`.
+- Resolution responses may expose only the diagnostic `Server-Timing: daily-resolve;dur=<milliseconds>` duration header in addition to their normal sanitized body/headers.
 - Logs must not include signing secrets, answer IDs, credentials, or full reveals.
 - No Redis, replay cache, per-action database write, or durable anonymous session is required.
 

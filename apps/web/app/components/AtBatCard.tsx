@@ -56,6 +56,7 @@ export function AtBatCard({
 }: AtBatCardProps): JSX.Element {
   const [results, setResults] = useState<PlayerSearchResult[]>([]);
   const hasRevealedAllHints = state.revealCount >= 4;
+  const guessPending = requestPending && !giveUpPending;
   const resolvedTerminalResult = state.submittedResult !== null && state.submittedResult.kind !== 'incorrect'
     ? state.submittedResult
     : null;
@@ -176,8 +177,9 @@ export function AtBatCard({
           className="button-primary"
           onClick={onSubmit}
           disabled={state.selectedPlayerId === null || requestPending}
+          aria-busy={guessPending}
         >
-          Submit Guess
+          {guessPending ? 'Checking…' : 'Submit Guess'}
         </button>
       </div>
     </div>
