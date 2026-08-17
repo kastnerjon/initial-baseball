@@ -1,4 +1,8 @@
-import type { CanonicalRuntimeAccessor } from '@initial-baseball/baseball-data/runtime';
+import {
+  isCanonicalPlayerIdFormat,
+  type CanonicalPlayerReveal,
+  type CanonicalRuntimeAccessor,
+} from '@initial-baseball/baseball-data/runtime';
 import { getGuessOutcome } from '@initial-baseball/engine';
 import {
   CURRENT_DAILY_RULESET_VERSION,
@@ -21,7 +25,9 @@ import type {
 } from './dailyRuntimeContracts';
 
 type CreateDailyRuntimeServiceInput = {
-  canonicalRuntime: CanonicalRuntimeAccessor;
+  canonicalRuntime?: CanonicalRuntimeAccessor;
+  resolveLegacyPlayerId?: (playerId: string) => string;
+  getCanonicalReveal?: (canonicalPlayerId: string) => CanonicalPlayerReveal;
   createPuzzle: (date: string) => Promise<DailyPuzzle> | DailyPuzzle;
   progressionTokens: DailyProgressionTokenCodec;
 };
@@ -39,15 +45,21 @@ export class DailyRuntimeRequestError extends Error {
   }
 }
 
-export function createDailyRuntimeService({
-  canonicalRuntime,
-  createPuzzle,
-  progressionTokens,
-}: CreateDailyRuntimeServiceInput): DailyRuntimeService {
+export function createDailyRuntimeService(input: CreateDailyRuntimeServiceInput): DailyRuntimeService {
+  const { canonicalRuntime, createPuzzle, progressionTokens } = input;
+  const resolveLegacyPlayerId = input.resolveLegacyPlayerId
+    ?? (playerId => requireConfiguredRuntime(canonicalRuntime).requireCanonicalPlayerId(playerId));
+  const getCanonicalReveal = input.getCanonicalReveal
+    ?? (playerId => requireConfiguredRuntime(canonicalRuntime).getReveal(playerId));
+
   async function createCanonicalPuzzle(date: string): Promise<DailyPuzzle> {
     const puzzle = await createPuzzle(date);
     if (puzzle.puzzleDate !== date) {
       throw new DailyRuntimeRequestError(`Daily puzzle ${puzzle.id} does not match requested date ${date}.`);
+    }
+    if (puzzle.pitches.every(pitch => isCanonicalPlayerIdFormat(pitch.player.playerId))) return puzzle;
+    if (canonicalRuntime === undefined) {
+      throw new DailyRuntimeRequestError(`Daily puzzle ${puzzle.id} contains a non-canonical player ID.`);
     }
     return {
       ...puzzle,
@@ -78,11 +90,7 @@ export function createDailyRuntimeService({
     if (puzzle.id !== claims.puzzleId || puzzle.puzzleDate !== claims.puzzleDate) {
       throw new DailyRuntimeRequestError('Daily progression token does not match its puzzle.');
     }
-    return {
-      claims,
-      puzzle,
-      pitch: requirePitch(puzzle, claims.pitchNumber),
-    };
+    return { claims, puzzle, pitch: requirePitch(puzzle, claims.pitchNumber) };
   }
 
   function createHintBundle(authorized: AuthorizedProgression): DailyHintBundle {
@@ -100,7 +108,6 @@ export function createDailyRuntimeService({
         hintValue,
       };
     });
-
     const checkpoints = hints
       .filter(hint => hint.slot > authorized.claims.revealCount)
       .map(hint => ({
@@ -110,7 +117,6 @@ export function createDailyRuntimeService({
           revealCount: hint.slot as DailyProgressionClaims['revealCount'],
         }),
       }));
-
     return {
       pitchNumber: authorized.pitch.pitchNumber,
       revealedCount: authorized.claims.revealCount,
@@ -146,9 +152,7 @@ export function createDailyRuntimeService({
 
     async getHintBundle(progressionToken) {
       const authorized = await requireAuthorizedProgression(progressionToken);
-      return {
-        hintBundle: createHintBundle(authorized),
-      };
+      return { hintBundle: createHintBundle(authorized) };
     },
 
     async revealHint(progressionToken) {
@@ -164,18 +168,14 @@ export function createDailyRuntimeService({
         );
       }
       return {
-        hint: {
-          hintType: hint.hintType,
-          hintLabel: hint.hintLabel,
-          hintValue: hint.hintValue,
-        },
+        hint: { hintType: hint.hintType, hintLabel: hint.hintLabel, hintValue: hint.hintValue },
         progressionToken: checkpoint.progressionToken,
       };
     },
 
     async resolveAtBat(request) {
       const authorized = await requireAuthorizedProgression(request.progressionToken);
-      const submittedPlayerId = resolveSubmittedPlayerId(request, canonicalRuntime);
+      const submittedPlayerId = resolveSubmittedPlayerId(request, resolveLegacyPlayerId);
       const isCorrect = submittedPlayerId === authorized.pitch.player.playerId;
       const result = request.giveUp === true
         ? {
@@ -201,13 +201,10 @@ export function createDailyRuntimeService({
             puzzle: authorized.puzzle,
             pitch: requirePitch(authorized.puzzle, successorClaims.pitchNumber),
           });
-
       return {
         result,
         reveal: isTerminal
-          ? createCanonicalRevealViewModel(
-              canonicalRuntime.getReveal(authorized.pitch.player.playerId),
-            )
+          ? createCanonicalRevealViewModel(getCanonicalReveal(authorized.pitch.player.playerId))
           : null,
         progressionToken,
         hintBundle: successorBundle,
@@ -236,12 +233,8 @@ function createSuccessorClaims(
   result: DailyGuessResult,
 ): DailyProgressionClaims {
   if (result.kind === 'incorrect') {
-    return {
-      ...authorized.claims,
-      strikeCount: result.strikeCount as 1 | 2,
-    };
+    return { ...authorized.claims, strikeCount: result.strikeCount as 1 | 2 };
   }
-
   const nextOutCount = result.kind === 'strikeout'
     ? incrementOutCount(authorized.claims.outCount)
     : authorized.claims.outCount;
@@ -252,7 +245,6 @@ function createSuccessorClaims(
   const completedByLegacyOuts = authorized.claims.rulesetVersion === LEGACY_DAILY_RULESET_VERSION
     && nextOutCount === 3;
   const completed = completedByLegacyOuts || nextPitch === undefined;
-
   return {
     version: 1,
     rulesetVersion: authorized.claims.rulesetVersion,
@@ -266,37 +258,36 @@ function createSuccessorClaims(
   };
 }
 
-function requirePitch(
-  puzzle: DailyPuzzle,
-  pitchNumber: number,
-): DailyPuzzle['pitches'][number] {
+function requirePitch(puzzle: DailyPuzzle, pitchNumber: number): DailyPuzzle['pitches'][number] {
   const pitch = puzzle.pitches.find(candidate => candidate.pitchNumber === pitchNumber);
   if (pitch === undefined) {
-    throw new DailyRuntimeRequestError(
-      `Unknown pitch ${pitchNumber} for ${puzzle.puzzleDate}.`,
-    );
+    throw new DailyRuntimeRequestError(`Unknown pitch ${pitchNumber} for ${puzzle.puzzleDate}.`);
   }
   return pitch;
 }
 
 function resolveSubmittedPlayerId(
   request: DailyResolutionRequest,
-  canonicalRuntime: CanonicalRuntimeAccessor,
+  resolveLegacyPlayerId: (playerId: string) => string,
 ): string | null {
-  if (request.giveUp === true) {
-    return null;
-  }
+  if (request.giveUp === true) return null;
   const submittedPlayerId = request.submittedPlayerId?.trim();
   if (!submittedPlayerId) {
     throw new DailyRuntimeRequestError('submittedPlayerId is required for a guess.');
   }
+  if (isCanonicalPlayerIdFormat(submittedPlayerId)) return submittedPlayerId;
   try {
-    return canonicalRuntime.requireCanonicalPlayerId(submittedPlayerId);
+    return resolveLegacyPlayerId(submittedPlayerId);
   } catch {
-    throw new DailyRuntimeRequestError(
-      'submittedPlayerId does not resolve to a canonical player.',
-    );
+    throw new DailyRuntimeRequestError('submittedPlayerId does not resolve to a canonical player.');
   }
+}
+
+function requireConfiguredRuntime(runtime: CanonicalRuntimeAccessor | undefined): CanonicalRuntimeAccessor {
+  if (runtime === undefined) {
+    throw new DailyRuntimeRequestError('Canonical runtime capability is unavailable.');
+  }
+  return runtime;
 }
 
 function incrementOutCount(

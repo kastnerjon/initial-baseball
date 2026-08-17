@@ -2,6 +2,11 @@ import type {
   DailyPuzzleEditorialRecord,
   DailyPuzzleRepository,
 } from '@initial-baseball/daily';
+import {
+  DEFAULT_DAILY_HINT_CONFIG,
+  DEFAULT_DAILY_STATS_HINT_CONFIG,
+  type DailyPuzzle,
+} from '@initial-baseball/shared';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const cacheTestState = vi.hoisted(() => ({
@@ -28,7 +33,7 @@ vi.mock('next/cache', () => ({
 }));
 
 import {
-  createCachedPublicDailyPuzzleReader,
+  createCachedPublicDailyPuzzleSource,
   createPublicDailyPuzzleCacheInvalidatingRepository,
 } from './publicDailyPuzzleCache';
 
@@ -38,37 +43,35 @@ describe('public Daily puzzle cache', () => {
     cacheTestState.revalidateTag.mockClear();
   });
 
-  it('reuses an authoritative editorial read for the same puzzle date', async () => {
-    const record = createRecord(0);
-    const repository = createRepository(record);
-    const reader = createCachedPublicDailyPuzzleReader(repository);
+  it('reuses a fully materialized public puzzle for the same date', async () => {
+    const source = vi.fn(async (puzzleDate: string) => createPuzzle(puzzleDate, 5));
+    const cachedSource = createCachedPublicDailyPuzzleSource(source);
 
-    await expect(reader.getByDate(record.puzzleDate)).resolves.toEqual(record);
-    await expect(reader.getByDate(record.puzzleDate)).resolves.toEqual(record);
+    await expect(cachedSource('2026-08-09')).resolves.toMatchObject({ puzzleNumber: 105 });
+    await expect(cachedSource('2026-08-09')).resolves.toMatchObject({ puzzleNumber: 105 });
 
-    expect(repository.getByDate).toHaveBeenCalledTimes(1);
+    expect(source).toHaveBeenCalledTimes(1);
   });
 
-  it('invalidates cached public reads after a successful editorial save', async () => {
+  it('invalidates a cached materialized puzzle after a successful editorial save', async () => {
     let current = createRecord(0);
     const repository = createRepository(current, saved => {
       current = saved;
     }, () => current);
-    const reader = createCachedPublicDailyPuzzleReader(repository);
+    const source = vi.fn(async (puzzleDate: string) => createPuzzle(puzzleDate, current.revision));
+    const cachedSource = createCachedPublicDailyPuzzleSource(source);
     const invalidatingRepository = createPublicDailyPuzzleCacheInvalidatingRepository(repository);
 
-    await reader.getByDate(current.puzzleDate);
+    await expect(cachedSource(current.puzzleDate)).resolves.toMatchObject({ puzzleNumber: 100 });
     const updated = { ...current, revision: 1, status: 'archived' as const };
     await invalidatingRepository.save(updated, { expectedRevision: 0 });
-    const refreshed = await reader.getByDate(current.puzzleDate);
+    await expect(cachedSource(current.puzzleDate)).resolves.toMatchObject({ puzzleNumber: 101 });
 
-    expect(refreshed?.revision).toBe(1);
-    expect(refreshed?.status).toBe('archived');
-    expect(repository.getByDate).toHaveBeenCalledTimes(2);
+    expect(source).toHaveBeenCalledTimes(2);
     expect(cacheTestState.revalidateTag).toHaveBeenCalledTimes(1);
   });
 
-  it('does not invalidate a public read when an editorial save fails', async () => {
+  it('does not invalidate a materialized puzzle when an editorial save fails', async () => {
     const record = createRecord(0);
     const repository = createRepository(record);
     repository.save = vi.fn(async () => {
@@ -80,6 +83,18 @@ describe('public Daily puzzle cache', () => {
     expect(cacheTestState.revalidateTag).not.toHaveBeenCalled();
   });
 });
+
+function createPuzzle(puzzleDate: string, revision: number): DailyPuzzle {
+  return {
+    id: `daily-${puzzleDate}`,
+    puzzleDate,
+    puzzleNumber: 100 + revision,
+    status: 'published',
+    hintConfig: DEFAULT_DAILY_HINT_CONFIG,
+    statsHintConfig: DEFAULT_DAILY_STATS_HINT_CONFIG,
+    pitches: [],
+  };
+}
 
 function createRepository(
   initial: DailyPuzzleEditorialRecord,

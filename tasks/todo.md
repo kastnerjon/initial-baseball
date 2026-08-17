@@ -5,7 +5,7 @@ Last updated: 2026-08-16
 
 Completed history belongs in PRs, canonical docs, or `tasks/lessons.md`. Durable resumption context belongs in `docs/START-HERE.md`.
 
-Current order: finish public real-browser gameplay QA, then authenticated admin QA when the editor is available, then completed-result contracts and persistence, then the lineup-content system.
+Current order: finish the resolution hot-path fix and production mobile latency retest as part of public real-browser gameplay QA, then authenticated admin QA when the editor is available, then completed-result contracts and persistence, then the lineup-content system.
 
 ## 0. Continuity
 
@@ -22,10 +22,15 @@ Current order: finish public real-browser gameplay QA, then authenticated admin 
 - [x] Merge PR #126 and verify instant-hint production payload/build boundaries.
 - [x] Merge PR #128 and verify production deployment from merge SHA `9ba0a44198799fe71b0520d5245b16b39e056fc2` is READY/canonically aliased.
 - [x] Verify production bootstrap shows `0/36 PTS`, `0/9 AB`, a signed `points-v2` token, one current-batter hint bundle, no answer/reveal/future-batter bundle, and no recent runtime errors.
+- [x] Merge PR #132 and verify production deployment from merge SHA `a942bab74a68077a1c6ed1aff37b16af45ccc685` is READY/canonically aliased.
 
 ### Public real-browser gameplay
 
-- [x] Add immediate Give Up and Submit Guess pending feedback, resolve timing instrumentation, and server-side editorial-read caching before hosted QA.
+- [x] Add immediate Give Up and Submit Guess pending feedback plus initial resolve timing instrumentation.
+- [x] Confirm from production device/log evidence that Submit Guess can still take roughly two seconds even when requests succeed, establishing a real hot-path performance defect rather than an error/retry issue.
+- [x] Implement the bounded hot-path optimization: cache the fully materialized server-only puzzle, lazy-load lineup/Supabase composition on cache miss, separate search initialization from resolution, avoid full canonical-index loading for ordinary canonical guesses, and use direct reveal-shard access for terminal resolution.
+- [x] Keep resolve `Server-Timing` as the handler-level diagnostic and use it with phone end-to-end timing to separate remaining platform/network overhead from server work.
+- [ ] After merge, verify production iPhone Submit Guess and Give Up end-to-end latency and compare it with the handler-level server timing; do not mark responsiveness solved from CI/preview alone.
 - [ ] Verify resolved `points-v2` outcome plus awarded-point presentation.
 - [ ] Verify saved-session `/api/daily/hints` hydration and refresh recovery.
 - [ ] Verify correct guess, wrong guesses, third strike, Give Up responsiveness/reveal, all-nine continuation, final reveal/completion, action responses/logs, and common iPhone/iPad behavior.
