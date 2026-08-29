@@ -24,7 +24,7 @@ export function ResultDisplay({
   if (result.kind === 'correct') {
     const awardedPoints = getAwardedPointsCopy(rulesetVersion, result.outcome);
     return (
-      <div className="result-card">
+      <div className="result-card result-card-correct" aria-live="polite">
         <span className="result-label">Outcome</span>
         <strong className="result-value">{result.outcome}</strong>
         {awardedPoints === null ? null : <p className="result-note">{awardedPoints}</p>}
@@ -38,7 +38,7 @@ export function ResultDisplay({
   if (result.kind === 'strikeout') {
     const awardedPoints = getAwardedPointsCopy(rulesetVersion, result.outcome);
     return (
-      <div className="result-card">
+      <div className="result-card result-card-strikeout" aria-live="polite">
         <span className="result-label">Outcome</span>
         <strong className="result-value">{result.outcome}</strong>
         <p className="result-note">
@@ -52,10 +52,10 @@ export function ResultDisplay({
   }
 
   return (
-    <div className="result-card">
-      <span className="result-label">Outcome</span>
+    <div className="result-card result-card-incorrect" aria-live="polite">
+      <span className="result-label">Call</span>
       <strong className="result-value">Incorrect</strong>
-      <p className="result-note">{`${result.remainingStrikes} strike${result.remainingStrikes === 1 ? '' : 's'} left in full game rules.`}</p>
+      <p className="result-note">{`${result.remainingStrikes} strike${result.remainingStrikes === 1 ? '' : 's'} left.`}</p>
     </div>
   );
 }
