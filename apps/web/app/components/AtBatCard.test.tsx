@@ -40,19 +40,32 @@ describe('AtBatCard pending resolution feedback', () => {
     expect(html).not.toContain('Revealing…');
     expect(html).not.toContain('Checking…');
   });
+
+  it('does not show an empty search-results state after a player is selected', () => {
+    const html = renderCard({
+      requestPending: false,
+      giveUpPending: false,
+      selectedPlayerId: 'player-id',
+      query: 'Ken Griffey Jr.',
+    });
+
+    expect(html).toContain('search-shell-selected');
+    expect(html).not.toContain('No matching players');
+  });
 });
 
 function renderCard(input: {
   requestPending: boolean;
   giveUpPending: boolean;
   selectedPlayerId?: string | null;
+  query?: string;
 }): string {
   return renderToStaticMarkup(
     <AtBatCard
       atBat={{ pitchNumber: 1, initials: 'JR' }}
       rulesetVersion="points-v2"
       state={{
-        query: '',
+        query: input.query ?? '',
         selectedPlayerId: input.selectedPlayerId ?? null,
         revealCount: 0,
         revealedHints: [],

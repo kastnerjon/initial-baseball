@@ -1,7 +1,7 @@
 # Daily Inning end-to-end blueprint
 
 Status: Living product source of truth  
-Last updated: 2026-07-31
+Last updated: 2026-08-29
 
 ## Product decision
 
@@ -74,6 +74,21 @@ Statistical accomplishment is not recognizability. The current weighted-stat ran
 - completed-at-bat history and spoiler-safe point share;
 - local refresh recovery with token-authorized hint hydration;
 - authorized seven-day editorial administration.
+
+## Visual system
+
+The public Daily surface uses a **modern heritage scorecard** direction: warm scorebook paper, clubhouse green, muted scorekeeper red, restrained brass/gold accents, serif display typography, condensed utility labels, and compact scoreboard/stat-table motifs. It should evoke a real baseball scorecard or old club program without becoming novelty retro UI.
+
+Presentation rules:
+
+- mobile web is the primary layout constraint; the public game becomes a full-bleed scorebook sheet on narrow screens rather than a floating desktop card;
+- the Daily masthead, edition number, sticky scorebug, active initials, hints, search, actions, resolved result, reveal card, scorecard history, and completion/share surfaces should read as one visual system;
+- active initials are the dominant gameplay focal point, while controls remain tactile, high-contrast, and at least comfortable mobile tap targets;
+- search suggestions overlay the flow rather than shifting the page, and a selected player suppresses the empty-results dropdown;
+- placeholder result-distribution UI is not shown before real persisted aggregate data exists;
+- visual polish must not expose hidden answers, move rules into React, change scoring, or alter server-authoritative resolution.
+
+The heritage direction is now the public visual baseline rather than deferred post-mechanics work. Future comparison/percentile UI should extend this same system instead of introducing a second visual language.
 
 ## Required before broad launch
 

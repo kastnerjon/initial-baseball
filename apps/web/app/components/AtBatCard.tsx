@@ -87,17 +87,16 @@ export function AtBatCard({
 
   if (resolvedTerminalResult !== null) {
     return (
-      <div className="at-bat-card">
+      <div className="at-bat-card at-bat-card-resolved">
         <div className="pitch-meta">
           <span className="pitch-number">{`At Bat ${atBat.pitchNumber}`}</span>
           <CountIndicator label="Strikes" filledCount={state.strikeCount} total={3} />
         </div>
         <ResultDisplay result={resolvedTerminalResult} rulesetVersion={rulesetVersion} />
         {state.reveal === null ? null : <PlayerRevealCard reveal={state.reveal} />}
-        <OutcomeDistributionPlaceholder />
         <button
           type="button"
-          className="button-primary"
+          className="button-primary button-next-at-bat"
           onClick={onNextPitch}
         >
           Next At Bat
@@ -116,15 +115,17 @@ export function AtBatCard({
       <div className="initials-block">
         <span className="initials-label">Up Now</span>
         <strong className="initials-value">{atBat.initials}</strong>
+        <span className="initials-prompt">Who is it?</span>
       </div>
 
-      <div className="hint-block">
+      <section className="hint-block" aria-label="Revealed hints">
+        <div className="hint-heading">
+          <span className="hint-label">Scouting Report</span>
+          <span className="hint-progress">{`${state.revealCount}/4 hints`}</span>
+        </div>
         <div className="hint-list">
           {state.revealedHints.length === 0 ? (
-            <div>
-              <span className="hint-label">Hints</span>
-              <p className="hint-value">None revealed yet.</p>
-            </div>
+            <p className="hint-empty">No hints on the card yet.</p>
           ) : (
             state.revealedHints.map((hint) => (
               <div key={hint.hintLabel} className="revealed-hint">
@@ -136,22 +137,22 @@ export function AtBatCard({
         </div>
         <button
           type="button"
-          className="button-secondary"
+          className="button-secondary button-hint"
           onClick={onRevealHint}
           disabled={hasRevealedAllHints || requestPending}
         >
-          Reveal Next Hint
+          {hasRevealedAllHints ? 'All Hints Revealed' : 'Reveal Next Hint'}
         </button>
-      </div>
+      </section>
 
-      <div className="search-shell">
+      <div className={state.selectedPlayerId === null ? 'search-shell' : 'search-shell search-shell-selected'}>
         <SearchInput
           value={state.query}
           onChange={onQueryChange}
         />
         <ResultsDropdown
           results={results}
-          visible={state.query.trim().length > 0}
+          visible={state.query.trim().length > 0 && state.selectedPlayerId === null}
           selectedPlayerId={state.selectedPlayerId}
           onSelect={handleSelect}
         />
@@ -160,7 +161,7 @@ export function AtBatCard({
       {state.submittedResult !== null && state.submittedResult.kind === 'incorrect' ? (
         <ResultDisplay result={state.submittedResult} rulesetVersion={rulesetVersion} />
       ) : null}
-      {requestError === null ? null : <p role="alert">{requestError}</p>}
+      {requestError === null ? null : <p className="request-error" role="alert">{requestError}</p>}
 
       <div className="at-bat-actions">
         <button
@@ -214,15 +215,5 @@ function CountIndicator({
         ))}
       </div>
     </div>
-  );
-}
-
-function OutcomeDistributionPlaceholder(): JSX.Element {
-  return (
-    <section className="outcome-distribution-card">
-      <span className="field-label">Field Results</span>
-      {/* TODO: Replace with persisted public Daily results grouped by puzzleNumber, at-bat number, and outcome. */}
-      <p className="result-note">Outcome distribution will appear once public results are collected.</p>
-    </section>
   );
 }

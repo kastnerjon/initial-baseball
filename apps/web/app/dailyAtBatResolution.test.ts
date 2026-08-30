@@ -165,7 +165,7 @@ describe('AtBatCard terminal output', () => {
     expect(html).toContain('<th scope="col">Summary</th>');
     expect(html).toContain('<th scope="col">OPS</th>');
     expect(html).toContain('<td>630</td>');
-    expect(html).toContain('Outcome distribution will appear once public results are collected.');
+    expect(html).not.toContain('Outcome distribution will appear once public results are collected.');
   });
 
   it('reveals the correct answer after a normal strikeout', () => {

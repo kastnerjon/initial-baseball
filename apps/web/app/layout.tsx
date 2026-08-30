@@ -1,6 +1,10 @@
 import type { JSX } from 'react';
 import type { Metadata } from 'next';
 import './styles.css';
+import './daily-shell.css';
+import './daily-game.css';
+import './daily-results.css';
+import './daily-responsive.css';
 
 export const metadata: Metadata = {
   title: 'Initial Baseball',
