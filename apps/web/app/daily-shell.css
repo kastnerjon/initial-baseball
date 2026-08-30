@@ -12,7 +12,7 @@
   width: min(100%, 780px);
   margin: 0 auto;
   padding: 30px;
-  overflow: hidden;
+  overflow: visible;
   border: 1px solid rgba(255, 250, 240, 0.24);
   border-radius: 20px;
   background:
