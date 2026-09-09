@@ -1,71 +1,71 @@
 :root {
   color-scheme: light;
-  --ink: #172219;
-  --ink-soft: #566158;
-  --clubhouse: #113b2a;
-  --clubhouse-deep: #08281d;
-  --clubhouse-black: #061b14;
-  --paper: #f3ead6;
-  --paper-light: #fffaf0;
-  --paper-deep: #e2d3b5;
-  --score-red: #9d332b;
-  --score-red-dark: #74251f;
-  --score-gold: #d5b66f;
-  --line: rgba(23, 34, 25, 0.17);
-  --line-soft: rgba(23, 34, 25, 0.09);
-  --shadow: 0 28px 80px rgba(3, 20, 13, 0.28);
+  --ink: #24352c;
+  --ink-soft: #616960;
+  --clubhouse: #194b38;
+  --clubhouse-deep: #153b2d;
+  --paper: #f7f5ee;
+  --paper-light: #fffef9;
+  --score-red: #993e32;
+  --score-red-dark: #803329;
+  --score-gold: #e3cb94;
+  --line: #d7dbd2;
+  --line-soft: #e9eae2;
   --display-font: Georgia, "Times New Roman", serif;
-  --utility-font: "Avenir Next Condensed", "Arial Narrow", "Franklin Gothic Medium", ui-sans-serif, system-ui, sans-serif;
-  --body-font: "Avenir Next", Avenir, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --body-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
+  --utility-font: var(--body-font);
   font-family: var(--body-font);
-  background: var(--paper);
+  font-size: 16px;
   color: var(--ink);
+  background: var(--paper);
 }
-
 * {
   box-sizing: border-box;
 }
-
-html {
-  min-width: 320px;
-  background: var(--paper);
-}
-
+html,
 body {
   min-width: 320px;
   margin: 0;
+}
+body {
   background: var(--paper);
   color: var(--ink);
+  line-height: 1.5;
 }
-
 button,
 input,
 summary {
   font: inherit;
 }
-
 button {
   -webkit-tap-highlight-color: transparent;
 }
-
 button:focus-visible,
 input:focus-visible,
 summary:focus-visible,
 [tabindex="0"]:focus-visible {
-  outline: 3px solid rgba(157, 51, 43, 0.34);
+  outline: 2px solid var(--clubhouse);
   outline-offset: 3px;
 }
-
 button:disabled {
   cursor: not-allowed;
-  opacity: 0.5;
+  opacity: 0.55;
 }
-
 ::selection {
-  background: rgba(213, 182, 111, 0.46);
+  background: #e4d6ae;
   color: var(--clubhouse-deep);
 }
-
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+  border: 0;
+}
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

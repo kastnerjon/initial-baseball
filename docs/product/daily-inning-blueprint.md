@@ -1,7 +1,7 @@
 # Daily Inning end-to-end blueprint
 
 Status: Living product source of truth  
-Last updated: 2026-08-29
+Last updated: 2026-09-08
 
 ## Product decision
 
@@ -77,18 +77,26 @@ Statistical accomplishment is not recognizability. The current weighted-stat ran
 
 ## Visual system
 
-The public Daily surface uses a **modern heritage scorecard** direction: warm scorebook paper, clubhouse green, muted scorekeeper red, restrained brass/gold accents, serif display typography, condensed utility labels, and compact scoreboard/stat-table motifs. It should evoke a real baseball scorecard or old club program without becoming novelty retro UI.
+The public Daily surface uses a **compact baseball scorebook**: warm off-white paper, forest green, muted red, and restrained serif typography for the masthead, initials and player name. This refines the heritage baseline after screenshot review; readability and the main guessing interaction take priority over decoration.
 
 Presentation rules:
 
-- mobile web is the primary layout constraint; the public game becomes a full-bleed scorebook sheet on narrow screens rather than a floating desktop card;
-- the Daily masthead, edition number, sticky scorebug, active initials, hints, search, actions, resolved result, reveal card, scorecard history, and completion/share surfaces should read as one visual system;
-- active initials are the dominant gameplay focal point, while controls remain tactile, high-contrast, and at least comfortable mobile tap targets;
-- search suggestions overlay the flow rather than shifting the page, and a selected player suppresses the empty-results dropdown;
-- placeholder result-distribution UI is not shown before real persisted aggregate data exists;
-- visual polish must not expose hidden answers, move rules into React, change scoring, or alter server-authoritative resolution.
+- compact masthead with one edition number and a small expandable help control; no full-width instruction row, double borders, ruled textures, gradients or nested decorative cards;
+- a centered playing surface up to 640px wide, with a wider resolved-player surface up to 960px for desktop statistics;
+- a non-sticky compact status row shows the current at-bat number unambiguously, the ruleset-derived score/maximum and strikeouts; legacy sessions retain runs/hits/bases/outs and never receive point copy;
+- terminal status renders existing pending-advance totals immediately, without recomputing rules in React;
+- current strikes appear once beside the guessing interaction with an accessible numeric label;
+- regular-weight system sans serif for body text, controls and data; display serif is reserved for a few focal points;
+- the initials, hints and guess input remain close together; Submit Guess is the primary action, Hint is secondary, and Give Up is quiet; controls keep at least 44px tap targets and text inputs remain 16px;
+- completed-at-bat history follows the playing surface; optional history never pushes the current interaction down;
+- terminal outcome/awarded points and Next At Bat precede the reveal and expandable season tables, preserving continuation when tables are long;
+- search suggestions overlay the flow and selecting a player suppresses the empty-results dropdown; unique names remain names only and genuine duplicates retain years, without position/team clues;
+- no placeholder distributions or unsourced award/leader emphasis; future percentile/comparison UI follows the same restrained hierarchy;
+- presentation never changes scoring, server answer authority, canonical facts, persistence, publication, or progression.
 
-The heritage direction is now the public visual baseline rather than deferred post-mechanics work. Future comparison/percentile UI should extend this same system instead of introducing a second visual language.
+Statistics use compact right-aligned tabular numerals, regular-weight season values, a distinguished career total row, subtle row rules, and expandable season details. Season and Team are separate columns; all teams in a multi-team season remain visible. Tables scroll within keyboard-focusable labeled regions, with sticky headers and Season/Team identifiers. Column abbreviations provide definitions. Missing values remain distinct from known zero; rendering does not infer facts or add unsourced statistics.
+
+Browser verification must cover common phone/tablet/desktop widths, local table overflow, search overlays and pending states, terminal/reveal/continuation, refresh and completion. Emulated browser checks do not substitute for physical iPhone timing/touch QA.
 
 ## Required before broad launch
 

@@ -19,18 +19,16 @@ export default async function DailyInningHomePage(): Promise<JSX.Element> {
               <p className="daily-deck">Guess today&apos;s lineup from initials.</p>
             </div>
           </div>
-          <div className="daily-edition" aria-label={`Daily Inning number ${bootstrap.puzzle.puzzleNumber}`}>
-            <span className="daily-edition-label">Daily</span>
-            <strong>{`#${bootstrap.puzzle.puzzleNumber}`}</strong>
+          <div className="daily-header-tools">
+            <span className="daily-edition" aria-label={`Daily Inning number ${bootstrap.puzzle.puzzleNumber}`}>
+              {`Daily #${bootstrap.puzzle.puzzleNumber}`}
+            </span>
+            <details className="daily-instructions">
+              <summary>How to play</summary>
+              <p>Guess the player from initials. Reveal hints if stuck; earlier correct guesses score better outcomes. Three wrong guesses or Give Up records a strikeout. A new Daily Inning arrives after midnight Pacific.</p>
+            </details>
           </div>
         </header>
-
-        <div className="masthead-rule" aria-hidden="true" />
-
-        <details className="daily-instructions">
-          <summary>How to play</summary>
-          <p>Guess the player from initials. Reveal hints if stuck; earlier correct guesses score better outcomes. Three wrong guesses or Give Up records a strikeout. A new Daily Inning arrives after midnight Pacific.</p>
-        </details>
 
         <DailyInningGame
           puzzle={bootstrap.puzzle}

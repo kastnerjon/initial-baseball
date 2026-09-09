@@ -3,28 +3,27 @@ import {
   isDailyPointsRulesetVersion,
   type DailyBaseState,
   type DailyPointsSummary,
-  type DailyPuzzle,
   type DailyRulesetVersion,
   type DailyScoreSummary,
 } from '@initial-baseball/shared';
 import { ScorebugShell } from './ScorebugShell';
 
 type DailyScorebugProps = {
-  puzzleNumber: DailyPuzzle['puzzleNumber'];
+  currentAtBat: number;
+  totalAtBats: number;
   rulesetVersion: DailyRulesetVersion;
   summary: DailyScoreSummary;
   points: DailyPointsSummary;
   bases: DailyBaseState;
-  currentStrikeCount: number;
 };
 
 export function DailyScorebug({
-  puzzleNumber,
+  currentAtBat,
+  totalAtBats,
   rulesetVersion,
   summary,
   points,
   bases,
-  currentStrikeCount,
 }: DailyScorebugProps): JSX.Element {
   const isPointsGame = isDailyPointsRulesetVersion(rulesetVersion);
 
@@ -32,14 +31,12 @@ export function DailyScorebug({
     <ScorebugShell
       left={(
         <div className="scorebug-identity">
-          <span className="scorebug-kicker">Today</span>
-          <p className="scorebug-title">{`#${puzzleNumber}`}</p>
+          <p className="scorebug-title">{`At bat ${currentAtBat} of ${totalAtBats}`}</p>
         </div>
       )}
       middle={isPointsGame ? (
         <div className="scorebug-metrics">
-          <ScorebugMetric label="PTS" value={`${points.points}/${points.maximumPoints}`} />
-          <ScorebugMetric label="AB" value={`${points.atBatsCompleted}/${points.totalAtBats}`} />
+          <ScorebugMetric label="Points" value={`${points.points}/${points.maximumPoints}`} />
         </div>
       ) : (
         <div className="scorebug-metrics">
@@ -51,9 +48,8 @@ export function DailyScorebug({
       right={(
         <div className="count-panel">
           {isPointsGame
-            ? <ScorebugMetric label="K" value={summary.strikeouts} />
-            : <CountIndicator label="Outs" filledCount={Math.min(summary.outs, 2)} total={2} />}
-          <CountIndicator label="Strikes" filledCount={Math.min(currentStrikeCount, 3)} total={3} />
+            ? <ScorebugMetric label="Strikeouts" value={summary.strikeouts} />
+            : <CountIndicator label="Outs" filledCount={summary.outs} total={3} />}
         </div>
       )}
     />
@@ -111,7 +107,7 @@ function CountIndicator({
   return (
     <div className="count-indicator">
       <span className="scorebug-section-label">{label}</span>
-      <div className="count-markers" aria-label={label}>
+      <div className="count-markers" aria-label={`${filledCount} ${label.toLowerCase()}`} role="img">
         {Array.from({ length: total }, (_, index) => (
           <span
             key={`${label}-${index}`}

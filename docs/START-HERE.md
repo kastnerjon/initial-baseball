@@ -1,7 +1,7 @@
 # Initial Baseball — Start Here
 
 Status: Active project handoff  
-Last updated: 2026-08-29
+Last updated: 2026-09-08
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
@@ -60,7 +60,9 @@ Answer integrity: `docs/decisions/0001-daily-answer-integrity.md`.
 - PR #131 added immediate Give Up feedback plus server-side editorial-read caching.
 - PR #132 merged as `a942bab74a68077a1c6ed1aff37b16af45ccc685`; Submit Guess now immediately shows `Checking…`.
 - PR #133 merged as `543adf1038f780313870ed3ff30c163648bd86f3`; the public resolve hot path now caches the fully materialized Daily puzzle, defers heavyweight lineup/Supabase composition to cache misses, separates search initialization from resolution, avoids full canonical-index validation for ordinary canonical guesses, and uses direct reveal-shard access for terminal reveals.
-- Production deployment `dpl_AyXpSu9VyQaVUrmANTqJVNQVFf4k` is `READY` on exact PR #133 merge SHA `543adf1038f780313870ed3ff30c163648bd86f3` at `https://initial-baseball-web.vercel.app`; its production build passed hidden-answer QA.
+- PR #135 merged as `d2de746664e7d154294f54dc9ae4b1d55f651ad8` on August 30. Its heritage UI is already deployed; the previous instruction to merge it was stale.
+- Verified September 8: production deployment `dpl_32hGx8N4TKEGKsCaoqHxVbBfVxtf` is `READY` on that exact merge SHA at `https://initial-baseball-web.vercel.app`. PR #135 head CI run `33282802850` passed; no open PRs existed before the compact UI work began.
+- Production is not confirmed error-free: Vercel returned five grouped occurrences of `Insufficient eligible Daily players for slot 2 (ranks 1-250).` on `/`, with first/last seen September 3–8. Issue #136 records this separate lineup/runtime investigation. The grouped timestamps span more than the requested 24-hour window; do not report all five as last-24-hour events.
 - Real-device QA before PR #133 observed roughly two seconds end-to-end for Submit Guess despite successful 200 resolution requests. The post-optimization production iPhone timing retest is still required; do not infer latency improvement from CI/build success.
 - The scheduled August 1 rollover observation verified that production advanced from July 31, 2026 / Daily #96 to August 1, 2026 / Daily #97 after midnight Pacific without a coincident redeploy. Deployment `dpl_Bp2gX76FqxQXpjCgAbMY76nUyqwC` remained current, and the post-boundary response served the correct puzzle through Vercel revalidation.
 - The initial production payload retains exactly one current-batter four-hint bundle and contains no answer ID/name, canonical reveal record, credential, service-role data, or unrelated future-batter hint bundle.
@@ -107,9 +109,9 @@ A technical user may inspect all current-batter hints and replay a prior valid t
 
 ### Public visual presentation
 
-The public Daily surface now uses the modern heritage scorecard direction recorded in `docs/product/daily-inning-blueprint.md`: warm paper, clubhouse green, muted scorekeeper red, restrained gold, a real masthead/edition lockup, sticky scoreboard treatment, a dominant active-batter initials panel, scorecard-like hints/history, tactile controls, and baseball-card/stat-table reveals.
+The September 8 screenshot review supersedes the oversized heritage treatment with the **compact baseball scorebook** direction in `docs/product/daily-inning-blueprint.md`: small masthead/help, one edition number, compact non-sticky status, single current-strike indicator, restrained serif focal points, readable sans serif controls/data, flat surfaces, and history below active play. Stats separate Season/Team, use compact tabular numerals and local keyboard-accessible scrolling, preserve all canonical facts, and distinguish career totals. Next At Bat precedes optional long season tables. Existing pending-advance scores are rendered immediately at resolution.
 
-The visual pass is presentation-only. It does not change scoring, progression, answer authority, baseball facts, persistence, publication, or search semantics. Search suggestions overlay the page instead of shifting it; selecting a player suppresses the misleading empty-results state; the placeholder outcome-distribution card is absent until real aggregate results exist. Common iPhone/iPad visual and interaction QA remains required on the deployed build.
+This is web presentation work; scoring/version compatibility, search semantics, canonical facts, publication, persistence, and answer authority remain unchanged. Plan/scope and verification evidence: `tasks/plans/compact-scorebook.md`. The production baseline above remains PR #135 until a later deployment is explicitly verified. Physical iPhone/iPad touch and post-PR #133 latency QA remain outstanding.
 
 ## Settled future systems
 
@@ -132,7 +134,7 @@ Future aggregation uses one compact idempotent completed-game submission from na
 These require an actual browser lifecycle but no editor credentials:
 
 - re-test Submit Guess and Give Up latency on production after PR #133, inspecting handler-level server timing against end-to-end phone timing;
-- verify the heritage Daily presentation and touch behavior on common iPhone/iPad sizes, including sticky scorebug, hints, search dropdown, selected-player state, result/reveal cards, scorecard history, and completion/share;
+- verify the compact Daily presentation and touch behavior on physical iPhone/iPad, including hints, search dropdown, selected-player state, result/reveal tables, history, and completion/share;
 - resolved `points-v2` outcome/point presentation;
 - saved-session `/api/daily/hints` hydration and refresh recovery;
 - correct guess, wrong guesses, third strike, Give Up responsiveness/reveal, all-nine continuation, final reveal/completion, and mobile interaction;
@@ -149,11 +151,11 @@ These require the editor's authenticated session:
 
 ## Exact next work order
 
-1. Merge/deploy the bounded heritage Daily UI pass after CI/preview/review, then complete the production iPhone/iPad presentation check together with the outstanding PR #133 latency retest and public browser/refresh/completion checklist.
+1. Complete compact UI CI/browser/review/preview verification and deploy it; investigate production lineup exhaustion separately under issue #136. Then complete physical iPhone/iPad presentation checks and the outstanding PR #133 latency/public refresh/completion checklist.
 2. Complete the authenticated admin checklist when the editor is available.
 3. Define the compact completed-game submission, validation, idempotent repository port, and derived-score contract in portable layers.
 4. Add a separate Supabase migration/adapter and public submission route only after that contract is reviewed.
-5. Add same-puzzle/same-ruleset aggregates and percentile UI using the established heritage visual system.
+5. Add same-puzzle/same-ruleset aggregates and percentile UI using the compact scorebook visual system.
 6. Define gameplay-profile and lineup-recipe contracts, then establish a conservative recognizable Standard Daily pool/recipe.
 7. Continue analytics, monitoring, legal/domain basics, and later refinement of the established mobile/heritage presentation.
 
