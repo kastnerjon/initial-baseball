@@ -1,7 +1,7 @@
 # Initial Baseball — Start Here
 
 Status: Active project handoff  
-Last updated: 2026-09-08
+Last updated: 2026-09-09
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
@@ -63,6 +63,7 @@ Answer integrity: `docs/decisions/0001-daily-answer-integrity.md`.
 - PR #135 merged as `d2de746664e7d154294f54dc9ae4b1d55f651ad8` on August 30. Its heritage UI is already deployed; the previous instruction to merge it was stale.
 - Verified September 8: production deployment `dpl_32hGx8N4TKEGKsCaoqHxVbBfVxtf` is `READY` on that exact merge SHA at `https://initial-baseball-web.vercel.app`. PR #135 head CI run `33282802850` passed; no open PRs existed before the compact UI work began.
 - Production is not confirmed error-free: Vercel returned five grouped occurrences of `Insufficient eligible Daily players for slot 2 (ranks 1-250).` on `/`, with first/last seen September 3–8. Issue #136 records this separate lineup/runtime investigation. The grouped timestamps span more than the requested 24-hour window; do not report all five as last-24-hour events.
+- PR #137 contains the compact scorebook presentation revision and its required documentation-impact section; CI must still complete the production build gate before deployment is claimed.
 - Real-device QA before PR #133 observed roughly two seconds end-to-end for Submit Guess despite successful 200 resolution requests. The post-optimization production iPhone timing retest is still required; do not infer latency improvement from CI/build success.
 - The scheduled August 1 rollover observation verified that production advanced from July 31, 2026 / Daily #96 to August 1, 2026 / Daily #97 after midnight Pacific without a coincident redeploy. Deployment `dpl_Bp2gX76FqxQXpjCgAbMY76nUyqwC` remained current, and the post-boundary response served the correct puzzle through Vercel revalidation.
 - The initial production payload retains exactly one current-batter four-hint bundle and contains no answer ID/name, canonical reveal record, credential, service-role data, or unrelated future-batter hint bundle.
