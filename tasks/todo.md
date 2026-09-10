@@ -5,7 +5,7 @@ Last updated: 2026-09-10
 
 Completed history belongs in PRs, canonical docs, or `tasks/lessons.md`. Durable resumption context belongs in `docs/START-HERE.md`.
 
-Current order: finish the bounded production lineup-exhaustion fix under issue #136, confirm the merged compact UI can deploy on that corrected runtime, complete physical iPhone/iPad presentation and resolution-latency QA, then authenticated admin QA, completed-result contracts/persistence, and the lineup-content system.
+Current order: complete physical iPhone/iPad presentation and resolution-latency QA on the now-corrected production runtime, then authenticated admin QA, completed-result contracts/persistence, and the lineup-content system.
 
 ## 0. Continuity
 
@@ -33,8 +33,8 @@ Current order: finish the bounded production lineup-exhaustion fix under issue #
 - [x] Keep resolve `Server-Timing` as the handler-level diagnostic and use it with phone end-to-end timing to separate remaining platform/network overhead from server work.
 - [x] Merge/deploy the original heritage baseline as PR #135, production `dpl_32hGx8N4TKEGKsCaoqHxVbBfVxtf` at `d2de746664e7d154294f54dc9ae4b1d55f651ad8`; verified September 8.
 - [x] Implement and merge the authorized compact scorebook revision as PR #137: readable typography, compact header/status, single current-strike indicator, history after play, quiet secondary controls, continuation before long reveals, and compact Season/Team tables; scope in `tasks/plans/compact-scorebook.md`.
-- [ ] Finish issue #136: use dense canonical recognizability ranks beginning September 2 while preserving earlier v2 lineups, the 90-day repeat window, published/manual puzzles, and hosting settings; complete CI and bounded review.
-- [ ] Confirm a successful production deployment of merged PR #137 after the lineup-exhaustion runtime defect is fixed.
+- [x] Fix issue #136 in PR #138: use dense canonical recognizability ranks beginning September 2 while preserving earlier v2 lineups, the 90-day repeat window, published/manual puzzles, and hosting settings; regression coverage includes the 173-of-250 reproduction, cutover compatibility, and continuous generation through October 2027.
+- [x] Verify production deployment `dpl_8e7N4n8E34rXCgmYj9rJEKBdsKHu` from merge SHA `7c568f3253d62b8fab11becc3e68d94628fa6b0a` is READY/canonically aliased, serves `/` with HTTP 200 and the compact scorebook UI, and has no error/fatal logs on the new deployment at verification time.
 - [ ] Verify physical iPhone Submit Guess and Give Up end-to-end latency against handler timing after PR #133; CI/browser emulation alone cannot establish a phone latency improvement.
 - [ ] Verify compact presentation on physical iPhone/iPad, including search dropdown/selection, hint and pending states, local reveal-table scrolling, history, completion/share and no accidental zoom/overflow.
 - [ ] Verify resolved `points-v2` outcome plus awarded-point presentation.
