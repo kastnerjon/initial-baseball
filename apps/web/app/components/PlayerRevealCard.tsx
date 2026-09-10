@@ -116,7 +116,8 @@ function SeasonStatTables({
               );
               return {
                 key: `${season.season}:${season.teamIds.join(',')}:${careerLine.kind}`,
-                label: `${season.season} · ${season.teamIds.join(', ') || EMPTY_VALUE}`,
+                label: String(season.season),
+                team: season.teamIds.join(', ') || EMPTY_VALUE,
                 values: columns.map((column) => line?.stats[column] ?? EMPTY_VALUE),
               };
             })}
@@ -156,6 +157,7 @@ function StatLineGroup({
 type StatTableRow = {
   key: string;
   label: string;
+  team?: string;
   values: Array<number | string | undefined>;
 };
 
@@ -168,14 +170,17 @@ function StatTable({
   rows: StatTableRow[];
   ariaLabel: string;
 }): JSX.Element {
+  const isSeasonTable = rows.some((row) => row.team !== undefined);
   return (
     <div className="player-reveal-stat-strip" role="region" aria-label={ariaLabel} tabIndex={0}>
       <table>
+        <caption className="sr-only">{ariaLabel}</caption>
         <thead>
           <tr>
-            <th scope="col">Summary</th>
+            <th scope="col">{isSeasonTable ? 'Season' : 'Summary'}</th>
+            {isSeasonTable ? <th scope="col" className="stat-team">Team</th> : null}
             {columns.map((column) => (
-              <th key={column} scope="col">{column}</th>
+              <th key={column} scope="col"><abbr title={STAT_LABELS[column] ?? column}>{column}</abbr></th>
             ))}
           </tr>
         </thead>
@@ -183,6 +188,7 @@ function StatTable({
           {rows.map((row) => (
             <tr key={row.key}>
               <th scope="row">{row.label}</th>
+              {isSeasonTable ? <td className="stat-team">{row.team}</td> : null}
               {row.values.map((value, index) => (
                 <td key={columns[index]}>{value ?? EMPTY_VALUE}</td>
               ))}
@@ -208,3 +214,11 @@ function formatRole(role: CanonicalRevealViewModel['playerType']): string {
       return 'Two-way';
   }
 }
+
+const STAT_LABELS: Record<string, string> = {
+  AB: 'At bats', H: 'Hits', HR: 'Home runs', BA: 'Batting average',
+  R: 'Runs', RBI: 'Runs batted in', SB: 'Stolen bases',
+  OBP: 'On-base percentage', SLG: 'Slugging percentage', OPS: 'On-base plus slugging',
+  W: 'Wins', L: 'Losses', SV: 'Saves', ERA: 'Earned run average',
+  WHIP: 'Walks and hits per inning pitched', K: 'Strikeouts', IP: 'Innings pitched',
+};

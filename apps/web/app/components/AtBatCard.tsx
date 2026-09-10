@@ -93,7 +93,6 @@ export function AtBatCard({
           <CountIndicator label="Strikes" filledCount={state.strikeCount} total={3} />
         </div>
         <ResultDisplay result={resolvedTerminalResult} rulesetVersion={rulesetVersion} />
-        {state.reveal === null ? null : <PlayerRevealCard reveal={state.reveal} />}
         <button
           type="button"
           className="button-primary button-next-at-bat"
@@ -101,6 +100,7 @@ export function AtBatCard({
         >
           Next At Bat
         </button>
+        {state.reveal === null ? null : <PlayerRevealCard reveal={state.reveal} />}
       </div>
     );
   }
@@ -108,24 +108,22 @@ export function AtBatCard({
   return (
     <div className="at-bat-card">
       <div className="pitch-meta">
-        <span className="pitch-number">{`At Bat ${atBat.pitchNumber}`}</span>
+        <span className="pitch-number">Who is the player?</span>
         <CountIndicator label="Strikes" filledCount={state.strikeCount} total={3} />
       </div>
 
       <div className="initials-block">
-        <span className="initials-label">Up Now</span>
         <strong className="initials-value">{atBat.initials}</strong>
-        <span className="initials-prompt">Who is it?</span>
       </div>
 
       <section className="hint-block" aria-label="Revealed hints">
         <div className="hint-heading">
-          <span className="hint-label">Scouting Report</span>
+          <span className="hint-label">Hints</span>
           <span className="hint-progress">{`${state.revealCount}/4 hints`}</span>
         </div>
         <div className="hint-list">
           {state.revealedHints.length === 0 ? (
-            <p className="hint-empty">No hints on the card yet.</p>
+            <p className="hint-empty">Know it already? Make your guess below.</p>
           ) : (
             state.revealedHints.map((hint) => (
               <div key={hint.hintLabel} className="revealed-hint">
@@ -203,7 +201,7 @@ function CountIndicator({
   return (
     <div className="at-bat-count">
       <span className="at-bat-count-label">{label}</span>
-      <div className="at-bat-count-markers" aria-label={label}>
+      <div className="at-bat-count-markers" aria-label={`${filledCount} of ${total} ${label.toLowerCase()}`} role="img">
         {Array.from({ length: total }, (_, index) => (
           <span
             key={`${label}-${index}`}

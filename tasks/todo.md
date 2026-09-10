@@ -1,11 +1,11 @@
 # Initial Baseball Current Work
 
 Status: Active ordered implementation plan  
-Last updated: 2026-08-29
+Last updated: 2026-09-08
 
 Completed history belongs in PRs, canonical docs, or `tasks/lessons.md`. Durable resumption context belongs in `docs/START-HERE.md`.
 
-Current order: merge/verify the heritage Daily UI pass, then complete the production iPhone/iPad presentation check together with the outstanding resolution-latency and public real-browser gameplay QA, then authenticated admin QA when the editor is available, then completed-result contracts and persistence, then the lineup-content system.
+Current order: verify/deploy the compact UI revision, investigate production lineup exhaustion (#136) as separate bounded work, complete physical iPhone/iPad presentation and resolution-latency QA, then authenticated admin QA, completed-result contracts/persistence, and the lineup-content system.
 
 ## 0. Continuity
 
@@ -31,9 +31,12 @@ Current order: merge/verify the heritage Daily UI pass, then complete the produc
 - [x] Confirm from production device/log evidence that Submit Guess can still take roughly two seconds even when requests succeed, establishing a real hot-path performance defect rather than an error/retry issue.
 - [x] Implement and merge the bounded hot-path optimization: cache the fully materialized server-only puzzle, lazy-load lineup/Supabase composition on cache miss, separate search initialization from resolution, avoid full canonical-index loading for ordinary canonical guesses, and use direct reveal-shard access for terminal resolution.
 - [x] Keep resolve `Server-Timing` as the handler-level diagnostic and use it with phone end-to-end timing to separate remaining platform/network overhead from server work.
-- [x] Establish the modern heritage scorecard visual baseline for the public Daily surface without changing gameplay/domain authority: masthead/edition lockup, sticky scoreboard, dominant initials panel, scorecard-style hints/history, tactile controls, baseball-card reveal styling, completion/share treatment, overlay search results, and removal of placeholder aggregate UI.
-- [ ] After the heritage UI merge, verify production iPhone Submit Guess and Give Up end-to-end latency and compare it with handler-level server timing; do not mark responsiveness solved from CI/preview alone.
-- [ ] Verify the heritage presentation and touch behavior on common iPhone/iPad sizes, including sticky scorebug, search dropdown/selection, hint states, pending states, reveal tables, horizontal scorecard history, completion/share, and no accidental viewport zoom/overflow.
+- [x] Merge/deploy the original heritage baseline as PR #135, production `dpl_32hGx8N4TKEGKsCaoqHxVbBfVxtf` at `d2de746664e7d154294f54dc9ae4b1d55f651ad8`; verified September 8.
+- [x] Implement the authorized compact scorebook revision: readable typography, compact header/status, single current-strike indicator, history after play, quiet secondary controls, continuation before long reveals, and compact Season/Team tables; scope in `tasks/plans/compact-scorebook.md`.
+- [ ] Complete compact UI browser/full-CI/bounded-review/preview verification and confirm production deployment.
+- [ ] Investigate production insufficient eligible players for slot 2 under issue #136; keep lineup-rule/data fixes separate from UI work.
+- [ ] Verify physical iPhone Submit Guess and Give Up end-to-end latency against handler timing after PR #133; CI/browser emulation alone cannot establish a phone latency improvement.
+- [ ] Verify compact presentation on physical iPhone/iPad, including search dropdown/selection, hint and pending states, local reveal-table scrolling, history, completion/share and no accidental zoom/overflow.
 - [ ] Verify resolved `points-v2` outcome plus awarded-point presentation.
 - [ ] Verify saved-session `/api/daily/hints` hydration and refresh recovery.
 - [ ] Verify correct guess, wrong guesses, third strike, Give Up responsiveness/reveal, all-nine continuation, final reveal/completion, action responses/logs, and common iPhone/iPad behavior.
@@ -92,7 +95,7 @@ Current order: merge/verify the heritage Daily UI pass, then complete the produc
 
 - [ ] Add same-puzzle/same-ruleset completion count, average score, score distribution, outcome/hint-depth/K/Give Up aggregates.
 - [ ] Settle percentile tie treatment and minimum sample copy.
-- [ ] Add understandable percentile/sample-size UI by extending the established heritage scorecard system and preserve raw-fact recalculation.
+- [ ] Add understandable percentile/sample-size UI by extending the compact scorebook system and preserve raw-fact recalculation.
 
 ## 5. Lineup-content system
 
@@ -107,8 +110,8 @@ Current order: merge/verify the heritage Daily UI pass, then complete the produc
 ## 6. Launch surfaces
 
 - [ ] Analytics/error monitoring.
-- [ ] Finish real-device iPhone/iPad polish and payload measurement after the heritage baseline is deployed.
-- [x] Establish the heritage ballpark/scorecard/old-program presentation as the public visual baseline.
+- [ ] Finish real-device iPhone/iPad polish and payload measurement after the compact revision is deployed.
+- [x] Refine the heritage baseline into the compact baseball scorebook direction after September 8 screenshot review.
 - [ ] Privacy, terms, canonical domain, social metadata.
 
 ## Deferred public products

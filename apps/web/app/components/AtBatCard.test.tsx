@@ -41,6 +41,13 @@ describe('AtBatCard pending resolution feedback', () => {
     expect(html).not.toContain('Checking…');
   });
 
+  it('announces the current strike count and does not render a hidden reveal while active', () => {
+    const html = renderCard({ requestPending: false, giveUpPending: false });
+    expect(html).toContain('aria-label="0 of 3 strikes"');
+    expect(html).not.toContain('Player Reveal');
+    expect(html).not.toContain('player-reveal-stat-strip');
+  });
+
   it('does not show an empty search-results state after a player is selected', () => {
     const html = renderCard({
       requestPending: false,

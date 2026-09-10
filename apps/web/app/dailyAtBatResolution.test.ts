@@ -9,6 +9,7 @@ import {
   type DailyRulesetVersion,
 } from '@initial-baseball/shared';
 import { describe, expect, it } from 'vitest';
+import { DailyScorebug } from './components/DailyScorebug';
 import { AtBatCard } from './components/AtBatCard';
 import { PlayerRevealCard } from './components/PlayerRevealCard';
 import type { CanonicalRevealViewModel } from './canonicalRevealViewModel';
@@ -142,7 +143,7 @@ describe('AtBatCard terminal output', () => {
       strikeCount: 0,
     });
 
-    expect(html).toContain(`At Bat ${firstPitch.pitchNumber}`);
+    expect(html).toContain('Who is the player?');
     expect(html).not.toContain(`Pitch ${firstPitch.pitchNumber}`);
     expect(html).toContain('Give up');
     expect(html).toContain('Guess the player');
@@ -156,6 +157,7 @@ describe('AtBatCard terminal output', () => {
 
     expect(html).toContain(`At Bat ${firstPitch.pitchNumber}`);
     expect(html).toContain('Next At Bat');
+    expect(html.indexOf('Next At Bat')).toBeLessThan(html.indexOf('Player Reveal'));
     expect(html).not.toContain('Next Pitch');
     expect(html).toContain('K');
     expect(html).toContain('Strikeout · 0 points');
@@ -163,7 +165,7 @@ describe('AtBatCard terminal output', () => {
     expect(html).toContain(firstReveal.displayName);
     expect(html).toContain(`${firstReveal.yearsPlayedDisplay} · Hitter · ${firstReveal.primaryPosition}`);
     expect(html).toContain('<th scope="col">Summary</th>');
-    expect(html).toContain('<th scope="col">OPS</th>');
+    expect(html).toContain('<th scope="col"><abbr title="On-base plus slugging">OPS</abbr></th>');
     expect(html).toContain('<td>630</td>');
     expect(html).not.toContain('Outcome distribution will appear once public results are collected.');
   });
@@ -247,22 +249,70 @@ describe('PlayerRevealCard', () => {
 
     expect(html).toContain('1989–2010');
     expect(html).toContain('<th scope="col">Summary</th>');
-    expect(html).toContain('<th scope="col">AB</th>');
-    expect(html).toContain('<th scope="col">OPS</th>');
+    expect(html).toContain('<th scope="col"><abbr title="At bats">AB</abbr></th>');
+    expect(html).toContain('<th scope="col"><abbr title="On-base plus slugging">OPS</abbr></th>');
     expect(html).toContain('<th scope="row">Career</th>');
     expect(html).toContain('<td>630</td>');
     expect(html).toContain('<td>.908</td>');
+  });
+
+  it('separates Season and Team, retains every team, and distinguishes zero from unavailable', () => {
+    const reveal = buildReveal('hitter');
+    reveal.seasons = [{
+      season: 2008, teamIds: ['TOR', 'OAK'],
+      lines: [{ kind: 'hitter', stats: { HR: 0, BA: '—' } }],
+    }];
+    const html = renderToStaticMarkup(React.createElement(PlayerRevealCard, { reveal }));
+    expect(html).toContain('<th scope="col">Season</th>');
+    expect(html).toContain('<th scope="col" class="stat-team">Team</th>');
+    expect(html).toContain('<th scope="row">2008</th><td class="stat-team">TOR, OAK</td>');
+    expect(html).toContain('<td>0</td><td>—</td>');
+    expect(html).toContain('role="region" aria-label="Season-by-season batting statistics" tabindex="0"');
+    expect(html).toContain('<caption class="sr-only">Season-by-season batting statistics</caption>');
+  });
+
+  it('renders both batting and pitching tables for two-way players', () => {
+    const reveal = buildReveal('hitter');
+    reveal.playerType = 'two-way';
+    reveal.career.lines.push(...buildReveal('pitcher').career.lines);
+    const html = renderToStaticMarkup(React.createElement(PlayerRevealCard, { reveal }));
+    expect(html).toContain('Career batting summary');
+    expect(html).toContain('Career pitching summary');
+    expect(html).toContain('<h3>Batting</h3>');
+    expect(html).toContain('<h3>Pitching</h3>');
   });
 
   it('renders pitcher stat strip labels and values', () => {
     const html = renderToStaticMarkup(React.createElement(PlayerRevealCard, { reveal: buildReveal('pitcher') }));
 
     expect(html).toContain('2001–2019');
-    expect(html).toContain('<th scope="col">ERA</th>');
-    expect(html).toContain('<th scope="col">WHIP</th>');
-    expect(html).toContain('<th scope="col">IP</th>');
+    expect(html).toContain('<th scope="col"><abbr title="Earned run average">ERA</abbr></th>');
+    expect(html).toContain('<th scope="col"><abbr title="Walks and hits per inning pitched">WHIP</abbr></th>');
+    expect(html).toContain('<th scope="col"><abbr title="Innings pitched">IP</abbr></th>');
     expect(html).toContain('<td>251</td>');
     expect(html).toContain('<td>3093</td>');
+  });
+});
+
+describe('compact Daily status', () => {
+  it.each(['points-v2', 'points-v1', 'legacy-inning-v1'] as const)('keeps %s status explicit without duplicating current strikes', (rulesetVersion) => {
+    const game = createInitialDemoGameState(DEMO_DAILY_PUZZLE);
+    const html = renderToStaticMarkup(React.createElement(DailyScorebug, {
+      currentAtBat: 2, totalAtBats: 9, rulesetVersion,
+      summary: game.score,
+      points: { ...game.points, points: 2, maximumPoints: rulesetVersion === 'points-v1' ? 45 : 36 },
+      bases: game.inning.bases,
+    }));
+    expect(html).toContain('At bat 2 of 9');
+    expect(html).not.toContain('>Strikes<');
+    expect(html).not.toContain('>AB<');
+    if (rulesetVersion === 'legacy-inning-v1') {
+      expect(html).not.toContain('>Points<');
+      expect(html).toContain('Base occupancy');
+      expect(html).toContain('Outs');
+    } else {
+      expect(html).toContain(rulesetVersion === 'points-v1' ? '2/45' : '2/36');
+    }
   });
 });
 

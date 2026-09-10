@@ -204,21 +204,13 @@ export function DailyInningGame({
   return (
     <div className="game-shell">
       <DailyScorebug
-        puzzleNumber={puzzle.puzzleNumber}
+        currentAtBat={activePitch.pitchNumber}
+        totalAtBats={puzzle.pitches.length}
         rulesetVersion={gameState.rulesetVersion}
-        summary={gameState.score}
-        points={gameState.points}
-        bases={gameState.inning.bases}
-        currentStrikeCount={atBatState.strikeCount}
+        summary={pendingAdvance?.score ?? gameState.score}
+        points={pendingAdvance?.points ?? gameState.points}
+        bases={pendingAdvance?.inning.bases ?? gameState.inning.bases}
       />
-      {gameState.completedPitchLines.length > 0 ? (
-        <PitchResultList
-          pitchLines={gameState.completedPitchLines}
-          title="Completed At-bats"
-          emptyLabel="No completed at-bats yet."
-          compact
-        />
-      ) : null}
       <AtBatCard
         atBat={activePitch}
         rulesetVersion={gameState.rulesetVersion}
@@ -248,6 +240,14 @@ export function DailyInningGame({
         onGiveUp={() => { void handleGiveUp(); }}
         onNextPitch={handleNextPitch}
       />
+      {gameState.completedPitchLines.length > 0 ? (
+        <PitchResultList
+          pitchLines={gameState.completedPitchLines}
+          title="Completed At-bats"
+          emptyLabel="No completed at-bats yet."
+          compact
+        />
+      ) : null}
       <button type="button" className="reset-local-result-button" onClick={handleResetToday}>
         Reset today's local result
       </button>
