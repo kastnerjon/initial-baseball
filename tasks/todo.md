@@ -1,11 +1,11 @@
 # Initial Baseball Current Work
 
 Status: Active ordered implementation plan  
-Last updated: 2026-09-08
+Last updated: 2026-09-10
 
 Completed history belongs in PRs, canonical docs, or `tasks/lessons.md`. Durable resumption context belongs in `docs/START-HERE.md`.
 
-Current order: verify/deploy the compact UI revision, investigate production lineup exhaustion (#136) as separate bounded work, complete physical iPhone/iPad presentation and resolution-latency QA, then authenticated admin QA, completed-result contracts/persistence, and the lineup-content system.
+Current order: finish the bounded production lineup-exhaustion fix under issue #136, confirm the merged compact UI can deploy on that corrected runtime, complete physical iPhone/iPad presentation and resolution-latency QA, then authenticated admin QA, completed-result contracts/persistence, and the lineup-content system.
 
 ## 0. Continuity
 
@@ -32,9 +32,9 @@ Current order: verify/deploy the compact UI revision, investigate production lin
 - [x] Implement and merge the bounded hot-path optimization: cache the fully materialized server-only puzzle, lazy-load lineup/Supabase composition on cache miss, separate search initialization from resolution, avoid full canonical-index loading for ordinary canonical guesses, and use direct reveal-shard access for terminal resolution.
 - [x] Keep resolve `Server-Timing` as the handler-level diagnostic and use it with phone end-to-end timing to separate remaining platform/network overhead from server work.
 - [x] Merge/deploy the original heritage baseline as PR #135, production `dpl_32hGx8N4TKEGKsCaoqHxVbBfVxtf` at `d2de746664e7d154294f54dc9ae4b1d55f651ad8`; verified September 8.
-- [x] Implement the authorized compact scorebook revision: readable typography, compact header/status, single current-strike indicator, history after play, quiet secondary controls, continuation before long reveals, and compact Season/Team tables; scope in `tasks/plans/compact-scorebook.md`.
-- [ ] Complete compact UI browser/full-CI/bounded-review/preview verification and confirm production deployment.
-- [ ] Investigate production insufficient eligible players for slot 2 under issue #136; keep lineup-rule/data fixes separate from UI work.
+- [x] Implement and merge the authorized compact scorebook revision as PR #137: readable typography, compact header/status, single current-strike indicator, history after play, quiet secondary controls, continuation before long reveals, and compact Season/Team tables; scope in `tasks/plans/compact-scorebook.md`.
+- [ ] Finish issue #136: use dense canonical recognizability ranks beginning September 2 while preserving earlier v2 lineups, the 90-day repeat window, published/manual puzzles, and hosting settings; complete CI and bounded review.
+- [ ] Confirm a successful production deployment of merged PR #137 after the lineup-exhaustion runtime defect is fixed.
 - [ ] Verify physical iPhone Submit Guess and Give Up end-to-end latency against handler timing after PR #133; CI/browser emulation alone cannot establish a phone latency improvement.
 - [ ] Verify compact presentation on physical iPhone/iPad, including search dropdown/selection, hint and pending states, local reveal-table scrolling, history, completion/share and no accidental zoom/overflow.
 - [ ] Verify resolved `points-v2` outcome plus awarded-point presentation.

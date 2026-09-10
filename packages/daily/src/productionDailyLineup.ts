@@ -1,5 +1,8 @@
 import { dailyEligiblePlayers } from '@initial-baseball/baseball-data';
-import { createCanonicalDailyLineupCandidates } from './dailyLineupCandidates';
+import {
+  createCanonicalDailyLineupCandidates,
+  createLegacySourceRankCanonicalDailyLineupCandidates,
+} from './dailyLineupCandidates';
 import {
   DAILY_LINEUP_ALGORITHM_VERSION,
   DAILY_REPEAT_WINDOW_DAYS,
@@ -17,6 +20,7 @@ import {
 
 export const DAILY_REVIEWED_DATA_VERSION = 'reviewed-player-data-2026-07-20';
 export const DAILY_LINEUP_QUALITY_LAUNCH_DATE = '2026-07-22';
+export const DAILY_DENSE_CANONICAL_RANKING_LAUNCH_DATE = '2026-09-02';
 
 const LEGACY_POOL_SIZES = [250, 250, 1000, 1000, 2500, 2500, 5000, 5000, 5000] as const;
 
@@ -28,11 +32,16 @@ export function createProductionCanonicalDailySelector(
   overrides: DailyPuzzleOverrideMap,
   resolveCanonicalPlayerId: ResolveCanonicalPlayerId,
 ): ProductionCanonicalDailySelector {
+  const rankedPlayers = rankPlayersByRecognizability(dailyEligiblePlayers);
   const candidates = createCanonicalDailyLineupCandidates(
-    rankPlayersByRecognizability(dailyEligiblePlayers),
+    rankedPlayers,
     resolveCanonicalPlayerId,
   );
-  const rankedLegacyCandidates = candidates.map(({ canonicalPlayerId, player }) => ({
+  const legacySourceRankCandidates = createLegacySourceRankCanonicalDailyLineupCandidates(
+    rankedPlayers,
+    resolveCanonicalPlayerId,
+  );
+  const rankedLegacyCandidates = legacySourceRankCandidates.map(({ canonicalPlayerId, player }) => ({
     canonicalPlayerId,
     player,
   }));
@@ -76,7 +85,9 @@ export function createProductionCanonicalDailySelector(
             reviewedDataVersion: DAILY_REVIEWED_DATA_VERSION,
             algorithmVersion: DAILY_LINEUP_ALGORITHM_VERSION,
           },
-          candidates,
+          candidates: puzzleDate < DAILY_DENSE_CANONICAL_RANKING_LAUNCH_DATE
+            ? legacySourceRankCandidates
+            : candidates,
           usageHistory,
         }).map(({ canonicalPlayerId, player }) => ({ canonicalPlayerId, player }))
         : resolveCanonicalOverride(

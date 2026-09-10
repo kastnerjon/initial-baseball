@@ -6,16 +6,32 @@ export function createCanonicalDailyLineupCandidates(
   rankedPlayers: readonly Player[],
   resolveCanonicalPlayerId: ResolveCanonicalPlayerId,
 ): DailyLineupCandidate[] {
+  return createCanonicalCandidates(rankedPlayers, resolveCanonicalPlayerId, 'dense-canonical');
+}
+
+export function createLegacySourceRankCanonicalDailyLineupCandidates(
+  rankedPlayers: readonly Player[],
+  resolveCanonicalPlayerId: ResolveCanonicalPlayerId,
+): DailyLineupCandidate[] {
+  return createCanonicalCandidates(rankedPlayers, resolveCanonicalPlayerId, 'source-rank');
+}
+
+function createCanonicalCandidates(
+  rankedPlayers: readonly Player[],
+  resolveCanonicalPlayerId: ResolveCanonicalPlayerId,
+  rankMode: 'dense-canonical' | 'source-rank',
+): DailyLineupCandidate[] {
   const candidatesByCanonicalId = new Map<string, DailyLineupCandidate>();
 
-  rankedPlayers.forEach((player, index) => {
+  rankedPlayers.forEach((player, sourceIndex) => {
     const canonicalPlayerId = resolveCanonicalPlayerId(player.id);
     if (canonicalPlayerId === null || candidatesByCanonicalId.has(canonicalPlayerId)) return;
 
+    const canonicalRank = candidatesByCanonicalId.size + 1;
     candidatesByCanonicalId.set(canonicalPlayerId, {
       canonicalPlayerId,
       player,
-      recognizabilityRank: index + 1,
+      recognizabilityRank: rankMode === 'dense-canonical' ? canonicalRank : sourceIndex + 1,
       revealReady: isRevealReady(player),
     });
   });
