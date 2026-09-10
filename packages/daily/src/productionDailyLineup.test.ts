@@ -6,6 +6,7 @@ import {
   selectCanonicalDailyPlayersForDate,
 } from './index';
 import {
+  DAILY_DENSE_CANONICAL_RANKING_LAUNCH_DATE,
   DAILY_LINEUP_QUALITY_LAUNCH_DATE,
   createProductionCanonicalDailySelector,
 } from './productionDailyLineup';
@@ -32,6 +33,76 @@ describe('production canonical Daily lineup', () => {
     expect(new Set(first.map(selection => selection.canonicalPlayerId)).size).toBe(9);
     expect(first.every(selection => selection.canonicalPlayerId.startsWith('canonical:'))).toBe(true);
   });
+
+  it('preserves pre-cutover v2 source-rank semantics', () => {
+    const ranked = rankPlayersByRecognizability(dailyEligiblePlayers);
+    const sourceRankById = new Map(ranked.map((player, index) => [player.id, index + 1]));
+    const canonicalById = new Map(ranked.map((player, index) => [
+      player.id,
+      index === 1 ? `canonical:${ranked[0]?.id ?? player.id}` : `canonical:${player.id}`,
+    ]));
+    const selectPlayers = createProductionCanonicalDailySelector(
+      {},
+      playerId => canonicalById.get(playerId) ?? null,
+    );
+    const selections = selectPlayers('2026-09-01');
+
+    selections.forEach((selection, index) => {
+      const policy = DAILY_RECOGNIZABILITY_POLICY[index];
+      const sourceRank = sourceRankById.get(selection.player.id);
+      if (policy === undefined || sourceRank === undefined) {
+        throw new Error(`Missing source-rank policy for slot ${index + 1}.`);
+      }
+      expect(sourceRank).toBeGreaterThanOrEqual(policy.minimumRank);
+      expect(sourceRank).toBeLessThanOrEqual(policy.maximumRank);
+    });
+  }, 10_000);
+
+  it('uses dense canonical ranks beginning September 2', () => {
+    const ranked = rankPlayersByRecognizability(dailyEligiblePlayers);
+    const canonicalById = new Map<string, string>();
+    const canonicalOrder = new Map<string, number>();
+    let denseRank = 0;
+    ranked.forEach((player, index) => {
+      const canonicalPlayerId = index === 1
+        ? `canonical:${ranked[0]?.id ?? player.id}`
+        : `canonical:${player.id}`;
+      canonicalById.set(player.id, canonicalPlayerId);
+      if (!canonicalOrder.has(canonicalPlayerId)) {
+        denseRank += 1;
+        canonicalOrder.set(canonicalPlayerId, denseRank);
+      }
+    });
+    const selectPlayers = createProductionCanonicalDailySelector(
+      {},
+      playerId => canonicalById.get(playerId) ?? null,
+    );
+    const selections = selectPlayers(DAILY_DENSE_CANONICAL_RANKING_LAUNCH_DATE);
+
+    selections.forEach((selection, index) => {
+      const policy = DAILY_RECOGNIZABILITY_POLICY[index];
+      const rank = canonicalOrder.get(selection.canonicalPlayerId);
+      if (policy === undefined || rank === undefined) {
+        throw new Error(`Missing dense canonical rank policy for slot ${index + 1}.`);
+      }
+      expect(rank).toBeGreaterThanOrEqual(policy.minimumRank);
+      expect(rank).toBeLessThanOrEqual(policy.maximumRank);
+    });
+  });
+
+  it('generates continuously from the dense-ranking cutover through October 2027', () => {
+    const selectPlayers = createProductionCanonicalDailySelector({}, resolveCanonicalPlayerId);
+    const cursor = new Date(`${DAILY_DENSE_CANONICAL_RANKING_LAUNCH_DATE}T00:00:00.000Z`);
+    const end = new Date('2027-10-31T00:00:00.000Z');
+
+    while (cursor.getTime() <= end.getTime()) {
+      const date = cursor.toISOString().slice(0, 10);
+      const selections = selectPlayers(date);
+      expect(selections).toHaveLength(9);
+      expect(new Set(selections.map(selection => selection.canonicalPlayerId)).size).toBe(9);
+      cursor.setUTCDate(cursor.getUTCDate() + 1);
+    }
+  }, 30_000);
 
   it('uses the approved non-overlapping recognizability bands in production', () => {
     const selections = selectLaunchPlayers(DAILY_LINEUP_QUALITY_LAUNCH_DATE);
