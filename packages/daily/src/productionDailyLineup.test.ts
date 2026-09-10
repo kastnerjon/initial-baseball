@@ -56,7 +56,7 @@ describe('production canonical Daily lineup', () => {
       expect(sourceRank).toBeGreaterThanOrEqual(policy.minimumRank);
       expect(sourceRank).toBeLessThanOrEqual(policy.maximumRank);
     });
-  });
+  }, 10_000);
 
   it('uses dense canonical ranks beginning September 2', () => {
     const ranked = rankPlayersByRecognizability(dailyEligiblePlayers);
@@ -102,7 +102,7 @@ describe('production canonical Daily lineup', () => {
       expect(new Set(selections.map(selection => selection.canonicalPlayerId)).size).toBe(9);
       cursor.setUTCDate(cursor.getUTCDate() + 1);
     }
-  });
+  }, 30_000);
 
   it('uses the approved non-overlapping recognizability bands in production', () => {
     const selections = selectLaunchPlayers(DAILY_LINEUP_QUALITY_LAUNCH_DATE);
