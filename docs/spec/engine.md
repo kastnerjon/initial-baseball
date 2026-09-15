@@ -34,7 +34,11 @@ These outcomes are the stable vocabulary. Scoring and completion policies interp
 
 ## Versioned Daily policies
 
-### `points-v2` — current Standard Daily
+### `classic-inning-v1` — approved alternate rules
+
+Classic uses the existing hit/forced-walk runner advancement and run scoring. K adds one out; the game completes at three outs or the end of the same daily nine. The pure `isDailyGameComplete` policy is shared by engine outcome application and the web progression adapter. Post-completion outcomes have no effect. Point values and maximum are zero; presentation uses runs/hits/outs. This identifier is distinct from legacy-inning-v1. Public selection is a separate integration step.
+
+### `points-v2` — Daily Nine, current Standard Daily
 
 | Outcome | Points |
 |---|---:|
@@ -107,6 +111,7 @@ Players select canonical search results. Correctness is exact canonical `playerI
 
 - Share output contains puzzle/result metadata, initials, spoiler-safe outcomes, and the ruleset-derived point total.
 - It never contains player names or hidden answer IDs.
+- Current points-v2 shares are labelled Daily Nine; Classic shares are labelled Classic Inning. Older points-v1/legacy share labels remain Daily Inning.
 - Legacy results retain their legacy baseball summary rather than being mislabeled as a points result.
 - Different ruleset versions must not be compared as the same score distribution.
 

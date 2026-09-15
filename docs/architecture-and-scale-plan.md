@@ -59,11 +59,12 @@ Dependencies do not point upward. React and routes transport/render domain behav
 
 Native completed-at-bat facts preserve slot, initials, HR/3B/2B/1B/BB/K, hints revealed, wrong guesses, and correct/strikeout/Give Up resolution.
 
-- `points-v2`: current Standard Daily policy, `4/3/2/1/0.5/0`, all scheduled at-bats, maximum 36 for nine.
+- `classic-inning-v1`: same daily nine, existing runner advancement, run scoring, three outs or nine at-bats. Public selection/persistence integration is separate.
+- `points-v2`: Daily Nine, current Standard Daily policy, `4/3/2/1/0.5/0`, all scheduled at-bats, maximum 36 for nine.
 - `points-v1`: compatibility policy, `5/4/3/2/1/0`, all scheduled at-bats, maximum 45 for nine.
 - `legacy-inning-v1`: runner advancement and three-out completion for compatible pre-ruleset sessions.
 
-Ruleset version flows through shared state, engine, signed progression, local persistence, final result, and share output. Point totals and resolved-result copy are derived from the engine policy rather than duplicated in React. Do not build a generic plugin framework.
+Ruleset version flows through shared state, engine, signed progression, local persistence, final result, and share output. Point totals and resolved-result copy are derived from the engine policy rather than duplicated in React. The pure engine completion policy is reusable by signed progression so server and client agree. Do not build a generic plugin framework.
 
 ## Immediate active-at-bat hint architecture
 

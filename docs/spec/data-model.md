@@ -116,6 +116,10 @@ Recipe evaluation belongs in `packages/daily`. Storage preserves structured inpu
 
 A puzzle stores its exact final nine even when a recipe generated the proposal.
 
+## Approved Classic result identity
+
+classic-inning-v1 is a separate ruleset using the same puzzle identity. Its result contains only faced at-bats (three through nine), with runs/hits/outs derived from existing runner rules. Default points-v2 remains Daily Nine. Both modes may be played; future submissions and aggregates must isolate rulesets. Classic browser storage isolation and bootstrap selection follow in a separate web integration.
+
 ## Future completed-game results
 
 Aggregate comparison will add at most one compact idempotent submission per completed game.
@@ -124,7 +128,7 @@ The future raw contract should preserve:
 
 - puzzle identity;
 - ruleset version;
-- nine ordered native at-bat facts;
+- ordered native at-bat facts for every faced slot (nine for Daily Nine; three through nine for Classic);
 - outcome;
 - hints revealed;
 - wrong guesses;

@@ -37,6 +37,10 @@ Detailed content direction: `docs/product/lineup-content-system.md`.
 
 Compatible `points-v1` sessions retain `5/4/3/2/1/0` and a 45-point maximum. Compatible pre-ruleset sessions remain `legacy-inning-v1` and retain their prior three-out behavior.
 
+## Approved alternate mode: Classic Inning
+
+Daily Nine remains the default points-v2 game. Classic Inning uses classic-inning-v1: same ordered daily nine, runner advancement and run scoring, ending at three outs or nine at-bats. Players may play both modes, accepting the spoiler interaction. Only faced players appear in the scorecard. Results/shares identify the mode, and local sessions must remain separate. The portable policy is implemented; public mode selection and save isolation are the next integration work, not yet live. Legacy and points-v1 rules remain unchanged.
+
 ## Hint and answer boundary
 
 Current-batter hints are gameplay inputs, not answers, and may be present in browser memory/initial props. The browser must not receive:

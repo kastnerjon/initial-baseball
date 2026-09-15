@@ -2,12 +2,14 @@ import { DEFAULT_ALPHA_SETTINGS, type HintConfigSlot, type HintType } from './ga
 import type { PlayerIdentity } from './player.js';
 import type { StatsHintConfig } from './stats.js';
 
+export const CLASSIC_DAILY_RULESET_VERSION = 'classic-inning-v1' as const;
 export const LEGACY_DAILY_RULESET_VERSION = 'legacy-inning-v1' as const;
 export const POINTS_V1_DAILY_RULESET_VERSION = 'points-v1' as const;
 export const POINTS_V2_DAILY_RULESET_VERSION = 'points-v2' as const;
 export const CURRENT_DAILY_RULESET_VERSION = POINTS_V2_DAILY_RULESET_VERSION;
 
 export type DailyRulesetVersion =
+  | typeof CLASSIC_DAILY_RULESET_VERSION
   | typeof LEGACY_DAILY_RULESET_VERSION
   | typeof POINTS_V1_DAILY_RULESET_VERSION
   | typeof POINTS_V2_DAILY_RULESET_VERSION;
@@ -175,14 +177,15 @@ export type DailyGameState = {
 };
 
 export function isDailyRulesetVersion(value: unknown): value is DailyRulesetVersion {
-  return value === LEGACY_DAILY_RULESET_VERSION
+  return value === CLASSIC_DAILY_RULESET_VERSION
+    || value === LEGACY_DAILY_RULESET_VERSION
     || value === POINTS_V1_DAILY_RULESET_VERSION
     || value === POINTS_V2_DAILY_RULESET_VERSION;
 }
 
 export function isDailyPointsRulesetVersion(
   value: DailyRulesetVersion,
-): value is Exclude<DailyRulesetVersion, typeof LEGACY_DAILY_RULESET_VERSION> {
+): value is typeof POINTS_V1_DAILY_RULESET_VERSION | typeof POINTS_V2_DAILY_RULESET_VERSION {
   return value === POINTS_V1_DAILY_RULESET_VERSION
     || value === POINTS_V2_DAILY_RULESET_VERSION;
 }
