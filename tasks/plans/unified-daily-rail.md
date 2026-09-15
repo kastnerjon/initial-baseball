@@ -14,6 +14,7 @@ Keep every primary Daily surface on the same desktop width and make scorecard ro
 
 - Use the existing 960px reveal/statistics width as the maximum rail for the masthead, scorebug, active card, scorecard, share card, and footer.
 - Keep the rail fluid at narrower viewport sizes.
+- Let child surfaces inherit the outer rail width; do not introduce a second desktop width token.
 - Align scorecard initials, canonical answer, and outcome in compact columns starting at the left edge.
 - Reconcile the canonical visual contract and active handoff documents.
 
