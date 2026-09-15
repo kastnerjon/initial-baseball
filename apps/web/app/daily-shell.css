@@ -17,7 +17,7 @@
   padding-bottom: 20px;
   margin-bottom: 24px;
   border-bottom: 1px solid var(--line);
-  width: min(100%, 640px);
+  width: 100%;
   margin-inline: auto;
 }
 .daily-brand-lockup {
@@ -106,7 +106,7 @@
 .pitch-results-card,
 .complete-card,
 .share-card {
-  width: min(100%, 640px);
+  width: 100%;
   justify-self: center;
 }
 .scorebug-shell {
@@ -205,6 +205,6 @@
   border-top: 1px solid var(--line);
   color: var(--ink-soft);
   font-size: 11px;
-  width: min(100%, 640px);
+  width: 100%;
   margin-inline: auto;
 }

@@ -217,8 +217,9 @@
 }
 .scorecard-row {
   display: grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
+  grid-template-columns: 48px minmax(160px, 260px) max-content;
   align-items: baseline;
+  justify-content: start;
   gap: 16px;
   padding: 10px 0;
   border-bottom: 1px solid var(--line-soft);
@@ -226,10 +227,10 @@
 }
 .scorecard-answer {
   overflow-wrap: anywhere;
-  text-align: center;
+  text-align: left;
 }
 .scorecard-row .pitch-outcome {
-  text-align: right;
+  text-align: left;
 }
 .share-card-header {
   display: flex;
