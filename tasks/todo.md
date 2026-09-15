@@ -45,7 +45,7 @@ Current order: complete the approved Classic isolated mode integration; complete
 - [x] Verify production deployment `dpl_8e7N4n8E34rXCgmYj9rJEKBdsKHu` from merge SHA `7c568f3253d62b8fab11becc3e68d94628fa6b0a` is READY/canonically aliased, serves `/` with HTTP 200 and the compact scorebook UI, and has no error/fatal logs on the new deployment at verification time.
 - [ ] Verify physical iPhone Submit Guess and Give Up end-to-end latency against handler timing after PR #133; CI/browser emulation alone cannot establish a phone latency improvement.
 - [ ] Verify compact presentation on physical iPhone/iPad, including search dropdown/selection, hint and pending states, local reveal-table scrolling, history, completion/share and no accidental zoom/overflow.
-- [ ] Verify resolved `points-v3` outcome plus hint/wrong-guess deductions and awarded-point presentation.
+- [ ] Verify resolved `points-v3` outcome plus hint/wrong-guess deductions, banner total/active-at-bat allowance, and awarded-point presentation.
 - [ ] Verify saved-session `/api/daily/hints` hydration and refresh recovery.
 - [ ] Verify correct guess, wrong guesses, third strike, Give Up responsiveness/reveal, all-nine continuation, final reveal/completion, action responses/logs, and common iPhone/iPad behavior.
 

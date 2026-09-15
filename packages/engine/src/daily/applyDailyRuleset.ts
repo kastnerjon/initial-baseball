@@ -38,6 +38,13 @@ export type DailyAtBatPointsInput = {
   wrongGuesses?: number | undefined;
 };
 
+export type DailyAtBatPointsRemainingInput = {
+  rulesetVersion: DailyRulesetVersion;
+  hintsRevealed?: number | undefined;
+  wrongGuesses?: number | undefined;
+  atBatComplete?: boolean | undefined;
+};
+
 export type DailyRulesetEngineState = {
   inning: DailyInningState;
   score: DailyScoreSummary;
@@ -84,6 +91,27 @@ export function getDailyAtBatPoints({
     return Math.max(0, POINTS_V3_MAX_POINTS_PER_AT_BAT - clampNonNegative(hintsRevealed) - normalizedWrongGuesses);
   }
   return getDailyOutcomePoints(rulesetVersion, outcome);
+}
+
+/** Returns the live points still available for the active Daily Nine at-bat. */
+export function getDailyAtBatPointsRemaining({
+  rulesetVersion,
+  hintsRevealed = 0,
+  wrongGuesses = 0,
+  atBatComplete = false,
+}: DailyAtBatPointsRemainingInput): number | null {
+  if (rulesetVersion !== POINTS_V3_DAILY_RULESET_VERSION) {
+    return null;
+  }
+  if (atBatComplete) {
+    return 0;
+  }
+  return getDailyAtBatPoints({
+    rulesetVersion,
+    outcome: 'HR',
+    hintsRevealed,
+    wrongGuesses,
+  });
 }
 
 export function getDailyMaximumPoints(

@@ -7,6 +7,7 @@ import {
   applyDailyOutcomeForRuleset,
   createDailyPointsSummary,
   getDailyAtBatPoints,
+  getDailyAtBatPointsRemaining,
   getDailyMaximumPoints,
 } from './applyDailyRuleset.js';
 
@@ -55,6 +56,30 @@ describe('points-v3 Daily Nine scoring', () => {
       hintsRevealed: 0,
       wrongGuesses: 3,
     })).toBe(0);
+  });
+
+  it.each([
+    [0, 0, 7],
+    [1, 0, 6],
+    [0, 2, 5],
+    [4, 2, 1],
+    [0, 3, 0],
+  ] as const)('reports live points remaining (%s hints, %s wrong guesses)', (hintsRevealed, wrongGuesses, expected) => {
+    expect(getDailyAtBatPointsRemaining({
+      rulesetVersion: POINTS_V3_DAILY_RULESET_VERSION,
+      hintsRevealed,
+      wrongGuesses,
+    })).toBe(expected);
+  });
+
+  it('reports zero after an at-bat is complete and no live value for compatibility rulesets', () => {
+    expect(getDailyAtBatPointsRemaining({
+      rulesetVersion: POINTS_V3_DAILY_RULESET_VERSION,
+      atBatComplete: true,
+    })).toBe(0);
+    expect(getDailyAtBatPointsRemaining({
+      rulesetVersion: POINTS_V2_DAILY_RULESET_VERSION,
+    })).toBeNull();
   });
 
   it('uses the verified terminal facts when accumulating points', () => {

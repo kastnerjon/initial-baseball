@@ -15,6 +15,7 @@ type DailyScorebugProps = {
   summary: DailyScoreSummary;
   points: DailyPointsSummary;
   bases: DailyBaseState;
+  atBatPointsRemaining?: number | null;
 };
 
 export function DailyScorebug({
@@ -24,6 +25,7 @@ export function DailyScorebug({
   summary,
   points,
   bases,
+  atBatPointsRemaining = null,
 }: DailyScorebugProps): JSX.Element {
   const isPointsGame = isDailyPointsRulesetVersion(rulesetVersion);
 
@@ -36,7 +38,10 @@ export function DailyScorebug({
       )}
       middle={isPointsGame ? (
         <div className="scorebug-metrics">
-          <ScorebugMetric label="Points" value={`${points.points}/${points.maximumPoints}`} />
+          <ScorebugMetric label="Points" value={points.points} />
+          {atBatPointsRemaining === null ? null : (
+            <ScorebugMetric label="This AB" value={atBatPointsRemaining} />
+          )}
         </div>
       ) : (
         <div className="scorebug-metrics">

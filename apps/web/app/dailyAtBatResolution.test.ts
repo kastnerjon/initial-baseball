@@ -316,7 +316,10 @@ describe('compact Daily status', () => {
       expect(html).toContain('Base occupancy');
       expect(html).toContain('Outs');
     } else {
-      expect(html).toContain(rulesetVersion === 'points-v1' ? '2/45' : rulesetVersion === 'points-v3' ? '2/63' : '2/36');
+      expect(html).toContain('>2<');
+      expect(html).not.toContain('2/45');
+      expect(html).not.toContain('2/36');
+      expect(html).not.toContain('2/63');
     }
   });
 });

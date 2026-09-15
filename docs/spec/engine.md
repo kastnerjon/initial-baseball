@@ -40,7 +40,7 @@ Classic uses the existing hit/forced-walk runner advancement and run scoring. K 
 
 ### `points-v3` — Daily Nine, current scoring
 
-Each at-bat starts at 7 points. Every revealed hint and every wrong guess costs 1 point. The award is max(0, 7 - hints revealed - wrong guesses) for a correct resolution. A third wrong guess or Give Up records K and awards 0 points. Nine at-bats produce a maximum of 63 points. The UI derives the displayed award from server-verified reveal/strike facts; the engine owns the formula.
+Each at-bat starts at 7 points. Every revealed hint and every wrong guess costs 1 point. The award is max(0, 7 - hints revealed - wrong guesses) for a correct resolution. A third wrong guess or Give Up records K and awards 0 points. Nine at-bats produce a maximum of 63 points. The UI derives the displayed award and live active-at-bat allowance from server-verified reveal/strike facts; the engine owns the formula.
 
 New Daily Nine sessions use points-v3. The prior points-v2 policy remains a compatibility contract for already-started or restored sessions.
 
