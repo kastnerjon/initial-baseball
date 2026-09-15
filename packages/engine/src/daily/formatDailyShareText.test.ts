@@ -105,7 +105,7 @@ it('formats points-v2 fractional scoring without falling back to legacy totals',
   const shareText = formatCompletedShare(gameState);
 
   expect(shareText).toBe([
-    'Daily Inning #42',
+    'Daily Nine #42',
     'by Initial Baseball',
     '',
     '4.5/12 PTS · 1 K',

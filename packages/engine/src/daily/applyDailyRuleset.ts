@@ -1,5 +1,5 @@
 import {
-  LEGACY_DAILY_RULESET_VERSION,
+  isDailyPointsRulesetVersion,
   POINTS_V1_DAILY_RULESET_VERSION,
   POINTS_V2_DAILY_RULESET_VERSION,
   type DailyInningState,
@@ -85,8 +85,8 @@ export function applyDailyOutcomeForRuleset(
   });
   const atBatsCompleted = Math.min(input.points.atBatsCompleted + 1, input.totalAtBats);
 
-  if (input.rulesetVersion === LEGACY_DAILY_RULESET_VERSION) {
-    const completed = baseballState.score.completed || atBatsCompleted >= input.totalAtBats;
+  if (!isDailyPointsRulesetVersion(input.rulesetVersion)) {
+    const completed = isDailyGameComplete(input.rulesetVersion, atBatsCompleted, input.totalAtBats, baseballState.score.outs, input.inning.maxOuts);
     return {
       inning: baseballState.inning,
       score: {
@@ -103,7 +103,7 @@ export function applyDailyOutcomeForRuleset(
     };
   }
 
-  const completed = atBatsCompleted >= input.totalAtBats;
+  const completed = isDailyGameComplete(input.rulesetVersion, atBatsCompleted, input.totalAtBats, baseballState.score.outs);
   return {
     inning: baseballState.inning,
     score: {
@@ -131,4 +131,16 @@ function getOutcomePointsMapping(
     return POINTS_V2_OUTCOME_POINTS;
   }
   return null;
+}
+
+/** Shared by outcome application and signed server progression. */
+export function isDailyGameComplete(
+  rulesetVersion: DailyRulesetVersion,
+  atBatsCompleted: number,
+  totalAtBats: number,
+  outs: number,
+  maxOuts = 3,
+): boolean {
+  return atBatsCompleted >= totalAtBats
+    || (!isDailyPointsRulesetVersion(rulesetVersion) && outs >= maxOuts);
 }

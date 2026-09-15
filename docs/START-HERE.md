@@ -121,6 +121,10 @@ The current scorecard branch adds initials → canonical answer → outcome for 
 
 The user approved Daily Nine as the default points-v2 experience and Classic Inning as a separate classic-inning-v1 using the same daily lineup, runner advancement and runs, ending at three outs or nine at-bats. Both modes may be played on the same date; saves/results/shares must distinguish mode, unplayed answers stay hidden, and legacy/points-v1 compatibility remains intact. Classic implementation follows in separate bounded changes.
 
+## Approved Classic direction
+
+The September 15 user decision adds Daily Nine (default points-v2) and Classic Inning (new classic-inning-v1). Classic shares the daily nine, uses existing runners/runs, and ends at three outs or nine at-bats. Both modes may be played; unplayed answers stay hidden; persistence and sharing must distinguish modes. Portable policy/label/completion support is implemented on this branch; web selection and persistence follow separately. Scope and stage boundaries: `tasks/plans/classic-inning.md`. Scorecard answers/Copy are implemented in PR #140; public mode integration is not yet live.
+
 ## Settled future systems
 
 ### Canonical player facts versus gameplay profiles

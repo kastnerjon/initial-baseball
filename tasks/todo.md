@@ -5,12 +5,12 @@ Last updated: 2026-09-15
 
 Completed history belongs in PRs, canonical docs, or `tasks/lessons.md`. Durable resumption context belongs in `docs/START-HERE.md`.
 
-Current order: complete the approved scorecard/share change, then Classic rules and isolated mode integration; complete physical iPhone/iPad presentation and resolution-latency QA on the now-corrected production runtime, then authenticated admin QA, completed-result contracts/persistence, and the lineup-content system.
+Current order: complete Classic isolated mode integration; complete physical iPhone/iPad presentation and resolution-latency QA on the now-corrected production runtime, then authenticated admin QA, completed-result contracts/persistence, and the lineup-content system.
 
 ## September 15 approved product work
 
-- [ ] Ship private initials/answer/outcome scorecard with additive local answer retention and separate spoiler-safe Copy share card.
-- [ ] Define and implement classic-inning-v1 in portable rules, preserving existing policies.
+- [x] Implement private initials/answer/outcome scorecard with additive local answer retention and separate spoiler-safe Copy share card (PR #140).
+- [x] Define and implement classic-inning-v1 in portable rules, preserving existing policies (PR #141).
 - [ ] Expose Daily Nine / Classic Inning with isolated saved sessions, signed mode identity, mode-labelled results/sharing, same daily nine and three-outs-or-nine Classic completion.
 - [ ] Verify both modes, terminal/complete refresh, clipboard success/failure, answer safety and responsive layouts; retain physical-device QA as distinct.
 

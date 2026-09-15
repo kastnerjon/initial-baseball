@@ -23,7 +23,7 @@ The active hint bundle contains:
 - all four current-batter hint labels/values;
 - signed checkpoints for only the later reveal depths still available from the current claims.
 
-It contains no answer ID, answer name, reveal record, or future-batter hint. New games use `points-v2`. Existing valid `points-v1` and `legacy-inning-v1` tokens retain their own policies.
+It contains no answer ID, answer name, reveal record, or future-batter hint. New Daily Nine games use `points-v2`; the approved Classic Inning integration will use `classic-inning-v1` with the same nine and three-outs-or-nine completion. Existing valid `points-v1` and `legacy-inning-v1` tokens retain their own policies.
 
 ## Canonical player search
 
@@ -115,7 +115,7 @@ Behavior:
 - incorrect guess: no reveal, successor token with one additional strike, refreshed bundle for the same pitch and strike count;
 - correct guess: current reveal, successor token, next-pitch bundle unless complete;
 - third strike/Give Up: current reveal, recorded out, successor token, next-pitch bundle unless complete;
-- final pitch or legacy three-out completion: completed token and `hintBundle: null`.
+- final pitch or a three-out completion under `classic-inning-v1`/`legacy-inning-v1`: completed token and `hintBundle: null`.
 
 Canonical-format submitted IDs are compared directly with the server-only canonical answer ID. This avoids loading the full canonical player index for the ordinary public-search path. A noncanonical/legacy submitted ID is still validated through the canonical redirect boundary; unknown or excluded legacy IDs are rejected. A syntactically valid but nonexistent canonical ID is simply an incorrect anonymous guess. This does not expose the answer or create a score advantage, and it avoids turning full-universe identity validation into a per-guess hot-path cost.
 
@@ -137,7 +137,7 @@ Scoring therefore still uses server-verifiable reveal depth on the later resolut
 
 Claims contain only contract/ruleset version, puzzle ID/date, current pitch, reveal count, strike count, recorded outs, and completion. Tokens contain no hints or answers.
 
-Valid pre-ruleset tokens normalize to `legacy-inning-v1`. Valid `points-v1` and `points-v2` claims round-trip without reinterpretation. Tokens are stateless and replayable; anonymous scoring is not tamper-proof.
+Valid pre-ruleset tokens normalize to `legacy-inning-v1`. Valid `classic-inning-v1`, `points-v1`, and `points-v2` claims round-trip without reinterpretation. Tokens are stateless and replayable; anonymous scoring is not tamper-proof. Public mode selection and Classic bootstrap issuance remain a separate web integration step.
 
 ## Browser persistence
 
