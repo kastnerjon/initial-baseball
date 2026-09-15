@@ -23,7 +23,7 @@ The active hint bundle contains:
 - all four current-batter hint labels/values;
 - signed checkpoints for only the later reveal depths still available from the current claims.
 
-It contains no answer ID, answer name, reveal record, or future-batter hint. New Daily Nine games use `points-v2`; the approved Classic Inning integration will use `classic-inning-v1` with the same nine and three-outs-or-nine completion. Existing valid `points-v1` and `legacy-inning-v1` tokens retain their own policies.
+It contains no answer ID, answer name, reveal record, or future-batter hint. New Daily Nine games use `points-v3`; the approved Classic Inning integration will use `classic-inning-v1` with the same nine and three-outs-or-nine completion. Existing valid `points-v2`, `points-v1`, and `legacy-inning-v1` tokens retain their own policies.
 
 ## Canonical player search
 
@@ -121,7 +121,7 @@ Canonical-format submitted IDs are compared directly with the server-only canoni
 
 Terminal responses load only the deterministic reveal shard for the canonical answer ID. They do not require the full player index solely to locate that shard. Search and legacy redirect behavior continue to use the full canonical runtime when those capabilities are actually needed.
 
-The browser does not submit pitch, hint depth, strike count, out count, or ruleset version independently. After a terminal response, the browser derives the awarded point display from the engine mapping for the verified ruleset and returned outcome. The route does not duplicate a client-trusted point value.
+The browser does not submit pitch, hint depth, strike count, out count, or ruleset version independently. After a terminal response, the browser derives the awarded point display from the engine policy and the server-verified reveal/strike facts. For points-v3, a correct resolution awards max(0, 7 - hints revealed - wrong guesses); a third wrong guess or Give Up records K and 0. The route does not duplicate a client-trusted point value.
 
 ## Local Hint action
 
@@ -137,7 +137,7 @@ Scoring therefore still uses server-verifiable reveal depth on the later resolut
 
 Claims contain only contract/ruleset version, puzzle ID/date, current pitch, reveal count, strike count, recorded outs, and completion. Tokens contain no hints or answers.
 
-Valid pre-ruleset tokens normalize to `legacy-inning-v1`. Valid `classic-inning-v1`, `points-v1`, and `points-v2` claims round-trip without reinterpretation. Tokens are stateless and replayable; anonymous scoring is not tamper-proof. Public mode selection and Classic bootstrap issuance remain a separate web integration step.
+Valid pre-ruleset tokens normalize to `legacy-inning-v1`. Valid `classic-inning-v1`, `points-v1`, `points-v2`, and `points-v3` claims round-trip without reinterpretation. Tokens are stateless and replayable; anonymous scoring is not tamper-proof. Public mode selection and Classic bootstrap issuance remain a separate web integration step.
 
 ## Browser persistence
 

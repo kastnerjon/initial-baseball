@@ -3,6 +3,8 @@ import {
   CURRENT_DAILY_RULESET_VERSION,
   LEGACY_DAILY_RULESET_VERSION,
   POINTS_V1_DAILY_RULESET_VERSION,
+  POINTS_V2_DAILY_RULESET_VERSION,
+  POINTS_V3_DAILY_RULESET_VERSION,
   type DailyGameState,
 } from '@initial-baseball/shared';
 import {
@@ -132,7 +134,6 @@ describe('dailyLocalStorage', () => {
     }, storage);
 
     expect(load(storage)).toEqual({
-      scorecardAnswers: {},
       schemaVersion: 3,
       puzzleId: DEMO_DAILY_PUZZLE.id,
       puzzleDate: DEMO_DAILY_PUZZLE.puzzleDate,
@@ -145,10 +146,11 @@ describe('dailyLocalStorage', () => {
     });
   });
 
-  it('round-trips current points-v2 state with half points', () => {
+  it('round-trips points-v2 state with half points', () => {
     const storage = new FakeStorage();
     const gameState: DailyGameState = {
       ...createInitialDemoGameState(DEMO_DAILY_PUZZLE),
+      rulesetVersion: POINTS_V2_DAILY_RULESET_VERSION,
       completedPitchLines: [{ initials: 'KGJ', outcome: 'BB' }],
       completedAtBats: [{
         pitchNumber: 1,
@@ -176,8 +178,45 @@ describe('dailyLocalStorage', () => {
     }, storage);
 
     expect(load(storage)?.gameState).toMatchObject({
-      rulesetVersion: CURRENT_DAILY_RULESET_VERSION,
+      rulesetVersion: POINTS_V2_DAILY_RULESET_VERSION,
       points: { points: 0.5, maximumPoints: 24, atBatsCompleted: 1 },
+    });
+  });
+
+  it('recomputes points-v3 saves from verified hints and wrong guesses', () => {
+    const storage = new FakeStorage();
+    const gameState: DailyGameState = {
+      ...createInitialDemoGameState(DEMO_DAILY_PUZZLE),
+      rulesetVersion: POINTS_V3_DAILY_RULESET_VERSION,
+      completedPitchLines: [{ initials: 'KGJ', outcome: '2B' }],
+      completedAtBats: [{
+        pitchNumber: 1,
+        initials: 'KGJ',
+        outcome: '2B',
+        hintsRevealed: 2,
+        wrongGuesses: 1,
+        resolution: 'correct',
+      }],
+      points: {
+        points: 0,
+        maximumPoints: 42,
+        atBatsCompleted: 1,
+        totalAtBats: 6,
+        completed: false,
+      },
+    };
+
+    saveDailyGame(DEMO_DAILY_PUZZLE, {
+      currentPitchIndex: 1,
+      gameState,
+      atBatState: createInitialAtBatUiState(),
+      pendingAdvance: null,
+      progressionToken: savedProgressionToken,
+    }, storage);
+
+    expect(load(storage)?.gameState).toMatchObject({
+      rulesetVersion: POINTS_V3_DAILY_RULESET_VERSION,
+      points: { points: 4, maximumPoints: 42, atBatsCompleted: 1 },
     });
   });
 

@@ -63,6 +63,7 @@ Answer integrity: `docs/decisions/0001-daily-answer-integrity.md`.
 - PR #135 merged as `d2de746664e7d154294f54dc9ae4b1d55f651ad8` on August 30 and established the heritage UI baseline.
 - PR #137 merged as `dda608ae7422093b96ded03dd0bf024d71c5c2b6` on September 10 and contains the compact scorebook presentation revision. Its first production attempt failed because of the separate Daily lineup-exhaustion defect tracked in issue #136.
 - PR #138 merged as `7c568f3253d62b8fab11becc3e68d94628fa6b0a` on September 10 and closed issue #136. Generated dates from September 2 onward now use dense canonical recognizability ranks after redirect/deduplication; July 22 through September 1 retain the prior `lineup-quality-v2` source-rank interpretation. Published/manual puzzles, the 90-day repeat window, slot bands, deterministic seed inputs, scoring, Supabase behavior, and hosting settings remain unchanged.
+- The approved points-v3 Daily Nine contract is implemented in this branch: seven points per at-bat, one point off per revealed hint or wrong guess, and zero on a third wrong guess or Give Up; nine at-bats max 63. Existing points-v2/points-v1/legacy sessions remain versioned compatibility behavior.
 - Verified September 10: production deployment `dpl_8e7N4n8E34rXCgmYj9rJEKBdsKHu` is `READY` on exact merge SHA `7c568f3253d62b8fab11becc3e68d94628fa6b0a` and canonically aliased at `https://initial-baseball-web.vercel.app`. The production build completed successfully, including hidden-answer build QA. A post-activation request to `/` returned HTTP 200 and rendered Daily #137 with the compact scorebook presentation. Error/fatal runtime logs on the new deployment were empty at verification time.
 - The previous grouped `Insufficient eligible Daily players for slot 2 (ranks 1-250).` errors are tied to old production deployment `dpl_32hGx8N4TKEGKsCaoqHxVbBfVxtf`; the last grouped occurrence was September 10 at 23:14:43 UTC, before the corrected deployment became `READY`.
 - Real-device QA before PR #133 observed roughly two seconds end-to-end for Submit Guess despite successful 200 resolution requests. The post-optimization production iPhone timing retest is still required; do not infer latency improvement from CI/build success.
@@ -74,10 +75,11 @@ Answer integrity: `docs/decisions/0001-daily-answer-integrity.md`.
 
 ## Implemented gameplay
 
-New Standard Daily sessions use `points-v2`:
+New Standard Daily sessions use `points-v3`:
 
-- HR/3B/2B/1B/BB/K = `4/3/2/1/0.5/0`;
-- all nine scheduled at-bats are played;
+- each at-bat starts at 7 points; each revealed hint or wrong guess costs 1;
+- a third wrong guess or Give Up records K and awards 0;
+- all nine scheduled at-bats are played, for a 63-point maximum;
 - the resolved at-bat shows both its baseball outcome and awarded points;
 - raw facts preserve slot, initials, outcome, hints revealed, wrong guesses, and correct/K/Give Up resolution;
 - ruleset version flows through token, local state, result, and share output;
@@ -119,11 +121,11 @@ PR #137 merged that presentation code, and production deployment `dpl_8e7N4n8E34
 
 The current scorecard branch adds initials → canonical answer → outcome for resolved players, including K/Give Up, plus an isolated spoiler-safe share card with Copy in its upper-right. Browser-only answer retention is additive to schema 3; old saves without names show Answer unavailable. This work is not yet deployed. Scope: `tasks/plans/scorecard-answers.md`.
 
-The user approved Daily Nine as the default points-v2 experience and Classic Inning as a separate classic-inning-v1 using the same daily lineup, runner advancement and runs, ending at three outs or nine at-bats. Both modes may be played on the same date; saves/results/shares must distinguish mode, unplayed answers stay hidden, and legacy/points-v1 compatibility remains intact. Classic implementation follows in separate bounded changes.
+The user approved Daily Nine as the default points-v3 experience and Classic Inning as a separate classic-inning-v1 using the same daily lineup, runner advancement and runs, ending at three outs or nine at-bats. Both modes may be played on the same date; saves/results/shares must distinguish mode, unplayed answers stay hidden, and legacy/points-v1 compatibility remains intact. Classic implementation follows in separate bounded changes.
 
 ## Approved Classic direction
 
-The September 15 user decision adds Daily Nine (default points-v2) and Classic Inning (new classic-inning-v1). Classic shares the daily nine, uses existing runners/runs, and ends at three outs or nine at-bats. Both modes may be played; unplayed answers stay hidden; persistence and sharing must distinguish modes. Portable policy/label/completion support is implemented on this branch; web selection and persistence follow separately. Scope and stage boundaries: `tasks/plans/classic-inning.md`. Scorecard answers/Copy are implemented in PR #140; public mode integration is not yet live.
+The September 15 user decision adds Daily Nine (default points-v3) and Classic Inning (new classic-inning-v1). Classic shares the daily nine, uses existing runners/runs, and ends at three outs or nine at-bats. Both modes may be played; unplayed answers stay hidden; persistence and sharing must distinguish modes. Portable policy/label/completion support is implemented on this branch; web selection and persistence follow separately. Scope and stage boundaries: `tasks/plans/classic-inning.md`. Scorecard answers/Copy are implemented in PR #140; public mode integration is not yet live.
 
 ## Settled future systems
 
@@ -147,7 +149,7 @@ These require an actual browser lifecycle but no editor credentials:
 
 - re-test Submit Guess and Give Up latency on production after PR #133, inspecting handler-level server timing against end-to-end phone timing;
 - verify the compact Daily presentation and touch behavior on physical iPhone/iPad, including hints, search dropdown, selected-player state, result/reveal tables, history, and completion/share;
-- resolved `points-v2` outcome/point presentation;
+- resolved `points-v3` outcome/point presentation, including hint/wrong-guess deductions;
 - saved-session `/api/daily/hints` hydration and refresh recovery;
 - correct guess, wrong guesses, third strike, Give Up responsiveness/reveal, all-nine continuation, final reveal/completion, and mobile interaction;
 - action-level network/log inspection during those flows.
@@ -163,7 +165,7 @@ These require the editor's authenticated session:
 
 ## Exact next work order
 
-1. Complete the scorecard/share PR, then the approved Classic contract and isolated mode integration with focused QA and documentation.
+1. Complete the approved Classic contract and isolated mode integration with focused QA and documentation; the current Daily Nine scoring contract is points-v3.
 2. Complete physical iPhone/iPad presentation checks and the outstanding PR #133 latency/public refresh/completion checklist.
 3. Complete the authenticated admin checklist when the editor is available.
 4. Define the compact completed-game submission, validation, idempotent repository port, and derived-score contract in portable layers.

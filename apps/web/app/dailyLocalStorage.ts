@@ -1,4 +1,4 @@
-import { createDailyPointsSummary, getDailyOutcomePoints } from '@initial-baseball/engine';
+import { createDailyPointsSummary, getDailyAtBatPoints } from '@initial-baseball/engine';
 import {
   CURRENT_DAILY_RULESET_VERSION,
   LEGACY_DAILY_RULESET_VERSION,
@@ -15,7 +15,6 @@ import {
   type DailySharePitchLine,
   type DailyShareResult,
 } from '@initial-baseball/shared';
-import { restoreDailyScorecardAnswers, type DailyScorecardAnswers } from './dailyScorecard';
 import type { PendingAtBatAdvance } from './dailyAtBatResolution';
 import type { DailyAtBatUiState } from './dailyClientState';
 
@@ -35,7 +34,6 @@ export type SavedDailyGame = {
   atBatState: DailyAtBatUiState;
   pendingAdvance: PendingAtBatAdvance | null;
   progressionToken: string;
-  scorecardAnswers?: DailyScorecardAnswers;
 };
 
 type PersistedSavedDailyGame = Omit<SavedDailyGame, 'schemaVersion' | 'progressionToken'> & {
@@ -49,7 +47,6 @@ export type SaveDailyGameInput = {
   atBatState: DailyAtBatUiState;
   pendingAdvance: PendingAtBatAdvance | null;
   progressionToken: string;
-  scorecardAnswers?: DailyScorecardAnswers;
 };
 
 export function getDailyStorageKey(puzzleDate: string): string {
@@ -99,7 +96,6 @@ export function saveDailyGame(
     atBatState: input.atBatState,
     pendingAdvance: input.pendingAdvance,
     progressionToken: input.progressionToken,
-    scorecardAnswers: input.scorecardAnswers ?? {},
   };
 
   safelyWriteStorage(storage, getDailyStorageKey(publicPuzzle.puzzleDate), JSON.stringify(savedGame));
@@ -232,15 +228,8 @@ function normalizeSavedDailyGame(
     savedGame.gameState.score.completed,
   );
 
-  const pendingAdvance = savedGame.pendingAdvance === null
-    ? null
-    : normalizePendingAdvance(savedGame.pendingAdvance, rulesetVersion, publicPuzzle.pitches.length);
   return {
     ...savedGame,
-    scorecardAnswers: restoreDailyScorecardAnswers(
-      savedGame.scorecardAnswers,
-      (pendingAdvance?.completedAtBats ?? completedAtBats).map(atBat => atBat.pitchNumber),
-    ),
     schemaVersion: DAILY_STORAGE_SCHEMA_VERSION,
     progressionToken: savedGame.schemaVersion === DAILY_STORAGE_SCHEMA_VERSION
       ? savedGame.progressionToken as string
@@ -260,7 +249,9 @@ function normalizeSavedDailyGame(
       reveal: legacyAtBatState.reveal ?? null,
       submittedResult: normalizeDailyGuessResult(savedGame.atBatState.submittedResult),
     },
-    pendingAdvance,
+    pendingAdvance: savedGame.pendingAdvance === null
+      ? null
+      : normalizePendingAdvance(savedGame.pendingAdvance, rulesetVersion, publicPuzzle.pitches.length),
   };
 }
 
@@ -349,7 +340,12 @@ function buildNormalizedPoints(
   return {
     ...base,
     points: completedAtBats.reduce(
-      (total, atBat) => total + getDailyOutcomePoints(rulesetVersion, atBat.outcome),
+      (total, atBat) => total + getDailyAtBatPoints({
+        rulesetVersion,
+        outcome: atBat.outcome,
+        hintsRevealed: atBat.hintsRevealed,
+        wrongGuesses: atBat.wrongGuesses,
+      }),
       0,
     ),
     atBatsCompleted,

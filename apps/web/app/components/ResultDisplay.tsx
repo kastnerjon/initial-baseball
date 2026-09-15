@@ -1,9 +1,10 @@
 import type { JSX } from 'react';
-import { getDailyOutcomePoints } from '@initial-baseball/engine';
+import { getDailyAtBatPoints } from '@initial-baseball/engine';
 import {
   isDailyPointsRulesetVersion,
   type DailyGuessResult,
   type DailyOutcome,
+  type DailyRevealCount,
   type DailyRulesetVersion,
 } from '@initial-baseball/shared';
 import { formatDailyAwardedPoints } from './formatDailyAwardedPoints';
@@ -13,6 +14,8 @@ type ResultDisplayProps = {
   rulesetVersion: DailyRulesetVersion;
   correctAnswer?: string;
   revealAnswer?: boolean;
+  revealedCount?: DailyRevealCount;
+  wrongGuesses?: number;
 };
 
 export function ResultDisplay({
@@ -20,9 +23,11 @@ export function ResultDisplay({
   rulesetVersion,
   correctAnswer,
   revealAnswer = false,
+  revealedCount = 0,
+  wrongGuesses = 0,
 }: ResultDisplayProps): JSX.Element {
   if (result.kind === 'correct') {
-    const awardedPoints = getAwardedPointsCopy(rulesetVersion, result.outcome);
+    const awardedPoints = getAwardedPointsCopy(rulesetVersion, result.outcome, revealedCount, wrongGuesses);
     return (
       <div className="result-card result-card-correct" aria-live="polite">
         <span className="result-label">Outcome</span>
@@ -36,7 +41,7 @@ export function ResultDisplay({
   }
 
   if (result.kind === 'strikeout') {
-    const awardedPoints = getAwardedPointsCopy(rulesetVersion, result.outcome);
+    const awardedPoints = getAwardedPointsCopy(rulesetVersion, result.outcome, revealedCount, wrongGuesses);
     return (
       <div className="result-card result-card-strikeout" aria-live="polite">
         <span className="result-label">Outcome</span>
@@ -63,8 +68,15 @@ export function ResultDisplay({
 function getAwardedPointsCopy(
   rulesetVersion: DailyRulesetVersion,
   outcome: DailyOutcome,
+  revealedCount: DailyRevealCount,
+  wrongGuesses: number,
 ): string | null {
   return isDailyPointsRulesetVersion(rulesetVersion)
-    ? formatDailyAwardedPoints(getDailyOutcomePoints(rulesetVersion, outcome))
+    ? formatDailyAwardedPoints(getDailyAtBatPoints({
+        rulesetVersion,
+        outcome,
+        hintsRevealed: revealedCount,
+        wrongGuesses,
+      }))
     : null;
 }

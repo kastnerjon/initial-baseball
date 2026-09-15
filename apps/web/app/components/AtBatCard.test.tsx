@@ -37,6 +37,7 @@ describe('AtBatCard pending resolution feedback', () => {
 
     expect(html).toContain('Give up');
     expect(html).toContain('Submit Guess');
+    expect(html).toContain('Reveal Next Hint · −1 point');
     expect(html).not.toContain('Revealing…');
     expect(html).not.toContain('Checking…');
   });

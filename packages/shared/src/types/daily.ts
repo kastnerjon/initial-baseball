@@ -6,13 +6,15 @@ export const CLASSIC_DAILY_RULESET_VERSION = 'classic-inning-v1' as const;
 export const LEGACY_DAILY_RULESET_VERSION = 'legacy-inning-v1' as const;
 export const POINTS_V1_DAILY_RULESET_VERSION = 'points-v1' as const;
 export const POINTS_V2_DAILY_RULESET_VERSION = 'points-v2' as const;
-export const CURRENT_DAILY_RULESET_VERSION = POINTS_V2_DAILY_RULESET_VERSION;
+export const POINTS_V3_DAILY_RULESET_VERSION = 'points-v3' as const;
+export const CURRENT_DAILY_RULESET_VERSION = POINTS_V3_DAILY_RULESET_VERSION;
 
 export type DailyRulesetVersion =
   | typeof CLASSIC_DAILY_RULESET_VERSION
   | typeof LEGACY_DAILY_RULESET_VERSION
   | typeof POINTS_V1_DAILY_RULESET_VERSION
-  | typeof POINTS_V2_DAILY_RULESET_VERSION;
+  | typeof POINTS_V2_DAILY_RULESET_VERSION
+  | typeof POINTS_V3_DAILY_RULESET_VERSION;
 export type DailyPuzzleStatus = 'draft' | 'scheduled' | 'published' | 'archived';
 export type DailyGameStatus = 'not_started' | 'in_progress' | 'completed';
 
@@ -180,14 +182,16 @@ export function isDailyRulesetVersion(value: unknown): value is DailyRulesetVers
   return value === CLASSIC_DAILY_RULESET_VERSION
     || value === LEGACY_DAILY_RULESET_VERSION
     || value === POINTS_V1_DAILY_RULESET_VERSION
-    || value === POINTS_V2_DAILY_RULESET_VERSION;
+    || value === POINTS_V2_DAILY_RULESET_VERSION
+    || value === POINTS_V3_DAILY_RULESET_VERSION;
 }
 
 export function isDailyPointsRulesetVersion(
   value: DailyRulesetVersion,
-): value is typeof POINTS_V1_DAILY_RULESET_VERSION | typeof POINTS_V2_DAILY_RULESET_VERSION {
+): value is typeof POINTS_V1_DAILY_RULESET_VERSION | typeof POINTS_V2_DAILY_RULESET_VERSION | typeof POINTS_V3_DAILY_RULESET_VERSION {
   return value === POINTS_V1_DAILY_RULESET_VERSION
-    || value === POINTS_V2_DAILY_RULESET_VERSION;
+    || value === POINTS_V2_DAILY_RULESET_VERSION
+    || value === POINTS_V3_DAILY_RULESET_VERSION;
 }
 
 export const DEFAULT_DAILY_SCORING: DailyScoringMapping = {
@@ -216,7 +220,7 @@ export const DEFAULT_DAILY_SCORE_SUMMARY: DailyScoreSummary = {
 
 export const DEFAULT_DAILY_POINTS_SUMMARY: DailyPointsSummary = {
   points: 0,
-  maximumPoints: 36,
+  maximumPoints: 63,
   atBatsCompleted: 0,
   totalAtBats: 9,
   completed: false,

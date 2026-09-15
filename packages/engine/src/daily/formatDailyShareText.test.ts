@@ -5,6 +5,7 @@ import {
   LEGACY_DAILY_RULESET_VERSION,
   POINTS_V1_DAILY_RULESET_VERSION,
   POINTS_V2_DAILY_RULESET_VERSION,
+  POINTS_V3_DAILY_RULESET_VERSION,
   type DailyCompletedAtBat,
   type DailyGameState,
   type DailyOutcome,
@@ -120,6 +121,29 @@ it('formats points-v2 fractional scoring without falling back to legacy totals',
   expectSpoilerSafe(shareText);
 });
 
+it('formats points-v3 deduction scoring with the Daily Nine label', () => {
+  let gameState = createPointsGameState(POINTS_V3_DAILY_RULESET_VERSION);
+  gameState = applyOutcome(gameState, 'HR', 'KGJ', 1, 0, 0);
+  gameState = applyOutcome(gameState, '2B', 'DW', 2, 2, 1);
+  gameState = applyOutcome(gameState, 'K', 'CCS', 3, 0, 3);
+
+  const shareText = formatCompletedShare(gameState);
+
+  expect(shareText).toBe([
+    'Daily Nine #42',
+    'by Initial Baseball',
+    '',
+    '11/21 PTS · 1 K',
+    '',
+    'KGJ: HR',
+    'DW: 2B',
+    'CCS: K',
+    '',
+    'https://dailyinning.com',
+  ].join('\n'));
+  expectSpoilerSafe(shareText);
+});
+
 function createPointsGameState(rulesetVersion: DailyRulesetVersion): DailyGameState {
   return {
     anonymousPlayerId: 'anon-1',
@@ -159,6 +183,8 @@ function applyOutcome(
   outcome: DailyOutcome,
   initials: string,
   pitchNumber: number,
+  hintsRevealed = revealCountForOutcome(outcome),
+  wrongGuesses = outcome === 'K' ? 3 : 0,
 ): DailyGameState {
   const nextState = applyDailyOutcomeForRuleset({
     rulesetVersion: gameState.rulesetVersion,
@@ -166,14 +192,16 @@ function applyOutcome(
     score: gameState.score,
     points: gameState.points,
     outcome,
+    hintsRevealed,
+    wrongGuesses,
     totalAtBats: gameState.puzzle.pitches.length,
   });
   const completedAtBat: DailyCompletedAtBat = {
     pitchNumber,
     initials,
     outcome,
-    hintsRevealed: revealCountForOutcome(outcome),
-    wrongGuesses: outcome === 'K' ? 3 : 0,
+    hintsRevealed,
+    wrongGuesses,
     resolution: outcome === 'K' ? 'strikeout' : 'correct',
   };
 
