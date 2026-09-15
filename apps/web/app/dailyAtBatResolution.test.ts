@@ -137,6 +137,28 @@ describe('resolveDailyTerminalAtBat', () => {
 });
 
 describe('AtBatCard terminal output', () => {
+  it('shows incorrect feedback without the Call label', () => {
+    const incorrectResult = getGuessOutcome({
+      isCorrect: false,
+      revealCount: 0,
+      strikeCount: 0,
+      maxStrikes: 3,
+    });
+
+    if (incorrectResult.kind !== 'incorrect') {
+      throw new Error('Expected an incorrect result.');
+    }
+
+    const html = renderAtBatCard({
+      submittedResult: incorrectResult,
+      strikeCount: 1,
+    });
+
+    expect(html).toContain('Incorrect');
+    expect(html).not.toContain('>Call<');
+    expect(html).toContain('2 strikes left.');
+  });
+
   it('renders At Bat language and a Give up action while active', () => {
     const html = renderAtBatCard({
       submittedResult: null,

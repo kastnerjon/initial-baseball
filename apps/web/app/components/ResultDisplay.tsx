@@ -58,7 +58,6 @@ export function ResultDisplay({
 
   return (
     <div className="result-card result-card-incorrect" aria-live="polite">
-      <span className="result-label">Call</span>
       <strong className="result-value">Incorrect</strong>
       <p className="result-note">{`${result.remainingStrikes} strike${result.remainingStrikes === 1 ? '' : 's'} left.`}</p>
     </div>

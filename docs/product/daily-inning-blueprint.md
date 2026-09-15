@@ -87,6 +87,7 @@ Presentation rules:
 - a single 640px content rail keeps the masthead, playing surface, scorecard, share card, and footer aligned; resolved-player statistics may expand to 960px on desktop;
 - a non-sticky compact status row shows the current at-bat number unambiguously, accumulated points without the overall denominator, and strikeouts; current Daily Nine also shows the points still available on the active at-bat, while legacy sessions retain runs/hits/bases/outs and never receive point copy;
 - terminal status renders existing pending-advance totals immediately, without recomputing rules in React;
+- incorrect feedback presents the Incorrect status and remaining-strikes message without a separate call label;
 - current strikes appear once beside the guessing interaction with an accessible numeric label;
 - regular-weight system sans serif for body text, controls and data; display serif is reserved for a few focal points;
 - the initials, hints and guess input remain close together; Submit Guess is the primary action, Hint is secondary, and Give Up is quiet; controls keep at least 44px tap targets and text inputs remain 16px;
