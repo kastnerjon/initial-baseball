@@ -203,6 +203,7 @@ describe('AtBatCard terminal output', () => {
     const html = renderAtBatCard({
       submittedResult: correctResult,
       strikeCount: 0,
+      revealCount: 1,
     });
 
     expect(html).toContain('3B');
@@ -323,10 +324,12 @@ describe('compact Daily status', () => {
 function renderAtBatCard({
   submittedResult,
   strikeCount,
+  revealCount = 0,
   rulesetVersion = CURRENT_DAILY_RULESET_VERSION,
 }: {
   submittedResult: DailyGuessResult | null;
   strikeCount: number;
+  revealCount?: 0 | 1 | 2 | 3 | 4;
   rulesetVersion?: DailyRulesetVersion;
 }): string {
   return renderToStaticMarkup(
@@ -335,6 +338,7 @@ function renderAtBatCard({
       rulesetVersion,
       state: {
         ...createInitialAtBatUiState(),
+        revealCount,
         strikeCount,
         submittedResult,
         reveal: submittedResult === null || submittedResult.kind === 'incorrect' ? null : firstReveal,

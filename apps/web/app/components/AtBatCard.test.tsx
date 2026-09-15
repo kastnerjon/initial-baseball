@@ -67,11 +67,12 @@ function renderCard(input: {
   giveUpPending: boolean;
   selectedPlayerId?: string | null;
   query?: string;
+  rulesetVersion?: 'points-v2' | 'points-v3';
 }): string {
   return renderToStaticMarkup(
     <AtBatCard
       atBat={{ pitchNumber: 1, initials: 'JR' }}
-      rulesetVersion="points-v2"
+      rulesetVersion={input.rulesetVersion ?? 'points-v3'}
       state={{
         query: input.query ?? '',
         selectedPlayerId: input.selectedPlayerId ?? null,
