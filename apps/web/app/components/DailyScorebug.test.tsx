@@ -4,6 +4,8 @@ import { describe, expect, it } from 'vitest';
 import { DEFAULT_DAILY_SCORE_SUMMARY } from '@initial-baseball/shared';
 import { DailyScorebug } from './DailyScorebug';
 
+(globalThis as Record<string, unknown>).React = React;
+
 describe('DailyScorebug points presentation', () => {
   it('shows the current total without a denominator and the live at-bat allowance', () => {
     const html = renderToStaticMarkup(React.createElement(DailyScorebug, {
