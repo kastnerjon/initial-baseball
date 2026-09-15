@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import {
   createDailyShareResult,
   formatDailyShareText,
+  getDailyAtBatPointsRemaining,
   type PlayerSearchResult,
 } from '@initial-baseball/engine';
 import type {
@@ -205,6 +206,12 @@ export function DailyInningGame({
     return <div className="game-shell" />;
   }
   const activePitch = currentPitch;
+  const atBatPointsRemaining = getDailyAtBatPointsRemaining({
+    rulesetVersion: gameState.rulesetVersion,
+    hintsRevealed: atBatState.revealCount,
+    wrongGuesses: atBatState.strikeCount,
+    atBatComplete: atBatState.submittedResult !== null && atBatState.submittedResult.kind !== 'incorrect',
+  });
 
   return (
     <div className="game-shell">
@@ -214,6 +221,7 @@ export function DailyInningGame({
         rulesetVersion={gameState.rulesetVersion}
         summary={pendingAdvance?.score ?? gameState.score}
         points={pendingAdvance?.points ?? gameState.points}
+        atBatPointsRemaining={atBatPointsRemaining}
         bases={pendingAdvance?.inning.bases ?? gameState.inning.bases}
       />
       <AtBatCard
