@@ -1,15 +1,18 @@
 import type { JSX } from 'react';
 import { isDailyPointsRulesetVersion, type DailyShareResult } from '@initial-baseball/shared';
 import { PitchResultList } from './PitchResultList';
+import { DailyShareCard } from './DailyShareCard';
+import type { DailyScorecardAnswers } from '../dailyScorecard';
 import { ScoreLine } from './ScoreLine';
 
 type GameCompleteViewProps = {
   shareResult: DailyShareResult;
   shareText: string;
+  scorecardAnswers?: DailyScorecardAnswers;
   onResetToday?: () => void;
 };
 
-export function GameCompleteView({ shareResult, shareText, onResetToday }: GameCompleteViewProps): JSX.Element {
+export function GameCompleteView({ shareResult, shareText, scorecardAnswers = {}, onResetToday }: GameCompleteViewProps): JSX.Element {
   return (
     <div className="game-shell">
       <section className="complete-card">
@@ -25,14 +28,12 @@ export function GameCompleteView({ shareResult, shareText, onResetToday }: GameC
         )}
       </section>
       <PitchResultList
+        answers={scorecardAnswers}
         pitchLines={shareResult.pitchLines}
         title="At-bat Results"
         emptyLabel="No at-bat results were recorded."
       />
-      <section className="share-card">
-        <h2>Share Text</h2>
-        <pre className="share-text">{shareText}</pre>
-      </section>
+      <DailyShareCard shareText={shareText} />
       {onResetToday !== undefined ? (
         <button
           type="button"

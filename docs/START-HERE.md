@@ -1,7 +1,7 @@
 # Initial Baseball — Start Here
 
 Status: Active project handoff  
-Last updated: 2026-09-10
+Last updated: 2026-09-15
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
@@ -115,6 +115,12 @@ The September 8 screenshot review superseded the oversized heritage treatment wi
 
 PR #137 merged that presentation code, and production deployment `dpl_8e7N4n8E34rXCgmYj9rJEKBdsKHu` now serves it successfully after PR #138 removed the independent lineup-exhaustion blocker. This is presentation work only; scoring/version compatibility, search semantics, canonical facts, publication, persistence, and answer authority remain unchanged. Plan/scope: `tasks/plans/compact-scorebook.md`. Physical iPhone/iPad touch and post-PR #133 latency QA remain outstanding.
 
+## Approved September 15 work
+
+The current scorecard branch adds initials → canonical answer → outcome for resolved players, including K/Give Up, plus an isolated spoiler-safe share card with Copy in its upper-right. Browser-only answer retention is additive to schema 3; old saves without names show Answer unavailable. This work is not yet deployed. Scope: `tasks/plans/scorecard-answers.md`.
+
+The user approved Daily Nine as the default points-v2 experience and Classic Inning as a separate classic-inning-v1 using the same daily lineup, runner advancement and runs, ending at three outs or nine at-bats. Both modes may be played on the same date; saves/results/shares must distinguish mode, unplayed answers stay hidden, and legacy/points-v1 compatibility remains intact. Classic implementation follows in separate bounded changes.
+
 ## Settled future systems
 
 ### Canonical player facts versus gameplay profiles
@@ -153,13 +159,14 @@ These require the editor's authenticated session:
 
 ## Exact next work order
 
-1. Complete physical iPhone/iPad presentation checks and the outstanding PR #133 latency/public refresh/completion checklist.
-2. Complete the authenticated admin checklist when the editor is available.
-3. Define the compact completed-game submission, validation, idempotent repository port, and derived-score contract in portable layers.
-4. Add a separate Supabase migration/adapter and public submission route only after that contract is reviewed.
-5. Add same-puzzle/same-ruleset aggregates and percentile UI using the compact scorebook visual system.
-6. Define gameplay-profile and lineup-recipe contracts, then establish a conservative recognizable Standard Daily pool/recipe.
-7. Continue analytics, monitoring, legal/domain basics, and later refinement of the established mobile/heritage presentation.
+1. Complete the scorecard/share PR, then the approved Classic contract and isolated mode integration with focused QA and documentation.
+2. Complete physical iPhone/iPad presentation checks and the outstanding PR #133 latency/public refresh/completion checklist.
+3. Complete the authenticated admin checklist when the editor is available.
+4. Define the compact completed-game submission, validation, idempotent repository port, and derived-score contract in portable layers.
+5. Add a separate Supabase migration/adapter and public submission route only after that contract is reviewed.
+6. Add same-puzzle/same-ruleset aggregates and percentile UI using the compact scorebook visual system.
+7. Define gameplay-profile and lineup-recipe contracts, then establish a conservative recognizable Standard Daily pool/recipe.
+8. Continue analytics, monitoring, legal/domain basics, and later refinement of the established mobile/heritage presentation.
 
 ## Open decisions
 

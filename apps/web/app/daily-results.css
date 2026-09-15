@@ -210,26 +210,41 @@
   font-size: 18px;
   font-weight: 600;
 }
-.pitch-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+.scorecard-list {
   margin: 10px 0 0;
   padding: 0;
   list-style: none;
 }
-.pitch-row {
-  display: flex;
+.scorecard-row {
+  display: grid;
+  grid-template-columns: 3rem minmax(0, 1fr) 2.5rem;
+  align-items: baseline;
+  gap: 12px;
+  padding: 10px 0;
+  border-bottom: 1px solid var(--line-soft);
+  font-size: 14px;
 }
-.pitch-row-chip {
+.scorecard-answer {
+  overflow-wrap: anywhere;
+}
+.scorecard-row .pitch-outcome {
+  text-align: right;
+}
+.share-card-header {
   display: flex;
+  justify-content: space-between;
   align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  background: var(--paper-light);
-  font-size: 12px;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+.share-card-header h2 {
+  margin: 0;
+}
+.share-copy-status {
+  min-height: 1.5em;
+  margin: 8px 0 0;
+  color: var(--ink-soft);
+  font-size: 13px;
 }
 .pitch-outcome {
   color: var(--score-red);
