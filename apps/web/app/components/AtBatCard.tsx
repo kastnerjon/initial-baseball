@@ -5,6 +5,7 @@ import { useEffect, useState } from 'react';
 import {
   type PlayerSearchResult,
 } from '@initial-baseball/engine';
+import { POINTS_V3_DAILY_RULESET_VERSION } from '@initial-baseball/shared';
 import type {
   DailyGuessResult,
   DailyPublicPuzzlePitch,
@@ -92,7 +93,12 @@ export function AtBatCard({
           <span className="pitch-number">{`At Bat ${atBat.pitchNumber}`}</span>
           <CountIndicator label="Strikes" filledCount={state.strikeCount} total={3} />
         </div>
-        <ResultDisplay result={resolvedTerminalResult} rulesetVersion={rulesetVersion} />
+        <ResultDisplay
+          result={resolvedTerminalResult}
+          rulesetVersion={rulesetVersion}
+          revealedCount={state.revealCount}
+          wrongGuesses={state.strikeCount}
+        />
         <button
           type="button"
           className="button-primary button-next-at-bat"
@@ -139,7 +145,11 @@ export function AtBatCard({
           onClick={onRevealHint}
           disabled={hasRevealedAllHints || requestPending}
         >
-          {hasRevealedAllHints ? 'All Hints Revealed' : 'Reveal Next Hint'}
+          {hasRevealedAllHints
+            ? 'All Hints Revealed'
+            : rulesetVersion === POINTS_V3_DAILY_RULESET_VERSION
+              ? 'Reveal Next Hint · −1 point'
+              : 'Reveal Next Hint'}
         </button>
       </section>
 

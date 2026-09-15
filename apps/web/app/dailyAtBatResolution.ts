@@ -60,6 +60,8 @@ export function resolveDailyTerminalAtBat({
     score: gameState.score,
     points: gameState.points,
     outcome,
+    hintsRevealed: result.revealedCount,
+    wrongGuesses,
     totalAtBats: gameState.puzzle.pitches.length,
   });
   const completedAtBat: DailyCompletedAtBat = {

@@ -74,7 +74,7 @@ Current browser state includes:
 - ordered spoiler-safe raw completed-at-bat facts: pitch number, initials, outcome, hints revealed, wrong guesses, and correct/strikeout/Give Up resolution;
 - opaque signed progression token.
 
-New games use `points-v2` with `4/3/2/1/0.5/0` and a 36-point maximum. Compatible `points-v1` saves and signed tokens retain `5/4/3/2/1/0` and a 45-point maximum. Compatible pre-ruleset saves and signed tokens normalize to `legacy-inning-v1` so an already-started game is not silently changed from three-out completion to all-scheduled-at-bats completion.
+New games use `points-v3`: each at-bat starts at 7 points, each revealed hint or wrong guess deducts 1, and a third wrong guess or Give Up awards 0; nine at-bats have a 63-point maximum. Compatible `points-v2` saves retain `4/3/2/1/0.5/0` and a 36-point maximum; `points-v1` saves and signed tokens retain `5/4/3/2/1/0` and a 45-point maximum. Compatible pre-ruleset saves and signed tokens normalize to `legacy-inning-v1` so an already-started game is not silently changed from three-out completion to all-scheduled-at-bats completion.
 
 No Redis, replay cache, durable anonymous server session, or database write per hint/guess is part of the accepted launch model.
 
@@ -118,7 +118,7 @@ A puzzle stores its exact final nine even when a recipe generated the proposal.
 
 ## Approved Classic result identity
 
-classic-inning-v1 is a separate ruleset using the same puzzle identity. Its result contains only faced at-bats (three through nine), with runs/hits/outs derived from existing runner rules. Default points-v2 remains Daily Nine. Both modes may be played; future submissions and aggregates must isolate rulesets. Classic browser storage isolation and bootstrap selection follow in a separate web integration.
+classic-inning-v1 is a separate ruleset using the same puzzle identity. Its result contains only faced at-bats (three through nine), with runs/hits/outs derived from existing runner rules. Default points-v3 remains Daily Nine; points-v2 remains a compatibility population. Both modes may be played; future submissions and aggregates must isolate rulesets. Classic browser storage isolation and bootstrap selection follow in a separate web integration.
 
 ## Future completed-game results
 
@@ -139,7 +139,7 @@ The future raw contract should preserve:
 
 The browser now records the native raw facts needed to form that later submission. No relational results table or submission API exists yet. Legacy facts reconstructed from old local pitch lines are compatibility display data and should not be treated as analytics-quality native submissions without an explicit migration rule.
 
-Percentiles compare the same puzzle and ruleset version. Raw facts are retained so formulas and aggregates can be recalculated. `points-v1` and `points-v2` results must remain in separate comparison populations.
+Percentiles compare the same puzzle and ruleset version. Raw facts are retained so formulas and aggregates can be recalculated. `points-v1`, `points-v2`, and `points-v3` results must remain in separate comparison populations.
 
 Do not reuse inactive legacy attempt/result tables by default and do not introduce per-action writes.
 

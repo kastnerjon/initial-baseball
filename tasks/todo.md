@@ -5,7 +5,7 @@ Last updated: 2026-09-15
 
 Completed history belongs in PRs, canonical docs, or `tasks/lessons.md`. Durable resumption context belongs in `docs/START-HERE.md`.
 
-Current order: complete Classic isolated mode integration; complete physical iPhone/iPad presentation and resolution-latency QA on the now-corrected production runtime, then authenticated admin QA, completed-result contracts/persistence, and the lineup-content system.
+Current order: complete the approved Classic isolated mode integration; complete physical iPhone/iPad presentation and resolution-latency QA on the now-corrected production runtime, then authenticated admin QA, completed-result contracts/persistence, and the lineup-content system.
 
 ## September 15 approved product work
 
@@ -28,7 +28,8 @@ Current order: complete Classic isolated mode integration; complete physical iPh
 - [x] Merge/verify `points-v1` production with `0/45 PTS`, `0/9 AB`, signed ruleset token, hidden-answer QA, full CI/data/build, and no runtime errors.
 - [x] Merge PR #126 and verify instant-hint production payload/build boundaries.
 - [x] Merge PR #128 and verify production deployment from merge SHA `9ba0a44198799fe71b0520d5245b16b39e056fc2` is READY/canonically aliased.
-- [x] Verify production bootstrap shows `0/36 PTS`, `0/9 AB`, a signed `points-v2` token, one current-batter hint bundle, no answer/reveal/future-batter bundle, and no recent runtime errors.
+- [x] Verify the pre-v3 production bootstrap contract (`0/36 PTS`, `0/9 AB`, signed `points-v2` token, one current-batter hint bundle, no answer/reveal/future-batter bundle); retain this as compatibility evidence.
+- [ ] Deploy and verify the points-v3 bootstrap (`0/63 PTS`, `0/9 AB`, signed `points-v3` token) with hidden-answer QA and no runtime errors.
 - [x] Merge PR #132 and verify production deployment from merge SHA `a942bab74a68077a1c6ed1aff37b16af45ccc685` is READY/canonically aliased.
 - [x] Merge PR #133 and verify production deployment `dpl_AyXpSu9VyQaVUrmANTqJVNQVFf4k` from exact merge SHA `543adf1038f780313870ed3ff30c163648bd86f3` is READY/canonically aliased with hidden-answer build QA passing.
 
@@ -44,7 +45,7 @@ Current order: complete Classic isolated mode integration; complete physical iPh
 - [x] Verify production deployment `dpl_8e7N4n8E34rXCgmYj9rJEKBdsKHu` from merge SHA `7c568f3253d62b8fab11becc3e68d94628fa6b0a` is READY/canonically aliased, serves `/` with HTTP 200 and the compact scorebook UI, and has no error/fatal logs on the new deployment at verification time.
 - [ ] Verify physical iPhone Submit Guess and Give Up end-to-end latency against handler timing after PR #133; CI/browser emulation alone cannot establish a phone latency improvement.
 - [ ] Verify compact presentation on physical iPhone/iPad, including search dropdown/selection, hint and pending states, local reveal-table scrolling, history, completion/share and no accidental zoom/overflow.
-- [ ] Verify resolved `points-v2` outcome plus awarded-point presentation.
+- [ ] Verify resolved `points-v3` outcome plus hint/wrong-guess deductions and awarded-point presentation.
 - [ ] Verify saved-session `/api/daily/hints` hydration and refresh recovery.
 - [ ] Verify correct guess, wrong guesses, third strike, Give Up responsiveness/reveal, all-nine continuation, final reveal/completion, action responses/logs, and common iPhone/iPad behavior.
 
@@ -64,11 +65,13 @@ Current order: complete Classic isolated mode integration; complete physical iPh
 
 - [x] `legacy-inning-v1` compatibility contract.
 - [x] `points-v1` compatibility contract: `5/4/3/2/1/0`, 45-point maximum.
-- [x] `points-v2` current contract: `4/3/2/1/0.5/0`, 36-point maximum.
+- [x] `points-v2` compatibility contract: `4/3/2/1/0.5/0`, 36-point maximum.
+- [x] `points-v3` current contract: 7 points per at-bat minus verified hints/wrong guesses; third wrong guess or Give Up is 0; 63-point maximum for nine.
 - [x] Native raw at-bat facts independent of final score.
 - [x] Ruleset versioning through signed tokens, local persistence, results, and sharing.
 - [x] Resolved at-bat display derives and shows awarded points beside the baseball outcome for point rulesets only.
 - [x] Focused tests, full CI, preview, three review passes, merge, production bootstrap verification, and runtime-error verification for `points-v2`.
+- [x] Add points-v3 engine/web/storage regression coverage and reconcile canonical scoring docs; production verification remains pending this PR.
 
 ## 3. Immediate active-batter hints
 

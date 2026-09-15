@@ -3,6 +3,7 @@ import {
   LEGACY_DAILY_RULESET_VERSION,
   POINTS_V1_DAILY_RULESET_VERSION,
   POINTS_V2_DAILY_RULESET_VERSION,
+  POINTS_V3_DAILY_RULESET_VERSION,
 } from '@initial-baseball/shared';
 import { describe, expect, it } from 'vitest';
 import {
@@ -43,6 +44,16 @@ describe('Daily progression token codec', () => {
     };
 
     expect(codec.verify(codec.sign(pointsV2Claims))).toEqual(pointsV2Claims);
+  });
+
+  it('round-trips points-v3 progression claims', () => {
+    const codec = createDailyProgressionTokenCodec(secret);
+    const pointsV3Claims = {
+      ...claims,
+      rulesetVersion: POINTS_V3_DAILY_RULESET_VERSION,
+    };
+
+    expect(codec.verify(codec.sign(pointsV3Claims))).toEqual(pointsV3Claims);
   });
 
   it('normalizes signed pre-ruleset claims to the legacy inning policy', () => {

@@ -39,7 +39,7 @@ describe('createGiveUpResult', () => {
 });
 
 describe('resolveDailyTerminalAtBat', () => {
-  it('records Give Up as a zero-point raw at-bat fact without ending points-v2', () => {
+  it('records Give Up as a zero-point raw at-bat fact without ending points-v3', () => {
     const advance = resolveDailyTerminalAtBat({
       gameState: createInitialDemoGameState(DEMO_DAILY_PUZZLE),
       pitch: firstPitch,
@@ -52,7 +52,7 @@ describe('resolveDailyTerminalAtBat', () => {
     expect(advance.score.outs).toBe(1);
     expect(advance.score.hits).toBe(0);
     expect(advance.score.completed).toBe(false);
-    expect(advance.points).toMatchObject({ points: 0, maximumPoints: 24, atBatsCompleted: 1, completed: false });
+    expect(advance.points).toMatchObject({ points: 0, maximumPoints: 42, atBatsCompleted: 1, completed: false });
     expect(advance.completedAtBats).toEqual([{
       pitchNumber: firstPitch.pitchNumber,
       initials: firstPitch.player.initials,
@@ -64,7 +64,7 @@ describe('resolveDailyTerminalAtBat', () => {
     expect(advance.pitchLines).toEqual([{ initials: firstPitch.player.initials, outcome: 'K' }]);
   });
 
-  it('awards four points for an initials-only correct guess', () => {
+  it('awards seven points for an initials-only correct guess', () => {
     const correctResult = getGuessOutcome({
       isCorrect: true,
       revealCount: 0,
@@ -88,7 +88,7 @@ describe('resolveDailyTerminalAtBat', () => {
     expect(advance.score.runs).toBe(1);
     expect(advance.score.hits).toBe(1);
     expect(advance.score.outs).toBe(0);
-    expect(advance.points.points).toBe(4);
+    expect(advance.points.points).toBe(7);
     expect(advance.completedAtBats[0]).toMatchObject({
       outcome: 'HR',
       hintsRevealed: 0,
@@ -129,7 +129,7 @@ describe('resolveDailyTerminalAtBat', () => {
     }));
 
     expect(shareText).toContain(`Daily Nine #${DEMO_DAILY_PUZZLE.puzzleNumber}`);
-    expect(shareText).toContain('0/24 PTS');
+    expect(shareText).toContain('0/42 PTS');
     expect(shareText).toContain(`${firstPitch.player.initials}: K`);
     expect(shareText).not.toContain(firstPitch.player.fullName);
     expect(shareText).not.toContain('initialbaseball.com');
@@ -203,10 +203,11 @@ describe('AtBatCard terminal output', () => {
     const html = renderAtBatCard({
       submittedResult: correctResult,
       strikeCount: 0,
+      revealCount: 1,
     });
 
     expect(html).toContain('3B');
-    expect(html).toContain('3 points');
+    expect(html).toContain('6 points');
     expect(html).toContain('Player Reveal');
     expect(html).toContain(firstReveal.displayName);
     expect(html).toContain(firstReveal.yearsPlayedDisplay);
@@ -295,12 +296,16 @@ describe('PlayerRevealCard', () => {
 });
 
 describe('compact Daily status', () => {
-  it.each(['points-v2', 'points-v1', 'legacy-inning-v1'] as const)('keeps %s status explicit without duplicating current strikes', (rulesetVersion) => {
+  it.each(['points-v3', 'points-v2', 'points-v1', 'legacy-inning-v1'] as const)('keeps %s status explicit without duplicating current strikes', (rulesetVersion) => {
     const game = createInitialDemoGameState(DEMO_DAILY_PUZZLE);
     const html = renderToStaticMarkup(React.createElement(DailyScorebug, {
       currentAtBat: 2, totalAtBats: 9, rulesetVersion,
       summary: game.score,
-      points: { ...game.points, points: 2, maximumPoints: rulesetVersion === 'points-v1' ? 45 : 36 },
+      points: {
+        ...game.points,
+        points: 2,
+        maximumPoints: rulesetVersion === 'points-v1' ? 45 : rulesetVersion === 'points-v3' ? 63 : 36,
+      },
       bases: game.inning.bases,
     }));
     expect(html).toContain('At bat 2 of 9');
@@ -311,7 +316,7 @@ describe('compact Daily status', () => {
       expect(html).toContain('Base occupancy');
       expect(html).toContain('Outs');
     } else {
-      expect(html).toContain(rulesetVersion === 'points-v1' ? '2/45' : '2/36');
+      expect(html).toContain(rulesetVersion === 'points-v1' ? '2/45' : rulesetVersion === 'points-v3' ? '2/63' : '2/36');
     }
   });
 });
@@ -319,10 +324,12 @@ describe('compact Daily status', () => {
 function renderAtBatCard({
   submittedResult,
   strikeCount,
+  revealCount = 0,
   rulesetVersion = CURRENT_DAILY_RULESET_VERSION,
 }: {
   submittedResult: DailyGuessResult | null;
   strikeCount: number;
+  revealCount?: 0 | 1 | 2 | 3 | 4;
   rulesetVersion?: DailyRulesetVersion;
 }): string {
   return renderToStaticMarkup(
@@ -331,6 +338,7 @@ function renderAtBatCard({
       rulesetVersion,
       state: {
         ...createInitialAtBatUiState(),
+        revealCount,
         strikeCount,
         submittedResult,
         reveal: submittedResult === null || submittedResult.kind === 'incorrect' ? null : firstReveal,

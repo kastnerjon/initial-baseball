@@ -1,4 +1,4 @@
-import { createDailyPointsSummary, getDailyOutcomePoints } from '@initial-baseball/engine';
+import { createDailyPointsSummary, getDailyAtBatPoints } from '@initial-baseball/engine';
 import {
   CURRENT_DAILY_RULESET_VERSION,
   LEGACY_DAILY_RULESET_VERSION,
@@ -349,7 +349,12 @@ function buildNormalizedPoints(
   return {
     ...base,
     points: completedAtBats.reduce(
-      (total, atBat) => total + getDailyOutcomePoints(rulesetVersion, atBat.outcome),
+      (total, atBat) => total + getDailyAtBatPoints({
+        rulesetVersion,
+        outcome: atBat.outcome,
+        hintsRevealed: atBat.hintsRevealed,
+        wrongGuesses: atBat.wrongGuesses,
+      }),
       0,
     ),
     atBatsCompleted,

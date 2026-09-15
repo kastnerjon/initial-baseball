@@ -4,7 +4,7 @@ Status: Approved direction; bounded implementation contracts, September 15, 2026
 
 ## Product decision
 
-Daily Nine remains the default `points-v2` game (nine at-bats, 36 maximum). Classic Inning uses a new `classic-inning-v1`: the same ordered daily nine, existing runner advancement and runs, immediate completion at the third out or after batter nine. Three wrong guesses or Give Up is one out. There is no repeat batting or extra lineup generation. Unplayed answers remain hidden. Players can play both modes on one date, accepting the known spoiler interaction of a shared lineup. Existing `legacy-inning-v1`, `points-v1`, and `points-v2` sessions retain their rules.
+Daily Nine remains the default `points-v3` game (nine at-bats, 63 maximum). The prior `points-v2` contract remains compatible for existing sessions. Classic Inning uses a new `classic-inning-v1`: the same ordered daily nine, existing runner advancement and runs, immediate completion at the third out or after batter nine. Three wrong guesses or Give Up is one out. There is no repeat batting or extra lineup generation. Unplayed answers remain hidden. Players can play both modes on one date, accepting the known spoiler interaction of a shared lineup. Existing `legacy-inning-v1`, `points-v1`, and `points-v2` sessions retain their rules.
 
 ## PR A: portable rules contract
 

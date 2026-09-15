@@ -25,7 +25,7 @@ export default async function DailyInningHomePage(): Promise<JSX.Element> {
             </span>
             <details className="daily-instructions">
               <summary>How to play</summary>
-              <p>Guess the player from initials. Reveal hints if stuck; earlier correct guesses score better outcomes. Three wrong guesses or Give Up records a strikeout. A new Daily Inning arrives after midnight Pacific.</p>
+              <p>Each at-bat is worth up to 7 points. Every hint or wrong guess costs 1 point. Three wrong guesses—or Give Up—score 0 points. Play all 9 at-bats for up to 63 points.</p>
             </details>
           </div>
         </header>
