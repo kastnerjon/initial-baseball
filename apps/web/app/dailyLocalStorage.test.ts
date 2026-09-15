@@ -132,6 +132,7 @@ describe('dailyLocalStorage', () => {
     }, storage);
 
     expect(load(storage)).toEqual({
+      scorecardAnswers: {},
       schemaVersion: 3,
       puzzleId: DEMO_DAILY_PUZZLE.id,
       puzzleDate: DEMO_DAILY_PUZZLE.puzzleDate,

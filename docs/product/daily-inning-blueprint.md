@@ -1,7 +1,7 @@
 # Daily Inning end-to-end blueprint
 
 Status: Living product source of truth  
-Last updated: 2026-09-08
+Last updated: 2026-09-15
 
 ## Product decision
 
@@ -71,7 +71,8 @@ Statistical accomplishment is not recognizability. The current weighted-stat ran
 - local, immediate active-batter Hint actions;
 - canonical search/guess flow;
 - post-at-bat career and season reveal;
-- completed-at-bat history and spoiler-safe point share;
+- private scorecard rows with initials, resolved canonical answer, and outcome;
+- separate spoiler-safe share card with an upper-right Copy button;
 - local refresh recovery with token-authorized hint hydration;
 - authorized seven-day editorial administration.
 
@@ -116,6 +117,12 @@ Accounts, streaks/cross-device history, public leaderboards, user-created or exp
 Anonymous visible state remains client-driven. Local storage restores puzzle/ruleset, at-bat state, raw facts, score, and opaque token. The hint bundle is not required as durable state; a verified saved token may hydrate the exact current bundle before interaction.
 
 Future aggregate results use one compact idempotent completed-game write, not per-action writes.
+
+## Scorecard and sharing
+
+The scorecard uses canonical display names already delivered at terminal resolution, including correct guesses, third strikes, and Give Up. It shows only faced/resolved players. Browser-local names survive refresh, including the pending Next At Bat screen, and reset with that local session. Older saves without retained names show “Answer unavailable”; no missing-answer fetch is introduced.
+
+The separate share card and copied text remain spoiler-free: initials, outcomes, score, puzzle metadata, and URL only. Copy provides success feedback or a manual-selection fallback when clipboard permission is unavailable.
 
 ## Statistics and reveal
 

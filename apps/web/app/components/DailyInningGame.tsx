@@ -35,6 +35,7 @@ import type {
   DailyHintBundleResponse,
   DailyResolutionResponse,
 } from '../dailyRuntimeContracts';
+import type { DailyScorecardAnswers } from '../dailyScorecard';
 import { AtBatCard } from './AtBatCard';
 import { DailyScorebug } from './DailyScorebug';
 import { GameCompleteView } from './GameCompleteView';
@@ -54,6 +55,7 @@ export function DailyInningGame({
   initialHintBundle,
 }: DailyInningGameProps): JSX.Element {
   const [gameState, setGameState] = useState<DailyGameState>(() => createInitialDailyGameState(puzzle));
+  const [scorecardAnswers, setScorecardAnswers] = useState<DailyScorecardAnswers>({});
   const [currentPitchIndex, setCurrentPitchIndex] = useState(0);
   const [atBatState, setAtBatState] = useState<DailyAtBatUiState>(() => createInitialAtBatUiState());
   const [pendingAdvance, setPendingAdvance] = useState<PendingAtBatAdvance | null>(null);
@@ -101,6 +103,7 @@ export function DailyInningGame({
     }
 
     setGameState(savedGame.gameState);
+    setScorecardAnswers(savedGame.scorecardAnswers ?? {});
     setCurrentPitchIndex(savedGame.currentPitchIndex);
     setAtBatState(savedGame.atBatState);
     setPendingAdvance(savedGame.pendingAdvance);
@@ -168,12 +171,14 @@ export function DailyInningGame({
       atBatState,
       pendingAdvance,
       progressionToken,
+      scorecardAnswers,
     });
-  }, [atBatState, currentPitchIndex, gameState, hasLoadedSavedState, pendingAdvance, progressionToken, puzzle]);
+  }, [atBatState, currentPitchIndex, gameState, hasLoadedSavedState, pendingAdvance, progressionToken, puzzle, scorecardAnswers]);
 
   if (shareResult !== null) {
     return (
       <GameCompleteView
+        scorecardAnswers={scorecardAnswers}
         shareResult={shareResult}
         shareText={formatDailyShareText(shareResult)}
         onResetToday={handleResetToday}
@@ -242,6 +247,7 @@ export function DailyInningGame({
       />
       {gameState.completedPitchLines.length > 0 ? (
         <PitchResultList
+          answers={scorecardAnswers}
           pitchLines={gameState.completedPitchLines}
           title="Completed At-bats"
           emptyLabel="No completed at-bats yet."
@@ -301,6 +307,7 @@ export function DailyInningGame({
       : result.kind === 'strikeout'
         ? result.strikeCount
         : atBatState.strikeCount;
+    setScorecardAnswers(answers => ({ ...answers, [activePitch.pitchNumber]: reveal.displayName }));
     setPendingAdvance(resolveDailyTerminalAtBat({
       gameState,
       pitch: {
@@ -353,6 +360,7 @@ export function DailyInningGame({
 
   function resetToInitialState(): void {
     setGameState(createInitialDailyGameState(puzzle));
+    setScorecardAnswers({});
     setCurrentPitchIndex(0);
     setAtBatState(createInitialAtBatUiState());
     setPendingAdvance(null);

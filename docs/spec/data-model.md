@@ -1,7 +1,7 @@
 # Data Model Spec
 
 Status: Current persistence contract and approved next entities  
-Last updated: 2026-08-01
+Last updated: 2026-09-15
 
 ## Ownership
 
@@ -77,6 +77,10 @@ Current browser state includes:
 New games use `points-v2` with `4/3/2/1/0.5/0` and a 36-point maximum. Compatible `points-v1` saves and signed tokens retain `5/4/3/2/1/0` and a 45-point maximum. Compatible pre-ruleset saves and signed tokens normalize to `legacy-inning-v1` so an already-started game is not silently changed from three-out completion to all-scheduled-at-bats completion.
 
 No Redis, replay cache, durable anonymous server session, or database write per hint/guess is part of the accepted launch model.
+
+## Browser-local scorecard answers
+
+Schema 3 accepts an optional `scorecardAnswers` map of pitch number to terminal canonical display name alongside the game state. Missing/malformed values normalize to an empty map; only resolved/pending-terminal slots are retained. Names are not part of shared raw facts, share results, tokens, or future aggregate submissions. Existing saves remain readable with an unavailable-answer placeholder. Reset removes the map with its saved session.
 
 ## Future gameplay profiles
 

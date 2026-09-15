@@ -1,4 +1,5 @@
 import type { JSX } from 'react';
+import type { DailyScorecardAnswers } from '../dailyScorecard';
 import type { DailySharePitchLine } from '@initial-baseball/shared';
 
 type PitchResultListProps = {
@@ -6,6 +7,7 @@ type PitchResultListProps = {
   title: string;
   emptyLabel: string;
   compact?: boolean;
+  answers?: DailyScorecardAnswers;
 };
 
 export function PitchResultList({
@@ -13,6 +15,7 @@ export function PitchResultList({
   title,
   emptyLabel,
   compact = false,
+  answers = {},
 }: PitchResultListProps): JSX.Element {
   if (compact && pitchLines.length > 0) {
     return (
@@ -21,7 +24,7 @@ export function PitchResultList({
           <span className="pitch-results-kicker">Scorecard</span>
           <span className="pitch-results-title">{`${pitchLines.length} completed`}</span>
         </summary>
-        <PitchList pitchLines={pitchLines} title={title} />
+        <PitchList pitchLines={pitchLines} title={title} answers={answers} />
       </details>
     );
   }
@@ -35,7 +38,7 @@ export function PitchResultList({
       {pitchLines.length === 0 ? (
         <p className="pitch-results-empty">{emptyLabel}</p>
       ) : (
-        <PitchList pitchLines={pitchLines} title={title} />
+        <PitchList pitchLines={pitchLines} title={title} answers={answers} />
       )}
     </section>
   );
@@ -44,18 +47,19 @@ export function PitchResultList({
 function PitchList({
   pitchLines,
   title,
+  answers,
 }: {
   pitchLines: DailySharePitchLine[];
   title: string;
+  answers: DailyScorecardAnswers;
 }): JSX.Element {
   return (
-    <ul className="pitch-list" aria-label={title}>
+    <ul className="scorecard-list" aria-label={title}>
       {pitchLines.map((line, index) => (
-        <li key={`${line.initials}-${line.outcome}-${index}`} className="pitch-row">
-          <span className="pitch-row-chip">
-            <span className="pitch-initials">{line.initials}</span>
-            <strong className="pitch-outcome">{line.outcome}</strong>
-          </span>
+        <li key={`${line.initials}-${line.outcome}-${index}`} className="scorecard-row">
+          <span className="pitch-initials">{line.initials}</span>
+          <span className="scorecard-answer">{answers[index + 1] ?? 'Answer unavailable'}</span>
+          <strong className="pitch-outcome">{line.outcome}</strong>
         </li>
       ))}
     </ul>

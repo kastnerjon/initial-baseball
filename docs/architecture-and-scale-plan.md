@@ -1,7 +1,7 @@
 # Architecture and launch-scale plan
 
 Status: Living architecture source of truth  
-Last updated: 2026-08-16
+Last updated: 2026-09-15
 
 ## Product goal
 
@@ -143,6 +143,10 @@ Search-candidate construction is separated from the resolve composition. The ful
 `POST /api/daily/resolve` retains its `daily-resolve` `Server-Timing` duration. Because that metric begins inside the route handler, comparing it with real-browser end-to-end latency helps identify any remaining browser/network/platform-startup component after the hot path is reduced; it contains no answer data.
 
 These are web/server runtime optimizations only. They do not change scoring, lifecycle rules, progression claims, publication authority, or public payloads. Supabase remains authoritative for editorial records. A syntactically valid but nonexistent canonical submitted ID is treated as an incorrect anonymous guess rather than forcing a full player-index validation; legacy/noncanonical IDs remain explicitly validated. Out-of-band database edits that bypass the authenticated admin path may remain cached until the safety revalidation window expires.
+
+## Private recap presentation
+
+The web adapter retains terminal canonical display names in a browser-local `scorecardAnswers` map keyed by pitch number, separate from portable game facts and `DailyShareResult`. Only resolved slots survive restoration. Scorecard and share-card components receive separate inputs; clipboard copies only the existing engine-formatted spoiler-safe text. No server payload, data dependency, or answer-authority change is required.
 
 ## Editorial persistence
 
