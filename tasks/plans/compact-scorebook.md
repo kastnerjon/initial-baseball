@@ -26,3 +26,8 @@ All changes are web-specific rendering and interaction hierarchy. React may depe
 ## Baseline
 
 Main d2de746664e7d154294f54dc9ae4b1d55f651ad8 (PR #135) is deployed as dpl_32hGx8N4TKEGKsCaoqHxVbBfVxtf, READY at initial-baseball-web.vercel.app. No open PRs at inspection. PR #135 head CI run 33282802850 passed. Handoff/todo still incorrectly requested its merge. Vercel runtime errors returned five occurrences of insufficient eligible Daily players for slot 2 (ranks 1-250), with timestamps spanning September 3–8; this is a separate production follow-up, not evidence of a UI defect or a healthy runtime.
+
+
+## Follow-up polish — September 15, 2026
+
+The masthead and footer stay on the same 640px content rail as the game surface while preserving the wider page container for desktop statistics. Scorecard rows use balanced three-column alignment for initials, canonical answer, and outcome; wrapping and tap-target sizing remain intact at mobile breakpoints.

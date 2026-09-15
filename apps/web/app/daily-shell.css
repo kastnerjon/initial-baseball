@@ -17,6 +17,8 @@
   padding-bottom: 20px;
   margin-bottom: 24px;
   border-bottom: 1px solid var(--line);
+  width: min(100%, 640px);
+  margin-inline: auto;
 }
 .daily-brand-lockup {
   display: flex;
@@ -203,4 +205,6 @@
   border-top: 1px solid var(--line);
   color: var(--ink-soft);
   font-size: 11px;
+  width: min(100%, 640px);
+  margin-inline: auto;
 }
