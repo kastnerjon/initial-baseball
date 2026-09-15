@@ -34,8 +34,8 @@ export const POINTS_V3_MAX_POINTS_PER_AT_BAT = 7;
 export type DailyAtBatPointsInput = {
   rulesetVersion: DailyRulesetVersion;
   outcome: DailyOutcome;
-  hintsRevealed?: number;
-  wrongGuesses?: number;
+  hintsRevealed?: number | undefined;
+  wrongGuesses?: number | undefined;
 };
 
 export type DailyRulesetEngineState = {
