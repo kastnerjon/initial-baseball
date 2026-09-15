@@ -4,7 +4,7 @@
   border-top: 4px solid var(--clubhouse);
 }
 .daily-card {
-  width: min(100%, 960px);
+  width: min(100%, 640px);
   margin: 0 auto;
 }
 .daily-masthead {
@@ -203,4 +203,6 @@
   border-top: 1px solid var(--line);
   color: var(--ink-soft);
   font-size: 11px;
+  width: min(100%, 640px);
+  margin-inline: auto;
 }

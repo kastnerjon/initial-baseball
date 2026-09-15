@@ -87,13 +87,13 @@ The public Daily surface uses a **compact baseball scorebook**: warm off-white p
 Presentation rules:
 
 - compact masthead with one edition number and a small expandable help control; no full-width instruction row, double borders, ruled textures, gradients or nested decorative cards;
-- a centered playing surface up to 640px wide, with a wider resolved-player surface up to 960px for desktop statistics;
+- a single 640px content rail keeps the masthead, playing surface, scorecard, share card, and footer aligned; resolved-player statistics may expand to 960px on desktop;
 - a non-sticky compact status row shows the current at-bat number unambiguously, the ruleset-derived score/maximum and strikeouts; legacy sessions retain runs/hits/bases/outs and never receive point copy;
 - terminal status renders existing pending-advance totals immediately, without recomputing rules in React;
 - current strikes appear once beside the guessing interaction with an accessible numeric label;
 - regular-weight system sans serif for body text, controls and data; display serif is reserved for a few focal points;
 - the initials, hints and guess input remain close together; Submit Guess is the primary action, Hint is secondary, and Give Up is quiet; controls keep at least 44px tap targets and text inputs remain 16px;
-- completed-at-bat history follows the playing surface; optional history never pushes the current interaction down;
+- completed-at-bat history follows the playing surface; scorecard rows use three balanced columns for initials, canonical answer, and outcome; optional history never pushes the current interaction down;
 - terminal outcome/awarded points and Next At Bat precede the reveal and expandable season tables, preserving continuation when tables are long;
 - search suggestions overlay the flow and selecting a player suppresses the empty-results dropdown; unique names remain names only and genuine duplicates retain years, without position/team clues;
 - no placeholder distributions or unsourced award/leader emphasis; future percentile/comparison UI follows the same restrained hierarchy;
