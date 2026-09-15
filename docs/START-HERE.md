@@ -118,6 +118,8 @@ The September 8 screenshot review superseded the oversized heritage treatment wi
 
 PR #137 merged that presentation code, and production deployment `dpl_8e7N4n8E34rXCgmYj9rJEKBdsKHu` now serves it successfully after PR #138 removed the independent lineup-exhaustion blocker. This is presentation work only; scoring/version compatibility, search semantics, canonical facts, publication, persistence, and answer authority remain unchanged. Plan/scope: `tasks/plans/compact-scorebook.md`. Physical iPhone/iPad touch and post-PR #133 latency QA remain outstanding.
 
+The September 15 rail follow-up makes the 960px reveal/statistics width the consistent desktop maximum for the masthead, scorebug, active card, scorecard, share card, and footer. Scorecard columns remain aligned but form a compact left-aligned group rather than spanning the full rail. Scope: `tasks/plans/unified-daily-rail.md`.
+
 ## Approved September 15 work
 
 The current scorecard branch adds initials → canonical answer → outcome for resolved players, including K/Give Up, plus an isolated spoiler-safe share card with Copy in its upper-right. Browser-only answer retention is additive to schema 3; old saves without names show Answer unavailable. This work is not yet deployed. Scope: `tasks/plans/scorecard-answers.md`.

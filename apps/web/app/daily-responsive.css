@@ -102,6 +102,10 @@
   .pitch-row {
     flex: 0 0 auto;
   }
+  .scorecard-row {
+    grid-template-columns: 36px minmax(0, 1fr) max-content;
+    gap: 12px;
+  }
   .daily-footer {
     flex-wrap: wrap;
     gap: 4px 12px;
