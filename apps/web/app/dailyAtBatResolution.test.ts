@@ -141,7 +141,7 @@ describe('AtBatCard terminal output', () => {
     const incorrectResult = getGuessOutcome({
       isCorrect: false,
       revealCount: 0,
-      strikeCount: 1,
+      strikeCount: 0,
       maxStrikes: 3,
     });
 
