@@ -128,7 +128,7 @@ describe('resolveDailyTerminalAtBat', () => {
       url: createDailyShareUrl(),
     }));
 
-    expect(shareText).toContain(`Daily Inning #${DEMO_DAILY_PUZZLE.puzzleNumber}`);
+    expect(shareText).toContain(`Daily Nine #${DEMO_DAILY_PUZZLE.puzzleNumber}`);
     expect(shareText).toContain('0/24 PTS');
     expect(shareText).toContain(`${firstPitch.player.initials}: K`);
     expect(shareText).not.toContain(firstPitch.player.fullName);
