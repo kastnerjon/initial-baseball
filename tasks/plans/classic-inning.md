@@ -1,6 +1,6 @@
 # Classic Inning: versioned rules and isolated public mode
 
-Status: Approved direction; bounded implementation contracts, September 15, 2026.
+Status: Approved direction; portable rules merged in PR #141; web transport implementation is in progress September 16, 2026.
 
 ## Product decision
 
@@ -15,15 +15,24 @@ Daily Nine remains the default `points-v3` game (nine at-bats, 63 maximum). The 
 - **Acceptance:** runners/forced walks/runs, three-out stop, ninth-batter stop, no post-completion mutation, points compatibility through nine, unchanged legacy formatting and behavior, mode-labelled sharing, full repository checks.
 - **Stop conditions:** new baseball mechanics or generic policy framework; decompose above 12 handwritten files/600 net lines.
 
-## PR B: web transport and progression (pending)
+PR #141 merged this portable rules contract.
 
-Typed ruleset bootstrap and signed progression reuse engine `isDailyGameComplete`. Carry mode identity through hints, resolution, completion, results, and sharing; stop immediately at three outs or batter nine with no successor bundle. Prepare shared page composition; activate public `/classic` together with isolated browser persistence in PR C so an intermediate deployment cannot overwrite Daily Nine saves.
+## PR B: web transport and progression
+
+Scope contract: `tasks/plans/classic-web-transport.md`.
+
+- **Goal:** allow the existing Daily server runtime to issue and advance signed `classic-inning-v1` progression without activating the public Classic browser experience yet.
+- **Owning layer:** `apps/web` server transport/runtime, delegating completion to engine `isDailyGameComplete`.
+- **In scope:** typed new-session bootstrap selection limited to `points-v3` or `classic-inning-v1`; explicit bootstrap ruleset identity; signed ruleset preservation through hint checkpoints and resolution; Classic completion at three outs or batter nine; no successor hint bundle after completion; existing signed points/legacy compatibility; focused transport/token tests and canonical docs.
+- **Out of scope:** `/classic`, navigation, browser persistence namespaces, reset/refresh/result/share UI behavior, layout, persistence, hosting, aggregates, or lineup changes.
+- **Acceptance:** default bootstrap remains points-v3; explicit Classic bootstrap signs Classic claims; points policies continue through three outs; Classic and legacy stop at three outs; all rulesets stop after batter nine; completed progression returns no hint bundle; token tampering remains rejected; full repository checks.
+- **Stop conditions:** any browser persistence/public route activation or new API/dependency/authority boundary is deferred to PR C.
 
 ## PR C: mode-aware browser experience (stacked after PR B; pending)
 
 - **Goal:** choose, play, resume and finish either mode without overwriting the other.
 - **Owning layer:** `apps/web` transport/presentation/browser persistence.
-- **In scope:** typed bootstrap ruleset selection; signed progression using the engine completion policy; `/` and `/classic` server pages sharing one presentation; mode navigation/help, mode-labelled completion; independent Classic storage key and legacy default-key compatibility; terminal/complete refresh and reset; focused runtime/storage tests and browser QA; API/data/architecture/blueprint/handoff/todo documentation.
+- **In scope:** `/classic` and shared page composition; mode navigation/help, mode-labelled completion; independent Classic storage key and legacy default-key compatibility; terminal/complete refresh and reset; client initialization from the server-selected bootstrap ruleset; focused runtime/storage tests and browser QA; API/data/architecture/blueprint/handoff/todo documentation.
 - **Out of scope:** puzzle identity/publication changes, new result database, auth, stronger anonymous anti-cheat, extra batters, hosting changes.
 - **Acceptance:** each bootstrap authorizes only its current batter; Classic stops at third K/Give Up without a successor bundle; both modes stop at nine; mode tampering fails signature validation; refresh preserves each mode and recap; reset touches only the selected mode; points-v1/legacy saves survive; copy matches spoiler-free text; phone/tablet/desktop layouts; full CI/build/hidden-answer QA.
 - **Stop conditions:** broader storage migration, new APIs/dependencies or cross-mode competitive fairness; decompose above 12 source/test files/600 net lines.

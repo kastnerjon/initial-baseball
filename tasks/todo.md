@@ -5,13 +5,13 @@ Last updated: 2026-09-16
 
 Completed history belongs in PRs, canonical docs, or `tasks/lessons.md`. Durable resumption context belongs in `docs/START-HERE.md`.
 
-Current order: complete the approved Classic isolated mode integration; complete physical iPhone/iPad presentation and resolution-latency QA on the now-corrected production runtime; then completed-result contracts/persistence and the lineup-content system. The secure conversational Daily lineup bridge is active in production and is the preferred routine lineup-entry path.
+Current order: finish Classic server transport/progression in PR #155, then complete the approved stacked mode-aware Classic browser experience; complete physical iPhone/iPad presentation and resolution-latency QA on the now-corrected production runtime; then completed-result contracts/persistence and the lineup-content system. The secure conversational Daily lineup bridge is active in production and is the preferred routine lineup-entry path.
 
 ## September 15 approved product work
 
 - [x] Implement private initials/answer/outcome scorecard with additive local answer retention and separate spoiler-safe Copy share card (PR #140).
 - [x] Define and implement classic-inning-v1 in portable rules, preserving existing policies (PR #141).
-- [ ] Classic transport PR: typed bootstrap selection, signed mode identity, engine-owned completion, and no successor hint bundle after three outs or batter nine.
+- [ ] Finish/review/merge PR #155: typed new-session bootstrap selection, signed Classic mode identity, engine-owned three-out/nine-batter completion, and no successor hint bundle after completion. Public `/classic` activation is intentionally not part of this PR.
 - [ ] Stacked browser PR: activate `/classic` with navigation, isolated saves, compatible default keys, mode-aware refresh/reset/results/sharing, and hidden unplayed answers.
 - [ ] Verify both modes, terminal/complete refresh, clipboard success/failure, answer safety and responsive layouts; retain physical-device QA as distinct.
 

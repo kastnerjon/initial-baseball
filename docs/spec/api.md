@@ -11,8 +11,11 @@ Every route must validate input, return sanitized data, keep rules in their owni
 
 ## Public bootstrap
 
-The Daily page receives:
+The Daily server runtime can create a new-session bootstrap for exactly one of two approved current modes: default Daily Nine `points-v3` or Classic Inning `classic-inning-v1`. The selected ruleset is returned explicitly as `rulesetVersion` and is signed into the first progression token and every authorized hint checkpoint. The current `/` page still requests the default `points-v3`; public `/classic` routing and browser-mode persistence are the separate stacked browser-integration concern.
 
+A bootstrap receives:
+
+- `rulesetVersion` for the authorized new session;
 - puzzle ID, number, date, status, hint configuration, and nine public initials;
 - one opaque signed progression token for the first pitch;
 - one authorized hint bundle for the first pitch only.
@@ -23,7 +26,7 @@ The active hint bundle contains:
 - all four current-batter hint labels/values;
 - signed checkpoints for only the later reveal depths still available from the current claims.
 
-It contains no answer ID, answer name, reveal record, or future-batter hint. New Daily Nine games use `points-v3`; the approved Classic Inning integration will use `classic-inning-v1` with the same nine and three-outs-or-nine completion. Existing valid `points-v2`, `points-v1`, and `legacy-inning-v1` tokens retain their own policies.
+It contains no answer ID, answer name, reveal record, or future-batter hint. Existing valid `points-v2`, `points-v1`, and `legacy-inning-v1` signed sessions retain their own policies even though those compatibility rulesets are not selectable for a new bootstrap.
 
 ## Canonical player search
 
@@ -43,7 +46,7 @@ Request:
 { "progressionToken": "opaque-signed-token" }
 ```
 
-The server verifies the token and returns the bundle for exactly the authorized current pitch, strike count, and reveal depth.
+The server verifies the token and returns the bundle for exactly the authorized current pitch, strike count, reveal depth, and signed ruleset.
 
 ```json
 {
@@ -115,13 +118,17 @@ Behavior:
 - incorrect guess: no reveal, successor token with one additional strike, refreshed bundle for the same pitch and strike count;
 - correct guess: current reveal, successor token, next-pitch bundle unless complete;
 - third strike/Give Up: current reveal, recorded out, successor token, next-pitch bundle unless complete;
-- final pitch or a three-out completion under `classic-inning-v1`/`legacy-inning-v1`: completed token and `hintBundle: null`.
+- all point rulesets complete after the scheduled ninth at-bat, even if three strikeouts have already been recorded;
+- `classic-inning-v1` and `legacy-inning-v1` use the engine-owned non-points completion policy: third recorded out or scheduled ninth at-bat, whichever comes first;
+- every completed successor token returns `hintBundle: null`, so Classic never authorizes a later batter after out three.
+
+The server transport delegates this completion decision to engine `isDailyGameComplete`; routes and React do not duplicate the three-out rule.
 
 Canonical-format submitted IDs are compared directly with the server-only canonical answer ID. This avoids loading the full canonical player index for the ordinary public-search path. A noncanonical/legacy submitted ID is still validated through the canonical redirect boundary; unknown or excluded legacy IDs are rejected. A syntactically valid but nonexistent canonical ID is simply an incorrect anonymous guess. This does not expose the answer or create a score advantage, and it avoids turning full-universe identity validation into a per-guess hot-path cost.
 
 Terminal responses load only the deterministic reveal shard for the canonical answer ID. They do not require the full player index solely to locate that shard. Search and legacy redirect behavior continue to use the full canonical runtime when those capabilities are actually needed.
 
-The browser does not submit pitch, hint depth, strike count, out count, or ruleset version independently. After a terminal response, the browser derives the awarded point display from the engine policy and the server-verified reveal/strike facts. For points-v3, a correct resolution awards max(0, 7 - hints revealed - wrong guesses); a third wrong guess or Give Up records K and 0. The route does not duplicate a client-trusted point value.
+The browser does not submit pitch, hint depth, strike count, out count, or ruleset version independently. The signed progression token remains authoritative for those claims. After a terminal response, the browser derives the awarded point display from the engine policy and the server-verified reveal/strike facts. For points-v3, a correct resolution awards max(0, 7 - hints revealed - wrong guesses); a third wrong guess or Give Up records K and 0. The route does not duplicate a client-trusted point value.
 
 ## Local Hint action
 
@@ -131,17 +138,17 @@ The active client performs no HTTP request on Hint click. It:
 2. reveals it locally;
 3. replaces the current progression token with the matching signed checkpoint.
 
-Scoring therefore still uses server-verifiable reveal depth on the later resolution request.
+The checkpoint preserves the server-selected ruleset as well as pitch, strike, and reveal claims. Scoring/completion therefore still uses server-verifiable progression on the later resolution request.
 
 ## Token contract
 
 Claims contain only contract/ruleset version, puzzle ID/date, current pitch, reveal count, strike count, recorded outs, and completion. Tokens contain no hints or answers.
 
-Valid pre-ruleset tokens normalize to `legacy-inning-v1`. Valid `classic-inning-v1`, `points-v1`, `points-v2`, and `points-v3` claims round-trip without reinterpretation. Tokens are stateless and replayable; anonymous scoring is not tamper-proof. Public mode selection and Classic bootstrap issuance remain a separate web integration step.
+Valid pre-ruleset tokens normalize to `legacy-inning-v1`. Valid `classic-inning-v1`, `points-v1`, `points-v2`, and `points-v3` claims round-trip without reinterpretation. Ruleset identity is signed and cannot be changed by a client without invalidating the token signature. Tokens are stateless and replayable; anonymous scoring is not tamper-proof. The runtime can now issue Classic bootstrap claims, while public `/classic` selection and mode-isolated browser state remain the next stacked web concern.
 
 ## Browser persistence
 
-The browser persists public gameplay state and the current opaque token, not the full authorized hint bundle. On ordinary transitions, the server response supplies the next bundle. On refresh, `/api/daily/hints` hydrates the bundle before the restored at-bat becomes interactive.
+The browser persists public gameplay state and the current opaque token, not the full authorized hint bundle. On ordinary transitions, the server response supplies the next bundle. On refresh, `/api/daily/hints` hydrates the bundle before the restored at-bat becomes interactive. Separate Classic persistence and mode-safe restore/reset behavior are not part of the server transport contract and remain in the stacked browser-experience work.
 
 ## Caching and privacy
 

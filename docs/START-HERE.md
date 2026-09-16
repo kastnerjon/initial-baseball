@@ -77,6 +77,7 @@ Answer integrity: `docs/decisions/0001-daily-answer-integrity.md`.
 - PR #152 merged as `61cf0aa51556e5ded577490cfd9c569c0306eca4` and added atomic nine-player future-lineup replacement plus the private machine-authenticated server adapter while preserving the existing Daily lifecycle, optimistic revisions, cache invalidation, and published-puzzle immutability.
 - PR #153 merged as `e3ab3b8a9fc8a196d7962a79e5c23e0cf15c617c` and activated the private Supabase `pg_net` transport. On September 16 the matching machine credential was configured in Vercel Production and Supabase Vault, production was redeployed successfully, and the transport reached the authenticated server route.
 - The conversational lineup bridge is now operational. A production smoke test first rejected an ineligible canonical candidate atomically with HTTP 400 and no lineup mutation; the corrected future nine was then persisted in exact batting order, scheduled explicitly, and read back at revision 2 with `scheduled_by`/`updated_by` equal to `chatops:assistant`. Future lineup payloads must never be transported through public GitHub issues/commits/PRs/Actions inputs. Runbook: `docs/operations/daily-lineup-chatops.md`.
+- PR #155 is the current bounded product work. It adds typed new-session bootstrap selection for Daily Nine or Classic, signs that ruleset through hint/resolution progression, and reuses engine `isDailyGameComplete` so Classic stops at three outs or batter nine with no successor hint bundle. It deliberately does not activate `/classic` or browser persistence; those remain the next stacked PR. Scope: `tasks/plans/classic-web-transport.md`.
 
 ## Implemented gameplay
 
@@ -134,7 +135,7 @@ The user approved Daily Nine as the default points-v3 experience and Classic Inn
 
 ## Approved Classic direction
 
-The September 15 user decision adds Daily Nine (default points-v3) and Classic Inning (new classic-inning-v1). Classic shares the daily nine, uses existing runners/runs, and ends at three outs or nine at-bats. Both modes may be played; unplayed answers stay hidden; persistence and sharing must distinguish modes. PR #141 merged portable policy/label/completion support; web transport and mode-aware browser integration remain outstanding as two stacked PRs. Scope and stage boundaries: `tasks/plans/classic-inning.md`. Scorecard answers/Copy are implemented in PR #140; public mode integration is not yet live.
+The September 15 user decision adds Daily Nine (default points-v3) and Classic Inning (new classic-inning-v1). Classic shares the daily nine, uses existing runners/runs, and ends at three outs or nine at-bats. Both modes may be played; unplayed answers stay hidden; persistence and sharing must distinguish modes. PR #141 merged portable policy/label/completion support. PR #155 is implementing the server transport/progression seam: typed Classic bootstrap issuance, signed mode identity, engine-owned completion, and no future hint bundle after completion. Public `/classic`, navigation, isolated browser saves, mode-aware refresh/reset/results/sharing, and hidden unplayed answers remain the next stacked browser PR. Scope and stage boundaries: `tasks/plans/classic-inning.md` and `tasks/plans/classic-web-transport.md`.
 
 ## Settled future systems
 
@@ -185,7 +186,7 @@ Remaining hosted editorial checks:
 
 ## Exact next work order
 
-1. Implement Classic web transport/progression: typed ruleset bootstrap selection, signed mode identity, engine-owned three-out/nine-batter completion, and no successor hint bundle after completion.
+1. Finish review/CI and merge PR #155 for Classic web transport/progression; do not activate `/classic` or browser storage in this PR.
 2. Implement the stacked mode-aware browser experience: `/classic`, navigation, isolated saves, compatibility keys, refresh/reset/results/sharing, and hidden unplayed answers.
 3. Run the full cross-mode QA matrix, then complete physical iPhone/iPad presentation checks and the outstanding PR #133 latency/public refresh/completion checklist.
 4. Define the compact completed-game submission, validation, idempotent repository port, and derived-score contract in portable layers.
