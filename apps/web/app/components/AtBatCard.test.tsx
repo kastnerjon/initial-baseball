@@ -111,7 +111,7 @@ function renderCard(input: {
       requestPending={input.requestPending}
       giveUpPending={input.giveUpPending}
       requestError={null}
-      nextActionLabel={input.nextActionLabel}
+      {...(input.nextActionLabel === undefined ? {} : { nextActionLabel: input.nextActionLabel })}
       onQueryChange={() => undefined}
       onSelectPlayer={() => undefined}
       onRevealHint={() => undefined}
