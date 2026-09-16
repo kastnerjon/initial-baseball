@@ -1,7 +1,7 @@
 # Daily Inning end-to-end blueprint
 
 Status: Living product source of truth  
-Last updated: 2026-09-15
+Last updated: 2026-09-16
 
 ## Product decision
 
@@ -34,9 +34,9 @@ Player-facing explanation: “Each at-bat is worth up to 7 points. Every hint or
 
 Compatible `points-v1` sessions retain `5/4/3/2/1/0` and a 45-point maximum. Compatible pre-ruleset sessions remain `legacy-inning-v1` and retain their prior three-out behavior.
 
-## Approved alternate mode: Classic Inning
+## Alternate mode: Classic Inning
 
-Daily Nine remains the default points-v3 game. Classic Inning uses classic-inning-v1: same ordered daily nine, runner advancement and run scoring, ending at three outs or nine at-bats. Players may play both modes, accepting the spoiler interaction. Only faced players appear in the scorecard. Results/shares identify the mode, and local sessions must remain separate. The portable policy is implemented; public mode selection and save isolation are the next integration work, not yet live. Legacy and points-v1 rules remain unchanged.
+Daily Nine remains the default points-v3 game at `/`. Classic Inning is available at `/classic` and uses `classic-inning-v1`: the same ordered daily nine, runner advancement and run scoring, ending at three outs or nine at-bats. Players may play both modes, accepting the spoiler interaction. Only faced players appear in the scorecard. Results/shares identify the mode, Classic shares return to `/classic`, and Classic browser saves/reset are isolated from the existing default Daily storage key. Both modes reuse the same browser game implementation and signed server progression; legacy and points-v1 rules remain unchanged.
 
 ## Hint and answer boundary
 
@@ -67,7 +67,10 @@ Statistical accomplishment is not recognizability. The current weighted-stat ran
 
 ## Current surfaces
 
+- Daily Nine at `/` and Classic Inning at `/classic`, with shared daily puzzle content and explicit mode navigation;
+- isolated Classic/default browser saves and mode-safe reset/refresh restoration;
 - point-focused Daily scorebug and all-nine game;
+- Classic runs/hits/bases/outs scorebug and three-out-or-nine-batter completion;
 - resolved outcome plus awarded-point display;
 - local, immediate active-batter Hint actions;
 - canonical search/guess flow;
@@ -116,7 +119,7 @@ Accounts, streaks/cross-device history, public leaderboards, user-created or exp
 
 ## State and persistence
 
-Anonymous visible state remains client-driven. Local storage restores puzzle/ruleset, at-bat state, raw facts, score, and opaque token. The hint bundle is not required as durable state; a verified saved token may hydrate the exact current bundle before interaction.
+Anonymous visible state remains client-driven. Local storage restores puzzle/ruleset, at-bat state, raw facts, score, and opaque token. Daily Nine retains the existing date-keyed storage namespace for compatibility; Classic uses a distinct mode namespace for the same puzzle date, so switching or resetting one mode does not overwrite the other. The hint bundle is not required as durable state; a verified saved token may hydrate the exact current bundle before interaction.
 
 Future aggregate results use one compact idempotent completed-game write, not per-action writes.
 
@@ -124,7 +127,7 @@ Future aggregate results use one compact idempotent completed-game write, not pe
 
 The scorecard uses canonical display names already delivered at terminal resolution, including correct guesses, third strikes, and Give Up. It shows only faced/resolved players. Browser-local names survive refresh, including the pending Next At Bat screen, and reset with that local session. Older saves without retained names show “Answer unavailable”; no missing-answer fetch is introduced.
 
-The separate share card and copied text remain spoiler-free: initials, outcomes, score, puzzle metadata, and URL only. Copy provides success feedback or a manual-selection fallback when clipboard permission is unavailable.
+The separate share card and copied text remain spoiler-free: initials, outcomes, score, puzzle metadata, and URL only. Copy provides success feedback or a manual-selection fallback when clipboard permission is unavailable. Daily Nine shares point to `/`; Classic shares point to `/classic`, and the share formatter labels the ruleset’s mode.
 
 ## Statistics and reveal
 

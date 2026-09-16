@@ -33,6 +33,7 @@ type AtBatCardProps = {
   requestPending: boolean;
   giveUpPending: boolean;
   requestError: string | null;
+  nextActionLabel?: string;
   onQueryChange: (query: string) => void;
   onSelectPlayer: (result: PlayerSearchResult) => void;
   onRevealHint: () => void;
@@ -48,6 +49,7 @@ export function AtBatCard({
   requestPending,
   giveUpPending,
   requestError,
+  nextActionLabel = 'Next At Bat',
   onQueryChange,
   onSelectPlayer,
   onRevealHint,
@@ -104,7 +106,7 @@ export function AtBatCard({
           className="button-primary button-next-at-bat"
           onClick={onNextPitch}
         >
-          Next At Bat
+          {nextActionLabel}
         </button>
         {state.reveal === null ? null : <PlayerRevealCard reveal={state.reveal} />}
       </div>

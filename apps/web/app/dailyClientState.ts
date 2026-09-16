@@ -7,6 +7,7 @@ import {
   type DailyGuessResult,
   type DailyInningState,
   type DailyPublicPuzzle,
+  type DailyRulesetVersion,
 } from '@initial-baseball/shared';
 import type { CanonicalRevealViewModel } from './canonicalRevealViewModel';
 import type { DailyHintResponse } from './dailyRuntimeContracts';
@@ -32,15 +33,18 @@ export function createInitialDailyInningState(): DailyInningState {
   };
 }
 
-export function createInitialDailyGameState(puzzle: DailyPublicPuzzle): DailyGameState {
+export function createInitialDailyGameState(
+  puzzle: DailyPublicPuzzle,
+  rulesetVersion: DailyRulesetVersion = CURRENT_DAILY_RULESET_VERSION,
+): DailyGameState {
   return {
     anonymousPlayerId: 'anon-demo',
     status: 'in_progress',
-    rulesetVersion: CURRENT_DAILY_RULESET_VERSION,
+    rulesetVersion,
     puzzle,
     inning: createInitialDailyInningState(),
     score: { ...DEFAULT_DAILY_SCORE_SUMMARY },
-    points: createDailyPointsSummary(CURRENT_DAILY_RULESET_VERSION, puzzle.pitches.length),
+    points: createDailyPointsSummary(rulesetVersion, puzzle.pitches.length),
     completedAtBats: [],
     completedPitchLines: [],
     shareResult: null,

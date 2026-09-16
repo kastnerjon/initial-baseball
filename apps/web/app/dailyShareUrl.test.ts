@@ -13,12 +13,14 @@ describe('createDailyShareUrl', () => {
     setSiteUrl('https://example.com');
 
     expect(createDailyShareUrl()).toBe('https://example.com/');
+    expect(createDailyShareUrl('/classic')).toBe('https://example.com/classic');
   });
 
   it('handles configured origins with trailing slashes', () => {
     setSiteUrl('https://example.com///');
 
     expect(createDailyShareUrl()).toBe('https://example.com/');
+    expect(createDailyShareUrl('/classic')).toBe('https://example.com/classic');
   });
 
   it('does not hardcode initialbaseball.com', () => {
@@ -32,12 +34,14 @@ describe('createDailyShareUrl', () => {
     setBrowserOrigin('https://preview.example.com');
 
     expect(createDailyShareUrl()).toBe('https://preview.example.com/');
+    expect(createDailyShareUrl('/classic')).toBe('https://preview.example.com/classic');
   });
 
-  it('falls back safely to the existing homepage route with no origin available', () => {
+  it('falls back safely to the requested route with no origin available', () => {
     setSiteUrl(undefined);
 
     expect(createDailyShareUrl()).toBe('/');
+    expect(createDailyShareUrl('/classic')).toBe('/classic');
   });
 });
 

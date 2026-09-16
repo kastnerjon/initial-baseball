@@ -8,11 +8,12 @@ import {
   getDailyAtBatPointsRemaining,
   type PlayerSearchResult,
 } from '@initial-baseball/engine';
-import type {
-  DailyAtBatResolution,
-  DailyGameState,
-  DailyGuessResult,
-  DailyPublicPuzzle,
+import {
+  CLASSIC_DAILY_RULESET_VERSION,
+  type DailyAtBatResolution,
+  type DailyGameState,
+  type DailyGuessResult,
+  type DailyPublicPuzzle,
 } from '@initial-baseball/shared';
 import {
   type PendingAtBatAdvance,
@@ -24,6 +25,10 @@ import {
   loadSavedDailyGame,
   saveDailyGame,
 } from '../dailyLocalStorage';
+import {
+  getDailyModeStorage,
+  isDailyModeSaveCompatible,
+} from '../dailyModeStorage';
 import { createDailyShareUrl } from '../dailyShareUrl';
 import type { CanonicalRevealViewModel } from '../canonicalRevealViewModel';
 import {
@@ -32,6 +37,7 @@ import {
   createInitialDailyGameState,
 } from '../dailyClientState';
 import type {
+  DailyBootstrapRulesetVersion,
   DailyHintBundle,
   DailyHintBundleResponse,
   DailyResolutionResponse,
@@ -44,6 +50,7 @@ import { PitchResultList } from './PitchResultList';
 
 type DailyInningGameProps = {
   puzzle: DailyPublicPuzzle;
+  rulesetVersion: DailyBootstrapRulesetVersion;
   initialProgressionToken: string;
   initialHintBundle: DailyHintBundle;
 };
@@ -52,10 +59,13 @@ type PendingResolutionAction = 'guess' | 'give_up';
 
 export function DailyInningGame({
   puzzle,
+  rulesetVersion,
   initialProgressionToken,
   initialHintBundle,
 }: DailyInningGameProps): JSX.Element {
-  const [gameState, setGameState] = useState<DailyGameState>(() => createInitialDailyGameState(puzzle));
+  const [gameState, setGameState] = useState<DailyGameState>(
+    () => createInitialDailyGameState(puzzle, rulesetVersion),
+  );
   const [scorecardAnswers, setScorecardAnswers] = useState<DailyScorecardAnswers>({});
   const [currentPitchIndex, setCurrentPitchIndex] = useState(0);
   const [atBatState, setAtBatState] = useState<DailyAtBatUiState>(() => createInitialAtBatUiState());
@@ -85,7 +95,9 @@ export function DailyInningGame({
             score: { ...gameState.score, completed: true },
             points: { ...gameState.points, completed: true },
           },
-          url: createDailyShareUrl(),
+          url: createDailyShareUrl(
+            gameState.rulesetVersion === CLASSIC_DAILY_RULESET_VERSION ? '/classic' : '/',
+          ),
         })
       : null),
     [gameState, isGameComplete],
@@ -93,9 +105,13 @@ export function DailyInningGame({
 
   useEffect(() => {
     let cancelled = false;
-    const savedGame = loadSavedDailyGame(puzzle, initialProgressionToken);
+    const storage = getDailyModeStorage(rulesetVersion);
+    const savedGame = loadSavedDailyGame(puzzle, initialProgressionToken, storage);
 
-    if (savedGame === null) {
+    if (
+      savedGame === null
+      || !isDailyModeSaveCompatible(rulesetVersion, savedGame.gameState.rulesetVersion)
+    ) {
       resetToInitialState();
       setHasLoadedSavedState(true);
       return () => {
@@ -159,7 +175,7 @@ export function DailyInningGame({
     return () => {
       cancelled = true;
     };
-  }, [initialHintBundle, initialProgressionToken, puzzle]);
+  }, [initialHintBundle, initialProgressionToken, puzzle, rulesetVersion]);
 
   useEffect(() => {
     if (!hasLoadedSavedState) {
@@ -173,8 +189,18 @@ export function DailyInningGame({
       pendingAdvance,
       progressionToken,
       scorecardAnswers,
-    });
-  }, [atBatState, currentPitchIndex, gameState, hasLoadedSavedState, pendingAdvance, progressionToken, puzzle, scorecardAnswers]);
+    }, getDailyModeStorage(rulesetVersion));
+  }, [
+    atBatState,
+    currentPitchIndex,
+    gameState,
+    hasLoadedSavedState,
+    pendingAdvance,
+    progressionToken,
+    puzzle,
+    rulesetVersion,
+    scorecardAnswers,
+  ]);
 
   if (shareResult !== null) {
     return (
@@ -212,6 +238,7 @@ export function DailyInningGame({
     wrongGuesses: atBatState.strikeCount,
     atBatComplete: atBatState.submittedResult !== null && atBatState.submittedResult.kind !== 'incorrect',
   });
+  const terminalPending = pendingAdvance?.points.completed === true || pendingAdvance?.score.completed === true;
 
   return (
     <div className="game-shell">
@@ -231,6 +258,7 @@ export function DailyInningGame({
         requestPending={requestPending}
         giveUpPending={pendingResolutionAction === 'give_up'}
         requestError={requestError}
+        nextActionLabel={terminalPending ? 'View Results' : 'Next At Bat'}
         onQueryChange={(query) => {
           setAtBatState(currentState => ({
             ...currentState,
@@ -342,7 +370,7 @@ export function DailyInningGame({
 
     setGameState(currentGameState => ({
       ...currentGameState,
-      status: pendingAdvance.points.completed || pendingAdvance.nextPitchIndex >= puzzle.pitches.length
+      status: pendingAdvance.points.completed || pendingAdvance.score.completed || pendingAdvance.nextPitchIndex >= puzzle.pitches.length
         ? 'completed'
         : 'in_progress',
       inning: pendingAdvance.inning,
@@ -359,7 +387,7 @@ export function DailyInningGame({
   }
 
   function handleResetToday(): void {
-    clearSavedDailyGame(puzzle);
+    clearSavedDailyGame(puzzle, getDailyModeStorage(rulesetVersion));
     resetToInitialState();
     setPendingResolutionAction(null);
     setBundlePending(false);
@@ -367,7 +395,7 @@ export function DailyInningGame({
   }
 
   function resetToInitialState(): void {
-    setGameState(createInitialDailyGameState(puzzle));
+    setGameState(createInitialDailyGameState(puzzle, rulesetVersion));
     setScorecardAnswers({});
     setCurrentPitchIndex(0);
     setAtBatState(createInitialAtBatUiState());
