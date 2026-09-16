@@ -19,7 +19,7 @@ Do not restart settled discussions because the conversation changed. Correct dri
 
 ## Product promise
 
-Initial Baseball currently means **Daily Inning**, a browser-first daily baseball guessing game with the same nine-player puzzle for everyone on a Pacific date.
+Initial Baseball currently means **Daily Inning**, a browser-first daily game with the same nine-player puzzle for everyone on a Pacific date.
 
 Standard Daily should be difficult because recall and hints are difficult, not because players are arbitrarily obscure. Except for a possible final deep-challenge slot, a reveal should normally prompt: **“I could have gotten that.”**
 
@@ -66,7 +66,7 @@ Answer integrity: `docs/decisions/0001-daily-answer-integrity.md`.
 - PR #143 merged the points-v3 Daily Nine contract: seven points per at-bat, one point off per revealed hint or wrong guess, and zero on a third wrong guess or Give Up; nine at-bats max 63. Existing points-v2/points-v1/legacy sessions remain versioned compatibility behavior.
 - The points banner now shows the accumulated total without an overall denominator and, for the active points-v3 at-bat, the live points still available on that at-bat. The allowance is derived from the same verified hint/strike facts as scoring.
 - Verified September 10: production deployment `dpl_8e7N4n8E34rXCgmYj9rJEKBdsKHu` is `READY` on exact merge SHA `7c568f3253d62b8fab11becc3e68d94628fa6b0a` and canonically aliased at `https://initial-baseball-web.vercel.app`. The production build completed successfully, including hidden-answer build QA. A post-activation request to `/` returned HTTP 200 and rendered Daily #137 with the compact scorebook presentation. Error/fatal runtime logs on the new deployment were empty at verification time.
-- The previous grouped `Insufficient eligible Daily players for slot 2 (ranks 1-250).` errors are tied to old production deployment `dpl_32hGx8N4n8E34rXCgmYj9rJEKBdsKHu`; the last grouped occurrence was September 10 at 23:14:43 UTC, before the corrected deployment became `READY`.
+- The previous grouped `Insufficient eligible Daily players for slot 2 (ranks 1-250).` errors are tied to old production deployment `dpl_32hGx8N4TKEGKsCaoqHxVbBfVxtf`; the last grouped occurrence was September 10 at 23:14:43 UTC, before the corrected deployment became `READY`.
 - Real-device QA before PR #133 observed roughly two seconds end-to-end for Submit Guess despite successful 200 resolution requests. The post-optimization production iPhone timing retest is still required; do not infer latency improvement from CI/build success.
 - The scheduled August 1 rollover observation verified that production advanced from July 31, 2026 / Daily #96 to August 1, 2026 / Daily #97 after midnight Pacific without a coincident redeploy. Deployment `dpl_Bp2gX76FqxQXpjCgAbMY76nUyqwC` remained current, and the post-boundary response served the correct puzzle through Vercel revalidation.
 - The initial production payload retains exactly one current-batter four-hint bundle and contains no answer ID/name, canonical reveal record, credential, service-role data, or unrelated future-batter hint bundle.
