@@ -3,10 +3,9 @@ import {
   type CanonicalPlayerReveal,
   type CanonicalRuntimeAccessor,
 } from '@initial-baseball/baseball-data/runtime';
-import { getGuessOutcome } from '@initial-baseball/engine';
+import { getGuessOutcome, isDailyGameComplete } from '@initial-baseball/engine';
 import {
   CURRENT_DAILY_RULESET_VERSION,
-  LEGACY_DAILY_RULESET_VERSION,
   type DailyGuessResult,
   type DailyPuzzle,
   type DailyPublicPuzzle,
@@ -19,6 +18,7 @@ import {
   type DailyProgressionTokenCodec,
 } from './dailyProgressionToken';
 import type {
+  DailyBootstrapRulesetVersion,
   DailyHintBundle,
   DailyResolutionRequest,
   DailyRuntimeService,
@@ -126,7 +126,10 @@ export function createDailyRuntimeService(input: CreateDailyRuntimeServiceInput)
   }
 
   return {
-    async getBootstrap(date) {
+    async getBootstrap(
+      date,
+      rulesetVersion: DailyBootstrapRulesetVersion = CURRENT_DAILY_RULESET_VERSION,
+    ) {
       const puzzle = await createCanonicalPuzzle(date);
       const firstPitch = puzzle.pitches[0];
       if (firstPitch === undefined) {
@@ -134,7 +137,7 @@ export function createDailyRuntimeService(input: CreateDailyRuntimeServiceInput)
       }
       const claims: DailyProgressionClaims = {
         version: 1,
-        rulesetVersion: CURRENT_DAILY_RULESET_VERSION,
+        rulesetVersion,
         puzzleId: puzzle.id,
         puzzleDate: puzzle.puzzleDate,
         pitchNumber: firstPitch.pitchNumber,
@@ -144,6 +147,7 @@ export function createDailyRuntimeService(input: CreateDailyRuntimeServiceInput)
         completed: false,
       };
       return {
+        rulesetVersion,
         puzzle: toPublicPuzzle(puzzle),
         progressionToken: progressionTokens.sign(claims),
         hintBundle: createHintBundle({ claims, puzzle, pitch: firstPitch }),
@@ -241,16 +245,30 @@ function createSuccessorClaims(
   const currentPitchIndex = authorized.puzzle.pitches.findIndex(
     candidate => candidate.pitchNumber === authorized.claims.pitchNumber,
   );
+  if (currentPitchIndex < 0) {
+    throw new DailyRuntimeRequestError(
+      `Unknown pitch ${authorized.claims.pitchNumber} for ${authorized.puzzle.puzzleDate}.`,
+    );
+  }
+  const atBatsCompleted = currentPitchIndex + 1;
+  const completed = isDailyGameComplete(
+    authorized.claims.rulesetVersion,
+    atBatsCompleted,
+    authorized.puzzle.pitches.length,
+    nextOutCount,
+  );
   const nextPitch = authorized.puzzle.pitches[currentPitchIndex + 1];
-  const completedByLegacyOuts = authorized.claims.rulesetVersion === LEGACY_DAILY_RULESET_VERSION
-    && nextOutCount === 3;
-  const completed = completedByLegacyOuts || nextPitch === undefined;
+  if (!completed && nextPitch === undefined) {
+    throw new DailyRuntimeRequestError(
+      `Daily progression could not advance after pitch ${authorized.claims.pitchNumber}.`,
+    );
+  }
   return {
     version: 1,
     rulesetVersion: authorized.claims.rulesetVersion,
     puzzleId: authorized.claims.puzzleId,
     puzzleDate: authorized.claims.puzzleDate,
-    pitchNumber: completed ? authorized.claims.pitchNumber : nextPitch.pitchNumber,
+    pitchNumber: completed ? authorized.claims.pitchNumber : nextPitch!.pitchNumber,
     revealCount: 0,
     strikeCount: 0,
     outCount: nextOutCount,

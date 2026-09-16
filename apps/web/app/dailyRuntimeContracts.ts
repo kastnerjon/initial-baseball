@@ -1,10 +1,16 @@
-import type {
-  DailyGuessResult,
-  DailyPublicPuzzle,
-  DailyRevealCount,
-  HintType,
+import {
+  CLASSIC_DAILY_RULESET_VERSION,
+  CURRENT_DAILY_RULESET_VERSION,
+  type DailyGuessResult,
+  type DailyPublicPuzzle,
+  type DailyRevealCount,
+  type HintType,
 } from '@initial-baseball/shared';
 import type { CanonicalRevealViewModel } from './canonicalRevealViewModel';
+
+export type DailyBootstrapRulesetVersion =
+  | typeof CURRENT_DAILY_RULESET_VERSION
+  | typeof CLASSIC_DAILY_RULESET_VERSION;
 
 export type DailyAuthorizedHint = {
   slot: 1 | 2 | 3 | 4;
@@ -26,6 +32,7 @@ export type DailyHintBundle = {
 };
 
 export type DailyBootstrap = {
+  rulesetVersion: DailyBootstrapRulesetVersion;
   puzzle: DailyPublicPuzzle;
   progressionToken: string;
   hintBundle: DailyHintBundle;
@@ -54,7 +61,10 @@ export type DailyResolutionResponse = {
 };
 
 export type DailyRuntimeService = {
-  getBootstrap: (date: string) => Promise<DailyBootstrap>;
+  getBootstrap: (
+    date: string,
+    rulesetVersion?: DailyBootstrapRulesetVersion,
+  ) => Promise<DailyBootstrap>;
   getHintBundle: (progressionToken: string) => Promise<DailyHintBundleResponse>;
   revealHint: (progressionToken: string) => Promise<DailyHintResponse>;
   resolveAtBat: (request: DailyResolutionRequest) => Promise<DailyResolutionResponse>;

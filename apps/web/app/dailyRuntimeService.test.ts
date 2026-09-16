@@ -1,5 +1,6 @@
 import { createCanonicalRuntimeAccessor } from '@initial-baseball/baseball-data/runtime';
 import {
+  CLASSIC_DAILY_RULESET_VERSION,
   CURRENT_DAILY_RULESET_VERSION,
   DEFAULT_DAILY_HINT_CONFIG,
   DEFAULT_DAILY_STATS_HINT_CONFIG,
@@ -37,6 +38,7 @@ describe('Daily canonical runtime service', () => {
     const bootstrap = await service.getBootstrap(date);
     const serialized = JSON.stringify(bootstrap);
 
+    expect(bootstrap.rulesetVersion).toBe(CURRENT_DAILY_RULESET_VERSION);
     expect(bootstrap.puzzle.pitches).toHaveLength(9);
     expect(bootstrap.puzzle.pitches[0]).toEqual({ pitchNumber: 1, initials: 'HA' });
     expect(tokens.verify(bootstrap.progressionToken)).toEqual(initialClaims());
@@ -64,6 +66,23 @@ describe('Daily canonical runtime service', () => {
     expect(serialized).not.toContain(legacyId);
     expect(serialized).not.toContain(answerName);
     expect(serialized).not.toContain(revealMarker);
+  });
+
+  it('bootstraps Classic with a signed ruleset identity', async () => {
+    const bootstrap = await service.getBootstrap(date, CLASSIC_DAILY_RULESET_VERSION);
+
+    expect(bootstrap.rulesetVersion).toBe(CLASSIC_DAILY_RULESET_VERSION);
+    expect(tokens.verify(bootstrap.progressionToken)).toEqual({
+      ...initialClaims(),
+      rulesetVersion: CLASSIC_DAILY_RULESET_VERSION,
+    });
+    for (const checkpoint of bootstrap.hintBundle.checkpoints) {
+      expect(tokens.verify(checkpoint.progressionToken)).toMatchObject({
+        rulesetVersion: CLASSIC_DAILY_RULESET_VERSION,
+        pitchNumber: 1,
+        revealCount: checkpoint.revealedCount,
+      });
+    }
   });
 
   it('hydrates an authorized current bundle without lower-depth checkpoints', async () => {
@@ -252,6 +271,45 @@ describe('Daily canonical runtime service', () => {
     });
   });
 
+  it('completes Classic immediately on the third out and returns no future bundle', async () => {
+    const response = await service.resolveAtBat({
+      progressionToken: tokens.sign({
+        ...initialClaims(),
+        rulesetVersion: CLASSIC_DAILY_RULESET_VERSION,
+        outCount: 2,
+      }),
+      giveUp: true,
+    });
+
+    expect(tokens.verify(response.progressionToken)).toMatchObject({
+      rulesetVersion: CLASSIC_DAILY_RULESET_VERSION,
+      outCount: 3,
+      completed: true,
+      pitchNumber: 1,
+    });
+    expect(response.hintBundle).toBeNull();
+    await expect(service.getHintBundle(response.progressionToken)).rejects.toThrow(/already complete/);
+  });
+
+  it('keeps Classic active before three outs', async () => {
+    const response = await service.resolveAtBat({
+      progressionToken: tokens.sign({
+        ...initialClaims(),
+        rulesetVersion: CLASSIC_DAILY_RULESET_VERSION,
+        outCount: 1,
+      }),
+      giveUp: true,
+    });
+
+    expect(tokens.verify(response.progressionToken)).toMatchObject({
+      rulesetVersion: CLASSIC_DAILY_RULESET_VERSION,
+      outCount: 2,
+      completed: false,
+      pitchNumber: 2,
+    });
+    expect(response.hintBundle?.pitchNumber).toBe(2);
+  });
+
   it('preserves legacy three-out completion and returns no future bundle', async () => {
     const response = await service.resolveAtBat({
       progressionToken: tokens.sign({
@@ -280,6 +338,26 @@ describe('Daily canonical runtime service', () => {
 
     expect(tokens.verify(response.progressionToken)).toMatchObject({
       pitchNumber: 9,
+      completed: true,
+    });
+    expect(response.hintBundle).toBeNull();
+  });
+
+  it('completes Classic after batter nine even with fewer than three outs', async () => {
+    const response = await service.resolveAtBat({
+      progressionToken: tokens.sign({
+        ...initialClaims(),
+        rulesetVersion: CLASSIC_DAILY_RULESET_VERSION,
+        pitchNumber: 9,
+        outCount: 1,
+      }),
+      submittedPlayerId: answerId,
+    });
+
+    expect(tokens.verify(response.progressionToken)).toMatchObject({
+      rulesetVersion: CLASSIC_DAILY_RULESET_VERSION,
+      pitchNumber: 9,
+      outCount: 1,
       completed: true,
     });
     expect(response.hintBundle).toBeNull();

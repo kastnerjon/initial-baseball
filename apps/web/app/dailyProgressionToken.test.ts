@@ -1,5 +1,6 @@
 import { createHmac } from 'node:crypto';
 import {
+  CLASSIC_DAILY_RULESET_VERSION,
   LEGACY_DAILY_RULESET_VERSION,
   POINTS_V1_DAILY_RULESET_VERSION,
   POINTS_V2_DAILY_RULESET_VERSION,
@@ -34,6 +35,16 @@ describe('Daily progression token codec', () => {
     expect(token).not.toContain(claims.puzzleId);
     expect(token).not.toContain('player');
     expect(token).not.toContain(secret);
+  });
+
+  it('round-trips Classic progression claims', () => {
+    const codec = createDailyProgressionTokenCodec(secret);
+    const classicClaims = {
+      ...claims,
+      rulesetVersion: CLASSIC_DAILY_RULESET_VERSION,
+    };
+
+    expect(codec.verify(codec.sign(classicClaims))).toEqual(classicClaims);
   });
 
   it('round-trips points-v2 progression claims', () => {
