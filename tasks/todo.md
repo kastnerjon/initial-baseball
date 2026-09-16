@@ -5,7 +5,7 @@ Last updated: 2026-09-16
 
 Completed history belongs in PRs, canonical docs, or `tasks/lessons.md`. Durable resumption context belongs in `docs/START-HERE.md`.
 
-Current order: finish and activate the secure conversational Daily lineup bridge; then complete the approved Classic isolated mode integration; complete physical iPhone/iPad presentation and resolution-latency QA on the now-corrected production runtime; then completed-result contracts/persistence and the lineup-content system.
+Current order: complete the approved Classic isolated mode integration; complete physical iPhone/iPad presentation and resolution-latency QA on the now-corrected production runtime; then completed-result contracts/persistence and the lineup-content system. The secure conversational Daily lineup bridge is active in production and is the preferred routine lineup-entry path.
 
 ## September 15 approved product work
 
@@ -54,14 +54,14 @@ Current order: finish and activate the secure conversational Daily lineup bridge
 
 ### Authenticated editorial workflow
 
-Admin redesign is deferred. The user may supply a future date and nine ordered player names for assisted entry. Resolve ambiguous identities, validate the lineup and use normal revision/lifecycle controls; never bypass published-puzzle immutability.
+Admin redesign is deferred. The user may supply a future date and nine ordered player names for assisted entry. Resolve ambiguous identities, validate the lineup and use normal revision/lifecycle controls; never bypass published-puzzle immutability. The private conversational bridge is active in production and is the preferred routine entry path; `/admin/daily` remains a supported interface over the same editorial records.
 
-- [ ] Complete PR #152: atomic nine-player replacement plus private machine-authenticated server adapter; no direct Supabase editorial writes and no future lineup payloads in public GitHub surfaces.
-- [ ] Connect the Supabase app, configure private transport, store `DAILY_CHATOPS_TOKEN` only in Vercel server environment and Supabase Vault, redeploy, and verify unauthorized failure.
-- [ ] Smoke-test conversational editing on one future draft, verify exact nine-player readback/order/revision, then explicitly schedule and verify status.
+- [x] Merge PR #152: atomic nine-player replacement plus private machine-authenticated server adapter; no direct Supabase editorial writes and no future lineup payloads in public GitHub surfaces.
+- [x] Merge PR #153, connect the Supabase app, apply the private `pg_net` transport, store the matching `DAILY_CHATOPS_TOKEN` only in Vercel server environment and Supabase Vault, and redeploy production.
+- [x] Smoke-test conversational editing on a future draft: verify atomic rejection for an ineligible candidate, exact nine-player readback/order/revision for the corrected lineup, explicit scheduling, and `chatops:assistant` audit attribution.
 - [ ] Verify seven-day Supabase horizon and missing-draft generation.
-- [ ] Preview/search/replace/revalidate one future slot.
-- [ ] Schedule one future puzzle and verify public scheduled/published consumption.
+- [ ] Preview/search/replace/revalidate one future slot through the authenticated editor workflow.
+- [ ] Verify public scheduled/published consumption for an editorially scheduled future puzzle.
 - [ ] Verify deterministic fallback for missing/draft records.
 - [ ] Reconcile issues #97, #91, and #86 after the full hosted checklist.
 
