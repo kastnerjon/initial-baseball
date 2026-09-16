@@ -78,7 +78,7 @@ Answer integrity: `docs/decisions/0001-daily-answer-integrity.md`.
 - PR #153 merged as `e3ab3b8a9fc8a196d7962a79e5c23e0cf15c617c` and activated the private Supabase `pg_net` transport. On September 16 the matching machine credential was configured in Vercel Production and Supabase Vault, production was redeployed successfully, and the transport reached the authenticated server route.
 - The conversational lineup bridge is now operational. A production smoke test first rejected an ineligible canonical candidate atomically with HTTP 400 and no lineup mutation; the corrected future nine was then persisted in exact batting order, scheduled explicitly, and read back at revision 2 with `scheduled_by`/`updated_by` equal to `chatops:assistant`. Future lineup payloads must never be transported through public GitHub issues/commits/PRs/Actions inputs. Runbook: `docs/operations/daily-lineup-chatops.md`.
 - PR #155 merged as `c7633a84138838f8b3816484fd4a9e9df38c72dc`. It added typed new-session bootstrap selection for Daily Nine or Classic, signs that ruleset through hint/resolution progression, and reuses engine `isDailyGameComplete` so Classic stops at three outs or batter nine with no successor hint bundle. Scope: `tasks/plans/classic-web-transport.md`.
-- PR #156 is the current bounded product work. It activates `/classic` in the browser, keeps `/` as Daily Nine, shares the existing game component, isolates Classic browser saves from the existing Daily key, makes reset/refresh/share mode-aware, and changes a terminal Classic continuation to `View Results` so an unplayed batter is never advanced to or exposed. Scope: `tasks/plans/classic-browser-experience.md`.
+- PR #156 merged as `cf92eb2ac1a16ef732396e2c8fe44d9f86454db4`. It activates `/classic`, keeps `/` as Daily Nine, shares the existing game component, isolates Classic browser saves from the existing Daily key, makes reset/refresh/share mode-aware, and changes a terminal Classic continuation to `View Results` so an unplayed batter is never advanced to or exposed. Production deployment `dpl_5TBWWVyAUpwVtnouotnSBk79Lhgr` is READY and canonically aliased. Both `/` and `/classic` returned HTTP 200 for Daily #143 with the same public puzzle/initials and signed `points-v3` versus `classic-inning-v1` mode identity respectively; the build exposed both routes, hidden-answer QA passed for two initial payloads, and no error/fatal runtime logs were present at verification time. Scope: `tasks/plans/classic-browser-experience.md`.
 
 ## Implemented gameplay
 
@@ -136,7 +136,7 @@ The user approved Daily Nine as the default points-v3 experience and Classic Inn
 
 ## Approved Classic direction
 
-The September 15 user decision adds Daily Nine (default points-v3) and Classic Inning (classic-inning-v1). Classic shares the daily nine, uses existing runners/runs, and ends at three outs or nine at-bats. Both modes may be played; unplayed answers stay hidden; persistence and sharing must distinguish modes. PR #141 merged portable policy/label/completion support. PR #155 merged the signed server transport/progression seam. PR #156 now owns the browser activation: `/classic`, navigation, isolated Classic saves, mode-aware refresh/reset/results/sharing, and hidden unplayed answers while preserving the existing default Daily storage key and legacy/points compatibility. Scope and stage boundaries: `tasks/plans/classic-inning.md`, `tasks/plans/classic-web-transport.md`, and `tasks/plans/classic-browser-experience.md`.
+The September 15 user decision adds Daily Nine (default points-v3) and Classic Inning (classic-inning-v1). Classic shares the daily nine, uses existing runners/runs, and ends at three outs or nine at-bats. Both modes may be played; unplayed answers stay hidden; persistence and sharing must distinguish modes. PR #141 merged portable policy/label/completion support, PR #155 merged the signed server transport/progression seam, and PR #156 merged the browser activation with `/classic`, navigation, isolated Classic saves, mode-aware refresh/reset/results/sharing, and hidden unplayed answers while preserving the existing default Daily storage key and legacy/points compatibility. Scope and stage boundaries: `tasks/plans/classic-inning.md`, `tasks/plans/classic-web-transport.md`, and `tasks/plans/classic-browser-experience.md`.
 
 ## Settled future systems
 
@@ -158,7 +158,7 @@ Future aggregation uses one compact idempotent completed-game submission from na
 
 These require an actual browser lifecycle but no editor credentials:
 
-- verify Daily Nine and Classic route switching, isolated saves/reset, active and pending refresh, terminal completion, share destinations, and hidden unplayed Classic answers on the PR #156 preview;
+- verify interactive Daily Nine/Classic switching, isolated saves/reset, active and pending refresh, terminal completion, share destinations, and hidden unplayed Classic answers on physical/common browser widths; production server-rendered route/bootstrap identity is already verified;
 - re-test Submit Guess and Give Up latency on production after PR #133, inspecting handler-level server timing against end-to-end phone timing;
 - verify the compact Daily presentation and touch behavior on physical iPhone/iPad, including hints, search dropdown, selected-player state, result/reveal tables, history, and completion/share;
 - resolved `points-v3` outcome/point presentation, including hint/wrong-guess deductions;
@@ -188,14 +188,12 @@ Remaining hosted editorial checks:
 
 ## Exact next work order
 
-1. Finish PR #156 focused/full CI, exact-head Vercel preview, bounded review, cross-mode browser QA, documentation reconciliation, and merge if clean.
-2. After merge, verify the production deployment and both `/` Daily Nine and `/classic` Classic routes without reopening settled mode architecture.
-3. Complete physical iPhone/iPad presentation checks and the outstanding PR #133 latency/public refresh/completion checklist.
-4. Define the compact completed-game submission, validation, idempotent repository port, and derived-score contract in portable layers.
-5. Add a separate Supabase migration/adapter and public submission route only after that contract is reviewed.
-6. Add same-puzzle/same-ruleset aggregates and percentile UI using the compact scorebook visual system.
-7. Define gameplay-profile and lineup-recipe contracts, then establish a conservative recognizable Standard Daily pool/recipe.
-8. Continue analytics, monitoring, legal/domain basics, and later refinement of the established mobile/heritage presentation.
+1. Complete interactive cross-mode browser QA plus physical iPhone/iPad presentation checks and the outstanding PR #133 latency/public refresh/completion checklist; do not reopen settled Daily Nine/Classic architecture.
+2. Define the compact completed-game submission, validation, idempotent repository port, and derived-score contract in portable layers.
+3. Add a separate Supabase migration/adapter and public submission route only after that contract is reviewed.
+4. Add same-puzzle/same-ruleset aggregates and percentile UI using the compact scorebook visual system.
+5. Define gameplay-profile and lineup-recipe contracts, then establish a conservative recognizable Standard Daily pool/recipe.
+6. Continue analytics, monitoring, legal/domain basics, and later refinement of the established mobile/heritage presentation.
 
 ## Open decisions
 

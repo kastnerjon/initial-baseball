@@ -5,15 +5,15 @@ Last updated: 2026-09-16
 
 Completed history belongs in PRs, canonical docs, or `tasks/lessons.md`. Durable resumption context belongs in `docs/START-HERE.md`.
 
-Current order: PR #155 is merged; finish/review/merge PR #156 for the approved mode-aware Classic browser experience; complete physical iPhone/iPad presentation and resolution-latency QA on the now-corrected production runtime; then completed-result contracts/persistence and the lineup-content system. The secure conversational Daily lineup bridge is active in production and is the preferred routine lineup-entry path.
+Current order: PR #156 is merged and its exact production deployment is verified; complete interactive cross-mode and physical iPhone/iPad presentation/resolution-latency QA; then completed-result contracts/persistence and the lineup-content system. The secure conversational Daily lineup bridge is active in production and is the preferred routine lineup-entry path.
 
 ## September 15 approved product work
 
 - [x] Implement private initials/answer/outcome scorecard with additive local answer retention and separate spoiler-safe Copy share card (PR #140).
 - [x] Define and implement classic-inning-v1 in portable rules, preserving existing policies (PR #141).
-- [x] Merge PR #155: typed new-session bootstrap selection, signed Classic mode identity, engine-owned three-out/nine-batter completion, and no successor hint bundle after completion. Public `/classic` activation remains in the stacked browser PR.
-- [ ] Finish/review/merge PR #156: activate `/classic` with navigation, isolated saves, compatible default keys, mode-aware refresh/reset/results/sharing, and hidden unplayed answers.
-- [ ] Verify both modes, terminal/complete refresh, clipboard success/failure, answer safety and responsive layouts; retain physical-device QA as distinct.
+- [x] Merge PR #155: typed new-session bootstrap selection, signed Classic mode identity, engine-owned three-out/nine-batter completion, and no successor hint bundle after completion.
+- [x] Merge PR #156: activate `/classic` with navigation, isolated saves, compatible default keys, mode-aware refresh/reset/results/sharing, and hidden unplayed answers; exact production deployment is READY and both public routes return the same Daily puzzle with their correct signed ruleset identities.
+- [ ] Verify both modes interactively through terminal/complete refresh, clipboard success/failure, answer safety and responsive layouts; retain physical-device QA as distinct.
 
 ## 0. Continuity
 
@@ -30,7 +30,7 @@ Current order: PR #155 is merged; finish/review/merge PR #156 for the approved m
 - [x] Merge PR #126 and verify instant-hint production payload/build boundaries.
 - [x] Merge PR #128 and verify production deployment from merge SHA `9ba0a44198799fe71b0520d5245b16b39e056fc2` is READY/canonically aliased.
 - [x] Verify the pre-v3 production bootstrap contract (`0/36 PTS`, `0/9 AB`, signed `points-v2` token, one current-batter hint bundle, no answer/reveal/future-batter bundle); retain this as compatibility evidence.
-- [ ] Deploy and verify the points-v3 bootstrap (`0/63 PTS`, `0/9 AB`, signed `points-v3` token) with hidden-answer QA and no runtime errors.
+- [x] Verify the current points-v3 production bootstrap (`0/63 PTS`, `0/9 AB`, signed `points-v3` token) and Classic bootstrap (`classic-inning-v1`) on the same public Daily puzzle; hidden-answer build QA passes for both initial payloads and no error/fatal runtime logs were present after PR #156 deployment.
 - [x] Merge PR #132 and verify production deployment from merge SHA `a942bab74a68077a1c6ed1aff37b16af45ccc685` is READY/canonically aliased.
 - [x] Merge PR #133 and verify production deployment `dpl_AyXpSu9VyQaVUrmANTqJVNQVFf4k` from exact merge SHA `543adf1038f780313870ed3ff30c163648bd86f3` is READY/canonically aliased with hidden-answer build QA passing.
 
@@ -47,9 +47,9 @@ Current order: PR #155 is merged; finish/review/merge PR #156 for the approved m
 - [x] Normalize the Daily desktop surface to the 960px reveal/statistics rail and keep scorecard fields in a compact left-aligned group; scope in `tasks/plans/unified-daily-rail.md`.
 - [x] Clarify the points-v3 scorebug with four equal-width metrics ordered At bat, Points possible this AB, Points so far, and Strikeouts; compatibility scorebugs retain their existing metrics.
 - [ ] Verify physical iPhone Submit Guess and Give Up end-to-end latency against handler timing after PR #133; CI/browser emulation alone cannot establish a phone latency improvement.
-- [ ] Verify compact presentation on physical iPhone/iPad, including search dropdown/selection, hint and pending states, local reveal-table scrolling, history, completion/share and no accidental zoom/overflow.
+- [ ] Verify compact presentation on physical iPhone/iPad, including Daily Nine/Classic switching, isolated save/reset behavior, search dropdown/selection, hint and pending states, local reveal-table scrolling, history, completion/share and no accidental zoom/overflow.
 - [ ] Verify resolved `points-v3` outcome plus hint/wrong-guess deductions, banner total/active-at-bat allowance, and awarded-point presentation.
-- [ ] Verify saved-session `/api/daily/hints` hydration and refresh recovery.
+- [ ] Verify saved-session `/api/daily/hints` hydration and refresh recovery in both modes, including Classic third-out completion with no unplayed answer exposure.
 - [ ] Verify correct guess, wrong guesses, third strike, Give Up responsiveness/reveal, all-nine continuation, final reveal/completion, action responses/logs, and common iPhone/iPad behavior.
 
 ### Authenticated editorial workflow
@@ -79,7 +79,7 @@ Admin redesign is deferred. The user may supply a future date and nine ordered p
 - [x] Ruleset versioning through signed tokens, local persistence, results, and sharing.
 - [x] Resolved at-bat display derives and shows awarded points beside the baseball outcome for point rulesets only.
 - [x] Focused tests, full CI, preview, three review passes, merge, production bootstrap verification, and runtime-error verification for `points-v2`.
-- [x] Add points-v3 engine/web/storage regression coverage and reconcile canonical scoring docs; production verification remains pending this PR.
+- [x] Add points-v3 engine/web/storage regression coverage and reconcile canonical scoring docs; production bootstrap is verified.
 
 ## 3. Immediate active-batter hints
 
