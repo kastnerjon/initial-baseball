@@ -52,6 +52,7 @@ export async function POST(request: Request): Promise<NextResponse> {
         canonicalPlayerId: selection.player?.canonicalPlayerId ?? null,
         displayName: selection.player?.player.displayName ?? null,
       })),
+      validation: puzzle.validation,
     }, {
       status: 200,
       headers: { 'cache-control': 'private, no-store' },

@@ -173,7 +173,7 @@ Request:
 
 The request requires exactly nine unique, reviewed canonical Daily candidate IDs in batting order and an explicit schedule boolean. The route rejects malformed input, unknown candidates, and current/past dates. It ensures a draft exists for the future date, then delegates one atomic lineup replacement to the existing Daily workflow/lifecycle. Published and archived records remain immutable. Replacing a scheduled future puzzle returns it to draft before an explicit schedule transition.
 
-The response returns the persisted puzzle date/number/status/revision and the ordered canonical IDs/display names for readback. It is `private, no-store`.
+The response returns the persisted puzzle date/number/status/revision, the ordered canonical IDs/display names for readback, and the existing lineup validation result so the assistant can surface repeat/recognizability warnings rather than silently weakening them. It is `private, no-store`.
 
 Supabase remains persistence only. A connected assistant may use a private Supabase transport to forward this request, but must never write `daily_editorial_puzzles` directly or move lifecycle/validation behavior into SQL/Edge code. Because this repository is public, future lineup payloads must not be transported through GitHub issues, commits, pull requests, or public Actions inputs. Operational details and credential setup are in `docs/operations/daily-lineup-chatops.md`.
 
