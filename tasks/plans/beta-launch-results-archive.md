@@ -33,6 +33,7 @@ Canonical product/architecture documentation only.
 - product decision is explicit and internally consistent;
 - canonical blueprint/architecture/handoff/todo point to the decision and no longer imply current beta numbering is permanent archive history;
 - completed-result implementation remains the next bounded engineering concern after remaining physical-device QA;
+- PR metadata contains the repository-required exact `## Documentation impact` section;
 - documentation-impact CI passes.
 
 ## Stop conditions
