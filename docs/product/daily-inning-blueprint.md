@@ -85,7 +85,7 @@ Presentation rules:
 
 - compact masthead with one edition number and a small expandable help control; no full-width instruction row, double borders, ruled textures, gradients or nested decorative cards;
 - a single 960px maximum content rail keeps the masthead, scorebug, playing surface, scorecard, share card, and footer aligned; the rail remains fluid below that width on smaller screens;
-- a non-sticky compact status row shows the current at-bat number unambiguously, accumulated points without the overall denominator, and strikeouts; current Daily Nine also shows the points still available on the active at-bat, while legacy sessions retain runs/hits/bases/outs and never receive point copy;
+- a non-sticky compact status row shows At bat, Points possible this AB, Points so far, and Strikeouts in that order with equal-width columns; accumulated points omit the overall denominator, while legacy sessions retain runs/hits/bases/outs and never receive point copy;
 - terminal status renders existing pending-advance totals immediately, without recomputing rules in React;
 - incorrect feedback presents the Incorrect status and remaining-strikes message without a separate call label;
 - current strikes appear once beside the guessing interaction with an accessible numeric label;

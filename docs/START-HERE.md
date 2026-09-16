@@ -1,7 +1,7 @@
 # Initial Baseball — Start Here
 
 Status: Active project handoff  
-Last updated: 2026-09-15
+Last updated: 2026-09-16
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
@@ -63,7 +63,7 @@ Answer integrity: `docs/decisions/0001-daily-answer-integrity.md`.
 - PR #135 merged as `d2de746664e7d154294f54dc9ae4b1d55f651ad8` on August 30 and established the heritage UI baseline.
 - PR #137 merged as `dda608ae7422093b96ded03dd0bf024d71c5c2b6` on September 10 and contains the compact scorebook presentation revision. Its first production attempt failed because of the separate Daily lineup-exhaustion defect tracked in issue #136.
 - PR #138 merged as `7c568f3253d62b8fab11becc3e68d94628fa6b0a` on September 10 and closed issue #136. Generated dates from September 2 onward now use dense canonical recognizability ranks after redirect/deduplication; July 22 through September 1 retain the prior `lineup-quality-v2` source-rank interpretation. Published/manual puzzles, the 90-day repeat window, slot bands, deterministic seed inputs, scoring, Supabase behavior, and hosting settings remain unchanged.
-- The approved points-v3 Daily Nine contract is implemented in this branch: seven points per at-bat, one point off per revealed hint or wrong guess, and zero on a third wrong guess or Give Up; nine at-bats max 63. Existing points-v2/points-v1/legacy sessions remain versioned compatibility behavior.
+- PR #143 merged the points-v3 Daily Nine contract: seven points per at-bat, one point off per revealed hint or wrong guess, and zero on a third wrong guess or Give Up; nine at-bats max 63. Existing points-v2/points-v1/legacy sessions remain versioned compatibility behavior.
 - The points banner now shows the accumulated total without an overall denominator and, for the active points-v3 at-bat, the live points still available on that at-bat. The allowance is derived from the same verified hint/strike facts as scoring.
 - Verified September 10: production deployment `dpl_8e7N4n8E34rXCgmYj9rJEKBdsKHu` is `READY` on exact merge SHA `7c568f3253d62b8fab11becc3e68d94628fa6b0a` and canonically aliased at `https://initial-baseball-web.vercel.app`. The production build completed successfully, including hidden-answer build QA. A post-activation request to `/` returned HTTP 200 and rendered Daily #137 with the compact scorebook presentation. Error/fatal runtime logs on the new deployment were empty at verification time.
 - The previous grouped `Insufficient eligible Daily players for slot 2 (ranks 1-250).` errors are tied to old production deployment `dpl_32hGx8N4TKEGKsCaoqHxVbBfVxtf`; the last grouped occurrence was September 10 at 23:14:43 UTC, before the corrected deployment became `READY`.
@@ -73,6 +73,8 @@ Answer integrity: `docs/decisions/0001-daily-answer-integrity.md`.
 - `DAILY_PROGRESSION_SECRET`, Supabase credentials, and Daily admin credentials are configured for Preview/Production.
 - `daily_editorial_puzzles` migration and RLS/service-role checks passed.
 - Unauthenticated `/admin/daily` reaches the challenge and the editor previously authenticated.
+
+Latest deployment: PR #146 is merged as `f187b58d65edbb40c445c9a3dbcbb0a97b8bebcb`; production `dpl_CRzD98cG9rojkPd5rrHmarsCKNeP` reached READY on that SHA. CI #501 passed. This includes the unified 960px rail, compact scorecard, prior points-v3 scoring/banner and removal of the Incorrect call label.
 
 ## Implemented gameplay
 
@@ -120,15 +122,17 @@ PR #137 merged that presentation code, and production deployment `dpl_8e7N4n8E34
 
 The September 15 rail follow-up makes the 960px reveal/statistics width the consistent desktop maximum for the masthead, scorebug, active card, scorecard, share card, and footer. Scorecard columns remain aligned but form a compact left-aligned group rather than spanning the full rail. Scope: `tasks/plans/unified-daily-rail.md`.
 
+The points-v3 scorebug presents four equal-width metrics in game order: At bat, Points possible this AB, Points so far, and Strikeouts. Compatibility modes keep their existing metrics. Scope: `tasks/plans/daily-nine-scorebug-points.md`.
+
 ## Approved September 15 work
 
-The current scorecard branch adds initials → canonical answer → outcome for resolved players, including K/Give Up, plus an isolated spoiler-safe share card with Copy in its upper-right. Browser-only answer retention is additive to schema 3; old saves without names show Answer unavailable. This work is not yet deployed. Scope: `tasks/plans/scorecard-answers.md`.
+Merged PR #140 adds initials → canonical answer → outcome for resolved players, including K/Give Up, plus an isolated spoiler-safe share card with Copy in its upper-right. Browser-only answer retention is additive to schema 3; old saves without names show Answer unavailable. This work is included in the deployed main branch. Scope: `tasks/plans/scorecard-answers.md`.
 
 The user approved Daily Nine as the default points-v3 experience and Classic Inning as a separate classic-inning-v1 using the same daily lineup, runner advancement and runs, ending at three outs or nine at-bats. Both modes may be played on the same date; saves/results/shares must distinguish mode, unplayed answers stay hidden, and legacy/points-v1 compatibility remains intact. Classic implementation follows in separate bounded changes.
 
 ## Approved Classic direction
 
-The September 15 user decision adds Daily Nine (default points-v3) and Classic Inning (new classic-inning-v1). Classic shares the daily nine, uses existing runners/runs, and ends at three outs or nine at-bats. Both modes may be played; unplayed answers stay hidden; persistence and sharing must distinguish modes. Portable policy/label/completion support is implemented on this branch; web selection and persistence follow separately. Scope and stage boundaries: `tasks/plans/classic-inning.md`. Scorecard answers/Copy are implemented in PR #140; public mode integration is not yet live.
+The September 15 user decision adds Daily Nine (default points-v3) and Classic Inning (new classic-inning-v1). Classic shares the daily nine, uses existing runners/runs, and ends at three outs or nine at-bats. Both modes may be played; unplayed answers stay hidden; persistence and sharing must distinguish modes. PR #141 merged portable policy/label/completion support; web transport and mode-aware browser integration remain outstanding as two stacked PRs. Scope and stage boundaries: `tasks/plans/classic-inning.md`. Scorecard answers/Copy are implemented in PR #140; public mode integration is not yet live.
 
 ## Settled future systems
 

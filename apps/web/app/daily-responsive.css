@@ -33,6 +33,21 @@
   .scorebug-shell {
     padding: 10px 12px;
   }
+  .scorebug-shell-four-up {
+    padding-inline: 6px;
+  }
+  .scorebug-shell-four-up .scorebug-metric {
+    align-self: stretch;
+    align-content: center;
+  }
+  .scorebug-shell-four-up .scorebug-metric-label {
+    display: flex;
+    min-height: 2.2em;
+    align-items: flex-end;
+    justify-content: center;
+    line-height: 1.1;
+    text-wrap: balance;
+  }
   .scorebug-title {
     font-size: 12px;
   }

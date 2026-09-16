@@ -119,6 +119,18 @@
   color: var(--paper-light);
   font-variant-numeric: tabular-nums;
 }
+.scorebug-shell-four-up {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+.scorebug-shell-four-up .scorebug-middle,
+.scorebug-shell-four-up .scorebug-metrics {
+  display: contents;
+}
+.scorebug-shell-four-up .scorebug-block,
+.scorebug-shell-four-up .scorebug-metric {
+  justify-items: center;
+  text-align: center;
+}
 .scorebug-block {
   min-width: 0;
 }

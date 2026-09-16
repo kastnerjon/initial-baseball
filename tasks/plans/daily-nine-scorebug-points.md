@@ -8,9 +8,10 @@ Make the points banner answer two separate questions without duplicating scoring
 
 ## Contract
 
-- The Points metric shows accumulated points only; it does not show the nine-at-bat maximum denominator.
-- Current points-v3 shows a This AB metric starting at 7.
-- Each revealed hint or wrong guess reduces This AB by 1.
+- The Points so far metric shows accumulated points only; it does not show the nine-at-bat maximum denominator.
+- Current points-v3 shows a Points possible this AB metric starting at 7.
+- The four metrics are ordered At bat, Points possible this AB, Points so far, Strikeouts in equal-width columns.
+- Each revealed hint or wrong guess reduces Points possible this AB by 1.
 - A third wrong guess or a completed at-bat shows 0 remaining for that at-bat.
 - Classic, points-v2, points-v1, and legacy sessions retain their ruleset-appropriate metrics; no compatibility scoring changes.
 - The completion/share surfaces continue to show the overall maximum where result context requires it.
