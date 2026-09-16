@@ -1,6 +1,6 @@
 # Daily lineup ChatOps
 
-Status: server adapter merged in PR #152; private Supabase transport and production credential activation remain to be completed and smoke-tested.
+Status: operational in production and smoke-tested September 16, 2026.
 
 ## Goal
 
@@ -57,19 +57,21 @@ When the owner supplies a lineup:
 
 Do not publish from this conversational operation. Publication remains a separate lifecycle action.
 
-## One-time production setup
+This procedure is intentionally durable across chats. A future assistant should begin with `AGENTS.md`, `docs/START-HERE.md`, and `tasks/todo.md`, then use this runbook for lineup operations. The Supabase connection must be available in that chat; if it is not connected, reconnect the existing Initial Baseball Supabase project rather than inventing another transport.
 
-1. Connect the Supabase app to ChatGPT for the Initial Baseball project. Completed September 16, 2026: project `initial-baseball-db` / `dwreeiydvwikpamlokji`.
-2. Merge and apply the private transport migration that enables `pg_net` and installs `private.dispatch_daily_lineup_chatops(...)`.
-3. Generate one random secret of at least 32 characters outside chat. Do not paste it into a conversation or commit it.
-4. Add that value to Vercel as `DAILY_CHATOPS_TOKEN` for Production, then redeploy so the route can read it. Add Preview only when preview QA is desired.
-5. Store the same value in Supabase Vault under the unique name `daily_chatops_token`. Do not hard-code it in SQL, source control, logs, or browser code.
-6. Verify the production route fails closed without/with an incorrect credential.
-7. Dispatch a future-draft smoke test through the Supabase transport, inspect `net._http_response`, and verify exact persisted readback before scheduling.
+## Production setup — completed September 16, 2026
+
+1. Supabase app connected to project `initial-baseball-db` / `dwreeiydvwikpamlokji`.
+2. Private transport migration merged/applied; `pg_net` and `private.dispatch_daily_lineup_chatops(...)` are active.
+3. A random 64-character machine credential was generated without exposing it in chat.
+4. `DAILY_CHATOPS_TOKEN` is configured in Vercel Production and production was redeployed so the route reads it.
+5. The matching credential is stored in Supabase Vault as `daily_chatops_token`; it is not hard-coded in SQL, source control, logs, or browser code.
+6. The transport reached the production route successfully. An invalid Daily candidate was rejected atomically with HTTP 400 before any lineup mutation.
+7. The corrected September 18, 2026 / Daily #145 lineup was dispatched through the private transport, persisted in exact batting order, and scheduled. The persisted record reached revision 2 with `scheduled_by` and `updated_by` equal to `chatops:assistant`.
 
 ## QA gate
 
-Before routine production use:
+Verified before routine production use:
 
 - request parser rejects malformed/impossible dates, wrong counts, duplicates, empty IDs, and implicit schedule intent;
 - auth rejects absent, short, and incorrect tokens without exposing the configured value;
@@ -83,7 +85,7 @@ Before routine production use:
 - the response readback exactly matches the requested nine;
 - the private transport is not executable by `public`, `anon`, or `authenticated` and the `private` schema is not exposed through the Data API;
 - no future lineup content appears in public GitHub surfaces or browser payloads;
-- full CI, documentation checks, preview deployment, production deployment, unauthorized-failure check, and one future-draft smoke test pass.
+- full CI, documentation checks, preview deployment, production deployment, credential activation, production transport dispatch, atomic rejection, exact persisted readback, and explicit scheduling were exercised.
 
 ## Deferred
 
