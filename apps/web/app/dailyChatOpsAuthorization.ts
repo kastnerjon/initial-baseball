@@ -17,7 +17,7 @@ export class DailyChatOpsAuthorizationError extends Error {
 }
 
 export interface DailyChatOpsPrincipal {
-  actorId: 'chatops:github';
+  actorId: 'chatops:assistant';
 }
 
 export function requireDailyChatOpsPrincipal(
@@ -37,7 +37,7 @@ export function requireDailyChatOpsPrincipal(
     throw new DailyChatOpsAuthorizationError('unauthorized', 'Daily ChatOps credentials were not accepted.');
   }
 
-  return { actorId: 'chatops:github' };
+  return { actorId: 'chatops:assistant' };
 }
 
 function secureEqual(left: string, right: string): boolean {
