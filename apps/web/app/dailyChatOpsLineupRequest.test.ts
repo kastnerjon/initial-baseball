@@ -17,11 +17,12 @@ describe('Daily ChatOps lineup request', () => {
     expect(request.schedule).toBe(true);
   });
 
-  it('rejects malformed, incomplete, duplicate, and implicit-schedule requests', () => {
+  it('rejects malformed, impossible-date, incomplete, duplicate, and implicit-schedule requests', () => {
     const validIds = Array.from({ length: 9 }, (_, index) => `player-${index + 1}`);
     const invalidRequests = [
       null,
       { puzzleDate: '09/18/2026', canonicalPlayerIds: validIds, schedule: true },
+      { puzzleDate: '2026-02-31', canonicalPlayerIds: validIds, schedule: true },
       { puzzleDate: '2026-09-18', canonicalPlayerIds: validIds.slice(0, 8), schedule: true },
       { puzzleDate: '2026-09-18', canonicalPlayerIds: ['same', 'same', ...validIds.slice(2)], schedule: true },
       { puzzleDate: '2026-09-18', canonicalPlayerIds: validIds },
