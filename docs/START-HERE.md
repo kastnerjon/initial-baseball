@@ -74,7 +74,9 @@ Answer integrity: `docs/decisions/0001-daily-answer-integrity.md`.
 - `daily_editorial_puzzles` migration and RLS/service-role checks passed.
 - Unauthenticated `/admin/daily` reaches the challenge and the editor previously authenticated.
 - PR #147 merged as `57c1b8374c8b722a31a3fd5dc10ed54bd4d40e93`; production deployment `dpl_6K7qvDBcPFFDz9ACveBMq7jEgCvX` is READY on that exact SHA. It includes the unified 960px Daily rail, compact left-aligned scorecard, points-v3 scorebug ordered At bat → Points possible this AB → Points so far → Strikeouts, and the prior incorrect-feedback cleanup.
-- PR #152 is the current bounded operational work. It adds atomic nine-player future-lineup replacement and a private machine-authenticated server adapter while preserving the existing Daily lifecycle, optimistic revisions, cache invalidation, and published-puzzle immutability. It is not merged or active in production yet. Because the repository is public, future lineup payloads must not be transported through GitHub issues/commits/PRs/Actions inputs. Scope: `tasks/plans/daily-lineup-chatops.md`; operations: `docs/operations/daily-lineup-chatops.md`.
+- PR #152 merged as `61cf0aa51556e5ded577490cfd9c569c0306eca4` and added atomic nine-player future-lineup replacement plus the private machine-authenticated server adapter while preserving the existing Daily lifecycle, optimistic revisions, cache invalidation, and published-puzzle immutability.
+- PR #153 merged as `e3ab3b8a9fc8a196d7962a79e5c23e0cf15c617c` and activated the private Supabase `pg_net` transport. On September 16 the matching machine credential was configured in Vercel Production and Supabase Vault, production was redeployed successfully, and the transport reached the authenticated server route.
+- The conversational lineup bridge is now operational. A production smoke test first rejected an ineligible canonical candidate atomically with HTTP 400 and no lineup mutation; the corrected future nine was then persisted in exact batting order, scheduled explicitly, and read back at revision 2 with `scheduled_by`/`updated_by` equal to `chatops:assistant`. Future lineup payloads must never be transported through public GitHub issues/commits/PRs/Actions inputs. Runbook: `docs/operations/daily-lineup-chatops.md`.
 
 ## Implemented gameplay
 
@@ -163,27 +165,34 @@ These require an actual browser lifecycle but no editor credentials:
 
 ### Authenticated editorial workflow
 
-Admin redesign is deferred. The existing authenticated editor remains available. The preferred routine workflow is conversational future-lineup entry through the private ChatOps adapter once PR #152 and its production transport are verified.
+Admin redesign is deferred. The existing authenticated editor remains available. The preferred routine workflow is conversational future-lineup entry through the now-active private ChatOps adapter. It and `/admin/daily` operate on the same editorial lifecycle and records; the assistant path is not a parallel schedule.
 
-- complete PR #152 and configure `DAILY_CHATOPS_TOKEN` without exposing it;
-- connect the private Supabase transport and verify it forwards to the server adapter rather than writing editorial tables directly;
-- smoke-test one future nine-player replacement, exact readback/order/revision, and explicit schedule transition;
+Verified September 16:
+
+- PRs #152 and #153 are merged and active in production;
+- the Supabase connection targets `initial-baseball-db` / `dwreeiydvwikpamlokji`;
+- `private.dispatch_daily_lineup_chatops(...)` forwards through `pg_net` to the authenticated server adapter and does not write editorial tables directly;
+- the matching bearer credential is stored only in Vercel server environment and Supabase Vault;
+- an invalid candidate failed atomically before mutation;
+- a corrected future nine was persisted in exact order, explicitly scheduled, and read back with `chatops:assistant` attribution.
+
+Remaining hosted editorial checks:
+
 - seven-day Supabase horizon and missing-draft generation;
-- player preview/search/replacement and validation;
-- scheduling one future puzzle and verifying public scheduled/published consumption;
+- player preview/search/replacement and validation through the authenticated editor workflow;
+- public scheduled/published consumption for an editorially scheduled future puzzle;
 - deterministic fallback for missing/draft records.
 
 ## Exact next work order
 
-1. Finish, review, merge, configure, and smoke-test the private conversational Daily lineup bridge in PR #152; do not redesign the admin UI.
-2. Implement Classic web transport/progression: typed ruleset bootstrap selection, signed mode identity, engine-owned three-out/nine-batter completion, and no successor hint bundle after completion.
-3. Implement the stacked mode-aware browser experience: `/classic`, navigation, isolated saves, compatibility keys, refresh/reset/results/sharing, and hidden unplayed answers.
-4. Run the full cross-mode QA matrix, then complete physical iPhone/iPad presentation checks and the outstanding PR #133 latency/public refresh/completion checklist.
-5. Define the compact completed-game submission, validation, idempotent repository port, and derived-score contract in portable layers.
-6. Add a separate Supabase migration/adapter and public submission route only after that contract is reviewed.
-7. Add same-puzzle/same-ruleset aggregates and percentile UI using the compact scorebook visual system.
-8. Define gameplay-profile and lineup-recipe contracts, then establish a conservative recognizable Standard Daily pool/recipe.
-9. Continue analytics, monitoring, legal/domain basics, and later refinement of the established mobile/heritage presentation.
+1. Implement Classic web transport/progression: typed ruleset bootstrap selection, signed mode identity, engine-owned three-out/nine-batter completion, and no successor hint bundle after completion.
+2. Implement the stacked mode-aware browser experience: `/classic`, navigation, isolated saves, compatibility keys, refresh/reset/results/sharing, and hidden unplayed answers.
+3. Run the full cross-mode QA matrix, then complete physical iPhone/iPad presentation checks and the outstanding PR #133 latency/public refresh/completion checklist.
+4. Define the compact completed-game submission, validation, idempotent repository port, and derived-score contract in portable layers.
+5. Add a separate Supabase migration/adapter and public submission route only after that contract is reviewed.
+6. Add same-puzzle/same-ruleset aggregates and percentile UI using the compact scorebook visual system.
+7. Define gameplay-profile and lineup-recipe contracts, then establish a conservative recognizable Standard Daily pool/recipe.
+8. Continue analytics, monitoring, legal/domain basics, and later refinement of the established mobile/heritage presentation.
 
 ## Open decisions
 
