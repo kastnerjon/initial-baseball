@@ -5,15 +5,19 @@ Last updated: 2026-09-16
 
 Completed history belongs in PRs, canonical docs, or `tasks/lessons.md`. Durable resumption context belongs in `docs/START-HERE.md`.
 
-Current order: PR #156 is merged and its exact production deployment is verified; complete interactive cross-mode and physical iPhone/iPad presentation/resolution-latency QA; then completed-result contracts/persistence and the lineup-content system. The secure conversational Daily lineup bridge is active in production and is the preferred routine lineup-entry path.
+Current order: Daily Nine and Classic are live as distinct beta games and their exact production deployment is verified. Complete outstanding interactive/physical iPhone/iPad QA, then implement the game-aware completed-result contract/persistence, same-Daily/same-ruleset comparison, and permanent archive/local history. Current beta numbering is disposable; broad launch later restarts at Daily #1 after the owner chooses the surviving game/final rules. The secure conversational Daily lineup bridge is active in production and is the preferred routine lineup-entry path.
 
-## September 15 approved product work
+## September 15–16 approved product work
 
 - [x] Implement private initials/answer/outcome scorecard with additive local answer retention and separate spoiler-safe Copy share card (PR #140).
 - [x] Define and implement classic-inning-v1 in portable rules, preserving existing policies (PR #141).
-- [x] Merge PR #155: typed new-session bootstrap selection, signed Classic mode identity, engine-owned three-out/nine-batter completion, and no successor hint bundle after completion.
-- [x] Merge PR #156: activate `/classic` with navigation, isolated saves, compatible default keys, mode-aware refresh/reset/results/sharing, and hidden unplayed answers; exact production deployment is READY and both public routes return the same Daily puzzle with their correct signed ruleset identities.
-- [ ] Verify both modes interactively through terminal/complete refresh, clipboard success/failure, answer safety and responsive layouts; retain physical-device QA as distinct.
+- [x] Merge PR #155: typed new-session bootstrap selection, signed Classic game identity, engine-owned three-out/nine-batter completion, and no successor hint bundle after completion.
+- [x] Merge PR #156: activate `/classic` with navigation, isolated saves, compatible default keys, game-aware refresh/reset/results/sharing, and hidden unplayed answers; exact production deployment is READY and both public routes return the same Daily puzzle with their correct signed ruleset identities.
+- [ ] Verify both games interactively through terminal/complete refresh, clipboard success/failure, answer safety and responsive layouts; retain physical-device QA as distinct.
+- [x] Settle beta/launch direction: Daily Nine and Classic are distinct beta games sharing a lineup today; either may ultimately be removed or separated, and infrastructure must not require both forever.
+- [x] Settle permanent-history direction: current numbering is beta; broad launch explicitly restarts at Daily #1 and only post-launch Dailies enter the permanent archive.
+- [x] Settle comparison direction: result populations are stable-puzzle + ruleset/game specific; Daily Nine gets per-AB and whole-game comparison, while Classic gets separate baseball-native comparison.
+- [x] Settle initial personal-history direction: archive completion/scores are remembered on the current browser/device; cross-device history waits for accounts.
 
 ## 0. Continuity
 
@@ -46,10 +50,11 @@ Current order: PR #156 is merged and its exact production deployment is verified
 - [x] Verify production deployment `dpl_8e7N4n8E34rXCgmYj9rJEKBdsKHu` from merge SHA `7c568f3253d62b8fab11becc3e68d94628fa6b0a` is READY/canonically aliased, serves `/` with HTTP 200 and the compact scorebook UI, and has no error/fatal logs on the new deployment at verification time.
 - [x] Normalize the Daily desktop surface to the 960px reveal/statistics rail and keep scorecard fields in a compact left-aligned group; scope in `tasks/plans/unified-daily-rail.md`.
 - [x] Clarify the points-v3 scorebug with four equal-width metrics ordered At bat, Points possible this AB, Points so far, and Strikeouts; compatibility scorebugs retain their existing metrics.
+- [x] Verify on physical iPhone that Daily Nine/Classic navigation is visible, switches cleanly, and the two games maintain independent active saves/hint state.
 - [ ] Verify physical iPhone Submit Guess and Give Up end-to-end latency against handler timing after PR #133; CI/browser emulation alone cannot establish a phone latency improvement.
-- [ ] Verify compact presentation on physical iPhone/iPad, including Daily Nine/Classic switching, isolated save/reset behavior, search dropdown/selection, hint and pending states, local reveal-table scrolling, history, completion/share and no accidental zoom/overflow.
+- [ ] Complete compact presentation QA on physical iPhone/iPad: search dropdown/selection, hint and pending states, local reveal-table scrolling, history, terminal completion/share, reset, and no accidental zoom/overflow.
 - [ ] Verify resolved `points-v3` outcome plus hint/wrong-guess deductions, banner total/active-at-bat allowance, and awarded-point presentation.
-- [ ] Verify saved-session `/api/daily/hints` hydration and refresh recovery in both modes, including Classic third-out completion with no unplayed answer exposure.
+- [ ] Verify saved-session `/api/daily/hints` hydration and refresh recovery in both games, including Classic third-out completion with no unplayed answer exposure.
 - [ ] Verify correct guess, wrong guesses, third strike, Give Up responsiveness/reveal, all-nine continuation, final reveal/completion, action responses/logs, and common iPhone/iPad behavior.
 
 ### Authenticated editorial workflow
@@ -74,12 +79,13 @@ Admin redesign is deferred. The user may supply a future date and nine ordered p
 - [x] `legacy-inning-v1` compatibility contract.
 - [x] `points-v1` compatibility contract: `5/4/3/2/1/0`, 45-point maximum.
 - [x] `points-v2` compatibility contract: `4/3/2/1/0.5/0`, 36-point maximum.
-- [x] `points-v3` current contract: 7 points per at-bat minus verified hints/wrong guesses; third wrong guess or Give Up is 0; 63-point maximum for nine.
+- [x] `points-v3` current Daily Nine beta contract: 7 points per at-bat minus verified hints/wrong guesses; third wrong guess or Give Up is 0; 63-point maximum for nine.
+- [x] `classic-inning-v1` current Classic beta contract: runner advancement/run scoring, three outs or nine at-bats.
 - [x] Native raw at-bat facts independent of final score.
 - [x] Ruleset versioning through signed tokens, local persistence, results, and sharing.
 - [x] Resolved at-bat display derives and shows awarded points beside the baseball outcome for point rulesets only.
-- [x] Focused tests, full CI, preview, three review passes, merge, production bootstrap verification, and runtime-error verification for `points-v2`.
-- [x] Add points-v3 engine/web/storage regression coverage and reconcile canonical scoring docs; production bootstrap is verified.
+- [x] Add points-v3 engine/web/storage regression coverage and verify production bootstrap.
+- [ ] Before broad launch, explicitly choose the surviving game and final launch rules; do not silently treat current beta policy as immutable launch policy.
 
 ## 3. Immediate active-batter hints
 
@@ -91,15 +97,16 @@ Admin redesign is deferred. The user may supply a future date and nine ordered p
 - [x] Focused tests, full CI, preview, P1 review fixes, merge, production payload/build QA, and runtime-error verification.
 - [ ] Real-browser saved hydration and interaction QA remains under hosted verification.
 
-## 4. Completed-game comparison
+## 4. Completed-game results and comparison
 
-### 4A. Portable result contract
+### 4A. Portable result contract — next bounded engineering concern
 
-- [ ] Define a compact transport submission using puzzle identity, ruleset version, client-generated idempotency ID, and nine ordered native at-bat facts.
-- [ ] Validate exact puzzle/date/number, pitch order/initials, outcome-to-hint consistency, wrong-guess/resolution consistency, and supported ruleset.
-- [ ] Derive score and maximum from engine rules; never trust a submitted total.
-- [ ] Define an atomic idempotent repository port: same ID/same payload returns the existing record; same ID/different payload conflicts.
-- [ ] Add focused valid, malformed, spoofed-puzzle, inconsistent-fact, retry, and conflict tests.
+- [ ] Define a compact transport submission using stable puzzle identity, ruleset/game identity, client-generated idempotency ID, and ordered native completed-at-bat facts.
+- [ ] Validate exact puzzle/date/number, faced pitch order/initials, completion shape for the ruleset, outcome-to-hint consistency, wrong-guess/resolution consistency, and supported ruleset.
+- [ ] Derive Daily Nine points/maximum and Classic baseball summary from engine rules; never trust a submitted total.
+- [ ] Define an atomic idempotent provider-neutral repository port: same ID/same normalized payload returns the existing record; same ID/different payload conflicts.
+- [ ] Preserve raw facts for later aggregate recalculation.
+- [ ] Add focused valid, malformed, spoofed-puzzle, inconsistent-fact, incomplete-game, retry, and conflict tests for both beta games.
 
 ### 4B. Provider and submission API
 
@@ -109,13 +116,34 @@ Admin redesign is deferred. The user may supply a future date and nine ordered p
 - [ ] Submit at most once after completion and retry idempotently after ordinary failures/refresh.
 - [ ] Verify no per-action writes and no answer/credential leakage.
 
-### 4C. Aggregate comparison
+### 4C. Daily Nine comparison
 
-- [ ] Add same-puzzle/same-ruleset completion count, average score, score distribution, outcome/hint-depth/K/Give Up aggregates.
-- [ ] Settle percentile tie treatment and minimum sample copy.
-- [ ] Add understandable percentile/sample-size UI by extending the compact scorebook system and preserve raw-fact recalculation.
+- [ ] Add same-Daily/same-ruleset completion count and average total points.
+- [ ] Add per-at-bat average points for each of the nine slots plus useful outcome/hint/K/Give Up rates.
+- [ ] Add score distribution.
+- [ ] Settle percentile tie treatment and minimum sample copy before percentile UI.
+- [ ] Add understandable total/per-AB comparison UI by extending the compact scorebook system.
 
-## 5. Lineup-content system
+### 4D. Classic comparison
+
+- [ ] Add same-Daily/same-ruleset runs, hits, at-bats reached, per-at-bat outcome, strikeout, and reach-rate aggregates.
+- [ ] Keep later-batter reach population distinct from all Classic completions.
+- [ ] Do not invent a single Classic percentile/ordering metric until explicitly settled.
+- [ ] Avoid elaborate Classic-only analytics until beta feedback justifies retaining Classic.
+
+## 5. Permanent archive and local history
+
+- [ ] Define stable permanent Daily identity/launch-epoch contract without choosing the launch date yet.
+- [ ] Build archive infrastructure to begin at future permanent Daily #1; do not import current beta history.
+- [ ] Freeze each issued permanent Daily so later lineup-generation/profile changes cannot change historical answers.
+- [ ] Add archive routes/navigation with Daily Nine/Classic choice while both games remain supported.
+- [ ] Isolate archived-game saves from current Daily and from the other game.
+- [ ] Remember per-browser/device completion and recorded score/result for each stable Daily + game/ruleset.
+- [ ] Keep archived results shareable and eligible for same-Daily/same-ruleset global comparison.
+- [ ] Defer cross-device history until accounts.
+- [ ] Before launch, explicitly choose the surviving game, final launch rules, and launch date; reset permanent numbering to Daily #1.
+
+## 6. Lineup-content system
 
 - [ ] Define gameplay-profile contracts separately from facts.
 - [ ] Define versioned lineup recipes with slot groups, filters, difficulty, repeats, and diversity constraints.
@@ -125,7 +153,7 @@ Admin redesign is deferred. The user may supply a future date and nine ordered p
 - [ ] Add provider-neutral profile/recipe persistence/admin editing in bounded PRs.
 - [ ] Preserve manual review/replacement of exact generated nine.
 
-## 6. Launch surfaces
+## 7. Launch surfaces
 
 - [ ] Analytics/error monitoring.
 - [ ] Finish real-device iPhone/iPad polish and payload measurement after the compact revision is deployed.
@@ -134,4 +162,4 @@ Admin redesign is deferred. The user may supply a future date and nine ordered p
 
 ## Deferred public products
 
-Accounts/streaks/cross-device history; native clients; head-to-head/social; public custom/theme libraries before core Daily proves itself; payments before demand.
+Accounts/cross-device history; native clients; head-to-head/social; public custom/theme libraries before the core game proves itself; payments before demand. Advanced mode-specific analytics remain deferred until beta selects the launch game.

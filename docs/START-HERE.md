@@ -19,7 +19,9 @@ Do not restart settled discussions because the conversation changed. Correct dri
 
 ## Product promise
 
-Initial Baseball currently means **Daily Inning**, a browser-first daily game with the same nine-player puzzle for everyone on a Pacific date.
+Initial Baseball is currently beta-testing **Daily Nine** and **Classic Inning** as two distinct browser-first games over the same daily nine-player puzzle. The owner expects friend/beta feedback to determine which game becomes the primary/sole broad-launch product. The shared lineup is a current choice, not a permanent identity constraint; either game must remain removable without corrupting the other game's data.
+
+Current Daily numbering is beta. At a later explicit broad-launch decision, the permanent sequence restarts at **Daily #1** and current beta history is not imported into the permanent archive. Settled launch/results/archive direction: `docs/product/beta-launch-results-archive.md`.
 
 Standard Daily should be difficult because recall and hints are difficult, not because players are arbitrarily obscure. Except for a possible final deep-challenge slot, a reveal should normally prompt: **“I could have gotten that.”**
 
@@ -40,13 +42,14 @@ shared
 ```
 
 - shared: portable contracts and version identifiers;
-- engine: outcomes, scoring/completion, runner rules, search, and results;
+- engine: outcomes, scoring/completion, runner rules, search, result validation/derivation, and results;
 - baseball-data: canonical facts, enrichment, provenance, QA, and runtime artifacts;
-- daily: future profiles/recipes, selection, repeats, validation, lifecycle, and repository/service ports;
+- daily: future profiles/recipes, selection, repeats, validation, lifecycle, and provider-neutral repository/service ports;
 - web: rendering, browser state, signed authorization, active hint bundles, routes, admin, and persistence adapters;
 - Supabase: operational persistence, not baseball facts or product rules.
 
 Product behavior: `docs/product/daily-inning-blueprint.md`.  
+Beta/launch/results/archive model: `docs/product/beta-launch-results-archive.md`.  
 Lineup content: `docs/product/lineup-content-system.md`.  
 Architecture: `docs/architecture-and-scale-plan.md`.  
 Answer integrity: `docs/decisions/0001-daily-answer-integrity.md`.
@@ -78,11 +81,13 @@ Answer integrity: `docs/decisions/0001-daily-answer-integrity.md`.
 - PR #153 merged as `e3ab3b8a9fc8a196d7962a79e5c23e0cf15c617c` and activated the private Supabase `pg_net` transport. On September 16 the matching machine credential was configured in Vercel Production and Supabase Vault, production was redeployed successfully, and the transport reached the authenticated server route.
 - The conversational lineup bridge is now operational. A production smoke test first rejected an ineligible canonical candidate atomically with HTTP 400 and no lineup mutation; the corrected future nine was then persisted in exact batting order, scheduled explicitly, and read back at revision 2 with `scheduled_by`/`updated_by` equal to `chatops:assistant`. Future lineup payloads must never be transported through public GitHub issues/commits/PRs/Actions inputs. Runbook: `docs/operations/daily-lineup-chatops.md`.
 - PR #155 merged as `c7633a84138838f8b3816484fd4a9e9df38c72dc`. It added typed new-session bootstrap selection for Daily Nine or Classic, signs that ruleset through hint/resolution progression, and reuses engine `isDailyGameComplete` so Classic stops at three outs or batter nine with no successor hint bundle. Scope: `tasks/plans/classic-web-transport.md`.
-- PR #156 merged as `cf92eb2ac1a16ef732396e2c8fe44d9f86454db4`. It activates `/classic`, keeps `/` as Daily Nine, shares the existing game component, isolates Classic browser saves from the existing Daily key, makes reset/refresh/share mode-aware, and changes a terminal Classic continuation to `View Results` so an unplayed batter is never advanced to or exposed. Production deployment `dpl_5TBWWVyAUpwVtnouotnSBk79Lhgr` is READY and canonically aliased. Both `/` and `/classic` returned HTTP 200 for Daily #143 with the same public puzzle/initials and signed `points-v3` versus `classic-inning-v1` mode identity respectively; the build exposed both routes, hidden-answer QA passed for two initial payloads, and no error/fatal runtime logs were present at verification time. Scope: `tasks/plans/classic-browser-experience.md`.
+- PR #156 merged as `cf92eb2ac1a16ef732396e2c8fe44d9f86454db4`. It activates `/classic`, keeps `/` as Daily Nine, shares the existing game component, isolates Classic browser saves from the existing Daily key, makes reset/refresh/share game-aware, and changes a terminal Classic continuation to `View Results` so an unplayed batter is never advanced to or exposed. Production deployment `dpl_5TBWWVyAUpwVtnouotnSBk79Lhgr` is READY and canonically aliased. Both `/` and `/classic` returned HTTP 200 for Daily #143 with the same public puzzle/initials and signed `points-v3` versus `classic-inning-v1` game identity respectively; the build exposed both routes, hidden-answer QA passed for two initial payloads, and no error/fatal runtime logs were present at verification time. Scope: `tasks/plans/classic-browser-experience.md`.
+- Physical iPhone spot-check on September 16 confirmed the Daily Nine/Classic navigation is present, switches cleanly, and active saves/hint state are independent. The broader terminal/refresh/share/latency/device matrix remains outstanding.
+- September 16 product decisions now treat Daily Nine and Classic as competing beta games. Playing one does not count as playing the other; result/comparison/history populations remain separate. Current shared lineup content is not a permanent identity constraint, and either game may ultimately be removed without rewriting the survivor. Permanent numbering/archive starts only after an explicit future reset to Daily #1. Source of truth: `docs/product/beta-launch-results-archive.md`.
 
 ## Implemented gameplay
 
-New Standard Daily sessions use `points-v3`:
+New Daily Nine sessions use `points-v3`:
 
 - each at-bat starts at 7 points; each revealed hint or wrong guess costs 1;
 - a third wrong guess or Give Up records K and awards 0;
@@ -92,6 +97,8 @@ New Standard Daily sessions use `points-v3`:
 - ruleset version flows through token, local state, result, and share output;
 - compatible `points-v1` sessions retain `5/4/3/2/1/0` and a 45-point maximum;
 - compatible old sessions remain `legacy-inning-v1` with prior three-out behavior and no misleading point copy.
+
+`points-v3` is the current Daily Nine beta policy, not yet a frozen permanent-launch promise. Any later scoring change still requires an explicit new ruleset version.
 
 ### Immediate active-batter hints
 
@@ -126,17 +133,15 @@ PR #137 merged that presentation code, and production deployment `dpl_8e7N4n8E34
 
 The September 15 rail follow-up makes the 960px reveal/statistics width the consistent desktop maximum for the masthead, scorebug, active card, scorecard, share card, and footer. Scorecard columns remain aligned but form a compact left-aligned group rather than spanning the full rail. Scope: `tasks/plans/unified-daily-rail.md`.
 
-The points-v3 scorebug presents four equal-width metrics in game order: At bat, Points possible this AB, Points so far, and Strikeouts. Compatibility modes keep their existing metrics. Scope: `tasks/plans/daily-nine-scorebug-points.md`.
+The points-v3 scorebug presents four equal-width metrics in game order: At bat, Points possible this AB, Points so far, and Strikeouts. Compatibility games keep their existing metrics. Scope: `tasks/plans/daily-nine-scorebug-points.md`.
 
-## Approved September 15 work
+## Approved September 15–16 direction
 
 Merged PR #140 adds initials → canonical answer → outcome for resolved players, including K/Give Up, plus an isolated spoiler-safe share card with Copy in its upper-right. Browser-only answer retention is additive to schema 3; old saves without names show Answer unavailable. This work is included in the deployed main branch. Scope: `tasks/plans/scorecard-answers.md`.
 
-The user approved Daily Nine as the default points-v3 experience and Classic Inning as a separate classic-inning-v1 using the same daily lineup, runner advancement and runs, ending at three outs or nine at-bats. Both modes may be played on the same date; saves/results/shares must distinguish mode, unplayed answers stay hidden, and legacy/points-v1 compatibility remains intact. Classic implementation follows in separate bounded changes.
+Daily Nine is currently the default points-v3 beta game and Classic Inning is a separate classic-inning-v1 beta game using the same daily lineup, runner advancement and runs, ending at three outs or nine at-bats. Both may be played on the same date; saves/results/shares distinguish them and unplayed answers stay hidden. PR #141 merged portable policy/label/completion support, PR #155 merged the signed server transport/progression seam, and PR #156 merged `/classic`, navigation, isolated Classic saves, game-aware refresh/reset/results/sharing, and hidden unplayed answers while preserving existing Daily/legacy compatibility.
 
-## Approved Classic direction
-
-The September 15 user decision adds Daily Nine (default points-v3) and Classic Inning (classic-inning-v1). Classic shares the daily nine, uses existing runners/runs, and ends at three outs or nine at-bats. Both modes may be played; unplayed answers stay hidden; persistence and sharing must distinguish modes. PR #141 merged portable policy/label/completion support, PR #155 merged the signed server transport/progression seam, and PR #156 merged the browser activation with `/classic`, navigation, isolated Classic saves, mode-aware refresh/reset/results/sharing, and hidden unplayed answers while preserving the existing default Daily storage key and legacy/points compatibility. Scope and stage boundaries: `tasks/plans/classic-inning.md`, `tasks/plans/classic-web-transport.md`, and `tasks/plans/classic-browser-experience.md`.
+The owner is keeping both games during beta to collect friend/user feedback, but realistically expects to choose one for broad launch. New shared infrastructure should therefore be game-aware without doubling expensive game-specific systems. Classic can later be disabled/removed without corrupting Daily Nine; the current shared lineup can also be separated later without redefining completed-result identity. Detailed source: `docs/product/beta-launch-results-archive.md`.
 
 ## Settled future systems
 
@@ -148,9 +153,15 @@ One authoritative canonical player system is enriched from reproducible sources.
 
 Standard Daily is one versioned recipe, not the only selector. Recipes may define slot groups, sourced factual filters, gameplay-profile filters, repeat protection, duplicate prevention, reveal readiness, and diversity constraints. The generator proposes; the editor reviews, replaces, validates, and schedules the exact nine.
 
-### Completed results
+### Completed results and comparison
 
-Future aggregation uses one compact idempotent completed-game submission from native raw facts and ruleset version. The server validates puzzle identity and internal fact consistency and derives the score rather than trusting a submitted total. Percentiles compare the same puzzle and ruleset. No per-action database writes.
+Future aggregation uses one compact idempotent completed-game submission from stable puzzle identity, ruleset/game identity, and native raw at-bat facts. The server validates puzzle identity and internal fact consistency and derives summaries rather than trusting a submitted total. No per-action database writes.
+
+Daily Nine comparison includes the player's points on each at-bat versus that at-bat's average plus total average/distribution/percentile for the same Daily/ruleset. Classic is a separate comparison population using baseball-native measures such as runs, hits, at-bats reached, per-at-bat outcomes, strikeout rates, and reach rates. A single Classic percentile metric is not settled.
+
+### Permanent archive and personal history
+
+Current beta numbering/history is disposable. At a later explicit broad-launch decision, the permanent sequence restarts at Daily #1. From that point, every issued Daily is frozen and remains playable/shareable in the archive. The initial no-account product remembers completed archived games and recorded results on the current browser/device, keyed by stable Daily identity plus game/ruleset. Cross-device history waits for accounts.
 
 ## Remaining verification
 
@@ -158,9 +169,9 @@ Future aggregation uses one compact idempotent completed-game submission from na
 
 These require an actual browser lifecycle but no editor credentials:
 
-- verify interactive Daily Nine/Classic switching, isolated saves/reset, active and pending refresh, terminal completion, share destinations, and hidden unplayed Classic answers on physical/common browser widths; production server-rendered route/bootstrap identity is already verified;
+- complete interactive Daily Nine/Classic switching, isolated saves/reset, active and pending refresh, terminal completion, share destinations, and hidden unplayed Classic answers on physical/common browser widths; basic iPhone switching/save isolation is already verified;
 - re-test Submit Guess and Give Up latency on production after PR #133, inspecting handler-level server timing against end-to-end phone timing;
-- verify the compact Daily presentation and touch behavior on physical iPhone/iPad, including hints, search dropdown, selected-player state, result/reveal tables, history, and completion/share;
+- verify the compact presentation and touch behavior on physical iPhone/iPad, including hints, search dropdown, selected-player state, result/reveal tables, history, and completion/share;
 - resolved `points-v3` outcome/point presentation, including hint/wrong-guess deductions;
 - saved-session `/api/daily/hints` hydration and refresh recovery;
 - correct guess, wrong guesses, third strike, Give Up responsiveness/reveal, all-nine continuation, final reveal/completion, and mobile interaction;
@@ -188,21 +199,25 @@ Remaining hosted editorial checks:
 
 ## Exact next work order
 
-1. Complete interactive cross-mode browser QA plus physical iPhone/iPad presentation checks and the outstanding PR #133 latency/public refresh/completion checklist; do not reopen settled Daily Nine/Classic architecture.
-2. Define the compact completed-game submission, validation, idempotent repository port, and derived-score contract in portable layers.
-3. Add a separate Supabase migration/adapter and public submission route only after that contract is reviewed.
-4. Add same-puzzle/same-ruleset aggregates and percentile UI using the compact scorebook visual system.
-5. Define gameplay-profile and lineup-recipe contracts, then establish a conservative recognizable Standard Daily pool/recipe.
-6. Continue analytics, monitoring, legal/domain basics, and later refinement of the established mobile/heritage presentation.
+1. Complete the remaining interactive/physical iPhone/iPad presentation, terminal/refresh/share, and PR #133 latency QA without treating both beta games as permanent launch commitments.
+2. Define the compact completed-game submission, validation/derived summaries, and idempotent provider-neutral repository boundary for both beta games.
+3. Add a separate Supabase current-results migration/adapter and one completed-game submission route.
+4. Add same-Daily/same-ruleset per-at-bat and whole-game comparison; settle percentile tie/sample-size rules before percentile UI.
+5. Build permanent archive/local-history infrastructure that starts from the future explicit launch Daily #1 rather than importing beta history.
+6. Before broad launch, choose the primary game/final rules and launch epoch, then continue gameplay-profile/lineup-recipe calibration, analytics/monitoring, legal/domain/social metadata, and launch polish.
 
 ## Open decisions
 
-- Any future point-weight or wrong-guess-penalty change requires a new ruleset version.
+- Which beta game becomes the permanent broad-launch product.
+- Whether Daily Nine and Classic ever receive separate lineups before that decision.
+- Final launch ruleset/scoring contract and launch date / permanent Daily #1 epoch.
 - Exact percentile tie treatment and minimum sample display.
+- Classic overall comparison/percentile metric, if any.
+- Replay policy for an already-completed archived game beyond preserving the recorded first result.
 - Exact Standard Daily recipe thresholds after playtesting.
 - Approved All-Star/award/bWAR source workflows.
 - Persistence/admin UX for profiles and recipes.
-- Automatic publication, emergency correction, archive/replay, and eventual themed/custom public modes.
+- Automatic publication and emergency correction/versioning.
 
 ## Continuity control
 

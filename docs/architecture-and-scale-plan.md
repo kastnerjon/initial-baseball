@@ -1,11 +1,13 @@
 # Architecture and launch-scale plan
 
 Status: Living architecture source of truth  
-Last updated: 2026-09-15
+Last updated: 2026-09-16
 
 ## Product goal
 
-Build a polished Daily baseball guessing game that supports at least 10,000 plays per day without a rewrite. Daily Inning is the only committed product; inexpensive reuse seams may later support themed or alternate experiences.
+Build a polished daily baseball guessing product that supports at least 10,000 plays per day without a rewrite. Daily Nine and Classic Inning are currently distinct beta games over the same daily puzzle; beta feedback will determine the primary/sole broad-launch game. Infrastructure should preserve inexpensive game/ruleset seams without assuming both games survive launch.
+
+Current Daily numbering is beta. A later explicit launch decision restarts the permanent sequence at Daily #1; beta history is not the permanent archive. Product details: `docs/product/beta-launch-results-archive.md`.
 
 Product behavior: `docs/product/daily-inning-blueprint.md`.  
 Lineup content: `docs/product/lineup-content-system.md`.  
@@ -14,7 +16,7 @@ Current handoff: `docs/START-HERE.md`.
 ## Operating principles
 
 - Repository-local versioned knowledge is the system of record.
-- Stable facts/contracts remain durable; scoring, difficulty, and presentation may be tuned through versions.
+- Stable facts/contracts remain durable; scoring, difficulty, game availability, and presentation may be tuned through explicit versions/decisions.
 - Ownership and dependency direction are explicit and tested.
 - Each PR has one bounded concern, focused tests, full CI, review, deployment verification, and documentation reconciliation.
 - Do not add speculative infrastructure.
@@ -25,19 +27,19 @@ Current handoff: `docs/START-HERE.md`.
 Stable portable types, schemas, settings, ruleset identifiers, and serialization contracts.
 
 ### `packages/engine`
-Pure outcomes, versioned scoring/completion, runner advancement, search behavior, and result/share calculations. Depends only on shared.
+Pure outcomes, versioned scoring/completion, runner advancement, search behavior, result validation/derivation, and share/result calculations. Depends only on shared.
 
 ### `packages/baseball-data`
 Canonical identity, aliases, teams, seasons, career facts, enrichment, provenance, QA, generated runtime artifacts, canonical-ID format validation, and deterministic reveal-shard access. Web code does not reinterpret facts.
 
 ### `packages/daily`
-Puzzle identity/numbering, future gameplay profiles and lineup recipes, selection, recognizability/difficulty policy, repeat/diversity constraints, validation, editorial lifecycle, repository ports, public eligibility, and seven-day orchestration.
+Puzzle identity/numbering, future gameplay profiles and lineup recipes, selection, recognizability/difficulty policy, repeat/diversity constraints, validation, editorial lifecycle, provider-neutral puzzle/result orchestration boundaries, public eligibility, and seven-day orchestration.
 
 ### `apps/web`
-Next.js/React rendering, browser persistence, search/hint/resolve/admin routes, signed-token authorization, current-batter hint bundles, server-only canonical runtime composition, sharing, HTTP Basic editor boundary, and Supabase adapters.
+Next.js/React rendering, browser persistence, search/hint/resolve/admin/result routes, signed-token authorization, current-batter hint bundles, server-only canonical runtime composition, sharing, HTTP Basic editor boundary, and Supabase adapters.
 
 ### Supabase/Postgres
-Operational persistence behind provider-neutral ports: current editorial puzzles and future profiles, recipes, and compact completed results. It does not own baseball facts, scoring, recipe semantics, or lifecycle rules.
+Operational persistence behind provider-neutral ports: current editorial puzzles and future profiles, recipes, and compact completed results. It does not own baseball facts, scoring, comparison semantics, recipe semantics, or lifecycle rules.
 
 ## Dependency direction
 
@@ -59,13 +61,15 @@ Dependencies do not point upward. React and routes transport/render domain behav
 
 Native completed-at-bat facts preserve slot, initials, HR/3B/2B/1B/BB/K, hints revealed, wrong guesses, and correct/strikeout/Give Up resolution.
 
-- `classic-inning-v1`: same daily nine, existing runner advancement, run scoring, three outs or nine at-bats. Public selection/persistence integration is separate.
-- `points-v3`: Daily Nine, current policy, seven points per at-bat minus verified hints/wrong guesses, zero at three wrong guesses or Give Up, all scheduled at-bats, maximum 63 for nine.
+- `classic-inning-v1`: Classic beta game; same daily nine today, existing runner advancement, run scoring, three outs or nine at-bats.
+- `points-v3`: Daily Nine beta game; seven points per at-bat minus verified hints/wrong guesses, zero at three wrong guesses or Give Up, all scheduled at-bats, maximum 63 for nine.
 - `points-v2`: Daily Nine compatibility policy, `4/3/2/1/0.5/0`, all scheduled at-bats, maximum 36 for nine.
 - `points-v1`: compatibility policy, `5/4/3/2/1/0`, all scheduled at-bats, maximum 45 for nine.
 - `legacy-inning-v1`: runner advancement and three-out completion for compatible pre-ruleset sessions.
 
 Ruleset version flows through shared state, engine, signed progression, local persistence, final result, and share output. Point totals and resolved-result copy are derived from the engine policy and verified reveal/strike facts rather than duplicated in React. The pure engine completion policy is reusable by signed progression so server and client agree. Do not build a generic plugin framework.
+
+Daily Nine and Classic are independently modeled games. Playing one never completes the other, and completed-result/comparison populations never mix. Their current shared lineup is not an architectural identity requirement. Either game may later be disabled/removed without corrupting the other game's data; separate lineups remain possible without being current scope.
 
 ## Immediate active-at-bat hint architecture
 
@@ -150,9 +154,29 @@ These are web/server runtime optimizations only. They do not change scoring, lif
 
 The web adapter retains terminal canonical display names in a browser-local `scorecardAnswers` map keyed by pitch number, separate from portable game facts and `DailyShareResult`. Only resolved slots survive restoration. Scorecard and share-card components receive separate inputs; clipboard copies only the existing engine-formatted spoiler-safe text. No server payload, data dependency, or answer-authority change is required.
 
+## Completed-result and comparison architecture
+
+The initial result system performs **one compact idempotent write after completion**, never per-action writes.
+
+A submission identifies the stable puzzle, ruleset/game, and a client-generated idempotency ID, and carries ordered native completed-at-bat facts. The server validates exact puzzle identity and fact consistency and derives summaries through portable rules; it never trusts a client-submitted total score.
+
+The persistence boundary is provider-neutral. Same idempotency ID + same normalized payload returns the existing result; the same ID + different payload conflicts. Raw facts are retained so aggregates can be recomputed as presentation evolves.
+
+Comparison is scoped to the same stable puzzle and ruleset/game. Daily Nine requires per-at-bat average points plus whole-game average/distribution/percentile. Classic remains a separate population with baseball-native measures such as runs, hits, at-bats reached, per-at-bat outcomes, and reach rates. A single Classic percentile metric is intentionally unresolved.
+
+This architecture supports either beta game surviving launch without doubling persistence infrastructure or mixing incompatible populations.
+
+## Permanent launch and archive architecture
+
+Current beta Daily numbering is not permanent history. When the owner explicitly chooses the broad-launch game/rules and launch date, that date becomes permanent Daily #1. No current beta puzzle must be migrated into the public archive.
+
+From permanent Daily #1 onward, issued puzzles are frozen historical objects. Later generator/profile changes cannot silently alter them. The archive exposes prior permanent Dailies through stable identity, and archive browser state/history is isolated from the current Daily.
+
+The initial personal-history layer is browser/device-local and keyed by stable Daily identity plus game/ruleset. It remembers which archived games were completed and the recorded result without creating an account identity. Cross-device history remains deferred until accounts.
+
 ## Editorial persistence
 
-`daily_editorial_puzzles` remains authoritative for editorial dates: one row/date, atomic exact-nine JSONB selection, lifecycle status, optimistic revision, audit metadata, RLS, and server-only service role. Future profiles/recipes/results require separate portable contracts and migrations.
+`daily_editorial_puzzles` remains authoritative for editorial dates: one row/date, atomic exact-nine JSONB selection, lifecycle status, optimistic revision, audit metadata, RLS, and server-only service role. Future profiles/recipes/results require separate portable contracts and migrations. Inactive legacy attempt/result tables are not repurposed for the current result system.
 
 ## Scale target
 
@@ -181,15 +205,17 @@ Vercel and Supabase remain replaceable adapters. No new cache service, queue, da
 
 ## Current sequence
 
-1. Re-test resolution latency on production mobile after the hot-path optimization, then complete `points-v2`, restored-session hydration, all-nine, and authenticated admin behavior verification.
-2. Add compact completed-result persistence and same-puzzle/same-ruleset percentile comparison.
-3. Add gameplay-profile and recipe contracts plus a conservative recognizable Standard Daily recipe.
-4. Continue analytics, monitoring, mobile polish, legal/domain basics, and heritage presentation.
+1. Finish outstanding interactive/physical-device QA for Daily Nine and Classic without treating both as permanent launch commitments.
+2. Define the compact completed-result submission, validation/derived summaries, and idempotent provider-neutral repository boundary.
+3. Add a separate Supabase current-results migration/adapter and one completed-game submission route.
+4. Add same-puzzle/same-ruleset per-at-bat and whole-game comparison; settle percentile tie/sample-size rules before percentile UI.
+5. Build permanent archive/local-history infrastructure that starts from the future explicit launch Daily #1 rather than importing beta history.
+6. Before broad launch, choose the primary game/final rules and launch epoch, then continue calibrated lineups, analytics/monitoring, mobile polish, legal/domain/social metadata, and launch QA.
 
 ## Non-goals
 
-Rewriting the app; moving facts into Supabase/React; building all themed modes; generic rules plugins; tamper-proof anonymous competition; microservices/queues/replay caches; accounts before the Daily loop is excellent.
+Rewriting the app; moving facts into Supabase/React; generic rules plugins; tamper-proof anonymous competition; microservices/queues/replay caches; accounts before the Daily loop is excellent; importing beta history into the permanent archive; building elaborate game-specific analytics before beta determines which game survives.
 
 ## Decision rule
 
-Architecture is sufficient when scoring, completion, hint transport, player profiles, and lineup recipes can evolve without duplicating rules, corrupting facts/history, or rewriting unrelated UI/persistence. Code, tests, handoff, todo, and canonical docs change together.
+Architecture is sufficient when scoring, completion, completed results, comparison, archive identity, player profiles, and lineup recipes can evolve without duplicating rules, corrupting facts/history, or rewriting unrelated UI/persistence. Code, tests, handoff, todo, and canonical docs change together.
