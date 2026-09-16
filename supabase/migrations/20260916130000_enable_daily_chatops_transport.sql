@@ -11,7 +11,7 @@ create or replace function private.dispatch_daily_lineup_chatops(
 returns bigint
 language plpgsql
 security invoker
-set search_path = pg_catalog, public, vault, net
+set search_path = pg_catalog
 as $$
 declare
   chatops_token text;
