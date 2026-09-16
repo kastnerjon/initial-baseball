@@ -1,7 +1,7 @@
 # Initial Baseball Current Work
 
 Status: Active ordered implementation plan  
-Last updated: 2026-09-15
+Last updated: 2026-09-16
 
 Completed history belongs in PRs, canonical docs, or `tasks/lessons.md`. Durable resumption context belongs in `docs/START-HERE.md`.
 
@@ -11,7 +11,8 @@ Current order: complete the approved Classic isolated mode integration; complete
 
 - [x] Implement private initials/answer/outcome scorecard with additive local answer retention and separate spoiler-safe Copy share card (PR #140).
 - [x] Define and implement classic-inning-v1 in portable rules, preserving existing policies (PR #141).
-- [ ] Expose Daily Nine / Classic Inning with isolated saved sessions, signed mode identity, mode-labelled results/sharing, same daily nine and three-outs-or-nine Classic completion.
+- [ ] Classic transport PR: typed bootstrap selection, signed mode identity, engine-owned completion, and no successor hint bundle after three outs or batter nine.
+- [ ] Stacked browser PR: activate `/classic` with navigation, isolated saves, compatible default keys, mode-aware refresh/reset/results/sharing, and hidden unplayed answers.
 - [ ] Verify both modes, terminal/complete refresh, clipboard success/failure, answer safety and responsive layouts; retain physical-device QA as distinct.
 
 ## 0. Continuity
@@ -44,6 +45,7 @@ Current order: complete the approved Classic isolated mode integration; complete
 - [x] Fix issue #136 in PR #138: use dense canonical recognizability ranks beginning September 2 while preserving earlier v2 lineups, the 90-day repeat window, published/manual puzzles, and hosting settings; regression coverage includes the 173-of-250 reproduction, cutover compatibility, and continuous generation through October 2027.
 - [x] Verify production deployment `dpl_8e7N4n8E34rXCgmYj9rJEKBdsKHu` from merge SHA `7c568f3253d62b8fab11becc3e68d94628fa6b0a` is READY/canonically aliased, serves `/` with HTTP 200 and the compact scorebook UI, and has no error/fatal logs on the new deployment at verification time.
 - [x] Normalize the Daily desktop surface to the 960px reveal/statistics rail and keep scorecard fields in a compact left-aligned group; scope in `tasks/plans/unified-daily-rail.md`.
+- [x] Clarify the points-v3 scorebug with four equal-width metrics ordered At bat, Points possible this AB, Points so far, and Strikeouts; compatibility scorebugs retain their existing metrics.
 - [ ] Verify physical iPhone Submit Guess and Give Up end-to-end latency against handler timing after PR #133; CI/browser emulation alone cannot establish a phone latency improvement.
 - [ ] Verify compact presentation on physical iPhone/iPad, including search dropdown/selection, hint and pending states, local reveal-table scrolling, history, completion/share and no accidental zoom/overflow.
 - [ ] Verify resolved `points-v3` outcome plus hint/wrong-guess deductions, banner total/active-at-bat allowance, and awarded-point presentation.
@@ -51,6 +53,8 @@ Current order: complete the approved Classic isolated mode integration; complete
 - [ ] Verify correct guess, wrong guesses, third strike, Give Up responsiveness/reveal, all-nine continuation, final reveal/completion, action responses/logs, and common iPhone/iPad behavior.
 
 ### Authenticated editorial workflow
+
+Admin redesign is deferred. The user may supply a future date and nine ordered player names for assisted entry through the existing authenticated editor. Resolve ambiguous identities, validate the lineup and use normal revision/lifecycle controls; never bypass published-puzzle immutability.
 
 - [ ] Verify seven-day Supabase horizon and missing-draft generation.
 - [ ] Preview/search/replace/revalidate one future slot.

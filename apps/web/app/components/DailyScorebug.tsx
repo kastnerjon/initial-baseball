@@ -28,9 +28,11 @@ export function DailyScorebug({
   atBatPointsRemaining = null,
 }: DailyScorebugProps): JSX.Element {
   const isPointsGame = isDailyPointsRulesetVersion(rulesetVersion);
+  const hasLiveAtBatAllowance = isPointsGame && atBatPointsRemaining !== null;
 
   return (
     <ScorebugShell
+      layout={hasLiveAtBatAllowance ? 'four-up' : 'standard'}
       left={(
         <div className="scorebug-identity">
           <p className="scorebug-title">{`At bat ${currentAtBat} of ${totalAtBats}`}</p>
@@ -38,10 +40,10 @@ export function DailyScorebug({
       )}
       middle={isPointsGame ? (
         <div className="scorebug-metrics">
-          <ScorebugMetric label="Points" value={points.points} />
           {atBatPointsRemaining === null ? null : (
-            <ScorebugMetric label="This AB" value={atBatPointsRemaining} />
+            <ScorebugMetric label="Points possible this AB" value={atBatPointsRemaining} />
           )}
+          <ScorebugMetric label="Points so far" value={points.points} />
         </div>
       ) : (
         <div className="scorebug-metrics">

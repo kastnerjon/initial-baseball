@@ -15,7 +15,11 @@ Daily Nine remains the default `points-v3` game (nine at-bats, 63 maximum). The 
 - **Acceptance:** runners/forced walks/runs, three-out stop, ninth-batter stop, no post-completion mutation, points compatibility through nine, unchanged legacy formatting and behavior, mode-labelled sharing, full repository checks.
 - **Stop conditions:** new baseball mechanics or generic policy framework; decompose above 12 handwritten files/600 net lines.
 
-## PR B: web integration (explicitly stacked after PR A and scorecard)
+## PR B: web transport and progression (pending)
+
+Typed ruleset bootstrap and signed progression reuse engine `isDailyGameComplete`. Carry mode identity through hints, resolution, completion, results, and sharing; stop immediately at three outs or batter nine with no successor bundle. Prepare shared page composition; activate public `/classic` together with isolated browser persistence in PR C so an intermediate deployment cannot overwrite Daily Nine saves.
+
+## PR C: mode-aware browser experience (stacked after PR B; pending)
 
 - **Goal:** choose, play, resume and finish either mode without overwriting the other.
 - **Owning layer:** `apps/web` transport/presentation/browser persistence.
@@ -27,3 +31,7 @@ Daily Nine remains the default `points-v3` game (nine at-bats, 63 maximum). The 
 ## Ownership and persistence decision
 
 Rules live in engine/shared; the existing server adapter asks the same pure completion function when signing successor claims. The page chooses only an allowed new-session ruleset, which is signed before play. Browser state is initialized from that choice. Classic gets a namespaced date key; existing non-Classic keys stay readable, preserving points-v1/legacy rules rather than migrating totals. Names remain only in the private recap map. No durable server sessions, per-action writes, generic plugin framework or second editorial puzzle is needed.
+
+## Release QA and sequencing
+
+Verify correct/wrong/third-strike/Give Up, runner advancement and walks, three-out/nine-batter completion, active/pending/completed refresh, mode switching without save collisions, tampered ruleset tokens, spoiler-safe recap/shares, and desktop/phone/tablet layouts. Require full CI, hidden-answer checks, production build and exact-SHA Vercel verification. Physical iPhone/iPad touch and end-to-end latency QA remain separate gates. Aggregates, percentiles and new lineup systems wait until both modes are stable in production.

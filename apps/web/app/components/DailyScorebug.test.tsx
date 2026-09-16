@@ -24,11 +24,13 @@ describe('DailyScorebug points presentation', () => {
       bases: { first: false, second: false, third: false },
     }));
 
-    expect(html).toContain('>Points<');
+    expect(html).toContain('scorebug-shell-four-up');
+    expect(html).toContain('>Points so far<');
     expect(html).toContain('>12<');
     expect(html).not.toContain('12/63');
-    expect(html).toContain('>This AB<');
+    expect(html).toContain('>Points possible this AB<');
     expect(html).toContain('>5<');
+    expect(html.indexOf('Points possible this AB')).toBeLessThan(html.indexOf('Points so far'));
   });
 
   it('does not add the live allowance to compatibility points modes', () => {
@@ -48,7 +50,9 @@ describe('DailyScorebug points presentation', () => {
     }));
 
     expect(html).toContain('>4.5<');
+    expect(html).toContain('>Points so far<');
     expect(html).not.toContain('4.5/36');
-    expect(html).not.toContain('This AB');
+    expect(html).not.toContain('Points possible this AB');
+    expect(html).not.toContain('scorebug-shell-four-up');
   });
 });
