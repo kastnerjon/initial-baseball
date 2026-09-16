@@ -18,7 +18,7 @@ export function parseDailyChatOpsLineupRequest(value: unknown): DailyChatOpsLine
   const canonicalPlayerIds = value.canonicalPlayerIds;
   const schedule = value.schedule;
 
-  if (typeof puzzleDate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(puzzleDate)) {
+  if (typeof puzzleDate !== 'string' || !isValidDate(puzzleDate)) {
     throw new DailyChatOpsRequestError('A valid puzzleDate is required.');
   }
   if (!Array.isArray(canonicalPlayerIds) || canonicalPlayerIds.length !== 9) {
@@ -36,6 +36,12 @@ export function parseDailyChatOpsLineupRequest(value: unknown): DailyChatOpsLine
   }
 
   return { puzzleDate, canonicalPlayerIds: normalizedIds, schedule };
+}
+
+function isValidDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const timestamp = Date.parse(`${value}T00:00:00.000Z`);
+  return Number.isFinite(timestamp) && new Date(timestamp).toISOString().slice(0, 10) === value;
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
