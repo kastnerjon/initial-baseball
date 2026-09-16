@@ -1,4 +1,5 @@
 import type { JSX } from 'react';
+import { getDailyModeName } from '@initial-baseball/engine';
 import { isDailyPointsRulesetVersion, type DailyShareResult } from '@initial-baseball/shared';
 import { PitchResultList } from './PitchResultList';
 import { DailyShareCard } from './DailyShareCard';
@@ -13,10 +14,12 @@ type GameCompleteViewProps = {
 };
 
 export function GameCompleteView({ shareResult, shareText, scorecardAnswers = {}, onResetToday }: GameCompleteViewProps): JSX.Element {
+  const modeName = getDailyModeName(shareResult.rulesetVersion);
+
   return (
     <div className="game-shell">
       <section className="complete-card">
-        <h2>Game Complete</h2>
+        <h2>{`${modeName} Complete`}</h2>
         {isDailyPointsRulesetVersion(shareResult.rulesetVersion) ? (
           <div className="score-line" aria-label="Final Daily score">
             <span>{`${shareResult.points.points}/${shareResult.points.maximumPoints} PTS`}</span>

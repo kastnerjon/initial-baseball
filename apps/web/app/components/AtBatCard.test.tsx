@@ -42,6 +42,24 @@ describe('AtBatCard pending resolution feedback', () => {
     expect(html).not.toContain('Checking…');
   });
 
+  it('uses the supplied terminal action label after a resolved at-bat', () => {
+    const html = renderCard({
+      requestPending: false,
+      giveUpPending: false,
+      submittedResult: {
+        kind: 'strikeout',
+        revealedCount: 0,
+        strikeCount: 3,
+        outcome: 'K',
+        source: 'strikeout',
+      },
+      nextActionLabel: 'View Results',
+    });
+
+    expect(html).toContain('View Results');
+    expect(html).not.toContain('Next At Bat');
+  });
+
   it('announces the current strike count and does not render a hidden reveal while active', () => {
     const html = renderCard({ requestPending: false, giveUpPending: false });
     expect(html).toContain('aria-label="0 of 3 strikes"');
@@ -68,6 +86,14 @@ function renderCard(input: {
   selectedPlayerId?: string | null;
   query?: string;
   rulesetVersion?: 'points-v2' | 'points-v3';
+  submittedResult?: {
+    kind: 'strikeout';
+    revealedCount: 0;
+    strikeCount: number;
+    outcome: 'K';
+    source: 'strikeout';
+  };
+  nextActionLabel?: string;
 }): string {
   return renderToStaticMarkup(
     <AtBatCard
@@ -79,12 +105,13 @@ function renderCard(input: {
         revealCount: 0,
         revealedHints: [],
         strikeCount: 0,
-        submittedResult: null,
+        submittedResult: input.submittedResult ?? null,
         reveal: null,
       }}
       requestPending={input.requestPending}
       giveUpPending={input.giveUpPending}
       requestError={null}
+      nextActionLabel={input.nextActionLabel}
       onQueryChange={() => undefined}
       onSelectPlayer={() => undefined}
       onRevealHint={() => undefined}

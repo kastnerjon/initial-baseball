@@ -4,6 +4,7 @@ import './styles.css';
 import './daily-shell.css';
 import './daily-game.css';
 import './daily-results.css';
+import './daily-mode.css';
 import './daily-responsive.css';
 
 export const metadata: Metadata = {

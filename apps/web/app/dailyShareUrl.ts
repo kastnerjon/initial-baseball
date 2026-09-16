@@ -1,19 +1,19 @@
-const DAILY_SHARE_PATH = '/';
+const DEFAULT_DAILY_SHARE_PATH = '/';
 
-export function createDailyShareUrl(): string {
+export function createDailyShareUrl(path: '/' | '/classic' = DEFAULT_DAILY_SHARE_PATH): string {
   const configuredOrigin = normalizeOrigin(process.env.NEXT_PUBLIC_SITE_URL);
 
   if (configuredOrigin !== null) {
-    return `${configuredOrigin}${DAILY_SHARE_PATH}`;
+    return `${configuredOrigin}${path}`;
   }
 
   const browserOrigin = getBrowserOrigin();
 
   if (browserOrigin !== null) {
-    return `${browserOrigin}${DAILY_SHARE_PATH}`;
+    return `${browserOrigin}${path}`;
   }
 
-  return DAILY_SHARE_PATH;
+  return path;
 }
 
 function normalizeOrigin(value: string | undefined): string | null {
