@@ -13,7 +13,7 @@ describe('Daily ChatOps authorization', () => {
   it('accepts the configured bearer token and records a fixed audit actor', () => {
     expect(requireDailyChatOpsPrincipal(`Bearer ${TOKEN}`, {
       DAILY_CHATOPS_TOKEN: TOKEN,
-    })).toEqual({ actorId: 'chatops:github' });
+    })).toEqual({ actorId: 'chatops:assistant' });
   });
 
   it('rejects missing or incorrect bearer tokens without exposing the configured token', () => {
