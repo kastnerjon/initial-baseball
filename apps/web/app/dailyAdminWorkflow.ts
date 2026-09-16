@@ -143,7 +143,7 @@ export function createDailyAdminWorkflow(
         reviewedDataVersion: resolvedDependencies.reviewedDataVersion,
         candidates: resolvedDependencies.candidates,
         usageHistory: await getUsageHistory(repository, startDate, resolvedDependencies),
-        days,
+        ...(days === undefined ? {} : { days }),
       });
     },
 
