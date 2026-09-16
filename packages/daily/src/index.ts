@@ -40,6 +40,7 @@ export {
   createDailyPuzzleDraft,
   createDailyPuzzleEditorialService,
   publishDailyPuzzle,
+  replaceDailyPuzzleLineup,
   replaceDailyPuzzleSelection,
   scheduleDailyPuzzle,
   type CreateDailyPuzzleDraftInput,
