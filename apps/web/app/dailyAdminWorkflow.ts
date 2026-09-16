@@ -2,6 +2,7 @@ import 'server-only';
 import { dailyEligiblePlayers } from '@initial-baseball/baseball-data';
 import type { CanonicalPlayerReveal } from '@initial-baseball/baseball-data/runtime';
 import {
+  DAILY_AT_BAT_COUNT,
   DAILY_REPEAT_WINDOW_DAYS,
   DAILY_REVIEWED_DATA_VERSION,
   createCanonicalDailyLineupCandidates,
@@ -52,7 +53,7 @@ export type DailyAdminPlayerPreview = DailyAdminPlayerSearchResult & {
   reveal: CanonicalPlayerReveal;
 };
 
-export type DailyAdminWorkflowErrorKind = 'not-future-puzzle' | 'unknown-player';
+export type DailyAdminWorkflowErrorKind = 'invalid-lineup' | 'not-future-puzzle' | 'unknown-player';
 
 export class DailyAdminWorkflowError extends Error {
   constructor(
@@ -70,6 +71,7 @@ export interface DailyAdminWorkflow {
     actorId: string;
     occurredAt: string;
     startDate?: string;
+    days?: number;
   }): Promise<readonly DailyEditorialHorizonPuzzle[]>;
   searchPlayers(query: string): readonly DailyAdminPlayerSearchResult[];
   previewPlayer(canonicalPlayerId: string): DailyAdminPlayerPreview | null;
@@ -77,6 +79,12 @@ export interface DailyAdminWorkflow {
     puzzleDate: string;
     slot: number;
     canonicalPlayerId: string;
+    actorId: string;
+    occurredAt: string;
+  }): Promise<DailyEditorialHorizonPuzzle>;
+  replaceLineup(input: {
+    puzzleDate: string;
+    canonicalPlayerIds: readonly string[];
     actorId: string;
     occurredAt: string;
   }): Promise<DailyEditorialHorizonPuzzle>;
@@ -122,7 +130,12 @@ export function createDailyAdminWorkflow(
       });
     },
 
-    async ensureHorizon({ actorId, occurredAt, startDate = getDefaultStartDate(resolvedDependencies) }) {
+    async ensureHorizon({
+      actorId,
+      occurredAt,
+      startDate = getDefaultStartDate(resolvedDependencies),
+      days,
+    }) {
       return horizonService.ensureHorizon({
         startDate,
         actorId,
@@ -130,6 +143,7 @@ export function createDailyAdminWorkflow(
         reviewedDataVersion: resolvedDependencies.reviewedDataVersion,
         candidates: resolvedDependencies.candidates,
         usageHistory: await getUsageHistory(repository, startDate, resolvedDependencies),
+        ...(days === undefined ? {} : { days }),
       });
     },
 
@@ -158,12 +172,7 @@ export function createDailyAdminWorkflow(
     },
 
     async replaceSelection(input) {
-      if (input.puzzleDate <= resolvedDependencies.getCurrentDailyDate()) {
-        throw new DailyAdminWorkflowError(
-          'not-future-puzzle',
-          `Daily puzzle ${input.puzzleDate} is not a future editorial puzzle.`,
-        );
-      }
+      assertFuturePuzzle(input.puzzleDate, resolvedDependencies);
       if (!candidatesById.has(input.canonicalPlayerId)) {
         throw new DailyAdminWorkflowError(
           'unknown-player',
@@ -176,6 +185,37 @@ export function createDailyAdminWorkflow(
         candidates: resolvedDependencies.candidates,
         usageHistory: await getUsageHistory(repository, input.puzzleDate, resolvedDependencies),
       });
+    },
+
+    async replaceLineup(input) {
+      assertFuturePuzzle(input.puzzleDate, resolvedDependencies);
+      if (input.canonicalPlayerIds.length !== DAILY_AT_BAT_COUNT) {
+        throw new DailyAdminWorkflowError(
+          'invalid-lineup',
+          `Daily lineup must contain exactly ${DAILY_AT_BAT_COUNT} canonical player IDs.`,
+        );
+      }
+      if (new Set(input.canonicalPlayerIds).size !== DAILY_AT_BAT_COUNT) {
+        throw new DailyAdminWorkflowError('invalid-lineup', 'Daily lineup contains duplicate canonical players.');
+      }
+      for (const canonicalPlayerId of input.canonicalPlayerIds) {
+        if (!candidatesById.has(canonicalPlayerId)) {
+          throw new DailyAdminWorkflowError(
+            'unknown-player',
+            `Canonical Daily candidate ${canonicalPlayerId} is unavailable.`,
+          );
+        }
+      }
+
+      await editorialService.replaceLineup(input);
+      const [puzzle] = await horizonService.getHorizon({
+        startDate: input.puzzleDate,
+        days: 1,
+        candidates: resolvedDependencies.candidates,
+        usageHistory: await getUsageHistory(repository, input.puzzleDate, resolvedDependencies),
+      });
+      if (puzzle === undefined) throw new Error(`Daily puzzle not available for ${input.puzzleDate}.`);
+      return puzzle;
     },
 
     async transitionLifecycle(input) {
@@ -248,6 +288,18 @@ function countVisibleNames(candidates: readonly DailyLineupCandidate[]): Map<str
     counts.set(key, (counts.get(key) ?? 0) + 1);
   }
   return counts;
+}
+
+function assertFuturePuzzle(
+  puzzleDate: string,
+  dependencies: DailyAdminWorkflowDependencies,
+): void {
+  if (puzzleDate <= dependencies.getCurrentDailyDate()) {
+    throw new DailyAdminWorkflowError(
+      'not-future-puzzle',
+      `Daily puzzle ${puzzleDate} is not a future editorial puzzle.`,
+    );
+  }
 }
 
 async function getUsageHistory(
