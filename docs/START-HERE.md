@@ -73,8 +73,8 @@ Answer integrity: `docs/decisions/0001-daily-answer-integrity.md`.
 - `DAILY_PROGRESSION_SECRET`, Supabase credentials, and Daily admin credentials are configured for Preview/Production.
 - `daily_editorial_puzzles` migration and RLS/service-role checks passed.
 - Unauthenticated `/admin/daily` reaches the challenge and the editor previously authenticated.
-
-Latest deployment: PR #146 is merged as `f187b58d65edbb40c445c9a3dbcbb0a97b8bebcb`; production `dpl_CRzD98cG9rojkPd5rrHmarsCKNeP` reached READY on that SHA. CI #501 passed. This includes the unified 960px rail, compact scorecard, prior points-v3 scoring/banner and removal of the Incorrect call label.
+- PR #147 merged as `57c1b8374c8b722a31a3fd5dc10ed54bd4d40e93`; production deployment `dpl_6K7qvDBcPFFDz9ACveBMq7jEgCvX` is READY on that exact SHA. It includes the unified 960px Daily rail, compact left-aligned scorecard, points-v3 scorebug ordered At bat → Points possible this AB → Points so far → Strikeouts, and the prior incorrect-feedback cleanup.
+- PR #152 is the current bounded operational work. It adds atomic nine-player future-lineup replacement and a private machine-authenticated server adapter while preserving the existing Daily lifecycle, optimistic revisions, cache invalidation, and published-puzzle immutability. It is not merged or active in production yet. Because the repository is public, future lineup payloads must not be transported through GitHub issues/commits/PRs/Actions inputs. Scope: `tasks/plans/daily-lineup-chatops.md`; operations: `docs/operations/daily-lineup-chatops.md`.
 
 ## Implemented gameplay
 
@@ -163,8 +163,11 @@ These require an actual browser lifecycle but no editor credentials:
 
 ### Authenticated editorial workflow
 
-These require the editor's authenticated session:
+Admin redesign is deferred. The existing authenticated editor remains available. The preferred routine workflow is conversational future-lineup entry through the private ChatOps adapter once PR #152 and its production transport are verified.
 
+- complete PR #152 and configure `DAILY_CHATOPS_TOKEN` without exposing it;
+- connect the private Supabase transport and verify it forwards to the server adapter rather than writing editorial tables directly;
+- smoke-test one future nine-player replacement, exact readback/order/revision, and explicit schedule transition;
 - seven-day Supabase horizon and missing-draft generation;
 - player preview/search/replacement and validation;
 - scheduling one future puzzle and verifying public scheduled/published consumption;
@@ -172,14 +175,15 @@ These require the editor's authenticated session:
 
 ## Exact next work order
 
-1. Complete the approved Classic contract and isolated mode integration with focused QA and documentation; the current Daily Nine scoring contract is points-v3.
-2. Complete physical iPhone/iPad presentation checks and the outstanding PR #133 latency/public refresh/completion checklist.
-3. Complete the authenticated admin checklist when the editor is available.
-4. Define the compact completed-game submission, validation, idempotent repository port, and derived-score contract in portable layers.
-5. Add a separate Supabase migration/adapter and public submission route only after that contract is reviewed.
-6. Add same-puzzle/same-ruleset aggregates and percentile UI using the compact scorebook visual system.
-7. Define gameplay-profile and lineup-recipe contracts, then establish a conservative recognizable Standard Daily pool/recipe.
-8. Continue analytics, monitoring, legal/domain basics, and later refinement of the established mobile/heritage presentation.
+1. Finish, review, merge, configure, and smoke-test the private conversational Daily lineup bridge in PR #152; do not redesign the admin UI.
+2. Implement Classic web transport/progression: typed ruleset bootstrap selection, signed mode identity, engine-owned three-out/nine-batter completion, and no successor hint bundle after completion.
+3. Implement the stacked mode-aware browser experience: `/classic`, navigation, isolated saves, compatibility keys, refresh/reset/results/sharing, and hidden unplayed answers.
+4. Run the full cross-mode QA matrix, then complete physical iPhone/iPad presentation checks and the outstanding PR #133 latency/public refresh/completion checklist.
+5. Define the compact completed-game submission, validation, idempotent repository port, and derived-score contract in portable layers.
+6. Add a separate Supabase migration/adapter and public submission route only after that contract is reviewed.
+7. Add same-puzzle/same-ruleset aggregates and percentile UI using the compact scorebook visual system.
+8. Define gameplay-profile and lineup-recipe contracts, then establish a conservative recognizable Standard Daily pool/recipe.
+9. Continue analytics, monitoring, legal/domain basics, and later refinement of the established mobile/heritage presentation.
 
 ## Open decisions
 
