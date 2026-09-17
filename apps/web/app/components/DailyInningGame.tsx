@@ -19,10 +19,6 @@ import {
   type PendingAtBatAdvance,
   resolveDailyTerminalAtBat,
 } from '../dailyAtBatResolution';
-import {
-  clearCompletedDailyResultSubmission,
-  submitCompletedDailyResultIfNeeded,
-} from '../dailyCompletedResultClient';
 import { revealNextHintFromBundle } from '../dailyHintBundle';
 import {
   clearSavedDailyGame,
@@ -47,6 +43,7 @@ import type {
   DailyResolutionResponse,
 } from '../dailyRuntimeContracts';
 import type { DailyScorecardAnswers } from '../dailyScorecard';
+import { useCompletedDailyResultSubmission } from '../useCompletedDailyResultSubmission';
 import { AtBatCard } from './AtBatCard';
 import { DailyScorebug } from './DailyScorebug';
 import { GameCompleteView } from './GameCompleteView';
@@ -80,6 +77,7 @@ export function DailyInningGame({
   const [bundlePending, setBundlePending] = useState(false);
   const [pendingResolutionAction, setPendingResolutionAction] = useState<PendingResolutionAction | null>(null);
   const [requestError, setRequestError] = useState<string | null>(null);
+  const clearCompletedResultSubmission = useCompletedDailyResultSubmission(hasLoadedSavedState, gameState);
 
   const currentPitch = puzzle.pitches[currentPitchIndex] ?? null;
   const isPuzzleComplete = currentPitchIndex >= puzzle.pitches.length;
@@ -204,23 +202,6 @@ export function DailyInningGame({
     puzzle,
     rulesetVersion,
     scorecardAnswers,
-  ]);
-
-  useEffect(() => {
-    if (!hasLoadedSavedState || gameState.status !== 'completed') {
-      return;
-    }
-    void submitCompletedDailyResultIfNeeded({
-      puzzle,
-      rulesetVersion: gameState.rulesetVersion,
-      completedAtBats: gameState.completedAtBats,
-    });
-  }, [
-    gameState.completedAtBats,
-    gameState.rulesetVersion,
-    gameState.status,
-    hasLoadedSavedState,
-    puzzle,
   ]);
 
   if (shareResult !== null) {
@@ -408,7 +389,7 @@ export function DailyInningGame({
   }
 
   function handleResetToday(): void {
-    clearCompletedDailyResultSubmission({ puzzle, rulesetVersion: gameState.rulesetVersion });
+    clearCompletedResultSubmission();
     clearSavedDailyGame(puzzle, getDailyModeStorage(rulesetVersion));
     resetToInitialState();
     setPendingResolutionAction(null);
