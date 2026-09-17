@@ -83,6 +83,7 @@ Answer integrity: `docs/decisions/0001-daily-answer-integrity.md`.
 - PR #152 merged as `61cf0aa51556e5ded577490cfd9c569c0306eca4` and added atomic nine-player future-lineup replacement plus the private machine-authenticated server adapter while preserving the existing Daily lifecycle, optimistic revisions, cache invalidation, and published-puzzle immutability.
 - PR #153 merged as `e3ab3b8a9fc8a196d7962a79e5c23e0cf15c617c` and activated the private Supabase `pg_net` transport. On September 16 the matching machine credential was configured in Vercel Production and Supabase Vault, production was redeployed successfully, and the transport reached the authenticated server route.
 - The conversational lineup bridge is now operational. A production smoke test first rejected an ineligible canonical candidate atomically with HTTP 400 and no lineup mutation; the corrected future nine was then persisted in exact batting order, scheduled explicitly, and read back at revision 2 with `scheduled_by`/`updated_by` equal to `chatops:assistant`. Future lineup payloads must never be transported through public GitHub issues/commits/PRs/Actions inputs. Runbook: `docs/operations/daily-lineup-chatops.md`.
+- PR #162 separates automatic and manual Daily eligibility: automatic generation remains restricted to ranked `dailyEligiblePlayers`; authorized manual admin/ChatOps curation may select any canonical, reveal-ready Daily-compatible player. Manual-only candidates carry no automatic rank and surface `outside-automatic-daily-pool`; they do not alter automatic generation. Scope: `tasks/plans/manual-daily-canonical-selection.md`.
 - PR #155 merged as `c7633a84138838f8b3816484fd4a9e9df38c72dc`. It added typed new-session bootstrap selection for Daily Nine or Classic, signs that ruleset through hint/resolution progression, and reuses engine `isDailyGameComplete` so Classic stops at three outs or batter nine with no successor hint bundle. Scope: `tasks/plans/classic-web-transport.md`.
 - PR #156 merged as `cf92eb2ac1a16ef732396e2c8fe44d9f86454db4`. It activates `/classic`, keeps `/` as Daily Nine, shares the existing game component, isolates Classic browser saves from the existing Daily key, makes reset/refresh/share game-aware, and changes a terminal Classic continuation to `View Results` so an unplayed batter is never advanced to or exposed. Production deployment `dpl_5TBWWVyAUpwVtnouotnSBk79Lhgr` is READY and canonically aliased. Both `/` and `/classic` returned HTTP 200 for Daily #143 with the same public puzzle/initials and signed `points-v3` versus `classic-inning-v1` game identity respectively; the build exposed both routes, hidden-answer QA passed for two initial payloads, and no error/fatal runtime logs were present at verification time. Scope: `tasks/plans/classic-browser-experience.md`.
 - Physical iPhone spot-check on September 16 confirmed the Daily Nine/Classic navigation is present, switches cleanly, and active saves/hint state are independent. The broader terminal/refresh/share/latency/device matrix remains outstanding.
@@ -136,7 +137,7 @@ PR #137 merged that presentation code, and production deployment `dpl_8e7N4n8E34
 
 The September 15 rail follow-up makes the 960px reveal/statistics width the consistent desktop maximum for the masthead, scorebug, active card, scorecard, share card, and footer. Scorecard columns remain aligned but form a compact left-aligned group rather than spanning the full rail. Scope: `tasks/plans/unified-daily-rail.md`.
 
-The points-v3 scorebug presents four equal-width metrics in game order: At bat, Points possible this AB, Points so far, and Strikeouts. Compatibility games keep their existing metrics. Scope: `tasks/plans/daily-nine-scorebug-points.md`.
+The points-v3 scorebug presents four equal-width metrics in game order: At bat, Points possible this AB, Points so far, and Strikeouts. Compatibility scorebugs retain their existing metrics. Scope: `tasks/plans/daily-nine-scorebug-points.md`.
 
 ## Approved September 15–16 direction
 
@@ -155,6 +156,8 @@ One authoritative canonical player system is enriched from reproducible sources.
 ### Recipe-driven lineups
 
 Standard Daily is one versioned recipe, not the only selector. Recipes may define slot groups, sourced factual filters, gameplay-profile filters, repeat protection, duplicate prevention, reveal readiness, and diversity constraints. The generator proposes; the editor reviews, replaces, validates, and schedules the exact nine.
+
+Authorized manual curation is intentionally broader than automatic generation: automatic proposals remain restricted to ranked `dailyEligiblePlayers`, while an editor may intentionally select any canonical, reveal-ready Daily-compatible player. An outside-pool manual choice remains unranked for generation and surfaces `outside-automatic-daily-pool`; it does not change future automatic lineups or canonical baseball facts.
 
 ### Completed results and comparison
 
@@ -184,14 +187,15 @@ These require an actual browser lifecycle but no editor credentials:
 
 Admin redesign is deferred. The existing authenticated editor remains available. The preferred routine workflow is conversational future-lineup entry through the now-active private ChatOps adapter. It and `/admin/daily` operate on the same editorial lifecycle and records; the assistant path is not a parallel schedule.
 
-Verified September 16:
+Verified September 16–17:
 
 - PRs #152 and #153 are merged and active in production;
 - the Supabase connection targets `initial-baseball-db` / `dwreeiydvwikpamlokji`;
 - `private.dispatch_daily_lineup_chatops(...)` forwards through `pg_net` to the authenticated server adapter and does not write editorial tables directly;
 - the matching bearer credential is stored only in Vercel server environment and Supabase Vault;
-- an invalid candidate failed atomically before mutation;
-- a corrected future nine was persisted in exact order, explicitly scheduled, and read back with `chatops:assistant` attribution.
+- an invalid automatic-pool candidate failed atomically before the manual-candidate policy change;
+- a corrected future nine was persisted in exact order, explicitly scheduled, and read back with `chatops:assistant` attribution;
+- PR #162 broadens only authorized manual selection to canonical, reveal-ready Daily-compatible players outside the automatic pool; automatic generation remains unchanged.
 
 Remaining hosted editorial checks:
 
