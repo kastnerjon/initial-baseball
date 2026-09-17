@@ -1,7 +1,7 @@
 # Daily web API specification
 
 Status: Living source of truth  
-Last updated: 2026-09-16
+Last updated: 2026-09-17
 
 Daily routes are thin Next.js adapters over canonical baseball data, engine rules, and portable Daily logic. Answer-integrity rationale is in `docs/decisions/0001-daily-answer-integrity.md`.
 
@@ -150,14 +150,48 @@ Valid pre-ruleset tokens normalize to `legacy-inning-v1`. Valid `classic-inning-
 
 The browser persists public gameplay state and the current opaque token, not the full authorized hint bundle. On ordinary transitions, the server response supplies the next bundle. On refresh, `/api/daily/hints` hydrates the bundle before the restored at-bat becomes interactive. Daily Nine keeps the existing `initial-baseball:daily:<date>` namespace so points-v1/points-v2/points-v3/legacy saves remain compatible. Classic maps the same date key into a distinct Classic namespace, so load/save/clear/reset in one mode cannot overwrite the other. Persistence is a browser adapter concern; the signed token remains authoritative for ruleset/pitch/strike/reveal claims.
 
+Completed-result transport uses a separate local marker namespace rather than changing the gameplay-save schema. For a completed native `points-v3` or `classic-inning-v1` game, the browser creates one UUID-style `submissionId`, persists it as `pending` before network I/O, and reuses that exact ID after refresh or transient failure. `created`/`existing` responses mark the marker submitted; HTTP 409 marks a terminal conflict; ordinary validation 4xx marks it rejected; network and 5xx failures remain pending for retry. Reset clears both the gameplay save and the matching result-submission marker. Compatibility `points-v2`, `points-v1`, and `legacy-inning-v1` saves are not submitted.
+
+## Completed-game result submission
+
+### `POST /api/daily/results`
+
+The request is the shared schema-1 `DailyCompletedResultSubmission` transport:
+
+```json
+{
+  "schemaVersion": 1,
+  "submissionId": "browser-generated-stable-id",
+  "puzzleId": "daily-2026-09-17-editorial-v1",
+  "puzzleDate": "2026-09-17",
+  "puzzleNumber": 144,
+  "rulesetVersion": "points-v3",
+  "completedAtBats": []
+}
+```
+
+Only current native `points-v3` and `classic-inning-v1` result submissions are accepted. The server uses the submitted date/ruleset only to locate the authoritative public puzzle, then engine `validateDailyCompletedResult` binds the complete payload to that puzzle/game, verifies ordered native facts/completion, and derives the summary through existing engine rules. Client totals/extras are never persistence authority.
+
+The normalized result is passed to the portable 4B completed-result service and the server-only Supabase adapter. Persistence is atomic first-write-wins on `submissionId`: the adapter attempts `INSERT`; PostgreSQL unique violation `23505` triggers a read of the already-stored winner. No result route uses preflight read-before-write, upsert, update, or overwrite.
+
+Responses:
+
+- first insert: `201 { "status": "created" }`;
+- exact idempotent retry: `200 { "status": "existing" }`;
+- malformed/unsupported/mismatched/incomplete result: `400 { "error": "<safe-code>" }`;
+- same ID plus different normalized result: `409 { "error": "idempotency_conflict" }`;
+- provider/configuration failure: `500 { "error": "completed_result_unavailable" }`.
+
+Every response is `private, no-store`. The route returns neither stored raw facts/summary nor provider details, answer IDs, credentials, or service-role information. This is one post-completion write only; hints and guesses remain write-free.
+
 ## Caching and privacy
 
 - Bootstrap/public page data may use safe revalidation.
 - The fully materialized server-only public Daily puzzle is cached by puzzle date with a 300-second safety revalidation window; successful authenticated admin saves invalidate that cache.
 - The materialized cache may contain server-only answer IDs and hint data required for authorized resolution, but it is never itself a public response and does not alter bootstrap serialization rules.
-- Hint-bundle, one-hint, and resolution responses are `private, no-store`; resolution responses themselves are never cached.
+- Hint-bundle, one-hint, resolution, and completed-result responses are `private, no-store`; resolution/completed-result responses themselves are never cached.
 - Resolution responses may expose only the diagnostic `daily-resolve` timing duration above in addition to their normal sanitized body/headers.
-- Logs must not include signing secrets, answer IDs, credentials, or full reveals.
+- Logs must not include signing secrets, answer IDs, credentials, full reveals, or provider error text from completed-result persistence.
 - No Redis, replay cache, per-action database write, or durable anonymous session is required.
 
 ## Private Daily lineup ChatOps
@@ -186,4 +220,4 @@ Supabase remains persistence only. The concrete connected-assistant transport is
 
 ## Deferred APIs
 
-Compact completed-game submission/percentile reads, accounts, authoritative streaks/leaderboards, and head-to-head/social APIs require separate decisions.
+Aggregate/comparison reads and UI, accounts, authoritative streaks/leaderboards, and head-to-head/social APIs require separate decisions. The compact completed-game write path above is implemented independently of those reads.
