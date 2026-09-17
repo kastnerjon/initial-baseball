@@ -36,10 +36,10 @@ Canonical identity, aliases, teams, seasons, career facts, enrichment, provenanc
 Puzzle identity/numbering, future gameplay profiles and lineup recipes, selection, recognizability/difficulty policy, repeat/diversity constraints, validation, editorial lifecycle, provider-neutral puzzle/result orchestration boundaries, public eligibility, and seven-day orchestration.
 
 ### `apps/web`
-Next.js/React rendering, browser persistence, search/hint/resolve/admin/result routes, signed-token authorization, current-batter hint bundles, server-only canonical runtime composition, sharing, HTTP Basic editor boundary, and Supabase adapters.
+Next.js/React rendering, browser persistence, search/hint/resolve/admin/result routes, signed-token authorization, current-batter hint bundles, server-only canonical runtime composition, sharing, HTTP Basic editor boundary, completed-result submission/retry adapters, and Supabase adapters.
 
 ### Supabase/Postgres
-Operational persistence behind provider-neutral ports: current editorial puzzles and future profiles, recipes, and compact completed results. It does not own baseball facts, scoring, comparison semantics, recipe semantics, or lifecycle rules.
+Operational persistence behind provider-neutral ports: current editorial puzzles and validated anonymous completed results, with future profiles/recipes requiring separate migrations. It does not own baseball facts, scoring, comparison semantics, recipe semantics, or lifecycle rules.
 
 ## Dependency direction
 
@@ -156,15 +156,31 @@ The web adapter retains terminal canonical display names in a browser-local `sco
 
 ## Completed-result and comparison architecture
 
-The result system performs **one compact idempotent write after completion**, never per-action writes. Portable validation/derivation and the provider-neutral idempotent repository/service boundary are implemented; provider persistence and submission transport are not yet implemented.
+The result system performs **one compact idempotent write after completion**, never per-action writes. Portable validation/derivation, the provider-neutral idempotent repository/service boundary, Supabase persistence, the submission route, and stable browser retry identity are implemented. Aggregate/comparison reads and presentation remain separate work.
 
 A submission identifies the stable puzzle, ruleset/game, and a client-generated idempotency ID, and carries ordered native completed-at-bat facts. The server validates exact puzzle identity and fact consistency and derives summaries through portable rules; it never trusts a client-submitted total score.
 
 `shared` exports schema-1 submission/result types. Engine `validateDailyCompletedResult` accepts only `points-v3` and `classic-inning-v1`, checks the caller-provided puzzle/game and raw facts, and reuses `getGuessOutcome` plus `applyDailyOutcomeForRuleset` for derivation/completion. Output keeps copied, whitelisted facts and a game-specific summary; it drops client totals/answer fields. It does not prove honest play or native provenance. See `docs/spec/engine.md` and `docs/spec/data-model.md`.
 
-`packages/daily` now owns the provider-neutral persistence orchestration. `DailyCompletedResultRepository.insertIfAbsent(result)` is an atomic first-write-wins port keyed by `submissionId`: a provider inserts the complete normalized result if absent, otherwise returns the existing stored result without overwriting it. `createDailyCompletedResultService` compares explicit normalized contract fields. Same ID plus the same normalized result is an idempotent retry; the same ID plus any different puzzle, ruleset/game, raw at-bat fact, or derived summary is an `idempotency_conflict`. This is intentionally not implemented as a race-prone `get` then `save` sequence. Scope: `tasks/plans/completed-result-repository.md`.
+`packages/daily` owns the provider-neutral persistence orchestration. `DailyCompletedResultRepository.insertIfAbsent(result)` is an atomic first-write-wins port keyed by `submissionId`: a provider inserts the complete normalized result if absent, otherwise returns the existing stored result without overwriting it. `createDailyCompletedResultService` compares explicit normalized contract fields. Same ID plus the same normalized result is an idempotent retry; the same ID plus any different puzzle, ruleset/game, raw at-bat fact, or derived summary is an `idempotency_conflict`. This is intentionally not implemented as a race-prone `get` then `save` sequence. Scope: `tasks/plans/completed-result-repository.md`.
 
-The service consumes only the engine-derived `DailyCompletedResult`; it does not duplicate validation, scoring, or completion logic. It retains the complete normalized raw facts so later aggregates can be recomputed as presentation evolves. The next bounded concern is the separate Supabase current-results migration/codec/adapter and completed-game submission API/browser retry wiring.
+The 4C web/provider layer implements that port without changing it:
+
+```text
+completed native browser game
+  -> persist stable submission marker before network I/O
+  -> POST schema-1 raw facts once/retry same ID
+  -> load authoritative public puzzle
+  -> engine validate + derive normalized result
+  -> Daily first-write-wins service
+  -> Supabase INSERT daily_completed_results
+       ├─ inserted -> created
+       └─ unique 23505 -> read stored winner -> existing/conflict
+```
+
+`public.daily_completed_results` stores only validated normalized results: submission ID, schema version, stable puzzle ID/date/number, exact ruleset, ordered normalized raw at-bat facts, engine-derived summary, and provider receipt `created_at`. RLS is enabled, browser roles have no table privileges/policies, and the service role has only select/insert for this adapter. The provider codec fails closed on malformed rows. No update, upsert, delete, per-hint, or per-guess path exists.
+
+The browser result marker is separate from the gameplay-save schema. Native `points-v3`/`classic-inning-v1` completion creates one UUID-style ID, persists `pending` before POST, and reuses that ID after refresh/network/5xx failures. Success marks it submitted; HTTP 409 is terminal conflict; ordinary validation 4xx is terminal rejected. Compatibility `points-v2`, `points-v1`, and `legacy-inning-v1` saves are excluded. The submission hook is separate from `DailyInningGame` gameplay orchestration; result transport failure never blocks local completion/reset. Scope: `tasks/plans/completed-result-provider.md`.
 
 Comparison is scoped to the same stable puzzle and ruleset/game. Daily Nine requires per-at-bat average points plus whole-game average/distribution/percentile. Classic remains a separate population with baseball-native measures such as runs, hits, at-bats reached, per-at-bat outcomes, and reach rates. A single Classic percentile metric is intentionally unresolved.
 
@@ -178,9 +194,11 @@ From permanent Daily #1 onward, issued puzzles are frozen historical objects. La
 
 The initial personal-history layer is browser/device-local and keyed by stable Daily identity plus game/ruleset. It remembers which archived games were completed and the recorded result without creating an account identity. Cross-device history remains deferred until accounts.
 
-## Editorial persistence
+## Editorial and result persistence
 
-`daily_editorial_puzzles` remains authoritative for editorial dates: one row/date, atomic exact-nine JSONB selection, lifecycle status, optimistic revision, audit metadata, RLS, and server-only service role. Future profiles/recipes/results require separate portable contracts and migrations. Inactive legacy attempt/result tables are not repurposed for the current result system.
+`daily_editorial_puzzles` remains authoritative for editorial dates: one row/date, atomic exact-nine JSONB selection, lifecycle status, optimistic revision, audit metadata, RLS, and server-only service role.
+
+`daily_completed_results` is the separate immutable current-result provider table. It is not an archive identity system or account history. Future profiles/recipes require separate portable contracts and migrations. Inactive legacy attempt/result tables are not repurposed for the current result system.
 
 ## Scale target
 
@@ -194,7 +212,7 @@ At 10,000+ plays/day:
 - verify stateless progression;
 - perform no database write per hint/guess;
 - hydrate at most one active hint bundle on saved refresh;
-- submit at most one compact completed result;
+- submit at most one compact idempotent completed result;
 - keep routes thin and credentials isolated.
 
 Vercel and Supabase remain replaceable adapters. No new cache service, queue, database, or hosting-specific compute mode is required for the current optimization.
@@ -210,10 +228,9 @@ Vercel and Supabase remain replaceable adapters. No new cache service, queue, da
 ## Current sequence
 
 1. Finish outstanding interactive/physical-device QA for Daily Nine and Classic without treating both as permanent launch commitments.
-2. Add a separate Supabase current-results migration/codec/adapter and one completed-game submission route/browser retry path on the implemented atomic repository/service boundary.
-3. Add same-puzzle/same-ruleset per-at-bat and whole-game comparison; settle percentile tie/sample-size rules before percentile UI.
-4. Build permanent archive/local-history infrastructure that starts from the future explicit launch Daily #1 rather than importing beta history.
-5. Before broad launch, choose the primary game/final rules and launch epoch, then continue calibrated lineups, analytics/monitoring, mobile polish, legal/domain/social metadata, and launch QA.
+2. Add same-puzzle/same-ruleset completed-result aggregate queries and comparison output; settle Daily Nine percentile tie/sample-size rules before percentile UI and keep Classic baseball-native populations separate.
+3. Build permanent archive/local-history infrastructure that starts from the future explicit launch Daily #1 rather than importing beta history.
+4. Before broad launch, choose the primary game/final rules and launch epoch, then continue calibrated lineups, analytics/monitoring, mobile polish, legal/domain/social metadata, and launch QA.
 
 ## Non-goals
 
