@@ -27,7 +27,7 @@ Current order: finish the remaining authenticated future-editorial horizon/consu
 
 ## 1. Production and hosted verification
 
-- [x] September 17 baseline: main #163 (`0001f51c15b9e7b4e5e9647ce471365a96f19bc7`) has READY production `dpl_APaPW1hwmzghnoRg4fEXhcFnNCCw` on that exact merge SHA with successful Vercel status; 4A/4B are merged. #162 broadens authorized manual selection without changing automatic generation, and #163 makes public scheduled/published resolution use that editorial candidate universe. Supabase has an empty `daily_completed_results` table, but draft #161 is not live. This does not replace the outstanding interactive/physical-device QA.
+- [x] September 17 verified production code baseline is PR #163 (`0001f51c15b9e7b4e5e9647ce471365a96f19bc7`) with READY production `dpl_APaPW1hwmzghnoRg4fEXhcFnNCCw` on that exact merge SHA and successful Vercel status; 4A/4B are merged. #162 broadens authorized manual selection without changing automatic generation, and #163 makes public scheduled/published resolution use that editorial candidate universe. Supabase has an empty `daily_completed_results` table, but draft #161 is not live. This does not replace the outstanding interactive/physical-device QA.
 - [x] Verify exact merge-SHA production for the public editorial-candidate fix and reconcile hosted handoff: production `dpl_APaPW1hwmzghnoRg4fEXhcFnNCCw` is READY on PR #163 merge SHA `0001f51c15b9e7b4e5e9647ce471365a96f19bc7`.
 - [x] Configure progression, Supabase, and admin secrets for Preview/Production.
 - [x] Apply editorial migration and verify RLS/service-role boundaries.
