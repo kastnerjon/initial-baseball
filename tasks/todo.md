@@ -65,6 +65,7 @@ Admin redesign is deferred. The user may supply a future date and nine ordered p
 - [x] Merge PR #152: atomic nine-player replacement plus private machine-authenticated server adapter; no direct Supabase editorial writes and no future lineup payloads in public GitHub surfaces.
 - [x] Merge PR #153, connect the Supabase app, apply the private `pg_net` transport, store the matching `DAILY_CHATOPS_TOKEN` only in Vercel server environment and Supabase Vault, and redeploy production.
 - [x] Smoke-test conversational editing on a future draft: verify atomic rejection for an ineligible candidate, exact nine-player readback/order/revision for the corrected lineup, explicit scheduling, and `chatops:assistant` audit attribution.
+- [x] Separate automatic eligibility from manual editorial eligibility: automatic generation remains restricted to ranked `dailyEligiblePlayers`, while authorized manual admin/ChatOps curation may select any canonical, reveal-ready Daily-compatible player and receives `outside-automatic-daily-pool` when the player is outside the automatic pool (PR #162).
 - [ ] Verify seven-day Supabase horizon and missing-draft generation.
 - [ ] Preview/search/replace/revalidate one future slot through the authenticated editor workflow.
 - [ ] Verify public scheduled/published consumption for an editorially scheduled future puzzle.
@@ -160,7 +161,7 @@ Admin redesign is deferred. The user may supply a future date and nine ordered p
 - [ ] Establish a conservative “I could have gotten that” pool; only final slot may be deliberate deep challenge.
 - [ ] Add reproducible All-Star/award/bWAR enrichment.
 - [ ] Add provider-neutral profile/recipe persistence/admin editing in bounded PRs.
-- [ ] Preserve manual review/replacement of exact generated nine.
+- [x] Preserve manual review/replacement of exact generated nine and allow intentional canonical reveal-ready manual choices outside the automatic pool without changing automatic eligibility (PR #162).
 
 ## 7. Launch surfaces
 
