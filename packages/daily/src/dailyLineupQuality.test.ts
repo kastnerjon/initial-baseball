@@ -80,6 +80,23 @@ describe('Daily lineup quality', () => {
     ]));
   });
 
+  it('warns without structurally rejecting a manually selected player outside the generated Daily pool', () => {
+    const selections = buildManualSelections();
+    const manualOnly = selections[8];
+    if (manualOnly === undefined) throw new Error('Expected manual selection.');
+    manualOnly.player = {
+      ...manualOnly.player,
+      dailyEligibilityTier: 'none',
+      dailyEligible: false,
+    };
+
+    const result = validateDailyLineup('2026-07-21', selections);
+
+    expect(result.warnings).toEqual([]);
+    expect(result.slots[8]?.warnings).toContain('outside-daily-eligible-pool');
+    expect(result.valid).toBe(false);
+  });
+
   it('rejects extra, duplicate, and out-of-range slots', () => {
     const base = buildManualSelections();
     const extra = { ...base[0]!, slot: 10 };

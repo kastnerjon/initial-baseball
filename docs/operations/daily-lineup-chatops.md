@@ -25,7 +25,7 @@ The private transport is `private.dispatch_daily_lineup_chatops(...)`, installed
 `POST /admin/daily/chatops` accepts a JSON object containing:
 
 - `puzzleDate`: `YYYY-MM-DD`;
-- `canonicalPlayerIds`: exactly nine unique reviewed canonical Daily candidate IDs in batting order;
+- `canonicalPlayerIds`: exactly nine unique canonical player IDs in batting order;
 - `schedule`: explicit boolean.
 
 Authorization is a dedicated `Bearer` token from server-only `DAILY_CHATOPS_TOKEN`. The configured token must contain at least 32 characters and is compared through a timing-safe digest. Authorization occurs before the privileged Supabase repository is constructed. Successful mutations are audited as `chatops:assistant`.
@@ -34,11 +34,13 @@ The route:
 
 1. validates the request shape and calendar date;
 2. ensures the requested future date has a draft record;
-3. validates all requested IDs against the reviewed Daily candidate universe;
+3. validates all requested IDs against the manual editorial player universe: canonically resolvable and reveal-ready through the current gameplay/hint data boundary;
 4. atomically replaces all nine selections through the portable Daily lifecycle;
-5. reruns the existing horizon/lineup validation and returns warnings for conversational review;
+5. reruns the existing horizon/lineup validation and returns warnings for conversational review, including `outside-daily-eligible-pool` when a deliberate manual choice is outside the conservative automatic-generation pool;
 6. optionally schedules only when `schedule: true` was explicit;
 7. returns the persisted date, puzzle number, status, revision, validation result, and resolved ordered selections.
+
+Automatic lineup generation remains restricted to `dailyEligiblePlayers`. The broader manual editorial universe applies only to explicit authorized replacements/full-lineup edits; it does not add those players to automatic generation.
 
 Published and archived puzzles remain immutable. Replacing a scheduled future lineup returns it to draft before an explicit schedule transition. Repository optimistic-revision semantics remain intact.
 
@@ -49,11 +51,12 @@ When the owner supplies a lineup:
 1. preserve the supplied batting order;
 2. resolve each name to one canonical player ID using the existing canonical search/identity system;
 3. never guess through a missing or ambiguous identity; surface ambiguity and request the one needed clarification;
-4. present meaningful validation warnings rather than silently weakening repeat protection or eligibility rules;
-5. ask whether to schedule when that intent is not already explicit;
-6. call `private.dispatch_daily_lineup_chatops(puzzle_date, canonical_ids, schedule)` through the connected Supabase project;
-7. capture the returned `pg_net` request ID, then inspect `net._http_response` for the corresponding status/body after the asynchronous request completes;
-8. only treat the operation as successful when the HTTP response is 2xx and its persisted readback exactly matches the requested date, order, status, and nine canonical players.
+4. require the selected player to be canonically resolvable and reveal-ready; do not treat failure of the legacy `dailyEligiblePlayers` career-volume heuristic as a manual-selection prohibition;
+5. present meaningful validation warnings, including outside-auto-pool, repeat, or recognizability-band warnings, rather than silently weakening validation;
+6. ask whether to schedule when that intent is not already explicit;
+7. call `private.dispatch_daily_lineup_chatops(puzzle_date, canonical_ids, schedule)` through the connected Supabase project;
+8. capture the returned `pg_net` request ID, then inspect `net._http_response` for the corresponding status/body after the asynchronous request completes;
+9. only treat the operation as successful when the HTTP response is 2xx or an exact persisted readback proves the requested mutation completed despite a transport timeout; in either case verify the persisted date, order, status, and nine canonical players.
 
 Do not publish from this conversational operation. Publication remains a separate lifecycle action.
 
@@ -66,7 +69,7 @@ This procedure is intentionally durable across chats. A future assistant should 
 3. A random 64-character machine credential was generated without exposing it in chat.
 4. `DAILY_CHATOPS_TOKEN` is configured in Vercel Production and production was redeployed so the route reads it.
 5. The matching credential is stored in Supabase Vault as `daily_chatops_token`; it is not hard-coded in SQL, source control, logs, or browser code.
-6. The transport reached the production route successfully. An invalid Daily candidate was rejected atomically with HTTP 400 before any lineup mutation.
+6. The transport reached the production route successfully. An invalid canonical/reveal-ready candidate is rejected atomically before any lineup mutation.
 7. The corrected September 18, 2026 / Daily #145 lineup was dispatched through the private transport, persisted in exact batting order, and scheduled. The persisted record reached revision 2 with `scheduled_by` and `updated_by` equal to `chatops:assistant`.
 
 ## QA gate
@@ -76,7 +79,9 @@ Verified before routine production use:
 - request parser rejects malformed/impossible dates, wrong counts, duplicates, empty IDs, and implicit schedule intent;
 - auth rejects absent, short, and incorrect tokens without exposing the configured value;
 - full-lineup replacement is one optimistic-revision save and preserves exact order;
-- unknown/non-reviewed players are rejected before mutation;
+- unknown or non-reveal-ready players are rejected before mutation;
+- explicit manual players outside `dailyEligiblePlayers` are allowed and returned with an `outside-daily-eligible-pool` validation warning;
+- automatic draft generation remains restricted to the conservative generated-answer pool;
 - current/past dates are rejected;
 - published/archived puzzles remain immutable;
 - scheduled replacement returns to draft and only explicit scheduling restores `scheduled`;

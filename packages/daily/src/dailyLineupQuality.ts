@@ -45,6 +45,7 @@ export type DailyLineupWarning =
   | 'missing-canonical-player'
   | 'missing-recognizability-rank'
   | 'outside-recognizability-band'
+  | 'outside-daily-eligible-pool'
   | 'recently-used'
   | 'missing-reveal-data';
 
@@ -159,6 +160,9 @@ export function validateDailyLineup(
       && (recognizabilityRank < policy.minimumRank || recognizabilityRank > policy.maximumRank)
     ) {
       slotWarnings.push('outside-recognizability-band');
+    }
+    if (selection?.source === 'manual' && !selection.player.dailyEligible) {
+      slotWarnings.push('outside-daily-eligible-pool');
     }
     if (recentUse) slotWarnings.push('recently-used');
     if (!revealReady) slotWarnings.push('missing-reveal-data');

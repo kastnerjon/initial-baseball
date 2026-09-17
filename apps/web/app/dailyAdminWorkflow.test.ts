@@ -187,6 +187,50 @@ describe('Daily admin workflow', () => {
     expect(preview?.reveal.career.firstSeason).toBe(1989);
   });
 
+  it('keeps automatic generation conservative while allowing reveal-ready manual-only players with a warning', async () => {
+    const repository = new InMemoryRepository();
+    const candidates = buildCandidates();
+    const manualOnly = buildCandidate('manual-only', 2601, {
+      displayName: 'Manual Only',
+      dailyEligibilityTier: 'none',
+      dailyEligible: false,
+    });
+    const notRevealReady = {
+      ...buildCandidate('not-reveal-ready', 2602, { displayName: 'Not Reveal Ready' }),
+      revealReady: false,
+    };
+    const manualCandidates = [...candidates, manualOnly, notRevealReady];
+    const injected = dependencies(candidates);
+    injected.manualCandidates = manualCandidates;
+    injected.loadReveal = canonicalPlayerId => buildReveal(canonicalPlayerId, manualCandidates);
+    const workflow = createDailyAdminWorkflow(repository, injected);
+
+    expect(workflow.searchPlayers('Manual Only').map(result => result.canonicalPlayerId)).toEqual(['manual-only']);
+    expect(workflow.previewPlayer('manual-only')?.canonicalPlayerId).toBe('manual-only');
+    expect(workflow.searchPlayers('Not Reveal Ready')).toEqual([]);
+    expect(workflow.previewPlayer('not-reveal-ready')).toBeNull();
+
+    const [generated] = await workflow.ensureHorizon({
+      actorId: 'daily-editor',
+      occurredAt: OCCURRED_AT,
+      startDate: '2026-07-22',
+      days: 1,
+    });
+    expect(generated?.selections.some(selection => selection.player?.canonicalPlayerId === 'manual-only')).toBe(false);
+
+    const replaced = await workflow.replaceSelection({
+      puzzleDate: '2026-07-22',
+      slot: 9,
+      canonicalPlayerId: 'manual-only',
+      actorId: 'daily-editor',
+      occurredAt: '2026-07-21T19:00:00.000Z',
+    });
+
+    expect(replaced.selections[8]?.player?.canonicalPlayerId).toBe('manual-only');
+    expect(replaced.selections[8]?.source).toBe('manual');
+    expect(replaced.validation.slots[8]?.warnings).toContain('outside-daily-eligible-pool');
+  });
+
   it('replaces a future slot through the portable service and returns rerun validation', async () => {
     const repository = new InMemoryRepository();
     const candidates = buildCandidates();

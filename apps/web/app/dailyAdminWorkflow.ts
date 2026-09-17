@@ -1,5 +1,5 @@
 import 'server-only';
-import { dailyEligiblePlayers } from '@initial-baseball/baseball-data';
+import { baseballPlayers, dailyEligiblePlayers } from '@initial-baseball/baseball-data';
 import type { CanonicalPlayerReveal } from '@initial-baseball/baseball-data/runtime';
 import {
   DAILY_AT_BAT_COUNT,
@@ -28,7 +28,10 @@ import { getCanonicalRuntime, resolveCanonicalPlayerId } from './serverCanonical
 export type { DailyAdminLifecycleAction } from './dailyAdminLifecycleActions';
 
 export interface DailyAdminWorkflowDependencies {
+  /** Conservative pool used only when generating a proposal. */
   candidates: readonly DailyLineupCandidate[];
+  /** Broader canonical/reveal-ready pool available to explicit editorial selection. */
+  manualCandidates?: readonly DailyLineupCandidate[];
   reviewedDataVersion: string;
   selectProductionLineup: ProductionCanonicalDailySelector;
   getCurrentDailyDate: () => string;
@@ -103,13 +106,16 @@ export function createDailyAdminWorkflow(
   dependencies?: DailyAdminWorkflowDependencies,
 ): DailyAdminWorkflow {
   const resolvedDependencies = dependencies ?? getDefaultDependencies();
+  const generatedCandidates = resolvedDependencies.candidates;
+  const manualCandidates = (resolvedDependencies.manualCandidates ?? generatedCandidates)
+    .filter(candidate => candidate.revealReady);
   const horizonService = createDailyEditorialHorizonService(repository);
   const editorialService = createDailyPuzzleEditorialService(repository);
-  const candidatesById = new Map(
-    resolvedDependencies.candidates.map(candidate => [candidate.canonicalPlayerId, candidate]),
+  const manualCandidatesById = new Map(
+    manualCandidates.map(candidate => [candidate.canonicalPlayerId, candidate]),
   );
-  const visibleNameCounts = countVisibleNames(resolvedDependencies.candidates);
-  const searchCandidates = resolvedDependencies.candidates.map(candidate => ({
+  const visibleNameCounts = countVisibleNames(manualCandidates);
+  const searchCandidates = manualCandidates.map(candidate => ({
     id: candidate.canonicalPlayerId,
     displayName: candidate.player.displayName,
     fullName: candidate.player.fullName,
@@ -125,7 +131,7 @@ export function createDailyAdminWorkflow(
     async getHorizon(startDate = getDefaultStartDate(resolvedDependencies)) {
       return horizonService.getHorizon({
         startDate,
-        candidates: resolvedDependencies.candidates,
+        candidates: manualCandidates,
         usageHistory: await getUsageHistory(repository, startDate, resolvedDependencies),
       });
     },
@@ -136,20 +142,27 @@ export function createDailyAdminWorkflow(
       startDate = getDefaultStartDate(resolvedDependencies),
       days,
     }) {
-      return horizonService.ensureHorizon({
+      const usageHistory = await getUsageHistory(repository, startDate, resolvedDependencies);
+      await horizonService.ensureHorizon({
         startDate,
         actorId,
         occurredAt,
         reviewedDataVersion: resolvedDependencies.reviewedDataVersion,
-        candidates: resolvedDependencies.candidates,
-        usageHistory: await getUsageHistory(repository, startDate, resolvedDependencies),
+        candidates: generatedCandidates,
+        usageHistory,
+        ...(days === undefined ? {} : { days }),
+      });
+      return horizonService.getHorizon({
+        startDate,
+        candidates: manualCandidates,
+        usageHistory,
         ...(days === undefined ? {} : { days }),
       });
     },
 
     searchPlayers(query) {
       return searchCanonicalPlayers(query, searchCandidates).flatMap(result => {
-        const candidate = candidatesById.get(result.playerId);
+        const candidate = manualCandidatesById.get(result.playerId);
         return candidate === undefined
           ? []
           : [toPlayerSearchResult(candidate, result.requiresYearDisambiguation ?? false)];
@@ -157,7 +170,7 @@ export function createDailyAdminWorkflow(
     },
 
     previewPlayer(canonicalPlayerId) {
-      const candidate = candidatesById.get(canonicalPlayerId);
+      const candidate = manualCandidatesById.get(canonicalPlayerId);
       if (candidate === undefined) return null;
 
       return {
@@ -173,16 +186,16 @@ export function createDailyAdminWorkflow(
 
     async replaceSelection(input) {
       assertFuturePuzzle(input.puzzleDate, resolvedDependencies);
-      if (!candidatesById.has(input.canonicalPlayerId)) {
+      if (!manualCandidatesById.has(input.canonicalPlayerId)) {
         throw new DailyAdminWorkflowError(
           'unknown-player',
-          `Canonical Daily candidate ${input.canonicalPlayerId} is unavailable.`,
+          `Canonical reveal-ready player ${input.canonicalPlayerId} is unavailable for manual Daily selection.`,
         );
       }
 
       return horizonService.replaceSelection({
         ...input,
-        candidates: resolvedDependencies.candidates,
+        candidates: manualCandidates,
         usageHistory: await getUsageHistory(repository, input.puzzleDate, resolvedDependencies),
       });
     },
@@ -199,10 +212,10 @@ export function createDailyAdminWorkflow(
         throw new DailyAdminWorkflowError('invalid-lineup', 'Daily lineup contains duplicate canonical players.');
       }
       for (const canonicalPlayerId of input.canonicalPlayerIds) {
-        if (!candidatesById.has(canonicalPlayerId)) {
+        if (!manualCandidatesById.has(canonicalPlayerId)) {
           throw new DailyAdminWorkflowError(
             'unknown-player',
-            `Canonical Daily candidate ${canonicalPlayerId} is unavailable.`,
+            `Canonical reveal-ready player ${canonicalPlayerId} is unavailable for manual Daily selection.`,
           );
         }
       }
@@ -211,7 +224,7 @@ export function createDailyAdminWorkflow(
       const [puzzle] = await horizonService.getHorizon({
         startDate: input.puzzleDate,
         days: 1,
-        candidates: resolvedDependencies.candidates,
+        candidates: manualCandidates,
         usageHistory: await getUsageHistory(repository, input.puzzleDate, resolvedDependencies),
       });
       if (puzzle === undefined) throw new Error(`Daily puzzle not available for ${input.puzzleDate}.`);
@@ -232,7 +245,7 @@ export function createDailyAdminWorkflow(
       const [puzzle] = await horizonService.getHorizon({
         startDate: input.puzzleDate,
         days: 1,
-        candidates: resolvedDependencies.candidates,
+        candidates: manualCandidates,
         usageHistory: await getUsageHistory(repository, input.puzzleDate, resolvedDependencies),
       });
       if (puzzle === undefined) {
@@ -244,8 +257,12 @@ export function createDailyAdminWorkflow(
 }
 
 function getDefaultDependencies(): DailyAdminWorkflowDependencies {
-  defaultDependencies ??= {
-    candidates: buildCanonicalCandidates(),
+  if (defaultDependencies !== null) return defaultDependencies;
+
+  const candidates = buildGeneratedCandidates();
+  defaultDependencies = {
+    candidates,
+    manualCandidates: buildManualCandidates(candidates),
     reviewedDataVersion: DAILY_REVIEWED_DATA_VERSION,
     selectProductionLineup: createProductionCanonicalDailySelector(
       DAILY_PUZZLE_OVERRIDES,
@@ -257,11 +274,26 @@ function getDefaultDependencies(): DailyAdminWorkflowDependencies {
   return defaultDependencies;
 }
 
-function buildCanonicalCandidates(): DailyLineupCandidate[] {
+function buildGeneratedCandidates(): DailyLineupCandidate[] {
   return createCanonicalDailyLineupCandidates(
     rankPlayersByRecognizability(dailyEligiblePlayers),
     resolveCanonicalPlayerId,
   );
+}
+
+function buildManualCandidates(
+  generatedCandidates: readonly DailyLineupCandidate[],
+): DailyLineupCandidate[] {
+  const generatedRanks = new Map(
+    generatedCandidates.map(candidate => [candidate.canonicalPlayerId, candidate.recognizabilityRank]),
+  );
+  return createCanonicalDailyLineupCandidates(
+    rankPlayersByRecognizability(baseballPlayers),
+    resolveCanonicalPlayerId,
+  ).map(candidate => ({
+    ...candidate,
+    recognizabilityRank: generatedRanks.get(candidate.canonicalPlayerId) ?? candidate.recognizabilityRank,
+  }));
 }
 
 function toPlayerSearchResult(

@@ -1,7 +1,7 @@
 # Lineup Content System
 
-Status: Approved product and architecture direction; not yet implemented  
-Last updated: 2026-07-31
+Status: Approved product and architecture direction; partially implemented  
+Last updated: 2026-09-17
 
 ## Purpose
 
@@ -145,6 +145,14 @@ The authorized editor should be able to:
 8. schedule the exact final nine.
 
 The published puzzle is the exact nine selected canonical IDs. The recipe remains reusable metadata and an explanation of how the proposal was formed.
+
+### Current beta generation vs. manual-selection rule
+
+The provisional `dailyEligiblePlayers` thresholds are a conservative **automatic-generation** heuristic, not a hard editorial ban. Automatic Daily proposals continue to draw only from `dailyEligiblePlayers` and retain the existing recognizability/repeat rules.
+
+An explicit authorized manual replacement or full-lineup edit may instead select any canonically resolvable, reveal-ready MLB player available to the current gameplay/hint data boundary. A manually selected player whose legacy `dailyEligible` flag is false is accepted but receives an `outside-daily-eligible-pool` validation warning. The warning is review information; it does not prevent an explicit schedule transition. Unknown, duplicate, non-reveal-ready, published, or archived selections remain rejected by their existing boundaries.
+
+This distinction prevents career-volume heuristics from blocking deliberate editorial choices while keeping automatic generation conservative. It does not redefine the underlying baseball-data eligibility tiers or make non-eligible players candidates for automatic generation.
 
 ## Validation
 
