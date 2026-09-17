@@ -1,7 +1,7 @@
 # Game Engine Spec
 
 Status: Current implemented rules and versioned policy boundary  
-Last updated: 2026-07-31
+Last updated: 2026-09-17
 
 ## Principle
 
@@ -34,9 +34,9 @@ These outcomes are the stable vocabulary. Scoring and completion policies interp
 
 ## Versioned Daily policies
 
-### `classic-inning-v1` — approved alternate rules
+### `classic-inning-v1` — Classic beta game
 
-Classic uses the existing hit/forced-walk runner advancement and run scoring. K adds one out; the game completes at three outs or the end of the same daily nine. The pure `isDailyGameComplete` policy is shared by engine outcome application and the web progression adapter. Post-completion outcomes have no effect. Point values and maximum are zero; presentation uses runs/hits/outs. This identifier is distinct from legacy-inning-v1. Public selection is a separate integration step.
+Classic uses the existing hit/forced-walk runner advancement and run scoring. K adds one out; the game completes at three outs or the end of the same daily nine. The pure `isDailyGameComplete` policy is shared by engine outcome application and the web progression adapter. Post-completion outcomes have no effect. Point values and maximum are zero; presentation uses runs/hits/outs. This identifier is distinct from legacy-inning-v1. The browser game is available at `/classic`.
 
 ### `points-v3` — Daily Nine, current scoring
 
@@ -102,6 +102,27 @@ Each resolved at-bat preserves spoiler-safe stable facts independently from the 
 The game state also carries puzzle identity and ruleset version. A final numeric score alone is insufficient for future result persistence or recalculation.
 
 Legacy saved lines that predate this contract are normalized conservatively for local display only. Future aggregate submission must use natively recorded raw facts.
+
+## Portable completed-result validation
+
+`validateDailyCompletedResult` accepts an unknown submission plus the caller's authoritative public puzzle identity/ordered initials and expected ruleset. It does not look up puzzles, authorize a request, or write a result.
+
+The schema-1 transport/result types live in `shared` (`dailyCompletedResult.ts`). The first accepted rulesets are `points-v3` and `classic-inning-v1`; the exact ruleset is also the game discriminator. Compatibility `points-v1`, `points-v2`, and `legacy-inning-v1` submissions are rejected without changing their gameplay/local-display support.
+
+Validation requires:
+
+- exact puzzle ID, date, number, and expected supported ruleset;
+- a nine-pitch authoritative puzzle and a consecutive faced prefix with matching pitch numbers/initials;
+- integer hint counts 0–4 and wrong-guess counts 0–3;
+- correct resolution with fewer than three wrong guesses and the existing `getGuessOutcome` result for that hint depth;
+- strikeout with exactly three wrong guesses and outcome K, or Give Up with fewer than three wrong guesses and outcome K;
+- completion under the existing engine policy: all nine Daily Nine at-bats, or exactly the Classic third out/ninth batter, with no facts after completion.
+
+Accepted facts replay through `applyDailyOutcomeForRuleset` and its existing scoring/runner/completion rules. Daily Nine returns points, maximum, at-bat counts, completion, and all strikeouts; Classic returns runs, hits, outs, strikeouts, completion, and reached/total at-bat counts, without inventing a points ranking.
+
+The output retains freshly copied, whitelisted native facts and identity fields. Client scores, answer data, timestamps, and other extra fields are discarded. The same accepted facts produce the same normalized result; repository retry/conflict semantics remain a later concern.
+
+This checks internal consistency, not proof of honest play or native-fact provenance. The future caller must resolve the authoritative puzzle/game and exclude reconstructed legacy facts. Signed authorization, storage, timestamps, submission-ID generation, comparison, and archive behavior are outside this pure engine contract.
 
 ## Hints
 

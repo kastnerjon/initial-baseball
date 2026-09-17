@@ -16,3 +16,4 @@ export * from './daily/computeDailyPitchAggregate.js';
 export * from './daily/applyDailyOutcomeToInning.js';
 export * from './daily/applyDailyRuleset.js';
 export * from './daily/createDailyShareResult.js';
+export * from './daily/validateDailyCompletedResult.js';

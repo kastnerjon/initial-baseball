@@ -1,7 +1,7 @@
 # Architecture and launch-scale plan
 
 Status: Living architecture source of truth  
-Last updated: 2026-09-16
+Last updated: 2026-09-17
 
 ## Product goal
 
@@ -156,11 +156,13 @@ The web adapter retains terminal canonical display names in a browser-local `sco
 
 ## Completed-result and comparison architecture
 
-The initial result system performs **one compact idempotent write after completion**, never per-action writes.
+The planned result system performs **one compact idempotent write after completion**, never per-action writes. The portable contract/validator is implemented; persistence is not yet implemented.
 
 A submission identifies the stable puzzle, ruleset/game, and a client-generated idempotency ID, and carries ordered native completed-at-bat facts. The server validates exact puzzle identity and fact consistency and derives summaries through portable rules; it never trusts a client-submitted total score.
 
-The persistence boundary is provider-neutral. Same idempotency ID + same normalized payload returns the existing result; the same ID + different payload conflicts. Raw facts are retained so aggregates can be recomputed as presentation evolves.
+`shared` exports schema-1 submission/result types. Engine `validateDailyCompletedResult` accepts only `points-v3` and `classic-inning-v1`, checks the caller-provided puzzle/game and raw facts, and reuses `getGuessOutcome` plus `applyDailyOutcomeForRuleset` for derivation/completion. Output keeps copied, whitelisted facts and a game-specific summary; it drops client totals/answer fields. It does not prove honest play or native provenance. See `docs/spec/engine.md` and `docs/spec/data-model.md`.
+
+The next bounded PR defines the provider-neutral repository/service boundary. Same idempotency ID + same normalized payload must return the existing result; the same ID + different payload must conflict. This is not implemented by the pure validator. Raw facts are retained so aggregates can be recomputed as presentation evolves.
 
 Comparison is scoped to the same stable puzzle and ruleset/game. Daily Nine requires per-at-bat average points plus whole-game average/distribution/percentile. Classic remains a separate population with baseball-native measures such as runs, hits, at-bats reached, per-at-bat outcomes, and reach rates. A single Classic percentile metric is intentionally unresolved.
 
@@ -206,7 +208,7 @@ Vercel and Supabase remain replaceable adapters. No new cache service, queue, da
 ## Current sequence
 
 1. Finish outstanding interactive/physical-device QA for Daily Nine and Classic without treating both as permanent launch commitments.
-2. Define the compact completed-result submission, validation/derived summaries, and idempotent provider-neutral repository boundary.
+2. Build the idempotent provider-neutral repository/service boundary on the implemented portable completed-result contract. Retry/conflict behavior is a separate bounded concern from engine validation/derivation.
 3. Add a separate Supabase current-results migration/adapter and one completed-game submission route.
 4. Add same-puzzle/same-ruleset per-at-bat and whole-game comparison; settle percentile tie/sample-size rules before percentile UI.
 5. Build permanent archive/local-history infrastructure that starts from the future explicit launch Daily #1 rather than importing beta history.
