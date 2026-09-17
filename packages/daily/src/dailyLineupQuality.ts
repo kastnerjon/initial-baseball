@@ -44,6 +44,7 @@ export type DailyLineupWarning =
   | 'duplicate-canonical-player'
   | 'missing-canonical-player'
   | 'missing-recognizability-rank'
+  | 'outside-automatic-daily-pool'
   | 'outside-recognizability-band'
   | 'recently-used'
   | 'missing-reveal-data';
@@ -153,7 +154,13 @@ export function validateDailyLineup(
     const revealReady = selection?.revealReady ?? false;
 
     if (duplicate) slotWarnings.push('duplicate-canonical-player');
-    if (recognizabilityRank === null) slotWarnings.push('missing-recognizability-rank');
+    if (recognizabilityRank === null) {
+      slotWarnings.push(
+        selection?.source === 'manual' && canonicalPlayerId !== null
+          ? 'outside-automatic-daily-pool'
+          : 'missing-recognizability-rank',
+      );
+    }
     if (
       recognizabilityRank !== null
       && (recognizabilityRank < policy.minimumRank || recognizabilityRank > policy.maximumRank)
