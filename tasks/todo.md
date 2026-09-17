@@ -1,11 +1,11 @@
 # Initial Baseball Current Work
 
 Status: Active ordered implementation plan  
-Last updated: 2026-09-16
+Last updated: 2026-09-17
 
 Completed history belongs in PRs, canonical docs, or `tasks/lessons.md`. Durable resumption context belongs in `docs/START-HERE.md`.
 
-Current order: Daily Nine and Classic are live as distinct beta games and their exact production deployment is verified. Complete outstanding interactive/physical iPhone/iPad QA, then implement the game-aware completed-result contract/persistence, same-Daily/same-ruleset comparison, and permanent archive/local history. Current beta numbering is disposable; broad launch later restarts at Daily #1 after the owner chooses the surviving game/final rules. The secure conversational Daily lineup bridge is active in production and is the preferred routine lineup-entry path.
+Current order: Daily Nine and Classic are live as distinct beta games and their exact production deployment is verified. Portable completed-result validation/derivation (4A) is implemented. The next bounded engineering concern is the provider-neutral repository/service and atomic idempotency contract (4B), followed by separate provider/API integration, comparison, and permanent archive/local history. Outstanding interactive/physical iPhone/iPad QA remains open. Current beta numbering is disposable; broad launch later restarts at Daily #1 after the owner chooses the surviving game/final rules. The secure conversational Daily lineup bridge is active in production and is the preferred routine lineup-entry path.
 
 ## September 15–16 approved product work
 
@@ -27,6 +27,7 @@ Current order: Daily Nine and Classic are live as distinct beta games and their 
 
 ## 1. Production and hosted verification
 
+- [x] September 17 resume: PR #158 main CI passed, exact-SHA production `dpl_6PzqccRdjVdsaqDWHkHFa9GUWiXU` READY, both game routes HTTP 200, admin Basic challenge HTTP 401, no production error/fatal logs in the prior 24 hours, and Supabase ACTIVE_HEALTHY with editorial RLS enabled. This does not replace the outstanding interactive/physical-device QA.
 - [x] Configure progression, Supabase, and admin secrets for Preview/Production.
 - [x] Apply editorial migration and verify RLS/service-role boundaries.
 - [x] Verify admin challenge and prior successful editor authentication.
@@ -99,16 +100,21 @@ Admin redesign is deferred. The user may supply a future date and nine ordered p
 
 ## 4. Completed-game results and comparison
 
-### 4A. Portable result contract — next bounded engineering concern
+### 4A. Portable result contract
 
-- [ ] Define a compact transport submission using stable puzzle identity, ruleset/game identity, client-generated idempotency ID, and ordered native completed-at-bat facts.
-- [ ] Validate exact puzzle/date/number, faced pitch order/initials, completion shape for the ruleset, outcome-to-hint consistency, wrong-guess/resolution consistency, and supported ruleset.
-- [ ] Derive Daily Nine points/maximum and Classic baseball summary from engine rules; never trust a submitted total.
-- [ ] Define an atomic idempotent provider-neutral repository port: same ID/same normalized payload returns the existing record; same ID/different payload conflicts.
-- [ ] Preserve raw facts for later aggregate recalculation.
-- [ ] Add focused valid, malformed, spoofed-puzzle, inconsistent-fact, incomplete-game, retry, and conflict tests for both beta games.
+- [x] Define schema-1 transport/result types in shared using stable puzzle identity, exact ruleset/game identity, client idempotency ID, and ordered native at-bat facts; initially accept only `points-v3` and `classic-inning-v1`.
+- [x] Validate exact puzzle/date/number/game, faced pitch order/initials, completion shape, outcome-to-hint consistency, wrong-guess/resolution consistency, and supported schema/ruleset in the engine.
+- [x] Derive Daily Nine points/maximum/strikeouts and Classic baseball summary through existing engine rules; discard submitted totals/extras.
+- [x] Preserve copied normalized raw facts for later recalculation without changing anonymous authority or legacy gameplay compatibility.
+- [x] Cover valid, malformed, spoofed, inconsistent, incomplete, overlong/after-completion, game-isolation, and normalization behavior with focused engine tests.
 
-### 4B. Provider and submission API
+### 4B. Portable repository/service — next bounded engineering concern
+
+- [ ] Define an atomic idempotent provider-neutral repository/service boundary consuming validated/derived results.
+- [ ] Same ID/same normalized payload returns the existing record; same ID/different payload conflicts.
+- [ ] Test retry/conflict behavior and preserve raw facts without introducing Supabase, API, browser persistence, or per-action writes.
+
+### 4C. Provider and submission API
 
 - [ ] Add a separate current-results migration rather than reusing inactive legacy attempt/result tables.
 - [ ] Add server-only Supabase codec/adapter with RLS and least-privilege grants.
@@ -116,7 +122,7 @@ Admin redesign is deferred. The user may supply a future date and nine ordered p
 - [ ] Submit at most once after completion and retry idempotently after ordinary failures/refresh.
 - [ ] Verify no per-action writes and no answer/credential leakage.
 
-### 4C. Daily Nine comparison
+### 4D. Daily Nine comparison
 
 - [ ] Add same-Daily/same-ruleset completion count and average total points.
 - [ ] Add per-at-bat average points for each of the nine slots plus useful outcome/hint/K/Give Up rates.
@@ -124,7 +130,7 @@ Admin redesign is deferred. The user may supply a future date and nine ordered p
 - [ ] Settle percentile tie treatment and minimum sample copy before percentile UI.
 - [ ] Add understandable total/per-AB comparison UI by extending the compact scorebook system.
 
-### 4D. Classic comparison
+### 4E. Classic comparison
 
 - [ ] Add same-Daily/same-ruleset runs, hits, at-bats reached, per-at-bat outcome, strikeout, and reach-rate aggregates.
 - [ ] Keep later-batter reach population distinct from all Classic completions.

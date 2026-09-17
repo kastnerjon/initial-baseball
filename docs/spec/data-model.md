@@ -1,7 +1,7 @@
 # Data Model Spec
 
 Status: Current persistence contract and approved next entities  
-Last updated: 2026-09-16
+Last updated: 2026-09-17
 
 ## Ownership
 
@@ -148,11 +148,11 @@ A puzzle stores its exact final nine even when a recipe generated the proposal.
 
 `classic-inning-v1` is a separate ruleset/game population using the same current beta puzzle lineup identity. Its result contains only faced at-bats, with runs/hits/outs derived from existing runner rules. Default `points-v3` remains Daily Nine; `points-v2` remains a compatibility population. Both beta games may be played; future submissions and aggregates must isolate rulesets/games. Shared lineup identity is not a requirement of the future permanent model.
 
-## Future completed-game results
+## Completed-game result contract and future persistence
 
 Aggregate comparison will add at most one compact idempotent submission per completed game.
 
-The portable raw contract should preserve:
+The implemented schema-1 `DailyCompletedResultSubmission` preserves:
 
 - stable puzzle identity;
 - ruleset/game identity;
@@ -161,13 +161,15 @@ The portable raw contract should preserve:
 - hints revealed;
 - wrong guesses;
 - correct, K, or Give Up resolution;
-- server-derived game summary/score (a client total is never authoritative);
-- anonymous client-generated idempotency ID;
-- completion timestamp/server receipt metadata as needed.
+- anonymous client-generated idempotency ID (`submissionId`, 1–128 ASCII letters, digits, underscores, or hyphens, preserved exactly; a UUID is accepted).
 
-The browser now records the native raw facts needed to form that later submission. No relational current-results table or submission API exists yet. Legacy facts reconstructed from old local pitch lines are compatibility display data and should not be treated as analytics-quality native submissions without an explicit migration rule.
+Exact transport fields are `schemaVersion`, `submissionId`, `puzzleId`, `puzzleDate`, `puzzleNumber`, `rulesetVersion`, and `completedAtBats`. Only `points-v3` and `classic-inning-v1` are accepted initially. The ruleset identifies the game independently of the puzzle ID; neither game requires the other game or its lineup to exist.
 
-Submission validation and summary derivation belong in portable domain/engine code. The persistence repository receives validated/derived records; Supabase does not independently interpret scoring or completion rules. Idempotency prevents refresh/retry from counting one browser completion multiple times. There are no per-action writes.
+`DailyCompletedResult` adds the engine-derived, ruleset-specific `summary`. Daily Nine has points/maximum, completed/total at-bats, completion, and strikeouts. Classic has runs/hits/outs/strikeouts, completion, and completed/total at-bats. Client totals and unknown fields are discarded, not persisted as authority. No completion/receipt timestamp is created by the engine; server receipt metadata belongs to the later service/provider boundary.
+
+The browser records the native raw facts needed to form a future submission, but is not yet wired to this contract. No result repository/service, relational current-results table, submission API, or stable browser submission-ID persistence exists yet. Legacy facts reconstructed from old local pitch lines are compatibility display data and must not be submitted without an explicit migration rule.
+
+`validateDailyCompletedResult` owns portable validation/summary derivation; its requirements and consistency-only threat boundary are in `docs/spec/engine.md`. The future repository receives normalized validated/derived records; Supabase must not independently interpret scoring or completion. The next bounded PR defines atomic idempotency: same ID/same normalized payload returns the existing record, while same ID/different payload conflicts. This PR carries the ID but implements no retry/conflict storage semantics. There are no per-action writes.
 
 Comparison populations are always scoped to stable puzzle identity plus exact ruleset/game identity. Daily Nine and Classic never share an aggregate population. `points-v1`, `points-v2`, and `points-v3` results also remain separate populations. Raw facts are retained so aggregates can be recalculated as presentation evolves.
 

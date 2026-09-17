@@ -8,6 +8,7 @@ Allowed:
 - Hint generation from provided player data/settings.
 - Guess normalization helpers.
 - Base/inning state transitions.
+- Completed-result validation and summary derivation against caller-supplied authoritative puzzle/game context (`validateDailyCompletedResult`). Reuses gameplay rules and performs no persistence; see `docs/spec/engine.md`.
 
 Not allowed:
 
