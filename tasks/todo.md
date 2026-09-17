@@ -5,7 +5,7 @@ Last updated: 2026-09-17
 
 Completed history belongs in PRs, canonical docs, or `tasks/lessons.md`. Durable resumption context belongs in `docs/START-HERE.md`.
 
-Current order: finish deployment verification of the public editorial-candidate fix, then split draft #161 into provider, API, and browser work rather than merging it unchanged. Daily Nine and Classic remain distinct beta games; 4A/4B are merged. Supabase already has an empty current-results table, but submission is not live. Comparison and permanent archive/local history remain subsequent concerns. Outstanding interactive/physical iPhone/iPad QA remains open. Current beta numbering is disposable; broad launch later restarts at Daily #1 after the owner chooses the surviving game/final rules. The secure conversational Daily lineup bridge is active in production and is the preferred routine lineup-entry path.
+Current order: finish the remaining authenticated future-editorial horizon/consumption verification, then split draft #161 into provider, API, and browser work rather than merging it unchanged. Daily Nine and Classic remain distinct beta games; 4A/4B are merged. Supabase already has an empty current-results table, but submission is not live. Comparison and permanent archive/local history remain subsequent concerns. Outstanding interactive/physical iPhone/iPad QA remains open. Current beta numbering is disposable; broad launch later restarts at Daily #1 after the owner chooses the surviving game/final rules. The secure conversational Daily lineup bridge is active in production and is the preferred routine lineup-entry path.
 
 ## September 15–16 approved product work
 
@@ -27,8 +27,8 @@ Current order: finish deployment verification of the public editorial-candidate 
 
 ## 1. Production and hosted verification
 
-- [x] September 17 baseline: main #162 (`98dbfebd4555f7f062bdebefa9adcc10a49ded06`) has successful CI and READY production `dpl_FteSYYMqjj4LGA7jfpv4nr5ikfBp`; 4A/4B are merged. Supabase has an empty `daily_completed_results` table, but draft #161 is not live. This does not replace the outstanding interactive/physical-device QA.
-- [ ] Verify exact merge-SHA production for the public editorial-candidate fix and reconcile hosted handoff.
+- [x] September 17 verified production code baseline is PR #163 (`0001f51c15b9e7b4e5e9647ce471365a96f19bc7`) with READY production `dpl_APaPW1hwmzghnoRg4fEXhcFnNCCw` on that exact merge SHA and successful Vercel status; 4A/4B are merged. #162 broadens authorized manual selection without changing automatic generation, and #163 makes public scheduled/published resolution use that editorial candidate universe. Supabase has an empty `daily_completed_results` table, but draft #161 is not live. This does not replace the outstanding interactive/physical-device QA.
+- [x] Verify exact merge-SHA production for the public editorial-candidate fix and reconcile hosted handoff: production `dpl_APaPW1hwmzghnoRg4fEXhcFnNCCw` is READY on PR #163 merge SHA `0001f51c15b9e7b4e5e9647ce471365a96f19bc7`.
 - [x] Configure progression, Supabase, and admin secrets for Preview/Production.
 - [x] Apply editorial migration and verify RLS/service-role boundaries.
 - [x] Verify admin challenge and prior successful editor authentication.
