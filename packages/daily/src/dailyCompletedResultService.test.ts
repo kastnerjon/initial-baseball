@@ -48,6 +48,42 @@ describe('Daily completed-result service', () => {
     expect(repository.records).toHaveLength(1);
   });
 
+  it('collapses concurrent identical retries to one stored result', async () => {
+    const repository = new InMemoryDailyCompletedResultRepository();
+    const service = createDailyCompletedResultService(repository);
+    const result = buildPointsResult('concurrent-same');
+
+    const outcomes = await Promise.all([
+      service.store(result),
+      service.store(buildPointsResult('concurrent-same')),
+    ]);
+
+    expect(outcomes).toContainEqual({ ok: true, status: 'created', result });
+    expect(outcomes).toContainEqual({ ok: true, status: 'existing', result });
+    expect(repository.records).toEqual([result]);
+  });
+
+  it('returns one conflict when concurrent callers reuse an ID with different payloads', async () => {
+    const repository = new InMemoryDailyCompletedResultRepository();
+    const service = createDailyCompletedResultService(repository);
+    const first = buildPointsResult('concurrent-conflict');
+    const changed = buildPointsResult('concurrent-conflict');
+    changed.summary = { ...changed.summary, points: changed.summary.points - 1 };
+
+    const outcomes = await Promise.all([
+      service.store(first),
+      service.store(changed),
+    ]);
+
+    expect(outcomes).toContainEqual({ ok: true, status: 'created', result: first });
+    expect(outcomes).toContainEqual({
+      ok: false,
+      error: 'idempotency_conflict',
+      submissionId: 'concurrent-conflict',
+    });
+    expect(repository.records).toEqual([first]);
+  });
+
   it('conflicts when the same submission ID carries different raw at-bat facts', async () => {
     const repository = new InMemoryDailyCompletedResultRepository();
     const service = createDailyCompletedResultService(repository);
