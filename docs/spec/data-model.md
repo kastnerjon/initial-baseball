@@ -8,11 +8,11 @@ Last updated: 2026-09-17
 | Concern | Authority |
 |---|---|
 | Canonical identity, aliases, teams, seasons, career facts, enrichment, hints, and reveals | Versioned artifacts and source pipeline in `packages/baseball-data` |
-| Outcomes, scoring, completion, and runner rules | `packages/engine` |
-| Lineup profiles/recipes, generation, validation, lifecycle, and repository contracts | `packages/daily` |
+| Outcomes, scoring, completion, runner rules, and completed-result validation/derivation | `packages/engine` |
+| Lineup profiles/recipes, generation, validation, lifecycle, completed-result orchestration, and provider-neutral repository contracts | `packages/daily` |
 | Anonymous in-progress visible state | Browser state plus opaque signed progression authorization |
 | Editorial future/past puzzle records | `public.daily_editorial_puzzles` through `DailyPuzzleRepository` |
-| Future permanent archive identity, completed results, and personal archive history | Separate provider-neutral contracts and migrations/local schemas described below |
+| Future permanent archive identity, completed-result provider storage, and personal archive history | Separate migrations/adapters/local schemas described below |
 | Future gameplay profiles and saved recipes | Separate provider-neutral contracts and migrations, not legacy tables |
 
 Names are never database join keys.
@@ -49,7 +49,7 @@ Current editorial puzzle numbers/dates are beta operational identity. They must 
 
 ## Repository and security
 
-`apps/web/app/supabaseDailyPuzzleRepository.ts` implements the provider-neutral port.
+`apps/web/app/supabaseDailyPuzzleRepository.ts` implements the provider-neutral editorial puzzle port.
 
 - Reads support one date and inclusive date ranges.
 - Inserts require a revision-zero record.
@@ -60,6 +60,8 @@ Current editorial puzzle numbers/dates are beta operational identity. They must 
 - The server service role is constructed only after editor/server authorization.
 - Current editor authentication is per-request HTTP Basic over HTTPS through `/admin/auth`.
 - Credentials and service-role keys remain server-only.
+
+Completed-result persistence uses a separate provider-neutral port in `packages/daily`; no current Supabase result adapter/table exists yet. The result port deliberately has different semantics from the editorial repository: one atomic first-write-wins insert keyed by `submissionId`, with no overwrite/update path.
 
 ## Anonymous gameplay state
 
@@ -146,9 +148,9 @@ A puzzle stores its exact final nine even when a recipe generated the proposal.
 
 ## Approved Classic result identity
 
-`classic-inning-v1` is a separate ruleset/game population using the same current beta puzzle lineup identity. Its result contains only faced at-bats, with runs/hits/outs derived from existing runner rules. Default `points-v3` remains Daily Nine; `points-v2` remains a compatibility population. Both beta games may be played; future submissions and aggregates must isolate rulesets/games. Shared lineup identity is not a requirement of the future permanent model.
+`classic-inning-v1` is a separate ruleset/game population using the same current beta puzzle lineup identity. Its result contains only faced at-bats, with runs/hits/outs derived from existing runner rules. Default `points-v3` remains Daily Nine; `points-v2` remains a compatibility population. Both beta games may be played; submissions and aggregates must isolate rulesets/games. Shared lineup identity is not a requirement of the future permanent model.
 
-## Completed-game result contract and future persistence
+## Completed-game result contract and persistence boundary
 
 Aggregate comparison will add at most one compact idempotent submission per completed game.
 
@@ -165,11 +167,24 @@ The implemented schema-1 `DailyCompletedResultSubmission` preserves:
 
 Exact transport fields are `schemaVersion`, `submissionId`, `puzzleId`, `puzzleDate`, `puzzleNumber`, `rulesetVersion`, and `completedAtBats`. Only `points-v3` and `classic-inning-v1` are accepted initially. The ruleset identifies the game independently of the puzzle ID; neither game requires the other game or its lineup to exist.
 
-`DailyCompletedResult` adds the engine-derived, ruleset-specific `summary`. Daily Nine has points/maximum, completed/total at-bats, completion, and strikeouts. Classic has runs/hits/outs/strikeouts, completion, and completed/total at-bats. Client totals and unknown fields are discarded, not persisted as authority. No completion/receipt timestamp is created by the engine; server receipt metadata belongs to the later service/provider boundary.
+`DailyCompletedResult` adds the engine-derived, ruleset-specific `summary`. Daily Nine has points/maximum, completed/total at-bats, completion, and strikeouts. Classic has runs/hits/outs/strikeouts, completion, and completed/total at-bats. Client totals and unknown fields are discarded, not persisted as authority. No completion/receipt timestamp is created by the engine; server receipt metadata belongs to the later provider boundary.
 
-The browser records the native raw facts needed to form a future submission, but is not yet wired to this contract. No result repository/service, relational current-results table, submission API, or stable browser submission-ID persistence exists yet. Legacy facts reconstructed from old local pitch lines are compatibility display data and must not be submitted without an explicit migration rule.
+`validateDailyCompletedResult` owns portable validation/summary derivation; its requirements and consistency-only threat boundary are in `docs/spec/engine.md`. The repository/service consumes only this normalized validated/derived record; it does not re-run scoring, completion, or puzzle validation.
 
-`validateDailyCompletedResult` owns portable validation/summary derivation; its requirements and consistency-only threat boundary are in `docs/spec/engine.md`. The future repository receives normalized validated/derived records; Supabase must not independently interpret scoring or completion. The next bounded PR defines atomic idempotency: same ID/same normalized payload returns the existing record, while same ID/different payload conflicts. This PR carries the ID but implements no retry/conflict storage semantics. There are no per-action writes.
+`DailyCompletedResultRepository` and `createDailyCompletedResultService` implement step 4B in `packages/daily`:
+
+- `insertIfAbsent(result)` is the sole repository write primitive;
+- `submissionId` is the atomic first-write-wins key;
+- provider implementations must never overwrite an existing record for that ID;
+- a new ID returns the inserted complete normalized result;
+- an existing ID returns the already-stored complete normalized result;
+- the service compares every normalized contract field, including ordered raw at-bat facts and the derived summary;
+- same ID plus the same normalized result returns the existing result as an idempotent retry;
+- same ID plus any different normalized result returns `idempotency_conflict` and leaves the stored record unchanged.
+
+The repository contract is intentionally one atomic operation rather than `get` followed by `save`, so a later provider can make concurrent retries race-safe. The service retains the full result/raw facts rather than reducing persistence input to display totals. Exact implementation scope: `tasks/plans/completed-result-repository.md`.
+
+No relational current-results table, Supabase codec/adapter, completed-game submission API, or stable browser submission-ID persistence exists yet. Those are the separate 4C provider/API concern. The browser records the native raw facts needed to form a future submission, but is not yet wired to this contract. Legacy facts reconstructed from old local pitch lines are compatibility display data and must not be submitted without an explicit migration rule. There are no per-action writes.
 
 Comparison populations are always scoped to stable puzzle identity plus exact ruleset/game identity. Daily Nine and Classic never share an aggregate population. `points-v1`, `points-v2`, and `points-v3` results also remain separate populations. Raw facts are retained so aggregates can be recalculated as presentation evolves.
 
