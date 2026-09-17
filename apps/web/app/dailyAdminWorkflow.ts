@@ -1,10 +1,11 @@
 import 'server-only';
-import { dailyEligiblePlayers } from '@initial-baseball/baseball-data';
+import { baseballPlayers, dailyEligiblePlayers } from '@initial-baseball/baseball-data';
 import type { CanonicalPlayerReveal } from '@initial-baseball/baseball-data/runtime';
 import {
   DAILY_AT_BAT_COUNT,
   DAILY_REPEAT_WINDOW_DAYS,
   DAILY_REVIEWED_DATA_VERSION,
+  createCanonicalDailyEditorialCandidates,
   createCanonicalDailyLineupCandidates,
   createDailyEditorialHorizonService,
   createDailyPuzzleEditorialService,
@@ -258,8 +259,13 @@ function getDefaultDependencies(): DailyAdminWorkflowDependencies {
 }
 
 function buildCanonicalCandidates(): DailyLineupCandidate[] {
-  return createCanonicalDailyLineupCandidates(
+  const automaticCandidates = createCanonicalDailyLineupCandidates(
     rankPlayersByRecognizability(dailyEligiblePlayers),
+    resolveCanonicalPlayerId,
+  );
+  return createCanonicalDailyEditorialCandidates(
+    automaticCandidates,
+    baseballPlayers,
     resolveCanonicalPlayerId,
   );
 }
