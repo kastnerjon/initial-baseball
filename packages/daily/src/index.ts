@@ -52,6 +52,13 @@ export {
   type DailyPuzzleRepositorySaveOptions,
 } from './dailyPuzzleLifecycle';
 export {
+  createDailyCompletedResultService,
+  type DailyCompletedResultRepository,
+  type DailyCompletedResultRepositoryInsertResult,
+  type DailyCompletedResultService,
+  type DailyCompletedResultStoreResult,
+} from './dailyCompletedResultService';
+export {
   createEditorialDailyPuzzleId,
   resolvePublicDailyPuzzleSelection,
   type PublicDailyPuzzleSelectionDecision,

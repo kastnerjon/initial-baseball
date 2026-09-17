@@ -5,7 +5,7 @@ Last updated: 2026-09-17
 
 Completed history belongs in PRs, canonical docs, or `tasks/lessons.md`. Durable resumption context belongs in `docs/START-HERE.md`.
 
-Current order: Daily Nine and Classic are live as distinct beta games and their exact production deployment is verified. Portable completed-result validation/derivation (4A) is implemented. The next bounded engineering concern is the provider-neutral repository/service and atomic idempotency contract (4B), followed by separate provider/API integration, comparison, and permanent archive/local history. Outstanding interactive/physical iPhone/iPad QA remains open. Current beta numbering is disposable; broad launch later restarts at Daily #1 after the owner chooses the surviving game/final rules. The secure conversational Daily lineup bridge is active in production and is the preferred routine lineup-entry path.
+Current order: Daily Nine and Classic are live as distinct beta games and their exact production deployment is verified. Portable completed-result validation/derivation (4A) and the atomic provider-neutral repository/service boundary (4B) are implemented. The next bounded engineering concern is provider/API integration (4C): a separate current-results migration, Supabase codec/adapter, one completed-game submission route, and stable browser submission/retry wiring. Comparison and permanent archive/local history remain subsequent concerns. Outstanding interactive/physical iPhone/iPad QA remains open. Current beta numbering is disposable; broad launch later restarts at Daily #1 after the owner chooses the surviving game/final rules. The secure conversational Daily lineup bridge is active in production and is the preferred routine lineup-entry path.
 
 ## September 15–16 approved product work
 
@@ -16,7 +16,7 @@ Current order: Daily Nine and Classic are live as distinct beta games and their 
 - [ ] Verify both games interactively through terminal/complete refresh, clipboard success/failure, answer safety and responsive layouts; retain physical-device QA as distinct.
 - [x] Settle beta/launch direction: Daily Nine and Classic are distinct beta games sharing a lineup today; either may ultimately be removed or separated, and infrastructure must not require both forever.
 - [x] Settle permanent-history direction: current numbering is beta; broad launch explicitly restarts at Daily #1 and only post-launch Dailies enter the permanent archive.
-- [x] Settle comparison direction: result populations are stable-puzzle + ruleset/game specific; Daily Nine gets per-AB and whole-game comparison, while Classic gets separate baseball-native comparison.
+- [x] Settle comparison direction: result populations are stable-puzzle + ruleset/game specific; Daily Nine gets per-AB/whole-game comparison, while Classic gets separate baseball-native comparison.
 - [x] Settle initial personal-history direction: archive completion/scores are remembered on the current browser/device; cross-device history waits for accounts.
 
 ## 0. Continuity
@@ -27,7 +27,7 @@ Current order: Daily Nine and Classic are live as distinct beta games and their 
 
 ## 1. Production and hosted verification
 
-- [x] September 17 resume: PR #158 main CI passed, exact-SHA production `dpl_6PzqccRdjVdsaqDWHkHFa9GUWiXU` READY, both game routes HTTP 200, admin Basic challenge HTTP 401, no production error/fatal logs in the prior 24 hours, and Supabase ACTIVE_HEALTHY with editorial RLS enabled. This does not replace the outstanding interactive/physical-device QA.
+- [x] September 17 resume: PR #159 main CI passed, exact-SHA production is READY, both game routes return HTTP 200, no production error/fatal logs were present at verification time, and Supabase `initial-baseball-db` is ACTIVE_HEALTHY with only `daily_editorial_puzzles` in `public`; no result table exists. This does not replace the outstanding interactive/physical-device QA.
 - [x] Configure progression, Supabase, and admin secrets for Preview/Production.
 - [x] Apply editorial migration and verify RLS/service-role boundaries.
 - [x] Verify admin challenge and prior successful editor authentication.
@@ -108,13 +108,16 @@ Admin redesign is deferred. The user may supply a future date and nine ordered p
 - [x] Preserve copied normalized raw facts for later recalculation without changing anonymous authority or legacy gameplay compatibility.
 - [x] Cover valid, malformed, spoofed, inconsistent, incomplete, overlong/after-completion, game-isolation, and normalization behavior with focused engine tests.
 
-### 4B. Portable repository/service — next bounded engineering concern
+### 4B. Portable repository/service
 
-- [ ] Define an atomic idempotent provider-neutral repository/service boundary consuming validated/derived results.
-- [ ] Same ID/same normalized payload returns the existing record; same ID/different payload conflicts.
-- [ ] Test retry/conflict behavior and preserve raw facts without introducing Supabase, API, browser persistence, or per-action writes.
+- [x] Define `DailyCompletedResultRepository` and `createDailyCompletedResultService` in the portable Daily layer; scope: `tasks/plans/completed-result-repository.md`.
+- [x] Make `insertIfAbsent(result)` the atomic first-write-wins repository primitive keyed by `submissionId`; no read-then-save idempotency sequence.
+- [x] Same ID/same normalized payload returns the existing record; same ID/different normalized payload returns `idempotency_conflict` without overwrite.
+- [x] Compare explicit normalized result fields, including ordered raw facts and derived summary, without JSON-order/object-identity dependence.
+- [x] Preserve the complete normalized result/raw facts and cover insert, retry, conflict, cross-game ID reuse, and Classic shorter-fact-list behavior with focused tests.
+- [x] Keep Supabase, API, browser persistence/retry, aggregates, comparison UI, and archive/history out of 4B.
 
-### 4C. Provider and submission API
+### 4C. Provider and submission API — next bounded engineering concern
 
 - [ ] Add a separate current-results migration rather than reusing inactive legacy attempt/result tables.
 - [ ] Add server-only Supabase codec/adapter with RLS and least-privilege grants.

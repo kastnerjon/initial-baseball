@@ -56,8 +56,9 @@ Answer integrity: `docs/decisions/0001-daily-answer-integrity.md`.
 
 ## Current verified state
 
-- PR #158 merged as `603e365b438f15eed1a3a667c9e23e76de98fc45`; it records the settled beta/launch/results/archive model. At the September 17 resume check, main CI passed, production deployment `dpl_6PzqccRdjVdsaqDWHkHFa9GUWiXU` was READY on that exact SHA, `/` and `/classic` returned HTTP 200, `/admin/daily` returned its expected 401 Basic challenge, and production error/fatal logs for the preceding 24 hours were empty. Supabase `initial-baseball-db` was ACTIVE_HEALTHY with RLS enabled on `daily_editorial_puzzles`; no result table exists.
-- Completed-result step 4A implements shared schema-1 types and pure engine validation/derivation for `points-v3` and `classic-inning-v1`. The validator binds native facts to the expected puzzle/game, checks exact completion and fact consistency, reuses existing gameplay rules, and returns copied normalized facts plus a game-specific summary. It does not submit/store results or prove honest play. Scope: `tasks/plans/completed-result-contract.md`; contract: `docs/spec/engine.md` and `docs/spec/data-model.md`.
+- PR #159 merged as `c6ae2060e2d4b777be226c891264e389108d3092`. Main CI completed successfully on that exact merge SHA. Vercel production deployment `dpl_BYVydotusX2WiVBF9dL74CDTYohb` is READY on the same SHA; `/` and `/classic` return HTTP 200 and production error/fatal runtime checks were empty. Supabase `initial-baseball-db` is ACTIVE_HEALTHY and `public` contains only `daily_editorial_puzzles`; no current-results table exists yet.
+- Completed-result step 4A implements shared schema-1 types and pure engine validation/derivation for `points-v3` and `classic-inning-v1`. The validator binds native facts to the expected puzzle/game, checks exact completion and fact consistency, reuses existing gameplay rules, and returns copied normalized facts plus a game-specific summary. It does not prove honest play. Scope: `tasks/plans/completed-result-contract.md`; contract: `docs/spec/engine.md` and `docs/spec/data-model.md`.
+- Completed-result step 4B implements the provider-neutral atomic repository/service boundary in `packages/daily`. `insertIfAbsent(result)` is the first-write-wins repository primitive keyed by `submissionId`; identical retries return the existing normalized result, while same-ID/different-payload retries return `idempotency_conflict` without overwrite. The service consumes 4A output and does not re-run validation/scoring. Scope: `tasks/plans/completed-result-repository.md`. Supabase/API/browser submission remain separate 4C work.
 - PRs #120–#122 are merged; editorial public consumption, hosted Basic auth, and repository continuity controls are established.
 - PR #124 introduced versioned `points-v1`; PR #125 reconciled its verified production deployment.
 - PR #126 introduced immediate active-batter hints; PR #127 reconciled that production state.
@@ -157,7 +158,7 @@ Standard Daily is one versioned recipe, not the only selector. Recipes may defin
 
 ### Completed results and comparison
 
-Future aggregation uses one compact idempotent completed-game submission from stable puzzle identity, ruleset/game identity, and native raw at-bat facts. The portable schema/engine validator is implemented for `points-v3` and `classic-inning-v1`; it validates against caller-supplied authoritative puzzle/game context and derives summaries rather than trusting a submitted total. Repository/service idempotency, provider persistence, the API, and browser submission remain separate pending work. No per-action database writes.
+Aggregation uses one compact idempotent completed-game submission from stable puzzle identity, ruleset/game identity, and native raw at-bat facts. The portable schema/engine validator is implemented for `points-v3` and `classic-inning-v1`; it validates against caller-supplied authoritative puzzle/game context and derives summaries rather than trusting a submitted total. The provider-neutral Daily repository/service boundary is also implemented: atomic first-write-wins `insertIfAbsent`, idempotent identical retry, and same-ID/different-payload conflict. Provider persistence, the public API, and browser submission/retry wiring remain separate 4C work. No per-action database writes.
 
 Daily Nine comparison includes the player's points on each at-bat versus that at-bat's average plus total average/distribution/percentile for the same Daily/ruleset. Classic is a separate comparison population using baseball-native measures such as runs, hits, at-bats reached, per-at-bat outcomes, strikeout rates, and reach rates. A single Classic percentile metric is not settled.
 
@@ -202,11 +203,10 @@ Remaining hosted editorial checks:
 ## Exact next work order
 
 1. Complete the remaining interactive/physical iPhone/iPad presentation, terminal/refresh/share, and PR #133 latency QA without treating both beta games as permanent launch commitments.
-2. Implement the provider-neutral completed-result repository/service boundary on the completed 4A contract. Define/test atomic same-ID/same-normalized-payload retry and same-ID/different-payload conflict behavior; keep Supabase/API/browser integration in subsequent bounded PRs.
-3. Add a separate Supabase current-results migration/adapter and one completed-game submission route.
-4. Add same-Daily/same-ruleset per-at-bat and whole-game comparison; settle percentile tie/sample-size rules before percentile UI.
-5. Build permanent archive/local-history infrastructure that starts from the future explicit launch Daily #1 rather than importing beta history.
-6. Before broad launch, choose the primary game/final rules and launch epoch, then continue gameplay-profile/lineup-recipe calibration, analytics/monitoring, legal/domain/social metadata, and launch polish.
+2. Implement 4C provider/submission integration on the completed 4A/4B contracts: separate current-results migration, server-only Supabase codec/adapter, one completed-game POST route, and stable browser submission-ID/retry behavior. Keep comparison UI/aggregates out of that PR unless separately scoped.
+3. Add same-Daily/same-ruleset per-at-bat and whole-game comparison; settle percentile tie/sample-size rules before percentile UI.
+4. Build permanent archive/local-history infrastructure that starts from the future explicit launch Daily #1 rather than importing beta history.
+5. Before broad launch, choose the primary game/final rules and launch epoch, then continue gameplay-profile/lineup-recipe calibration, analytics/monitoring, legal/domain/social metadata, and launch polish.
 
 ## Open decisions
 
