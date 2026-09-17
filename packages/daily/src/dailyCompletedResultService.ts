@@ -95,26 +95,31 @@ function areDailyCompletedResultsEqual(
     }
   }
 
-  if (left.rulesetVersion === POINTS_V3_DAILY_RULESET_VERSION
-    && right.rulesetVersion === POINTS_V3_DAILY_RULESET_VERSION) {
-    return left.summary.points === right.summary.points
-      && left.summary.maximumPoints === right.summary.maximumPoints
-      && left.summary.atBatsCompleted === right.summary.atBatsCompleted
-      && left.summary.totalAtBats === right.summary.totalAtBats
-      && left.summary.completed === right.summary.completed
-      && left.summary.strikeouts === right.summary.strikeouts;
-  }
+  switch (left.rulesetVersion) {
+    case POINTS_V3_DAILY_RULESET_VERSION:
+      if (right.rulesetVersion !== POINTS_V3_DAILY_RULESET_VERSION) return false;
+      return left.summary.points === right.summary.points
+        && left.summary.maximumPoints === right.summary.maximumPoints
+        && left.summary.atBatsCompleted === right.summary.atBatsCompleted
+        && left.summary.totalAtBats === right.summary.totalAtBats
+        && left.summary.completed === right.summary.completed
+        && left.summary.strikeouts === right.summary.strikeouts;
 
-  if (left.rulesetVersion === CLASSIC_DAILY_RULESET_VERSION
-    && right.rulesetVersion === CLASSIC_DAILY_RULESET_VERSION) {
-    return left.summary.runs === right.summary.runs
-      && left.summary.hits === right.summary.hits
-      && left.summary.outs === right.summary.outs
-      && left.summary.strikeouts === right.summary.strikeouts
-      && left.summary.completed === right.summary.completed
-      && left.summary.atBatsCompleted === right.summary.atBatsCompleted
-      && left.summary.totalAtBats === right.summary.totalAtBats;
-  }
+    case CLASSIC_DAILY_RULESET_VERSION:
+      if (right.rulesetVersion !== CLASSIC_DAILY_RULESET_VERSION) return false;
+      return left.summary.runs === right.summary.runs
+        && left.summary.hits === right.summary.hits
+        && left.summary.outs === right.summary.outs
+        && left.summary.strikeouts === right.summary.strikeouts
+        && left.summary.completed === right.summary.completed
+        && left.summary.atBatsCompleted === right.summary.atBatsCompleted
+        && left.summary.totalAtBats === right.summary.totalAtBats;
 
-  return false;
+    default:
+      return assertNever(left);
+  }
+}
+
+function assertNever(value: never): never {
+  throw new Error(`Unhandled Daily completed-result ruleset: ${JSON.stringify(value)}`);
 }
