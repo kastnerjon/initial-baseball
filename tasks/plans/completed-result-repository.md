@@ -27,8 +27,8 @@ Allowed dependencies: `packages/daily` may consume the shared `DailyCompletedRes
 - Return `existing` for the same ID plus exactly the same normalized `DailyCompletedResult` payload.
 - Return `idempotency_conflict` for the same ID plus any different normalized payload, including raw at-bat facts, puzzle identity, ruleset/game, or derived summary.
 - Preserve the complete normalized result, including ordered raw completed-at-bat facts; do not reduce storage input to a presentation summary.
-- Compare normalized results deterministically by their explicit contract fields rather than object identity or JSON property ordering.
-- Add focused tests for insert, retry, conflict, game/ruleset isolation, raw-fact preservation, and repository-contract corruption.
+- Compare normalized results deterministically by their explicit contract fields rather than object identity or JSON property ordering; keep the ruleset comparison exhaustive so adding a new supported result ruleset requires an explicit comparator update.
+- Add focused tests for insert, retry, concurrent retry/conflict behavior, game/ruleset isolation, raw-fact preservation, and repository-contract corruption.
 - Export the new portable API from `@initial-baseball/daily`.
 - Reconcile canonical architecture/data-model/handoff/todo documentation so 4C becomes the next bounded concern.
 
