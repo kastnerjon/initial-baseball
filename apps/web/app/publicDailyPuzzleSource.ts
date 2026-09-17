@@ -1,5 +1,6 @@
 import 'server-only';
 import {
+  createCanonicalDailyEditorialCandidates,
   createCanonicalDailyLineupCandidates,
   createEditorialDailyPuzzleId,
   rankPlayersByRecognizability,
@@ -7,7 +8,7 @@ import {
   type DailyPuzzleRepository,
   type ProductionCanonicalDailySelector,
 } from '@initial-baseball/daily';
-import { dailyEligiblePlayers } from '@initial-baseball/baseball-data';
+import { baseballPlayers, dailyEligiblePlayers } from '@initial-baseball/baseball-data';
 import {
   DEFAULT_DAILY_HINT_CONFIG,
   DEFAULT_DAILY_STATS_HINT_CONFIG,
@@ -21,9 +22,14 @@ export function createPublicDailyPuzzleSource(input: {
   repository: Pick<DailyPuzzleRepository, 'getByDate'> | null;
   selectDeterministicPlayers: ProductionCanonicalDailySelector;
 }): (date: string) => Promise<DailyPuzzle> {
+  const automaticCandidates = createCanonicalDailyLineupCandidates(
+    rankPlayersByRecognizability(dailyEligiblePlayers),
+    resolveCanonicalPlayerId,
+  );
   const candidatesById = new Map(
-    createCanonicalDailyLineupCandidates(
-      rankPlayersByRecognizability(dailyEligiblePlayers),
+    createCanonicalDailyEditorialCandidates(
+      automaticCandidates,
+      baseballPlayers,
       resolveCanonicalPlayerId,
     ).map(candidate => [candidate.canonicalPlayerId, candidate.player]),
   );
