@@ -9,6 +9,28 @@ export function createCanonicalDailyLineupCandidates(
   return createCanonicalCandidates(rankedPlayers, resolveCanonicalPlayerId, 'dense-canonical');
 }
 
+export function createCanonicalDailyEditorialCandidates(
+  automaticCandidates: readonly DailyLineupCandidate[],
+  editorialPlayers: readonly Player[],
+  resolveCanonicalPlayerId: ResolveCanonicalPlayerId,
+): DailyLineupCandidate[] {
+  const automaticByCanonicalId = new Map(
+    automaticCandidates.map(candidate => [candidate.canonicalPlayerId, candidate]),
+  );
+
+  return createCanonicalCandidates(editorialPlayers, resolveCanonicalPlayerId, 'dense-canonical')
+    .flatMap((candidate) => {
+      const automaticCandidate = automaticByCanonicalId.get(candidate.canonicalPlayerId);
+      if (automaticCandidate !== undefined) return [automaticCandidate];
+      if (!candidate.revealReady) return [];
+
+      return [{
+        ...candidate,
+        recognizabilityRank: null,
+      }];
+    });
+}
+
 export function createLegacySourceRankCanonicalDailyLineupCandidates(
   rankedPlayers: readonly Player[],
   resolveCanonicalPlayerId: ResolveCanonicalPlayerId,
