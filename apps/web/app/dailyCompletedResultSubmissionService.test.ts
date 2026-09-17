@@ -113,7 +113,7 @@ describe('completed-result submission service', () => {
   it('surfaces 4B idempotency conflict without weakening first-write-wins behavior', async () => {
     const incoming = buildPointsSubmission();
     const repository: DailyCompletedResultRepository = {
-      insertIfAbsent: vi.fn(async (result) => ({
+      insertIfAbsent: vi.fn(async (result: DailyCompletedResult) => ({
         status: 'existing' as const,
         result: {
           ...result,
