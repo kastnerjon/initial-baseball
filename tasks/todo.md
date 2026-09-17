@@ -5,7 +5,7 @@ Last updated: 2026-09-17
 
 Completed history belongs in PRs, canonical docs, or `tasks/lessons.md`. Durable resumption context belongs in `docs/START-HERE.md`.
 
-Current order: Daily Nine and Classic are live as distinct beta games and their exact production deployment is verified. Portable completed-result validation/derivation (4A) and the atomic provider-neutral repository/service boundary (4B) are implemented. The next bounded engineering concern is provider/API integration (4C): a separate current-results migration, Supabase codec/adapter, one completed-game submission route, and stable browser submission/retry wiring. Comparison and permanent archive/local history remain subsequent concerns. Outstanding interactive/physical iPhone/iPad QA remains open. Current beta numbering is disposable; broad launch later restarts at Daily #1 after the owner chooses the surviving game/final rules. The secure conversational Daily lineup bridge is active in production and is the preferred routine lineup-entry path.
+Current order: finish deployment verification of the public editorial-candidate fix, then split draft #161 into provider, API, and browser work rather than merging it unchanged. Daily Nine and Classic remain distinct beta games; 4A/4B are merged. Supabase already has an empty current-results table, but submission is not live. Comparison and permanent archive/local history remain subsequent concerns. Outstanding interactive/physical iPhone/iPad QA remains open. Current beta numbering is disposable; broad launch later restarts at Daily #1 after the owner chooses the surviving game/final rules. The secure conversational Daily lineup bridge is active in production and is the preferred routine lineup-entry path.
 
 ## September 15–16 approved product work
 
@@ -27,7 +27,8 @@ Current order: Daily Nine and Classic are live as distinct beta games and their 
 
 ## 1. Production and hosted verification
 
-- [x] September 17 resume: PR #159 main CI passed, exact-SHA production is READY, both game routes return HTTP 200, no production error/fatal logs were present at verification time, and Supabase `initial-baseball-db` is ACTIVE_HEALTHY with only `daily_editorial_puzzles` in `public`; no result table exists. This does not replace the outstanding interactive/physical-device QA.
+- [x] September 17 baseline: main #162 (`98dbfebd4555f7f062bdebefa9adcc10a49ded06`) has successful CI and READY production `dpl_FteSYYMqjj4LGA7jfpv4nr5ikfBp`; 4A/4B are merged. Supabase has an empty `daily_completed_results` table, but draft #161 is not live. This does not replace the outstanding interactive/physical-device QA.
+- [ ] Verify exact merge-SHA production for the public editorial-candidate fix and reconcile hosted handoff.
 - [x] Configure progression, Supabase, and admin secrets for Preview/Production.
 - [x] Apply editorial migration and verify RLS/service-role boundaries.
 - [x] Verify admin challenge and prior successful editor authentication.
@@ -67,6 +68,7 @@ Admin redesign is deferred. The user may supply a future date and nine ordered p
 - [x] Smoke-test conversational editing on a future draft: verify atomic rejection for an ineligible candidate, exact nine-player readback/order/revision for the corrected lineup, explicit scheduling, and `chatops:assistant` audit attribution.
 - [x] Separate automatic eligibility from manual editorial eligibility: automatic generation remains restricted to ranked `dailyEligiblePlayers`, while authorized manual admin/ChatOps curation may select any canonical, reveal-ready Daily-compatible player and receives `outside-automatic-daily-pool` when the player is outside the automatic pool (PR #162).
 - [ ] Verify seven-day Supabase horizon and missing-draft generation.
+- [x] Make public scheduled/published resolution use the existing manual editorial candidate universe without changing the automatic pool; add rejection/fallback/order regression coverage.
 - [ ] Preview/search/replace/revalidate one future slot through the authenticated editor workflow.
 - [ ] Verify public scheduled/published consumption for an editorially scheduled future puzzle.
 - [ ] Verify deterministic fallback for missing/draft records.
