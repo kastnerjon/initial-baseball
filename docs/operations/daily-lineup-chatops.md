@@ -25,8 +25,10 @@ The private transport is `private.dispatch_daily_lineup_chatops(...)`, installed
 `POST /admin/daily/chatops` accepts a JSON object containing:
 
 - `puzzleDate`: `YYYY-MM-DD`;
-- `canonicalPlayerIds`: exactly nine unique reviewed canonical Daily candidate IDs in batting order;
+- `canonicalPlayerIds`: exactly nine unique canonical, reveal-ready Daily-compatible player IDs in batting order;
 - `schedule`: explicit boolean.
+
+Automatic generation remains restricted to ranked `dailyEligiblePlayers`. Authorized manual ChatOps replacement may select a canonical, reveal-ready player outside that automatic pool. Such a selection remains unranked for automatic generation and returns the advisory validation warning `outside-automatic-daily-pool`; it does not promote the player into `dailyEligiblePlayers` or change future generated lineups.
 
 Authorization is a dedicated `Bearer` token from server-only `DAILY_CHATOPS_TOKEN`. The configured token must contain at least 32 characters and is compared through a timing-safe digest. Authorization occurs before the privileged Supabase repository is constructed. Successful mutations are audited as `chatops:assistant`.
 
@@ -34,9 +36,9 @@ The route:
 
 1. validates the request shape and calendar date;
 2. ensures the requested future date has a draft record;
-3. validates all requested IDs against the reviewed Daily candidate universe;
+3. validates all requested IDs against the canonical, reveal-ready manual editorial candidate universe;
 4. atomically replaces all nine selections through the portable Daily lifecycle;
-5. reruns the existing horizon/lineup validation and returns warnings for conversational review;
+5. reruns the existing horizon/lineup validation and returns rank-band, repeat, automatic-pool, and other warnings for conversational review;
 6. optionally schedules only when `schedule: true` was explicit;
 7. returns the persisted date, puzzle number, status, revision, validation result, and resolved ordered selections.
 
@@ -49,11 +51,12 @@ When the owner supplies a lineup:
 1. preserve the supplied batting order;
 2. resolve each name to one canonical player ID using the existing canonical search/identity system;
 3. never guess through a missing or ambiguous identity; surface ambiguity and request the one needed clarification;
-4. present meaningful validation warnings rather than silently weakening repeat protection or eligibility rules;
-5. ask whether to schedule when that intent is not already explicit;
-6. call `private.dispatch_daily_lineup_chatops(puzzle_date, canonical_ids, schedule)` through the connected Supabase project;
-7. capture the returned `pg_net` request ID, then inspect `net._http_response` for the corresponding status/body after the asynchronous request completes;
-8. only treat the operation as successful when the HTTP response is 2xx and its persisted readback exactly matches the requested date, order, status, and nine canonical players.
+4. present meaningful validation warnings rather than silently weakening repeat protection, automatic eligibility, reveal readiness, or identity rules;
+5. treat `outside-automatic-daily-pool` as an advisory manual-curation warning, not a reason to substitute a different player without the owner's instruction;
+6. ask whether to schedule when that intent is not already explicit;
+7. call `private.dispatch_daily_lineup_chatops(puzzle_date, canonical_ids, schedule)` through the connected Supabase project;
+8. capture the returned `pg_net` request ID, then inspect `net._http_response` for the corresponding status/body after the asynchronous request completes;
+9. only treat the operation as successful when the HTTP response is 2xx and its persisted readback exactly matches the requested date, order, status, and nine canonical players.
 
 Do not publish from this conversational operation. Publication remains a separate lifecycle action.
 
@@ -76,7 +79,8 @@ Verified before routine production use:
 - request parser rejects malformed/impossible dates, wrong counts, duplicates, empty IDs, and implicit schedule intent;
 - auth rejects absent, short, and incorrect tokens without exposing the configured value;
 - full-lineup replacement is one optimistic-revision save and preserves exact order;
-- unknown/non-reviewed players are rejected before mutation;
+- unknown, non-canonical, or non-reveal-ready players are rejected before mutation;
+- reveal-ready manual players outside the automatic Daily pool may be selected and are surfaced with `outside-automatic-daily-pool` rather than being silently promoted into automatic generation;
 - current/past dates are rejected;
 - published/archived puzzles remain immutable;
 - scheduled replacement returns to draft and only explicit scheduling restores `scheduled`;
