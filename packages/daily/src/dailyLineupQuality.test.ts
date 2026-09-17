@@ -41,6 +41,22 @@ describe('Daily lineup quality', () => {
     });
   });
 
+  it('ignores unranked editorial-only candidates during automatic generation', () => {
+    const candidates = buildCandidates(5000);
+    candidates.push({
+      ...candidates[0]!,
+      canonicalPlayerId: 'canonical:editorial-only',
+      recognizabilityRank: null,
+    });
+
+    const lineup = generateDailyLineup({
+      seed: { dailyDate: '2026-07-21', reviewedDataVersion: 'v1' },
+      candidates,
+    });
+
+    expect(lineup.some(selection => selection.canonicalPlayerId === 'canonical:editorial-only')).toBe(false);
+  });
+
   it('excludes players used from 1 through exactly 90 days ago, but not 91 days ago', () => {
     const candidates = buildCandidates(5000);
     const blocked = candidates[0];
@@ -71,13 +87,27 @@ describe('Daily lineup quality', () => {
     ]);
     expect(result.valid).toBe(false);
     expect(result.slots[0]?.warnings).toContain('duplicate-canonical-player');
-    expect(result.slots[2]?.warnings).toContain('missing-recognizability-rank');
+    expect(result.slots[2]?.warnings).toContain('outside-automatic-daily-pool');
     expect(result.slots[3]?.warnings).toContain('outside-recognizability-band');
     expect(result.slots[4]?.warnings).toContain('missing-reveal-data');
     expect(result.slots[5]?.lastDailyUsage).toBe('2026-07-20');
     expect(result).toEqual(validateDailyLineup('2026-07-21', candidates, [
       { canonicalPlayerId: candidates[5]!.canonicalPlayerId, dailyDate: '2026-07-20' },
     ]));
+  });
+
+  it('keeps a missing generated rank distinct from an intentional manual pool override', () => {
+    const selections = buildManualSelections();
+    selections[2] = {
+      ...selections[2]!,
+      source: 'generated',
+      recognizabilityRank: null,
+    };
+
+    const result = validateDailyLineup('2026-07-21', selections);
+
+    expect(result.slots[2]?.warnings).toContain('missing-recognizability-rank');
+    expect(result.slots[2]?.warnings).not.toContain('outside-automatic-daily-pool');
   });
 
   it('rejects extra, duplicate, and out-of-range slots', () => {
