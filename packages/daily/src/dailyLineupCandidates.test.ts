@@ -1,6 +1,7 @@
 import { dailyEligiblePlayers } from '@initial-baseball/baseball-data';
 import { describe, expect, it } from 'vitest';
 import {
+  createCanonicalDailyEditorialCandidates,
   createCanonicalDailyLineupCandidates,
   createLegacySourceRankCanonicalDailyLineupCandidates,
 } from './dailyLineupCandidates';
@@ -71,5 +72,66 @@ describe('canonical Daily lineup candidates', () => {
     expect(sparse.filter(candidate => (candidate.recognizabilityRank ?? Infinity) <= 250)).toHaveLength(173);
     expect(dense.filter(candidate => (candidate.recognizabilityRank ?? Infinity) <= 250)).toHaveLength(250);
     expect(new Set(dense.slice(0, 250).map(candidate => candidate.canonicalPlayerId)).size).toBe(250);
+  });
+
+  it('adds reveal-ready editorial players without giving them an automatic rank', () => {
+    const templates = dailyEligiblePlayers.filter(player => player.careerStats !== null).slice(0, 2);
+    const [automaticPlayer, editorialTemplate] = templates;
+    if (automaticPlayer === undefined || editorialTemplate === undefined) {
+      throw new Error('Expected reveal-ready Daily players.');
+    }
+
+    const editorialOnlyPlayer = {
+      ...editorialTemplate,
+      id: 'legacy:editorial-only',
+      displayName: 'Editorial Only Player',
+      fullName: 'Editorial Only Player',
+    };
+    const canonicalIds = new Map([
+      [automaticPlayer.id, 'canonical:auto'],
+      [editorialOnlyPlayer.id, 'canonical:editorial'],
+    ]);
+    const resolveCanonicalPlayerId = (playerId: string): string | null => canonicalIds.get(playerId) ?? null;
+    const automaticCandidates = createCanonicalDailyLineupCandidates(
+      [automaticPlayer],
+      resolveCanonicalPlayerId,
+    );
+
+    const candidates = createCanonicalDailyEditorialCandidates(
+      automaticCandidates,
+      [automaticPlayer, editorialOnlyPlayer],
+      resolveCanonicalPlayerId,
+    );
+
+    expect(candidates).toEqual([
+      expect.objectContaining({ canonicalPlayerId: 'canonical:auto', recognizabilityRank: 1 }),
+      expect.objectContaining({
+        canonicalPlayerId: 'canonical:editorial',
+        recognizabilityRank: null,
+        revealReady: true,
+      }),
+    ]);
+  });
+
+  it('does not expose non-reveal-ready players to manual editorial selection', () => {
+    const template = dailyEligiblePlayers.find(player => player.careerStats !== null);
+    if (template === undefined) throw new Error('Expected a reveal-ready Daily player.');
+
+    const unavailablePlayer = {
+      ...template,
+      id: 'legacy:unavailable',
+      displayName: 'Unavailable Player',
+      fullName: 'Unavailable Player',
+      careerStats: null,
+    };
+    const resolveCanonicalPlayerId = (playerId: string): string | null => (
+      playerId === unavailablePlayer.id ? 'canonical:unavailable' : null
+    );
+
+    expect(createCanonicalDailyEditorialCandidates(
+      [],
+      [unavailablePlayer],
+      resolveCanonicalPlayerId,
+    )).toEqual([]);
   });
 });
