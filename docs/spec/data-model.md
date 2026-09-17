@@ -12,7 +12,8 @@ Last updated: 2026-09-17
 | Lineup profiles/recipes, generation, validation, lifecycle, completed-result orchestration, and provider-neutral repository contracts | `packages/daily` |
 | Anonymous in-progress visible state | Browser state plus opaque signed progression authorization |
 | Editorial future/past puzzle records | `public.daily_editorial_puzzles` through `DailyPuzzleRepository` |
-| Future permanent archive identity, completed-result provider storage, and personal archive history | Separate migrations/adapters/local schemas described below |
+| Validated anonymous completed results | `public.daily_completed_results` through `DailyCompletedResultRepository` and the server-only Supabase adapter |
+| Future permanent archive identity and personal archive history | Separate migrations/adapters/local schemas described below |
 | Future gameplay profiles and saved recipes | Separate provider-neutral contracts and migrations, not legacy tables |
 
 Names are never database join keys.
@@ -61,7 +62,9 @@ Current editorial puzzle numbers/dates are beta operational identity. They must 
 - Current editor authentication is per-request HTTP Basic over HTTPS through `/admin/auth`.
 - Credentials and service-role keys remain server-only.
 
-Completed-result persistence uses a separate provider-neutral port in `packages/daily`; no current Supabase result adapter/table exists yet. The result port deliberately has different semantics from the editorial repository: one atomic first-write-wins insert keyed by `submissionId`, with no overwrite/update path.
+Completed-result persistence uses its own provider-neutral port in `packages/daily` and server-only adapter in `apps/web/app/supabaseDailyCompletedResultRepository.ts`. It deliberately has different semantics from the editorial repository: one atomic first-write-wins insert keyed by `submissionId`, with no overwrite/update path. Provider rows cross an explicit codec before they re-enter portable logic. The adapter attempts an insert first; only PostgreSQL unique violation `23505` causes a read of the stored winner.
+
+`public.daily_completed_results` has RLS enabled, no browser policy, all privileges revoked from `public`, `anon`, and `authenticated`, and only `select`/`insert` granted to `service_role`. The table is append-only through the current repository surface; there is no update/delete/upsert method.
 
 ## Anonymous gameplay state
 
@@ -81,6 +84,8 @@ Current browser state includes:
 
 New games use `points-v3`: each at-bat starts at 7 points, each revealed hint or wrong guess deducts 1, and a third wrong guess or Give Up awards 0; nine at-bats have a 63-point maximum. Compatible `points-v2` saves retain `4/3/2/1/0.5/0` and a 36-point maximum; `points-v1` saves and signed tokens retain `5/4/3/2/1/0` and a 45-point maximum. Compatible pre-ruleset saves and signed tokens normalize to `legacy-inning-v1` so an already-started game is not silently changed from three-out completion to all-scheduled-at-bats completion.
 
+Completed-result retry state is intentionally separate from the gameplay-save schema. A mode/date/puzzle-scoped browser marker stores only the stable generated `submissionId`, puzzle/ruleset identity, schema version, and transport state (`pending`, `submitted`, `conflict`, or `rejected`). It is persisted before the first result POST so refresh/network retries reuse one ID. Reset removes the marker with that game's local save. `points-v2`, `points-v1`, and `legacy-inning-v1` compatibility saves never create this marker or submit reconstructed facts.
+
 No Redis, replay cache, durable anonymous server session, or database write per hint/guess is part of the accepted launch model.
 
 ## Beta versus permanent Daily identity
@@ -95,7 +100,7 @@ Daily Nine and Classic Inning are distinct games that currently share a lineup. 
 
 ## Browser-local scorecard answers
 
-Schema 3 accepts an optional `scorecardAnswers` map of pitch number to terminal canonical display name alongside the game state. Missing/malformed values normalize to an empty map; only resolved/pending-terminal slots are retained. Names are not part of shared raw facts, share results, tokens, or future aggregate submissions. Existing saves remain readable with an unavailable-answer placeholder. Reset removes the map with its saved session.
+Schema 3 accepts an optional `scorecardAnswers` map of pitch number to terminal canonical display name alongside the game state. Missing/malformed values normalize to an empty map; only resolved/pending-terminal slots are retained. Names are not part of shared raw facts, share results, tokens, or aggregate submissions. Existing saves remain readable with an unavailable-answer placeholder. Reset removes the map with its saved session.
 
 ## Future browser-local archive history
 
@@ -152,7 +157,7 @@ A puzzle stores its exact final nine even when a recipe generated the proposal.
 
 ## Completed-game result contract and persistence boundary
 
-Aggregate comparison will add at most one compact idempotent submission per completed game.
+Aggregate comparison uses at most one compact idempotent submission per completed game.
 
 The implemented schema-1 `DailyCompletedResultSubmission` preserves:
 
@@ -167,7 +172,7 @@ The implemented schema-1 `DailyCompletedResultSubmission` preserves:
 
 Exact transport fields are `schemaVersion`, `submissionId`, `puzzleId`, `puzzleDate`, `puzzleNumber`, `rulesetVersion`, and `completedAtBats`. Only `points-v3` and `classic-inning-v1` are accepted initially. The ruleset identifies the game independently of the puzzle ID; neither game requires the other game or its lineup to exist.
 
-`DailyCompletedResult` adds the engine-derived, ruleset-specific `summary`. Daily Nine has points/maximum, completed/total at-bats, completion, and strikeouts. Classic has runs/hits/outs/strikeouts, completion, and completed/total at-bats. Client totals and unknown fields are discarded, not persisted as authority. No completion/receipt timestamp is created by the engine; server receipt metadata belongs to the later provider boundary.
+`DailyCompletedResult` adds the engine-derived, ruleset-specific `summary`. Daily Nine has points/maximum, completed/total at-bats, completion, and strikeouts. Classic has runs/hits/outs/strikeouts, completion, and completed/total at-bats. Client totals and unknown fields are discarded, not persisted as authority. No completion timestamp is created by the engine; `created_at` is provider-owned server receipt metadata.
 
 `validateDailyCompletedResult` owns portable validation/summary derivation; its requirements and consistency-only threat boundary are in `docs/spec/engine.md`. The repository/service consumes only this normalized validated/derived record; it does not re-run scoring, completion, or puzzle validation.
 
@@ -182,11 +187,23 @@ Exact transport fields are `schemaVersion`, `submissionId`, `puzzleId`, `puzzleD
 - same ID plus the same normalized result returns the existing result as an idempotent retry;
 - same ID plus any different normalized result returns `idempotency_conflict` and leaves the stored record unchanged.
 
-The repository contract is intentionally one atomic operation rather than `get` followed by `save`, so a later provider can make concurrent retries race-safe. The service retains the full result/raw facts rather than reducing persistence input to display totals. Exact implementation scope: `tasks/plans/completed-result-repository.md`.
+The repository contract is intentionally one atomic operation rather than `get` followed by `save`, so concurrent retries are race-safe. The service retains the full result/raw facts rather than reducing persistence input to display totals. Exact 4B scope: `tasks/plans/completed-result-repository.md`.
 
-No relational current-results table, Supabase codec/adapter, completed-game submission API, or stable browser submission-ID persistence exists yet. Those are the separate 4C provider/API concern. The browser records the native raw facts needed to form a future submission, but is not yet wired to this contract. Legacy facts reconstructed from old local pitch lines are compatibility display data and must not be submitted without an explicit migration rule. There are no per-action writes.
+Step 4C connects that portable boundary to the current provider and browser:
 
-Comparison populations are always scoped to stable puzzle identity plus exact ruleset/game identity. Daily Nine and Classic never share an aggregate population. `points-v1`, `points-v2`, and `points-v3` results also remain separate populations. Raw facts are retained so aggregates can be recalculated as presentation evolves.
+- `public.daily_completed_results` stores one immutable row per `submission_id` with schema version, stable puzzle identity/date/number, exact ruleset, ordered normalized `completed_at_bats` JSONB, engine-derived `summary` JSONB, and provider receipt `created_at`;
+- the population index is `(puzzle_date, ruleset_version, puzzle_id)` for later same-puzzle/same-ruleset reads;
+- the server-only Supabase codec validates every persisted row before it reaches portable code;
+- the adapter performs `INSERT` first and reads the existing winner only after PostgreSQL reports unique violation `23505`; it has no update/upsert path;
+- `POST /api/daily/results` loads the authoritative puzzle, delegates validation to engine, then delegates idempotency/persistence to the 4B service;
+- the browser persists a stable submission marker before the first POST and retries the same ID after transient/network/5xx failure;
+- first insert returns `created`, an exact retry returns `existing`, a same-ID/different-result attempt returns `idempotency_conflict`, and malformed/unsupported/incomplete submissions are not stored;
+- legacy facts reconstructed from old local pitch lines remain compatibility display data and are never submitted without a separate approved migration rule;
+- there are still no per-action writes.
+
+Exact 4C scope: `tasks/plans/completed-result-provider.md`. Aggregate reads/comparison UI remain separate 4D work.
+
+Comparison populations are always scoped to stable puzzle identity plus exact ruleset/game identity. Daily Nine and Classic never share an aggregate population. `points-v1`, `points-v2`, and `points-v3` results also remain separate populations if historical policies are ever separately supported. Raw facts are retained so aggregates can be recalculated as presentation evolves.
 
 Daily Nine comparison may derive per-at-bat points, whole-game score, averages, distributions, and later percentiles. Classic comparison derives baseball-native measures such as runs, hits, reached-at-bat counts/rates, and per-at-bat outcome distributions; no overall Classic percentile formula is approved yet.
 
