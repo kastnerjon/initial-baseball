@@ -1,7 +1,7 @@
 # Lineup Content System
 
 Status: Approved product and architecture direction; not yet implemented  
-Last updated: 2026-07-31
+Last updated: 2026-09-17
 
 ## Purpose
 
@@ -57,6 +57,18 @@ A gameplay profile may include:
 These profiles should be editable through a provider-neutral administration boundary. Supabase may be the first persistence adapter, but React and database rows do not own the meaning of the fields.
 
 A factual data refresh must not silently overwrite an editorial judgment, and an editorial judgment must not mutate source baseball facts.
+
+## Automatic generation versus manual curation
+
+Automatic Standard Daily generation and authorized manual curation intentionally use different eligibility boundaries.
+
+- Automatic generation remains restricted to the ranked `dailyEligiblePlayers` pool and the active recognizability/recipe constraints.
+- Authorized manual curation may select any canonical, reveal-ready player represented by the existing Daily-compatible player data, even when that player is outside `dailyEligiblePlayers`.
+- A manually selected player outside the automatic pool carries no automatic recognizability rank and must surface an explicit editorial warning such as `outside-automatic-daily-pool`.
+- Manual inclusion does not promote that player into `dailyEligiblePlayers`, alter future generated lineups, or mutate canonical baseball facts.
+- Canonical uniqueness, reveal readiness, repeat warnings, future-date rules, lifecycle/audit behavior, and published-puzzle immutability still apply.
+
+This distinction keeps the automatic generator conservative while preserving editorial judgment for recognizable players whose career totals narrowly miss heuristic cutoffs or whose inclusion is otherwise intentional.
 
 ## Lineup recipes
 
@@ -140,7 +152,7 @@ The authorized editor should be able to:
 3. generate candidates;
 4. see why each player qualified;
 5. see difficulty, recognizability, last use, and data readiness;
-6. replace any editable player;
+6. replace any editable player, including a canonical reveal-ready player outside the automatic pool with an explicit warning;
 7. rerun validation;
 8. schedule the exact final nine.
 
@@ -160,7 +172,8 @@ Validation should cover:
 - required hint/reveal data;
 - pool insufficiency;
 - optional diversity constraints;
-- explainable generated/manual source.
+- explainable generated/manual source;
+- an explicit advisory warning when a manual selection is outside the automatic Daily pool.
 
 The admin UI renders the validation result and dispatches actions.
 
