@@ -19,6 +19,10 @@ import {
   type PendingAtBatAdvance,
   resolveDailyTerminalAtBat,
 } from '../dailyAtBatResolution';
+import {
+  clearCompletedDailyResultSubmission,
+  submitCompletedDailyResultIfNeeded,
+} from '../dailyCompletedResultClient';
 import { revealNextHintFromBundle } from '../dailyHintBundle';
 import {
   clearSavedDailyGame,
@@ -200,6 +204,23 @@ export function DailyInningGame({
     puzzle,
     rulesetVersion,
     scorecardAnswers,
+  ]);
+
+  useEffect(() => {
+    if (!hasLoadedSavedState || gameState.status !== 'completed') {
+      return;
+    }
+    void submitCompletedDailyResultIfNeeded({
+      puzzle,
+      rulesetVersion: gameState.rulesetVersion,
+      completedAtBats: gameState.completedAtBats,
+    });
+  }, [
+    gameState.completedAtBats,
+    gameState.rulesetVersion,
+    gameState.status,
+    hasLoadedSavedState,
+    puzzle,
   ]);
 
   if (shareResult !== null) {
@@ -387,6 +408,7 @@ export function DailyInningGame({
   }
 
   function handleResetToday(): void {
+    clearCompletedDailyResultSubmission({ puzzle, rulesetVersion: gameState.rulesetVersion });
     clearSavedDailyGame(puzzle, getDailyModeStorage(rulesetVersion));
     resetToInitialState();
     setPendingResolutionAction(null);
