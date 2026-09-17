@@ -1,4 +1,8 @@
-import type { DailyCompletedResult } from '@initial-baseball/shared';
+import {
+  CLASSIC_DAILY_RULESET_VERSION,
+  POINTS_V3_DAILY_RULESET_VERSION,
+  type DailyCompletedResult,
+} from '@initial-baseball/shared';
 
 export type DailyCompletedResultRepositoryInsertResult =
   | { status: 'inserted'; result: DailyCompletedResult }
@@ -91,7 +95,8 @@ function areDailyCompletedResultsEqual(
     }
   }
 
-  if (left.rulesetVersion === 'points-v3' && right.rulesetVersion === 'points-v3') {
+  if (left.rulesetVersion === POINTS_V3_DAILY_RULESET_VERSION
+    && right.rulesetVersion === POINTS_V3_DAILY_RULESET_VERSION) {
     return left.summary.points === right.summary.points
       && left.summary.maximumPoints === right.summary.maximumPoints
       && left.summary.atBatsCompleted === right.summary.atBatsCompleted
@@ -100,8 +105,8 @@ function areDailyCompletedResultsEqual(
       && left.summary.strikeouts === right.summary.strikeouts;
   }
 
-  if (left.rulesetVersion === 'classic-inning-v1'
-    && right.rulesetVersion === 'classic-inning-v1') {
+  if (left.rulesetVersion === CLASSIC_DAILY_RULESET_VERSION
+    && right.rulesetVersion === CLASSIC_DAILY_RULESET_VERSION) {
     return left.summary.runs === right.summary.runs
       && left.summary.hits === right.summary.hits
       && left.summary.outs === right.summary.outs
