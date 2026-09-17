@@ -125,6 +125,8 @@ versioned factual sources
 
 Facts and editorial judgments remain separate. Standard Daily is one recipe, not the only selector. A finalized puzzle stores exact ordered canonical IDs; later profile/recipe changes do not alter it.
 
+Automatic generation and authorized manual curation intentionally use different candidate boundaries. Automatic generation continues to consume only ranked `dailyEligiblePlayers`; editorial search/replacement may additionally expose canonical, reveal-ready players from the broader Daily-compatible player universe. Editorial-only candidates carry `recognizabilityRank: null`, so portable generation cannot select them, while manual validation surfaces `outside-automatic-daily-pool`. This is an editorial override capability, not a baseball-data promotion: it does not mutate facts, alter `dailyEligiblePlayers`, or change future generated lineups. Exact-nine uniqueness, repeat/reveal warnings, future-date rules, lifecycle audit, and published-puzzle immutability remain unchanged.
+
 ## Runtime and answer protection
 
 - Public puzzle metadata/initials and the active batter’s hints may reach the browser.
