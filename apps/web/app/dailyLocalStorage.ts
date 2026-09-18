@@ -43,6 +43,11 @@ type PersistedSavedDailyGame = Omit<SavedDailyGame, 'schemaVersion' | 'progressi
   progressionToken?: unknown;
 };
 
+export type LoadedSavedDailyGame = {
+  savedGame: SavedDailyGame;
+  completedAtBatFactsAreNative: boolean;
+};
+
 export type SaveDailyGameInput = {
   currentPitchIndex: number;
   gameState: DailyGameState;
@@ -61,22 +66,30 @@ export function loadSavedDailyGame(
   initialProgressionToken: string,
   storage: DailyStorage | null = getBrowserDailyStorage(),
 ): SavedDailyGame | null {
-  if (storage === null) {
-    return null;
-  }
+  return loadSavedDailyGameWithProvenance(puzzle, initialProgressionToken, storage)?.savedGame ?? null;
+}
+
+export function loadSavedDailyGameWithProvenance(
+  puzzle: DailyPublicPuzzle | DailyPuzzle,
+  initialProgressionToken: string,
+  storage: DailyStorage | null = getBrowserDailyStorage(),
+): LoadedSavedDailyGame | null {
+  if (storage === null) return null;
 
   const publicPuzzle = toPublicPuzzle(puzzle);
   const savedValue = safelyReadStorage(storage, getDailyStorageKey(publicPuzzle.puzzleDate));
-  if (savedValue === null) {
-    return null;
-  }
+  if (savedValue === null) return null;
 
   const parsedValue = parseSavedValue(savedValue);
-  if (!isSavedDailyGameForPuzzle(parsedValue, publicPuzzle)) {
-    return null;
-  }
+  if (!isSavedDailyGameForPuzzle(parsedValue, publicPuzzle)) return null;
 
-  return normalizeSavedDailyGame(parsedValue, publicPuzzle, initialProgressionToken);
+  const savedGame = normalizeSavedDailyGame(parsedValue, publicPuzzle, initialProgressionToken);
+  if (savedGame === null) return null;
+
+  return {
+    savedGame,
+    completedAtBatFactsAreNative: hasNativeCompletedAtBatFacts(parsedValue),
+  };
 }
 
 export function saveDailyGame(
@@ -203,6 +216,27 @@ function isSavedDailyGameForPuzzle(
     && typeof atBatState.revealCount === 'number'
     && typeof atBatState.strikeCount === 'number'
   );
+}
+
+function hasNativeCompletedAtBatFacts(savedGame: PersistedSavedDailyGame): boolean {
+  if (savedGame.schemaVersion !== DAILY_STORAGE_SCHEMA_VERSION) return false;
+  if (!isNativeCompletedAtBatList(
+    savedGame.gameState.completedAtBats,
+    savedGame.gameState.completedPitchLines,
+  )) return false;
+
+  return savedGame.pendingAdvance === null
+    || isNativeCompletedAtBatList(
+      savedGame.pendingAdvance.completedAtBats,
+      savedGame.pendingAdvance.pitchLines,
+    );
+}
+
+function isNativeCompletedAtBatList(value: unknown, pitchLines: unknown): boolean {
+  return Array.isArray(value)
+    && Array.isArray(pitchLines)
+    && value.length === pitchLines.length
+    && value.every(isDailyCompletedAtBat);
 }
 
 function normalizeSavedDailyGame(
