@@ -61,6 +61,7 @@ export type DailyResolutionResponse = {
 };
 
 export type DailyRuntimeService = {
+  getPublicPuzzle: (date: string) => Promise<DailyPublicPuzzle>;
   getBootstrap: (
     date: string,
     rulesetVersion?: DailyBootstrapRulesetVersion,
