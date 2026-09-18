@@ -1,6 +1,6 @@
 # Daily Nine resolved-at-bat comparison
 
-Status: Approved direction; implementation pending  
+Status: Approved direction; portable contracts/service implemented in scoped PRs, hosted collection pending
 Date: 2026-09-18
 
 ## Scope contract for this PR
