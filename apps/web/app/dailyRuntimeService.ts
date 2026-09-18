@@ -126,6 +126,10 @@ export function createDailyRuntimeService(input: CreateDailyRuntimeServiceInput)
   }
 
   return {
+    async getPublicPuzzle(date) {
+      return toPublicPuzzle(await createCanonicalPuzzle(date));
+    },
+
     async getBootstrap(
       date,
       rulesetVersion: DailyBootstrapRulesetVersion = CURRENT_DAILY_RULESET_VERSION,
