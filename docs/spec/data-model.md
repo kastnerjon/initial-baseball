@@ -233,3 +233,11 @@ The original migration's database-player, original Daily, attempt/result, social
 `DailyAtBatResultSubmission` schema 1 carries attemptId, exact puzzle ID/date/number, points-v3 and one native `atBat`. `validateDailyAtBatResult` binds that observation to caller-supplied authoritative puzzle/ruleset context, validates terminal facts through the same engine normalizer used for completed games, and derives `awardedPoints` using `getDailyAtBatPoints`. It accepts any isolated slot 1–9 without requiring earlier delivery or game completion. Classic and compatibility rulesets are not accepted by this new contract; their existing completed-result behavior is unchanged.
 
 Normalization copies only approved fields and discards client scores, answers and timestamps. This validates internal consistency, not honest play, unique people or coherent multi-tab attempts. Idempotency and browser identity enforcement belong to subsequent layers. No repository, table, endpoint or collection activation is added here. Scope: `tasks/plans/resolved-at-bat-contract.md`; the replacement comparison roadmap is PR #175.
+
+## Portable resolved-AB repository/service
+
+`DailyAtBatResultRepository.insertIfAbsent` and `createDailyAtBatResultService` in `packages/daily` consume already engine-normalized AB results. The provider must atomically insert or return the first stored record, never overwrite. The unique key is `(attemptId, puzzleId, rulesetVersion, pitchNumber)`; stable puzzle ID includes version. Date, number and schema version are compared payload metadata, not additional uniqueness dimensions that could permit double counting.
+
+Same key and all equal normalized fields return `existing`; changed native facts, derived points or metadata return `idempotency_conflict` containing only the incoming key. A provider returning a different key or claiming insertion of a different result throws a contract error. Provider failures propagate for the future transport's retry mapping. Different slots and populations are independent; neither AB order nor completion records are required. This is not a multi-tab run-coherence guarantee.
+
+Scope: `tasks/plans/resolved-at-bat-repository.md`. No Supabase provider, table, API or browser collection is activated by this portable layer. Receipt metadata and comparison-read status are not immutable AB facts.
