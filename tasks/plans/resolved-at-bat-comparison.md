@@ -1,6 +1,6 @@
 # Daily Nine resolved-at-bat comparison
 
-Status: Approved direction; portable contracts/service implemented in scoped PRs, hosted collection pending
+Status: Approved direction; portable contracts/service/provider implemented, hosted collection pending
 Date: 2026-09-18
 
 ## Scope contract for this PR
@@ -74,9 +74,9 @@ Provide a read-only comparison path for acknowledged results, refreshes and non-
 
 ## Persistence and scale gates
 
-One proposed new immutable table: `daily_at_bat_results`. Store attempt ID, stable puzzle ID/date/number, ruleset, slot, initials, outcome, hints, wrong guesses, resolution, engine-derived awarded points, provider receipt time and explicit schema/version metadata as needed by the contract. No answer names, search terms, wrong-answer identities or IP identity. Keep `daily_completed_results` for whole-game results.
+The implemented immutable table is `daily_at_bat_results`. It stores attempt ID, stable puzzle ID/date/number, ruleset, slot, initials, outcome, hints, wrong guesses, resolution, engine-derived awarded points, provider receipt time and explicit schema/version metadata. It stores no answer names, search terms, wrong-answer identities or IP identity. Keep `daily_completed_results` for whole-game results.
 
-Use unique observation identity plus a population/slot index. Server-only access, RLS, least-privilege SELECT/INSERT; no browser row access and no update/upsert overwrite. Exact migration and query design belong to the provider PR. No rollup tables, triggers, realtime, cron, mutable session table or retention deletion in v1.
+The provider uses composite unique observation identity plus a separate population/slot index. Access is server-only with RLS and least-privilege SELECT/INSERT; there is no browser row access or update/upsert overwrite. Exact design and hosted verification: `tasks/plans/resolved-at-bat-supabase-provider.md`. No rollup tables, triggers, realtime, cron, mutable session table or retention deletion in v1.
 
 Initial live read returns count and point sum/average only. Whole-game read uses bounded 0–63 score buckets; future AB distributions/rates can use retained native facts when a consumer needs them. No raw-population download into Node.
 
@@ -86,10 +86,10 @@ If scans miss the measured budget, first evaluate a brief bounded shared cache w
 
 ## Implementation sequence (one owning concern per PR)
 
-1. This documentation PR: settle product requirements, preserve #174 as draft, reconcile handoff.
-2. Portable resolved-AB contract/engine validation: versioned facts, puzzle binding, existing scoring reuse and malformed/compatibility tests. No persistence or UI.
-3. Portable Daily repository/service: atomic insert-if-absent, semantic same/conflicting payload behavior. No provider or browser.
-4. Supabase adapter/migration: normalized row codec, uniqueness/index, server-only privileges; validate on isolated data before hosted activation.
+1. Complete: documentation PR settled product requirements, preserved #174 as draft and reconciled handoff.
+2. Complete: portable resolved-AB contract/engine validation with versioned facts, puzzle binding, existing scoring reuse and malformed/compatibility tests.
+3. Complete: portable Daily repository/service with atomic insert-if-absent and semantic same/conflicting payload behavior.
+4. Complete: Supabase adapter/migration with normalized row codec, uniqueness/index, server-only privileges and isolated hosted verification; collection remains inactive.
 5. Web AB submission API: authoritative puzzle lookup and existing service composition, deliberate error mapping. No browser activation.
 6. Browser attempt/delivery lifecycle: settle cross-tab gate, reuse completion identity safely, durable immutable outbox, reset/legacy-save behavior and integration tests. Keep comparison UI out.
 7. Comparison read contract/provider/API: separate populations, null empty averages, strict-lower score calculation, split acknowledgment/read status, freshness, isolated benchmarks and instrumentation. Further split if provider/runtime scope exceeds AGENTS.md.
