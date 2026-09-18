@@ -2,39 +2,30 @@
 
 import { useEffect } from 'react';
 import type { DailyGameState } from '@initial-baseball/shared';
-import {
-  clearCompletedDailyResultSubmission,
-  submitCompletedDailyResultIfNeeded,
-} from './dailyCompletedResultClient';
+import { submitCompletedDailyResultIfNeeded } from './dailyCompletedResultClient';
 
 export function useCompletedDailyResultSubmission(
   hasLoadedSavedState: boolean,
-  completedAtBatFactsAreNative: boolean,
+  allowCreate: boolean,
   gameState: DailyGameState,
-): () => void {
+): void {
   useEffect(() => {
-    if (!hasLoadedSavedState
-      || !completedAtBatFactsAreNative
-      || gameState.status !== 'completed') {
-      return;
-    }
+    if (!hasLoadedSavedState || gameState.status !== 'completed') return;
 
-    void submitCompletedDailyResultIfNeeded({
-      puzzle: gameState.puzzle,
-      rulesetVersion: gameState.rulesetVersion,
-      completedAtBats: gameState.completedAtBats,
-    });
+    void submitCompletedDailyResultIfNeeded(
+      {
+        puzzle: gameState.puzzle,
+        rulesetVersion: gameState.rulesetVersion,
+        completedAtBats: gameState.completedAtBats,
+      },
+      { allowCreate },
+    );
   }, [
-    completedAtBatFactsAreNative,
+    allowCreate,
     gameState.completedAtBats,
     gameState.puzzle,
     gameState.rulesetVersion,
     gameState.status,
     hasLoadedSavedState,
   ]);
-
-  return () => clearCompletedDailyResultSubmission({
-    puzzle: gameState.puzzle,
-    rulesetVersion: gameState.rulesetVersion,
-  });
 }
