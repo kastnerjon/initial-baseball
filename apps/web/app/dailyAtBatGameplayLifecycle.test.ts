@@ -106,6 +106,19 @@ describe('Daily at-bat gameplay lifecycle', () => {
     });
   });
 
+  it('fails contribution closed after terminal delivery failure', () => {
+    const lifecycle = makeLifecycle(memoryStorage());
+    const fresh = lifecycle.prepareOwner({
+      loaded: null, hadPersistedGameplayValue: false, claimedGeneration: null, totalAtBats: 6,
+    });
+    expect(lifecycle.retireAfterDeliveryFailure(fresh)).toEqual({
+      status: 'inactive', reason: 'delivery_failure', allowCompletedResultCreate: false,
+    });
+    expect(lifecycle.journal.read(IDENTITY)).toMatchObject({
+      kind: 'valid', journal: { contributionState: 'retired' },
+    });
+  });
+
   it('fails contribution closed after a gameplay-save failure', () => {
     const lifecycle = makeLifecycle(memoryStorage());
     const fresh = lifecycle.prepareOwner({

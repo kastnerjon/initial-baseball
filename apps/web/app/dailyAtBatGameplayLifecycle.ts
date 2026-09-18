@@ -19,7 +19,8 @@ export type DailyAtBatContributionInactiveReason =
   | 'retired'
   | 'durable_mismatch'
   | 'journal_unavailable'
-  | 'save_failure';
+  | 'save_failure'
+  | 'delivery_failure';
 
 export type DailyAtBatContributionSession =
   | {
@@ -129,6 +130,14 @@ export function createDailyAtBatGameplayLifecycle({
       if (session.status !== 'active') return session;
       journal.retire(identity, session.generation);
       return inactive('save_failure', false);
+    },
+
+    retireAfterDeliveryFailure(
+      session: DailyAtBatContributionSession,
+    ): DailyAtBatContributionSession {
+      if (session.status !== 'active') return session;
+      journal.retire(identity, session.generation);
+      return inactive('delivery_failure', false);
     },
   };
 }

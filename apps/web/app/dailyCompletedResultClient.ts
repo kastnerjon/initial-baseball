@@ -59,7 +59,13 @@ export function createDailyCompletedResultClient({
   return {
     async submitIfNeeded(
       input: CompletedDailyResultSubmissionInput,
-      { allowCreate }: { allowCreate: boolean },
+      {
+        allowCreate,
+        creationSubmissionId = null,
+      }: {
+        allowCreate: boolean;
+        creationSubmissionId?: string | null;
+      },
     ): Promise<SubmissionState> {
       if (!isSupportedRuleset(input.rulesetVersion)) return 'unsupported';
       if (storage === null) return 'unavailable';
@@ -77,7 +83,7 @@ export function createDailyCompletedResultClient({
       let record: SubmissionRecord;
       if (existing.kind === 'missing') {
         if (!allowCreate) return 'not_started';
-        const submissionId = createSubmissionId();
+        const submissionId = creationSubmissionId ?? createSubmissionId();
         if (!isSubmissionId(submissionId)) return 'unavailable';
         record = {
           version: RECORD_VERSION,
@@ -112,7 +118,10 @@ export function createDailyCompletedResultClient({
 
 export function submitCompletedDailyResultIfNeeded(
   input: CompletedDailyResultSubmissionInput,
-  options: { allowCreate: boolean },
+  options: {
+    allowCreate: boolean;
+    creationSubmissionId?: string | null;
+  },
 ): Promise<SubmissionState> {
   return browserClient().submitIfNeeded(input, options);
 }

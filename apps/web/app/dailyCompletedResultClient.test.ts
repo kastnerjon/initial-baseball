@@ -44,6 +44,22 @@ describe('completed-result browser client', () => {
     });
   });
 
+  it('uses a preferred fresh attempt ID only when creating a new record', async () => {
+    const storage = memoryStorage();
+    const request = vi.fn().mockResolvedValue({ ok: true, status: 201 });
+    const createId = vi.fn(() => 'wrong-generated-id');
+    const client = makeClient(storage, request, createId);
+
+    await expect(client.submitIfNeeded(pointsInput(), {
+      allowCreate: true,
+      creationSubmissionId: 'attempt-one',
+    })).resolves.toBe('submitted');
+
+    expect(createId).not.toHaveBeenCalled();
+    expect(request.mock.calls[0]?.[0].submissionId).toBe('attempt-one');
+    expect(storage.record().submission.submissionId).toBe('attempt-one');
+  });
+
   it('deduplicates concurrent delivery in one tab', async () => {
     const storage = memoryStorage();
     const pending = deferred<{ ok: boolean; status: number }>();
@@ -76,8 +92,10 @@ describe('completed-result browser client', () => {
       index === 0 ? { ...atBat, hintsRevealed: 1, outcome: '3B' } : atBat
     ));
 
-    await expect(retry.submitIfNeeded(changedInput, { allowCreate: false }))
-      .resolves.toBe('submitted');
+    await expect(retry.submitIfNeeded(changedInput, {
+      allowCreate: false,
+      creationSubmissionId: 'different-attempt',
+    })).resolves.toBe('submitted');
 
     expect(createId).not.toHaveBeenCalled();
     expect(retryRequest.mock.calls[0]?.[0].submissionId).toBe('stable-id');
