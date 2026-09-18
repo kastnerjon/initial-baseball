@@ -5,7 +5,7 @@ Last updated: 2026-09-17
 
 Completed history belongs in PRs, canonical docs, or `tasks/lessons.md`. Durable resumption context belongs in `docs/START-HERE.md`.
 
-Current order: the routine conversational future-lineup path is operationally complete; the completed-result provider and server submission API are implemented on 4A/4B. The next bounded concern is browser stable-ID/retry wiring; draft #161 must not be merged unchanged. Remaining authenticated-editor slot QA, timed public editorial rollover/fallback checks, and physical iPhone/iPad QA stay open but do not block the results pipeline. Daily Nine and Classic remain distinct beta games; 4A/4B are merged. Supabase contains an empty current-results table, but public result submission is still not live until the API/browser steps land. Comparison and permanent archive/local history remain subsequent concerns. Current beta numbering is disposable; broad launch later restarts at Daily #1 after the owner chooses the surviving game/final rules.
+Current order: the routine conversational future-lineup path is operationally complete; completed-result 4A validation, 4B idempotency, the hardened Supabase provider, and the server POST API are merged. The current bounded concern is browser completion-only activation with immutable persisted payloads, refresh-safe retry, native-fact provenance gating, and replay-safe local reset semantics. Draft #161 must not be merged unchanged. Remaining authenticated-editor slot QA, timed public editorial rollover/fallback checks, and physical iPhone/iPad QA stay open but do not block the results pipeline. Production `daily_completed_results` was empty immediately before browser activation. Comparison and permanent archive/local history remain subsequent concerns. Current beta numbering is disposable; broad launch later restarts at Daily #1 after the owner chooses the surviving game/final rules.
 
 ## September 15–16 approved product work
 
@@ -127,7 +127,7 @@ Admin redesign is deferred. The user may supply a future date and nine ordered p
 - [x] Add the server-only Supabase row codec/adapter behind `DailyCompletedResultRepository.insertIfAbsent`.
 - [x] Preserve insert-first first-write-wins semantics: only a unique-key conflict reads the existing winner; no update/upsert path.
 - [x] Keep RLS enabled with no browser policies and harden `service_role` to direct `SELECT, INSERT` only via migration `20260918004822_harden_daily_completed_results_privileges`.
-- [ ] Pass focused/full CI, preview, advisor verification, merge, and exact production/source reconciliation.
+- [x] Pass focused/full CI, preview, advisor verification, merge, and exact production/source reconciliation.
 
 ### 4C-2. Completed-result submission API
 
@@ -135,15 +135,17 @@ Admin redesign is deferred. The user may supply a future date and nine ordered p
 - [x] Parse and reject malformed schema/date/ruleset/future routing before authoritative puzzle construction.
 - [x] Load the authoritative public puzzle through the existing Daily runtime without minting progression tokens/hint bundles and call engine `validateDailyCompletedResult`; never trust submitted totals.
 - [x] Store only the engine-normalized result through 4B/provider and map created/existing/conflict/invalid/provider-unavailable outcomes deliberately.
-- [ ] Pass focused/full CI, preview, merge, and exact production verification with no browser submission code in the diff.
+- [x] Pass focused/full CI, preview, merge, and exact production verification with no browser submission code in the diff.
 
-### 4C-3. Browser completion submission/retry — next bounded concern
+### 4C-3. Browser completion submission/retry — current bounded concern
 
-- [ ] Generate and persist one stable submission ID for a native completed game.
-- [ ] Submit only after genuine native completion for `points-v3` or `classic-inning-v1`; do not submit compatibility-reconstructed legacy facts.
-- [ ] Retry the same ID idempotently after transient failure/refresh without creating repeated in-flight requests.
-- [ ] Make reset/new-session handling race-safe so stale completion callbacks cannot resurrect or submit cleared state.
-- [ ] Keep submission bookkeeping separate from portable gameplay facts and existing save compatibility.
+- [x] Persist the exact immutable schema-1 submission payload, including one stable client-generated submission ID, before the first POST.
+- [x] Create new submissions only from genuine native `points-v3` / `classic-inning-v1` completion; never create from compatibility-reconstructed or pre-feature completed history.
+- [x] Retry the exact stored payload after network/408/425/429/5xx failure or refresh and deduplicate same-tab in-flight requests.
+- [x] Make async status writes ownership-safe by comparing the current stored submission ID before mutation.
+- [x] Keep result-delivery bookkeeping independent from gameplay save/reset state so replay cannot mint another browser aggregate contribution for the same puzzle/ruleset.
+- [x] Preserve Classic shorter faced-at-bat lists and reject unsupported compatibility rulesets client-side.
+- [ ] Pass final focused/full CI and preview, merge, verify exact production activation, and perform a controlled native completion/readback plus identical retry row-count check.
 
 ### 4D. Daily Nine comparison
 
