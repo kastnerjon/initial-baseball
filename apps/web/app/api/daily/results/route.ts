@@ -1,29 +1,28 @@
-import { NextResponse } from 'next/server';
-import {
-  completedResultPrivateJson,
-  mapCompletedResultRouteError,
-} from '../../../dailyCompletedResultHttp';
 import { submitDailyCompletedResult } from '../../../serverDailyCompletedResults';
+import {
+  mapCompletedResultRouteError,
+  privateCompletedResultJson,
+} from './response';
 
-export async function POST(request: Request): Promise<NextResponse> {
+export async function POST(request: Request) {
   let submission: unknown;
   try {
     submission = await request.json();
   } catch {
-    return completedResultPrivateJson({ error: 'invalid_submission' }, 400);
+    return privateCompletedResultJson({ error: 'invalid_submission' }, 400);
   }
 
   try {
     const result = await submitDailyCompletedResult(submission);
 
     if (result.ok) {
-      return completedResultPrivateJson(
+      return privateCompletedResultJson(
         { status: result.status },
         result.status === 'created' ? 201 : 200,
       );
     }
 
-    return completedResultPrivateJson(
+    return privateCompletedResultJson(
       { error: result.error },
       result.error === 'idempotency_conflict' ? 409 : 400,
     );
@@ -31,4 +30,3 @@ export async function POST(request: Request): Promise<NextResponse> {
     return mapCompletedResultRouteError(error);
   }
 }
-
