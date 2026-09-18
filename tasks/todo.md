@@ -1,11 +1,11 @@
 # Initial Baseball Current Work
 
 Status: Active ordered implementation plan  
-Last updated: 2026-09-17
+Last updated: 2026-09-18
 
 Completed history belongs in PRs, canonical docs, or `tasks/lessons.md`. Durable resumption context belongs in `docs/START-HERE.md`.
 
-Current order: the routine conversational future-lineup path is operationally complete; completed-result 4A validation, 4B idempotency, the hardened Supabase provider, POST API, browser delivery client, and native-completion activation are merged. PR #171 is READY in production on exact merge SHA `ae2fc428b2fad05685b068944acce66b9dddf536`. The current bounded concern is the live browser result-collection/idempotency proof; do not begin 4D comparison until it passes. Draft #161 must not be merged unchanged. Remaining authenticated-editor slot QA, timed public editorial rollover/fallback checks, and physical iPhone/iPad QA stay open but do not block this proof. Supabase still had zero completed-result rows immediately after #171 production deployment, as expected before a fresh native browser completion. Comparison and permanent archive/local history remain subsequent concerns. Current beta numbering is disposable; broad launch later restarts at Daily #1 after the owner chooses the surviving game/final rules.
+Current order: the routine conversational future-lineup path is operationally complete; completed-result 4A validation, 4B idempotency, the hardened Supabase provider, POST API, browser delivery client, native-completion activation, and live production idempotency proof are complete. A fresh real-browser Daily #144 / `points-v3` completion created exactly one result row, and replaying the exact same submission returned `existing` while row count stayed one. The next bounded concern is 4D Daily Nine comparison. Draft #161 must not be merged unchanged. Remaining authenticated-editor slot QA, timed public editorial rollover/fallback checks, and physical iPhone/iPad QA stay open but do not block the results pipeline. Permanent archive/local history remain subsequent concerns. Current beta numbering is disposable; broad launch later restarts at Daily #1 after the owner chooses the surviving game/final rules.
 
 ## September 15–16 approved product work
 
@@ -149,7 +149,7 @@ Admin redesign is deferred. The user may supply a future date and nine ordered p
 - [x] Pass final CI/preview and merge.
 - [x] Verify browser client + native activation together on exact PR #171 production deployment `dpl_DctrheRJbonPmcszrjAfPuJxvzhy` / merge SHA `ae2fc428b2fad05685b068944acce66b9dddf536`.
 
-### 4C-3b. Native completion activation — production live; proof pending
+### 4C-3b. Native completion activation — complete in production
 
 - [x] Expose hydration-only provenance that distinguishes explicit native completed-at-bat facts from compatibility reconstruction without changing the saved gameplay schema.
 - [x] Make creation eligibility explicit and unit-tested: untouched/native active saves may later create; compatibility-fact or already-completed restored saves may not.
@@ -158,9 +158,9 @@ Admin redesign is deferred. The user may supply a future date and nine ordered p
 - [x] Never retroactively create a submission from a pre-feature/compatibility-restored completed save.
 - [x] Keep result-delivery identity across Reset today/replay; gameplay reset clears only gameplay state, not the independent delivery record.
 - [x] Pass final focused/full CI, documentation-impact, exact-head Vercel preview, merge, and exact production deployment.
-- [ ] Verify live result collection end to end in production with one genuine native completion/readback and identical retry row-count check before comparison work.
+- [x] Verify live result collection end to end in production: real-browser Daily #144 / `points-v3` completion created one row; exact same-ID replay returned `existing`; row count remained one.
 
-### 4D. Daily Nine comparison
+### 4D. Daily Nine comparison — next bounded concern
 
 - [ ] Add same-Daily/same-ruleset completion count and average total points.
 - [ ] Add per-at-bat average points for each of the nine slots plus useful outcome/hint/K/Give Up rates.
