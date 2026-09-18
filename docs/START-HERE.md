@@ -256,8 +256,8 @@ The routine conversational future-lineup workflow itself is no longer a blocker 
 
 ## Exact next work order
 
-1. Replacement roadmap #175 is merged (`3d3a581`). Keep #174 draft; preserve earlier branch work. #176 passed its initial CI/preview and received a documentation-only reconciliation with main; fresh checks/merge must be verified.
-2. Portable resolved-AB contracts and repository/service are implemented in their scoped PRs. Verify their merge/check status, then implement the separate Supabase provider and API concerns in `tasks/plans/resolved-at-bat-comparison.md`.
+1. Replacement roadmap #175 and portable contract/validation PR #176 are merged. Keep #174 draft and preserve earlier branch work.
+2. Land the implemented portable resolved-AB repository/service, then implement the separate Supabase provider and API concerns in `tasks/plans/resolved-at-bat-comparison.md`.
 3. Resolve/test browser attempt ownership across tabs, reset, existing saves and delivery before activating collection. New identity must preserve old pending completed-result payloads.
 4. Implement and benchmark independent-population reads; then add asynchronous per-AB and final comparisons. Do not claim measured capacity or current hosting prices without checking.
 5. Continue outstanding physical-device/editorial QA; archive/local-history follows the explicit future launch epoch. Remove public Reset before launch.

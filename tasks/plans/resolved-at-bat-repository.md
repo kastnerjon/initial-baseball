@@ -1,6 +1,6 @@
 # Resolved-at-bat repository/service
 
-Status: Implementation scope  
+Status: Implementation scope
 Date: 2026-09-18
 
 Goal: persist an already engine-normalized AB through an atomic first-write-wins port, with identical retries accepted and conflicting facts rejected.
