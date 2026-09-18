@@ -75,4 +75,11 @@ export {
   type DailyEditorialHorizonSlot,
   type DailyEditorialPlayerReview,
   type DailyEditorialReplacementInput,
-} from './dailyEditorialHorizon';
+} from './dailyEditorialHorizon';export {
+  createDailyAtBatResultService,
+  type DailyAtBatResultKey,
+  type DailyAtBatResultRepository,
+  type DailyAtBatResultRepositoryInsertResult,
+  type DailyAtBatResultService,
+  type DailyAtBatResultStoreResult,
+} from './dailyAtBatResultService';
