@@ -64,9 +64,7 @@ export function DailyInningGame({
   initialProgressionToken,
   initialHintBundle,
 }: DailyInningGameProps): JSX.Element {
-  const [gameState, setGameState] = useState<DailyGameState>(
-    () => createInitialDailyGameState(puzzle, rulesetVersion),
-  );
+  const [gameState, setGameState] = useState<DailyGameState>(() => createInitialDailyGameState(puzzle, rulesetVersion));
   const [scorecardAnswers, setScorecardAnswers] = useState<DailyScorecardAnswers>({});
   const [currentPitchIndex, setCurrentPitchIndex] = useState(0);
   const [atBatState, setAtBatState] = useState<DailyAtBatUiState>(() => createInitialAtBatUiState());
@@ -77,19 +75,14 @@ export function DailyInningGame({
   const [bundlePending, setBundlePending] = useState(false);
   const [pendingResolutionAction, setPendingResolutionAction] = useState<PendingResolutionAction | null>(null);
   const [requestError, setRequestError] = useState<string | null>(null);
-  const completedResultSubmission = useCompletedDailyResultSubmission(
-    hasLoadedSavedState,
-    gameState,
-  );
+  const completedResultSubmission = useCompletedDailyResultSubmission(hasLoadedSavedState, gameState);
 
   const currentPitch = puzzle.pitches[currentPitchIndex] ?? null;
   const isPuzzleComplete = currentPitchIndex >= puzzle.pitches.length;
   const isGameComplete = gameState.points.completed || gameState.score.completed || isPuzzleComplete;
   const requestPending = pendingResolutionAction !== null;
-  const isRestoringActiveHints = hasLoadedSavedState
-    && hintBundle === null
-    && pendingAdvance === null
-    && !isGameComplete;
+  const isRestoringActiveHints = hasLoadedSavedState && hintBundle === null
+    && pendingAdvance === null && !isGameComplete;
 
   const shareResult = useMemo(
     () => (isGameComplete
@@ -143,9 +136,7 @@ export function DailyInningGame({
     setPendingAdvance(savedGame.pendingAdvance);
     setProgressionToken(savedGame.progressionToken);
     completedResultSubmission.restoreEligibility(
-      savedGame,
-      puzzle.pitches.length,
-      loaded!.completedAtBatFactsAreNative,
+      savedGame, puzzle.pitches.length, loaded!.completedAtBatFactsAreNative,
     );
     setHasLoadedSavedState(true);
     const canReuseInitialBundle = savedGame.currentPitchIndex === 0
