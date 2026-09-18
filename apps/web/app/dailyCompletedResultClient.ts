@@ -12,19 +12,22 @@ import {
 } from '@initial-baseball/shared';
 
 const STORAGE_PREFIX = 'initial-baseball:daily-result-submission:v1';
+const RECORD_VERSION = 1 as const;
 
-type StorageLike = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
-type Status = 'pending' | 'submitted' | 'conflict' | 'rejected';
-type Identity = {
-  puzzleId: string;
-  puzzleDate: string;
-  rulesetVersion: DailyCompletedResultRulesetVersion;
+type SubmissionStorage = Pick<Storage, 'getItem' | 'setItem'>;
+type TerminalStatus = 'submitted' | 'conflict' | 'rejected';
+type RecordStatus = 'pending' | TerminalStatus;
+
+type SubmissionRecord = {
+  version: typeof RECORD_VERSION;
+  status: RecordStatus;
+  submission: DailyCompletedResultSubmission;
 };
-type Marker = Identity & {
-  version: 1;
-  submissionId: string;
-  status: Status;
-};
+
+type StoredRecordRead =
+  | { kind: 'missing' }
+  | { kind: 'invalid' }
+  | { kind: 'valid'; record: SubmissionRecord };
 
 export type CompletedDailyResultSubmissionInput = {
   puzzle: Pick<DailyPublicPuzzle, 'id' | 'puzzleDate' | 'puzzleNumber'>;
@@ -33,127 +36,151 @@ export type CompletedDailyResultSubmissionInput = {
 };
 
 export type CompletedDailyResultSubmissionState =
-  | Status
+  | RecordStatus
+  | 'not_started'
   | 'unsupported'
   | 'unavailable';
 
-type RequestFn = (
+type SubmissionRequest = (
   submission: DailyCompletedResultSubmission,
 ) => Promise<{ ok: boolean; status: number }>;
+
+type CreateClientInput = {
+  storage: SubmissionStorage | null;
+  createSubmissionId: () => string | null;
+  submitRequest: SubmissionRequest;
+};
 
 export function createDailyCompletedResultClient({
   storage,
   createSubmissionId,
   submitRequest,
-}: {
-  storage: StorageLike | null;
-  createSubmissionId: () => string | null;
-  submitRequest: RequestFn;
-}) {
+}: CreateClientInput) {
   const inFlight = new Map<string, Promise<CompletedDailyResultSubmissionState>>();
 
-  function submitIfNeeded(
-    input: CompletedDailyResultSubmissionInput,
-  ): Promise<CompletedDailyResultSubmissionState> {
-    if (!isSupported(input.rulesetVersion)) return Promise.resolve('unsupported');
-    if (storage === null) return Promise.resolve('unavailable');
+  return {
+    async submitIfNeeded(
+      input: CompletedDailyResultSubmissionInput,
+      options: { allowCreate: boolean },
+    ): Promise<CompletedDailyResultSubmissionState> {
+      if (!isSubmittableRuleset(input.rulesetVersion)) return 'unsupported';
+      if (storage === null) return 'unavailable';
 
-    const identity: Identity = {
-      puzzleId: input.puzzle.id,
-      puzzleDate: input.puzzle.puzzleDate,
-      rulesetVersion: input.rulesetVersion,
-    };
-    const key = markerKey(identity);
-    let marker = readMarker(storage, key, identity);
+      const identity = {
+        puzzleId: input.puzzle.id,
+        puzzleDate: input.puzzle.puzzleDate,
+        puzzleNumber: input.puzzle.puzzleNumber,
+        rulesetVersion: input.rulesetVersion,
+      };
+      const key = storageKey(identity);
+      const existing = readRecord(storage, key, identity);
+      if (existing.kind === 'invalid') return 'unavailable';
 
-    if (marker === null) {
-      const submissionId = createSubmissionId();
-      if (!validId(submissionId)) return Promise.resolve('unavailable');
-      marker = { version: 1, submissionId, ...identity, status: 'pending' };
-      if (!writeMarker(storage, key, marker)) return Promise.resolve('unavailable');
-    }
-    if (marker.status !== 'pending') return Promise.resolve(marker.status);
+      let record: SubmissionRecord;
+      if (existing.kind === 'missing') {
+        if (!options.allowCreate) return 'not_started';
 
-    const active = inFlight.get(key);
-    if (active !== undefined) return active;
+        const submissionId = createSubmissionId();
+        if (submissionId === null || !isSubmissionId(submissionId)) return 'unavailable';
 
-    const request = submit(marker, key, identity, input);
-    inFlight.set(key, request);
-    void request.finally(() => {
-      if (inFlight.get(key) === request) inFlight.delete(key);
-    });
-    return request;
-  }
+        record = {
+          version: RECORD_VERSION,
+          status: 'pending',
+          submission: {
+            schemaVersion: DAILY_COMPLETED_RESULT_SCHEMA_VERSION,
+            submissionId,
+            puzzleId: identity.puzzleId,
+            puzzleDate: identity.puzzleDate,
+            puzzleNumber: identity.puzzleNumber,
+            rulesetVersion: identity.rulesetVersion,
+            completedAtBats: input.completedAtBats.map(atBat => ({ ...atBat })),
+          },
+        };
+        if (!writeRecord(storage, key, record)) return 'unavailable';
+      } else {
+        record = existing.record;
+      }
 
-  async function submit(
-    marker: Marker,
-    key: string,
-    identity: Identity,
-    input: CompletedDailyResultSubmissionInput,
-  ): Promise<CompletedDailyResultSubmissionState> {
-    const submission: DailyCompletedResultSubmission = {
-      schemaVersion: DAILY_COMPLETED_RESULT_SCHEMA_VERSION,
-      submissionId: marker.submissionId,
-      puzzleId: input.puzzle.id,
-      puzzleDate: input.puzzle.puzzleDate,
-      puzzleNumber: input.puzzle.puzzleNumber,
-      rulesetVersion: marker.rulesetVersion,
-      completedAtBats: input.completedAtBats.map(atBat => ({ ...atBat })),
-    };
+      if (record.status !== 'pending') return record.status;
 
-    let response: { ok: boolean; status: number };
-    try {
-      response = await submitRequest(submission);
-    } catch {
-      return currentState(storage!, key, identity, marker.submissionId);
-    }
+      const active = inFlight.get(key);
+      if (active !== undefined) return active;
 
-    const terminal: Exclude<Status, 'pending'> | null = response.ok
-      ? 'submitted'
-      : response.status === 409
-        ? 'conflict'
-        : response.status >= 400 && response.status < 500
-          ? 'rejected'
-          : null;
-    if (terminal === null) return currentState(storage!, key, identity, marker.submissionId);
-
-    const current = readMarker(storage!, key, identity);
-    if (current?.submissionId !== marker.submissionId || current.status !== 'pending') {
-      return current?.status ?? 'pending';
-    }
-    return writeMarker(storage!, key, { ...current, status: terminal })
-      ? terminal
-      : 'pending';
-  }
-
-  function clear(
-    input: Pick<CompletedDailyResultSubmissionInput, 'puzzle' | 'rulesetVersion'>,
-  ): void {
-    if (storage === null || !isSupported(input.rulesetVersion)) return;
-    const identity: Identity = {
-      puzzleId: input.puzzle.id,
-      puzzleDate: input.puzzle.puzzleDate,
-      rulesetVersion: input.rulesetVersion,
-    };
-    const key = markerKey(identity);
-    inFlight.delete(key);
-    try { storage.removeItem(key); } catch { /* never block reset */ }
-  }
-
-  return { submitIfNeeded, clear };
+      const request = deliverPendingRecord(storage, key, record, submitRequest)
+        .finally(() => {
+          if (inFlight.get(key) === request) inFlight.delete(key);
+        });
+      inFlight.set(key, request);
+      return request;
+    },
+  };
 }
 
-function currentState(
-  storage: StorageLike,
+export function submitCompletedDailyResultIfNeeded(
+  input: CompletedDailyResultSubmissionInput,
+  options: { allowCreate: boolean },
+): Promise<CompletedDailyResultSubmissionState> {
+  return getBrowserClient().submitIfNeeded(input, options);
+}
+
+async function deliverPendingRecord(
+  storage: SubmissionStorage,
   key: string,
-  identity: Identity,
-  submissionId: string,
-): CompletedDailyResultSubmissionState {
-  const current = readMarker(storage, key, identity);
-  return current?.submissionId === submissionId ? current.status : current?.status ?? 'pending';
+  record: SubmissionRecord,
+  submitRequest: SubmissionRequest,
+): Promise<CompletedDailyResultSubmissionState> {
+  let response: { ok: boolean; status: number };
+  try {
+    response = await submitRequest(cloneSubmission(record.submission));
+  } catch {
+    return 'pending';
+  }
+
+  const nextStatus = classifyResponse(response);
+  if (nextStatus === 'pending') return 'pending';
+
+  return persistTerminalStatusIfCurrent(
+    storage,
+    key,
+    record.submission.submissionId,
+    nextStatus,
+  );
 }
 
-function markerKey(identity: Identity): string {
+function classifyResponse(response: { ok: boolean; status: number }): RecordStatus {
+  if (response.ok) return 'submitted';
+  if (response.status === 409) return 'conflict';
+  if (response.status === 408
+    || response.status === 425
+    || response.status === 429
+    || response.status >= 500) {
+    return 'pending';
+  }
+  return response.status >= 400 && response.status < 500 ? 'rejected' : 'pending';
+}
+
+function persistTerminalStatusIfCurrent(
+  storage: SubmissionStorage,
+  key: string,
+  submissionId: string,
+  status: TerminalStatus,
+): CompletedDailyResultSubmissionState {
+  const current = readRecordByKey(storage, key);
+  if (current.kind !== 'valid') return 'pending';
+  if (current.record.submission.submissionId !== submissionId) {
+    return current.record.status;
+  }
+  if (current.record.status !== 'pending') return current.record.status;
+
+  const next: SubmissionRecord = { ...current.record, status };
+  return writeRecord(storage, key, next) ? status : 'pending';
+}
+
+function storageKey(identity: {
+  puzzleId: string;
+  puzzleDate: string;
+  rulesetVersion: DailyCompletedResultRulesetVersion;
+}): string {
   return [
     STORAGE_PREFIX,
     identity.rulesetVersion,
@@ -162,49 +189,103 @@ function markerKey(identity: Identity): string {
   ].join(':');
 }
 
-function readMarker(storage: StorageLike, key: string, identity: Identity): Marker | null {
-  try {
-    const raw = storage.getItem(key);
-    if (raw === null) return null;
-    const value = JSON.parse(raw) as unknown;
-    if (!isRecord(value)
-      || value.version !== 1
-      || !validId(value.submissionId)
-      || value.puzzleId !== identity.puzzleId
-      || value.puzzleDate !== identity.puzzleDate
-      || value.rulesetVersion !== identity.rulesetVersion
-      || !isStatus(value.status)) return null;
-    return value as Marker;
-  } catch {
-    return null;
+function readRecord(
+  storage: SubmissionStorage,
+  key: string,
+  identity: {
+    puzzleId: string;
+    puzzleDate: string;
+    puzzleNumber: number;
+    rulesetVersion: DailyCompletedResultRulesetVersion;
+  },
+): StoredRecordRead {
+  const parsed = readRecordByKey(storage, key);
+  if (parsed.kind !== 'valid') return parsed;
+
+  const submission = parsed.record.submission;
+  if (submission.puzzleId !== identity.puzzleId
+    || submission.puzzleDate !== identity.puzzleDate
+    || submission.puzzleNumber !== identity.puzzleNumber
+    || submission.rulesetVersion !== identity.rulesetVersion) {
+    return { kind: 'invalid' };
   }
+
+  return parsed;
 }
 
-function writeMarker(storage: StorageLike, key: string, marker: Marker): boolean {
+function readRecordByKey(storage: SubmissionStorage, key: string): StoredRecordRead {
+  let raw: string | null;
   try {
-    storage.setItem(key, JSON.stringify(marker));
+    raw = storage.getItem(key);
+  } catch {
+    return { kind: 'invalid' };
+  }
+  if (raw === null) return { kind: 'missing' };
+
+  let value: unknown;
+  try {
+    value = JSON.parse(raw);
+  } catch {
+    return { kind: 'invalid' };
+  }
+
+  if (!isRecord(value)
+    || value.version !== RECORD_VERSION
+    || !isRecordStatus(value.status)
+    || !isStoredSubmission(value.submission)) {
+    return { kind: 'invalid' };
+  }
+
+  return { kind: 'valid', record: value as SubmissionRecord };
+}
+
+function writeRecord(storage: SubmissionStorage, key: string, record: SubmissionRecord): boolean {
+  try {
+    storage.setItem(key, JSON.stringify(record));
     return true;
   } catch {
     return false;
   }
 }
 
-function isSupported(
-  rulesetVersion: DailyRulesetVersion,
+function isStoredSubmission(value: unknown): value is DailyCompletedResultSubmission {
+  if (!isRecord(value)
+    || value.schemaVersion !== DAILY_COMPLETED_RESULT_SCHEMA_VERSION
+    || !isSubmissionId(value.submissionId)
+    || typeof value.puzzleId !== 'string'
+    || value.puzzleId.length === 0
+    || typeof value.puzzleDate !== 'string'
+    || !Number.isInteger(value.puzzleNumber)
+    || !isSubmittableRuleset(value.rulesetVersion)
+    || !Array.isArray(value.completedAtBats)) {
+    return false;
+  }
+  return true;
+}
+
+function isRecordStatus(value: unknown): value is RecordStatus {
+  return value === 'pending'
+    || value === 'submitted'
+    || value === 'conflict'
+    || value === 'rejected';
+}
+
+function cloneSubmission(submission: DailyCompletedResultSubmission): DailyCompletedResultSubmission {
+  return {
+    ...submission,
+    completedAtBats: submission.completedAtBats.map(atBat => ({ ...atBat })),
+  };
+}
+
+function isSubmittableRuleset(
+  rulesetVersion: unknown,
 ): rulesetVersion is DailyCompletedResultRulesetVersion {
   return rulesetVersion === POINTS_V3_DAILY_RULESET_VERSION
     || rulesetVersion === CLASSIC_DAILY_RULESET_VERSION;
 }
 
-function validId(value: unknown): value is string {
+function isSubmissionId(value: unknown): value is string {
   return typeof value === 'string' && /^[A-Za-z0-9_-]{1,128}$/.test(value);
-}
-
-function isStatus(value: unknown): value is Status {
-  return value === 'pending'
-    || value === 'submitted'
-    || value === 'conflict'
-    || value === 'rejected';
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -215,10 +296,8 @@ let browserClient: ReturnType<typeof createDailyCompletedResultClient> | null = 
 
 function getBrowserClient() {
   browserClient ??= createDailyCompletedResultClient({
-    storage: browserStorage(),
-    createSubmissionId: () => {
-      try { return globalThis.crypto?.randomUUID?.() ?? null; } catch { return null; }
-    },
+    storage: getBrowserStorage(),
+    createSubmissionId: createBrowserSubmissionId,
     submitRequest: async (submission) => {
       const response = await fetch('/api/daily/results', {
         method: 'POST',
@@ -231,16 +310,18 @@ function getBrowserClient() {
   return browserClient;
 }
 
-export function submitCompletedDailyResultIfNeeded(input: CompletedDailyResultSubmissionInput) {
-  return getBrowserClient().submitIfNeeded(input);
+function createBrowserSubmissionId(): string | null {
+  try {
+    return globalThis.crypto?.randomUUID?.() ?? null;
+  } catch {
+    return null;
+  }
 }
 
-export function clearCompletedDailyResultSubmission(
-  input: Pick<CompletedDailyResultSubmissionInput, 'puzzle' | 'rulesetVersion'>,
-): void {
-  getBrowserClient().clear(input);
-}
-
-function browserStorage(): StorageLike | null {
-  try { return globalThis.localStorage ?? null; } catch { return null; }
+function getBrowserStorage(): SubmissionStorage | null {
+  try {
+    return globalThis.localStorage ?? null;
+  } catch {
+    return null;
+  }
 }
