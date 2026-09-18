@@ -1,6 +1,6 @@
 # Resolved-at-bat browser lifecycle
 
-Status: Approved architecture; browser 6A/6B/6C implemented, 6D next
+Status: Approved architecture; browser 6A–6D implementation complete, 6D production proof pending
 Date: 2026-09-18
 
 ## Scope contract for this planning PR
@@ -166,7 +166,7 @@ Out of scope: resolved-AB POST calls, comparison reads/UI, server changes and Cl
 
 ### 6D. Delivery activation and identity unification
 
-Status: Next bounded implementation.
+Status: Implementation complete; activation proof/reconciliation pending. Scope: `tasks/plans/resolved-at-bat-browser-6d.md`.
 
 Owning concern: resolved-AB browser activation.
 

@@ -7,10 +7,16 @@ import {
   type DailyRulesetVersion,
 } from '@initial-baseball/shared';
 import { canCreateCompletedResultFromLoadedSave } from './dailyCompletedResultActivation';
+import type { DailyAtBatAttemptIdentity } from './dailyAtBatAttemptJournal';
 import {
   createBrowserDailyAtBatGameplayLifecycle,
   type DailyAtBatContributionSession,
 } from './dailyAtBatGameplayLifecycle';
+import { persistGameplayThenFreezeDailyAtBats } from './dailyAtBatGameplayCommit';
+import {
+  createBrowserDailyAtBatResultClient,
+  type DailyAtBatDeliveryState,
+} from './dailyAtBatResultClient';
 import { createBrowserDailyAtBatOwnershipCoordinator } from './dailyAtBatOwnershipCoordinator';
 import {
   clearSavedDailyGame,
@@ -31,7 +37,7 @@ export function useDailyGameplayPersistence({
   hasLoadedSavedState,
   saveInput,
   onRestore,
-  setCompletedResultCreationAllowed,
+  submitCompletedResultCreationIfEligible,
 }: {
   puzzle: DailyPublicPuzzle;
   rulesetVersion: DailyRulesetVersion;
@@ -39,19 +45,28 @@ export function useDailyGameplayPersistence({
   hasLoadedSavedState: boolean;
   saveInput: SaveDailyGameInput;
   onRestore: (loaded: LoadedSavedDailyGame | null) => void;
-  setCompletedResultCreationAllowed: (allow: boolean) => void;
+  submitCompletedResultCreationIfEligible: (input: {
+    allowCreate: boolean;
+    creationSubmissionId?: string | null;
+  }) => void;
 }) {
   const [access, setAccess] = useState<DailyGameplayAccess>('checking');
   const [contribution, setContribution] = useState<DailyAtBatContributionSession | null>(null);
   const accessRef = useRef(access);
   const contributionRef = useRef(contribution);
+  const identityRef = useRef<DailyAtBatAttemptIdentity | null>(null);
   const lifecycleRef = useRef<ReturnType<typeof createBrowserDailyAtBatGameplayLifecycle> | null>(null);
+  const resultClientRef = useRef<ReturnType<typeof createBrowserDailyAtBatResultClient> | null>(null);
   const restoreRef = useRef(onRestore);
-  const completedResultRef = useRef(setCompletedResultCreationAllowed);
+  const completedResultRef = useRef(submitCompletedResultCreationIfEligible);
+  const completionPolicyRef = useRef({
+    allowCreate: false,
+    creationSubmissionId: null as string | null,
+  });
   accessRef.current = access;
   contributionRef.current = contribution;
   restoreRef.current = onRestore;
-  completedResultRef.current = setCompletedResultCreationAllowed;
+  completedResultRef.current = submitCompletedResultCreationIfEligible;
 
   useEffect(() => {
     let cancelled = false;
@@ -61,24 +76,31 @@ export function useDailyGameplayPersistence({
       && (initialLoaded === null
         || initialLoaded.savedGame.gameState.rulesetVersion === POINTS_V3_DAILY_RULESET_VERSION);
 
+    identityRef.current = null;
+    lifecycleRef.current = null;
+    resultClientRef.current = null;
     setContribution(null);
     contributionRef.current = null;
-    completedResultRef.current(false);
+    completionPolicyRef.current = { allowCreate: false, creationSubmissionId: null };
 
     if (!coordinate) {
-      setAccess('compatibility');
+      applyAccess('compatibility');
       restoreCompatibility(initialLoaded);
       return () => { cancelled = true; };
     }
 
-    const identity = {
+    const identity: DailyAtBatAttemptIdentity = {
       id: puzzle.id,
       puzzleDate: puzzle.puzzleDate,
       puzzleNumber: puzzle.puzzleNumber,
       rulesetVersion: POINTS_V3_DAILY_RULESET_VERSION,
-    } as const;
+    };
     const lifecycle = createBrowserDailyAtBatGameplayLifecycle(identity, storage);
+    const resultClient = createBrowserDailyAtBatResultClient(storage);
+    identityRef.current = identity;
     lifecycleRef.current = lifecycle;
+    resultClientRef.current = resultClient;
+
     const coordinator = createBrowserDailyAtBatOwnershipCoordinator({
       identity,
       journal: lifecycle.journal,
@@ -98,36 +120,44 @@ export function useDailyGameplayPersistence({
     const unsubscribe = coordinator.subscribe((state) => {
       if (cancelled) return;
       if (state.status === 'owner') {
-        setAccess('owner');
+        applyAccess('owner');
+        const expected = contributionRef.current;
+        void resultClient.retryPending(identity).then((results) => {
+          if (!cancelled && results.some(isContributionDeliveryFailure)) {
+            failCurrentContribution(expected);
+          }
+        });
       } else if (state.status === 'follower') {
-        setAccess('follower');
-        completedResultRef.current(false);
+        applyAccess('follower');
+        completionPolicyRef.current = { allowCreate: false, creationSubmissionId: null };
       } else {
-        setAccess('unsupported');
+        applyAccess('unsupported');
         setContribution(null);
         contributionRef.current = null;
-        restoreCompatibility(loadCompatible(puzzle, rulesetVersion, initialProgressionToken, storage));
+        restoreCompatibility(loadCompatible(
+          puzzle,
+          rulesetVersion,
+          initialProgressionToken,
+          storage,
+        ));
       }
     });
-    setAccess('follower');
+    applyAccess('follower');
     coordinator.start();
 
     return () => {
       cancelled = true;
       unsubscribe();
       coordinator.stop();
+      identityRef.current = null;
       lifecycleRef.current = null;
+      resultClientRef.current = null;
     };
 
     function restoreCompatibility(loaded: LoadedSavedDailyGame | null) {
       const allow = compatibilityCompletedResultEligibility(loaded, puzzle.pitches.length);
-      completedResultRef.current(allow);
+      completionPolicyRef.current = { allowCreate: allow, creationSubmissionId: null };
       restoreRef.current(loaded);
-    }
-    function applyContribution(next: DailyAtBatContributionSession) {
-      contributionRef.current = next;
-      setContribution(next);
-      completedResultRef.current(next.allowCompletedResultCreate);
     }
   }, [
     initialProgressionToken,
@@ -137,16 +167,50 @@ export function useDailyGameplayPersistence({
 
   useEffect(() => {
     if (!hasLoadedSavedState || access === 'checking' || access === 'follower') return;
-    const saved = saveDailyGame(puzzle, saveInput, getDailyModeStorage(rulesetVersion));
-    if (access !== 'owner' || saved) return;
 
-    const lifecycle = lifecycleRef.current;
+    const storage = getDailyModeStorage(rulesetVersion);
+    if (access !== 'owner') {
+      if (saveDailyGame(puzzle, saveInput, storage)) {
+        completedResultRef.current(completionPolicyRef.current);
+      }
+      return;
+    }
+
     const current = contributionRef.current;
-    if (lifecycle === null || current === null || current.status !== 'active') return;
-    const next = lifecycle.retireAfterGameplaySaveFailure(current);
-    contributionRef.current = next;
-    setContribution(next);
-    completedResultRef.current(false);
+    const identity = identityRef.current;
+    const resultClient = resultClientRef.current;
+    if (identity === null || resultClient === null) {
+      saveDailyGame(puzzle, saveInput, storage);
+      return;
+    }
+
+    const commit = persistGameplayThenFreezeDailyAtBats({
+      persistGameplay: () => saveDailyGame(puzzle, saveInput, storage),
+      contribution: current,
+      identity,
+      saveInput,
+      freezeObservation: input => resultClient.freezeObservation(input),
+    });
+
+    if (!commit.saved) {
+      failCurrentGameplaySave(current);
+      return;
+    }
+    if (commit.freezeFailure !== null) {
+      failCurrentContribution(current);
+      return;
+    }
+
+    completedResultRef.current(completionPolicyRef.current);
+
+    for (const pitchNumber of commit.deliveryPitchNumbers) {
+      const expected = current;
+      void resultClient.deliverObservation(identity, pitchNumber).then((result) => {
+        if (isContributionDeliveryFailure(result)) {
+          failCurrentContribution(expected);
+        }
+      });
+    }
   }, [
     access,
     hasLoadedSavedState,
@@ -160,6 +224,35 @@ export function useDailyGameplayPersistence({
     saveInput.scorecardAnswers,
   ]);
 
+  function applyAccess(next: DailyGameplayAccess) {
+    accessRef.current = next;
+    setAccess(next);
+  }
+
+  function applyContribution(next: DailyAtBatContributionSession) {
+    contributionRef.current = next;
+    setContribution(next);
+    completionPolicyRef.current = {
+      allowCreate: next.allowCompletedResultCreate,
+      creationSubmissionId: next.status === 'active' ? next.attemptId : null,
+    };
+  }
+
+  function failCurrentGameplaySave(expected: DailyAtBatContributionSession | null) {
+    const lifecycle = lifecycleRef.current;
+    const current = contributionRef.current;
+    if (!sameActiveContribution(current, expected) || lifecycle === null) return;
+    applyContribution(lifecycle.retireAfterGameplaySaveFailure(current));
+  }
+
+  function failCurrentContribution(expected: DailyAtBatContributionSession | null) {
+    if (accessRef.current !== 'owner') return;
+    const lifecycle = lifecycleRef.current;
+    const current = contributionRef.current;
+    if (!sameActiveContribution(current, expected) || lifecycle === null) return;
+    applyContribution(lifecycle.retireAfterDeliveryFailure(current));
+  }
+
   function resetPersistedState(): boolean {
     if (accessRef.current === 'checking' || accessRef.current === 'follower') return false;
 
@@ -167,13 +260,10 @@ export function useDailyGameplayPersistence({
       const lifecycle = lifecycleRef.current;
       const current = contributionRef.current;
       if (lifecycle !== null && current !== null) {
-        const next = lifecycle.resetContribution(current);
-        contributionRef.current = next;
-        setContribution(next);
-        completedResultRef.current(next.allowCompletedResultCreate);
+        applyContribution(lifecycle.resetContribution(current));
       }
     } else {
-      completedResultRef.current(true);
+      completionPolicyRef.current = { allowCreate: true, creationSubmissionId: null };
     }
 
     clearSavedDailyGame(puzzle, getDailyModeStorage(rulesetVersion));
@@ -181,6 +271,24 @@ export function useDailyGameplayPersistence({
   }
 
   return { access, contribution, resetPersistedState };
+}
+
+function sameActiveContribution(
+  current: DailyAtBatContributionSession | null,
+  expected: DailyAtBatContributionSession | null,
+): current is Extract<DailyAtBatContributionSession, { status: 'active' }> {
+  return current?.status === 'active'
+    && expected?.status === 'active'
+    && current.attemptId === expected.attemptId
+    && current.generation === expected.generation;
+}
+
+function isContributionDeliveryFailure(state: DailyAtBatDeliveryState): boolean {
+  return state === 'conflict'
+    || state === 'rejected'
+    || state === 'stale'
+    || state === 'unavailable'
+    || state === 'not_started';
 }
 
 function loadCompatible(

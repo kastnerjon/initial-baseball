@@ -84,7 +84,7 @@ export function DailyInningGame({
       scorecardAnswers,
     },
     onRestore: restoreLoadedGame,
-    setCompletedResultCreationAllowed: completedResultSubmission.setCreationEligibility,
+    submitCompletedResultCreationIfEligible: completedResultSubmission.submitCreationIfEligible,
   });
 
   useEffect(() => () => {

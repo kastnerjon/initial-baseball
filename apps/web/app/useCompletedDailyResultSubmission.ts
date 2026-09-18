@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect } from 'react';
 import type { DailyGameState } from '@initial-baseball/shared';
 import { submitCompletedDailyResultIfNeeded } from './dailyCompletedResultClient';
 
@@ -8,8 +8,6 @@ export function useCompletedDailyResultSubmission(
   hasLoadedSavedState: boolean,
   gameState: DailyGameState,
 ) {
-  const [allowCreate, setAllowCreate] = useState(false);
-
   useEffect(() => {
     if (!hasLoadedSavedState) return;
 
@@ -24,16 +22,24 @@ export function useCompletedDailyResultSubmission(
     hasLoadedSavedState,
   ]);
 
-  useEffect(() => {
+  const submitCreationIfEligible = useCallback(({
+    allowCreate,
+    creationSubmissionId = null,
+  }: {
+    allowCreate: boolean;
+    creationSubmissionId?: string | null;
+  }): void => {
     if (!hasLoadedSavedState || !allowCreate || gameState.status !== 'completed') return;
 
     void submitCompletedDailyResultIfNeeded({
       puzzle: gameState.puzzle,
       rulesetVersion: gameState.rulesetVersion,
       completedAtBats: gameState.completedAtBats,
-    }, { allowCreate: true });
+    }, {
+      allowCreate: true,
+      creationSubmissionId,
+    });
   }, [
-    allowCreate,
     gameState.completedAtBats,
     gameState.puzzle,
     gameState.rulesetVersion,
@@ -41,9 +47,5 @@ export function useCompletedDailyResultSubmission(
     hasLoadedSavedState,
   ]);
 
-  return {
-    setCreationEligibility(allow: boolean): void {
-      setAllowCreate(allow);
-    },
-  };
+  return { submitCreationIfEligible };
 }

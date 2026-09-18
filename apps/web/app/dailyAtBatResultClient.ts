@@ -19,6 +19,23 @@ export type DailyAtBatDeliveryState =
   | 'unavailable'
   | 'stale';
 
+export function createBrowserDailyAtBatResultClient(storage: StoragePort | null) {
+  return createDailyAtBatResultClient({
+    storage,
+    createAttemptId: () => {
+      try { return globalThis.crypto?.randomUUID?.() ?? null; } catch { return null; }
+    },
+    submitRequest: async (submission) => {
+      const response = await fetch('/api/daily/at-bats', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(submission),
+      });
+      return { ok: response.ok, status: response.status };
+    },
+  });
+}
+
 export function createDailyAtBatResultClient({
   storage,
   createAttemptId,
