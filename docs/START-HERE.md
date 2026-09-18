@@ -1,7 +1,7 @@
 # Initial Baseball — Start Here
 
 Status: Active project handoff  
-Last updated: 2026-09-17
+Last updated: 2026-09-18
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
@@ -202,9 +202,11 @@ Authorized manual curation is intentionally broader than automatic generation: a
 
 ### Completed results and comparison
 
-Aggregation uses one compact idempotent completed-game submission from stable puzzle identity, ruleset/game identity, and native raw at-bat facts. The portable schema/engine validator is implemented for `points-v3` and `classic-inning-v1`; it validates against caller-supplied authoritative puzzle/game context and derives summaries rather than trusting a submitted total. The provider-neutral Daily repository/service boundary is implemented with atomic first-write-wins `insertIfAbsent`, idempotent identical retry, and same-ID/different-payload conflict. Provider persistence and the POST API are merged. The browser delivery adapter now persists the exact immutable submission payload before network I/O and can retry that same payload after transient failure/refresh, but automatic gameplay creation remains deferred to the separate native-provenance activation PR. No per-action database writes.
+Completed-result collection is implemented and has prior production proof as recorded above. Preserve its engine validation, immutable repository, server adapter and exact-payload browser retries.
 
-Daily Nine comparison includes the player's points on each at-bat versus that at-bat's average plus total average/distribution/percentile for the same Daily/ruleset. Classic is a separate comparison population using baseball-native measures such as runs, hits, at-bats reached, per-at-bat outcomes, strikeout rates, and reach rates. A single Classic percentile metric is not settled.
+Approved September 18 replacement for 4D: collect one immutable observation per resolved Daily Nine AB, including partial games; show YOU / AVG after each terminal reveal. Final scores compare completed games only. Saving and comparison read success are independent; briefly stale comparisons are acceptable. Strictly lower scores define "You beat X% of finishers". Public Reset is beta-only and must be removed before launch; any retained admin/test flow is non-contributing.
+
+PR #174 was inspected at `38f3bc9` and converted to draft. Do not merge unchanged: its every-AB-count-equals-completion-count rule is invalid for this product. Current main inspected at `2a737a2`. No new AB collection or comparison implementation is live. Current browser identity starts at completion; progression tokens have no attempt ID/history. Cross-tab coordination must be designed/tested before activating earlier identity and AB delivery. Full replacement scope, old-save policy, failure states and ordered PRs: `tasks/plans/resolved-at-bat-comparison.md`.
 
 ### Permanent archive and personal history
 
@@ -250,18 +252,18 @@ The routine conversational future-lineup workflow itself is no longer a blocker 
 
 ## Exact next work order
 
-1. Merge/deploy the native-completion activation layer after CI/preview review, then verify the exact production deployment.
-2. Perform one genuine native completion/readback and one identical same-ID retry; require exactly one normalized result row before treating analytics collection as operational.
-3. Continue physical-device/editorial timed QA in parallel.
-4. Add same-Daily/same-ruleset comparison only after collection is live and verified; settle percentile tie/sample-size rules before percentile UI.
-5. Build permanent archive/local-history from the future explicit launch Daily #1, then complete broad-launch game/rules/epoch and launch polish.
+1. Review/land the replacement 4D documentation plan; keep #174 draft. Preserve earlier branch work rather than overwriting it.
+2. Implement portable resolved-AB contracts/engine validation, then the separate Daily repository, provider and API concerns in `tasks/plans/resolved-at-bat-comparison.md`.
+3. Resolve/test browser attempt ownership across tabs, reset, existing saves and delivery before activating collection. New identity must preserve old pending completed-result payloads.
+4. Implement and benchmark independent-population reads; then add asynchronous per-AB and final comparisons. Do not claim measured capacity or current hosting prices without checking.
+5. Continue outstanding physical-device/editorial QA; archive/local-history follows the explicit future launch epoch. Remove public Reset before launch.
 
 ## Open decisions
 
 - Which beta game becomes the permanent broad-launch product.
 - Whether Daily Nine and Classic ever receive separate lineups before that decision.
 - Final launch ruleset/scoring contract and launch date / permanent Daily #1 epoch.
-- Exact percentile tie treatment and minimum sample display.
+- Concrete atomic browser coordination mechanism and supported-browser fallback before AB collection activation.
 - Classic overall comparison/percentile metric, if any.
 - Replay policy for an already-completed archived game beyond preserving the recorded first result.
 - Exact Standard Daily recipe thresholds after playtesting.

@@ -116,9 +116,11 @@ Browser verification must cover common phone/tablet/desktop widths, local table 
 
 ## Completed results and comparison direction
 
-Future aggregation uses one compact idempotent completed-game submission from native raw facts, stable puzzle identity, and ruleset identity. The server validates puzzle identity/internal consistency and derives summaries rather than trusting client-submitted totals. There are no per-action writes.
+Whole-game aggregation uses one compact idempotent completed-game submission from native raw facts, stable puzzle identity, and ruleset identity. The server validates puzzle identity/internal consistency and derives summaries rather than trusting client-submitted totals. The approved AB extension adds terminal observations, not per-hint/per-guess writes.
 
-Daily Nine comparison includes per-at-bat points versus the same at-bat's average plus whole-game average/distribution/percentile for the same Daily and ruleset. Classic comparison remains separate and baseball-native: runs, hits, at-bats reached, per-at-bat outcome/reach rates, and related measures. An overall Classic percentile metric is not yet settled and must not be invented implicitly.
+Daily Nine v1 shows points versus the same at-bat average after each terminal resolution, asynchronously without blocking Next At Bat. AB populations include received resolved-AB observations from partial games; whole-game averages use completed results only. The final scorecard combines these independent populations and shows the percentage of finishers scoring strictly lower, subject to minimum samples. Comparisons may be briefly cached and refresh independently of immutable personal results. Classic remains separate and baseball-native; no overall Classic ranking is approved. Details: `docs/product/beta-launch-results-archive.md` and `tasks/plans/resolved-at-bat-comparison.md`.
+
+"Reset today’s results" is beta-only and must leave the public UI before broad launch. Any retained admin/test mechanism must not contribute to comparisons.
 
 ## Archive and personal history direction
 
@@ -145,7 +147,7 @@ Accounts/cross-device history, public leaderboards, user-created or exposed them
 
 Anonymous visible state remains client-driven. Local storage restores puzzle/ruleset, at-bat state, raw facts, score, and opaque token. Daily Nine retains the existing date-keyed storage namespace for compatibility; Classic uses a distinct game namespace for the same puzzle date, so switching or resetting one game does not overwrite the other. The hint bundle is not required as durable state; a verified saved token may hydrate the exact current bundle before interaction.
 
-Future aggregate results use one compact idempotent completed-game write, not per-action writes. Future archive history is local/browser-device history unless/until accounts are introduced.
+Aggregate results use a compact idempotent completed-game write plus the approved immutable terminal-AB observations; no per-hint/per-guess writes. Future archive history is local/browser-device history unless/until accounts are introduced.
 
 ## Scorecard and sharing
 
@@ -161,11 +163,11 @@ Career summary remains separate from chronological regular-season rows. Multi-te
 
 ## Architecture constraints
 
-Rules stay outside React/routes; facts stay in baseball-data; scoring stays in engine/shared; recipes stay in Daily; web owns transport, authorization, browser state, and adapters; Supabase is a provider, not a rule owner. No microservices, queues, replay caches, or per-action persistence for launch. Results and archive infrastructure are game-aware but must not introduce a generic plugin framework or force permanent support for both beta games.
+Rules stay outside React/routes; facts stay in baseball-data; scoring stays in engine/shared; recipes stay in Daily; web owns transport, authorization, browser state, and adapters; Supabase is a provider, not a rule owner. No microservices, queues, replay caches, or per-hint/per-guess persistence for launch. Results and archive infrastructure are game-aware but must not introduce a generic plugin framework or force permanent support for both beta games.
 
 ## Launch-ready definition
 
-The winning beta game is explicitly chosen; permanent numbering/launch epoch is explicit; lineups are recognizable and editorially reviewable; Hint feels instantaneous; scoring/versioning is coherent; refresh is reliable; search/reveals are accurate; results and sharing are spoiler-safe; comparison works without per-action writes; the permanent archive/history works from Daily #1; answer boundaries hold; mobile layouts are polished; deployment/legal/domain/monitoring basics are complete.
+The winning beta game is explicitly chosen; permanent numbering/launch epoch is explicit; lineups are recognizable and editorially reviewable; Hint feels instantaneous; scoring/versioning is coherent; refresh is reliable; search/reveals are accurate; results and sharing are spoiler-safe; comparison works with one immutable observation per resolved AB and no per-hint/per-guess writes; the permanent archive/history works from Daily #1; answer boundaries hold; mobile layouts are polished; deployment/legal/domain/monitoring basics are complete.
 
 ## Change rule
 
