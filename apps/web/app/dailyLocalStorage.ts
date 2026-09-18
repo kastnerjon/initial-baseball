@@ -25,8 +25,6 @@ const MAX_TOKEN_LENGTH = 4096;
 
 type DailyStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 
-export type DailyCompletedAtBatProvenance = 'native' | 'compatibility';
-
 export type SavedDailyGame = {
   schemaVersion: typeof DAILY_STORAGE_SCHEMA_VERSION;
   puzzleId: string;
@@ -38,10 +36,6 @@ export type SavedDailyGame = {
   pendingAdvance: PendingAtBatAdvance | null;
   progressionToken: string;
   scorecardAnswers?: DailyScorecardAnswers;
-};
-
-export type LoadedSavedDailyGame = SavedDailyGame & {
-  completedAtBatProvenance: DailyCompletedAtBatProvenance;
 };
 
 type PersistedSavedDailyGame = Omit<SavedDailyGame, 'schemaVersion' | 'progressionToken'> & {
@@ -249,7 +243,7 @@ function normalizeSavedDailyGame(
   savedGame: PersistedSavedDailyGame,
   publicPuzzle: DailyPublicPuzzle,
   initialProgressionToken: string,
-): LoadedSavedDailyGame | null {
+): SavedDailyGame | null {
   if (savedGame.schemaVersion < DAILY_STORAGE_SCHEMA_VERSION && !isSafePreTokenSave(savedGame, publicPuzzle)) {
     return null;
   }
@@ -264,17 +258,6 @@ function normalizeSavedDailyGame(
     savedGame.gameState.score.completed,
     savedGame.schemaVersion,
   );
-  const gameFactsNative = hasNativeCompletedAtBatFacts(
-    savedGame.gameState.completedAtBats,
-    pitchLines,
-  );
-  const pendingFactsNative = savedGame.pendingAdvance === null
-    || hasNativeCompletedAtBatFacts(
-      savedGame.pendingAdvance.completedAtBats,
-      savedGame.pendingAdvance.pitchLines.map(normalizeSharePitchLine),
-    );
-  const completedAtBatProvenance: DailyCompletedAtBatProvenance =
-    gameFactsNative && pendingFactsNative ? 'native' : 'compatibility';
   const completedAtBats = normalizeCompletedAtBats(savedGame.gameState.completedAtBats, pitchLines);
   const points = buildNormalizedPoints(
     rulesetVersion,
@@ -288,7 +271,6 @@ function normalizeSavedDailyGame(
     : normalizePendingAdvance(savedGame.pendingAdvance, rulesetVersion, publicPuzzle.pitches.length);
   return {
     ...savedGame,
-    completedAtBatProvenance,
     scorecardAnswers: restoreDailyScorecardAnswers(
       savedGame.scorecardAnswers,
       (pendingAdvance?.completedAtBats ?? completedAtBats).map(atBat => atBat.pitchNumber),
@@ -370,22 +352,10 @@ function normalizeCompletedAtBats(
   value: unknown,
   pitchLines: DailySharePitchLine[],
 ): DailyCompletedAtBat[] {
-  if (hasNativeCompletedAtBatFacts(value, pitchLines)) {
+  if (isNativeCompletedAtBatList(value, pitchLines)) {
     return (value as DailyCompletedAtBat[]).map(atBat => ({ ...atBat }));
   }
   return pitchLines.map((line, index) => deriveLegacyCompletedAtBat(line, index + 1));
-}
-
-function hasNativeCompletedAtBatFacts(
-  value: unknown,
-  pitchLines: DailySharePitchLine[],
-): boolean {
-  if (pitchLines.length === 0 && (value === undefined || (Array.isArray(value) && value.length === 0))) {
-    return true;
-  }
-  return Array.isArray(value)
-    && value.length === pitchLines.length
-    && value.every(isDailyCompletedAtBat);
 }
 
 function deriveLegacyCompletedAtBat(
