@@ -3,7 +3,6 @@ import {
   CURRENT_DAILY_RULESET_VERSION,
   LEGACY_DAILY_RULESET_VERSION,
   isDailyRulesetVersion,
-  type DailyAtBatResolution,
   type DailyCompletedAtBat,
   type DailyGameState,
   type DailyGuessResult,
@@ -385,33 +384,6 @@ function buildNormalizedPoints(
     atBatsCompleted,
     completed: scoreCompleted || atBatsCompleted >= totalAtBats,
   };
-}
-
-function isDailyCompletedAtBat(value: unknown): value is DailyCompletedAtBat {
-  if (!isRecord(value)) {
-    return false;
-  }
-  return Number.isInteger(value.pitchNumber)
-    && (value.pitchNumber as number) >= 1
-    && (value.pitchNumber as number) <= 9
-    && typeof value.initials === 'string'
-    && isDailyOutcome(value.outcome)
-    && isRevealCount(value.hintsRevealed)
-    && Number.isInteger(value.wrongGuesses)
-    && (value.wrongGuesses as number) >= 0
-    && isDailyAtBatResolution(value.resolution);
-}
-
-function isDailyOutcome(value: unknown): value is DailyOutcome {
-  return value === 'HR' || value === '3B' || value === '2B' || value === '1B' || value === 'BB' || value === 'K';
-}
-
-function isRevealCount(value: unknown): value is DailyRevealCount {
-  return Number.isInteger(value) && (value as number) >= 0 && (value as number) <= 4;
-}
-
-function isDailyAtBatResolution(value: unknown): value is DailyAtBatResolution {
-  return value === 'correct' || value === 'strikeout' || value === 'give_up';
 }
 
 function revealCountForOutcome(outcome: DailyOutcome): DailyRevealCount {
