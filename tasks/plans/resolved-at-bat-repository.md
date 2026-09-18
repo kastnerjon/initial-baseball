@@ -10,7 +10,7 @@ Out of scope: provider/migration, API, browser coordination, comparisons, UI, sc
 Acceptance: insert/retry/conflict, out-of-order independent slots, puzzle/ruleset/attempt isolation, every normalized field compared, provider failure propagation and malformed provider responses; Daily tests/typecheck/build, file-size/docs checks and CI.
 Stop conditions: a new storage/authority contract, external dependency or change to gameplay must become separate work.
 
-This PR is explicitly stacked on #176 while its documentation-only main reconciliation passes CI. Retarget to main after #176 merges. Roadmap #175 is merged; #174 remains draft.
+PR #176 is merged into main; this PR is now based directly on that merged contract. Roadmap #175 is merged; #174 remains draft.
 
 ## Architecture decision
 
