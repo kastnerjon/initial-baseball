@@ -16,6 +16,7 @@ import {
   clearSavedDailyGame,
   getDailyStorageKey,
   loadSavedDailyGame,
+  loadSavedDailyGameWithProvenance,
   saveDailyGame,
   type SavedDailyGame,
 } from './dailyLocalStorage';
@@ -219,6 +220,45 @@ describe('dailyLocalStorage', () => {
       rulesetVersion: POINTS_V3_DAILY_RULESET_VERSION,
       points: { points: 4, maximumPoints: 42, atBatsCompleted: 1 },
     });
+  });
+
+  it('marks current schema-3 native completed-at-bat facts as submission eligible', () => {
+    const storage = new FakeStorage();
+    const gameState: DailyGameState = {
+      ...createInitialDemoGameState(DEMO_DAILY_PUZZLE),
+      rulesetVersion: POINTS_V3_DAILY_RULESET_VERSION,
+      completedPitchLines: [{ initials: 'KGJ', outcome: 'HR' }],
+      completedAtBats: [{
+        pitchNumber: 1,
+        initials: 'KGJ',
+        outcome: 'HR',
+        hintsRevealed: 0,
+        wrongGuesses: 0,
+        resolution: 'correct',
+      }],
+    };
+    const savedGame = buildSavedGame({ gameState, currentPitchIndex: 1 });
+    storage.setItem(getDailyStorageKey(DEMO_DAILY_PUZZLE.puzzleDate), JSON.stringify(savedGame));
+
+    expect(loadWithProvenance(storage)?.completedAtBatFactsAreNative).toBe(true);
+  });
+
+  it('marks compatibility-reconstructed facts as ineligible for result submission', () => {
+    const storage = new FakeStorage();
+    const savedGame = buildSavedGame({
+      gameState: {
+        ...createInitialDemoGameState(DEMO_DAILY_PUZZLE),
+        completedPitchLines: [{ initials: 'KGJ', outcome: '3B' }],
+      },
+      currentPitchIndex: 1,
+    });
+    const storedGameState = savedGame.gameState as unknown as Record<string, unknown>;
+    delete storedGameState.completedAtBats;
+    storage.setItem(getDailyStorageKey(DEMO_DAILY_PUZZLE.puzzleDate), JSON.stringify(savedGame));
+
+    const restored = loadWithProvenance(storage);
+    expect(restored?.savedGame.gameState.completedAtBats).toHaveLength(1);
+    expect(restored?.completedAtBatFactsAreNative).toBe(false);
   });
 
   it('normalizes pre-ruleset schema-3 state to legacy inning behavior', () => {
@@ -456,6 +496,14 @@ class FakeStorage {
 
 function load(storage: FakeStorage) {
   return loadSavedDailyGame(DEMO_DAILY_PUZZLE, initialProgressionToken, storage);
+}
+
+function loadWithProvenance(storage: FakeStorage) {
+  return loadSavedDailyGameWithProvenance(
+    DEMO_DAILY_PUZZLE,
+    initialProgressionToken,
+    storage,
+  );
 }
 
 function buildSavedGame(overrides: Partial<SavedDailyGame>): SavedDailyGame {
