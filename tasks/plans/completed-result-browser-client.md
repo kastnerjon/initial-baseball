@@ -46,6 +46,10 @@ Web browser adapter.
 - background retry timers/queues/service workers;
 - archive/history.
 
+## Baseline prerequisite
+
+PR #170 (`Fix baseball-data test/build race`) is merged on `main`; final validation for this PR must run against that stabilized Turbo build/test baseline.
+
 ## Acceptance checks
 
 - the exact payload exists in storage before the request starts;
