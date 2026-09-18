@@ -137,13 +137,21 @@ Admin redesign is deferred. The user may supply a future date and nine ordered p
 - [x] Store only the engine-normalized result through 4B/provider and map created/existing/conflict/invalid/provider-unavailable outcomes deliberately.
 - [ ] Pass focused/full CI, preview, merge, and exact production verification with no browser submission code in the diff.
 
-### 4C-3. Browser completion submission/retry — next bounded concern
+### 4C-3a. Browser submission client
 
-- [ ] Generate and persist one stable submission ID for a native completed game.
-- [ ] Submit only after genuine native completion for `points-v3` or `classic-inning-v1`; do not submit compatibility-reconstructed legacy facts.
-- [ ] Retry the same ID idempotently after transient failure/refresh without creating repeated in-flight requests.
-- [ ] Make reset/new-session handling race-safe so stale completion callbacks cannot resurrect or submit cleared state.
-- [ ] Keep submission bookkeeping separate from portable gameplay facts and existing save compatibility.
+- [x] Generate and persist one stable submission ID before the first completed-result POST.
+- [x] Retry the same ID after network/5xx failure and preserve terminal submitted/conflict/rejected marker states.
+- [x] Deduplicate concurrent same-game requests in one tab.
+- [x] Make clear/reset compare-before-write safe so stale responses cannot recreate a cleared marker or overwrite a newer marker.
+- [x] Keep submission bookkeeping in its own local namespace, separate from portable gameplay facts and Daily save compatibility.
+
+### 4C-3b. Native completion activation — next bounded concern
+
+- [ ] Expose local-only provenance that distinguishes native completed-at-bat facts from compatibility reconstruction.
+- [ ] Trigger submission only after hydrated native `points-v3` or `classic-inning-v1` completion.
+- [ ] Never submit compatibility-reconstructed legacy facts.
+- [ ] Clear only the current puzzle/ruleset marker on Reset today and preserve the client race guarantees.
+- [ ] Verify live result collection end to end in production before comparison work.
 
 ### 4D. Daily Nine comparison
 
