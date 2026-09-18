@@ -3,7 +3,6 @@ import {
   CURRENT_DAILY_RULESET_VERSION,
   LEGACY_DAILY_RULESET_VERSION,
   isDailyRulesetVersion,
-  type DailyAtBatResolution,
   type DailyCompletedAtBat,
   type DailyGameState,
   type DailyGuessResult,
@@ -17,6 +16,7 @@ import {
 } from '@initial-baseball/shared';
 import { restoreDailyScorecardAnswers, type DailyScorecardAnswers } from './dailyScorecard';
 import type { PendingAtBatAdvance } from './dailyAtBatResolution';
+import { isNativeCompletedAtBatList } from './dailyCompletedAtBatProvenance';
 import type { DailyAtBatUiState } from './dailyClientState';
 
 const DAILY_STORAGE_PREFIX = 'initial-baseball:daily';
@@ -43,6 +43,11 @@ type PersistedSavedDailyGame = Omit<SavedDailyGame, 'schemaVersion' | 'progressi
   progressionToken?: unknown;
 };
 
+export type LoadedSavedDailyGame = {
+  savedGame: SavedDailyGame;
+  completedAtBatFactsAreNative: boolean;
+};
+
 export type SaveDailyGameInput = {
   currentPitchIndex: number;
   gameState: DailyGameState;
@@ -61,22 +66,41 @@ export function loadSavedDailyGame(
   initialProgressionToken: string,
   storage: DailyStorage | null = getBrowserDailyStorage(),
 ): SavedDailyGame | null {
-  if (storage === null) {
-    return null;
-  }
+  return loadSavedDailyGameWithProvenance(puzzle, initialProgressionToken, storage)?.savedGame ?? null;
+}
+
+export function loadSavedDailyGameWithProvenance(
+  puzzle: DailyPublicPuzzle | DailyPuzzle,
+  initialProgressionToken: string,
+  storage: DailyStorage | null = getBrowserDailyStorage(),
+): LoadedSavedDailyGame | null {
+  if (storage === null) return null;
 
   const publicPuzzle = toPublicPuzzle(puzzle);
   const savedValue = safelyReadStorage(storage, getDailyStorageKey(publicPuzzle.puzzleDate));
-  if (savedValue === null) {
-    return null;
-  }
+  if (savedValue === null) return null;
 
   const parsedValue = parseSavedValue(savedValue);
-  if (!isSavedDailyGameForPuzzle(parsedValue, publicPuzzle)) {
-    return null;
-  }
+  if (!isSavedDailyGameForPuzzle(parsedValue, publicPuzzle)) return null;
 
-  return normalizeSavedDailyGame(parsedValue, publicPuzzle, initialProgressionToken);
+  const savedGame = normalizeSavedDailyGame(parsedValue, publicPuzzle, initialProgressionToken);
+  if (savedGame === null) return null;
+
+  return {
+    savedGame,
+    completedAtBatFactsAreNative: parsedValue.schemaVersion === DAILY_STORAGE_SCHEMA_VERSION
+      && isNativeCompletedAtBatList(
+        parsedValue.gameState.completedAtBats,
+        parsedValue.gameState.completedPitchLines,
+      )
+      && (
+        parsedValue.pendingAdvance === null
+        || isNativeCompletedAtBatList(
+          parsedValue.pendingAdvance.completedAtBats,
+          parsedValue.pendingAdvance.pitchLines,
+        )
+      ),
+  };
 }
 
 export function saveDailyGame(
@@ -318,7 +342,7 @@ function normalizeCompletedAtBats(
   value: unknown,
   pitchLines: DailySharePitchLine[],
 ): DailyCompletedAtBat[] {
-  if (Array.isArray(value) && value.length === pitchLines.length && value.every(isDailyCompletedAtBat)) {
+  if (isNativeCompletedAtBatList(value, pitchLines)) {
     return value.map(atBat => ({ ...atBat }));
   }
   return pitchLines.map((line, index) => deriveLegacyCompletedAtBat(line, index + 1));
@@ -360,33 +384,6 @@ function buildNormalizedPoints(
     atBatsCompleted,
     completed: scoreCompleted || atBatsCompleted >= totalAtBats,
   };
-}
-
-function isDailyCompletedAtBat(value: unknown): value is DailyCompletedAtBat {
-  if (!isRecord(value)) {
-    return false;
-  }
-  return Number.isInteger(value.pitchNumber)
-    && (value.pitchNumber as number) >= 1
-    && (value.pitchNumber as number) <= 9
-    && typeof value.initials === 'string'
-    && isDailyOutcome(value.outcome)
-    && isRevealCount(value.hintsRevealed)
-    && Number.isInteger(value.wrongGuesses)
-    && (value.wrongGuesses as number) >= 0
-    && isDailyAtBatResolution(value.resolution);
-}
-
-function isDailyOutcome(value: unknown): value is DailyOutcome {
-  return value === 'HR' || value === '3B' || value === '2B' || value === '1B' || value === 'BB' || value === 'K';
-}
-
-function isRevealCount(value: unknown): value is DailyRevealCount {
-  return Number.isInteger(value) && (value as number) >= 0 && (value as number) <= 4;
-}
-
-function isDailyAtBatResolution(value: unknown): value is DailyAtBatResolution {
-  return value === 'correct' || value === 'strikeout' || value === 'give_up';
 }
 
 function revealCountForOutcome(outcome: DailyOutcome): DailyRevealCount {

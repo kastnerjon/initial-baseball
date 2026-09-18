@@ -66,7 +66,8 @@ Guess / Give Up
   -> successor signed token + next authorized hint bundle
 
 Completed result stack
-  browser native-completion activation (next PR)
+  DailyInningGame native-completion activation
+  -> useCompletedDailyResultSubmission
   -> dailyCompletedResultClient
   -> POST /api/daily/results
   -> serverDailyCompletedResults
@@ -95,7 +96,7 @@ Answer integrity: `docs/decisions/0001-daily-answer-integrity.md`.
 
 ## Current verified state
 
-- September 17 verified production code baseline is `3f28e46ccccd6cedfdc3fc6dfec4a1bd4f6b5ce2` (PR #167), with READY production deployment `dpl_H4DPS9C2eXAZKxUyrx4UXzkPkK3j` on that exact merge SHA. The private future-lineup workflow is operational through Daily #151. Completed-result 4A validation, 4B idempotency, the hardened Supabase provider, and the completed-game POST API are merged; production `daily_completed_results` remained empty immediately after #167 because gameplay still does not call the endpoint. The current browser-client PR adds a separate immutable local delivery record containing the exact schema-1 payload, stable submission ID, retry/terminal status, same-tab single-flight protection, and stale-response ownership checks. It is intentionally dormant until the next native-fact provenance/React activation PR. Draft PR #161 remains unmerged and must not be merged unchanged.
+- September 17 code baseline before this activation change is `e0d3eb2719fbd14b4b77f967133d501b37686a98` (PR #168) on `main`; PR #170 fixed the underlying Turbo/baseball-data duplicate-build race. Completed-result 4A validation, 4B idempotency, the hardened Supabase provider, POST API, and immutable browser delivery client are merged. Production `daily_completed_results` remained at zero rows immediately after #168 because gameplay activation was still dormant. The native activation layer is now implemented as hydration-only provenance + explicit/tested creation eligibility + a thin retry/create hook wired through `DailyInningGame`; it does not change client/API/provider contracts or the gameplay save schema. Production collection must still be treated as unverified until this change is merged/deployed and one controlled native completion/readback plus identical retry row-count check succeeds. Draft PR #161 remains unmerged and must not be merged unchanged.
 - The public source now reuses the same canonical editorial-candidate factory as the admin workflow, so approved manual-only players resolve without widening automatic generation. Focused tests cover scheduled/published order, canonical identity, rejection, fallback, and archived behavior. Scope: `tasks/plans/public-editorial-candidates.md`. Exact merge-SHA production deployment is verified READY as `dpl_APaPW1hwmzghnoRg4fEXhcFnNCCw` on `0001f51c15b9e7b4e5e9647ce471365a96f19bc7`.
 - Completed-result step 4A implements shared schema-1 types and pure engine validation/derivation for `points-v3` and `classic-inning-v1`. The validator binds native facts to the expected puzzle/game, checks exact completion and fact consistency, reuses existing gameplay rules, and returns copied normalized facts plus a game-specific summary. It does not prove honest play. Scope: `tasks/plans/completed-result-contract.md`; contract: `docs/spec/engine.md` and `docs/spec/data-model.md`.
 - Completed-result step 4B implements the provider-neutral atomic repository/service boundary in `packages/daily`. `insertIfAbsent(result)` is the first-write-wins repository primitive keyed by `submissionId`; identical retries return the existing normalized result, while same-ID/different-payload retries return `idempotency_conflict` without overwrite. The service consumes 4A output and does not re-run validation/scoring. The current provider step adds the reconciled `daily_completed_results` migrations plus a server-only Supabase row codec/adapter that inserts first and reads the existing winner only after a PostgreSQL unique-key conflict. It has no update/upsert path and does not validate gameplay. Scope: `tasks/plans/completed-result-supabase-provider.md`. The completed-game API is the separate web/server layer described in `tasks/plans/completed-result-submission-api.md`; the browser retry adapter is described in `tasks/plans/completed-result-browser-client.md`, and gameplay activation/native-fact provenance remains the next client concern.
@@ -249,10 +250,10 @@ The routine conversational future-lineup workflow itself is no longer a blocker 
 
 ## Exact next work order
 
-1. Merge/verify the bounded browser delivery client, then build the separate native-completion activation PR: save provenance + React hook/game integration only.
-2. In activation, create new records only from native current-session `points-v3`/`classic-inning-v1` completion; retry existing pending records independently from gameplay state; keep delivery identity across local reset/replay.
-3. Verify live result collection end to end with one controlled native completion/readback and an identical retry that creates no second row; continue physical-device/editorial timed QA in parallel.
-4. Add same-Daily/same-ruleset comparison once collection is live and verified; settle percentile tie/sample-size rules before percentile UI.
+1. Merge/deploy the native-completion activation layer after CI/preview review, then verify the exact production deployment.
+2. Perform one genuine native completion/readback and one identical same-ID retry; require exactly one normalized result row before treating analytics collection as operational.
+3. Continue physical-device/editorial timed QA in parallel.
+4. Add same-Daily/same-ruleset comparison only after collection is live and verified; settle percentile tie/sample-size rules before percentile UI.
 5. Build permanent archive/local-history from the future explicit launch Daily #1, then complete broad-launch game/rules/epoch and launch polish.
 
 ## Open decisions

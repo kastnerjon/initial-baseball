@@ -16,6 +16,7 @@ import {
   clearSavedDailyGame,
   getDailyStorageKey,
   loadSavedDailyGame,
+  loadSavedDailyGameWithProvenance,
   saveDailyGame,
   type SavedDailyGame,
 } from './dailyLocalStorage';
@@ -383,6 +384,7 @@ describe('dailyLocalStorage', () => {
     const restored = load(storage);
     expect(restored?.gameState.status).toBe('completed');
     expect(restored?.progressionToken).toBe(initialProgressionToken);
+    expect(loadWithProvenance(storage)?.completedAtBatFactsAreNative).toBe(false);
   });
 
   it('normalizes legacy BUNT outcomes while retaining schema-3 authorization', () => {
@@ -456,6 +458,14 @@ class FakeStorage {
 
 function load(storage: FakeStorage) {
   return loadSavedDailyGame(DEMO_DAILY_PUZZLE, initialProgressionToken, storage);
+}
+
+function loadWithProvenance(storage: FakeStorage) {
+  return loadSavedDailyGameWithProvenance(
+    DEMO_DAILY_PUZZLE,
+    initialProgressionToken,
+    storage,
+  );
 }
 
 function buildSavedGame(overrides: Partial<SavedDailyGame>): SavedDailyGame {
