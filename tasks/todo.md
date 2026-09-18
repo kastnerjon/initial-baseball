@@ -162,6 +162,7 @@ Admin redesign is deferred. The user may supply a future date and nine ordered p
 
 ### 4D. Daily Nine comparison — next bounded concern
 
+- [ ] 4D-1: define the provider-neutral sufficient-statistics read port and pure Daily Nine aggregate service; keep points-v3 scoring in the engine and SQL/provider code semantics-free.
 - [ ] Add same-Daily/same-ruleset completion count and average total points.
 - [ ] Add per-at-bat average points for each of the nine slots plus useful outcome/hint/K/Give Up rates.
 - [ ] Add score distribution.

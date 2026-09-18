@@ -1,7 +1,7 @@
 # Data Model Spec
 
 Status: Current persistence contract and approved next entities  
-Last updated: 2026-09-17
+Last updated: 2026-09-18
 
 ## Ownership
 
@@ -216,7 +216,9 @@ The relational `daily_completed_results` table plus server-only Supabase row cod
 
 Comparison populations are always scoped to stable puzzle identity plus exact ruleset/game identity. Daily Nine and Classic never share an aggregate population. `points-v1`, `points-v2`, and `points-v3` results also remain separate populations. Raw facts are retained so aggregates can be recalculated as presentation evolves.
 
-Daily Nine comparison may derive per-at-bat points, whole-game score, averages, distributions, and later percentiles. Classic comparison derives baseball-native measures such as runs, hits, reached-at-bat counts/rates, and per-at-bat outcome distributions; no overall Classic percentile formula is approved yet.
+Daily Nine comparison may derive per-at-bat points, whole-game score, averages, distributions, and later percentiles. The first portable 4D read contract is a sufficient-statistics boundary in `packages/daily`: a provider returns same-puzzle/`points-v3` score-count buckets plus grouped native at-bat fact buckets (slot, outcome, hints, wrong guesses, resolution, count). The provider does not score those facts. `packages/daily` applies the existing engine `getDailyAtBatPoints` rule to the bounded buckets and derives completion count, average total points, score distribution, per-slot average points, average hints, hint-use rate, outcome rates, and resolution rates. For a completed Daily Nine population, every slot sample count must equal the completion count; mismatches fail closed. This keeps SQL/provider work focused on grouping persisted facts rather than owning points-v3 or comparison semantics, and avoids transferring every raw completed game to the application tier. A later Supabase adapter may implement the read port using the existing population index without changing this portable contract.
+
+Classic comparison derives baseball-native measures such as runs, hits, reached-at-bat counts/rates, and per-at-bat outcome distributions; no overall Classic percentile formula is approved yet.
 
 Do not reuse inactive legacy attempt/result tables by default and do not introduce per-action writes.
 

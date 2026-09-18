@@ -62,6 +62,19 @@ export {
   type DailyCompletedResultStoreResult,
 } from './dailyCompletedResultService';
 export {
+  aggregateDailyNineComparison,
+  createDailyNineComparisonService,
+  type DailyNineAtBatComparison,
+  type DailyNineAtBatFactBucket,
+  type DailyNineComparison,
+  type DailyNineComparisonPopulation,
+  type DailyNineComparisonPopulationKey,
+  type DailyNineComparisonRepository,
+  type DailyNineComparisonService,
+  type DailyNineScoreBucket,
+  type DailyNineScoreDistributionBucket,
+} from './dailyNineComparison';
+export {
   createEditorialDailyPuzzleId,
   resolvePublicDailyPuzzleSelection,
   type PublicDailyPuzzleSelectionDecision,
