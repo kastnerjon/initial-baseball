@@ -5,7 +5,7 @@ Last updated: 2026-09-17
 
 Completed history belongs in PRs, canonical docs, or `tasks/lessons.md`. Durable resumption context belongs in `docs/START-HERE.md`.
 
-Current order: the routine conversational future-lineup path is operationally complete; completed-result 4A validation, 4B idempotency, the hardened Supabase provider, POST API, and browser delivery client are merged. The current bounded concern is native-completion activation: hydration-only provenance plus React/game composition. Draft #161 must not be merged unchanged. Remaining authenticated-editor slot QA, timed public editorial rollover/fallback checks, and physical iPhone/iPad QA stay open but do not block the results pipeline. Supabase still had zero completed-result rows immediately after #168 because gameplay activation had not landed. Comparison and permanent archive/local history remain subsequent concerns. Current beta numbering is disposable; broad launch later restarts at Daily #1 after the owner chooses the surviving game/final rules.
+Current order: the routine conversational future-lineup path is operationally complete; completed-result 4A validation, 4B idempotency, the hardened Supabase provider, POST API, browser delivery client, and native-completion activation are merged. PR #171 is READY in production on exact merge SHA `ae2fc428b2fad05685b068944acce66b9dddf536`. The current bounded concern is the live browser result-collection/idempotency proof; do not begin 4D comparison until it passes. Draft #161 must not be merged unchanged. Remaining authenticated-editor slot QA, timed public editorial rollover/fallback checks, and physical iPhone/iPad QA stay open but do not block this proof. Supabase still had zero completed-result rows immediately after #171 production deployment, as expected before a fresh native browser completion. Comparison and permanent archive/local history remain subsequent concerns. Current beta numbering is disposable; broad launch later restarts at Daily #1 after the owner chooses the surviving game/final rules.
 
 ## September 15–16 approved product work
 
@@ -147,9 +147,9 @@ Admin redesign is deferred. The user may supply a future date and nine ordered p
 - [x] Keep delivery bookkeeping in its own local namespace, separate from portable gameplay facts and Daily save compatibility.
 - [x] Preserve shorter Classic faced-at-bat lists and reject unsupported compatibility rulesets locally.
 - [x] Pass final CI/preview and merge.
-- [ ] Verify exact production deployment of the merged browser client before native activation is treated as live.
+- [x] Verify browser client + native activation together on exact PR #171 production deployment `dpl_DctrheRJbonPmcszrjAfPuJxvzhy` / merge SHA `ae2fc428b2fad05685b068944acce66b9dddf536`.
 
-### 4C-3b. Native completion activation — current bounded concern
+### 4C-3b. Native completion activation — production live; proof pending
 
 - [x] Expose hydration-only provenance that distinguishes explicit native completed-at-bat facts from compatibility reconstruction without changing the saved gameplay schema.
 - [x] Make creation eligibility explicit and unit-tested: untouched/native active saves may later create; compatibility-fact or already-completed restored saves may not.
@@ -157,7 +157,7 @@ Admin redesign is deferred. The user may supply a future date and nine ordered p
 - [x] Independently retry an already-persisted pending delivery record after hydration, even when gameplay state itself is not completed.
 - [x] Never retroactively create a submission from a pre-feature/compatibility-restored completed save.
 - [x] Keep result-delivery identity across Reset today/replay; gameplay reset clears only gameplay state, not the independent delivery record.
-- [ ] Pass final focused/full CI, documentation-impact, and exact-head Vercel preview; merge and verify exact production deployment.
+- [x] Pass final focused/full CI, documentation-impact, exact-head Vercel preview, merge, and exact production deployment.
 - [ ] Verify live result collection end to end in production with one genuine native completion/readback and identical retry row-count check before comparison work.
 
 ### 4D. Daily Nine comparison
