@@ -80,9 +80,7 @@ describe('completed-result Supabase row codec', () => {
       summary: { ...POINTS_RESULT.summary, points: '63' },
     };
 
-    expect(() => decodeDailyCompletedResultRow(row)).toThrow(
-      expect.objectContaining({ kind: 'invalid-row' }),
-    );
+    expectInvalidRow(() => decodeDailyCompletedResultRow(row));
   });
 
   it('rejects a syntactically shaped but impossible persisted calendar date', () => {
@@ -91,9 +89,7 @@ describe('completed-result Supabase row codec', () => {
       puzzle_date: '2026-02-31',
     };
 
-    expect(() => decodeDailyCompletedResultRow(row)).toThrow(
-      expect.objectContaining({ kind: 'invalid-row' }),
-    );
+    expectInvalidRow(() => decodeDailyCompletedResultRow(row));
   });
 
   it('rejects an unsupported persisted ruleset instead of coercing it', () => {
@@ -102,8 +98,16 @@ describe('completed-result Supabase row codec', () => {
       ruleset_version: 'points-v4',
     };
 
-    expect(() => decodeDailyCompletedResultRow(row)).toThrow(
-      expect.objectContaining({ kind: 'invalid-row' }),
-    );
+    expectInvalidRow(() => decodeDailyCompletedResultRow(row));
   });
 });
+
+function expectInvalidRow(run: () => unknown): void {
+  try {
+    run();
+  } catch (error) {
+    expect(error).toMatchObject({ kind: 'invalid-row' });
+    return;
+  }
+  throw new Error('Expected completed-result row decoding to fail.');
+}
