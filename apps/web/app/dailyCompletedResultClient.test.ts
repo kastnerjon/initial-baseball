@@ -22,181 +22,189 @@ const AT_BATS: DailyCompletedAtBat[] = Array.from({ length: 9 }, (_, index) => (
   resolution: 'correct',
 }));
 
-describe('completed-result browser client', () => {
-  it('persists one submission ID before posting and marks success submitted', async () => {
+describe('completed-result browser delivery', () => {
+  it('persists the exact payload before POST and marks a successful submission terminal', async () => {
     const storage = memoryStorage();
-    const submitRequest = vi.fn().mockResolvedValue({ ok: true, status: 201 });
-    const client = createDailyCompletedResultClient({
-      storage,
-      createSubmissionId: () => 'submission-one',
-      submitRequest,
+    const submitRequest = vi.fn().mockImplementation(async (submission) => {
+      expect(storage.values()[0]).toContain('"status":"pending"');
+      expect(storage.values()[0]).toContain('"submissionId":"stable-id"');
+      return { ok: true, status: 201 };
     });
+    const client = createClient(storage, submitRequest, () => 'stable-id');
 
-    await expect(client.submitIfNeeded(pointsInput())).resolves.toBe('submitted');
+    await expect(client.submitIfNeeded(pointsInput(), { allowCreate: true }))
+      .resolves.toBe('submitted');
 
     expect(submitRequest).toHaveBeenCalledTimes(1);
     expect(submitRequest).toHaveBeenCalledWith(expect.objectContaining({
-      schemaVersion: 1,
-      submissionId: 'submission-one',
+      submissionId: 'stable-id',
       puzzleId: PUZZLE.id,
-      puzzleDate: PUZZLE.puzzleDate,
-      puzzleNumber: PUZZLE.puzzleNumber,
       rulesetVersion: POINTS_V3_DAILY_RULESET_VERSION,
       completedAtBats: AT_BATS,
     }));
     expect(storage.values()[0]).toContain('"status":"submitted"');
   });
 
-  it('deduplicates concurrent calls for the same game identity', async () => {
-    const request = deferred<{ ok: boolean; status: number }>();
-    const submitRequest = vi.fn(() => request.promise);
-    const client = createDailyCompletedResultClient({
-      storage: memoryStorage(),
-      createSubmissionId: () => 'single-flight-id',
-      submitRequest,
-    });
-
-    const first = client.submitIfNeeded(pointsInput());
-    const second = client.submitIfNeeded(pointsInput());
-
-    expect(submitRequest).toHaveBeenCalledTimes(1);
-    request.resolve({ ok: true, status: 201 });
-    await expect(Promise.all([first, second])).resolves.toEqual(['submitted', 'submitted']);
-  });
-
-  it('retries transient failure with the same stored submission ID', async () => {
+  it('retries the immutable stored payload with the same ID even if replay facts differ', async () => {
     const storage = memoryStorage();
-    const createSubmissionId = vi.fn(() => 'stable-retry-id');
     const submitRequest = vi.fn()
       .mockRejectedValueOnce(new Error('offline'))
       .mockResolvedValueOnce({ ok: true, status: 200 });
-    const client = createDailyCompletedResultClient({ storage, createSubmissionId, submitRequest });
+    const createSubmissionId = vi.fn(() => 'retry-id');
+    const client = createClient(storage, submitRequest, createSubmissionId);
 
-    await expect(client.submitIfNeeded(pointsInput())).resolves.toBe('pending');
-    await expect(client.submitIfNeeded(pointsInput())).resolves.toBe('submitted');
+    await expect(client.submitIfNeeded(pointsInput(), { allowCreate: true }))
+      .resolves.toBe('pending');
+
+    const changed = pointsInput();
+    changed.completedAtBats = changed.completedAtBats.map((atBat, index) => (
+      index === 0 ? { ...atBat, hintsRevealed: 1 as const, outcome: '3B' as const } : atBat
+    ));
+    await expect(client.submitIfNeeded(changed, { allowCreate: true }))
+      .resolves.toBe('submitted');
 
     expect(createSubmissionId).toHaveBeenCalledTimes(1);
     expect(submitRequest).toHaveBeenCalledTimes(2);
-    expect(submitRequest.mock.calls[0]?.[0].submissionId).toBe('stable-retry-id');
-    expect(submitRequest.mock.calls[1]?.[0].submissionId).toBe('stable-retry-id');
+    expect(submitRequest.mock.calls[1]?.[0]).toEqual(submitRequest.mock.calls[0]?.[0]);
   });
 
-  it('keeps 5xx pending but makes conflict and ordinary 4xx terminal', async () => {
+  it('deduplicates concurrent effects into one in-flight POST', async () => {
     const storage = memoryStorage();
-    const submitRequest = vi.fn()
-      .mockResolvedValueOnce({ ok: false, status: 503 })
-      .mockResolvedValueOnce({ ok: false, status: 409 });
-    const client = createDailyCompletedResultClient({
-      storage,
-      createSubmissionId: () => 'terminal-id',
-      submitRequest,
-    });
+    const response = deferred<{ ok: boolean; status: number }>();
+    const submitRequest = vi.fn(() => response.promise);
+    const client = createClient(storage, submitRequest, () => 'one-flight');
 
-    await expect(client.submitIfNeeded(pointsInput())).resolves.toBe('pending');
-    await expect(client.submitIfNeeded(pointsInput())).resolves.toBe('conflict');
-    await expect(client.submitIfNeeded(pointsInput())).resolves.toBe('conflict');
-    expect(submitRequest).toHaveBeenCalledTimes(2);
+    const first = client.submitIfNeeded(pointsInput(), { allowCreate: true });
+    const second = client.submitIfNeeded(pointsInput(), { allowCreate: true });
 
-    client.clear(pointsInput());
-    const rejectedClient = createDailyCompletedResultClient({
-      storage,
-      createSubmissionId: () => 'rejected-id',
-      submitRequest: vi.fn().mockResolvedValue({ ok: false, status: 400 }),
-    });
-    await expect(rejectedClient.submitIfNeeded(pointsInput())).resolves.toBe('rejected');
+    expect(submitRequest).toHaveBeenCalledTimes(1);
+    response.resolve({ ok: true, status: 201 });
+    await expect(Promise.all([first, second])).resolves.toEqual(['submitted', 'submitted']);
   });
 
-  it('does not recreate a marker when reset happens during an in-flight request', async () => {
+  it('does not retroactively create a marker for a restored completion', async () => {
     const storage = memoryStorage();
-    const request = deferred<{ ok: boolean; status: number }>();
-    const client = createDailyCompletedResultClient({
-      storage,
-      createSubmissionId: () => 'reset-race-id',
-      submitRequest: vi.fn(() => request.promise),
-    });
-
-    const pending = client.submitIfNeeded(pointsInput());
-    expect(storage.values()[0]).toContain('reset-race-id');
-
-    client.clear(pointsInput());
-    expect(storage.values()).toEqual([]);
-
-    request.resolve({ ok: true, status: 201 });
-    await expect(pending).resolves.toBe('pending');
-    expect(storage.values()).toEqual([]);
-  });
-
-  it('cannot let an old response overwrite a new marker created after reset', async () => {
-    const storage = memoryStorage();
-    const firstRequest = deferred<{ ok: boolean; status: number }>();
-    const secondRequest = deferred<{ ok: boolean; status: number }>();
-    const submitRequest = vi.fn()
-      .mockImplementationOnce(() => firstRequest.promise)
-      .mockImplementationOnce(() => secondRequest.promise);
-    const ids = ['old-id', 'new-id'];
-    const client = createDailyCompletedResultClient({
-      storage,
-      createSubmissionId: () => ids.shift() ?? null,
-      submitRequest,
-    });
-
-    const oldPending = client.submitIfNeeded(pointsInput());
-    client.clear(pointsInput());
-    const newPending = client.submitIfNeeded(pointsInput());
-
-    expect(storage.values()[0]).toContain('"submissionId":"new-id"');
-    firstRequest.resolve({ ok: true, status: 201 });
-    await oldPending;
-    expect(storage.values()[0]).toContain('"submissionId":"new-id"');
-    expect(storage.values()[0]).toContain('"status":"pending"');
-
-    secondRequest.resolve({ ok: true, status: 201 });
-    await expect(newPending).resolves.toBe('submitted');
-    expect(storage.values()[0]).toContain('"submissionId":"new-id"');
-    expect(storage.values()[0]).toContain('"status":"submitted"');
-  });
-
-  it('never submits compatibility rulesets', async () => {
     const submitRequest = vi.fn();
-    const client = createDailyCompletedResultClient({
-      storage: memoryStorage(),
-      createSubmissionId: () => 'unused-id',
-      submitRequest,
-    });
+    const createSubmissionId = vi.fn(() => 'should-not-exist');
+    const client = createClient(storage, submitRequest, createSubmissionId);
 
-    await expect(client.submitIfNeeded({
-      ...pointsInput(),
-      rulesetVersion: LEGACY_DAILY_RULESET_VERSION,
-    })).resolves.toBe('unsupported');
+    await expect(client.submitIfNeeded(pointsInput(), { allowCreate: false }))
+      .resolves.toBe('not_started');
 
+    expect(createSubmissionId).not.toHaveBeenCalled();
     expect(submitRequest).not.toHaveBeenCalled();
+    expect(storage.values()).toEqual([]);
   });
 
-  it('preserves only faced at-bats for Classic and clears independently', async () => {
+  it('retries an existing pending marker after refresh without creating a new ID', async () => {
+    const storage = memoryStorage();
+    const first = createClient(
+      storage,
+      vi.fn().mockRejectedValue(new Error('offline')),
+      () => 'persisted-id',
+    );
+    await first.submitIfNeeded(pointsInput(), { allowCreate: true });
+
+    const createSubmissionId = vi.fn(() => 'wrong-new-id');
+    const submitRequest = vi.fn().mockResolvedValue({ ok: true, status: 200 });
+    const refreshed = createClient(storage, submitRequest, createSubmissionId);
+
+    await expect(refreshed.submitIfNeeded(pointsInput(), { allowCreate: false }))
+      .resolves.toBe('submitted');
+
+    expect(createSubmissionId).not.toHaveBeenCalled();
+    expect(submitRequest.mock.calls[0]?.[0].submissionId).toBe('persisted-id');
+  });
+
+  it.each([408, 425, 429, 500, 503])(
+    'keeps HTTP %i retryable as pending',
+    async (status) => {
+      const client = createClient(
+        memoryStorage(),
+        vi.fn().mockResolvedValue({ ok: false, status }),
+        () => `retry-${status}`,
+      );
+      await expect(client.submitIfNeeded(pointsInput(), { allowCreate: true }))
+        .resolves.toBe('pending');
+    },
+  );
+
+  it.each([
+    [409, 'conflict'],
+    [400, 'rejected'],
+    [422, 'rejected'],
+  ] as const)('makes HTTP %i terminal as %s', async (status, expected) => {
+    const submitRequest = vi.fn().mockResolvedValue({ ok: false, status });
+    const client = createClient(memoryStorage(), submitRequest, () => `terminal-${status}`);
+
+    await expect(client.submitIfNeeded(pointsInput(), { allowCreate: true }))
+      .resolves.toBe(expected);
+    await expect(client.submitIfNeeded(pointsInput(), { allowCreate: true }))
+      .resolves.toBe(expected);
+    expect(submitRequest).toHaveBeenCalledTimes(1);
+  });
+
+  it('does not let an old async response overwrite a different stored submission ID', async () => {
+    const storage = memoryStorage();
+    const response = deferred<{ ok: boolean; status: number }>();
+    const client = createClient(storage, vi.fn(() => response.promise), () => 'old-id');
+
+    const request = client.submitIfNeeded(pointsInput(), { allowCreate: true });
+    const [key, raw] = storage.entries()[0]!;
+    const record = JSON.parse(raw) as {
+      status: string;
+      submission: { submissionId: string };
+    };
+    record.submission.submissionId = 'replacement-id';
+    storage.setItem(key, JSON.stringify(record));
+
+    response.resolve({ ok: true, status: 201 });
+    await expect(request).resolves.toBe('pending');
+    expect(storage.values()[0]).toContain('"submissionId":"replacement-id"');
+    expect(storage.values()[0]).toContain('"status":"pending"');
+  });
+
+  it('keeps one terminal browser contribution across replay attempts', async () => {
     const storage = memoryStorage();
     const submitRequest = vi.fn().mockResolvedValue({ ok: true, status: 201 });
-    const client = createDailyCompletedResultClient({
-      storage,
-      createSubmissionId: () => 'classic-id',
-      submitRequest,
-    });
-    const classicAtBats = AT_BATS.slice(0, 3).map(atBat => ({
+    const client = createClient(storage, submitRequest, () => 'first-completion');
+
+    await client.submitIfNeeded(pointsInput(), { allowCreate: true });
+    const replay = pointsInput();
+    replay.completedAtBats = replay.completedAtBats.map(atBat => ({
       ...atBat,
-      outcome: 'K' as const,
-      wrongGuesses: 3,
-      resolution: 'strikeout' as const,
+      wrongGuesses: 1,
+      outcome: '3B' as const,
     }));
-    const input = {
+
+    await expect(client.submitIfNeeded(replay, { allowCreate: true }))
+      .resolves.toBe('submitted');
+    expect(submitRequest).toHaveBeenCalledTimes(1);
+  });
+
+  it('preserves Classic faced-at-bat length and rejects compatibility rulesets', async () => {
+    const submitRequest = vi.fn().mockResolvedValue({ ok: true, status: 201 });
+    const client = createClient(memoryStorage(), submitRequest, () => 'classic-id');
+    const classic = {
       puzzle: PUZZLE,
       rulesetVersion: CLASSIC_DAILY_RULESET_VERSION,
-      completedAtBats: classicAtBats,
+      completedAtBats: AT_BATS.slice(0, 3).map(atBat => ({
+        ...atBat,
+        outcome: 'K' as const,
+        wrongGuesses: 3,
+        resolution: 'strikeout' as const,
+      })),
     };
 
-    await expect(client.submitIfNeeded(input)).resolves.toBe('submitted');
+    await expect(client.submitIfNeeded(classic, { allowCreate: true }))
+      .resolves.toBe('submitted');
     expect(submitRequest.mock.calls[0]?.[0].completedAtBats).toHaveLength(3);
 
-    client.clear(input);
-    expect(storage.values()).toEqual([]);
+    await expect(client.submitIfNeeded(
+      { ...pointsInput(), rulesetVersion: LEGACY_DAILY_RULESET_VERSION },
+      { allowCreate: true },
+    )).resolves.toBe('unsupported');
+    expect(submitRequest).toHaveBeenCalledTimes(1);
   });
 });
 
@@ -204,8 +212,16 @@ function pointsInput() {
   return {
     puzzle: PUZZLE,
     rulesetVersion: POINTS_V3_DAILY_RULESET_VERSION,
-    completedAtBats: AT_BATS,
+    completedAtBats: AT_BATS.map(atBat => ({ ...atBat })),
   };
+}
+
+function createClient(
+  storage: ReturnType<typeof memoryStorage>,
+  submitRequest: ReturnType<typeof vi.fn>,
+  createSubmissionId: () => string | null,
+) {
+  return createDailyCompletedResultClient({ storage, submitRequest, createSubmissionId });
 }
 
 function memoryStorage() {
@@ -213,8 +229,8 @@ function memoryStorage() {
   return {
     getItem: (key: string) => map.get(key) ?? null,
     setItem: (key: string, value: string) => { map.set(key, value); },
-    removeItem: (key: string) => { map.delete(key); },
     values: () => [...map.values()],
+    entries: () => [...map.entries()],
   };
 }
 
