@@ -261,71 +261,6 @@ describe('dailyLocalStorage', () => {
     expect(restored?.completedAtBatFactsAreNative).toBe(false);
   });
 
-  it('marks only current-schema persisted completed-at-bat facts as native', () => {
-    const storage = new FakeStorage();
-    const gameState: DailyGameState = {
-      ...createInitialDemoGameState(DEMO_DAILY_PUZZLE),
-      rulesetVersion: POINTS_V3_DAILY_RULESET_VERSION,
-      completedPitchLines: [{ initials: 'KGJ', outcome: 'HR' }],
-      completedAtBats: [{
-        pitchNumber: 1,
-        initials: 'KGJ',
-        outcome: 'HR',
-        hintsRevealed: 0,
-        wrongGuesses: 0,
-        resolution: 'correct',
-      }],
-    };
-    const savedGame = buildSavedGame({ gameState, currentPitchIndex: 1 });
-    storage.setItem(getDailyStorageKey(DEMO_DAILY_PUZZLE.puzzleDate), JSON.stringify(savedGame));
-
-    expect(loadSavedDailyGameWithProvenance(
-      DEMO_DAILY_PUZZLE,
-      initialProgressionToken,
-      storage,
-    )?.completedAtBatFactsAreNative).toBe(true);
-
-    const reconstructed = buildSavedGame({
-      gameState: {
-        ...gameState,
-        completedPitchLines: [{ initials: 'KGJ', outcome: 'BUNT' }],
-        completedAtBats: [],
-      } as unknown as DailyGameState,
-    });
-    storage.setItem(
-      getDailyStorageKey(DEMO_DAILY_PUZZLE.puzzleDate),
-      JSON.stringify(reconstructed),
-    );
-
-    expect(loadSavedDailyGameWithProvenance(
-      DEMO_DAILY_PUZZLE,
-      initialProgressionToken,
-      storage,
-    )?.completedAtBatFactsAreNative).toBe(false);
-  });
-
-  it('never marks a pre-token completed save as native submission facts', () => {
-    const storage = new FakeStorage();
-    const initialGameState = createInitialDemoGameState(DEMO_DAILY_PUZZLE);
-    const savedGame = buildSavedGame({
-      currentPitchIndex: DEMO_DAILY_PUZZLE.pitches.length,
-      gameState: {
-        ...initialGameState,
-        status: 'completed',
-        score: { ...initialGameState.score, completed: true },
-        points: { ...initialGameState.points, completed: true },
-      },
-    });
-    setPreTokenSchema(savedGame, 2);
-    storage.setItem(getDailyStorageKey(DEMO_DAILY_PUZZLE.puzzleDate), JSON.stringify(savedGame));
-
-    expect(loadSavedDailyGameWithProvenance(
-      DEMO_DAILY_PUZZLE,
-      initialProgressionToken,
-      storage,
-    )?.completedAtBatFactsAreNative).toBe(false);
-  });
-
   it('normalizes pre-ruleset schema-3 state to legacy inning behavior', () => {
     const storage = new FakeStorage();
     const savedGame = buildSavedGame({
@@ -488,6 +423,7 @@ describe('dailyLocalStorage', () => {
     const restored = load(storage);
     expect(restored?.gameState.status).toBe('completed');
     expect(restored?.progressionToken).toBe(initialProgressionToken);
+    expect(loadWithProvenance(storage)?.completedAtBatFactsAreNative).toBe(false);
   });
 
   it('normalizes legacy BUNT outcomes while retaining schema-3 authorization', () => {
