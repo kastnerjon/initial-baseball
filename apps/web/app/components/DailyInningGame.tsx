@@ -43,7 +43,6 @@ import type {
   DailyResolutionResponse,
 } from '../dailyRuntimeContracts';
 import type { DailyScorecardAnswers } from '../dailyScorecard';
-import { canCreateCompletedResultFromLoadedSave } from '../dailyCompletedResultActivation';
 import { useCompletedDailyResultSubmission } from '../useCompletedDailyResultSubmission';
 import { AtBatCard } from './AtBatCard';
 import { DailyScorebug } from './DailyScorebug';
@@ -75,13 +74,11 @@ export function DailyInningGame({
   const [progressionToken, setProgressionToken] = useState(initialProgressionToken);
   const [hintBundle, setHintBundle] = useState<DailyHintBundle | null>(initialHintBundle);
   const [hasLoadedSavedState, setHasLoadedSavedState] = useState(false);
-  const [completedResultCreationAllowed, setCompletedResultCreationAllowed] = useState(false);
   const [bundlePending, setBundlePending] = useState(false);
   const [pendingResolutionAction, setPendingResolutionAction] = useState<PendingResolutionAction | null>(null);
   const [requestError, setRequestError] = useState<string | null>(null);
-  useCompletedDailyResultSubmission(
+  const completedResultSubmission = useCompletedDailyResultSubmission(
     hasLoadedSavedState,
-    completedResultCreationAllowed,
     gameState,
   );
 
@@ -145,11 +142,11 @@ export function DailyInningGame({
     setAtBatState(savedGame.atBatState);
     setPendingAdvance(savedGame.pendingAdvance);
     setProgressionToken(savedGame.progressionToken);
-    setCompletedResultCreationAllowed(canCreateCompletedResultFromLoadedSave({
+    completedResultSubmission.restoreEligibility(
       savedGame,
-      totalAtBats: puzzle.pitches.length,
-      completedAtBatFactsAreNative: loaded!.completedAtBatFactsAreNative,
-    }));
+      puzzle.pitches.length,
+      loaded!.completedAtBatFactsAreNative,
+    );
     setHasLoadedSavedState(true);
     const canReuseInitialBundle = savedGame.currentPitchIndex === 0
       && savedGame.progressionToken === initialProgressionToken;
@@ -413,7 +410,7 @@ export function DailyInningGame({
   }
 
   function resetToInitialState(): void {
-    setCompletedResultCreationAllowed(true);
+    completedResultSubmission.allowFreshSession();
     setGameState(createInitialDailyGameState(puzzle, rulesetVersion));
     setScorecardAnswers({});
     setCurrentPitchIndex(0);
