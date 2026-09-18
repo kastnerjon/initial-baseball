@@ -181,11 +181,11 @@ Responses expose only status/error codes:
 
 Every response is `private, no-store`. The route does not return normalized at-bat facts, score summaries, answer IDs/names, hints, credentials, or provider details.
 
-The endpoint is consistency-authoritative, not proof of honest anonymous play. It deliberately does not introduce an account, durable gameplay session, per-action event log, or stronger anti-cheat model. Browser creation/persistence of the stable `submissionId` and retry behavior are a separate client-adapter concern.
+The endpoint is consistency-authoritative, not proof of honest anonymous play. It deliberately does not introduce an account, durable gameplay session, per-action event log, or stronger anti-cheat model. The browser client adapter now owns creation/persistence of the stable `submissionId` and retry marker. It is intentionally not yet invoked by gameplay; activation after native-fact provenance is a separate concern.
 
 ## Browser persistence
 
-The browser persists public gameplay state and the current opaque token, not the full authorized hint bundle. On ordinary transitions, the server response supplies the next bundle. On refresh, `/api/daily/hints` hydrates the bundle before the restored at-bat becomes interactive. Daily Nine keeps the existing `initial-baseball:daily:<date>` namespace so points-v1/points-v2/points-v3/legacy saves remain compatible. Classic maps the same date key into a distinct Classic namespace, so load/save/clear/reset in one mode cannot overwrite the other. Persistence is a browser adapter concern; the signed token remains authoritative for ruleset/pitch/strike/reveal claims.
+The browser persists public gameplay state and the current opaque token, not the full authorized hint bundle. On ordinary transitions, the server response supplies the next bundle. On refresh, `/api/daily/hints` hydrates the bundle before the restored at-bat becomes interactive. Daily Nine keeps the existing `initial-baseball:daily:<date>` namespace so points-v1/points-v2/points-v3/legacy saves remain compatible. Classic maps the same date key into a distinct Classic namespace, so load/save/clear/reset in one mode cannot overwrite the other. Persistence is a browser adapter concern; the signed token remains authoritative for ruleset/pitch/strike/reveal claims. Completed-result retry bookkeeping uses the separate `initial-baseball:daily-result-submission:v1:<ruleset>:<date>:<puzzle>` namespace and never mutates the Daily save. A pending marker survives refresh and retries with the same ID; Reset today may clear only that game identity. Terminal marker state is local bookkeeping, not gameplay or aggregate authority.
 
 ## Caching and privacy
 
