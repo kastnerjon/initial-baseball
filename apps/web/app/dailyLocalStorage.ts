@@ -61,6 +61,14 @@ export function getDailyStorageKey(puzzleDate: string): string {
   return `${DAILY_STORAGE_PREFIX}:${puzzleDate}`;
 }
 
+export function hasPersistedDailyGameValue(
+  puzzleDate: string,
+  storage: Pick<Storage, 'getItem'> | null = getBrowserDailyStorage(),
+): boolean {
+  if (storage === null) return false;
+  return safelyReadStorage(storage, getDailyStorageKey(puzzleDate)) !== null;
+}
+
 export function loadSavedDailyGame(
   puzzle: DailyPublicPuzzle | DailyPuzzle,
   initialProgressionToken: string,
@@ -107,9 +115,9 @@ export function saveDailyGame(
   puzzle: DailyPublicPuzzle | DailyPuzzle,
   input: SaveDailyGameInput,
   storage: DailyStorage | null = getBrowserDailyStorage(),
-): void {
+): boolean {
   if (storage === null) {
-    return;
+    return false;
   }
 
   const publicPuzzle = toPublicPuzzle(puzzle);
@@ -126,17 +134,21 @@ export function saveDailyGame(
     scorecardAnswers: input.scorecardAnswers ?? {},
   };
 
-  safelyWriteStorage(storage, getDailyStorageKey(publicPuzzle.puzzleDate), JSON.stringify(savedGame));
+  return safelyWriteStorage(
+    storage,
+    getDailyStorageKey(publicPuzzle.puzzleDate),
+    JSON.stringify(savedGame),
+  );
 }
 
 export function clearSavedDailyGame(
   puzzle: DailyPublicPuzzle | DailyPuzzle,
   storage: DailyStorage | null = getBrowserDailyStorage(),
-): void {
+): boolean {
   if (storage === null) {
-    return;
+    return false;
   }
-  safelyRemoveStorage(storage, getDailyStorageKey(puzzle.puzzleDate));
+  return safelyRemoveStorage(storage, getDailyStorageKey(puzzle.puzzleDate));
 }
 
 function toPublicPuzzle(puzzle: DailyPublicPuzzle | DailyPuzzle): DailyPublicPuzzle {
@@ -158,7 +170,7 @@ function getBrowserDailyStorage(): DailyStorage | null {
   }
 }
 
-function safelyReadStorage(storage: DailyStorage, key: string): string | null {
+function safelyReadStorage(storage: Pick<Storage, 'getItem'>, key: string): string | null {
   try {
     return storage.getItem(key);
   } catch {
@@ -166,19 +178,23 @@ function safelyReadStorage(storage: DailyStorage, key: string): string | null {
   }
 }
 
-function safelyWriteStorage(storage: DailyStorage, key: string, value: string): void {
+function safelyWriteStorage(storage: DailyStorage, key: string, value: string): boolean {
   try {
     storage.setItem(key, value);
+    return true;
   } catch {
     // Persistence should never block gameplay.
+    return false;
   }
 }
 
-function safelyRemoveStorage(storage: DailyStorage, key: string): void {
+function safelyRemoveStorage(storage: DailyStorage, key: string): boolean {
   try {
     storage.removeItem(key);
+    return true;
   } catch {
     // Persistence should never block gameplay.
+    return false;
   }
 }
 

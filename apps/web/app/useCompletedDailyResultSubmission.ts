@@ -2,9 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import type { DailyGameState } from '@initial-baseball/shared';
-import { canCreateCompletedResultFromLoadedSave } from './dailyCompletedResultActivation';
 import { submitCompletedDailyResultIfNeeded } from './dailyCompletedResultClient';
-import type { SavedDailyGame } from './dailyLocalStorage';
 
 export function useCompletedDailyResultSubmission(
   hasLoadedSavedState: boolean,
@@ -44,19 +42,8 @@ export function useCompletedDailyResultSubmission(
   ]);
 
   return {
-    restoreEligibility(
-      savedGame: SavedDailyGame,
-      totalAtBats: number,
-      completedAtBatFactsAreNative: boolean,
-    ): void {
-      setAllowCreate(canCreateCompletedResultFromLoadedSave({
-        savedGame,
-        totalAtBats,
-        completedAtBatFactsAreNative,
-      }));
-    },
-    allowFreshSession(): void {
-      setAllowCreate(true);
+    setCreationEligibility(allow: boolean): void {
+      setAllowCreate(allow);
     },
   };
 }

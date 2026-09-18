@@ -1,7 +1,7 @@
 'use client';
 
 import type { JSX } from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import {
   createDailyShareResult,
   formatDailyShareText,
@@ -20,15 +20,8 @@ import {
   resolveDailyTerminalAtBat,
 } from '../dailyAtBatResolution';
 import { revealNextHintFromBundle } from '../dailyHintBundle';
-import {
-  clearSavedDailyGame,
-  loadSavedDailyGameWithProvenance,
-  saveDailyGame,
-} from '../dailyLocalStorage';
-import {
-  getDailyModeStorage,
-  isDailyModeSaveCompatible,
-} from '../dailyModeStorage';
+import type { LoadedSavedDailyGame } from '../dailyLocalStorage';
+import { useDailyGameplayPersistence } from '../useDailyGameplayPersistence';
 import { createDailyShareUrl } from '../dailyShareUrl';
 import type { CanonicalRevealViewModel } from '../canonicalRevealViewModel';
 import {
@@ -75,7 +68,28 @@ export function DailyInningGame({
   const [bundlePending, setBundlePending] = useState(false);
   const [pendingResolutionAction, setPendingResolutionAction] = useState<PendingResolutionAction | null>(null);
   const [requestError, setRequestError] = useState<string | null>(null);
+  const restoreGenerationRef = useRef(0);
   const completedResultSubmission = useCompletedDailyResultSubmission(hasLoadedSavedState, gameState);
+  const gameplayPersistence = useDailyGameplayPersistence({
+    puzzle,
+    rulesetVersion,
+    initialProgressionToken,
+    hasLoadedSavedState,
+    saveInput: {
+      currentPitchIndex,
+      gameState,
+      atBatState,
+      pendingAdvance,
+      progressionToken,
+      scorecardAnswers,
+    },
+    onRestore: restoreLoadedGame,
+    setCompletedResultCreationAllowed: completedResultSubmission.setCreationEligibility,
+  });
+
+  useEffect(() => () => {
+    restoreGenerationRef.current += 1;
+  }, []);
 
   const currentPitch = puzzle.pitches[currentPitchIndex] ?? null;
   const isPuzzleComplete = currentPitchIndex >= puzzle.pitches.length;
@@ -101,110 +115,19 @@ export function DailyInningGame({
     [gameState, isGameComplete],
   );
 
-  useEffect(() => {
-    let cancelled = false;
-    const storage = getDailyModeStorage(rulesetVersion);
-    const loaded = loadSavedDailyGameWithProvenance(
-      puzzle,
-      initialProgressionToken,
-      storage,
+  if (gameplayPersistence.access === 'checking' || gameplayPersistence.access === 'follower') {
+    return (
+      <div className="game-shell">
+        <section className="at-bat-card" aria-live="polite">
+          <p>
+            {gameplayPersistence.access === 'checking'
+              ? 'Opening today’s game…'
+              : 'This Daily is active in another tab. Close that tab to continue here.'}
+          </p>
+        </section>
+      </div>
     );
-    const savedGame = loaded?.savedGame ?? null;
-
-    if (
-      savedGame === null
-      || !isDailyModeSaveCompatible(rulesetVersion, savedGame.gameState.rulesetVersion)
-    ) {
-      resetToInitialState();
-      setHasLoadedSavedState(true);
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    const savedGameComplete = savedGame.gameState.points.completed
-      || savedGame.gameState.score.completed
-      || savedGame.currentPitchIndex >= puzzle.pitches.length
-      || savedGame.pendingAdvance?.points.completed === true
-      || savedGame.pendingAdvance?.score.completed === true
-      || (savedGame.pendingAdvance?.nextPitchIndex ?? 0) >= puzzle.pitches.length;
-
-    setGameState(savedGame.gameState);
-    setScorecardAnswers(savedGame.scorecardAnswers ?? {});
-    setCurrentPitchIndex(savedGame.currentPitchIndex);
-    setAtBatState(savedGame.atBatState);
-    setPendingAdvance(savedGame.pendingAdvance);
-    setProgressionToken(savedGame.progressionToken);
-    completedResultSubmission.restoreEligibility(savedGame, puzzle.pitches.length, loaded!.completedAtBatFactsAreNative);
-    setHasLoadedSavedState(true);
-    const canReuseInitialBundle = savedGame.currentPitchIndex === 0
-      && savedGame.progressionToken === initialProgressionToken;
-
-    if (savedGameComplete) {
-      setHintBundle(null);
-      setBundlePending(false);
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    if (canReuseInitialBundle) {
-      setHintBundle(initialHintBundle);
-      setBundlePending(false);
-      return () => {
-        cancelled = true;
-      };
-    }
-
-    setHintBundle(null);
-    setBundlePending(true);
-    void fetchHintBundle(savedGame.progressionToken)
-      .then((response) => {
-        if (!cancelled) {
-          setHintBundle(response.hintBundle);
-          setRequestError(null);
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setRequestError('The saved at-bat could not be restored. Reset today’s game to continue.');
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setBundlePending(false);
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [initialHintBundle, initialProgressionToken, puzzle, rulesetVersion]);
-
-  useEffect(() => {
-    if (!hasLoadedSavedState) {
-      return;
-    }
-
-    saveDailyGame(puzzle, {
-      currentPitchIndex,
-      gameState,
-      atBatState,
-      pendingAdvance,
-      progressionToken,
-      scorecardAnswers,
-    }, getDailyModeStorage(rulesetVersion));
-  }, [
-    atBatState,
-    currentPitchIndex,
-    gameState,
-    hasLoadedSavedState,
-    pendingAdvance,
-    progressionToken,
-    puzzle,
-    rulesetVersion,
-    scorecardAnswers,
-  ]);
+  }
 
   if (shareResult !== null) {
     return (
@@ -391,7 +314,7 @@ export function DailyInningGame({
   }
 
   function handleResetToday(): void {
-    clearSavedDailyGame(puzzle, getDailyModeStorage(rulesetVersion));
+    if (!gameplayPersistence.resetPersistedState()) return;
     resetToInitialState();
     setPendingResolutionAction(null);
     setBundlePending(false);
@@ -399,7 +322,7 @@ export function DailyInningGame({
   }
 
   function resetToInitialState(): void {
-    completedResultSubmission.allowFreshSession();
+    restoreGenerationRef.current += 1;
     setGameState(createInitialDailyGameState(puzzle, rulesetVersion));
     setScorecardAnswers({});
     setCurrentPitchIndex(0);
@@ -408,6 +331,60 @@ export function DailyInningGame({
     setProgressionToken(initialProgressionToken);
     setHintBundle(initialHintBundle);
     setRequestError(null);
+  }
+
+  function restoreLoadedGame(loaded: LoadedSavedDailyGame | null): void {
+    const restoreGeneration = ++restoreGenerationRef.current;
+    const savedGame = loaded?.savedGame ?? null;
+    if (savedGame === null) {
+      resetToInitialState();
+      setHasLoadedSavedState(true);
+      return;
+    }
+
+    const savedGameComplete = savedGame.gameState.points.completed
+      || savedGame.gameState.score.completed
+      || savedGame.currentPitchIndex >= puzzle.pitches.length
+      || savedGame.pendingAdvance?.points.completed === true
+      || savedGame.pendingAdvance?.score.completed === true
+      || (savedGame.pendingAdvance?.nextPitchIndex ?? 0) >= puzzle.pitches.length;
+
+    setGameState(savedGame.gameState);
+    setScorecardAnswers(savedGame.scorecardAnswers ?? {});
+    setCurrentPitchIndex(savedGame.currentPitchIndex);
+    setAtBatState(savedGame.atBatState);
+    setPendingAdvance(savedGame.pendingAdvance);
+    setProgressionToken(savedGame.progressionToken);
+    setHasLoadedSavedState(true);
+
+    const canReuseInitialBundle = savedGame.currentPitchIndex === 0
+      && savedGame.progressionToken === initialProgressionToken;
+    if (savedGameComplete) {
+      setHintBundle(null);
+      setBundlePending(false);
+      return;
+    }
+    if (canReuseInitialBundle) {
+      setHintBundle(initialHintBundle);
+      setBundlePending(false);
+      return;
+    }
+
+    setHintBundle(null);
+    setBundlePending(true);
+    void fetchHintBundle(savedGame.progressionToken)
+      .then((response) => {
+        if (restoreGenerationRef.current !== restoreGeneration) return;
+        setHintBundle(response.hintBundle);
+        setRequestError(null);
+      })
+      .catch(() => {
+        if (restoreGenerationRef.current !== restoreGeneration) return;
+        setRequestError('The saved at-bat could not be restored. Reset today’s game to continue.');
+      })
+      .finally(() => {
+        if (restoreGenerationRef.current === restoreGeneration) setBundlePending(false);
+      });
   }
 
   function handleRevealHint(): void {
