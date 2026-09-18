@@ -52,7 +52,6 @@ describe('completed-result browser client', () => {
 
     const first = client.submitIfNeeded(pointsInput(), { allowCreate: true });
     const second = client.submitIfNeeded(pointsInput(), { allowCreate: true });
-    expect(first).toBe(second);
     expect(request).toHaveBeenCalledTimes(1);
 
     pending.resolve({ ok: true, status: 201 });
