@@ -5,7 +5,7 @@ Last updated: 2026-09-18
 
 Completed history belongs in PRs, canonical docs, or `tasks/lessons.md`. Durable resumption context belongs in `docs/START-HERE.md`.
 
-Current order: the routine conversational future-lineup path is operationally complete; completed-result 4A validation, 4B idempotency, the hardened Supabase provider, POST API, browser delivery client, native-completion activation, and live production idempotency proof are complete. A fresh real-browser Daily #144 / `points-v3` completion created exactly one result row, and replaying the exact same submission returned `existing` while row count stayed one. The next bounded concern is 4D Daily Nine comparison. Draft #161 must not be merged unchanged. Remaining authenticated-editor slot QA, timed public editorial rollover/fallback checks, and physical iPhone/iPad QA stay open but do not block the results pipeline. Permanent archive/local history remain subsequent concerns. Current beta numbering is disposable; broad launch later restarts at Daily #1 after the owner chooses the surviving game/final rules.
+Current order: the routine conversational future-lineup path and completed-result 4A/4B/4C stack are operationally complete, including live production idempotency proof. Daily Nine comparison now has portable validation, repository/service and a hosted-but-inactive Supabase provider foundation. The next bounded concern is the resolved-AB web submission API; browser collection remains off. Draft #161 must not be merged unchanged. Remaining authenticated-editor slot QA, timed public editorial rollover/fallback checks, and physical iPhone/iPad QA stay open but do not block the results pipeline. Permanent archive/local history remain subsequent concerns. Current beta numbering is disposable; broad launch later restarts at Daily #1 after the owner chooses the surviving game/final rules.
 
 ## September 15–16 approved product work
 
@@ -166,8 +166,8 @@ Replacement plan: `tasks/plans/resolved-at-bat-comparison.md`. PR #174 is held a
 
 - [x] Inspect main/#174 and record separate resolved-AB/completed-game populations, after-each-AB v1 UI, strict-lower tie semantics, freshness and delivery acknowledgment separation.
 - [x] Portable resolved-AB transport and engine validation/derived points; scope: `tasks/plans/resolved-at-bat-contract.md`. No collection activation.
-- [x] Portable immutable repository/service and retry/conflict semantics; scope: `tasks/plans/resolved-at-bat-repository.md`. Provider atomicity still needs adapter/integration verification.
-- [ ] Supabase row adapter/migration, unique observation identity, population index and server-only privileges.
+- [x] Portable immutable repository/service and retry/conflict semantics; scope: `tasks/plans/resolved-at-bat-repository.md`.
+- [x] Supabase row adapter/migration, unique observation identity, population index, server-only privileges and isolated same-key atomicity verification; scope: `tasks/plans/resolved-at-bat-supabase-provider.md`. Collection remains inactive.
 - [ ] Web submission API using authoritative puzzle context.
 - [ ] Browser attempt identity before first contribution, cross-tab atomic ownership, immutable outbox, reset behavior and old-save migration; gate activation on lifecycle tests.
 - [ ] Independent-population comparison contracts/provider/API, read-only recovery, freshness and representative isolated performance measurements.

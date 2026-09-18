@@ -1,7 +1,7 @@
 # Data Model Spec
 
 Status: Current persistence contract and approved next entities  
-Last updated: 2026-09-17
+Last updated: 2026-09-18
 
 ## Ownership
 
@@ -13,6 +13,7 @@ Last updated: 2026-09-17
 | Anonymous in-progress visible state | Browser state plus opaque signed progression authorization |
 | Editorial future/past puzzle records | `public.daily_editorial_puzzles` through `DailyPuzzleRepository` |
 | Current completed-result provider storage | `public.daily_completed_results` through the web Supabase adapter behind `DailyCompletedResultRepository` |
+| Current resolved-AB provider storage | `public.daily_at_bat_results` through the web Supabase adapter behind `DailyAtBatResultRepository` |
 | Future permanent archive identity and personal archive history | Separate migrations/adapters/local schemas described below |
 | Future gameplay profiles and saved recipes | Separate provider-neutral contracts and migrations, not legacy tables |
 
@@ -240,4 +241,20 @@ Normalization copies only approved fields and discards client scores, answers an
 
 Same key and all equal normalized fields return `existing`; changed native facts, derived points or metadata return `idempotency_conflict` containing only the incoming key. A provider returning a different key or claiming insertion of a different result throws a contract error. Provider failures propagate for the future transport's retry mapping. Different slots and populations are independent; neither AB order nor completion records are required. This is not a multi-tab run-coherence guarantee.
 
-Scope: `tasks/plans/resolved-at-bat-repository.md`. No Supabase provider, table, API or browser collection is activated by this portable layer. Receipt metadata and comparison-read status are not immutable AB facts.
+Scope: `tasks/plans/resolved-at-bat-repository.md`. This portable layer itself has no Supabase dependency. Receipt metadata and comparison-read status are not immutable AB facts.
+
+## Resolved-AB Supabase provider
+
+`public.daily_at_bat_results` stores one flat engine-normalized points-v3 terminal observation per row. It includes attempt and puzzle identity, schema/ruleset, pitch number/initials, outcome, hints, wrong guesses, resolution, engine-derived awarded points, and provider-owned `created_at`. It stores no answer name, search text, wrong-answer identity, IP/account identity, client score, or per-action event stream.
+
+Persistence/security contract:
+
+- migration `20260918185110_create_daily_at_bat_results` is applied and reconciled with source;
+- composite primary key `(attempt_id, puzzle_id, ruleset_version, pitch_number)` makes the observation first-write-wins without letting date, number or schema version create duplicates;
+- population index `(puzzle_id, ruleset_version, pitch_number) INCLUDE (awarded_points)` supports later exact count/average reads without defining comparison semantics here;
+- RLS is enabled with no policies; `anon` and `authenticated` have no direct access; `service_role` has `SELECT, INSERT` only;
+- the server-only row codec fails closed on malformed persisted rows;
+- the adapter inserts first, reads the existing winner by the complete key only after PostgreSQL `23505`, and has no update/upsert path;
+- SQL constrains contract shape and value ranges but does not duplicate engine outcome consistency or scoring formulas.
+
+Hosted verification used two simultaneous disposable same-key inserts with differing normalized payloads. Exactly one row won; cleanup returned the table to zero rows. This proves the database uniqueness primitive, not coherent browser attempt ownership. No API or browser collection is active yet. Scope: `tasks/plans/resolved-at-bat-supabase-provider.md`.
