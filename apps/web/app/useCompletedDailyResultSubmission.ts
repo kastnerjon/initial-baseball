@@ -10,13 +10,27 @@ export function useCompletedDailyResultSubmission(
   gameState: DailyGameState,
 ): void {
   useEffect(() => {
-    if (!hasLoadedSavedState || gameState.status !== 'completed') return;
+    if (!hasLoadedSavedState) return;
+
+    void submitCompletedDailyResultIfNeeded({
+      puzzle: gameState.puzzle,
+      rulesetVersion: gameState.rulesetVersion,
+      completedAtBats: [],
+    }, { allowCreate: false });
+  }, [
+    gameState.puzzle,
+    gameState.rulesetVersion,
+    hasLoadedSavedState,
+  ]);
+
+  useEffect(() => {
+    if (!hasLoadedSavedState || !allowCreate || gameState.status !== 'completed') return;
 
     void submitCompletedDailyResultIfNeeded({
       puzzle: gameState.puzzle,
       rulesetVersion: gameState.rulesetVersion,
       completedAtBats: gameState.completedAtBats,
-    }, { allowCreate });
+    }, { allowCreate: true });
   }, [
     allowCreate,
     gameState.completedAtBats,
