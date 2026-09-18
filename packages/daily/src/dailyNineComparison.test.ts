@@ -58,7 +58,7 @@ describe('Daily Nine comparison aggregation', () => {
   it('uses engine points-v3 deductions for grouped native facts', () => {
     const factBuckets = uniformAtBats([
       {
-        outcome: '2B',
+        outcome: '3B',
         hintsRevealed: 1,
         wrongGuesses: 2,
         resolution: 'correct',
@@ -75,7 +75,7 @@ describe('Daily Nine comparison aggregation', () => {
       averageHintsRevealed: 1,
       hintUseRate: 1,
     });
-    expect(comparison.atBats[0]?.outcomeRates['2B']).toBe(1);
+    expect(comparison.atBats[0]?.outcomeRates['3B']).toBe(1);
   });
 
   it('rejects a provider population missing a completed slot', () => {
