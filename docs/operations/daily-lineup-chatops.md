@@ -1,6 +1,6 @@
 # Daily lineup ChatOps
 
-Status: operational in production and smoke-tested September 16, 2026.
+Status: operational in production; smoke-tested September 16 and exercised for routine owner-supplied future lineups September 17, 2026.
 
 ## Goal
 
@@ -56,7 +56,8 @@ When the owner supplies a lineup:
 6. ask whether to schedule when that intent is not already explicit;
 7. call `private.dispatch_daily_lineup_chatops(puzzle_date, canonical_ids, schedule)` through the connected Supabase project;
 8. capture the returned `pg_net` request ID, then inspect `net._http_response` for the corresponding status/body after the asynchronous request completes;
-9. only treat the operation as successful when the HTTP response is 2xx and its persisted readback exactly matches the requested date, order, status, and nine canonical players.
+9. on a normal 2xx response, require the returned persisted readback to exactly match the requested date, order, status, and nine canonical players;
+10. if `pg_net` reports a transport timeout, do **not** blindly retry: first read the authoritative editorial record for that date. If the exact nine/order/status and `chatops:assistant` audit metadata are already persisted, treat the mutation as completed and record the timeout as a transport anomaly. Retry only when authoritative readback proves the requested mutation did not complete.
 
 Do not publish from this conversational operation. Publication remains a separate lifecycle action.
 
@@ -71,6 +72,8 @@ This procedure is intentionally durable across chats. A future assistant should 
 5. The matching credential is stored in Supabase Vault as `daily_chatops_token`; it is not hard-coded in SQL, source control, logs, or browser code.
 6. The transport reached the production route successfully. An invalid Daily candidate was rejected atomically with HTTP 400 before any lineup mutation.
 7. The corrected September 18, 2026 / Daily #145 lineup was dispatched through the private transport, persisted in exact batting order, and scheduled. The persisted record reached revision 2 with `scheduled_by` and `updated_by` equal to `chatops:assistant`.
+8. On September 17, owner-supplied future Dailies #149–#151 were resolved through the canonical identity system, persisted in exact batting order through the private transport, and scheduled. The persisted seven-day horizon then covered Dailies #145–#151 with no draft gaps. Future player names and canonical IDs remain intentionally absent from public repository history.
+9. One routine dispatch timed out at the `pg_net` transport after the server had already committed the exact scheduled lineup. Direct authoritative readback confirmed revision 2, exact order, and `chatops:assistant` attribution before any retry; a second routine dispatch returned HTTP 200 normally.
 
 ## QA gate
 
@@ -86,7 +89,8 @@ Verified before routine production use:
 - scheduled replacement returns to draft and only explicit scheduling restores `scheduled`;
 - cache invalidation still runs through the existing repository wrapper;
 - validation warnings are returned for conversational review;
-- the response readback exactly matches the requested nine;
+- normal 2xx response readback exactly matches the requested nine;
+- timeout recovery checks the authoritative editorial row before retrying and never assumes that a transport timeout means the server mutation failed;
 - the private transport is not executable by `public`, `anon`, or `authenticated` and the `private` schema is not exposed through the Data API;
 - no future lineup content appears in public GitHub surfaces or browser payloads;
 - full CI, documentation checks, preview deployment, production deployment, credential activation, production transport dispatch, atomic rejection, exact persisted readback, and explicit scheduling were exercised.
