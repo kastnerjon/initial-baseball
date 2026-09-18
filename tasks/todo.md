@@ -146,7 +146,8 @@ Admin redesign is deferred. The user may supply a future date and nine ordered p
 - [x] Compare current stored submission ID before applying an async terminal status so stale responses cannot overwrite a replacement record.
 - [x] Keep delivery bookkeeping in its own local namespace, separate from portable gameplay facts and Daily save compatibility.
 - [x] Preserve shorter Classic faced-at-bat lists and reject unsupported compatibility rulesets locally.
-- [x] Pass final CI/preview, merge, and exact production verification.
+- [x] Pass final CI/preview and merge.
+- [ ] Verify exact production deployment of the merged browser client before native activation is treated as live.
 
 ### 4C-3b. Native completion activation — current bounded concern
 
