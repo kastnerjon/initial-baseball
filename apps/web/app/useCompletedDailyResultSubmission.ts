@@ -12,14 +12,11 @@ export function useCompletedDailyResultSubmission(
   useEffect(() => {
     if (!hasLoadedSavedState || gameState.status !== 'completed') return;
 
-    void submitCompletedDailyResultIfNeeded(
-      {
-        puzzle: gameState.puzzle,
-        rulesetVersion: gameState.rulesetVersion,
-        completedAtBats: gameState.completedAtBats,
-      },
-      { allowCreate },
-    );
+    void submitCompletedDailyResultIfNeeded({
+      puzzle: gameState.puzzle,
+      rulesetVersion: gameState.rulesetVersion,
+      completedAtBats: gameState.completedAtBats,
+    }, { allowCreate });
   }, [
     allowCreate,
     gameState.completedAtBats,
