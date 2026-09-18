@@ -5,7 +5,7 @@ Last updated: 2026-09-18
 
 Completed history belongs in PRs, canonical docs, or `tasks/lessons.md`. Durable resumption context belongs in `docs/START-HERE.md`.
 
-Current order: the routine conversational future-lineup path and completed-result 4A/4B/4C stack are operationally complete, including live production idempotency proof. Daily Nine comparison now has portable validation, repository/service, hosted-but-inactive Supabase provider and an authoritative server submission API. The next bounded concern is browser attempt/delivery lifecycle; gameplay collection remains off until cross-tab/reset/legacy gates pass. Draft #161 must not be merged unchanged. Remaining authenticated-editor slot QA, timed public editorial rollover/fallback checks, and physical iPhone/iPad QA stay open but do not block the results pipeline. Permanent archive/local history remain subsequent concerns. Current beta numbering is disposable; broad launch later restarts at Daily #1 after the owner chooses the surviving game/final rules.
+Current order: the routine conversational future-lineup path and completed-result 4A/4B/4C stack are operationally complete, including live production idempotency proof. Daily Nine comparison now has portable validation, repository/service, hosted-but-inactive Supabase provider and an authoritative server submission API. Browser lifecycle architecture is settled and split into journal/outbox, cross-tab ownership, gameplay integration and activation PRs; gameplay collection remains off through the first three. Draft #161 must not be merged unchanged. Remaining authenticated-editor slot QA, timed public editorial rollover/fallback checks, and physical iPhone/iPad QA stay open but do not block the results pipeline. Permanent archive/local history remain subsequent concerns. Current beta numbering is disposable; broad launch later restarts at Daily #1 after the owner chooses the surviving game/final rules.
 
 ## September 15–16 approved product work
 
@@ -169,7 +169,11 @@ Replacement plan: `tasks/plans/resolved-at-bat-comparison.md`. PR #174 is held a
 - [x] Portable immutable repository/service and retry/conflict semantics; scope: `tasks/plans/resolved-at-bat-repository.md`.
 - [x] Supabase row adapter/migration, unique observation identity, population index, server-only privileges and isolated same-key atomicity verification; scope: `tasks/plans/resolved-at-bat-supabase-provider.md`. Collection remains inactive.
 - [x] Web submission API using authoritative puzzle context, engine normalization/derived points, Daily idempotency and provider persistence; scope: `tasks/plans/resolved-at-bat-submission-api.md`. No browser activation.
-- [ ] Browser attempt identity before first contribution, cross-tab atomic ownership, immutable outbox, reset behavior and old-save migration; gate activation on lifecycle tests.
+- [x] Settle browser lifecycle architecture and decomposition: exclusive Web Lock owner, separate versioned local attempt journal/outbox, owner-only shared save writes, takeover reload, fail-closed contribution fallback, reset/legacy policy; scope: `tasks/plans/resolved-at-bat-browser-lifecycle.md`.
+- [ ] Browser 6A: durable attempt journal plus immutable exact-payload AB outbox/retry client. No Web Locks, React or activation.
+- [ ] Browser 6B: exclusive cross-tab ownership/takeover coordinator with generation fencing and unsupported-browser behavior. No gameplay or network activation.
+- [ ] Browser 6C: owner-gated gameplay persistence, fresh-run attempt creation, takeover rehydration, reset retirement and legacy-save/completed-result eligibility integration. Collection remains off.
+- [ ] Browser 6D: freeze/send/retry native terminal ABs, reuse fresh attempt ID for new completion record, and complete multi-tab/mobile/production proof before declaring collection live.
 - [ ] Independent-population comparison contracts/provider/API, read-only recovery, freshness and representative isolated performance measurements.
 - [ ] Asynchronous YOU / AVG after every terminal AB; final nine-row scorecard, whole-game average and strict-lower finishers percentage with low-sample/outage states.
 - [ ] Verify mobile, answer integrity, failed delivery/read recovery and unchanged gameplay critical path before declaring live.

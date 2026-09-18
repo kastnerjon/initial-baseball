@@ -51,7 +51,7 @@ The final scorecard shows personal points and nine AB averages plus the whole-ga
 
 Comparisons may be briefly cached and need not immediately include the new submission. Previously loaded values render immediately and refresh asynchronously on the final screen; the user's own result never changes. Saving and comparison availability have separate success states. Missing comparisons never block gameplay or sharing. Counts represent anonymous observations, not verified unique people or proof of abandonment.
 
-Retain immutable native AB facts plus server/engine-derived points separately from completed results. Do not backfill old completions into the AB population. Scope, browser coordination gates and rollout policy: `tasks/plans/resolved-at-bat-comparison.md`.
+Retain immutable native AB facts plus server/engine-derived points separately from completed results. Do not backfill old completions into the AB population. Comparison scope: `tasks/plans/resolved-at-bat-comparison.md`; settled browser ownership, reset/legacy and rollout architecture: `tasks/plans/resolved-at-bat-browser-lifecycle.md`.
 
 ### Reset and testing
 

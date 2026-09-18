@@ -178,7 +178,9 @@ The resolved-AB provider maps the normalized result to one flat `public.daily_at
 
 `POST /api/daily/at-bats` is the separate resolved-AB submission boundary. It preflights schema/date/points-v3 routing, rejects future Pacific dates, loads the authoritative cached public puzzle without minting progression tokens/hints, calls engine validation/point derivation, then stores through Daily/provider. Created, existing, conflict, invalid and unavailable outcomes are deliberately mapped to private/no-store responses containing no facts or points. It is not called by `/api/daily/resolve`; browser activation remains gated on the later attempt/outbox/cross-tab lifecycle. Scope: `tasks/plans/resolved-at-bat-submission-api.md`.
 
-Gameplay resolution must not await comparison persistence or reads. A combined submission/read response distinguishes saved result from unavailable comparison; read-only recovery does not resubmit acknowledged records. Briefly cached comparisons are acceptable without immediate self-inclusion. Preserve the current completed-result foundation and legacy pending payloads. Settle atomic cross-tab attempt ownership before browser activation. Current progression tokens have no attempt identity/history and do not establish honest play.
+Gameplay resolution must not await comparison persistence or reads. A combined submission/read response distinguishes saved result from unavailable comparison; read-only recovery does not resubmit acknowledged records. Briefly cached comparisons are acceptable without immediate self-inclusion. Preserve the current completed-result foundation and legacy pending payloads. Current progression tokens have no attempt identity/history and do not establish honest play.
+
+The approved browser gate uses a long-lived exclusive Web Lock per stable puzzle/ruleset plus a separate versioned `localStorage` attempt journal/outbox. The lock serializes the contributing owner; only that owner writes the shared gameplay save or contribution record. A follower is passive while another tab owns the run. After release/crash, a queued owner reloads durable state before continuing. Storage events are notification only; no timeout lease or forced steal is allowed. Because gameplay and journal remain separate records, terminal commit ordering is gameplay save → immutable journal append → asynchronous POST; reset-after-observation ordering is journal retirement → gameplay clear. Hydration mismatches retire contribution without backfill. Missing Web Locks/storage/random-ID support fails closed for new AB collection while leaving existing compatibility gameplay available. Implementation is split into journal/outbox, ownership coordinator, gameplay lifecycle, and activation PRs; scope: `tasks/plans/resolved-at-bat-browser-lifecycle.md`.
 
 Use the new immutable AB table and indexed population reads, not mutable rollups. Exact AVG still scans the population; benchmark mixed read/write load and concurrency before claiming capacity. Later caching/rollups sit behind read ports. The portable AB service mirrors the completed-result atomic insert-if-absent port, comparing normalized fields without re-scoring or introducing a generic repository framework. Provider errors remain distinct from idempotency conflicts. Detailed owning-layer PR sequence and gates: `tasks/plans/resolved-at-bat-comparison.md`. Classic's overall ranking remains unresolved.
 
@@ -224,10 +226,11 @@ Vercel and Supabase remain replaceable adapters. No new cache service, queue, da
 ## Current sequence
 
 1. Completed-result collection is live and production-proven for a native Daily Nine completion, including exact same-ID idempotent replay; preserve that 4A/4B/4C boundary unchanged unless a separate defect requires it.
-2. Follow `tasks/plans/resolved-at-bat-comparison.md`: resolved-AB contracts, provider and submission API are complete; next add browser attempt coordination, then measured independent-population reads and asynchronous reveal/final UI. Supabase is the provider; engine owns scoring; React renders.
-3. Apply settled strict-lower-score tie semantics and initial presentation thresholds; keep them separate from persistence.
-4. Continue outstanding interactive/physical-device QA plus timed editorial rollover/fallback observations without blocking the result pipeline.
-5. Build Permanent archive/local-history infrastructure from the future explicit launch Daily #1, then finish broad-launch game/rules/epoch and launch polish.
+2. Follow `tasks/plans/resolved-at-bat-browser-lifecycle.md`: implement the browser journal/outbox, ownership coordinator, gameplay lifecycle, and activation as four bounded concerns. Keep collection off until the final activation proof.
+3. Then follow `tasks/plans/resolved-at-bat-comparison.md` for measured independent-population reads and asynchronous reveal/final UI. Supabase is the provider; engine owns scoring; React renders.
+4. Apply settled strict-lower-score tie semantics and initial presentation thresholds; keep them separate from persistence.
+5. Continue outstanding interactive/physical-device QA plus timed editorial rollover/fallback observations without blocking the result pipeline.
+6. Build Permanent archive/local-history infrastructure from the future explicit launch Daily #1, then finish broad-launch game/rules/epoch and launch polish.
 
 ## Non-goals
 

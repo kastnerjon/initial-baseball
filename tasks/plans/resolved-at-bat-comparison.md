@@ -1,6 +1,6 @@
 # Daily Nine resolved-at-bat comparison
 
-Status: Approved direction; portable contracts/service/provider/API implemented, browser collection pending
+Status: Approved direction; browser lifecycle architecture settled, implementation pending
 Date: 2026-09-18
 
 ## Scope contract for this PR
@@ -45,9 +45,9 @@ Public "Reset today's results" is beta-only and must be removed before broad lau
 
 ### Cross-tab implementation gate
 
-First-write-wins on individual rows does not ensure one coherent run. Before activating collection, implement and test serialized ownership of the contributing run plus atomic durable observation creation. A second tab must not independently fork the same attempt or mint another counted attempt. Storage events alone are notification, not a lock.
+First-write-wins on individual rows does not ensure one coherent run. Before activating collection, implement and test serialized ownership of the contributing run plus durable observation creation. A second tab must not independently fork the same attempt or mint another counted attempt. Storage events alone are notification, not a lock.
 
-The browser-lifecycle PR must specify ownership acquisition, stale-tab takeover, simultaneous initialization, stale pending resolve responses, reset propagation, crash recovery and browser support. A takeover must restore the persisted run state rather than continue a stale local branch. If ownership/durability cannot be established, gameplay remains available but new analytics contribution fails closed. Original immutable pending payloads may still retry. Choose the narrowest supported browser mechanism after inspecting save writes; do not add a server session table just to conceal this decision.
+The settled design uses one long-lived exclusive Web Lock per stable puzzle + exact ruleset, a small versioned `localStorage` attempt journal/outbox, and owner-only shared gameplay-save writes. A queued takeover reloads persisted gameplay and journal state before contributing; it never continues a follower's stale in-memory branch. Do not use clock leases or forced stealing. Unsupported locking/storage/random-ID capability leaves gameplay available but fails closed for new resolved-AB contribution. Exact record shape, follower behavior, reset/legacy rules, browser verification and the four bounded implementation PRs are defined in `tasks/plans/resolved-at-bat-browser-lifecycle.md`.
 
 ### Existing saves and rollout
 
@@ -91,9 +91,13 @@ If scans miss the measured budget, first evaluate a brief bounded shared cache w
 3. Complete: portable Daily repository/service with atomic insert-if-absent and semantic same/conflicting payload behavior.
 4. Complete: Supabase adapter/migration with normalized row codec, uniqueness/index, server-only privileges and isolated hosted verification; collection remains inactive.
 5. Complete: web AB submission API with authoritative puzzle lookup, existing service composition and deliberate error mapping. No browser activation.
-6. Browser attempt/delivery lifecycle: settle cross-tab gate, reuse completion identity safely, durable immutable outbox, reset/legacy-save behavior and integration tests. Keep comparison UI out.
-7. Comparison read contract/provider/API: separate populations, null empty averages, strict-lower score calculation, split acknowledgment/read status, freshness, isolated benchmarks and instrumentation. Further split if provider/runtime scope exceeds AGENTS.md.
-8. Reveal/final-scorecard UI: asynchronous YOU / AVG after every AB, low samples/outages, final refresh, stale-response protection, mobile and answer-integrity verification.
+6. Approved: browser lifecycle architecture and decomposition; scope: `tasks/plans/resolved-at-bat-browser-lifecycle.md`.
+7. Browser 6A: durable attempt journal and immutable AB outbox client; no Web Locks, React or activation.
+8. Browser 6B: exclusive cross-tab ownership coordinator and takeover/fencing tests; no gameplay or network activation.
+9. Browser 6C: owner-gated gameplay persistence plus fresh/reset/legacy lifecycle integration; collection remains off.
+10. Browser 6D: freeze/send/retry terminal ABs, reuse the fresh attempt ID for a new completion record, then complete multi-tab/device/production proof.
+11. Comparison read contract/provider/API: separate populations, null empty averages, strict-lower score calculation, split acknowledgment/read status, freshness, isolated benchmarks and instrumentation. Further split if provider/runtime scope exceeds AGENTS.md.
+12. Reveal/final-scorecard UI: asynchronous YOU / AVG after every AB, low samples/outages, final refresh, stale-response protection, mobile and answer-integrity verification.
 
 Each PR starts from updated main, writes its own scope contract, updates canonical docs, and gets one bounded review plus applicable CI/preview verification. Do not batch all eight concerns into one implementation diff. Production migrations and activation require source/hosted reconciliation; no feature is called live based solely on passing unit tests.
 
