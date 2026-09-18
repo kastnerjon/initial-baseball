@@ -94,6 +94,10 @@ Lineup content: `docs/product/lineup-content-system.md`.
 Architecture: `docs/architecture-and-scale-plan.md`.  
 Answer integrity: `docs/decisions/0001-daily-answer-integrity.md`.
 
+## Resolved-AB contract implementation
+
+The next 4D foundation adds portable schema-1 points-v3 AB transport and pure engine validation, reusing terminal-fact checks with completed results and deriving awarded points. It does not activate collection or change gameplay. Scope: `tasks/plans/resolved-at-bat-contract.md`. PR #174 is draft; its equal-population invariant is superseded by replacement roadmap PR #175. Next implementation concern is the portable AB repository/service. Browser identity, cross-tab coordination, provider/API, comparisons and UI remain pending.
+
 ## Current verified state
 
 - September 18 production result collection is now proven end to end on the PR #171 activation baseline. A fresh real-browser Daily #144 / `points-v3` session completed with nine Give Ups and created exactly one `public.daily_completed_results` row at `2026-09-18 06:16:47.384891+00`. The persisted row carried the expected puzzle/ruleset identity, nine ordered native Give Up facts, and engine-derived zero-point summary. Replaying the exact stored schema-1 payload with the same `submissionId` through production `POST /api/daily/results` returned HTTP 200 `{"status":"existing"}` and the table remained at exactly one row with the same receipt timestamp. The surrounding Vercel runtime-error scan was clean. PR #171 remains the activation code baseline (`ae2fc428b2fad05685b068944acce66b9dddf536`, production deployment `dpl_DctrheRJbonPmcszrjAfPuJxvzhy`); PR #172 reconciled the pre-proof handoff. Completed-result 4A/4B/4C is therefore operationally complete, and 4D Daily Nine comparison is the next bounded concern. Draft PR #161 remains unmerged and must not be merged unchanged.

@@ -5,3 +5,4 @@ export * from './types/stats.js';
 export * from './types/daily.js';
 export * from './types/dailyCompletedResult.js';
 export * from './validators/validateGameSettings.js';
+export * from './types/dailyAtBatResult.js';

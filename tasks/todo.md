@@ -165,7 +165,7 @@ Admin redesign is deferred. The user may supply a future date and nine ordered p
 Replacement plan: `tasks/plans/resolved-at-bat-comparison.md`. PR #174 is held as draft; its completion-only AB population is superseded. Complete one owning concern per PR.
 
 - [x] Inspect main/#174 and record separate resolved-AB/completed-game populations, after-each-AB v1 UI, strict-lower tie semantics, freshness and delivery acknowledgment separation.
-- [ ] Portable resolved-AB transport and engine validation/derived points.
+- [x] Portable resolved-AB transport and engine validation/derived points; scope: `tasks/plans/resolved-at-bat-contract.md`. No collection activation.
 - [ ] Portable immutable repository/service and retry/conflict semantics.
 - [ ] Supabase row adapter/migration, unique observation identity, population index and server-only privileges.
 - [ ] Web submission API using authoritative puzzle context.
