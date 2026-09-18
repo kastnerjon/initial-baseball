@@ -164,3 +164,9 @@ Players select canonical search results. Correctness is exact canonical `playerI
 ## Reuse
 
 Practice or future modes reuse the same outcome, hint, search, and policy functions. Do not create separate UI-owned scoring logic.
+
+## Portable resolved-at-bat observations (4D foundation)
+
+`DailyAtBatResultSubmission` schema 1 carries attemptId, exact puzzle ID/date/number, points-v3 and one native `atBat`. `validateDailyAtBatResult` binds that observation to caller-supplied authoritative puzzle/ruleset context, validates terminal facts through the same engine normalizer used for completed games, and derives `awardedPoints` using `getDailyAtBatPoints`. It accepts any isolated slot 1–9 without requiring earlier delivery or game completion. Classic and compatibility rulesets are not accepted by this new contract; their existing completed-result behavior is unchanged.
+
+Normalization copies only approved fields and discards client scores, answers and timestamps. This validates internal consistency, not honest play, unique people or coherent multi-tab attempts. Idempotency and browser identity enforcement belong to subsequent layers. No repository, table, endpoint or collection activation is added here. Scope: `tasks/plans/resolved-at-bat-contract.md`; the replacement comparison roadmap is PR #175.

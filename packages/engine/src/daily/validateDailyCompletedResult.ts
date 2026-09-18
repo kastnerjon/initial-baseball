@@ -9,9 +9,8 @@ import {
   type DailyCompletedResultRulesetVersion,
   type DailyCompletedResultValidation,
   type DailyPublicPuzzle,
-  type DailyRevealCount,
 } from '@initial-baseball/shared';
-import { getGuessOutcome } from '../guesses/getGuessOutcome.js';
+import { normalizeDailyTerminalAtBat } from './normalizeDailyTerminalAtBat.js';
 import {
   applyDailyOutcomeForRuleset,
   createDailyPointsSummary,
@@ -60,32 +59,9 @@ export function validateDailyCompletedResult({
   for (const [index, fact] of submission.completedAtBats.entries()) {
     if (state.points.completed) return reject('after_completion');
     const pitch = puzzle.pitches[index];
-    if (!isRecord(fact) || !isRevealCount(fact.hintsRevealed)
-      || !isIntegerWithin(fact.wrongGuesses, 0, 3)
-      || (fact.resolution !== 'correct' && fact.resolution !== 'strikeout' && fact.resolution !== 'give_up')) {
-      return reject('invalid_at_bat');
-    }
-    if (!pitch || fact.pitchNumber !== pitch.pitchNumber || fact.initials !== pitch.initials) {
-      return reject('at_bat_mismatch');
-    }
-    if (fact.resolution === 'strikeout' ? fact.wrongGuesses !== 3 : fact.wrongGuesses >= 3) {
-      return reject('inconsistent_at_bat');
-    }
-    const correct = getGuessOutcome({
-      isCorrect: true, revealCount: fact.hintsRevealed, strikeCount: fact.wrongGuesses, maxStrikes: 3,
-    });
-    const outcome = fact.resolution === 'correct' && correct.kind === 'correct' ? correct.outcome : 'K';
-    if (fact.outcome !== outcome) return reject('inconsistent_at_bat');
-
-    // Whitelist fields: never retain client totals, answer data, or mutable input references.
-    const atBat: DailyCompletedAtBat = {
-      pitchNumber: pitch.pitchNumber,
-      initials: pitch.initials,
-      outcome,
-      hintsRevealed: fact.hintsRevealed,
-      wrongGuesses: fact.wrongGuesses,
-      resolution: fact.resolution,
-    };
+    const normalizedFact = normalizeDailyTerminalAtBat(fact, pitch);
+    if (!normalizedFact.ok) return reject(normalizedFact.error);
+    const atBat = normalizedFact.atBat;
     completedAtBats.push(atBat);
     state = applyDailyOutcomeForRuleset({ ...state, ...atBat, rulesetVersion, totalAtBats });
   }
@@ -116,12 +92,4 @@ function reject(error: DailyCompletedResultError): DailyCompletedResultValidatio
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
-}
-
-function isIntegerWithin(value: unknown, minimum: number, maximum: number): value is number {
-  return typeof value === 'number' && Number.isInteger(value) && value >= minimum && value <= maximum;
-}
-
-function isRevealCount(value: unknown): value is DailyRevealCount {
-  return isIntegerWithin(value, 0, 4);
 }

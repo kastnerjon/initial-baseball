@@ -160,8 +160,10 @@ Admin redesign is deferred. The user may supply a future date and nine ordered p
 - [x] Pass final focused/full CI, documentation-impact, exact-head Vercel preview, merge, and exact production deployment.
 - [x] Verify live result collection end to end in production: real-browser Daily #144 / `points-v3` completion created one row; exact same-ID replay returned `existing`; row count remained one.
 
-### 4D. Daily Nine comparison — next bounded concern
+### 4D. Daily Nine comparison — portable AB foundation
 
+- [x] Add portable schema-1 points-v3 resolved-AB contract and engine validation with shared terminal-fact normalization; scope: `tasks/plans/resolved-at-bat-contract.md`. No collection activation.
+- [ ] Follow replacement roadmap PR #175: independent resolved-AB/completed-game populations; #174 remains draft and must not merge unchanged. Next: portable AB repository/service, then provider/API/browser lifecycle and comparison.
 - [ ] Add same-Daily/same-ruleset completion count and average total points.
 - [ ] Add per-at-bat average points for each of the nine slots plus useful outcome/hint/K/Give Up rates.
 - [ ] Add score distribution.

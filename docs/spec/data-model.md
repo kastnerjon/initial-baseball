@@ -223,3 +223,9 @@ Do not reuse inactive legacy attempt/result tables by default and do not introdu
 ## Inactive legacy scaffold
 
 The original migration's database-player, original Daily, attempt/result, social, and head-to-head tables remain inactive and non-authoritative. Cleanup or migration requires a separate dependency-aware decision.
+
+## Portable resolved-at-bat observations (4D foundation)
+
+`DailyAtBatResultSubmission` schema 1 carries attemptId, exact puzzle ID/date/number, points-v3 and one native `atBat`. `validateDailyAtBatResult` binds that observation to caller-supplied authoritative puzzle/ruleset context, validates terminal facts through the same engine normalizer used for completed games, and derives `awardedPoints` using `getDailyAtBatPoints`. It accepts any isolated slot 1–9 without requiring earlier delivery or game completion. Classic and compatibility rulesets are not accepted by this new contract; their existing completed-result behavior is unchanged.
+
+Normalization copies only approved fields and discards client scores, answers and timestamps. This validates internal consistency, not honest play, unique people or coherent multi-tab attempts. Idempotency and browser identity enforcement belong to subsequent layers. No repository, table, endpoint or collection activation is added here. Scope: `tasks/plans/resolved-at-bat-contract.md`; the replacement comparison roadmap is PR #175.
