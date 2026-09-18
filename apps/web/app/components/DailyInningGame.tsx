@@ -22,7 +22,7 @@ import {
 import { revealNextHintFromBundle } from '../dailyHintBundle';
 import {
   clearSavedDailyGame,
-  loadSavedDailyGame,
+  loadSavedDailyGameWithProvenance,
   saveDailyGame,
 } from '../dailyLocalStorage';
 import {
@@ -43,6 +43,7 @@ import type {
   DailyResolutionResponse,
 } from '../dailyRuntimeContracts';
 import type { DailyScorecardAnswers } from '../dailyScorecard';
+import { useCompletedDailyResultSubmission } from '../useCompletedDailyResultSubmission';
 import { AtBatCard } from './AtBatCard';
 import { DailyScorebug } from './DailyScorebug';
 import { GameCompleteView } from './GameCompleteView';
@@ -73,9 +74,15 @@ export function DailyInningGame({
   const [progressionToken, setProgressionToken] = useState(initialProgressionToken);
   const [hintBundle, setHintBundle] = useState<DailyHintBundle | null>(initialHintBundle);
   const [hasLoadedSavedState, setHasLoadedSavedState] = useState(false);
+  const [completedResultCreationAllowed, setCompletedResultCreationAllowed] = useState(false);
   const [bundlePending, setBundlePending] = useState(false);
   const [pendingResolutionAction, setPendingResolutionAction] = useState<PendingResolutionAction | null>(null);
   const [requestError, setRequestError] = useState<string | null>(null);
+  useCompletedDailyResultSubmission(
+    hasLoadedSavedState,
+    completedResultCreationAllowed,
+    gameState,
+  );
 
   const currentPitch = puzzle.pitches[currentPitchIndex] ?? null;
   const isPuzzleComplete = currentPitchIndex >= puzzle.pitches.length;
@@ -106,7 +113,12 @@ export function DailyInningGame({
   useEffect(() => {
     let cancelled = false;
     const storage = getDailyModeStorage(rulesetVersion);
-    const savedGame = loadSavedDailyGame(puzzle, initialProgressionToken, storage);
+    const loaded = loadSavedDailyGameWithProvenance(
+      puzzle,
+      initialProgressionToken,
+      storage,
+    );
+    const savedGame = loaded?.savedGame ?? null;
 
     if (
       savedGame === null
@@ -119,20 +131,26 @@ export function DailyInningGame({
       };
     }
 
-    setGameState(savedGame.gameState);
-    setScorecardAnswers(savedGame.scorecardAnswers ?? {});
-    setCurrentPitchIndex(savedGame.currentPitchIndex);
-    setAtBatState(savedGame.atBatState);
-    setPendingAdvance(savedGame.pendingAdvance);
-    setProgressionToken(savedGame.progressionToken);
-    setHasLoadedSavedState(true);
-
     const savedGameComplete = savedGame.gameState.points.completed
       || savedGame.gameState.score.completed
       || savedGame.currentPitchIndex >= puzzle.pitches.length
       || savedGame.pendingAdvance?.points.completed === true
       || savedGame.pendingAdvance?.score.completed === true
       || (savedGame.pendingAdvance?.nextPitchIndex ?? 0) >= puzzle.pitches.length;
+    const hasNoCompletedFacts = savedGame.gameState.completedAtBats.length === 0
+      && (savedGame.pendingAdvance?.completedAtBats.length ?? 0) === 0;
+
+    setGameState(savedGame.gameState);
+    setScorecardAnswers(savedGame.scorecardAnswers ?? {});
+    setCurrentPitchIndex(savedGame.currentPitchIndex);
+    setAtBatState(savedGame.atBatState);
+    setPendingAdvance(savedGame.pendingAdvance);
+    setProgressionToken(savedGame.progressionToken);
+    setCompletedResultCreationAllowed(
+      !savedGameComplete
+      && (loaded!.completedAtBatFactsAreNative || hasNoCompletedFacts),
+    );
+    setHasLoadedSavedState(true);
     const canReuseInitialBundle = savedGame.currentPitchIndex === 0
       && savedGame.progressionToken === initialProgressionToken;
 
@@ -395,6 +413,7 @@ export function DailyInningGame({
   }
 
   function resetToInitialState(): void {
+    setCompletedResultCreationAllowed(true);
     setGameState(createInitialDailyGameState(puzzle, rulesetVersion));
     setScorecardAnswers({});
     setCurrentPitchIndex(0);
