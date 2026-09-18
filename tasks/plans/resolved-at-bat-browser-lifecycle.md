@@ -1,6 +1,6 @@
 # Resolved-at-bat browser lifecycle
 
-Status: Approved architecture; browser 6A implemented, 6B next
+Status: Approved architecture; browser 6A/6B implemented, 6C next
 Date: 2026-09-18
 
 ## Scope contract for this planning PR
@@ -130,7 +130,7 @@ Out of scope: Web Locks, React, gameplay saves, completed-result changes, compar
 
 ### 6B. Cross-tab ownership coordinator
 
-Status: Next bounded implementation.
+Status: Implemented; scope and acceptance contract: `tasks/plans/resolved-at-bat-browser-ownership.md`.
 
 Owning concern: browser concurrency adapter.
 
@@ -146,6 +146,8 @@ In scope:
 Out of scope: gameplay mutation, HTTP delivery, UI comparisons and server/session infrastructure.
 
 ### 6C. Gameplay lifecycle integration, collection still off
+
+Status: Next bounded implementation.
 
 Owning concern: React/save composition.
 
