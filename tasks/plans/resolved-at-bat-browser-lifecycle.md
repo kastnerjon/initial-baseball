@@ -1,6 +1,6 @@
 # Resolved-at-bat browser lifecycle
 
-Status: Approved architecture; implementation not started
+Status: Approved architecture; browser 6A implemented, 6B next
 Date: 2026-09-18
 
 ## Scope contract for this planning PR
@@ -113,6 +113,8 @@ These orderings choose possible anonymous undercount after a storage/crash fault
 
 ### 6A. Durable attempt journal and AB outbox client
 
+Status: Implemented; scope and acceptance contract: `tasks/plans/resolved-at-bat-browser-outbox.md`.
+
 Owning concern: browser persistence/delivery adapter.
 
 In scope:
@@ -127,6 +129,8 @@ In scope:
 Out of scope: Web Locks, React, gameplay saves, completed-result changes, comparison reads and live activation.
 
 ### 6B. Cross-tab ownership coordinator
+
+Status: Next bounded implementation.
 
 Owning concern: browser concurrency adapter.
 
