@@ -181,11 +181,13 @@ Responses expose only status/error codes:
 
 Every response is `private, no-store`. The route does not return normalized at-bat facts, score summaries, answer IDs/names, hints, credentials, or provider details.
 
-The endpoint is consistency-authoritative, not proof of honest anonymous play. It deliberately does not introduce an account, durable gameplay session, per-action event log, or stronger anti-cheat model. Browser creation/persistence of the stable `submissionId` and retry behavior are a separate client-adapter concern.
+The endpoint is consistency-authoritative, not proof of honest anonymous play. It deliberately does not introduce an account, durable gameplay session, per-action event log, or stronger anti-cheat model. The browser client persists the exact immutable schema-1 payload before the first request, including one stable `submissionId`, and every retry reuses that stored payload. Network errors plus HTTP 408/425/429/5xx remain retryable; 2xx, 409, and other ordinary 4xx become terminal local delivery states.
 
 ## Browser persistence
 
 The browser persists public gameplay state and the current opaque token, not the full authorized hint bundle. On ordinary transitions, the server response supplies the next bundle. On refresh, `/api/daily/hints` hydrates the bundle before the restored at-bat becomes interactive. Daily Nine keeps the existing `initial-baseball:daily:<date>` namespace so points-v1/points-v2/points-v3/legacy saves remain compatible. Classic maps the same date key into a distinct Classic namespace, so load/save/clear/reset in one mode cannot overwrite the other. Persistence is a browser adapter concern; the signed token remains authoritative for ruleset/pitch/strike/reveal claims.
+
+Completed-result delivery bookkeeping uses a separate `initial-baseball:daily-result-submission:v1:<ruleset>:<date>:<encoded-puzzle-id>` namespace. A record contains the exact immutable submission payload plus local delivery status (`pending`, `submitted`, `conflict`, or `rejected`). Creating a record is allowed only for a natively completed current compatible session; a restored completion with no record is not retroactively submitted. An existing pending record may retry after refresh. Local gameplay reset does not erase the delivery record because a server aggregate row cannot be undone and clearing the record would permit duplicate replay contributions. Same-tab in-flight calls are deduplicated, and an async response updates status only if its submission ID still owns the stored record.
 
 ## Caching and privacy
 
