@@ -17,6 +17,7 @@ import {
 } from '@initial-baseball/shared';
 import { restoreDailyScorecardAnswers, type DailyScorecardAnswers } from './dailyScorecard';
 import type { PendingAtBatAdvance } from './dailyAtBatResolution';
+import { isNativeCompletedAtBatList } from './dailyCompletedAtBatProvenance';
 import type { DailyAtBatUiState } from './dailyClientState';
 
 const DAILY_STORAGE_PREFIX = 'initial-baseball:daily';
@@ -346,15 +347,6 @@ function normalizeCompletedAtBats(
     return value.map(atBat => ({ ...atBat }));
   }
   return pitchLines.map((line, index) => deriveLegacyCompletedAtBat(line, index + 1));
-}
-
-function isNativeCompletedAtBatList(
-  value: unknown,
-  pitchLines: DailySharePitchLine[],
-): value is DailyCompletedAtBat[] {
-  return Array.isArray(value)
-    && value.length === pitchLines.length
-    && value.every(isDailyCompletedAtBat);
 }
 
 function deriveLegacyCompletedAtBat(
