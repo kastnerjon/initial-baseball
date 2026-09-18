@@ -48,6 +48,47 @@ shared
 - web: rendering, browser state, signed authorization, active hint bundles, routes, admin, and persistence adapters;
 - Supabase: operational persistence, not baseball facts or product rules.
 
+### Runtime wiring at a glance
+
+```text
+Public Daily / Classic page
+  -> web Daily runtime
+  -> cached materialized public puzzle
+  -> editorial repository when scheduled/published
+  -> deterministic Daily fallback when no consumable editorial row exists
+  -> bootstrap with public puzzle + signed progression token + current hint bundle
+
+Guess / Give Up
+  -> browser signed progression token
+  -> POST /api/daily/resolve
+  -> Daily runtime / engine rules
+  -> canonical answer/reveal shard
+  -> successor signed token + next authorized hint bundle
+
+Completed native game
+  -> DailyInningGame
+  -> useCompletedDailyResultSubmission
+  -> dailyCompletedResultClient
+  -> browser-local immutable submission record
+  -> POST /api/daily/results
+  -> serverDailyCompletedResults
+  -> completed-result submission service
+  -> engine validateDailyCompletedResult (4A)
+  -> Daily idempotency service (4B)
+  -> Supabase completed-result repository
+  -> public.daily_completed_results
+
+Owner-supplied future lineup
+  -> private Supabase pg_net dispatch
+  -> POST /admin/daily/chatops
+  -> Daily editorial workflow/lifecycle
+  -> Supabase daily_editorial_puzzles
+  -> public-puzzle cache invalidation
+  -> normal public Daily runtime
+```
+
+The wiring map is orientation, not a replacement for contract docs. Follow the owning package/service above rather than placing domain behavior in routes, React, or Supabase adapters.
+
 Product behavior: `docs/product/daily-inning-blueprint.md`.  
 Beta/launch/results/archive model: `docs/product/beta-launch-results-archive.md`.  
 Lineup content: `docs/product/lineup-content-system.md`.  
@@ -56,7 +97,7 @@ Answer integrity: `docs/decisions/0001-daily-answer-integrity.md`.
 
 ## Current verified state
 
-- September 17 verified production code baseline is `a4828219af1b5e1e1da4872f08ab2f4c304040da` (PR #166), with READY production deployment `dpl_6MXe6r6rQtz7QYxQaQPMgEk91scj` on that exact merge SHA. The private future-lineup workflow is operational through Daily #151. PRs #159 (4A) and #160 (4B) are merged. The completed-result Supabase provider is implemented on top of the merged 4B port: production has an empty `daily_completed_results` table from applied migration `20260917132147`, migration `20260918004822` hardens direct `service_role` access to `SELECT, INSERT` only, and the server-only codec/insert-first adapter has no update/upsert path. The completed-game POST API is implemented as a thin web/server composition over the authoritative public puzzle, engine 4A validation, 4B idempotency service, and Supabase provider. It rejects malformed/future routing before puzzle loading and returns only sanitized status/error codes. Browser stable-ID/retry wiring remains the next bounded concern, so ordinary gameplay still does not submit results. Draft PR #161 remains unmerged and must not be merged unchanged.
+- September 17 verified production code baseline is `3f28e46ccccd6cedfdc3fc6dfec4a1bd4f6b5ce2` (PR #167), with READY production deployment `dpl_H4DPS9C2eXAZKxUyrx4UXzkPkK3j` on that exact merge SHA. The private future-lineup workflow is operational through Daily #151. Completed-result 4A validation, 4B idempotency, the hardened Supabase provider, and the completed-game POST API are merged. Production `daily_completed_results` was still empty immediately before browser activation. The current browser-submission PR adds immutable browser-local submission payloads, one in-flight request per puzzle/ruleset, refresh-safe same-payload retry, native-fact provenance gating, and replay-safe local reset behavior. Treat result collection as activation-pending until this browser PR is merged, its exact production deployment is READY, and a controlled completion/readback verifies one normalized row. Draft PR #161 remains unmerged and must not be merged unchanged.
 - The public source now reuses the same canonical editorial-candidate factory as the admin workflow, so approved manual-only players resolve without widening automatic generation. Focused tests cover scheduled/published order, canonical identity, rejection, fallback, and archived behavior. Scope: `tasks/plans/public-editorial-candidates.md`. Exact merge-SHA production deployment is verified READY as `dpl_APaPW1hwmzghnoRg4fEXhcFnNCCw` on `0001f51c15b9e7b4e5e9647ce471365a96f19bc7`.
 - Completed-result step 4A implements shared schema-1 types and pure engine validation/derivation for `points-v3` and `classic-inning-v1`. The validator binds native facts to the expected puzzle/game, checks exact completion and fact consistency, reuses existing gameplay rules, and returns copied normalized facts plus a game-specific summary. It does not prove honest play. Scope: `tasks/plans/completed-result-contract.md`; contract: `docs/spec/engine.md` and `docs/spec/data-model.md`.
 - Completed-result step 4B implements the provider-neutral atomic repository/service boundary in `packages/daily`. `insertIfAbsent(result)` is the first-write-wins repository primitive keyed by `submissionId`; identical retries return the existing normalized result, while same-ID/different-payload retries return `idempotency_conflict` without overwrite. The service consumes 4A output and does not re-run validation/scoring. The current provider step adds the reconciled `daily_completed_results` migrations plus a server-only Supabase row codec/adapter that inserts first and reads the existing winner only after a PostgreSQL unique-key conflict. It has no update/upsert path and does not validate gameplay. Scope: `tasks/plans/completed-result-supabase-provider.md`. The completed-game API is the separate web/server layer described in `tasks/plans/completed-result-submission-api.md`; browser submission/retry remains the next client concern.
@@ -162,7 +203,7 @@ Authorized manual curation is intentionally broader than automatic generation: a
 
 ### Completed results and comparison
 
-Aggregation uses one compact idempotent completed-game submission from stable puzzle identity, ruleset/game identity, and native raw at-bat facts. The portable schema/engine validator is implemented for `points-v3` and `classic-inning-v1`; it validates against caller-supplied authoritative puzzle/game context and derives summaries rather than trusting a submitted total. The provider-neutral Daily repository/service boundary is also implemented: atomic first-write-wins `insertIfAbsent`, idempotent identical retry, and same-ID/different-payload conflict. Provider persistence, the public API, and browser submission/retry wiring remain separate 4C work. No per-action database writes.
+Aggregation uses one compact idempotent completed-game submission from stable puzzle identity, ruleset/game identity, and native raw at-bat facts. The portable schema/engine validator is implemented for `points-v3` and `classic-inning-v1`; it validates against caller-supplied authoritative puzzle/game context and derives summaries rather than trusting a submitted total. The provider-neutral Daily repository/service boundary is implemented with atomic first-write-wins `insertIfAbsent`, idempotent identical retry, and same-ID/different-payload conflict. The Supabase provider and public POST API are merged. Browser delivery now persists the exact immutable submission payload before its first request, retries that exact payload after transient failure/refresh, refuses to create submissions from compatibility-reconstructed history, and keeps aggregate-delivery identity across local gameplay reset/replay. No per-action database writes.
 
 Daily Nine comparison includes the player's points on each at-bat versus that at-bat's average plus total average/distribution/percentile for the same Daily/ruleset. Classic is a separate comparison population using baseball-native measures such as runs, hits, at-bats reached, per-at-bat outcomes, strikeout rates, and reach rates. A single Classic percentile metric is not settled.
 
@@ -210,8 +251,8 @@ The routine conversational future-lineup workflow itself is no longer a blocker 
 
 ## Exact next work order
 
-1. Build browser completion-only submission/retry on the completed POST API with one stable persisted submission ID, same-ID retry across transient failure/refresh, native-fact provenance gating, and reset/in-flight race protection.
-2. Verify live result collection end to end without per-action writes or answer leakage; continue remaining physical-device/editorial timed QA in parallel.
+1. Finish the browser completed-result activation PR, verify its exact production deployment, and perform one controlled native completion/readback proving one normalized row plus identical same-ID retry behavior with no second row.
+2. Verify live result collection remains completion-only with no answer leakage or per-action writes; continue remaining physical-device/editorial timed QA in parallel.
 3. Add same-Daily/same-ruleset comparison once collection is live and verified; settle percentile tie/sample-size rules before percentile UI.
 4. Build permanent archive/local-history infrastructure from the future explicit launch Daily #1.
 5. Before broad launch choose the primary game/final rules/launch epoch and complete gameplay-profile/recipe calibration, analytics/monitoring, legal/domain/social metadata, and launch polish.
