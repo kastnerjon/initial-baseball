@@ -75,7 +75,8 @@ export {
   type DailyEditorialHorizonSlot,
   type DailyEditorialPlayerReview,
   type DailyEditorialReplacementInput,
-} from './dailyEditorialHorizon';export {
+} from './dailyEditorialHorizon';
+export {
   createDailyAtBatResultService,
   type DailyAtBatResultKey,
   type DailyAtBatResultRepository,
