@@ -65,7 +65,7 @@ export function loadSavedDailyGame(
   puzzle: DailyPublicPuzzle | DailyPuzzle,
   initialProgressionToken: string,
   storage: DailyStorage | null = getBrowserDailyStorage(),
-): LoadedSavedDailyGame | null {
+): SavedDailyGame | null {
   return loadSavedDailyGameWithProvenance(puzzle, initialProgressionToken, storage)?.savedGame ?? null;
 }
 
@@ -73,7 +73,7 @@ export function loadSavedDailyGameWithProvenance(
   puzzle: DailyPublicPuzzle | DailyPuzzle,
   initialProgressionToken: string,
   storage: DailyStorage | null = getBrowserDailyStorage(),
-): LoadedSavedDailyGame | null {
+): SavedDailyGame | null {
   if (storage === null) return null;
 
   const publicPuzzle = toPublicPuzzle(puzzle);
@@ -88,7 +88,18 @@ export function loadSavedDailyGameWithProvenance(
 
   return {
     savedGame,
-    completedAtBatFactsAreNative: hasNativeCompletedAtBatFacts(parsedValue),
+    completedAtBatFactsAreNative: parsedValue.schemaVersion === DAILY_STORAGE_SCHEMA_VERSION
+      && hasNativeCompletedAtBatFacts(
+        parsedValue.gameState.completedAtBats,
+        parsedValue.gameState.completedPitchLines,
+      )
+      && (
+        parsedValue.pendingAdvance === null
+        || hasNativeCompletedAtBatFacts(
+          parsedValue.pendingAdvance.completedAtBats,
+          parsedValue.pendingAdvance.pitchLines,
+        )
+      ),
   };
 }
 
@@ -216,27 +227,6 @@ function isSavedDailyGameForPuzzle(
     && typeof atBatState.revealCount === 'number'
     && typeof atBatState.strikeCount === 'number'
   );
-}
-
-function hasNativeCompletedAtBatFacts(savedGame: PersistedSavedDailyGame): boolean {
-  if (savedGame.schemaVersion !== DAILY_STORAGE_SCHEMA_VERSION) return false;
-  if (!isNativeCompletedAtBatList(
-    savedGame.gameState.completedAtBats,
-    savedGame.gameState.completedPitchLines,
-  )) return false;
-
-  return savedGame.pendingAdvance === null
-    || isNativeCompletedAtBatList(
-      savedGame.pendingAdvance.completedAtBats,
-      savedGame.pendingAdvance.pitchLines,
-    );
-}
-
-function isNativeCompletedAtBatList(value: unknown, pitchLines: unknown): boolean {
-  return Array.isArray(value)
-    && Array.isArray(pitchLines)
-    && value.length === pitchLines.length
-    && value.every(isDailyCompletedAtBat);
 }
 
 function normalizeSavedDailyGame(
