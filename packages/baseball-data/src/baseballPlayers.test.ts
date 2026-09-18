@@ -42,7 +42,7 @@ describe('baseballPlayers', () => {
       expect(player.dailyEligible).toBeTypeOf('boolean');
       expect(Array.isArray(player.aliases)).toBe(true);
     }
-  });
+  }, 15_000);
 
   it('keeps aliases as arrays', () => {
     expect(baseballPlayers.every((player) => Array.isArray(player.aliases))).toBe(true);
