@@ -135,9 +135,7 @@ export function DailyInningGame({
     setAtBatState(savedGame.atBatState);
     setPendingAdvance(savedGame.pendingAdvance);
     setProgressionToken(savedGame.progressionToken);
-    completedResultSubmission.restoreEligibility(
-      savedGame, puzzle.pitches.length, loaded!.completedAtBatFactsAreNative,
-    );
+    completedResultSubmission.restoreEligibility(savedGame, puzzle.pitches.length, loaded!.completedAtBatFactsAreNative);
     setHasLoadedSavedState(true);
     const canReuseInitialBundle = savedGame.currentPitchIndex === 0
       && savedGame.progressionToken === initialProgressionToken;
