@@ -343,9 +343,22 @@ function normalizeCompletedAtBats(
   pitchLines: DailySharePitchLine[],
 ): DailyCompletedAtBat[] {
   if (isNativeCompletedAtBatList(value, pitchLines)) {
-    return (value as DailyCompletedAtBat[]).map(atBat => ({ ...atBat }));
+    return value.map(atBat => ({ ...atBat }));
   }
   return pitchLines.map((line, index) => deriveLegacyCompletedAtBat(line, index + 1));
+}
+
+function isNativeCompletedAtBatList(
+  value: unknown,
+  pitchLines: DailySharePitchLine[],
+): value is DailyCompletedAtBat[] {
+  if (pitchLines.length === 0) {
+    return value === undefined || (Array.isArray(value) && value.length === 0);
+  }
+
+  return Array.isArray(value)
+    && value.length === pitchLines.length
+    && value.every(isDailyCompletedAtBat);
 }
 
 function isNativeCompletedAtBatList(
