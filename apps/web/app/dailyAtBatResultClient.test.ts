@@ -38,6 +38,15 @@ describe('resolved-at-bat browser journal and outbox', () => {
     expect(store.appendObservation({ identity: IDENTITY, generation: 2, atBat: atBat(2) })).toBe('retired');
   });
 
+  it('retires explicitly without deleting a pending frozen observation', () => {
+    const store = makeStore(memoryStorage());
+    store.create(IDENTITY); store.appendObservation({ identity: IDENTITY, generation: 1, atBat: atBat(1) });
+    expect(store.retire(IDENTITY, 1)).toBe('updated');
+    expect(validJournal(store)).toMatchObject({
+      contributionState: 'retired', observations: { 1: { delivery: 'pending' } },
+    });
+  });
+
   it('fails closed for corrupt/unavailable storage and invalid IDs', () => {
     const storage = memoryStorage();
     const store = makeStore(storage);
@@ -53,6 +62,8 @@ describe('resolved-at-bat browser journal and outbox', () => {
   it.each([
     [{ ok: false, status: 503 }, 'pending', 'active'],
     [{ ok: false, status: 429 }, 'pending', 'active'],
+    [{ ok: false, status: 408 }, 'pending', 'active'],
+    [{ ok: false, status: 425 }, 'pending', 'active'],
     [{ ok: false, status: 409 }, 'conflict', 'retired'],
     [{ ok: false, status: 400 }, 'rejected', 'retired'],
     [{ ok: true, status: 201 }, 'submitted', 'active'],
