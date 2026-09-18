@@ -1,35 +1,44 @@
-# Stabilize exhaustive baseball-player test timeout
+# Stabilize baseball-data test/build ordering
 
 Status: Active scope contract  
 Date: 2026-09-17
 
 ## Goal
 
-Remove a repeated CI-only timeout from the existing exhaustive player-field validation without changing baseball facts, generated data, runtime behavior, or assertion coverage.
+Eliminate a reproducible CI race where `@initial-baseball/baseball-data` can build twice concurrently during `turbo test`, causing concurrent TypeScript emission into `dist/generated/players.json` and occasionally exposing a partially written JSON file to dependent Daily tests.
+
+## Root cause
+
+- Root `pnpm test` runs `turbo test`.
+- Turbo's `test` task already depends on upstream package builds via `^build`.
+- `@initial-baseball/baseball-data` additionally defines `pretest: pnpm --filter @initial-baseball/shared build && pnpm build`.
+- During the workspace test graph, another package can require `@initial-baseball/baseball-data#build` while the baseball-data package's npm `pretest` independently launches the same build.
+- Both builds emit the same `dist/**` outputs. Observed failures included a malformed `dist/generated/players.json` and earlier exhaustive-player test timing instability.
 
 ## Owning layer
 
-Baseball-data test only.
+Build/test orchestration only.
 
 ## In scope
 
-- raise the per-test timeout only for the existing exhaustive `includes required fields for every player` assertion;
-- preserve every assertion and the generated player universe unchanged;
-- verify the previously timing-out test and full CI pass.
+- remove the redundant baseball-data `pretest` self-build;
+- leave the package's actual `test`, `build`, generated-data sources, and assertions unchanged;
+- record the durable lesson that Turbo-owned build prerequisites must not be duplicated through npm lifecycle hooks when they write the same outputs;
+- verify full CI repeatedly reaches the canonical-data and production-build stages without malformed generated JSON.
 
 ## Out of scope
 
-- baseball-data generation, eligibility, facts, runtime code, or schemas;
-- result collection/browser work;
-- global Vitest timeout changes;
-- performance rewrites unrelated to this bounded CI stability issue.
+- baseball facts, generation logic, runtime payload contents, eligibility, or schemas;
+- changing the exhaustive player assertions or increasing their timeout;
+- completed-result/browser feature code;
+- global Turbo concurrency changes;
+- changing generated artifacts by hand.
 
 ## Acceptance
 
-The same exhaustive assertion body passes with a realistic explicit timeout; no product/runtime source file changes.
-
-## Documentation impact
-
-No canonical product or architecture behavior changes. This bounded scope contract is the only documentation change required for the test-only timeout stabilization.
-
-The canonical product/architecture docs remain accurate because the exhaustive assertions and runtime behavior are unchanged; only the test's execution budget changes.
+- `packages/baseball-data/src/baseballPlayers.test.ts` is unchanged from `main`;
+- `@initial-baseball/baseball-data` no longer launches its own build from `pretest`;
+- root `pnpm test` relies on Turbo's dependency graph instead of duplicate package-level build invocation;
+- full CI passes without malformed `dist/generated/players.json`;
+- documentation-impact gate passes;
+- no product/runtime behavior changes.
