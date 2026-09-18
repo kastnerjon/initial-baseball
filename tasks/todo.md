@@ -5,7 +5,7 @@ Last updated: 2026-09-17
 
 Completed history belongs in PRs, canonical docs, or `tasks/lessons.md`. Durable resumption context belongs in `docs/START-HERE.md`.
 
-Current order: finish the remaining authenticated future-editorial horizon/consumption verification, then split draft #161 into provider, API, and browser work rather than merging it unchanged. Daily Nine and Classic remain distinct beta games; 4A/4B are merged. Supabase already has an empty current-results table, but submission is not live. Comparison and permanent archive/local history remain subsequent concerns. Outstanding interactive/physical iPhone/iPad QA remains open. Current beta numbering is disposable; broad launch later restarts at Daily #1 after the owner chooses the surviving game/final rules. The secure conversational Daily lineup bridge is active in production and is the preferred routine lineup-entry path.
+Current order: the routine conversational future-lineup path is operationally complete, including owner-supplied Dailies #149–#151 and a persisted seven-day horizon through #151. The next bounded engineering concern is to split draft #161 into provider, API, and browser work rather than merging it unchanged. Remaining authenticated-editor slot QA, timed public editorial rollover/fallback checks, and physical iPhone/iPad QA stay open but do not block the results pipeline. Daily Nine and Classic remain distinct beta games; 4A/4B are merged. Supabase already has an empty current-results table, but submission is not live. Comparison and permanent archive/local history remain subsequent concerns. Current beta numbering is disposable; broad launch later restarts at Daily #1 after the owner chooses the surviving game/final rules.
 
 ## September 15–16 approved product work
 
@@ -67,7 +67,8 @@ Admin redesign is deferred. The user may supply a future date and nine ordered p
 - [x] Merge PR #153, connect the Supabase app, apply the private `pg_net` transport, store the matching `DAILY_CHATOPS_TOKEN` only in Vercel server environment and Supabase Vault, and redeploy production.
 - [x] Smoke-test conversational editing on a future draft: verify atomic rejection for an ineligible candidate, exact nine-player readback/order/revision for the corrected lineup, explicit scheduling, and `chatops:assistant` audit attribution.
 - [x] Separate automatic eligibility from manual editorial eligibility: automatic generation remains restricted to ranked `dailyEligiblePlayers`, while authorized manual admin/ChatOps curation may select any canonical, reveal-ready Daily-compatible player and receives `outside-automatic-daily-pool` when the player is outside the automatic pool (PR #162).
-- [ ] Verify seven-day Supabase horizon and missing-draft generation.
+- [x] Exercise routine owner-supplied future-lineup entry through Dailies #149–#151: exact nine-player order persisted, explicit scheduling reached revision 2 with `chatops:assistant` attribution, and a `pg_net` timeout-after-commit case was safely reconciled by authoritative readback before retry.
+- [x] Verify seven-day Supabase horizon and missing-record creation: Dailies #145–#151 are persisted, all seven are public-consumable lifecycle states, and owner-supplied #149–#151 were created/replaced/scheduled through the private ChatOps path.
 - [x] Make public scheduled/published resolution use the existing manual editorial candidate universe without changing the automatic pool; add rejection/fallback/order regression coverage.
 - [ ] Preview/search/replace/revalidate one future slot through the authenticated editor workflow.
 - [ ] Verify public scheduled/published consumption for an editorially scheduled future puzzle.
