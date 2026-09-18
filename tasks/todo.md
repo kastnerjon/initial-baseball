@@ -177,8 +177,8 @@ Replacement plan: `tasks/plans/resolved-at-bat-comparison.md`. PR #174 is held a
 - [x] Browser 6D production deployment proof: PR #185 merge `1965258055eecbf501de82d6f0aed395aea33867` is READY as production deployment `dpl_7Ceu1nwPYZQgUrJaPdsiBQqrLmPa`.
 - [x] Browser 6D production AB route/database proof: exact disposable payload returned 201 then 200; one normalized row was read back with one receipt timestamp and then cleaned up.
 - [x] Browser 6D post-proof runtime-error scan for resolved-AB/completed-result routes is clean.
-- [ ] Browser 6D physical/current-browser multi-tab proof: one owner, passive follower, release/takeover rehydrate, no duplicate actor.
-- [ ] Browser 6D fresh full-completion identity proof: verify new `daily_completed_results.submission_id` equals the active `daily_at_bat_results.attempt_id` for the same run while existing records remain untouched.
+- [ ] Browser 6D physical/current-browser multi-tab proof: one owner, passive follower, release/takeover rehydrate, no duplicate actor. Runbook: `docs/operations/resolved-at-bat-browser-proof.md`.
+- [ ] Browser 6D fresh full-completion identity proof: verify new `daily_completed_results.submission_id` equals the active `daily_at_bat_results.attempt_id` for the same run while existing records remain untouched. Runbook: `docs/operations/resolved-at-bat-browser-proof.md`.
 - [ ] Browser 6D final canonical-doc declaration after both remaining browser proofs; only then call collection fully browser-proven.
 - [ ] Independent-population comparison contracts/provider/API, read-only recovery, freshness and representative isolated performance measurements.
 - [ ] Asynchronous YOU / AVG after every terminal AB; final nine-row scorecard, whole-game average and strict-lower finishers percentage with low-sample/outage states.

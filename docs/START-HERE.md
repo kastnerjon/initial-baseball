@@ -268,7 +268,7 @@ The routine conversational future-lineup workflow itself is no longer a blocker 
 ## Exact next work order
 
 1. Browser 6A–6D implementation is merged. Exact merge-SHA production deploy, controlled production AB first-write/exact-retry/readback, cleanup, and post-proof runtime-error scan are verified. Keep #174 draft.
-2. Complete the remaining 6D browser proof: physical/current-browser two-tab owner/follower/takeover behavior and one fresh full points-v3 completion proving the completed-result `submissionId` equals the active AB `attemptId`. Reconcile docs again and only then declare resolved-AB collection fully browser-proven.
+2. Complete the remaining 6D browser proof using `docs/operations/resolved-at-bat-browser-proof.md`: physical/current-browser two-tab owner/follower/takeover behavior, physical Safari support/restore, and one fresh full points-v3 completion proving the completed-result `submissionId` equals the active AB `attemptId`. Reconcile docs again and only then declare resolved-AB collection fully browser-proven.
 3. Implement and benchmark independent-population reads; then add asynchronous per-AB and final comparisons. Do not claim measured capacity or current hosting prices without checking.
 4. Continue outstanding physical-device/editorial QA; archive/local-history follows the explicit future launch epoch. Remove public Reset before launch.
 
