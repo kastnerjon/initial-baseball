@@ -13,7 +13,8 @@ vi.mock('../../../serverDailyCompletedResults', () => ({
 import { DailyRuntimeRequestError } from '../../../dailyRuntimeService';
 import { ServerSupabaseConfigurationError } from '../../../serverSupabaseClient';
 import { SupabaseDailyCompletedResultRepositoryError } from '../../../supabaseDailyCompletedResultRepository';
-import { POST, mapCompletedResultRouteError } from './route';
+import { mapCompletedResultRouteError } from '../../../dailyCompletedResultHttp';
+import { POST } from './route';
 
 describe('POST /api/daily/results', () => {
   beforeEach(() => server.submitDailyCompletedResult.mockReset());
