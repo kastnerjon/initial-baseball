@@ -27,15 +27,19 @@ export async function POST(request: Request): Promise<NextResponse> {
       result.error === 'idempotency_conflict' ? 409 : 400,
     );
   } catch (error) {
-    if (error instanceof DailyRuntimeRequestError) {
-      return privateJson({ error: 'invalid_puzzle' }, 400);
-    }
-    if (error instanceof ServerSupabaseConfigurationError
-      || error instanceof SupabaseDailyCompletedResultRepositoryError) {
-      return privateJson({ error: 'completed_result_unavailable' }, 503);
-    }
-    return privateJson({ error: 'completed_result_unavailable' }, 500);
+    return mapCompletedResultRouteError(error);
   }
+}
+
+export function mapCompletedResultRouteError(error: unknown): NextResponse {
+  if (error instanceof DailyRuntimeRequestError) {
+    return privateJson({ error: 'invalid_puzzle' }, 400);
+  }
+  if (error instanceof ServerSupabaseConfigurationError
+    || error instanceof SupabaseDailyCompletedResultRepositoryError) {
+    return privateJson({ error: 'completed_result_unavailable' }, 503);
+  }
+  return privateJson({ error: 'completed_result_unavailable' }, 500);
 }
 
 function privateJson(value: unknown, status: number): NextResponse {
