@@ -43,6 +43,7 @@ import type {
   DailyResolutionResponse,
 } from '../dailyRuntimeContracts';
 import type { DailyScorecardAnswers } from '../dailyScorecard';
+import { canCreateCompletedResultFromLoadedSave } from '../dailyCompletedResultActivation';
 import { useCompletedDailyResultSubmission } from '../useCompletedDailyResultSubmission';
 import { AtBatCard } from './AtBatCard';
 import { DailyScorebug } from './DailyScorebug';
@@ -137,8 +138,6 @@ export function DailyInningGame({
       || savedGame.pendingAdvance?.points.completed === true
       || savedGame.pendingAdvance?.score.completed === true
       || (savedGame.pendingAdvance?.nextPitchIndex ?? 0) >= puzzle.pitches.length;
-    const hasNoCompletedFacts = savedGame.gameState.completedAtBats.length === 0
-      && (savedGame.pendingAdvance?.completedAtBats.length ?? 0) === 0;
 
     setGameState(savedGame.gameState);
     setScorecardAnswers(savedGame.scorecardAnswers ?? {});
@@ -146,10 +145,11 @@ export function DailyInningGame({
     setAtBatState(savedGame.atBatState);
     setPendingAdvance(savedGame.pendingAdvance);
     setProgressionToken(savedGame.progressionToken);
-    setCompletedResultCreationAllowed(
-      !savedGameComplete
-      && (loaded!.completedAtBatFactsAreNative || hasNoCompletedFacts),
-    );
+    setCompletedResultCreationAllowed(canCreateCompletedResultFromLoadedSave({
+      savedGame,
+      totalAtBats: puzzle.pitches.length,
+      completedAtBatFactsAreNative: loaded!.completedAtBatFactsAreNative,
+    }));
     setHasLoadedSavedState(true);
     const canReuseInitialBundle = savedGame.currentPitchIndex === 0
       && savedGame.progressionToken === initialProgressionToken;
