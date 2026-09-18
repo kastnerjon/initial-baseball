@@ -31,3 +31,5 @@ The same exhaustive assertion body passes with a realistic explicit timeout; no 
 ## Documentation impact
 
 No canonical product or architecture behavior changes. This bounded scope contract is the only documentation change required for the test-only timeout stabilization.
+
+The canonical product/architecture docs remain accurate because the exhaustive assertions and runtime behavior are unchanged; only the test's execution budget changes.
