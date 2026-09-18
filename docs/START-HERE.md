@@ -96,7 +96,7 @@ Answer integrity: `docs/decisions/0001-daily-answer-integrity.md`.
 
 ## Resolved-AB contract implementation
 
-The next 4D foundation adds portable schema-1 points-v3 AB transport and pure engine validation, reusing terminal-fact checks with completed results and deriving awarded points. It does not activate collection or change gameplay. Scope: `tasks/plans/resolved-at-bat-contract.md`. PR #174 is draft; its equal-population invariant is superseded by replacement roadmap PR #175. Next implementation concern is the portable AB repository/service. Browser identity, cross-tab coordination, provider/API, comparisons and UI remain pending.
+The next 4D foundation adds portable schema-1 points-v3 AB transport and pure engine validation, reusing terminal-fact checks with completed results and deriving awarded points. It does not activate collection or change gameplay. Scope: `tasks/plans/resolved-at-bat-contract.md`. PR #174 is draft; its equal-population invariant is superseded by replacement roadmap PR #175. The portable AB repository/service now defines atomic first-write-wins storage and semantic retry/conflict behavior; scope: `tasks/plans/resolved-at-bat-repository.md`. Next implementation concern is the Supabase adapter/migration, with provider concurrency/privilege verification before activation. Browser identity, cross-tab coordination, provider/API, comparisons and UI remain pending.
 
 ## Current verified state
 
@@ -256,8 +256,8 @@ The routine conversational future-lineup workflow itself is no longer a blocker 
 
 ## Exact next work order
 
-1. Review/land the replacement 4D documentation plan; keep #174 draft. Preserve earlier branch work rather than overwriting it.
-2. Implement portable resolved-AB contracts/engine validation, then the separate Daily repository, provider and API concerns in `tasks/plans/resolved-at-bat-comparison.md`.
+1. Replacement roadmap #175 and portable contract/validation PR #176 are merged. Keep #174 draft and preserve earlier branch work.
+2. Land the implemented portable resolved-AB repository/service, then implement the separate Supabase provider and API concerns in `tasks/plans/resolved-at-bat-comparison.md`.
 3. Resolve/test browser attempt ownership across tabs, reset, existing saves and delivery before activating collection. New identity must preserve old pending completed-result payloads.
 4. Implement and benchmark independent-population reads; then add asynchronous per-AB and final comparisons. Do not claim measured capacity or current hosting prices without checking.
 5. Continue outstanding physical-device/editorial QA; archive/local-history follows the explicit future launch epoch. Remove public Reset before launch.
