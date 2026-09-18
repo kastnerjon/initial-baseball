@@ -216,9 +216,13 @@ The relational `daily_completed_results` table plus server-only Supabase row cod
 
 Comparison populations are always scoped to stable puzzle identity plus exact ruleset/game identity. Daily Nine and Classic never share an aggregate population. `points-v1`, `points-v2`, and `points-v3` results also remain separate populations. Raw facts are retained so aggregates can be recalculated as presentation evolves.
 
-Daily Nine comparison may derive per-at-bat points, whole-game score, averages, distributions, and later percentiles. Classic comparison derives baseball-native measures such as runs, hits, reached-at-bat counts/rates, and per-at-bat outcome distributions; no overall Classic percentile formula is approved yet.
+Approved next entity (not implemented): `daily_at_bat_results`, one immutable observation per attempt + stable puzzle + exact ruleset + slot. Store normalized native terminal facts, server/engine-derived awarded points and receipt time. The browser does not supply authoritative points. First-write-wins identical retries return existing; differing facts conflict. Server-only SELECT/INSERT and RLS follow completed-result boundaries. Exact schema/index/migration belongs to a later provider PR.
 
-Do not reuse inactive legacy attempt/result tables by default and do not introduce per-action writes.
+AB comparisons aggregate these independent observations, including partial games, using `resolvedAtBatCount`. Whole-game averages/distribution use `daily_completed_results` and `completedGameCount`. No equality or monotonic-slot-count invariant is valid. Empty averages are null. SQL may aggregate persisted engine-derived points but must not implement scoring. Do not backfill completed records into AB observations. Classic remains a separate population with baseball-native measures.
+
+New contributing runs establish anonymous identity before the first AB and should reuse it for completion without changing existing pending schema-1 payloads. Old saves without new provenance remain completion-only under existing eligibility; no synthetic historical ABs. Delivery acknowledgments are independent of optional comparison reads. Full identity/reset/multiple-tab gates: `tasks/plans/resolved-at-bat-comparison.md`.
+
+Do not reuse inactive legacy attempt/result tables by default and do not introduce per-hint/per-guess writes.
 
 ## Inactive legacy scaffold
 

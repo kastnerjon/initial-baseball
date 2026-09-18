@@ -1,7 +1,7 @@
 # Beta, launch, results, and archive product model
 
 Status: Settled product direction  
-Last updated: 2026-09-16
+Last updated: 2026-09-18
 
 ## Purpose
 
@@ -45,14 +45,17 @@ Comparison populations never mix rulesets/games. Daily Nine for one Daily compar
 
 ### Daily Nine comparison
 
-The intended player-facing comparison includes:
+Daily Nine v1 shows YOU / AVG asynchronously after every terminal at-bat, without delaying the answer reveal or Next At Bat. Its AB population includes everyone whose observation for that exact puzzle/ruleset/slot has arrived, including partial games. Whole-game averages and score distributions use completed games only; these denominators intentionally differ.
 
-- the player's points on each faced at-bat versus the average points on that same at-bat;
-- total points versus the average total for that Daily/ruleset;
-- score distribution and percentile once sample-size/tie rules are settled;
-- useful supporting rates such as strikeout/Give Up and outcome/hint-depth distributions.
+The final scorecard shows personal points and nine AB averages plus the whole-game average and "You beat X% of finishers." Beaten means strictly lower score divided by all completed games; ties do not count. Initial presentation policy: 0–1 observations waits, 2–9 is labeled early, 10+ shows a normal average, and beat-percentage waits for 20 completions. These are presentation thresholds, not database filters.
 
-The database must preserve enough raw facts to recompute these aggregates rather than persisting only presentation-ready averages.
+Comparisons may be briefly cached and need not immediately include the new submission. Previously loaded values render immediately and refresh asynchronously on the final screen; the user's own result never changes. Saving and comparison availability have separate success states. Missing comparisons never block gameplay or sharing. Counts represent anonymous observations, not verified unique people or proof of abandonment.
+
+Retain immutable native AB facts plus server/engine-derived points separately from completed results. Do not backfill old completions into the AB population. Scope, browser coordination gates and rollout policy: `tasks/plans/resolved-at-bat-comparison.md`.
+
+### Reset and testing
+
+"Reset today's results" is a beta builder/testing control, not a permanent public product feature. Remove it from public UI before broad launch. Any retained admin/test mechanism must be non-contributing. During beta, resetting after any terminal AB was locally recorded makes subsequent play non-contributing; retain original immutable pending submissions. Refresh continues the original run. Multiple tabs must not mix runs or count another run. Public replay is not a launch requirement.
 
 ### Classic comparison
 
@@ -77,7 +80,7 @@ Archive gameplay must not overwrite the current Daily save. Personal completion/
 1. Finish outstanding interactive/physical-device QA for the two beta games.
 2. Define and test the portable completed-result contract, validation, derived summaries, and idempotent repository boundary.
 3. Add the separate Supabase result persistence adapter and one completed-game submission API.
-4. Add same-Daily/same-ruleset per-at-bat and whole-game comparison; settle percentile tie/sample-size rules before percentile UI.
+4. Add same-Daily/same-ruleset per-at-bat and whole-game comparison; use independent resolved-AB/completed-game populations and strict-lower-score comparison.
 5. Build permanent archive/history infrastructure without importing beta history.
 6. Before broad launch, choose the primary game and final launch rules, choose the launch date, reset permanent numbering to Daily #1, and begin the frozen historical sequence.
 7. Continue lineup calibration, analytics/monitoring, legal/domain/social metadata, and launch polish.
@@ -90,7 +93,7 @@ Archive gameplay must not overwrite the current Daily save. Personal completion/
 - Supabase is persistence only and receives a separate current-results migration; inactive legacy attempt/result tables are not repurposed.
 - Web routes validate/authorize/compose adapters and format responses; they do not duplicate game rules.
 - Raw result facts are retained so aggregates can be recalculated as presentation evolves.
-- No per-action writes, generic mode plugin framework, account system, public leaderboard, or cross-device identity is introduced by the initial result work.
+- No per-hint/per-guess writes, generic mode plugin framework, account system, public leaderboard, or cross-device identity is introduced by the initial result work.
 
 ## Open decisions
 
@@ -99,5 +102,4 @@ Archive gameplay must not overwrite the current Daily save. Personal completion/
 - Final launch ruleset/scoring contract.
 - Permanent launch date / Daily #1 epoch.
 - Classic overall comparison/percentile metric, if any.
-- Percentile tie treatment and minimum sample-size presentation.
 - Replay policy for already-completed archived games beyond preserving the user's recorded first completion/result.

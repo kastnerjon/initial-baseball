@@ -160,15 +160,19 @@ Admin redesign is deferred. The user may supply a future date and nine ordered p
 - [x] Pass final focused/full CI, documentation-impact, exact-head Vercel preview, merge, and exact production deployment.
 - [x] Verify live result collection end to end in production: real-browser Daily #144 / `points-v3` completion created one row; exact same-ID replay returned `existing`; row count remained one.
 
-### 4D. Daily Nine comparison — portable AB foundation
+### 4D. Daily Nine resolved-AB comparison — approved, not implemented
 
-- [x] Add portable schema-1 points-v3 resolved-AB contract and engine validation with shared terminal-fact normalization; scope: `tasks/plans/resolved-at-bat-contract.md`. No collection activation.
-- [ ] Follow replacement roadmap PR #175: independent resolved-AB/completed-game populations; #174 remains draft and must not merge unchanged. Next: portable AB repository/service, then provider/API/browser lifecycle and comparison.
-- [ ] Add same-Daily/same-ruleset completion count and average total points.
-- [ ] Add per-at-bat average points for each of the nine slots plus useful outcome/hint/K/Give Up rates.
-- [ ] Add score distribution.
-- [ ] Settle percentile tie treatment and minimum sample copy before percentile UI.
-- [ ] Add understandable total/per-AB comparison UI by extending the compact scorebook system.
+Replacement plan: `tasks/plans/resolved-at-bat-comparison.md`. PR #174 is held as draft; its completion-only AB population is superseded. Complete one owning concern per PR.
+
+- [x] Inspect main/#174 and record separate resolved-AB/completed-game populations, after-each-AB v1 UI, strict-lower tie semantics, freshness and delivery acknowledgment separation.
+- [x] Portable resolved-AB transport and engine validation/derived points; scope: `tasks/plans/resolved-at-bat-contract.md`. No collection activation.
+- [ ] Portable immutable repository/service and retry/conflict semantics.
+- [ ] Supabase row adapter/migration, unique observation identity, population index and server-only privileges.
+- [ ] Web submission API using authoritative puzzle context.
+- [ ] Browser attempt identity before first contribution, cross-tab atomic ownership, immutable outbox, reset behavior and old-save migration; gate activation on lifecycle tests.
+- [ ] Independent-population comparison contracts/provider/API, read-only recovery, freshness and representative isolated performance measurements.
+- [ ] Asynchronous YOU / AVG after every terminal AB; final nine-row scorecard, whole-game average and strict-lower finishers percentage with low-sample/outage states.
+- [ ] Verify mobile, answer integrity, failed delivery/read recovery and unchanged gameplay critical path before declaring live.
 
 ### 4E. Classic comparison
 
@@ -200,6 +204,8 @@ Admin redesign is deferred. The user may supply a future date and nine ordered p
 - [x] Preserve manual review/replacement of exact generated nine and allow intentional canonical reveal-ready manual choices outside the automatic pool without changing automatic eligibility (PR #162).
 
 ## 7. Launch surfaces
+
+- [ ] Remove public Reset today's results before broad launch; any retained admin/test reset must be non-contributing.
 
 - [ ] Analytics/error monitoring.
 - [ ] Finish real-device iPhone/iPad polish and payload measurement after the compact revision is deployed.
