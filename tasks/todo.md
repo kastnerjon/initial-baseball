@@ -127,7 +127,7 @@ Admin redesign is deferred. The user may supply a future date and nine ordered p
 - [x] Add the server-only Supabase row codec/adapter behind `DailyCompletedResultRepository.insertIfAbsent`.
 - [x] Preserve insert-first first-write-wins semantics: only a unique-key conflict reads the existing winner; no update/upsert path.
 - [x] Keep RLS enabled with no browser policies and harden `service_role` to direct `SELECT, INSERT` only via migration `20260918004822_harden_daily_completed_results_privileges`.
-- [ ] Pass focused/full CI, preview, advisor verification, merge, and exact production/source reconciliation.
+- [x] Pass focused/full CI, preview, advisor verification, merge, and exact production/source reconciliation.
 
 ### 4C-2. Completed-result submission API
 
@@ -135,23 +135,27 @@ Admin redesign is deferred. The user may supply a future date and nine ordered p
 - [x] Parse and reject malformed schema/date/ruleset/future routing before authoritative puzzle construction.
 - [x] Load the authoritative public puzzle through the existing Daily runtime without minting progression tokens/hint bundles and call engine `validateDailyCompletedResult`; never trust submitted totals.
 - [x] Store only the engine-normalized result through 4B/provider and map created/existing/conflict/invalid/provider-unavailable outcomes deliberately.
-- [ ] Pass focused/full CI, preview, merge, and exact production verification with no browser submission code in the diff.
+- [x] Pass focused/full CI, preview, merge, and exact production verification with no browser submission code in the diff.
 
 ### 4C-3a. Browser submission client
 
-- [x] Generate and persist one stable submission ID before the first completed-result POST.
-- [x] Retry the same ID after network/5xx failure and preserve terminal submitted/conflict/rejected marker states.
-- [x] Deduplicate concurrent same-game requests in one tab.
-- [x] Make clear/reset compare-before-write safe so stale responses cannot recreate a cleared marker or overwrite a newer marker.
-- [x] Keep submission bookkeeping in its own local namespace, separate from portable gameplay facts and Daily save compatibility.
+- [x] Persist the exact immutable schema-1 submission payload, including one stable client-generated ID, before the first completed-result POST.
+- [x] Retry the same stored payload after network/408/425/429/5xx failure or refresh; never rebuild retry facts from current replay state.
+- [x] Support `allowCreate=false` so an existing pending record may retry without retroactively minting a submission from an old completion.
+- [x] Deduplicate concurrent same-puzzle/same-ruleset requests in one tab.
+- [x] Compare current stored submission ID before applying an async terminal status so stale responses cannot overwrite a replacement record.
+- [x] Keep delivery bookkeeping in its own local namespace, separate from portable gameplay facts and Daily save compatibility.
+- [x] Preserve shorter Classic faced-at-bat lists and reject unsupported compatibility rulesets locally.
+- [ ] Pass final CI/preview, merge, and exact production verification.
 
 ### 4C-3b. Native completion activation — next bounded concern
 
-- [ ] Expose local-only provenance that distinguishes native completed-at-bat facts from compatibility reconstruction.
-- [ ] Trigger submission only after hydrated native `points-v3` or `classic-inning-v1` completion.
-- [ ] Never submit compatibility-reconstructed legacy facts.
-- [ ] Clear only the current puzzle/ruleset marker on Reset today and preserve the client race guarantees.
-- [ ] Verify live result collection end to end in production before comparison work.
+- [ ] Expose local-only provenance that distinguishes explicit native completed-at-bat facts from compatibility reconstruction without changing the saved gameplay schema.
+- [ ] Permit new record creation only for a genuine current-session native `points-v3` or `classic-inning-v1` completion.
+- [ ] Independently retry an already-persisted pending delivery record after hydration, even if local gameplay was reset after the failed request.
+- [ ] Never retroactively create a submission from a pre-feature/compatibility-restored completed save.
+- [ ] Keep result-delivery identity across Reset today/replay so one browser cannot mint a second aggregate contribution for the same puzzle/ruleset merely by clearing local gameplay.
+- [ ] Verify live result collection end to end in production with one controlled native completion/readback and identical retry row-count check before comparison work.
 
 ### 4D. Daily Nine comparison
 
