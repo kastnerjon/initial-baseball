@@ -21,15 +21,15 @@ Web browser adapter / React integration.
 
 ## In scope
 
-- add a local submission marker keyed by stable puzzle identity plus exact ruleset/game;
-- persist one valid random submission ID before the first POST;
-- retry transient/network/5xx failures with the same stored ID;
-- treat 2xx as submitted, 409 as terminal conflict, and ordinary 4xx as terminal rejected;
+- add a local submission record keyed by stable puzzle identity plus exact ruleset/game;
+- persist the **exact immutable schema-1 submission payload**, including one valid random submission ID, before the first POST;
+- retry transient/network/408/425/429/5xx failures using that exact stored payload so one ID can never drift across replay facts;
+- treat 2xx as submitted, 409 as terminal conflict, and other ordinary 4xx as terminal rejected;
 - prevent duplicate concurrent POSTs for the same current game identity in one tab;
-- after a POST settles, compare the current stored marker before writing status so reset/new replay cannot be overwritten by a stale response;
+- after a POST settles, compare the current stored submission ID before writing status so a stale async response cannot overwrite changed/cleared transport state;
 - expose local-only native-fact provenance from Daily save hydration so compatibility-reconstructed completed at-bats are never submitted;
-- wire the submission effect only after saved-state hydration and genuine native completion for `points-v3` or `classic-inning-v1`;
-- reset clears only the current game/ruleset submission marker and invalidates any stale in-flight completion response;
+- permit marker creation only for a completion reached natively in the current compatible session, while allowing an already-persisted pending marker to retry after refresh;
+- keep result-delivery bookkeeping across `Reset today's local result`: a server aggregate row cannot be un-submitted, and clearing the marker would allow duplicate browser contributions on replay;
 - focused browser-client, save-provenance, and integration tests;
 - update API/browser-persistence/data-model/architecture/START-HERE/todo documentation.
 
@@ -38,6 +38,7 @@ Web browser adapter / React integration.
 - aggregate/comparison reads or UI;
 - submission status UI/toasts;
 - background timers, polling, service workers, or queues;
+- retroactively submitting already-completed saves that predate result-delivery bookkeeping;
 - accounts/cross-device identity;
 - stronger anti-cheat/session proof;
 - per-action writes;
@@ -47,14 +48,14 @@ Web browser adapter / React integration.
 
 ## Acceptance checks
 
-- supported native completion creates exactly one marker/ID before request;
+- supported native completion creates exactly one persisted payload/ID before request;
 - repeat effects and concurrent calls share one in-flight request;
-- refresh retries pending marker with the same ID;
-- transient/network/5xx failures remain pending;
-- 2xx, 409, and ordinary 4xx become terminal local statuses;
-- reset during an in-flight POST removes the marker and stale completion cannot recreate it;
-- a new marker/ID created after reset cannot be overwritten by an older request;
-- compatibility-reconstructed facts never call the result endpoint;
+- refresh retries the exact same pending payload and ID;
+- transient/network/408/425/429/5xx failures remain pending;
+- 2xx, 409, and other ordinary 4xx become terminal local statuses;
+- reset does not clear/re-mint aggregate identity, so replay cannot create a second browser contribution for the same puzzle/ruleset;
+- stale async responses update status only when their stored submission ID still owns the marker;
+- compatibility-reconstructed facts and pre-feature completed saves without a marker never call the result endpoint;
 - Classic shorter faced-at-bat lists submit intact;
 - no result write occurs before terminal completion;
 - docs distinguish local retry bookkeeping from gameplay state and global analytics;
