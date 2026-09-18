@@ -1,6 +1,6 @@
 # Resolved-at-bat browser lifecycle
 
-Status: Approved architecture; browser 6A/6B implemented, 6C next
+Status: Approved architecture; browser 6A/6B/6C implemented, 6D next
 Date: 2026-09-18
 
 ## Scope contract for this planning PR
@@ -147,7 +147,7 @@ Out of scope: gameplay mutation, HTTP delivery, UI comparisons and server/sessio
 
 ### 6C. Gameplay lifecycle integration, collection still off
 
-Status: Next bounded implementation.
+Status: Implemented; scope and acceptance contract: `tasks/plans/resolved-at-bat-browser-gameplay-lifecycle.md`.
 
 Owning concern: React/save composition.
 
@@ -165,6 +165,8 @@ In scope:
 Out of scope: resolved-AB POST calls, comparison reads/UI, server changes and Classic AB collection.
 
 ### 6D. Delivery activation and identity unification
+
+Status: Next bounded implementation.
 
 Owning concern: resolved-AB browser activation.
 
