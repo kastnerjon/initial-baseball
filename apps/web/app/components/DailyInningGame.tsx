@@ -74,13 +74,13 @@ export function DailyInningGame({
   const [progressionToken, setProgressionToken] = useState(initialProgressionToken);
   const [hintBundle, setHintBundle] = useState<DailyHintBundle | null>(initialHintBundle);
   const [hasLoadedSavedState, setHasLoadedSavedState] = useState(false);
-  const [completedAtBatFactsAreNative, setCompletedAtBatFactsAreNative] = useState(true);
+  const [completedResultCreationAllowed, setCompletedResultCreationAllowed] = useState(false);
   const [bundlePending, setBundlePending] = useState(false);
   const [pendingResolutionAction, setPendingResolutionAction] = useState<PendingResolutionAction | null>(null);
   const [requestError, setRequestError] = useState<string | null>(null);
-  const clearCompletedResultSubmission = useCompletedDailyResultSubmission(
+  useCompletedDailyResultSubmission(
     hasLoadedSavedState,
-    completedAtBatFactsAreNative,
+    completedResultCreationAllowed,
     gameState,
   );
 
@@ -131,27 +131,26 @@ export function DailyInningGame({
       };
     }
 
-    setGameState(savedGame.gameState);
-    setScorecardAnswers(savedGame.scorecardAnswers ?? {});
-    setCurrentPitchIndex(savedGame.currentPitchIndex);
-    setAtBatState(savedGame.atBatState);
-    setPendingAdvance(savedGame.pendingAdvance);
-    setProgressionToken(savedGame.progressionToken);
-    setCompletedAtBatFactsAreNative(
-      loaded!.completedAtBatFactsAreNative
-      || (
-        savedGame.gameState.completedAtBats.length === 0
-        && (savedGame.pendingAdvance?.completedAtBats.length ?? 0) === 0
-      ),
-    );
-    setHasLoadedSavedState(true);
-
     const savedGameComplete = savedGame.gameState.points.completed
       || savedGame.gameState.score.completed
       || savedGame.currentPitchIndex >= puzzle.pitches.length
       || savedGame.pendingAdvance?.points.completed === true
       || savedGame.pendingAdvance?.score.completed === true
       || (savedGame.pendingAdvance?.nextPitchIndex ?? 0) >= puzzle.pitches.length;
+    const hasNoCompletedFacts = savedGame.gameState.completedAtBats.length === 0
+      && (savedGame.pendingAdvance?.completedAtBats.length ?? 0) === 0;
+
+    setGameState(savedGame.gameState);
+    setScorecardAnswers(savedGame.scorecardAnswers ?? {});
+    setCurrentPitchIndex(savedGame.currentPitchIndex);
+    setAtBatState(savedGame.atBatState);
+    setPendingAdvance(savedGame.pendingAdvance);
+    setProgressionToken(savedGame.progressionToken);
+    setCompletedResultCreationAllowed(
+      !savedGameComplete
+      && (loaded!.completedAtBatFactsAreNative || hasNoCompletedFacts),
+    );
+    setHasLoadedSavedState(true);
     const canReuseInitialBundle = savedGame.currentPitchIndex === 0
       && savedGame.progressionToken === initialProgressionToken;
 
@@ -406,7 +405,6 @@ export function DailyInningGame({
   }
 
   function handleResetToday(): void {
-    clearCompletedResultSubmission();
     clearSavedDailyGame(puzzle, getDailyModeStorage(rulesetVersion));
     resetToInitialState();
     setPendingResolutionAction(null);
@@ -415,7 +413,7 @@ export function DailyInningGame({
   }
 
   function resetToInitialState(): void {
-    setCompletedAtBatFactsAreNative(true);
+    setCompletedResultCreationAllowed(true);
     setGameState(createInitialDailyGameState(puzzle, rulesetVersion));
     setScorecardAnswers({});
     setCurrentPitchIndex(0);
