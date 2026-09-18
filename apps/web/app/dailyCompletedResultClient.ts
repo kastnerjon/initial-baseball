@@ -29,7 +29,8 @@ type SubmissionRecord = {
   submission: DailyCompletedResultSubmission;
 };
 type RecordRead =
-  | { kind: 'missing' | 'invalid' }
+  | { kind: 'missing' }
+  | { kind: 'invalid' }
   | { kind: 'valid'; record: SubmissionRecord };
 
 export type CompletedDailyResultSubmissionInput = {
