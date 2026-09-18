@@ -156,9 +156,51 @@ These are web/server runtime optimizations only. They do not change scoring, lif
 
 The web adapter retains terminal canonical display names in a browser-local `scorecardAnswers` map keyed by pitch number, separate from portable game facts and `DailyShareResult`. Only resolved slots survive restoration. Scorecard and share-card components receive separate inputs; clipboard copies only the existing engine-formatted spoiler-safe text. No server payload, data dependency, or answer-authority change is required.
 
+## Current runtime composition
+
+A new agent should be able to orient from these paths before opening implementation details:
+
+```text
+Public gameplay:
+page / bootstrap
+  -> dailyRuntimeService
+  -> cached authoritative public puzzle
+  -> editorial repository or deterministic fallback
+  -> signed progression + current hint bundle
+
+Guess / Give Up:
+DailyInningGame
+  -> /api/daily/resolve
+  -> Daily runtime
+  -> engine scoring/completion
+  -> canonical reveal shard
+  -> successor progression token
+
+Completed result:
+DailyInningGame
+  -> useCompletedDailyResultSubmission
+  -> dailyCompletedResultClient
+  -> /api/daily/results
+  -> serverDailyCompletedResults
+  -> dailyCompletedResultSubmissionService
+  -> engine validateDailyCompletedResult
+  -> createDailyCompletedResultService
+  -> supabaseDailyCompletedResultRepository
+  -> daily_completed_results
+
+Editorial ChatOps:
+private.dispatch_daily_lineup_chatops
+  -> /admin/daily/chatops
+  -> Daily editorial workflow/lifecycle
+  -> daily_editorial_puzzles
+  -> public puzzle cache invalidation
+```
+
+The diagram names composition points, not domain owners. Rules stay in engine/Daily; routes and React remain adapters; Supabase repositories persist normalized contracts.
+
 ## Completed-result and comparison architecture
 
-The result system performs **one compact idempotent write after completion**, never per-action writes. Portable validation/derivation, the provider-neutral idempotent repository/service boundary, the server-only Supabase provider, and the completed-game POST boundary are implemented. Browser completion submission/retry wiring is the remaining activation step.
+The result system performs **one compact idempotent write after completion**, never per-action writes. Portable validation/derivation, the provider-neutral idempotent repository/service boundary, the server-only Supabase provider, the completed-game POST boundary, and browser completion delivery are implemented. The browser persists the immutable submission payload before its first request and retries that exact payload; it never rebuilds a retry from replay state.
 
 A submission identifies the stable puzzle, ruleset/game, and a client-generated idempotency ID, and carries ordered native completed-at-bat facts. The server validates exact puzzle identity and fact consistency and derives summaries through portable rules; it never trusts a client-submitted total score.
 
@@ -170,7 +212,9 @@ The service consumes only the engine-derived `DailyCompletedResult`; it does not
 
 The Supabase provider now maps that normalized result to `public.daily_completed_results` through a server-only row codec and an insert-first adapter. `submission_id` is the database primary key. A successful insert returns the inserted normalized row; a PostgreSQL unique-key conflict triggers a read of the existing winner, which 4B then compares field-by-field. There is no upsert/update path. RLS is enabled with no browser policies, and `service_role` is restricted to direct `SELECT` and `INSERT` table privileges. Provider receipt time is stored as `created_at` but does not enter the portable result contract.
 
-The web submission boundary is `POST /api/daily/results`. It preflights only routing fields needed before puzzle lookup, rejects future Pacific dates, loads the same authoritative cached public puzzle used by gameplay without minting progression tokens/hint bundles, calls engine validation/derivation, then stores through 4B/provider. Responses contain only created/existing/error status and are `private, no-store`. Browser stable-ID/retry wiring remains a separate following PR.
+The web submission boundary is `POST /api/daily/results`. It preflights only routing fields needed before puzzle lookup, rejects future Pacific dates, loads the same authoritative cached public puzzle used by gameplay without minting progression tokens/hint bundles, calls engine validation/derivation, then stores through 4B/provider. Responses contain only created/existing/error status and are `private, no-store`.
+
+The browser path is `DailyInningGame` → `useCompletedDailyResultSubmission` → `dailyCompletedResultClient`. Creation is allowed only for native facts from the current compatible play session. The client writes the exact schema-1 payload to its own local-storage namespace before POST, deduplicates one same-tab in-flight request per puzzle/ruleset, retries pending records after refresh, and marks terminal delivery only if the stored submission ID still matches when the response returns. Gameplay reset leaves result-delivery bookkeeping intact so replay cannot create another browser aggregate contribution.
 
 Comparison is scoped to the same stable puzzle and ruleset/game. Daily Nine requires per-at-bat average points plus whole-game average/distribution/percentile. Classic remains a separate population with baseball-native measures such as runs, hits, at-bats reached, per-at-bat outcomes, and reach rates. A single Classic percentile metric is intentionally unresolved.
 
@@ -215,8 +259,8 @@ Vercel and Supabase remain replaceable adapters. No new cache service, queue, da
 
 ## Current sequence
 
-1. Add browser stable submission identity and idempotent completion-only retry wiring on the completed POST API, with reset/in-flight race protection; do not submit compatibility-reconstructed legacy facts.
-2. Verify live result collection end to end and continue outstanding interactive/physical-device QA plus timed editorial rollover/fallback observations without blocking the result pipeline.
+1. Finish browser result-delivery activation and verify exact production behavior with one controlled native completion, normalized row readback, and an identical same-ID retry that does not create a second row.
+2. Verify result collection remains completion-only with no answer leakage/per-action writes and continue outstanding physical-device/editorial timed QA in parallel.
 3. Add same-puzzle/same-ruleset per-at-bat and whole-game comparison; settle percentile tie/sample-size rules before percentile UI.
 4. Build permanent archive/local-history infrastructure from the future explicit launch Daily #1.
 5. Before broad launch, choose the primary game/final rules and launch epoch, then complete calibrated lineups, analytics/monitoring, mobile/legal/domain/social polish.
