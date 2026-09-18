@@ -1,14 +1,17 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import type { DailyGameState } from '@initial-baseball/shared';
+import { canCreateCompletedResultFromLoadedSave } from './dailyCompletedResultActivation';
 import { submitCompletedDailyResultIfNeeded } from './dailyCompletedResultClient';
+import type { SavedDailyGame } from './dailyLocalStorage';
 
 export function useCompletedDailyResultSubmission(
   hasLoadedSavedState: boolean,
-  allowCreate: boolean,
   gameState: DailyGameState,
-): void {
+) {
+  const [allowCreate, setAllowCreate] = useState(false);
+
   useEffect(() => {
     if (!hasLoadedSavedState) return;
 
@@ -39,4 +42,21 @@ export function useCompletedDailyResultSubmission(
     gameState.status,
     hasLoadedSavedState,
   ]);
+
+  return {
+    restoreEligibility(
+      savedGame: SavedDailyGame,
+      totalAtBats: number,
+      completedAtBatFactsAreNative: boolean,
+    ): void {
+      setAllowCreate(canCreateCompletedResultFromLoadedSave({
+        savedGame,
+        totalAtBats,
+        completedAtBatFactsAreNative,
+      }));
+    },
+    allowFreshSession(): void {
+      setAllowCreate(true);
+    },
+  };
 }
