@@ -151,6 +151,7 @@ Admin redesign is deferred. The user may supply a future date and nine ordered p
 ### 4C-3b. Native completion activation — current bounded concern
 
 - [x] Expose hydration-only provenance that distinguishes explicit native completed-at-bat facts from compatibility reconstruction without changing the saved gameplay schema.
+- [x] Make creation eligibility explicit and unit-tested: untouched/native active saves may later create; compatibility-fact or already-completed restored saves may not.
 - [x] Permit new record creation only for a genuine current-session native `points-v3` or `classic-inning-v1` completion.
 - [x] Independently retry an already-persisted pending delivery record after hydration, even when gameplay state itself is not completed.
 - [x] Never retroactively create a submission from a pre-feature/compatibility-restored completed save.
