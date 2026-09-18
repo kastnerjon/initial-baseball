@@ -83,7 +83,7 @@ Answer integrity: `docs/decisions/0001-daily-answer-integrity.md`.
 - PR #147 merged as `57c1b8374c8b722a31a3fd5dc10ed54bd4d40e93`; production deployment `dpl_6K7qvDBcPFFDz9ACveBMq7jEgCvX` is READY on that exact SHA. It includes the unified 960px Daily rail, compact left-aligned scorecard, points-v3 scorebug ordered At bat → Points possible this AB → Points so far → Strikeouts, and the prior incorrect-feedback cleanup.
 - PR #152 merged as `61cf0aa51556e5ded577490cfd9c569c0306eca4` and added atomic nine-player future-lineup replacement plus the private machine-authenticated server adapter while preserving the existing Daily lifecycle, optimistic revisions, cache invalidation, and published-puzzle immutability.
 - PR #153 merged as `e3ab3b8a9fc8a196d7962a79e5c23e0cf15c617c` and activated the private Supabase `pg_net` transport. On September 16 the matching machine credential was configured in Vercel Production and Supabase Vault, production was redeployed successfully, and the transport reached the authenticated server route.
-- The conversational lineup bridge is now operational. A production smoke test first rejected an ineligible canonical candidate atomically with HTTP 400 and no lineup mutation; the corrected future nine was then persisted in exact batting order, scheduled explicitly, and read back at revision 2 with `scheduled_by`/`updated_by` equal to `chatops:assistant`. Future lineup payloads must never be transported through public GitHub issues/commits/PRs/Actions inputs. Runbook: `docs/operations/daily-lineup-chatops.md`.
+- The conversational lineup bridge is operational for routine future-lineup entry. After the initial production smoke test, owner-supplied Dailies #149–#151 were resolved through canonical identity, persisted in exact batting order, explicitly scheduled, and read back at revision 2 with `scheduled_by`/`updated_by` equal to `chatops:assistant`; the persisted seven-day horizon now covers Dailies #145–#151. One `pg_net` request timed out after the server had already committed the correct scheduled row, so the runbook now requires authoritative readback before any retry. Future lineup payloads must never be transported through public GitHub issues/commits/PRs/Actions inputs. Runbook: `docs/operations/daily-lineup-chatops.md`.
 - PR #162 separates automatic and manual Daily eligibility: automatic generation remains restricted to ranked `dailyEligiblePlayers`; authorized manual admin/ChatOps curation may select any canonical, reveal-ready Daily-compatible player. Manual-only candidates carry no automatic rank and surface `outside-automatic-daily-pool`; they do not alter automatic generation. Scope: `tasks/plans/manual-daily-canonical-selection.md`.
 - PR #155 merged as `c7633a84138838f8b3816484fd4a9e9df38c72dc`. It added typed new-session bootstrap selection for Daily Nine or Classic, signs that ruleset through hint/resolution progression, and reuses engine `isDailyGameComplete` so Classic stops at three outs or batter nine with no successor hint bundle. Scope: `tasks/plans/classic-web-transport.md`.
 - PR #156 merged as `cf92eb2ac1a16ef732396e2c8fe44d9f86454db4`. It activates `/classic`, keeps `/` as Daily Nine, shares the existing game component, isolates Classic browser saves from the existing Daily key, makes reset/refresh/share game-aware, and changes a terminal Classic continuation to `View Results` so an unplayed batter is never advanced to or exposed. Production deployment `dpl_5TBWWVyAUpwVtnouotnSBk79Lhgr` is READY and canonically aliased. Both `/` and `/classic` returned HTTP 200 for Daily #143 with the same public puzzle/initials and signed `points-v3` versus `classic-inning-v1` game identity respectively; the build exposed both routes, hidden-answer QA passed for two initial payloads, and no error/fatal runtime logs were present at verification time. Scope: `tasks/plans/classic-browser-experience.md`.
@@ -196,19 +196,22 @@ Verified September 16–17:
 - the matching bearer credential is stored only in Vercel server environment and Supabase Vault;
 - an invalid automatic-pool candidate failed atomically before the manual-candidate policy change;
 - a corrected future nine was persisted in exact order, explicitly scheduled, and read back with `chatops:assistant` attribution;
+- routine owner-supplied Dailies #149–#151 were then persisted in exact order and scheduled through the same private path, yielding a complete persisted seven-day horizon through Daily #151;
+- a transport timeout after one successful server mutation was safely reconciled by authoritative row readback before any retry;
 - PR #162 broadens only authorized manual selection to canonical, reveal-ready Daily-compatible players outside the automatic pool; automatic generation remains unchanged.
 
 Remaining hosted editorial checks:
 
-- seven-day Supabase horizon and missing-draft generation;
 - player preview/search/replacement and validation through the authenticated editor workflow;
-- public scheduled/published consumption for an editorially scheduled future puzzle;
-- deterministic fallback for missing/draft records.
+- timed public consumption when a newly scheduled future editorial puzzle reaches its live date;
+- deterministic fallback observation for a missing/draft record.
+
+The routine conversational future-lineup workflow itself is no longer a blocker for completed-result work.
 
 ## Exact next work order
 
-1. Complete the remaining interactive/physical iPhone/iPad presentation, terminal/refresh/share, and PR #133 latency QA without treating both beta games as permanent launch commitments.
-2. Finish exact-SHA production verification of the public editorial-candidate fix, then split draft #161 into bounded provider, API, and browser concerns on the completed 4A/4B contracts. Reconcile the already-applied results migration/grants, reject invalid date routing before puzzle generation, and fix terminal submission, reset/in-flight races, retryable throttling, and native-fact provenance. Do not merge #161 unchanged or include comparison UI/aggregates.
+1. Split draft #161 into bounded provider, API, and browser concerns on the completed 4A/4B contracts. Reconcile the already-applied results migration/grants, reject invalid date routing before puzzle generation, and fix terminal submission, reset/in-flight races, retryable throttling, and native-fact provenance. Do not merge #161 unchanged or include comparison UI/aggregates.
+2. Continue the remaining interactive/physical iPhone/iPad presentation, terminal/refresh/share, PR #133 latency QA, and timed editorial rollover/fallback observations as hosted QA without blocking the results pipeline.
 3. Add same-Daily/same-ruleset per-at-bat and whole-game comparison; settle percentile tie/sample-size rules before percentile UI.
 4. Build permanent archive/local-history infrastructure that starts from the future explicit launch Daily #1 rather than importing beta history.
 5. Before broad launch, choose the primary game/final rules and launch epoch, then continue gameplay-profile/lineup-recipe calibration, analytics/monitoring, legal/domain/social metadata, and launch polish.
