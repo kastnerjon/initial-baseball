@@ -77,6 +77,14 @@ Completed result stack
   -> Supabase completed-result repository
   -> public.daily_completed_results
 
+Resolved-AB server stack (browser activation pending)
+  -> POST /api/daily/at-bats
+  -> authoritative cached public puzzle
+  -> engine validateDailyAtBatResult / derived points
+  -> Daily first-write-wins service
+  -> Supabase resolved-AB repository
+  -> public.daily_at_bat_results
+
 Owner-supplied future lineup
   -> private Supabase pg_net dispatch
   -> POST /admin/daily/chatops
@@ -96,12 +104,13 @@ Answer integrity: `docs/decisions/0001-daily-answer-integrity.md`.
 
 ## Resolved-AB contract implementation
 
-The 4D foundation now includes portable schema-1 points-v3 AB transport, pure engine validation/derived points, the Daily first-write-wins repository/service, and a server-only Supabase provider. Scope: `tasks/plans/resolved-at-bat-contract.md`, `tasks/plans/resolved-at-bat-repository.md`, and `tasks/plans/resolved-at-bat-supabase-provider.md`. PR #174 remains draft; its equal-population invariant is superseded by replacement roadmap PR #175. Hosted table/migration/privileges and isolated atomicity are verified, but no route or browser collection is active. The next implementation concern is the web submission API using authoritative puzzle context; browser identity/cross-tab coordination, comparisons and UI remain pending.
+The 4D foundation now includes portable schema-1 points-v3 AB transport, pure engine validation/derived points, the Daily first-write-wins repository/service, a server-only Supabase provider, and `POST /api/daily/at-bats` authoritative server composition. Scope: `tasks/plans/resolved-at-bat-contract.md`, `tasks/plans/resolved-at-bat-repository.md`, `tasks/plans/resolved-at-bat-supabase-provider.md`, and `tasks/plans/resolved-at-bat-submission-api.md`. PR #174 remains draft; its equal-population invariant is superseded by replacement roadmap PR #175. The endpoint is deliberately absent from gameplay/browser code. The next concern is browser attempt ownership, immutable outbox, cross-tab/reset/legacy lifecycle and delivery activation; comparisons and UI follow.
 
 ## Current verified state
 
 - September 18 production result collection is now proven end to end on the PR #171 activation baseline. A fresh real-browser Daily #144 / `points-v3` session completed with nine Give Ups and created exactly one `public.daily_completed_results` row at `2026-09-18 06:16:47.384891+00`. The persisted row carried the expected puzzle/ruleset identity, nine ordered native Give Up facts, and engine-derived zero-point summary. Replaying the exact stored schema-1 payload with the same `submissionId` through production `POST /api/daily/results` returned HTTP 200 `{"status":"existing"}` and the table remained at exactly one row with the same receipt timestamp. The surrounding Vercel runtime-error scan was clean. PR #171 remains the activation code baseline (`ae2fc428b2fad05685b068944acce66b9dddf536`, production deployment `dpl_DctrheRJbonPmcszrjAfPuJxvzhy`); PR #172 reconciled the pre-proof handoff. Completed-result 4A/4B/4C is therefore operationally complete, and 4D Daily Nine comparison is the next bounded concern. Draft PR #161 remains unmerged and must not be merged unchanged.
 - Resolved-AB provider migration `20260918185110_create_daily_at_bat_results` is applied while collection remains inactive. The table uses composite first-write-wins identity `(attempt_id, puzzle_id, ruleset_version, pitch_number)`, a separate puzzle/ruleset/slot population index including derived points, RLS with no policies, no `anon`/`authenticated` grants, and `service_role` `SELECT, INSERT` only. Two simultaneous disposable same-key inserts produced one winner; the verification row was removed and hosted row count returned to zero. Scope: `tasks/plans/resolved-at-bat-supabase-provider.md`.
+- The resolved-AB server API preflights only routing fields, rejects future Pacific dates, loads the authoritative cached public puzzle, calls engine validation/point derivation and stores through Daily/provider. `POST /api/daily/at-bats` returns only created/existing/conflict/error status with `private, no-store`; it is not invoked by gameplay yet. Scope: `tasks/plans/resolved-at-bat-submission-api.md`.
 - The public source now reuses the same canonical editorial-candidate factory as the admin workflow, so approved manual-only players resolve without widening automatic generation. Focused tests cover scheduled/published order, canonical identity, rejection, fallback, and archived behavior. Scope: `tasks/plans/public-editorial-candidates.md`. Exact merge-SHA production deployment is verified READY as `dpl_APaPW1hwmzghnoRg4fEXhcFnNCCw` on `0001f51c15b9e7b4e5e9647ce471365a96f19bc7`.
 - Completed-result step 4A implements shared schema-1 types and pure engine validation/derivation for `points-v3` and `classic-inning-v1`. The validator binds native facts to the expected puzzle/game, checks exact completion and fact consistency, reuses existing gameplay rules, and returns copied normalized facts plus a game-specific summary. It does not prove honest play. Scope: `tasks/plans/completed-result-contract.md`; contract: `docs/spec/engine.md` and `docs/spec/data-model.md`.
 - Completed-result step 4B implements the provider-neutral atomic repository/service boundary in `packages/daily`. `insertIfAbsent(result)` is the first-write-wins repository primitive keyed by `submissionId`; identical retries return the existing normalized result, while same-ID/different-payload retries return `idempotency_conflict` without overwrite. The service consumes 4A output and does not re-run validation/scoring. The current provider step adds the reconciled `daily_completed_results` migrations plus a server-only Supabase row codec/adapter that inserts first and reads the existing winner only after a PostgreSQL unique-key conflict. It has no update/upsert path and does not validate gameplay. Scope: `tasks/plans/completed-result-supabase-provider.md`. The completed-game API is the separate web/server layer described in `tasks/plans/completed-result-submission-api.md`; the browser retry adapter is described in `tasks/plans/completed-result-browser-client.md`; native activation is implemented by `tasks/plans/completed-result-native-activation.md`. The September 18 controlled production proof confirmed one real browser completion created one row and an exact same-ID replay returned the existing result without increasing row count. Comparison work may now proceed.
@@ -211,7 +220,7 @@ Completed-result collection is implemented and has prior production proof as rec
 
 Approved September 18 replacement for 4D: collect one immutable observation per resolved Daily Nine AB, including partial games; show YOU / AVG after each terminal reveal. Final scores compare completed games only. Saving and comparison read success are independent; briefly stale comparisons are acceptable. Strictly lower scores define "You beat X% of finishers". Public Reset is beta-only and must be removed before launch; any retained admin/test flow is non-contributing.
 
-PR #174 was inspected at `38f3bc9` and converted to draft. Do not merge unchanged: its every-AB-count-equals-completion-count rule is invalid for this product. Current main inspected at `2a737a2`. No new AB collection or comparison implementation is live. Current browser identity starts at completion; progression tokens have no attempt ID/history. Cross-tab coordination must be designed/tested before activating earlier identity and AB delivery. Full replacement scope, old-save policy, failure states and ordered PRs: `tasks/plans/resolved-at-bat-comparison.md`.
+PR #174 was inspected at `38f3bc9` and converted to draft. Do not merge unchanged: its every-AB-count-equals-completion-count rule is invalid for this product. Resolved-AB validation, immutable provider storage and the server POST boundary now exist, but browser collection and comparison reads are not active. Current browser identity starts at completion; progression tokens have no attempt ID/history. Cross-tab coordination must be designed/tested before activating earlier identity and AB delivery. Full replacement scope, old-save policy, failure states and ordered PRs: `tasks/plans/resolved-at-bat-comparison.md`.
 
 ### Permanent archive and personal history
 
@@ -257,9 +266,9 @@ The routine conversational future-lineup workflow itself is no longer a blocker 
 
 ## Exact next work order
 
-1. Replacement roadmap #175, portable contract/validation #176, and repository/service #178 are merged. Keep #174 draft.
-2. Land the implemented resolved-AB Supabase provider, then implement the separate web submission API concern in `tasks/plans/resolved-at-bat-comparison.md`.
-3. Resolve/test browser attempt ownership across tabs, reset, existing saves and delivery before activating collection. New identity must preserve old pending completed-result payloads.
+1. Replacement roadmap #175, portable contract/validation #176, repository/service #178 and Supabase provider #179 are merged. Keep #174 draft.
+2. Land the implemented resolved-AB web submission API while keeping gameplay/browser collection inactive.
+3. Resolve/test browser attempt ownership across tabs, reset, existing saves and delivery; only then activate collection. New identity must preserve old pending completed-result payloads.
 4. Implement and benchmark independent-population reads; then add asynchronous per-AB and final comparisons. Do not claim measured capacity or current hosting prices without checking.
 5. Continue outstanding physical-device/editorial QA; archive/local-history follows the explicit future launch epoch. Remove public Reset before launch.
 
