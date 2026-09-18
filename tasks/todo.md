@@ -5,7 +5,7 @@ Last updated: 2026-09-17
 
 Completed history belongs in PRs, canonical docs, or `tasks/lessons.md`. Durable resumption context belongs in `docs/START-HERE.md`.
 
-Current order: the routine conversational future-lineup path is operationally complete and the completed-result Supabase provider is now the bounded implementation concern. After this provider merge, the next PR is the server submission API, followed by browser stable-ID/retry wiring; draft #161 must not be merged unchanged. Remaining authenticated-editor slot QA, timed public editorial rollover/fallback checks, and physical iPhone/iPad QA stay open but do not block the results pipeline. Daily Nine and Classic remain distinct beta games; 4A/4B are merged. Supabase contains an empty current-results table, but public result submission is still not live until the API/browser steps land. Comparison and permanent archive/local history remain subsequent concerns. Current beta numbering is disposable; broad launch later restarts at Daily #1 after the owner chooses the surviving game/final rules.
+Current order: the routine conversational future-lineup path is operationally complete and the completed-result Supabase provider is implemented behind 4B. The next bounded concern is the server submission API, followed by browser stable-ID/retry wiring; draft #161 must not be merged unchanged. Remaining authenticated-editor slot QA, timed public editorial rollover/fallback checks, and physical iPhone/iPad QA stay open but do not block the results pipeline. Daily Nine and Classic remain distinct beta games; 4A/4B are merged. Supabase contains an empty current-results table, but public result submission is still not live until the API/browser steps land. Comparison and permanent archive/local history remain subsequent concerns. Current beta numbering is disposable; broad launch later restarts at Daily #1 after the owner chooses the surviving game/final rules.
 
 ## September 15–16 approved product work
 
@@ -121,7 +121,7 @@ Admin redesign is deferred. The user may supply a future date and nine ordered p
 - [x] Preserve the complete normalized result/raw facts and cover insert, retry, conflict, cross-game ID reuse, and Classic shorter-fact-list behavior with focused tests.
 - [x] Keep Supabase, API, browser persistence/retry, aggregates, comparison UI, and archive/history out of 4B.
 
-### 4C-1. Supabase provider — current bounded concern
+### 4C-1. Supabase provider
 
 - [x] Reconcile the already-applied `20260917132147_create_daily_completed_results` migration into source control rather than reusing inactive legacy result tables.
 - [x] Add the server-only Supabase row codec/adapter behind `DailyCompletedResultRepository.insertIfAbsent`.
