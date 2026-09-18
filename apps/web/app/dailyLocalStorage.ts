@@ -348,6 +348,18 @@ function normalizeCompletedAtBats(
   return pitchLines.map((line, index) => deriveLegacyCompletedAtBat(line, index + 1));
 }
 
+function isNativeCompletedAtBatList(
+  value: unknown,
+  pitchLines: DailySharePitchLine[],
+): boolean {
+  if (pitchLines.length === 0) {
+    return value === undefined || (Array.isArray(value) && value.length === 0);
+  }
+  return Array.isArray(value)
+    && value.length === pitchLines.length
+    && value.every(isDailyCompletedAtBat);
+}
+
 function deriveLegacyCompletedAtBat(
   line: DailySharePitchLine,
   pitchNumber: number,
