@@ -5,7 +5,7 @@ Last updated: 2026-09-17
 
 Completed history belongs in PRs, canonical docs, or `tasks/lessons.md`. Durable resumption context belongs in `docs/START-HERE.md`.
 
-Current order: the routine conversational future-lineup path is operationally complete and the completed-result Supabase provider is implemented behind 4B. The next bounded concern is the server submission API, followed by browser stable-ID/retry wiring; draft #161 must not be merged unchanged. Remaining authenticated-editor slot QA, timed public editorial rollover/fallback checks, and physical iPhone/iPad QA stay open but do not block the results pipeline. Daily Nine and Classic remain distinct beta games; 4A/4B are merged. Supabase contains an empty current-results table, but public result submission is still not live until the API/browser steps land. Comparison and permanent archive/local history remain subsequent concerns. Current beta numbering is disposable; broad launch later restarts at Daily #1 after the owner chooses the surviving game/final rules.
+Current order: the routine conversational future-lineup path is operationally complete; the completed-result provider and server submission API are implemented on 4A/4B. The next bounded concern is browser stable-ID/retry wiring; draft #161 must not be merged unchanged. Remaining authenticated-editor slot QA, timed public editorial rollover/fallback checks, and physical iPhone/iPad QA stay open but do not block the results pipeline. Daily Nine and Classic remain distinct beta games; 4A/4B are merged. Supabase contains an empty current-results table, but public result submission is still not live until the API/browser steps land. Comparison and permanent archive/local history remain subsequent concerns. Current beta numbering is disposable; broad launch later restarts at Daily #1 after the owner chooses the surviving game/final rules.
 
 ## September 15–16 approved product work
 
@@ -129,15 +129,15 @@ Admin redesign is deferred. The user may supply a future date and nine ordered p
 - [x] Keep RLS enabled with no browser policies and harden `service_role` to direct `SELECT, INSERT` only via migration `20260918004822_harden_daily_completed_results_privileges`.
 - [ ] Pass focused/full CI, preview, advisor verification, merge, and exact production/source reconciliation.
 
-### 4C-2. Completed-result submission API — next after provider
+### 4C-2. Completed-result submission API
 
-- [ ] Add one public completed-game POST route with private/no-store responses.
-- [ ] Parse and reject malformed routing/date/ruleset fields before authoritative puzzle construction.
-- [ ] Load the authoritative puzzle/ruleset server-side and call engine `validateDailyCompletedResult`; never trust submitted totals.
-- [ ] Store only the engine-normalized result through 4B/provider and map created/existing/conflict/invalid/unavailable outcomes deliberately.
-- [ ] Verify no answer/credential leakage, no per-action writes, and no aggregate/comparison scope.
+- [x] Add one public completed-game POST route with private/no-store responses.
+- [x] Parse and reject malformed schema/date/ruleset/future routing before authoritative puzzle construction.
+- [x] Load the authoritative public puzzle through the existing Daily runtime without minting progression tokens/hint bundles and call engine `validateDailyCompletedResult`; never trust submitted totals.
+- [x] Store only the engine-normalized result through 4B/provider and map created/existing/conflict/invalid/provider-unavailable outcomes deliberately.
+- [ ] Pass focused/full CI, preview, merge, and exact production verification with no browser submission code in the diff.
 
-### 4C-3. Browser completion submission/retry — after API
+### 4C-3. Browser completion submission/retry — next bounded concern
 
 - [ ] Generate and persist one stable submission ID for a native completed game.
 - [ ] Submit only after genuine native completion for `points-v3` or `classic-inning-v1`; do not submit compatibility-reconstructed legacy facts.
