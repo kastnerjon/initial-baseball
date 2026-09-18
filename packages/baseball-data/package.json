@@ -46,7 +46,6 @@
     "qa:canonical-runtime-consumer": "pnpm build && node ./scripts/qa-canonical-runtime-consumer.mjs",
     "audit:current": "node ./scripts/audit-current-data.mjs",
     "audit:current:strict": "node ./scripts/audit-current-data.mjs --strict",
-    "pretest": "pnpm --filter @initial-baseball/shared build && pnpm build",
     "test": "vitest run --passWithNoTests",
     "lint": "tsc -p tsconfig.json --noEmit",
     "typecheck": "tsc -p tsconfig.json --noEmit"
