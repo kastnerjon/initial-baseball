@@ -1,7 +1,7 @@
 # Daily web API specification
 
 Status: Living source of truth  
-Last updated: 2026-09-16
+Last updated: 2026-09-17
 
 Daily routes are thin Next.js adapters over canonical baseball data, engine rules, and portable Daily logic. Answer-integrity rationale is in `docs/decisions/0001-daily-answer-integrity.md`.
 
@@ -146,6 +146,43 @@ Claims contain only contract/ruleset version, puzzle ID/date, current pitch, rev
 
 Valid pre-ruleset tokens normalize to `legacy-inning-v1`. Valid `classic-inning-v1`, `points-v1`, `points-v2`, and `points-v3` claims round-trip without reinterpretation. Ruleset identity is signed and cannot be changed by a client without invalidating the token signature. Tokens are stateless and replayable; anonymous scoring is not tamper-proof. The runtime issues Classic bootstrap claims for `/classic` and points-v3 claims for `/`; the browser does not choose or rewrite the signed ruleset after bootstrap.
 
+## Completed-game result submission
+
+### `POST /api/daily/results`
+
+This anonymous endpoint accepts exactly one completed-game submission after native `points-v3` Daily Nine or `classic-inning-v1` Classic completion. It is not called per hint, guess, or at-bat.
+
+Request contract:
+
+```json
+{
+  "schemaVersion": 1,
+  "submissionId": "stable-client-id",
+  "puzzleId": "stable-puzzle-id",
+  "puzzleDate": "2026-09-17",
+  "puzzleNumber": 144,
+  "rulesetVersion": "points-v3",
+  "completedAtBats": []
+}
+```
+
+The route performs only transport handling. Server composition first rejects unsupported schema/ruleset values, invalid calendar dates, and future Pacific dates before loading a puzzle. It then loads the same authoritative public puzzle used by gameplay through the server Daily runtime, without minting a progression token or building an active hint bundle.
+
+Engine `validateDailyCompletedResult` remains the authority for puzzle identity, ordered native facts, completion consistency, and summary derivation. Client-supplied totals, answer fields, and unknown extras are never persisted as authority. A successful normalized result flows through the 4B first-write-wins service and the server-only Supabase provider.
+
+Responses expose only status/error codes:
+
+- `201 {"status":"created"}`: first successful insert for the submission ID;
+- `200 {"status":"existing"}`: identical idempotent retry;
+- `409 {"error":"idempotency_conflict"}`: the ID already belongs to a different normalized result;
+- `400 {"error":"..."}`: malformed, unsupported, inconsistent, incomplete, future, or mismatched submission;
+- `503 {"error":"completed_result_unavailable"}`: known provider/configuration unavailability;
+- `500 {"error":"completed_result_unavailable"}`: unexpected server fault.
+
+Every response is `private, no-store`. The route does not return normalized at-bat facts, score summaries, answer IDs/names, hints, credentials, or provider details.
+
+The endpoint is consistency-authoritative, not proof of honest anonymous play. It deliberately does not introduce an account, durable gameplay session, per-action event log, or stronger anti-cheat model. Browser creation/persistence of the stable `submissionId` and retry behavior are a separate client-adapter concern.
+
 ## Browser persistence
 
 The browser persists public gameplay state and the current opaque token, not the full authorized hint bundle. On ordinary transitions, the server response supplies the next bundle. On refresh, `/api/daily/hints` hydrates the bundle before the restored at-bat becomes interactive. Daily Nine keeps the existing `initial-baseball:daily:<date>` namespace so points-v1/points-v2/points-v3/legacy saves remain compatible. Classic maps the same date key into a distinct Classic namespace, so load/save/clear/reset in one mode cannot overwrite the other. Persistence is a browser adapter concern; the signed token remains authoritative for ruleset/pitch/strike/reveal claims.
@@ -186,4 +223,4 @@ Supabase remains persistence only. The concrete connected-assistant transport is
 
 ## Deferred APIs
 
-Compact completed-game submission/percentile reads, accounts, authoritative streaks/leaderboards, and head-to-head/social APIs require separate decisions.
+Completed-result aggregate/percentile reads, accounts, authoritative streaks/leaderboards, and head-to-head/social APIs require separate decisions. Browser result submission/retry is a client workflow over the completed-game POST endpoint, not a separate public API.
