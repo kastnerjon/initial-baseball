@@ -12,7 +12,8 @@ Last updated: 2026-09-17
 | Lineup profiles/recipes, generation, validation, lifecycle, completed-result orchestration, and provider-neutral repository contracts | `packages/daily` |
 | Anonymous in-progress visible state | Browser state plus opaque signed progression authorization |
 | Editorial future/past puzzle records | `public.daily_editorial_puzzles` through `DailyPuzzleRepository` |
-| Future permanent archive identity, completed-result provider storage, and personal archive history | Separate migrations/adapters/local schemas described below |
+| Current completed-result provider storage | `public.daily_completed_results` through the web Supabase adapter behind `DailyCompletedResultRepository` |
+| Future permanent archive identity and personal archive history | Separate migrations/adapters/local schemas described below |
 | Future gameplay profiles and saved recipes | Separate provider-neutral contracts and migrations, not legacy tables |
 
 Names are never database join keys.
@@ -61,7 +62,34 @@ Current editorial puzzle numbers/dates are beta operational identity. They must 
 - Current editor authentication is per-request HTTP Basic over HTTPS through `/admin/auth`.
 - Credentials and service-role keys remain server-only.
 
-Completed-result persistence uses a separate provider-neutral port in `packages/daily`; no current Supabase result adapter/table exists yet. The result port deliberately has different semantics from the editorial repository: one atomic first-write-wins insert keyed by `submissionId`, with no overwrite/update path.
+Completed-result persistence uses a separate provider-neutral port in `packages/daily` plus a server-only Supabase adapter in `apps/web`. The result port deliberately has different semantics from the editorial repository: one atomic first-write-wins insert keyed by `submissionId`, with no overwrite/update path. The provider inserts first and reads the existing winner only after a unique-key conflict; 4B remains responsible for deciding whether that winner is an idempotent retry or an `idempotency_conflict`.
+
+## `daily_completed_results`
+
+One row represents one engine-normalized completed beta game submission.
+
+Fields are:
+
+- `submission_id`: immutable primary/idempotency key supplied by the browser transport contract;
+- `schema_version`: currently exactly schema 1;
+- stable `puzzle_id`, `puzzle_date`, and `puzzle_number`;
+- exact `ruleset_version` / game identity, initially `points-v3` or `classic-inning-v1`;
+- ordered `completed_at_bats` JSONB containing the normalized native facts;
+- engine-derived `summary` JSONB;
+- provider-owned `created_at` receipt timestamp.
+
+The table intentionally stores no account/user identity, answer names, client-trusted total, per-action event stream, or mutable gameplay state. The population index is `(puzzle_date, ruleset_version, puzzle_id)` for later same-puzzle/same-game aggregates.
+
+Persistence/security contract:
+
+- the production creation migration `20260917132147_create_daily_completed_results` is reconciled into source control;
+- RLS is enabled and there are no `anon` or `authenticated` policies;
+- `service_role` has direct `SELECT` and `INSERT` only after migration `20260918004822_harden_daily_completed_results_privileges`;
+- there is no provider update, delete, truncate, or upsert path;
+- the server-only row codec fails closed on malformed persisted contract rows;
+- the Supabase adapter implements the existing atomic `DailyCompletedResultRepository.insertIfAbsent` port and does not validate gameplay or derive summaries.
+
+The table/adapter being present does **not** mean result submission is live. No public completed-game POST route or browser submission/retry wiring exists yet.
 
 ## Anonymous gameplay state
 
@@ -184,7 +212,7 @@ Exact transport fields are `schemaVersion`, `submissionId`, `puzzleId`, `puzzleD
 
 The repository contract is intentionally one atomic operation rather than `get` followed by `save`, so a later provider can make concurrent retries race-safe. The service retains the full result/raw facts rather than reducing persistence input to display totals. Exact implementation scope: `tasks/plans/completed-result-repository.md`.
 
-No relational current-results table, Supabase codec/adapter, completed-game submission API, or stable browser submission-ID persistence exists yet. Those are the separate 4C provider/API concern. The browser records the native raw facts needed to form a future submission, but is not yet wired to this contract. Legacy facts reconstructed from old local pitch lines are compatibility display data and must not be submitted without an explicit migration rule. There are no per-action writes.
+The relational `daily_completed_results` table plus server-only Supabase row codec/repository adapter are implemented as the provider portion of 4C. The table is currently empty and not reachable from public gameplay. The completed-game submission API and stable browser submission-ID/retry wiring remain separate next concerns. The browser already records the native raw facts needed to form a future submission, but is not yet wired to this contract. Legacy facts reconstructed from old local pitch lines are compatibility display data and must not be submitted without an explicit migration rule. There are no per-action writes.
 
 Comparison populations are always scoped to stable puzzle identity plus exact ruleset/game identity. Daily Nine and Classic never share an aggregate population. `points-v1`, `points-v2`, and `points-v3` results also remain separate populations. Raw facts are retained so aggregates can be recalculated as presentation evolves.
 

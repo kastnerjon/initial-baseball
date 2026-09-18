@@ -158,7 +158,7 @@ The web adapter retains terminal canonical display names in a browser-local `sco
 
 ## Completed-result and comparison architecture
 
-The result system performs **one compact idempotent write after completion**, never per-action writes. Portable validation/derivation and the provider-neutral idempotent repository/service boundary are implemented; provider persistence and submission transport are not yet implemented.
+The result system performs **one compact idempotent write after completion**, never per-action writes. Portable validation/derivation, the provider-neutral idempotent repository/service boundary, and the server-only Supabase provider are implemented. Public submission transport and browser retry wiring are not yet implemented.
 
 A submission identifies the stable puzzle, ruleset/game, and a client-generated idempotency ID, and carries ordered native completed-at-bat facts. The server validates exact puzzle identity and fact consistency and derives summaries through portable rules; it never trusts a client-submitted total score.
 
@@ -166,7 +166,11 @@ A submission identifies the stable puzzle, ruleset/game, and a client-generated 
 
 `packages/daily` now owns the provider-neutral persistence orchestration. `DailyCompletedResultRepository.insertIfAbsent(result)` is an atomic first-write-wins port keyed by `submissionId`: a provider inserts the complete normalized result if absent, otherwise returns the existing stored result without overwriting it. `createDailyCompletedResultService` compares explicit normalized contract fields. Same ID plus the same normalized result is an idempotent retry; the same ID plus any different puzzle, ruleset/game, raw at-bat fact, or derived summary is an `idempotency_conflict`. This is intentionally not implemented as a race-prone `get` then `save` sequence. Scope: `tasks/plans/completed-result-repository.md`.
 
-The service consumes only the engine-derived `DailyCompletedResult`; it does not duplicate validation, scoring, or completion logic. It retains the complete normalized raw facts so later aggregates can be recomputed as presentation evolves. The next bounded concern is the separate Supabase current-results migration/codec/adapter and completed-game submission API/browser retry wiring.
+The service consumes only the engine-derived `DailyCompletedResult`; it does not duplicate validation, scoring, or completion logic. It retains the complete normalized raw facts so later aggregates can be recomputed as presentation evolves.
+
+The Supabase provider now maps that normalized result to `public.daily_completed_results` through a server-only row codec and an insert-first adapter. `submission_id` is the database primary key. A successful insert returns the inserted normalized row; a PostgreSQL unique-key conflict triggers a read of the existing winner, which 4B then compares field-by-field. There is no upsert/update path. RLS is enabled with no browser policies, and `service_role` is restricted to direct `SELECT` and `INSERT` table privileges. Provider receipt time is stored as `created_at` but does not enter the portable result contract.
+
+The provider remains dormant until a later web submission boundary calls it. The next bounded concern is the completed-game POST API that loads the authoritative puzzle, calls engine validation/derivation, and stores through 4B/provider; browser stable-ID/retry wiring remains a separate following PR.
 
 Comparison is scoped to the same stable puzzle and ruleset/game. Daily Nine requires per-at-bat average points plus whole-game average/distribution/percentile. Classic remains a separate population with baseball-native measures such as runs, hits, at-bats reached, per-at-bat outcomes, and reach rates. A single Classic percentile metric is intentionally unresolved.
 
@@ -182,7 +186,7 @@ The initial personal-history layer is browser/device-local and keyed by stable D
 
 ## Editorial persistence
 
-`daily_editorial_puzzles` remains authoritative for editorial dates: one row/date, atomic exact-nine JSONB selection, lifecycle status, optimistic revision, audit metadata, RLS, and server-only service role. Future profiles/recipes/results require separate portable contracts and migrations. Inactive legacy attempt/result tables are not repurposed for the current result system.
+`daily_editorial_puzzles` remains authoritative for editorial dates: one row/date, atomic exact-nine JSONB selection, lifecycle status, optimistic revision, audit metadata, RLS, and server-only service role. `daily_completed_results` is the separate current completed-result provider table behind the portable result repository; it stores immutable normalized submissions plus provider receipt time and is not a gameplay-rule authority. Future profiles/recipes require separate portable contracts and migrations. Inactive legacy attempt/result tables are not repurposed for the current result system.
 
 ## Scale target
 
@@ -211,11 +215,11 @@ Vercel and Supabase remain replaceable adapters. No new cache service, queue, da
 
 ## Current sequence
 
-1. Finish outstanding interactive/physical-device QA for Daily Nine and Classic without treating both as permanent launch commitments.
-2. Add a separate Supabase current-results migration/codec/adapter and one completed-game submission route/browser retry path on the implemented atomic repository/service boundary.
-3. Add same-puzzle/same-ruleset per-at-bat and whole-game comparison; settle percentile tie/sample-size rules before percentile UI.
-4. Build permanent archive/local-history infrastructure that starts from the future explicit launch Daily #1 rather than importing beta history.
-5. Before broad launch, choose the primary game/final rules and launch epoch, then continue calibrated lineups, analytics/monitoring, mobile polish, legal/domain/social metadata, and launch QA.
+1. Add the completed-game POST API on the implemented 4A validation, 4B idempotency service, and Supabase provider; keep puzzle loading/validation server-authoritative and reject malformed routing before expensive puzzle construction.
+2. Add browser stable submission identity and idempotent completion-only retry wiring with reset/in-flight race protection; do not submit compatibility-reconstructed legacy facts.
+3. Continue outstanding interactive/physical-device QA and timed editorial rollover/fallback observations without blocking the result pipeline.
+4. Add same-puzzle/same-ruleset per-at-bat and whole-game comparison; settle percentile tie/sample-size rules before percentile UI.
+5. Build permanent archive/local-history infrastructure from the future explicit launch Daily #1, then make the broad-launch game/rules/epoch decision and complete launch polish.
 
 ## Non-goals
 
