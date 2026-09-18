@@ -13,7 +13,7 @@ vi.mock('../../../serverDailyCompletedResults', () => ({
 import { DailyRuntimeRequestError } from '../../../dailyRuntimeService';
 import { ServerSupabaseConfigurationError } from '../../../serverSupabaseClient';
 import { SupabaseDailyCompletedResultRepositoryError } from '../../../supabaseDailyCompletedResultRepository';
-import { POST } from './route';
+import { POST, mapCompletedResultRouteError } from './route';
 
 describe('POST /api/daily/results', () => {
   beforeEach(() => server.submitDailyCompletedResult.mockReset());
@@ -45,14 +45,13 @@ describe('POST /api/daily/results', () => {
     expect(server.submitDailyCompletedResult).not.toHaveBeenCalled();
   });
 
-  it('sanitizes authoritative puzzle lookup failures as invalid puzzle', async () => {
-    server.submitDailyCompletedResult.mockRejectedValue(
+  it('maps authoritative puzzle lookup failures to sanitized invalid_puzzle responses', async () => {
+    const response = mapCompletedResultRouteError(
       new DailyRuntimeRequestError('hidden puzzle detail'),
     );
 
-    const response = await POST(createRequest({}));
-
     expect(response.status).toBe(400);
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
     await expect(response.json()).resolves.toEqual({ error: 'invalid_puzzle' });
   });
 
@@ -60,26 +59,22 @@ describe('POST /api/daily/results', () => {
     new ServerSupabaseConfigurationError('secret missing'),
     new SupabaseDailyCompletedResultRepositoryError('query', 'database detail'),
     new SupabaseDailyCompletedResultRepositoryError('invalid-row', 'stored row detail'),
-  ])('sanitizes known provider unavailability as 503', async (error) => {
-    server.submitDailyCompletedResult.mockRejectedValue(error);
-
-    const response = await POST(createRequest({}));
+  ])('maps known provider failures to sanitized 503 responses', async (error) => {
+    const response = mapCompletedResultRouteError(error);
 
     expect(response.status).toBe(503);
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
     await expect(response.json()).resolves.toEqual({ error: 'completed_result_unavailable' });
   });
 
-  it('sanitizes unexpected faults as 500', async () => {
-    server.submitDailyCompletedResult.mockRejectedValue(
-      new Error('unexpected detail'),
-    );
-
-    const response = await POST(createRequest({}));
+  it('maps unexpected faults to sanitized 500 responses', async () => {
+    const response = mapCompletedResultRouteError(new Error('unexpected detail'));
 
     expect(response.status).toBe(500);
     expect(response.headers.get('cache-control')).toBe('private, no-store');
     await expect(response.json()).resolves.toEqual({ error: 'completed_result_unavailable' });
   });
+
 });
 
 function createRequest(body: Record<string, unknown>): Request {
