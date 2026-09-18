@@ -37,7 +37,7 @@ export type CompletedDailyResultSubmissionInput = {
   rulesetVersion: DailyRulesetVersion;
   completedAtBats: DailyCompletedAtBat[];
 };
-export type CompletedDailyResultSubmissionState =
+export type SubmissionState =
   | RecordStatus | 'not_started' | 'unsupported' | 'unavailable';
 
 type SubmissionRequest = (
@@ -53,13 +53,13 @@ export function createDailyCompletedResultClient({
   createSubmissionId: () => string | null;
   submitRequest: SubmissionRequest;
 }) {
-  const inFlight = new Map<string, Promise<CompletedDailyResultSubmissionState>>();
+  const inFlight = new Map<string, Promise<SubmissionState>>();
 
   return {
     async submitIfNeeded(
       input: CompletedDailyResultSubmissionInput,
       { allowCreate }: { allowCreate: boolean },
-    ): Promise<CompletedDailyResultSubmissionState> {
+    ): Promise<SubmissionState> {
       if (!isSupportedRuleset(input.rulesetVersion)) return 'unsupported';
       if (storage === null) return 'unavailable';
 
@@ -112,7 +112,7 @@ export function createDailyCompletedResultClient({
 export function submitCompletedDailyResultIfNeeded(
   input: CompletedDailyResultSubmissionInput,
   options: { allowCreate: boolean },
-): Promise<CompletedDailyResultSubmissionState> {
+): Promise<SubmissionState> {
   return browserClient().submitIfNeeded(input, options);
 }
 
@@ -121,7 +121,7 @@ async function deliver(
   key: string,
   record: SubmissionRecord,
   submitRequest: SubmissionRequest,
-): Promise<CompletedDailyResultSubmissionState> {
+): Promise<SubmissionState> {
   let response: { ok: boolean; status: number };
   try {
     response = await submitRequest({
