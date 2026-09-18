@@ -121,6 +121,23 @@ Once issued, a permanent Daily is a frozen historical puzzle identity with an ex
 
 Daily Nine and Classic Inning are distinct games that currently share a lineup. Their saves, completed results, comparison populations, and personal history remain separate. The data model must not require both games to remain enabled or to share a lineup forever.
 
+## Browser-local completed-result delivery
+
+Result delivery bookkeeping is deliberately separate from the current Daily/Classic gameplay save.
+
+The browser-local delivery record stores:
+
+- schema version 1;
+- stable puzzle ID/date/number;
+- exact ruleset/game identity;
+- one stable client-generated `submissionId`;
+- the exact native completed-at-bat fact list that was present when the record was created;
+- local delivery status: `pending`, `submitted`, `conflict`, or `rejected`.
+
+The payload is immutable for a given browser record. A transient retry never rebuilds facts from current replay state. The delivery key is separate from the gameplay save key so resetting/replaying the local game cannot mint another aggregate identity. There is no account identity, device identity, answer data, trusted score total, or per-action event log in this local record.
+
+Native-fact provenance is a browser hydration concern only. Current schema-3 saves whose explicit completed-at-bat facts match their pitch lines are eligible to create a delivery record during the current compatible play session. Compatibility-reconstructed facts and already-completed saves that predate delivery bookkeeping remain readable but do not create a new aggregate submission.
+
 ## Browser-local scorecard answers
 
 Schema 3 accepts an optional `scorecardAnswers` map of pitch number to terminal canonical display name alongside the game state. Missing/malformed values normalize to an empty map; only resolved/pending-terminal slots are retained. Names are not part of shared raw facts, share results, tokens, or future aggregate submissions. Existing saves remain readable with an unavailable-answer placeholder. Reset removes the map with its saved session.
@@ -212,7 +229,7 @@ Exact transport fields are `schemaVersion`, `submissionId`, `puzzleId`, `puzzleD
 
 The repository contract is intentionally one atomic operation rather than `get` followed by `save`, so a later provider can make concurrent retries race-safe. The service retains the full result/raw facts rather than reducing persistence input to display totals. Exact implementation scope: `tasks/plans/completed-result-repository.md`.
 
-The relational `daily_completed_results` table plus server-only Supabase row codec/repository adapter are implemented as the provider portion of 4C. The completed-game POST API validates against the authoritative public puzzle through engine 4A and stores through 4B/provider. Stable browser submission-ID/retry wiring remains the next separate concern; until it lands, ordinary gameplay does not call the endpoint. The browser already records the native raw facts needed to form a future submission, but is not yet wired to this contract. Legacy facts reconstructed from old local pitch lines are compatibility display data and must not be submitted without an explicit migration rule. There are no per-action writes.
+The relational `daily_completed_results` table plus server-only Supabase row codec/repository adapter are implemented as the provider portion of 4C. The completed-game POST API validates against the authoritative public puzzle through engine 4A and stores through 4B/provider. Browser delivery uses a separate local record keyed by stable puzzle identity plus exact ruleset/game. That record contains the exact immutable schema-1 submission payload and local delivery status; it is created before the first POST so every retry preserves the same ID **and** raw facts. A restored completed save with no delivery record is not retroactively submitted, because compatibility-normalized facts are display compatibility rather than native telemetry. A pending delivery record may retry after refresh. Local gameplay reset does not clear this record, because the server aggregate row is immutable and replay must not create a second browser contribution for the same puzzle/ruleset. There are no per-action writes.
 
 Comparison populations are always scoped to stable puzzle identity plus exact ruleset/game identity. Daily Nine and Classic never share an aggregate population. `points-v1`, `points-v2`, and `points-v3` results also remain separate populations. Raw facts are retained so aggregates can be recalculated as presentation evolves.
 
