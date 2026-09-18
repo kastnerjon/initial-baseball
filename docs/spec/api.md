@@ -183,6 +183,46 @@ Every response is `private, no-store`. The route does not return normalized at-b
 
 The endpoint is consistency-authoritative, not proof of honest anonymous play. It deliberately does not introduce an account, durable gameplay session, per-action event log, or stronger anti-cheat model. The browser client adapter owns a separate immutable delivery record containing the exact schema-1 payload, one stable `submissionId`, and local delivery status. Gameplay activation is gated by browser-local provenance: only a genuine current-session native completion may create a new record, while an already-persisted pending record may retry after hydration without recreating facts from gameplay state.
 
+## Resolved-at-bat result submission
+
+### `POST /api/daily/at-bats`
+
+This anonymous server boundary accepts one terminal points-v3 Daily Nine AB observation. It is separate from `/api/daily/resolve`; gameplay resolution never waits for this persistence path. The endpoint exists before browser activation so its server authority and failure mapping can be verified independently.
+
+Request contract:
+
+```json
+{
+  "schemaVersion": 1,
+  "attemptId": "stable-run-id",
+  "puzzleId": "stable-puzzle-id",
+  "puzzleDate": "2026-09-18",
+  "puzzleNumber": 145,
+  "rulesetVersion": "points-v3",
+  "atBat": {
+    "pitchNumber": 7,
+    "initials": "RH",
+    "outcome": "3B",
+    "hintsRevealed": 1,
+    "wrongGuesses": 1,
+    "resolution": "correct"
+  }
+}
+```
+
+Server composition preflights only object/schema/date/ruleset fields required to route the request and rejects future Pacific dates before puzzle loading. It then loads the same authoritative cached public puzzle used by gameplay, calls engine `validateDailyAtBatResult`, and stores the normalized result through the Daily first-write-wins service and server-only Supabase provider. Client points, answers, timestamps and unknown extras are discarded; the engine derives `awardedPoints`.
+
+Responses expose only status/error codes:
+
+- `201 {"status":"created"}`: first insert for the observation key;
+- `200 {"status":"existing"}`: identical immutable retry;
+- `409 {"error":"idempotency_conflict"}`: the key already belongs to different normalized facts/metadata;
+- `400 {"error":"..."}`: malformed, unsupported, inconsistent, future or mismatched observation;
+- `503 {"error":"at_bat_result_unavailable"}`: known provider/configuration unavailability;
+- `500 {"error":"at_bat_result_unavailable"}`: unexpected server fault.
+
+Every response is `private, no-store` and contains no normalized facts, points, answer IDs/names, hints, credentials or provider details. This consistency boundary is not proof of a unique person or honest play. Browser attempt identity, atomic cross-tab ownership, immutable outbox/retry and reset/legacy behavior remain required before the app begins sending observations.
+
 ## Browser persistence
 
 The browser persists public gameplay state and the current opaque token, not the full authorized hint bundle. On ordinary transitions, the server response supplies the next bundle. On refresh, `/api/daily/hints` hydrates the bundle before the restored at-bat becomes interactive. Daily Nine keeps the existing `initial-baseball:daily:<date>` namespace so points-v1/points-v2/points-v3/legacy saves remain compatible. Classic maps the same date key into a distinct Classic namespace, so load/save/clear/reset in one mode cannot overwrite the other. Persistence is a browser adapter concern; the signed token remains authoritative for ruleset/pitch/strike/reveal claims. Completed-result retry bookkeeping uses the separate `initial-baseball:daily-result-submission:v1:<ruleset>:<date>:<puzzle>` namespace and never mutates the Daily save. The record is written before the first POST and stores the exact submission payload, not merely the ID. A pending record survives refresh and retries the same ID **and the same raw facts** even if current gameplay/replay state differs. The client exposes `allowCreate=false` so activation code can retry an existing record without retroactively creating one from an old completed save. Gameplay reset preserves the independent delivery identity across local replay because a server aggregate row cannot be un-submitted. Resetting local gameplay therefore cannot mint another browser contribution for the same puzzle/ruleset. Terminal delivery status is local bookkeeping, not gameplay or aggregate authority.

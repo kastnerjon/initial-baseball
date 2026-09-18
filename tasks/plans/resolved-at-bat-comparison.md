@@ -1,6 +1,6 @@
 # Daily Nine resolved-at-bat comparison
 
-Status: Approved direction; portable contracts/service/provider implemented, hosted collection pending
+Status: Approved direction; portable contracts/service/provider/API implemented, browser collection pending
 Date: 2026-09-18
 
 ## Scope contract for this PR
@@ -90,7 +90,7 @@ If scans miss the measured budget, first evaluate a brief bounded shared cache w
 2. Complete: portable resolved-AB contract/engine validation with versioned facts, puzzle binding, existing scoring reuse and malformed/compatibility tests.
 3. Complete: portable Daily repository/service with atomic insert-if-absent and semantic same/conflicting payload behavior.
 4. Complete: Supabase adapter/migration with normalized row codec, uniqueness/index, server-only privileges and isolated hosted verification; collection remains inactive.
-5. Web AB submission API: authoritative puzzle lookup and existing service composition, deliberate error mapping. No browser activation.
+5. Complete: web AB submission API with authoritative puzzle lookup, existing service composition and deliberate error mapping. No browser activation.
 6. Browser attempt/delivery lifecycle: settle cross-tab gate, reuse completion identity safely, durable immutable outbox, reset/legacy-save behavior and integration tests. Keep comparison UI out.
 7. Comparison read contract/provider/API: separate populations, null empty averages, strict-lower score calculation, split acknowledgment/read status, freshness, isolated benchmarks and instrumentation. Further split if provider/runtime scope exceeds AGENTS.md.
 8. Reveal/final-scorecard UI: asynchronous YOU / AVG after every AB, low samples/outages, final refresh, stale-response protection, mobile and answer-integrity verification.
