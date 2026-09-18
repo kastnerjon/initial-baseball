@@ -89,7 +89,7 @@ Persistence/security contract:
 - the server-only row codec fails closed on malformed persisted contract rows;
 - the Supabase adapter implements the existing atomic `DailyCompletedResultRepository.insertIfAbsent` port and does not validate gameplay or derive summaries.
 
-The table/adapter being present does **not** mean result submission is live. No public completed-game POST route or browser submission/retry wiring exists yet.
+The table/adapter is consumed only through the server completed-game POST boundary. Browser submission/retry wiring remains separate, so ordinary gameplay does not submit results until that client step lands.
 
 ## Anonymous gameplay state
 
@@ -212,7 +212,7 @@ Exact transport fields are `schemaVersion`, `submissionId`, `puzzleId`, `puzzleD
 
 The repository contract is intentionally one atomic operation rather than `get` followed by `save`, so a later provider can make concurrent retries race-safe. The service retains the full result/raw facts rather than reducing persistence input to display totals. Exact implementation scope: `tasks/plans/completed-result-repository.md`.
 
-The relational `daily_completed_results` table plus server-only Supabase row codec/repository adapter are implemented as the provider portion of 4C. The table is currently empty and not reachable from public gameplay. The completed-game submission API and stable browser submission-ID/retry wiring remain separate next concerns. The browser already records the native raw facts needed to form a future submission, but is not yet wired to this contract. Legacy facts reconstructed from old local pitch lines are compatibility display data and must not be submitted without an explicit migration rule. There are no per-action writes.
+The relational `daily_completed_results` table plus server-only Supabase row codec/repository adapter are implemented as the provider portion of 4C. The completed-game POST API validates against the authoritative public puzzle through engine 4A and stores through 4B/provider. Stable browser submission-ID/retry wiring remains the next separate concern; until it lands, ordinary gameplay does not call the endpoint. The browser already records the native raw facts needed to form a future submission, but is not yet wired to this contract. Legacy facts reconstructed from old local pitch lines are compatibility display data and must not be submitted without an explicit migration rule. There are no per-action writes.
 
 Comparison populations are always scoped to stable puzzle identity plus exact ruleset/game identity. Daily Nine and Classic never share an aggregate population. `points-v1`, `points-v2`, and `points-v3` results also remain separate populations. Raw facts are retained so aggregates can be recalculated as presentation evolves.
 
