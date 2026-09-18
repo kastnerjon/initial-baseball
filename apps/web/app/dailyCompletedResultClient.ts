@@ -12,31 +12,35 @@ import {
 } from '@initial-baseball/shared';
 
 const STORAGE_PREFIX = 'initial-baseball:daily-result-submission:v1';
+const RECORD_VERSION = 1 as const;
 
-type StorageLike = Pick<Storage, 'getItem' | 'setItem'>;
-type Status = 'pending' | 'submitted' | 'conflict' | 'rejected';
-type Stored = { version: 1; status: Status; submission: DailyCompletedResultSubmission };
+type StoragePort = Pick<Storage, 'getItem' | 'setItem'>;
+type TerminalStatus = 'submitted' | 'conflict' | 'rejected';
+type RecordStatus = 'pending' | TerminalStatus;
 type Identity = {
   puzzleId: string;
   puzzleDate: string;
   puzzleNumber: number;
   rulesetVersion: DailyCompletedResultRulesetVersion;
 };
-type ReadResult = Stored | 'missing' | 'invalid';
+type SubmissionRecord = {
+  version: typeof RECORD_VERSION;
+  status: RecordStatus;
+  submission: DailyCompletedResultSubmission;
+};
+type RecordRead =
+  | { kind: 'missing' | 'invalid' }
+  | { kind: 'valid'; record: SubmissionRecord };
 
 export type CompletedDailyResultSubmissionInput = {
   puzzle: Pick<DailyPublicPuzzle, 'id' | 'puzzleDate' | 'puzzleNumber'>;
   rulesetVersion: DailyRulesetVersion;
   completedAtBats: DailyCompletedAtBat[];
 };
-
 export type CompletedDailyResultSubmissionState =
-  | Status
-  | 'not_started'
-  | 'unsupported'
-  | 'unavailable';
+  | RecordStatus | 'not_started' | 'unsupported' | 'unavailable';
 
-type RequestFn = (
+type SubmissionRequest = (
   submission: DailyCompletedResultSubmission,
 ) => Promise<{ ok: boolean; status: number }>;
 
@@ -45,135 +49,157 @@ export function createDailyCompletedResultClient({
   createSubmissionId,
   submitRequest,
 }: {
-  storage: StorageLike | null;
+  storage: StoragePort | null;
   createSubmissionId: () => string | null;
-  submitRequest: RequestFn;
+  submitRequest: SubmissionRequest;
 }) {
   const inFlight = new Map<string, Promise<CompletedDailyResultSubmissionState>>();
 
-  async function deliver(
-    key: string,
-    record: Stored,
-  ): Promise<CompletedDailyResultSubmissionState> {
-    let response: { ok: boolean; status: number };
-    try {
-      response = await submitRequest(cloneSubmission(record.submission));
-    } catch {
-      return 'pending';
-    }
+  return {
+    async submitIfNeeded(
+      input: CompletedDailyResultSubmissionInput,
+      { allowCreate }: { allowCreate: boolean },
+    ): Promise<CompletedDailyResultSubmissionState> {
+      if (!isSupportedRuleset(input.rulesetVersion)) return 'unsupported';
+      if (storage === null) return 'unavailable';
 
-    const next = classify(response);
-    if (next === 'pending') return 'pending';
-
-    const current = readByKey(storage!, key);
-    if (typeof current === 'string') return 'pending';
-    if (current.submission.submissionId !== record.submission.submissionId) {
-      return current.status;
-    }
-    if (current.status !== 'pending') return current.status;
-    return write(storage!, key, { ...current, status: next }) ? next : 'pending';
-  }
-
-  function submitIfNeeded(
-    input: CompletedDailyResultSubmissionInput,
-    options: { allowCreate: boolean },
-  ): Promise<CompletedDailyResultSubmissionState> {
-    if (!isSupported(input.rulesetVersion)) return Promise.resolve('unsupported');
-    if (storage === null) return Promise.resolve('unavailable');
-
-    const identity: Identity = {
-      puzzleId: input.puzzle.id,
-      puzzleDate: input.puzzle.puzzleDate,
-      puzzleNumber: input.puzzle.puzzleNumber,
-      rulesetVersion: input.rulesetVersion,
-    };
-    const key = markerKey(identity);
-    const existing = read(storage, key, identity);
-    if (existing === 'invalid') return Promise.resolve('unavailable');
-
-    let record = existing === 'missing' ? null : existing;
-    if (record === null) {
-      if (!options.allowCreate) return Promise.resolve('not_started');
-      const submissionId = createSubmissionId();
-      if (!validId(submissionId)) return Promise.resolve('unavailable');
-      record = {
-        version: 1,
-        status: 'pending',
-        submission: {
-          schemaVersion: DAILY_COMPLETED_RESULT_SCHEMA_VERSION,
-          submissionId,
-          puzzleId: identity.puzzleId,
-          puzzleDate: identity.puzzleDate,
-          puzzleNumber: identity.puzzleNumber,
-          rulesetVersion: identity.rulesetVersion,
-          completedAtBats: input.completedAtBats.map(atBat => ({ ...atBat })),
-        },
+      const identity: Identity = {
+        puzzleId: input.puzzle.id,
+        puzzleDate: input.puzzle.puzzleDate,
+        puzzleNumber: input.puzzle.puzzleNumber,
+        rulesetVersion: input.rulesetVersion,
       };
-      if (!write(storage, key, record)) return Promise.resolve('unavailable');
-    }
+      const key = storageKey(identity);
+      const existing = readRecord(storage, key, identity);
+      if (existing.kind === 'invalid') return 'unavailable';
 
-    if (record.status !== 'pending') return Promise.resolve(record.status);
-    const active = inFlight.get(key);
-    if (active !== undefined) return active;
+      let record: SubmissionRecord;
+      if (existing.kind === 'missing') {
+        if (!allowCreate) return 'not_started';
+        const submissionId = createSubmissionId();
+        if (!isSubmissionId(submissionId)) return 'unavailable';
+        record = {
+          version: RECORD_VERSION,
+          status: 'pending',
+          submission: {
+            schemaVersion: DAILY_COMPLETED_RESULT_SCHEMA_VERSION,
+            submissionId,
+            puzzleId: identity.puzzleId,
+            puzzleDate: identity.puzzleDate,
+            puzzleNumber: identity.puzzleNumber,
+            rulesetVersion: identity.rulesetVersion,
+            completedAtBats: cloneAtBats(input.completedAtBats),
+          },
+        };
+        if (!writeRecord(storage, key, record)) return 'unavailable';
+      } else {
+        record = existing.record;
+      }
 
-    const request = deliver(key, record);
-    inFlight.set(key, request);
-    void request.finally(() => {
-      if (inFlight.get(key) === request) inFlight.delete(key);
-    });
-    return request;
-  }
+      if (record.status !== 'pending') return record.status;
+      const active = inFlight.get(key);
+      if (active !== undefined) return active;
 
-  return { submitIfNeeded };
+      const request = deliver(storage, key, record, submitRequest).finally(() => {
+        if (inFlight.get(key) === request) inFlight.delete(key);
+      });
+      inFlight.set(key, request);
+      return request;
+    },
+  };
 }
 
-function classify(response: { ok: boolean; status: number }): Status {
+export function submitCompletedDailyResultIfNeeded(
+  input: CompletedDailyResultSubmissionInput,
+  options: { allowCreate: boolean },
+): Promise<CompletedDailyResultSubmissionState> {
+  return browserClient().submitIfNeeded(input, options);
+}
+
+async function deliver(
+  storage: StoragePort,
+  key: string,
+  record: SubmissionRecord,
+  submitRequest: SubmissionRequest,
+): Promise<CompletedDailyResultSubmissionState> {
+  let response: { ok: boolean; status: number };
+  try {
+    response = await submitRequest({
+      ...record.submission,
+      completedAtBats: cloneAtBats(record.submission.completedAtBats),
+    });
+  } catch {
+    return 'pending';
+  }
+
+  const status = responseStatus(response);
+  if (status === 'pending') return status;
+
+  const current = readRawRecord(storage, key);
+  if (current.kind !== 'valid') return 'pending';
+  if (current.record.submission.submissionId !== record.submission.submissionId) {
+    return current.record.status;
+  }
+  if (current.record.status !== 'pending') return current.record.status;
+  return writeRecord(storage, key, { ...current.record, status }) ? status : 'pending';
+}
+
+function responseStatus(response: { ok: boolean; status: number }): RecordStatus {
   if (response.ok) return 'submitted';
   if (response.status === 409) return 'conflict';
-  if (response.status === 408
-    || response.status === 425
-    || response.status === 429
-    || response.status >= 500) return 'pending';
+  if ([408, 425, 429].includes(response.status) || response.status >= 500) return 'pending';
   return response.status >= 400 && response.status < 500 ? 'rejected' : 'pending';
 }
 
-function markerKey(identity: Omit<Identity, 'puzzleNumber'>): string {
-  return [
-    STORAGE_PREFIX,
-    identity.rulesetVersion,
-    identity.puzzleDate,
-    encodeURIComponent(identity.puzzleId),
-  ].join(':');
+function readRecord(storage: StoragePort, key: string, identity: Identity): RecordRead {
+  const result = readRawRecord(storage, key);
+  if (result.kind !== 'valid') return result;
+  const value = result.record.submission;
+  return value.puzzleId === identity.puzzleId
+    && value.puzzleDate === identity.puzzleDate
+    && value.puzzleNumber === identity.puzzleNumber
+    && value.rulesetVersion === identity.rulesetVersion
+    ? result
+    : { kind: 'invalid' };
 }
 
-function read(
-  storage: StorageLike,
-  key: string,
-  identity: Identity,
-): ReadResult {
-  const parsed = readByKey(storage, key);
-  if (typeof parsed === 'string') return parsed;
-  const submission = parsed.submission;
-  return submission.puzzleId === identity.puzzleId
-    && submission.puzzleDate === identity.puzzleDate
-    && submission.puzzleNumber === identity.puzzleNumber
-    && submission.rulesetVersion === identity.rulesetVersion
-    ? parsed
-    : 'invalid';
-}
-
-function readByKey(storage: StorageLike, key: string): ReadResult {
+function readRawRecord(storage: StoragePort, key: string): RecordRead {
+  let raw: string | null;
   try {
-    const raw = storage.getItem(key);
-    if (raw === null) return 'missing';
-    const value = JSON.parse(raw) as unknown;
-    return isStored(value) ? value : 'invalid';
+    raw = storage.getItem(key);
   } catch {
-    return 'invalid';
+    return { kind: 'invalid' };
   }
+  if (raw === null) return { kind: 'missing' };
+
+  let value: unknown;
+  try {
+    value = JSON.parse(raw);
+  } catch {
+    return { kind: 'invalid' };
+  }
+  return isSubmissionRecord(value)
+    ? { kind: 'valid', record: value }
+    : { kind: 'invalid' };
 }
 
-function write(storage: StorageLike, key: string, record: Stored): boolean {
+function isSubmissionRecord(value: unknown): value is SubmissionRecord {
+  if (!isObject(value)
+    || value.version !== RECORD_VERSION
+    || !isRecordStatus(value.status)
+    || !isObject(value.submission)) return false;
+  const submission = value.submission;
+  return submission.schemaVersion === DAILY_COMPLETED_RESULT_SCHEMA_VERSION
+    && isSubmissionId(submission.submissionId)
+    && typeof submission.puzzleId === 'string'
+    && submission.puzzleId.length > 0
+    && typeof submission.puzzleDate === 'string'
+    && Number.isInteger(submission.puzzleNumber)
+    && isSupportedRuleset(submission.rulesetVersion)
+    && Array.isArray(submission.completedAtBats);
+}
+
+function writeRecord(storage: StoragePort, key: string, record: SubmissionRecord): boolean {
   try {
     storage.setItem(key, JSON.stringify(record));
     return true;
@@ -182,55 +208,35 @@ function write(storage: StorageLike, key: string, record: Stored): boolean {
   }
 }
 
-function isStored(value: unknown): value is Stored {
-  if (!isRecord(value)
-    || value.version !== 1
-    || !isStatus(value.status)
-    || !isRecord(value.submission)) return false;
-  const submission = value.submission;
-  return submission.schemaVersion === DAILY_COMPLETED_RESULT_SCHEMA_VERSION
-    && validId(submission.submissionId)
-    && typeof submission.puzzleId === 'string'
-    && submission.puzzleId.length > 0
-    && typeof submission.puzzleDate === 'string'
-    && Number.isInteger(submission.puzzleNumber)
-    && isSupported(submission.rulesetVersion)
-    && Array.isArray(submission.completedAtBats);
+function storageKey(identity: Pick<Identity, 'puzzleId' | 'puzzleDate' | 'rulesetVersion'>): string {
+  return [
+    STORAGE_PREFIX,
+    identity.rulesetVersion,
+    identity.puzzleDate,
+    encodeURIComponent(identity.puzzleId),
+  ].join(':');
 }
 
-function cloneSubmission(submission: DailyCompletedResultSubmission): DailyCompletedResultSubmission {
-  return {
-    ...submission,
-    completedAtBats: submission.completedAtBats.map(atBat => ({ ...atBat })),
-  };
+function cloneAtBats(atBats: DailyCompletedAtBat[]): DailyCompletedAtBat[] {
+  return atBats.map(atBat => ({ ...atBat }));
 }
 
-function isSupported(
-  rulesetVersion: unknown,
-): rulesetVersion is DailyCompletedResultRulesetVersion {
-  return rulesetVersion === POINTS_V3_DAILY_RULESET_VERSION
-    || rulesetVersion === CLASSIC_DAILY_RULESET_VERSION;
+function isSupportedRuleset(value: unknown): value is DailyCompletedResultRulesetVersion {
+  return value === POINTS_V3_DAILY_RULESET_VERSION || value === CLASSIC_DAILY_RULESET_VERSION;
 }
-
-function validId(value: unknown): value is string {
+function isSubmissionId(value: unknown): value is string {
   return typeof value === 'string' && /^[A-Za-z0-9_-]{1,128}$/.test(value);
 }
-
-function isStatus(value: unknown): value is Status {
-  return value === 'pending'
-    || value === 'submitted'
-    || value === 'conflict'
-    || value === 'rejected';
+function isRecordStatus(value: unknown): value is RecordStatus {
+  return value === 'pending' || value === 'submitted' || value === 'conflict' || value === 'rejected';
 }
-
-function isRecord(value: unknown): value is Record<string, unknown> {
+function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
-let browserClient: ReturnType<typeof createDailyCompletedResultClient> | null = null;
-
-function getBrowserClient() {
-  browserClient ??= createDailyCompletedResultClient({
+let singleton: ReturnType<typeof createDailyCompletedResultClient> | null = null;
+function browserClient() {
+  singleton ??= createDailyCompletedResultClient({
     storage: browserStorage(),
     createSubmissionId: () => {
       try { return globalThis.crypto?.randomUUID?.() ?? null; } catch { return null; }
@@ -244,16 +250,8 @@ function getBrowserClient() {
       return { ok: response.ok, status: response.status };
     },
   });
-  return browserClient;
+  return singleton;
 }
-
-export function submitCompletedDailyResultIfNeeded(
-  input: CompletedDailyResultSubmissionInput,
-  options: { allowCreate: boolean },
-) {
-  return getBrowserClient().submitIfNeeded(input, options);
-}
-
-function browserStorage(): StorageLike | null {
+function browserStorage(): StoragePort | null {
   try { return globalThis.localStorage ?? null; } catch { return null; }
 }
