@@ -27,3 +27,7 @@ Baseball-data test only.
 ## Acceptance
 
 The same exhaustive assertion body passes with a realistic explicit timeout; no product/runtime source file changes.
+
+## Documentation impact
+
+No canonical product or architecture behavior changes. This bounded scope contract is the only documentation change required for the test-only timeout stabilization.
