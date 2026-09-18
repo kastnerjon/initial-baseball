@@ -73,7 +73,7 @@ export function loadSavedDailyGameWithProvenance(
   puzzle: DailyPublicPuzzle | DailyPuzzle,
   initialProgressionToken: string,
   storage: DailyStorage | null = getBrowserDailyStorage(),
-): SavedDailyGame | null {
+): LoadedSavedDailyGame | null {
   if (storage === null) return null;
 
   const publicPuzzle = toPublicPuzzle(puzzle);
@@ -89,13 +89,13 @@ export function loadSavedDailyGameWithProvenance(
   return {
     savedGame,
     completedAtBatFactsAreNative: parsedValue.schemaVersion === DAILY_STORAGE_SCHEMA_VERSION
-      && hasNativeCompletedAtBatFacts(
+      && isNativeCompletedAtBatList(
         parsedValue.gameState.completedAtBats,
         parsedValue.gameState.completedPitchLines,
       )
       && (
         parsedValue.pendingAdvance === null
-        || hasNativeCompletedAtBatFacts(
+        || isNativeCompletedAtBatList(
           parsedValue.pendingAdvance.completedAtBats,
           parsedValue.pendingAdvance.pitchLines,
         )
