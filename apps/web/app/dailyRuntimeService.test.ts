@@ -34,6 +34,19 @@ const service = createDailyRuntimeService({
 });
 
 describe('Daily canonical runtime service', () => {
+  it('loads a canonical public puzzle without answer IDs, reveals, or hint values', async () => {
+    const puzzle = await service.getPublicPuzzle(date);
+    const serialized = JSON.stringify(puzzle);
+
+    expect(puzzle.pitches).toHaveLength(9);
+    expect(puzzle.pitches[0]).toEqual({ pitchNumber: 1, initials: 'HA' });
+    expect(serialized).not.toContain(answerId);
+    expect(serialized).not.toContain(legacyId);
+    expect(serialized).not.toContain(answerName);
+    expect(serialized).not.toContain(firstHintMarker);
+    expect(serialized).not.toContain(revealMarker);
+  });
+
   it('bootstraps only the first active batter bundle and signed reveal checkpoints', async () => {
     const bootstrap = await service.getBootstrap(date);
     const serialized = JSON.stringify(bootstrap);
