@@ -160,13 +160,13 @@ Admin redesign is deferred. The user may supply a future date and nine ordered p
 - [x] Pass final focused/full CI, documentation-impact, exact-head Vercel preview, merge, and exact production deployment.
 - [x] Verify live result collection end to end in production: real-browser Daily #144 / `points-v3` completion created one row; exact same-ID replay returned `existing`; row count remained one.
 
-### 4D. Daily Nine resolved-AB comparison — approved, not implemented
+### 4D. Daily Nine resolved-AB comparison — portable foundations; collection pending
 
 Replacement plan: `tasks/plans/resolved-at-bat-comparison.md`. PR #174 is held as draft; its completion-only AB population is superseded. Complete one owning concern per PR.
 
 - [x] Inspect main/#174 and record separate resolved-AB/completed-game populations, after-each-AB v1 UI, strict-lower tie semantics, freshness and delivery acknowledgment separation.
 - [x] Portable resolved-AB transport and engine validation/derived points; scope: `tasks/plans/resolved-at-bat-contract.md`. No collection activation.
-- [ ] Portable immutable repository/service and retry/conflict semantics.
+- [x] Portable immutable repository/service and retry/conflict semantics; scope: `tasks/plans/resolved-at-bat-repository.md`. Provider atomicity still needs adapter/integration verification.
 - [ ] Supabase row adapter/migration, unique observation identity, population index and server-only privileges.
 - [ ] Web submission API using authoritative puzzle context.
 - [ ] Browser attempt identity before first contribution, cross-tab atomic ownership, immutable outbox, reset behavior and old-save migration; gate activation on lifecycle tests.
