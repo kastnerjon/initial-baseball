@@ -352,10 +352,6 @@ function isNativeCompletedAtBatList(
   value: unknown,
   pitchLines: DailySharePitchLine[],
 ): value is DailyCompletedAtBat[] {
-  if (pitchLines.length === 0) {
-    return value === undefined || (Array.isArray(value) && value.length === 0);
-  }
-
   return Array.isArray(value)
     && value.length === pitchLines.length
     && value.every(isDailyCompletedAtBat);
