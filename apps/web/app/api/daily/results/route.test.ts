@@ -46,9 +46,9 @@ describe('POST /api/daily/results', () => {
   });
 
   it('sanitizes authoritative puzzle lookup failures as invalid puzzle', async () => {
-    server.submitDailyCompletedResult.mockRejectedValue(
-      new DailyRuntimeRequestError('hidden puzzle detail'),
-    );
+    server.submitDailyCompletedResult.mockImplementation(async () => {
+      throw new DailyRuntimeRequestError('hidden puzzle detail');
+    });
 
     const response = await POST(createRequest({}));
 
@@ -61,7 +61,9 @@ describe('POST /api/daily/results', () => {
     new SupabaseDailyCompletedResultRepositoryError('query', 'database detail'),
     new SupabaseDailyCompletedResultRepositoryError('invalid-row', 'stored row detail'),
   ])('sanitizes known provider unavailability as 503', async (error) => {
-    server.submitDailyCompletedResult.mockRejectedValue(error);
+    server.submitDailyCompletedResult.mockImplementation(async () => {
+      throw error;
+    });
 
     const response = await POST(createRequest({}));
 
@@ -70,7 +72,9 @@ describe('POST /api/daily/results', () => {
   });
 
   it('sanitizes unexpected faults as 500', async () => {
-    server.submitDailyCompletedResult.mockRejectedValue(new Error('unexpected detail'));
+    server.submitDailyCompletedResult.mockImplementation(async () => {
+      throw new Error('unexpected detail');
+    });
 
     const response = await POST(createRequest({}));
 
