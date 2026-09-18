@@ -22,7 +22,7 @@ import {
 import { revealNextHintFromBundle } from '../dailyHintBundle';
 import {
   clearSavedDailyGame,
-  loadSavedDailyGame,
+  loadSavedDailyGameWithProvenance,
   saveDailyGame,
 } from '../dailyLocalStorage';
 import {
@@ -43,6 +43,7 @@ import type {
   DailyResolutionResponse,
 } from '../dailyRuntimeContracts';
 import type { DailyScorecardAnswers } from '../dailyScorecard';
+import { useCompletedDailyResultSubmission } from '../useCompletedDailyResultSubmission';
 import { AtBatCard } from './AtBatCard';
 import { DailyScorebug } from './DailyScorebug';
 import { GameCompleteView } from './GameCompleteView';
@@ -73,9 +74,15 @@ export function DailyInningGame({
   const [progressionToken, setProgressionToken] = useState(initialProgressionToken);
   const [hintBundle, setHintBundle] = useState<DailyHintBundle | null>(initialHintBundle);
   const [hasLoadedSavedState, setHasLoadedSavedState] = useState(false);
+  const [completedAtBatFactsAreNative, setCompletedAtBatFactsAreNative] = useState(true);
   const [bundlePending, setBundlePending] = useState(false);
   const [pendingResolutionAction, setPendingResolutionAction] = useState<PendingResolutionAction | null>(null);
   const [requestError, setRequestError] = useState<string | null>(null);
+  const clearCompletedResultSubmission = useCompletedDailyResultSubmission(
+    hasLoadedSavedState,
+    completedAtBatFactsAreNative,
+    gameState,
+  );
 
   const currentPitch = puzzle.pitches[currentPitchIndex] ?? null;
   const isPuzzleComplete = currentPitchIndex >= puzzle.pitches.length;
@@ -106,7 +113,12 @@ export function DailyInningGame({
   useEffect(() => {
     let cancelled = false;
     const storage = getDailyModeStorage(rulesetVersion);
-    const savedGame = loadSavedDailyGame(puzzle, initialProgressionToken, storage);
+    const loaded = loadSavedDailyGameWithProvenance(
+      puzzle,
+      initialProgressionToken,
+      storage,
+    );
+    const savedGame = loaded?.savedGame ?? null;
 
     if (
       savedGame === null
@@ -125,6 +137,13 @@ export function DailyInningGame({
     setAtBatState(savedGame.atBatState);
     setPendingAdvance(savedGame.pendingAdvance);
     setProgressionToken(savedGame.progressionToken);
+    setCompletedAtBatFactsAreNative(
+      loaded!.completedAtBatFactsAreNative
+      || (
+        savedGame.gameState.completedAtBats.length === 0
+        && (savedGame.pendingAdvance?.completedAtBats.length ?? 0) === 0
+      ),
+    );
     setHasLoadedSavedState(true);
 
     const savedGameComplete = savedGame.gameState.points.completed
@@ -387,6 +406,7 @@ export function DailyInningGame({
   }
 
   function handleResetToday(): void {
+    clearCompletedResultSubmission();
     clearSavedDailyGame(puzzle, getDailyModeStorage(rulesetVersion));
     resetToInitialState();
     setPendingResolutionAction(null);
@@ -395,6 +415,7 @@ export function DailyInningGame({
   }
 
   function resetToInitialState(): void {
+    setCompletedAtBatFactsAreNative(true);
     setGameState(createInitialDailyGameState(puzzle, rulesetVersion));
     setScorecardAnswers({});
     setCurrentPitchIndex(0);
