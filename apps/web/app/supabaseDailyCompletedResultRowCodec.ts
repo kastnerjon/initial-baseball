@@ -2,6 +2,7 @@ import {
   CLASSIC_DAILY_RULESET_VERSION,
   DAILY_COMPLETED_RESULT_SCHEMA_VERSION,
   POINTS_V3_DAILY_RULESET_VERSION,
+  type DailyAtBatResolution,
   type DailyCompletedAtBat,
   type DailyCompletedResult,
   type DailyOutcome,
@@ -31,9 +32,10 @@ export type DailyCompletedResultRow = {
   summary: unknown;
 };
 
-export function encodeDailyCompletedResultRow(
-  result: DailyCompletedResult,
-): DailyCompletedResultRow {
+const OUTCOMES = new Set<DailyOutcome>(['HR', '3B', '2B', '1B', 'BB', 'K']);
+const RESOLUTIONS = new Set<DailyAtBatResolution>(['correct', 'strikeout', 'give_up']);
+
+export function encodeDailyCompletedResultRow(result: DailyCompletedResult): DailyCompletedResultRow {
   return {
     submission_id: result.submissionId,
     schema_version: result.schemaVersion,
@@ -47,202 +49,156 @@ export function encodeDailyCompletedResultRow(
 }
 
 export function decodeDailyCompletedResultRow(row: unknown): DailyCompletedResult {
-  if (!isRecord(row)) invalid('Completed-result row must be an object.');
-
-  const submissionId = requireSubmissionId(row.submission_id);
-  const schemaVersion = row.schema_version;
+  const value = record(row, 'Completed-result row');
+  const schemaVersion = value.schema_version;
   if (schemaVersion !== DAILY_COMPLETED_RESULT_SCHEMA_VERSION) {
     invalid(`Unsupported completed-result schema version ${String(schemaVersion)}.`);
   }
 
-  const puzzleId = requireNonEmptyString(row.puzzle_id, 'puzzle_id');
-  const puzzleDate = requireCalendarDate(row.puzzle_date);
-  const puzzleNumber = requirePositiveInteger(row.puzzle_number, 'puzzle_number');
-  const completedAtBats = requireCompletedAtBats(row.completed_at_bats);
+  const common = {
+    schemaVersion,
+    submissionId: submissionId(value.submission_id),
+    puzzleId: text(value.puzzle_id, 'puzzle_id'),
+    puzzleDate: calendarDate(value.puzzle_date),
+    puzzleNumber: positiveInt(value.puzzle_number, 'puzzle_number'),
+    completedAtBats: completedAtBats(value.completed_at_bats),
+  };
 
-  if (row.ruleset_version === POINTS_V3_DAILY_RULESET_VERSION) {
+  if (value.ruleset_version === POINTS_V3_DAILY_RULESET_VERSION) {
     return {
-      schemaVersion,
-      submissionId,
-      puzzleId,
-      puzzleDate,
-      puzzleNumber,
+      ...common,
       rulesetVersion: POINTS_V3_DAILY_RULESET_VERSION,
-      completedAtBats,
-      summary: requirePointsSummary(row.summary),
+      summary: pointsSummary(value.summary),
     };
   }
 
-  if (row.ruleset_version === CLASSIC_DAILY_RULESET_VERSION) {
+  if (value.ruleset_version === CLASSIC_DAILY_RULESET_VERSION) {
     return {
-      schemaVersion,
-      submissionId,
-      puzzleId,
-      puzzleDate,
-      puzzleNumber,
+      ...common,
       rulesetVersion: CLASSIC_DAILY_RULESET_VERSION,
-      completedAtBats,
-      summary: requireClassicSummary(row.summary),
+      summary: classicSummary(value.summary),
     };
   }
 
-  return invalid(`Unsupported completed-result ruleset ${String(row.ruleset_version)}.`);
+  return invalid(`Unsupported completed-result ruleset ${String(value.ruleset_version)}.`);
 }
 
-function requireCompletedAtBats(value: unknown): DailyCompletedAtBat[] {
+function completedAtBats(value: unknown): DailyCompletedAtBat[] {
   if (!Array.isArray(value)) invalid('completed_at_bats must be an array.');
-  return value.map((candidate, index) => requireCompletedAtBat(candidate, index));
+  return value.map((candidate, index) => {
+    const row = record(candidate, `completed_at_bats[${index}]`);
+    const outcome = row.outcome;
+    const resolution = row.resolution;
+    if (typeof outcome !== 'string' || !OUTCOMES.has(outcome as DailyOutcome)) {
+      invalid(`completed_at_bats[${index}].outcome is invalid.`);
+    }
+    if (typeof resolution !== 'string'
+      || !RESOLUTIONS.has(resolution as DailyAtBatResolution)) {
+      invalid(`completed_at_bats[${index}].resolution is invalid.`);
+    }
+    return {
+      pitchNumber: positiveInt(row.pitchNumber, `completed_at_bats[${index}].pitchNumber`),
+      initials: text(row.initials, `completed_at_bats[${index}].initials`),
+      outcome: outcome as DailyOutcome,
+      hintsRevealed: boundedInt(
+        row.hintsRevealed,
+        0,
+        4,
+        `completed_at_bats[${index}].hintsRevealed`,
+      ) as DailyRevealCount,
+      wrongGuesses: boundedInt(
+        row.wrongGuesses,
+        0,
+        3,
+        `completed_at_bats[${index}].wrongGuesses`,
+      ),
+      resolution: resolution as DailyAtBatResolution,
+    };
+  });
 }
 
-function requireCompletedAtBat(value: unknown, index: number): DailyCompletedAtBat {
-  if (!isRecord(value)) invalid(`completed_at_bats[${index}] must be an object.`);
-
-  const resolution = value.resolution;
-  if (resolution !== 'correct' && resolution !== 'strikeout' && resolution !== 'give_up') {
-    invalid(`completed_at_bats[${index}].resolution is invalid.`);
-  }
-
+function pointsSummary(value: unknown) {
+  const row = record(value, 'points-v3 summary');
   return {
-    pitchNumber: requirePositiveInteger(
-      value.pitchNumber,
-      `completed_at_bats[${index}].pitchNumber`,
-    ),
-    initials: requireNonEmptyString(
-      value.initials,
-      `completed_at_bats[${index}].initials`,
-    ),
-    outcome: requireOutcome(value.outcome, index),
-    hintsRevealed: requireRevealCount(value.hintsRevealed, index),
-    wrongGuesses: requireIntegerWithin(
-      value.wrongGuesses,
-      0,
-      3,
-      `completed_at_bats[${index}].wrongGuesses`,
-    ),
-    resolution,
+    points: nonNegativeNumber(row.points, 'summary.points'),
+    maximumPoints: nonNegativeNumber(row.maximumPoints, 'summary.maximumPoints'),
+    atBatsCompleted: nonNegativeInt(row.atBatsCompleted, 'summary.atBatsCompleted'),
+    totalAtBats: positiveInt(row.totalAtBats, 'summary.totalAtBats'),
+    completed: bool(row.completed, 'summary.completed'),
+    strikeouts: nonNegativeInt(row.strikeouts, 'summary.strikeouts'),
   };
 }
 
-function requirePointsSummary(value: unknown) {
-  if (!isRecord(value)) invalid('points-v3 summary must be an object.');
+function classicSummary(value: unknown) {
+  const row = record(value, 'classic-inning-v1 summary');
   return {
-    points: requireNonNegativeNumber(value.points, 'summary.points'),
-    maximumPoints: requireNonNegativeNumber(value.maximumPoints, 'summary.maximumPoints'),
-    atBatsCompleted: requireNonNegativeInteger(
-      value.atBatsCompleted,
-      'summary.atBatsCompleted',
-    ),
-    totalAtBats: requirePositiveInteger(value.totalAtBats, 'summary.totalAtBats'),
-    completed: requireBoolean(value.completed, 'summary.completed'),
-    strikeouts: requireNonNegativeInteger(value.strikeouts, 'summary.strikeouts'),
+    runs: nonNegativeInt(row.runs, 'summary.runs'),
+    hits: nonNegativeInt(row.hits, 'summary.hits'),
+    outs: nonNegativeInt(row.outs, 'summary.outs'),
+    strikeouts: nonNegativeInt(row.strikeouts, 'summary.strikeouts'),
+    completed: bool(row.completed, 'summary.completed'),
+    atBatsCompleted: nonNegativeInt(row.atBatsCompleted, 'summary.atBatsCompleted'),
+    totalAtBats: positiveInt(row.totalAtBats, 'summary.totalAtBats'),
   };
 }
 
-function requireClassicSummary(value: unknown) {
-  if (!isRecord(value)) invalid('classic-inning-v1 summary must be an object.');
-  return {
-    runs: requireNonNegativeInteger(value.runs, 'summary.runs'),
-    hits: requireNonNegativeInteger(value.hits, 'summary.hits'),
-    outs: requireNonNegativeInteger(value.outs, 'summary.outs'),
-    strikeouts: requireNonNegativeInteger(value.strikeouts, 'summary.strikeouts'),
-    completed: requireBoolean(value.completed, 'summary.completed'),
-    atBatsCompleted: requireNonNegativeInteger(
-      value.atBatsCompleted,
-      'summary.atBatsCompleted',
-    ),
-    totalAtBats: requirePositiveInteger(value.totalAtBats, 'summary.totalAtBats'),
-  };
-}
-
-function requireSubmissionId(value: unknown): string {
+function submissionId(value: unknown): string {
   if (typeof value !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(value)) {
     invalid('submission_id is invalid.');
   }
   return value;
 }
 
-function requireCalendarDate(value: unknown): string {
+function calendarDate(value: unknown): string {
   if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) {
     invalid('puzzle_date must be YYYY-MM-DD.');
   }
-
-  const timestamp = Date.parse(`${value}T00:00:00.000Z`);
-  if (!Number.isFinite(timestamp)
-    || new Date(timestamp).toISOString().slice(0, 10) !== value) {
+  const parsed = Date.parse(`${value}T00:00:00.000Z`);
+  if (!Number.isFinite(parsed) || new Date(parsed).toISOString().slice(0, 10) !== value) {
     invalid('puzzle_date must be a real calendar date.');
   }
-
   return value;
 }
 
-function requireOutcome(value: unknown, index: number): DailyOutcome {
-  if (value !== 'HR'
-    && value !== '3B'
-    && value !== '2B'
-    && value !== '1B'
-    && value !== 'BB'
-    && value !== 'K') {
-    invalid(`completed_at_bats[${index}].outcome is invalid.`);
+function record(value: unknown, field: string): Record<string, unknown> {
+  if (typeof value !== 'object' || value === null || Array.isArray(value)) {
+    invalid(`${field} must be an object.`);
   }
-  return value;
+  return value as Record<string, unknown>;
 }
 
-function requireRevealCount(value: unknown, index: number): DailyRevealCount {
-  return requireIntegerWithin(
-    value,
-    0,
-    4,
-    `completed_at_bats[${index}].hintsRevealed`,
-  ) as DailyRevealCount;
-}
-
-function requirePositiveInteger(value: unknown, field: string): number {
-  if (typeof value !== 'number' || !Number.isInteger(value) || value <= 0) {
-    invalid(`${field} must be a positive integer.`);
-  }
-  return value;
-}
-
-function requireNonNegativeInteger(value: unknown, field: string): number {
-  return requireIntegerWithin(value, 0, Number.MAX_SAFE_INTEGER, field);
-}
-
-function requireIntegerWithin(
-  value: unknown,
-  minimum: number,
-  maximum: number,
-  field: string,
-): number {
-  if (typeof value !== 'number'
-    || !Number.isInteger(value)
-    || value < minimum
-    || value > maximum) {
-    invalid(`${field} must be an integer between ${minimum} and ${maximum}.`);
-  }
-  return value;
-}
-
-function requireNonNegativeNumber(value: unknown, field: string): number {
-  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
-    invalid(`${field} must be a non-negative finite number.`);
-  }
-  return value;
-}
-
-function requireNonEmptyString(value: unknown, field: string): string {
+function text(value: unknown, field: string): string {
   if (typeof value !== 'string' || value.trim().length === 0) {
     invalid(`${field} must be a non-empty string.`);
   }
   return value;
 }
 
-function requireBoolean(value: unknown, field: string): boolean {
-  if (typeof value !== 'boolean') invalid(`${field} must be boolean.`);
+function boundedInt(value: unknown, min: number, max: number, field: string): number {
+  if (typeof value !== 'number' || !Number.isInteger(value) || value < min || value > max) {
+    invalid(`${field} must be an integer between ${min} and ${max}.`);
+  }
   return value;
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null && !Array.isArray(value);
+function positiveInt(value: unknown, field: string): number {
+  return boundedInt(value, 1, Number.MAX_SAFE_INTEGER, field);
+}
+
+function nonNegativeInt(value: unknown, field: string): number {
+  return boundedInt(value, 0, Number.MAX_SAFE_INTEGER, field);
+}
+
+function nonNegativeNumber(value: unknown, field: string): number {
+  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
+    invalid(`${field} must be a non-negative finite number.`);
+  }
+  return value;
+}
+
+function bool(value: unknown, field: string): boolean {
+  if (typeof value !== 'boolean') invalid(`${field} must be boolean.`);
+  return value;
 }
 
 function invalid(message: string): never {
