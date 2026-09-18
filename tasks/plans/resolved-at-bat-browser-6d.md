@@ -1,6 +1,6 @@
 # Resolved-at-bat browser 6D: delivery activation and identity unification
 
-Status: Implementation scope
+Status: Implementation merged; production deploy + AB route/database proof complete; browser multi-tab + completion-identity proof pending
 Date: 2026-09-18
 
 ## Scope contract
@@ -89,13 +89,27 @@ Comparison reads/UI can then consume independently arriving immutable AB rows wi
 - compatibility/Classic sessions do not send resolved ABs;
 - crash-window behavior remains undercount/fail-closed rather than backfill;
 - no comparison/server/schema work enters the PR;
-- full CI/file-size/docs/build checks pass;
-- exact-head Vercel preview is READY;
-- production deployment is READY on exact merge SHA;
-- browser multi-tab proof confirms one owner/follower takeover;
-- one controlled production AB insert plus exact retry/readback proves first-write-wins delivery;
-- runtime-error scan is clean before collection is documented live.
+- full CI/file-size/docs/build checks pass — verified on PR #185;
+- exact-head Vercel preview is READY — verified before merge;
+- production deployment is READY on exact merge SHA — verified: `1965258055eecbf501de82d6f0aed395aea33867` / `dpl_7Ceu1nwPYZQgUrJaPdsiBQqrLmPa`;
+- one controlled production AB insert plus exact retry/readback proves first-write-wins delivery — verified: production 201 then 200, one normalized disposable row with one receipt timestamp, then cleanup;
+- runtime-error scan is clean after the proof — verified for `/api/daily/at-bats` and `/api/daily/results`;
+- browser multi-tab proof confirms one owner/follower takeover — pending physical/current-browser verification;
+- fresh full-completion identity proof confirms a new completed-result `submissionId` equals the active AB `attemptId` — pending;
+- only after the two remaining browser proofs may collection be documented fully browser-proven.
 
 ## Stop conditions
 
 Stop and split before adding comparison contracts/UI, server schema/API changes, Classic AB collection, background processing, accounts, server sessions, or product-rule changes.
+
+
+## Verified production evidence — 2026-09-18
+
+- PR #185 merged as `1965258055eecbf501de82d6f0aed395aea33867`.
+- Exact production deployment `dpl_7Ceu1nwPYZQgUrJaPdsiBQqrLmPa` reached READY.
+- Production runtime logs on that deployment recorded `POST /api/daily/at-bats` HTTP 201 at 23:23:48 UTC and HTTP 200 at 23:24:09 UTC for an exact retry.
+- Database readback between those requests/cleanup showed one normalized row for disposable attempt `proof6d_19652580_p1`, puzzle `daily-2026-09-18-editorial-f5f968b7`, `points-v3`, pitch 1, initials `GC`, outcome `K`, resolution `give_up`, awarded points 0, receipt `2026-09-18 23:23:50.838102+00`.
+- The disposable row was cleaned up; no persistent proof pollution remains.
+- A post-proof runtime-error scan for the resolved-AB and completed-result routes was clean.
+- No post-6D `/api/daily/results` request was observed during the verification window, so fresh attempt/completed-result identity reuse is not yet production-proven.
+- This environment does not expose an interactive multi-tab browser runner, so owner/follower/takeover behavior still requires a physical/current-browser verification rather than being inferred from unit tests.

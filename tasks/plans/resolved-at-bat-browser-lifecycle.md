@@ -1,6 +1,6 @@
 # Resolved-at-bat browser lifecycle
 
-Status: Approved architecture; browser 6A–6D implementation complete, 6D production proof pending
+Status: Approved architecture; browser 6A–6D merged; production deploy + AB first-write/retry proof complete; browser multi-tab + completion-identity proof pending
 Date: 2026-09-18
 
 ## Scope contract for this planning PR
@@ -166,7 +166,7 @@ Out of scope: resolved-AB POST calls, comparison reads/UI, server changes and Cl
 
 ### 6D. Delivery activation and identity unification
 
-Status: Implementation complete; activation proof/reconciliation pending. Scope: `tasks/plans/resolved-at-bat-browser-6d.md`.
+Status: Implementation merged. Exact production deployment, AB 201→200 retry/readback, cleanup, and post-proof runtime-error scan are verified; physical multi-tab/takeover and fresh completion-ID unification remain pending. Scope: `tasks/plans/resolved-at-bat-browser-6d.md`.
 
 Owning concern: resolved-AB browser activation.
 
