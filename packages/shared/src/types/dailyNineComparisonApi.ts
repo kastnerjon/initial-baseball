@@ -5,8 +5,6 @@ export const DAILY_NINE_COMPARISON_API_SCHEMA_VERSION = 1 as const;
 export type DailyNineComparisonApiFreshness = {
   /** When the backing comparison snapshot was read from its source. Cached responses preserve this. */
   sourceReadAt: string;
-  /** When this HTTP response payload was assembled for the caller. */
-  servedAt: string;
   /** Distinguishes a direct provider read from a later shared-cache response. */
   cacheStatus: 'live' | 'cached';
 };
