@@ -1,6 +1,6 @@
 # Daily Nine comparison server read composition
 
-Status: implemented on PR #200; merge verification pending  
+Status: implemented on PR #200  
 Date: 2026-09-19
 
 ## Scope contract
