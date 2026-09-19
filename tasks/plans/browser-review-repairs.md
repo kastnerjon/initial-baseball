@@ -1,12 +1,12 @@
 # Browser review repair roadmap
 
-Status: implementation authorized September 19; comparison remains deferred.
+Status: R1 implemented; R2 is the next bounded repair; comparison remains deferred.
 
 Preserve engine scoring, immutable transport/storage contracts, separate populations and Classic compatibility. All repairs are web-owned. No new runtime dependency, schema, lease, forced takeover or anti-cheat authority.
 
 ## Ordered PR scope contracts
 
-1. **R1 delivery lifetime.** Goal: a released owner never starts another retry or mutates a journal acknowledgment. In scope: result client, persistence-hook cleanup, regression tests. Fixed attempt/generation for each retry batch; synchronous disposal before lock release. Out: retry scheduling, gameplay requests, schema. Acceptance: late success/error after disposal, takeover between slots, original pending payload preserved, new owner retries safely. Stop: any need for another persistence mechanism.
+1. **R1 delivery lifetime — implemented.** A released owner cannot start another retry or mutate a journal acknowledgment. Delivery now uses a disposable exact attempt/generation owner session; the persistence hook disposes it synchronously before releasing the Web Lock. Late success/error is locally inert, pending exact payloads remain for successor retry, and takeover/interleaved-append regressions cover the original counterexample. No retry scheduling, gameplay request, schema or persistence-mechanism change.
 2. **R2 gameplay requests.** Goal: Reset/restore invalidates every old Guess/Give Up callback. In scope: small web request controller, component integration and tests. Synchronous single-flight and identity-checked success/error/finally. Out: scoring and AB delivery. Acceptance: delayed success/failure after reset, new pending request survives old cleanup, Daily/Classic behavior preserved. Stop: game-rule change.
 3. **R3/R4 persistence authorization.** Goal: only the current ready owner writes shared Daily state even after journal failure/re-bootstrap. In scope: coordinator degradation, explicit hook readiness and mounted lifecycle tests. Out: leases, forced stealing, Classic ownership. Acceptance: corrupt journal with two tabs, generation-write failure, prop changes/StrictMode, current gameplay restoration before save. Stop: product fallback or storage-format change.
 4. **R5 delivery recovery.** Goal: finite network requests and bounded owner-scoped retry opportunities. In scope: AB browser transport/scheduler and focused tests. Retry on meaningful events, no polling/tight loop, no historical scan. Out: comparison recovery and infrastructure. Acceptance: failure followed by online/new-terminal opportunity, no duplicate concurrent requests, cleanup cancellation.
