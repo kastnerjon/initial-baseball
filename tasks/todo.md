@@ -5,7 +5,7 @@ Last updated: 2026-09-19
 
 Completed history belongs in PRs, canonical docs, or `tasks/lessons.md`. Durable resumption context belongs in `docs/START-HERE.md`.
 
-Current order: the routine conversational future-lineup path and completed-result 4A/4B/4C stack are operationally complete, including live production idempotency proof. Daily Nine comparison now has portable validation, repository/service, hosted Supabase provider and an authoritative server submission API. Browser 6A–6D is implemented with successful normal-path production proof; September 19 review repairs R1–R4 are implemented, so the next comparison work may begin only as a new bounded portable-contract concern; resolved-AB collection is live for fresh points-v3 runs while comparison reads/UI remain inactive. Draft #161 must not be merged unchanged. Remaining authenticated-editor slot QA, timed public editorial rollover/fallback checks, and physical iPhone/iPad QA stay open but do not block the results pipeline. Permanent archive/local history remain subsequent concerns. Current beta numbering is disposable; broad launch later restarts at Daily #1 after the owner chooses the surviving game/final rules.
+Current order: the routine conversational future-lineup path and completed-result 4A/4B/4C stack are operationally complete, including live production idempotency proof. Daily Nine comparison now has portable validation, repository/service, hosted Supabase provider and an authoritative server submission API. Browser 6A–6D is implemented with successful normal-path production proof and R1–R4 repairs. The portable Daily Nine comparison read contract/service is implemented; the next bounded concern is the Supabase aggregate provider. Resolved-AB collection is live for fresh points-v3 runs while comparison API/UI remain inactive. PRs #161/#174 are closed as superseded references. Remaining authenticated-editor slot QA, timed public editorial rollover/fallback checks, and physical iPhone/iPad QA stay open but do not block the results pipeline. Permanent archive/local history remain subsequent concerns. Current beta numbering is disposable; broad launch later restarts at Daily #1 after the owner chooses the surviving game/final rules.
 
 ## September 19 review prerequisites
 
@@ -38,7 +38,7 @@ Review: `docs/engineering/resolved-at-bat-review-2026-09-19.md`. R1–R4 are rep
 
 ## 1. Production and hosted verification
 
-- [x] September 17 verified production code baseline is PR #163 (`0001f51c15b9e7b4e5e9647ce471365a96f19bc7`) with READY production `dpl_APaPW1hwmzghnoRg4fEXhcFnNCCw` on that exact merge SHA and successful Vercel status; 4A/4B are merged. #162 broadens authorized manual selection without changing automatic generation, and #163 makes public scheduled/published resolution use that editorial candidate universe. Supabase has an empty `daily_completed_results` table, but draft #161 is not live. This does not replace the outstanding interactive/physical-device QA.
+- [x] September 17 verified production code baseline is PR #163 (`0001f51c15b9e7b4e5e9647ce471365a96f19bc7`) with READY production `dpl_APaPW1hwmzghnoRg4fEXhcFnNCCw` on that exact merge SHA and successful Vercel status; 4A/4B are merged. #162 broadens authorized manual selection without changing automatic generation, and #163 makes public scheduled/published resolution use that editorial candidate universe. At that September 17 checkpoint Supabase had an empty `daily_completed_results` table and draft #161 was not live. #161 is now closed as superseded by the later bounded, production-proven stack. This historical checkpoint does not replace the outstanding interactive/physical-device QA.
 - [x] Verify exact merge-SHA production for the public editorial-candidate fix and reconcile hosted handoff: production `dpl_APaPW1hwmzghnoRg4fEXhcFnNCCw` is READY on PR #163 merge SHA `0001f51c15b9e7b4e5e9647ce471365a96f19bc7`.
 - [x] Configure progression, Supabase, and admin secrets for Preview/Production.
 - [x] Apply editorial migration and verify RLS/service-role boundaries.
@@ -173,7 +173,7 @@ Admin redesign is deferred. The user may supply a future date and nine ordered p
 
 ### 4D. Daily Nine resolved-AB comparison — collection browser-proven; comparison reads next
 
-Replacement plan: `tasks/plans/resolved-at-bat-comparison.md`. PR #174 is held as draft; its completion-only AB population is superseded. Complete one owning concern per PR.
+Replacement plan: `tasks/plans/resolved-at-bat-comparison.md`. PR #174 is closed as superseded; its equal-population/read-time-rescoring design is historical only. Complete one owning concern per PR.
 
 - [x] Inspect main/#174 and record separate resolved-AB/completed-game populations, after-each-AB v1 UI, strict-lower tie semantics, freshness and delivery acknowledgment separation.
 - [x] Portable resolved-AB transport and engine validation/derived points; scope: `tasks/plans/resolved-at-bat-contract.md`. No collection activation.
@@ -191,7 +191,8 @@ Replacement plan: `tasks/plans/resolved-at-bat-comparison.md`. PR #174 is held a
 - [x] Browser 6D physical/current-browser multi-tab proof: Chrome Incognito on a physical iPhone showed one owner plus passive follower; after batter-1 persistence, closing the owner let the follower rehydrate at batter 2 with the same attempt and no duplicate actor. Runbook/evidence: `docs/operations/resolved-at-bat-browser-proof.md`.
 - [x] Browser 6D fresh full-completion identity proof: attempt `6da8d6b7-aedd-457c-82e4-1be0b1e3ac7f` produced exactly nine pitches 1–9 and one completed-result row with the identical `submission_id`; all ten POSTs returned 201 and no route runtime errors were found.
 - [x] Browser 6D final browser/device gate: physical iPhone Safari Private restored the same fresh run at batter 2 after refresh; exact current-browser and Safari QA identities were cleaned from Supabase with zero rows remaining. These normal-path scenarios passed; the September 19 review prerequisites are now repaired in R1–R4 follow-ups.
-- [ ] Implement independent-population comparison contracts/service next, then provider, read-only API/recovery/freshness, then representative isolated performance measurements; one owning concern per PR.
+- [x] Implement independent-population portable comparison contract/service: one-slot count/point-sum reads, separate completed score buckets/histogram, null empty averages, strict-lower ties.
+- [ ] Implement the Supabase aggregate provider next; then read-only API/recovery/freshness and representative isolated performance measurements in later PRs.
 - [ ] Asynchronous YOU / AVG after every terminal AB; final nine-row scorecard, whole-game average and strict-lower finishers percentage with low-sample/outage states.
 - [ ] Verify mobile, answer integrity, failed delivery/read recovery and unchanged gameplay critical path before declaring live.
 

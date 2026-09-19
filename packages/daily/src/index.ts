@@ -84,3 +84,16 @@ export {
   type DailyAtBatResultService,
   type DailyAtBatResultStoreResult,
 } from './dailyAtBatResultService';
+export {
+  createDailyNineComparisonService,
+  getDailyNineStrictLowerFinishRate,
+  type DailyNineAtBatComparison,
+  type DailyNineAtBatComparisonQuery,
+  type DailyNineAtBatComparisonSource,
+  type DailyNineComparisonKey,
+  type DailyNineComparisonRepository,
+  type DailyNineComparisonService,
+  type DailyNineCompletedComparison,
+  type DailyNineCompletedComparisonSource,
+  type DailyNineScoreBucket,
+} from './dailyNineComparison';

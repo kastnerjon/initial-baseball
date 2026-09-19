@@ -113,6 +113,9 @@ importers:
       '@initial-baseball/baseball-data':
         specifier: workspace:*
         version: link:../baseball-data
+      '@initial-baseball/engine':
+        specifier: workspace:*
+        version: link:../engine
       '@initial-baseball/shared':
         specifier: workspace:*
         version: link:../shared
