@@ -382,6 +382,6 @@ function compatibilityCompletedResultEligibility(
   });
 }
 
-function canPersistDailyGameplay(access: DailyGameplayAccess): boolean {
+export function canPersistDailyGameplay(access: DailyGameplayAccess): boolean {
   return access === 'owner' || access === 'compatibility';
 }
