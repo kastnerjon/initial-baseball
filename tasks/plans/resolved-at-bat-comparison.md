@@ -98,7 +98,7 @@ If scans miss the measured budget, first evaluate a brief bounded shared cache w
 8. Browser 6B: exclusive cross-tab ownership coordinator and takeover/fencing tests; no gameplay or network activation.
 9. Browser 6C: owner-gated gameplay persistence plus fresh/reset/legacy lifecycle integration; collection remains off.
 10. Browser 6D: freeze/send/retry terminal ABs, reuse the fresh attempt ID for a new completion record, then complete multi-tab/device/production proof.
-11. Complete: portable Daily Nine comparison read contract/service. One slot read is independent from completed-game reads; providers supply count + stored point sum or score buckets; Daily derives null empty averages, bounded histogram, strict-lower rate and preserves `sourceReadAt`. Scope: `tasks/plans/daily-nine-comparison-read-contract.md`.
+11. Complete: portable Daily Nine comparison read contract/service. One slot read is independent from completed-game reads; providers supply count + stored point sum or score buckets; Daily derives null empty averages, bounded histogram, strict-lower rate. Scope: `tasks/plans/daily-nine-comparison-read-contract.md`.
 12. Next: Supabase aggregate provider only. Aggregate stored engine-derived points; no raw-population download or read-time rescoring. Keep provider verification and query-plan evidence in this concern.
 13. Then: read-only API and recovery/freshness response contract. Keep read failure separate from write acknowledgment and do not add React.
 14. Then: representative isolated performance evidence and any measured cache/rollup decision as separate scope if needed.
