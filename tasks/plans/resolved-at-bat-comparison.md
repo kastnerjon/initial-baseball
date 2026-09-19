@@ -1,15 +1,15 @@
 # Daily Nine resolved-at-bat comparison
 
-Status: Approved direction; normal-path collection proof recorded; September 19 browser review prerequisites precede comparison implementation
+Status: Approved direction; collection and R1–R4 browser prerequisites complete; portable comparison read contract implemented; provider/API/UI remain
 Date: 2026-09-18
 
-September 19 review update: `docs/engineering/resolved-at-bat-review-2026-09-19.md` identifies R1–R3 prerequisites and conditional R4 effect-ordering risk. Preserve this comparison design; complete bounded browser correctness fixes before implementing the read layer.
+September 19 review update: `docs/engineering/resolved-at-bat-review-2026-09-19.md` identified R1–R4 browser prerequisites; all four are repaired. The portable comparison contract is now implemented without provider/API/React work. Continue one owning concern per PR.
 
 ## Scope contract for this PR
 
 Goal: replace completion-only comparison planning with the agreed player experience and explicit implementation gates.
 Owning layer: repository product/architecture documentation.
-In scope: this plan, canonical product/architecture/data-model docs, START-HERE and todo; hold PR #174 as draft.
+In scope for the original planning PR: this plan, canonical product/architecture/data-model docs, START-HERE and todo; PR #174 was later closed as superseded.
 Out of scope: runtime changes, schema deployment, performance claims, public UI changes, merging #174.
 Acceptance: inspect current main and #174, reconcile contradictory directions, validate documentation impact and diff, perform one bounded review.
 Stop conditions: implementation belongs in subsequent owning-layer PRs; unresolved cross-tab authority must be settled before activating collection.
@@ -98,8 +98,11 @@ If scans miss the measured budget, first evaluate a brief bounded shared cache w
 8. Browser 6B: exclusive cross-tab ownership coordinator and takeover/fencing tests; no gameplay or network activation.
 9. Browser 6C: owner-gated gameplay persistence plus fresh/reset/legacy lifecycle integration; collection remains off.
 10. Browser 6D: freeze/send/retry terminal ABs, reuse the fresh attempt ID for a new completion record, then complete multi-tab/device/production proof.
-11. Comparison read contract/provider/API: separate populations, null empty averages, strict-lower score calculation, split acknowledgment/read status, freshness, isolated benchmarks and instrumentation. Further split if provider/runtime scope exceeds AGENTS.md.
-12. Reveal/final-scorecard UI: asynchronous YOU / AVG after every AB, low samples/outages, final refresh, stale-response protection, mobile and answer-integrity verification.
+11. Complete: portable Daily Nine comparison read contract/service. One slot read is independent from completed-game reads; providers supply count + stored point sum or score buckets; Daily derives null empty averages, bounded histogram, strict-lower rate and preserves `sourceReadAt`. Scope: `tasks/plans/daily-nine-comparison-read-contract.md`.
+12. Next: Supabase aggregate provider only. Aggregate stored engine-derived points; no raw-population download or read-time rescoring. Keep provider verification and query-plan evidence in this concern.
+13. Then: read-only API and recovery/freshness response contract. Keep read failure separate from write acknowledgment and do not add React.
+14. Then: representative isolated performance evidence and any measured cache/rollup decision as separate scope if needed.
+15. Reveal/final-scorecard UI: asynchronous YOU / AVG after every AB, low samples/outages, final refresh, stale-response protection, mobile and answer-integrity verification.
 
 Each PR starts from updated main, writes its own scope contract, updates canonical docs, and gets one bounded review plus applicable CI/preview verification. Do not batch all eight concerns into one implementation diff. Production migrations and activation require source/hosted reconciliation; no feature is called live based solely on passing unit tests.
 
