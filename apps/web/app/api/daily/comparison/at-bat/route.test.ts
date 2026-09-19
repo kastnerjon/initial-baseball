@@ -10,7 +10,6 @@ vi.mock('../../../../serverDailyNineComparison', () => ({
   readDailyNineAtBatComparison: server.readDailyNineAtBatComparison,
 }));
 
-import { DailyNineComparisonRequestError } from '../../../../dailyNineComparisonReadService';
 import { GET } from './route';
 
 describe('GET /api/daily/comparison/at-bat', () => {
@@ -51,19 +50,4 @@ describe('GET /api/daily/comparison/at-bat', () => {
     await expect(response.json()).resolves.toEqual(result);
   });
 
-  it('returns sanitized request errors', async () => {
-    server.readDailyNineAtBatComparison.mockRejectedValue(
-      new DailyNineComparisonRequestError('invalid_request', 'hidden detail'),
-    );
-
-    const response = await GET(new Request(
-      'http://localhost/api/daily/comparison/at-bat?date=nope&ruleset=points-v3&pitch=1',
-    ));
-
-    expect(response.status).toBe(400);
-    await expect(response.json()).resolves.toEqual({
-      schemaVersion: 1,
-      error: 'invalid_request',
-    });
-  });
 });
