@@ -32,7 +32,6 @@ describe('Daily Nine comparison API contract', () => {
       },
       freshness: {
         sourceReadAt: '2026-09-19T21:00:00.000Z',
-        servedAt: '2026-09-19T21:00:00.010Z',
         cacheStatus: 'live',
       },
     };
@@ -40,7 +39,6 @@ describe('Daily Nine comparison API contract', () => {
       ...live,
       freshness: {
         sourceReadAt: live.freshness.sourceReadAt,
-        servedAt: '2026-09-19T21:00:05.000Z',
         cacheStatus: 'cached',
       },
     };
