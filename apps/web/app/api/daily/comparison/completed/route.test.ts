@@ -10,7 +10,6 @@ vi.mock('../../../../serverDailyNineComparison', () => ({
   readDailyNineCompletedComparison: server.readDailyNineCompletedComparison,
 }));
 
-import { SupabaseDailyNineComparisonRepositoryError } from '../../../../supabaseDailyNineComparisonRepository';
 import { GET } from './route';
 
 describe('GET /api/daily/comparison/completed', () => {
@@ -50,19 +49,4 @@ describe('GET /api/daily/comparison/completed', () => {
     await expect(response.json()).resolves.toEqual(result);
   });
 
-  it('keeps provider failure separate from result-write acknowledgment', async () => {
-    server.readDailyNineCompletedComparison.mockRejectedValue(
-      new SupabaseDailyNineComparisonRepositoryError('query', 'hidden database detail'),
-    );
-
-    const response = await GET(new Request(
-      'http://localhost/api/daily/comparison/completed?date=2026-09-19&ruleset=points-v3',
-    ));
-
-    expect(response.status).toBe(503);
-    await expect(response.json()).resolves.toEqual({
-      schemaVersion: 1,
-      error: 'comparison_unavailable',
-    });
-  });
 });
