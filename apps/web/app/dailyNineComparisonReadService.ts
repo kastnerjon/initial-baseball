@@ -6,14 +6,15 @@ import {
   DAILY_NINE_COMPARISON_API_SCHEMA_VERSION,
   POINTS_V3_DAILY_RULESET_VERSION,
   type DailyNineAtBatComparisonApiResponse,
+  type DailyNineComparisonApiErrorCode,
   type DailyNineCompletedComparisonApiResponse,
   type DailyPublicPuzzle,
 } from '@initial-baseball/shared';
 
-export type DailyNineComparisonRequestErrorCode =
-  | 'invalid_request'
-  | 'invalid_puzzle'
-  | 'unsupported_ruleset';
+export type DailyNineComparisonRequestErrorCode = Exclude<
+  DailyNineComparisonApiErrorCode,
+  'comparison_unavailable'
+>;
 
 export class DailyNineComparisonRequestError extends Error {
   constructor(
