@@ -61,7 +61,6 @@ describe('Daily Nine comparison API contract', () => {
       },
       freshness: {
         sourceReadAt: '2026-09-19T21:00:00.000Z',
-        servedAt: '2026-09-19T21:00:00.004Z',
         cacheStatus: 'live',
       },
     };
