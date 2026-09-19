@@ -1,11 +1,11 @@
 # Resolved-at-bat browser activation proof
 
-Status: required before resolved-AB collection is described as fully browser-proven.
+Status: Complete; retained as the reproducible production QA runbook and verification record.
 Date: 2026-09-18
 
 ## Goal
 
-Verify the two remaining 6D browser guarantees against production:
+Verify and reproduce the two critical 6D browser guarantees against production:
 
 1. one supported browser context owns the Daily Nine run while a second same-origin tab is a passive follower, then the follower safely takes over after owner release;
 2. one genuinely fresh points-v3 run uses one identity end to end: the resolved-AB `attempt_id` and the newly created completed-result `submission_id` are the same value.
@@ -122,3 +122,8 @@ After A–D pass:
 - comparison read/provider/API work becomes the next bounded concern.
 
 If any proof fails, leave comparison work blocked until the browser lifecycle defect is understood and fixed.
+
+
+## Verified run — 2026-09-18
+
+The production run passed the current-browser two-tab owner/follower/takeover check, the fresh nine-at-bat attempt/completed-result identity check, and the physical iPhone Safari Private refresh/restore check. Database readback, HTTP status inspection, exact QA cleanup, and route runtime-error scans all passed. Detailed identifiers and observations are recorded in `tasks/plans/resolved-at-bat-browser-6d.md`.
