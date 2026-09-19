@@ -7,9 +7,9 @@ Date: 2026-09-19
 
 - **Goal:** define the smallest provider-neutral read contract that can power Daily Nine YOU / AVG after a terminal at-bat and whole-game comparison at completion without mixing populations or moving scoring into SQL/UI.
 - **Owning layer:** `packages/daily`.
-- **In scope:** exact puzzle + `points-v3` comparison identity; one-slot resolved-AB count/point-sum read; separate completed-game score-bucket read; null empty averages; bounded 0–63 histogram; strict-lower finishers rate; provider snapshot freshness metadata; runtime validation; focused tests; package exports and canonical docs.
-- **Out of scope:** Supabase queries/functions/migrations, API routes, browser fetching/retry/cache, React/UI, sample-size presentation thresholds, R5/R6/R8, Classic comparison, result writes, scoring changes, rollups, performance claims.
-- **Acceptance checks:** partial-game slot counts may differ freely; no completed-game read occurs for an at-bat request; empty averages are null; malformed sufficient statistics fail closed; score buckets normalize deterministically; ties are not counted as beaten; provider `sourceReadAt` is preserved; focused/full CI and preview pass.
+- **In scope:** exact puzzle + `points-v3` comparison identity; one-slot resolved-AB count/point-sum read; separate completed-game score-bucket read; null empty averages; bounded 0–63 histogram; strict-lower finish rate; runtime validation; focused tests; package exports and canonical docs.
+- **Out of scope:** Supabase queries/functions/migrations, API routes, browser fetching/retry/cache/freshness, React/UI, sample-size presentation thresholds, R5/R6/R8, Classic comparison, result writes, scoring changes, rollups, performance claims.
+- **Acceptance checks:** partial-game slot counts may differ freely; no completed-game read occurs for an at-bat request; empty averages are null; malformed sufficient statistics fail closed; score buckets normalize deterministically; ties are not counted as beaten; focused/full CI and preview pass.
 - **Stop conditions:** provider-specific query code, new database objects, API/React work, external dependencies, or a need to alter result-write/scoring contracts becomes a separate PR. The existing allowed Daily → engine dependency is used only for the canonical points-v3 maximum constant.
 
 ## First-principles decisions
@@ -30,9 +30,9 @@ The completed provider returns score/count buckets. Daily normalizes them into a
 
 No observations means no average, so `averagePoints` is null. Zero remains a real observed score.
 
-### Freshness has explicit meaning
+### Freshness belongs to the web read contract
 
-`sourceReadAt` is the time the provider snapshot was read. A later API/cache must preserve it when serving cached data so clients can distinguish a fresh source read from an older cached snapshot. It is not a row receipt timestamp and does not imply immediate self-inclusion.
+This portable layer has no clock or cache policy. The later read-only API/cache concern must make freshness explicit and distinguish cached/unavailable reads without changing these population semantics.
 
 ## Prior drafts
 
