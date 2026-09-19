@@ -3,7 +3,7 @@
 Status: Approved architecture; 6A–6D merged and normal-path production/device proof complete; September 19 lifecycle review findings remain open
 Date: 2026-09-18
 Review update: 2026-09-19 — see `docs/engineering/resolved-at-bat-review-2026-09-19.md` for R1–R4 ownership/request-lifetime gaps and prerequisites before comparison implementation.
-Repair update: R1 owner-lifetime delivery fencing is implemented with fixed attempt/generation sessions and synchronous disposal before lock release; R2–R4 remain open.
+Repair update: R1 owner-lifetime delivery fencing and R2 gameplay-request lifetime fencing are implemented; R3 shared-write authority and R4 re-bootstrap effect ordering remain open.
 
 ## Scope contract for this planning PR
 

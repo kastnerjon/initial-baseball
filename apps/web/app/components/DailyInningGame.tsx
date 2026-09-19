@@ -19,6 +19,10 @@ import {
   type PendingAtBatAdvance,
   resolveDailyTerminalAtBat,
 } from '../dailyAtBatResolution';
+import {
+  createDailyGameplayRequestController,
+  runDailyGameplayRequest,
+} from '../dailyGameplayRequestController';
 import { revealNextHintFromBundle } from '../dailyHintBundle';
 import type { LoadedSavedDailyGame } from '../dailyLocalStorage';
 import { useDailyGameplayPersistence } from '../useDailyGameplayPersistence';
@@ -69,6 +73,10 @@ export function DailyInningGame({
   const [pendingResolutionAction, setPendingResolutionAction] = useState<PendingResolutionAction | null>(null);
   const [requestError, setRequestError] = useState<string | null>(null);
   const restoreGenerationRef = useRef(0);
+  const gameplayRequestControllerRef = useRef<ReturnType<typeof createDailyGameplayRequestController> | null>(null);
+  const gameplayRequestController = gameplayRequestControllerRef.current
+    ?? createDailyGameplayRequestController();
+  gameplayRequestControllerRef.current = gameplayRequestController;
   const completedResultSubmission = useCompletedDailyResultSubmission(hasLoadedSavedState, gameState);
   const gameplayPersistence = useDailyGameplayPersistence({
     puzzle,
@@ -88,8 +96,27 @@ export function DailyInningGame({
   });
 
   useEffect(() => () => {
+    gameplayRequestController.invalidate();
     restoreGenerationRef.current += 1;
-  }, []);
+  }, [gameplayRequestController]);
+
+  useEffect(() => {
+    if (gameplayPersistence.access === 'checking'
+      || gameplayPersistence.access === 'follower'
+      || gameplayPersistence.access === 'unsupported') {
+      invalidateGameplayRequest();
+    }
+  }, [gameplayPersistence.access]);
+
+  useEffect(() => {
+    invalidateGameplayRequest();
+  }, [
+    initialProgressionToken,
+    puzzle.id,
+    puzzle.puzzleDate,
+    puzzle.puzzleNumber,
+    rulesetVersion,
+  ]);
 
   const currentPitch = puzzle.pitches[currentPitchIndex] ?? null;
   const isPuzzleComplete = currentPitchIndex >= puzzle.pitches.length;
@@ -315,8 +342,8 @@ export function DailyInningGame({
 
   function handleResetToday(): void {
     if (!gameplayPersistence.resetPersistedState()) return;
+    invalidateGameplayRequest();
     resetToInitialState();
-    setPendingResolutionAction(null);
     setBundlePending(false);
     setHasLoadedSavedState(true);
   }
@@ -334,6 +361,7 @@ export function DailyInningGame({
   }
 
   function restoreLoadedGame(loaded: LoadedSavedDailyGame | null): void {
+    invalidateGameplayRequest();
     const restoreGeneration = ++restoreGenerationRef.current;
     const savedGame = loaded?.savedGame ?? null;
     if (savedGame === null) {
@@ -424,26 +452,36 @@ export function DailyInningGame({
     body: Record<string, unknown>,
     pendingAction: PendingResolutionAction,
   ): Promise<T | null> {
-    if (pendingResolutionAction !== null) return null;
-    setPendingResolutionAction(pendingAction);
-    setRequestError(null);
-    try {
-      const response = await fetch(path, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify(body),
-      });
-      const payload = await response.json() as T & { error?: string };
-      if (!response.ok) {
-        throw new Error(payload.error ?? `Request failed with ${response.status}.`);
-      }
-      return payload;
-    } catch {
-      setRequestError('The Daily game could not complete that action. Please try again.');
-      return null;
-    } finally {
-      setPendingResolutionAction(null);
-    }
+    return runDailyGameplayRequest({
+      controller: gameplayRequestController,
+      request: async () => {
+        const response = await fetch(path, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(body),
+        });
+        const payload = await response.json() as T & { error?: string };
+        if (!response.ok) {
+          throw new Error(payload.error ?? `Request failed with ${response.status}.`);
+        }
+        return payload;
+      },
+      onStart: () => {
+        setPendingResolutionAction(pendingAction);
+        setRequestError(null);
+      },
+      onError: () => {
+        setRequestError('The Daily game could not complete that action. Please try again.');
+      },
+      onFinish: () => {
+        setPendingResolutionAction(null);
+      },
+    });
+  }
+
+  function invalidateGameplayRequest(): void {
+    gameplayRequestController.invalidate();
+    setPendingResolutionAction(null);
   }
 }
 

@@ -37,6 +37,8 @@ Required regression: queued retry loses ownership after its first await; old suc
 
 ### R2 — Reset fences hint restoration but not gameplay resolution (high)
 
+Repair status: implemented by the bounded gameplay-request-lifetime repair. A small web request controller now provides synchronous single-flight and request identity. Reset, durable restore, semantic game-session changes, coordinated ownership loss and unmount invalidate the old identity; stale success, failure and finally paths cannot return data, show an error or clear a newer request's pending state. The controller is shared by the Daily Nine and Classic component path.
+
 File: `apps/web/app/components/DailyInningGame.tsx`: `handleSubmit`, `handleGiveUp`, `handleResetToday`, `resetToInitialState`, `requestJson` (229–276, 316–334, 422–447).
 
 Reset increments `restoreGenerationRef`, but only `fetchHintBundle` callbacks check it. The Reset button remains enabled during a pending Guess/Give Up. A response from the prior run still updates the progression token, hint bundle, reveal and `pendingAdvance` using its captured old game/pitch. Its `finally` can also clear a newer request's pending state.
