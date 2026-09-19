@@ -86,7 +86,7 @@ export {
 } from './dailyAtBatResultService';
 export {
   createDailyNineComparisonService,
-  getDailyNineStrictLowerFinishersRate,
+  getDailyNineStrictLowerFinishRate,
   type DailyNineAtBatComparison,
   type DailyNineAtBatComparisonQuery,
   type DailyNineAtBatComparisonSource,
