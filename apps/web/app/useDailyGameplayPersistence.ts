@@ -29,7 +29,7 @@ import {
 } from './dailyLocalStorage';
 import { getDailyModeStorage, isDailyModeSaveCompatible } from './dailyModeStorage';
 
-export type DailyGameplayAccess = 'checking' | 'owner' | 'follower' | 'compatibility' | 'unsupported';
+export type DailyGameplayAccess = 'checking' | 'owner' | 'follower' | 'compatibility' | 'blocked';
 
 export function useDailyGameplayPersistence({
   puzzle,
@@ -115,14 +115,19 @@ export function useDailyGameplayPersistence({
     const coordinator = createBrowserDailyAtBatOwnershipCoordinator({
       identity,
       journal: lifecycle.journal,
-      reloadDurableState: ({ generation }) => {
+      reloadDurableState: ({ generation, contribution }) => {
         const loaded = loadCompatible(puzzle, rulesetVersion, initialProgressionToken, storage);
-        const next = lifecycle.prepareOwner({
-          loaded,
-          hadPersistedGameplayValue: hasPersistedDailyGameValue(puzzle.puzzleDate, storage),
-          claimedGeneration: generation,
-          totalAtBats: puzzle.pitches.length,
-        });
+        const next = contribution === 'enabled'
+          ? lifecycle.prepareOwner({
+              loaded,
+              hadPersistedGameplayValue: hasPersistedDailyGameValue(puzzle.puzzleDate, storage),
+              claimedGeneration: generation,
+              totalAtBats: puzzle.pitches.length,
+            })
+          : lifecycle.prepareOwnerWithoutContribution({
+              loaded,
+              totalAtBats: puzzle.pitches.length,
+            });
         if (cancelled) return;
         applyContribution(next);
         restoreRef.current(loaded);
@@ -131,26 +136,36 @@ export function useDailyGameplayPersistence({
     const unsubscribe = coordinator.subscribe((state) => {
       if (cancelled) return;
       if (state.status === 'owner') {
-        const ownerDelivery = resultClient.createOwnerDeliverySession(identity);
+        const ownerDelivery = state.contribution === 'enabled'
+          ? resultClient.createOwnerDeliverySession(identity)
+          : null;
         replaceDeliverySession(ownerDelivery);
         applyAccess('owner');
         const expected = contributionRef.current;
-        if (ownerDelivery === null) {
+        if (state.contribution === 'enabled' && ownerDelivery === null) {
           if (expected?.status === 'active') failCurrentContribution(expected);
           return;
         }
-        void ownerDelivery.retryPending().then((results) => {
-          if (!cancelled && results.some(isContributionDeliveryFailure)) {
-            failCurrentContribution(expected);
-          }
-        });
+        if (ownerDelivery !== null) {
+          void ownerDelivery.retryPending().then((results) => {
+            if (!cancelled && results.some(isContributionDeliveryFailure)) {
+              failCurrentContribution(expected);
+            }
+          });
+        }
       } else if (state.status === 'follower') {
         replaceDeliverySession(null);
         applyAccess('follower');
         completionPolicyRef.current = { allowCreate: false, creationSubmissionId: null };
+      } else if (state.status === 'blocked') {
+        replaceDeliverySession(null);
+        applyAccess('blocked');
+        setContribution(null);
+        contributionRef.current = null;
+        completionPolicyRef.current = { allowCreate: false, creationSubmissionId: null };
       } else {
         replaceDeliverySession(null);
-        applyAccess('unsupported');
+        applyAccess('compatibility');
         setContribution(null);
         contributionRef.current = null;
         restoreCompatibility(loadCompatible(
@@ -188,10 +203,10 @@ export function useDailyGameplayPersistence({
   ]);
 
   useEffect(() => {
-    if (!hasLoadedSavedState || access === 'checking' || access === 'follower') return;
+    if (!hasLoadedSavedState || !canPersistDailyGameplay(access)) return;
 
     const storage = getDailyModeStorage(rulesetVersion);
-    if (access !== 'owner') {
+    if (access === 'compatibility') {
       if (saveDailyGame(puzzle, saveInput, storage)) {
         completedResultRef.current(completionPolicyRef.current);
       }
@@ -296,7 +311,7 @@ export function useDailyGameplayPersistence({
   }
 
   function resetPersistedState(): boolean {
-    if (accessRef.current === 'checking' || accessRef.current === 'follower') return false;
+    if (!canPersistDailyGameplay(accessRef.current)) return false;
 
     if (accessRef.current === 'owner') {
       const lifecycle = lifecycleRef.current;
@@ -365,4 +380,8 @@ function compatibilityCompletedResultEligibility(
     totalAtBats,
     completedAtBatFactsAreNative: loaded.completedAtBatFactsAreNative,
   });
+}
+
+function canPersistDailyGameplay(access: DailyGameplayAccess): boolean {
+  return access === 'owner' || access === 'compatibility';
 }

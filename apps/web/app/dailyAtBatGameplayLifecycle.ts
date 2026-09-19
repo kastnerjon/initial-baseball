@@ -49,6 +49,16 @@ export function createDailyAtBatGameplayLifecycle({
   return {
     journal,
 
+    prepareOwnerWithoutContribution(input: {
+      loaded: LoadedSavedDailyGame | null;
+      totalAtBats: number;
+    }): DailyAtBatContributionSession {
+      return inactive(
+        'journal_unavailable',
+        input.loaded === null || canCreateCompletedResult(input.loaded, input.totalAtBats),
+      );
+    },
+
     prepareOwner(input: {
       loaded: LoadedSavedDailyGame | null;
       hadPersistedGameplayValue: boolean;

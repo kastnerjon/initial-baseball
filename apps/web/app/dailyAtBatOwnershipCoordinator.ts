@@ -32,16 +32,20 @@ export type DailyAtBatGenerationJournalPort = {
 
 export type DailyAtBatOwnershipState =
   | { status: 'follower' }
-  | { status: 'owner'; generation: number | null }
+  | ({ status: 'owner' } & DailyAtBatOwnerPreparation)
+  | { status: 'blocked'; reason: DailyAtBatOwnershipBlockedReason }
   | { status: 'unsupported'; reason: DailyAtBatOwnershipUnsupportedReason };
+export type DailyAtBatOwnerPreparation =
+  | { contribution: 'enabled'; generation: number | null }
+  | { contribution: 'disabled'; generation: null; reason: 'journal_unavailable' };
 export type DailyAtBatOwnershipUnsupportedReason =
   | 'locks_unavailable'
-  | 'abort_unavailable'
-  | 'journal_unavailable'
+  | 'abort_unavailable';
+export type DailyAtBatOwnershipBlockedReason =
   | 'owner_reload_failed'
   | 'lock_request_failed';
 
-type ReloadDurableState = (context: { generation: number | null }) => Promise<void> | void;
+type ReloadDurableState = (context: DailyAtBatOwnerPreparation) => Promise<void> | void;
 type OwnershipListener = (state: DailyAtBatOwnershipState) => void;
 
 export function getDailyAtBatOwnershipLockName(identity: DailyAtBatAttemptIdentity): string {
@@ -105,7 +109,7 @@ export function createDailyAtBatOwnershipCoordinator({
       async () => runAsOwner(run),
     ).catch(() => {
       if (started && run === lifecycle && abortController?.signal.aborted !== true) {
-        setState({ status: 'unsupported', reason: 'lock_request_failed' });
+        setState({ status: 'blocked', reason: 'lock_request_failed' });
       }
     });
   }
@@ -116,16 +120,10 @@ export function createDailyAtBatOwnershipCoordinator({
     const releaseThisOwner = release.resolve;
     releaseOwner = releaseThisOwner;
     try {
-      const claim = claimExistingGeneration(journal, identity);
-      if (!claim.ok) {
-        if (started && run === lifecycle) {
-          setState({ status: 'unsupported', reason: 'journal_unavailable' });
-        }
-        return;
-      }
+      const preparation = claimExistingGeneration(journal, identity);
 
       const prepared = Promise.resolve()
-        .then(() => reloadDurableState({ generation: claim.generation }))
+        .then(() => reloadDurableState(preparation))
         .then(() => 'ready' as const, () => 'failed' as const);
       const outcome = await Promise.race([
         prepared,
@@ -133,13 +131,14 @@ export function createDailyAtBatOwnershipCoordinator({
       ]);
       if (outcome === 'failed') {
         if (started && run === lifecycle) {
-          setState({ status: 'unsupported', reason: 'owner_reload_failed' });
+          setState({ status: 'blocked', reason: 'owner_reload_failed' });
+          await release.promise;
         }
         return;
       }
       if (outcome !== 'ready' || !started || run !== lifecycle) return;
 
-      setState({ status: 'owner', generation: claim.generation });
+      setState({ status: 'owner', ...preparation });
       await release.promise;
     } finally {
       if (releaseOwner === releaseThisOwner) releaseOwner = null;
@@ -187,20 +186,28 @@ export function createBrowserDailyAtBatOwnershipCoordinator(input: {
 function claimExistingGeneration(
   journal: DailyAtBatGenerationJournalPort,
   identity: DailyAtBatAttemptIdentity,
-): { ok: true; generation: number | null } | { ok: false } {
+): DailyAtBatOwnerPreparation {
   try {
     const before = journal.read(identity);
-    if (before.kind === 'missing') return { ok: true, generation: null };
-    if (before.kind !== 'valid') return { ok: false };
-    if (journal.advanceGeneration(identity) !== 'updated') return { ok: false };
+    if (before.kind === 'missing') {
+      return { contribution: 'enabled', generation: null };
+    }
+    if (before.kind !== 'valid') return unavailableJournalPreparation();
+    if (journal.advanceGeneration(identity) !== 'updated') return unavailableJournalPreparation();
     const after = journal.read(identity);
     if (after.kind !== 'valid'
       || after.journal.attemptId !== before.journal.attemptId
-      || after.journal.generation !== before.journal.generation + 1) return { ok: false };
-    return { ok: true, generation: after.journal.generation };
+      || after.journal.generation !== before.journal.generation + 1) {
+      return unavailableJournalPreparation();
+    }
+    return { contribution: 'enabled', generation: after.journal.generation };
   } catch {
-    return { ok: false };
+    return unavailableJournalPreparation();
   }
+}
+
+function unavailableJournalPreparation(): DailyAtBatOwnerPreparation {
+  return { contribution: 'disabled', generation: null, reason: 'journal_unavailable' };
 }
 
 function browserLockPort(): DailyAtBatExclusiveLockPort | null {
@@ -250,7 +257,14 @@ function readStorageKey(event: unknown): string | null {
 }
 function sameState(a: DailyAtBatOwnershipState, b: DailyAtBatOwnershipState): boolean {
   if (a.status !== b.status) return false;
-  if (a.status === 'owner' && b.status === 'owner') return a.generation === b.generation;
+  if (a.status === 'owner' && b.status === 'owner') {
+    if (a.contribution !== b.contribution || a.generation !== b.generation) return false;
+    if (a.contribution === 'disabled' && b.contribution === 'disabled') {
+      return a.reason === b.reason;
+    }
+    return true;
+  }
+  if (a.status === 'blocked' && b.status === 'blocked') return a.reason === b.reason;
   if (a.status === 'unsupported' && b.status === 'unsupported') return a.reason === b.reason;
   return true;
 }
