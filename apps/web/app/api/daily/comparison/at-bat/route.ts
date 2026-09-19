@@ -1,10 +1,15 @@
 import {
+  dailyNineComparisonDisabledResponse,
   dailyNineComparisonNoStoreJson,
+  isDailyNineComparisonReadEnabled,
   mapDailyNineComparisonRouteError,
 } from '../../../../dailyNineComparisonHttp';
 import { readDailyNineAtBatComparison } from '../../../../serverDailyNineComparison';
 
 export async function GET(request: Request) {
+  if (!isDailyNineComparisonReadEnabled()) {
+    return dailyNineComparisonDisabledResponse();
+  }
   const searchParams = new URL(request.url).searchParams;
 
   try {
