@@ -119,14 +119,18 @@ export function DailyInningGame({
     [gameState, isGameComplete],
   );
 
-  if (gameplayPersistence.access === 'checking' || gameplayPersistence.access === 'follower') {
+  if (gameplayPersistence.access === 'checking'
+    || gameplayPersistence.access === 'follower'
+    || gameplayPersistence.access === 'blocked') {
     return (
       <div className="game-shell">
         <section className="at-bat-card" aria-live="polite">
           <p>
             {gameplayPersistence.access === 'checking'
               ? 'Opening today’s game…'
-              : 'This Daily is active in another tab. Close that tab to continue here.'}
+              : gameplayPersistence.access === 'follower'
+                ? 'This Daily is active in another tab. Close that tab to continue here.'
+                : 'This Daily could not be restored safely in this tab. Refresh to try again.'}
           </p>
         </section>
       </div>

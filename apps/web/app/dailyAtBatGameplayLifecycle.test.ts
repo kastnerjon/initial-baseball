@@ -34,6 +34,24 @@ describe('Daily at-bat gameplay lifecycle', () => {
     );
   });
 
+  it('keeps a degraded exclusive owner non-contributing without disabling eligible completion', () => {
+    const lifecycle = makeLifecycle(memoryStorage());
+
+    expect(lifecycle.prepareOwnerWithoutContribution({
+      loaded: null, totalAtBats: 6,
+    })).toEqual({
+      status: 'inactive', reason: 'journal_unavailable', allowCompletedResultCreate: true,
+    });
+    expect(lifecycle.journal.read(IDENTITY)).toEqual({ kind: 'missing' });
+
+    expect(lifecycle.prepareOwnerWithoutContribution({
+      loaded: loadedGame(), totalAtBats: 6,
+    })).toEqual({
+      status: 'inactive', reason: 'journal_unavailable', allowCompletedResultCreate: true,
+    });
+    expect(lifecycle.journal.read(IDENTITY)).toEqual({ kind: 'missing' });
+  });
+
   it('accepts takeover only when durable terminal facts match exactly', () => {
     const storage = memoryStorage();
     const first = makeLifecycle(storage);

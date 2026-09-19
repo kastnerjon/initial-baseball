@@ -1,7 +1,7 @@
 # Architecture and launch-scale plan
 
 Status: Living architecture source of truth  
-Last updated: 2026-09-17
+Last updated: 2026-09-19
 
 ## Product goal
 
@@ -158,7 +158,7 @@ The web adapter retains terminal canonical display names in a browser-local `sco
 
 ## Completed-result and comparison architecture
 
-September 19 review of main `a91edc0`: preserve the boundaries below. R1 outbox ownership lifetime is repaired by binding delivery/retry and acknowledgment writes to one disposable exact attempt/generation owner session, invalidated before lock release. R2 gameplay request lifetime is repaired with a synchronous single-flight controller whose generation is invalidated by Reset/restore, so stale success/error/finally callbacks are inert and cannot clear a replacement request. Shared-save authority on journal failure (R3) still precedes comparison implementation; conditional re-bootstrap effect ordering (R4) still requires correction before extending the persistence hook. Evidence, tradeoffs and bounded PR sequence: `docs/engineering/resolved-at-bat-review-2026-09-19.md`.
+September 19 review of main `a91edc0`: preserve the boundaries below. R1 outbox ownership lifetime is repaired by binding delivery/retry and acknowledgment writes to one disposable exact attempt/generation owner session, invalidated before lock release. R2 gameplay request lifetime is repaired with a synchronous single-flight controller invalidated by Reset/restore plus persistence-session teardown/owner loss. R3 persistence authorization is repaired by separating exclusive Web Lock authority from resolved-AB eligibility: journal/generation failure under a held lock yields one non-contributing owner, while reload/lock-request failure is non-writable. Conditional re-bootstrap effect ordering (R4) still requires correction before extending the persistence hook or starting comparison work. Evidence, tradeoffs and bounded PR sequence: `docs/engineering/resolved-at-bat-review-2026-09-19.md`.
 
 The current completed-result path performs **one compact idempotent write after completion**. The approved resolved-AB extension below adds terminal observations, not per-hint/per-guess writes. Portable validation/derivation, the provider-neutral idempotent repository/service boundary, the server-only Supabase provider, the completed-game POST boundary, and the browser retry adapter are implemented. Native activation adds only browser-local provenance plus React/game composition; it does not move gameplay rules or idempotency semantics out of their existing owners.
 
@@ -228,8 +228,8 @@ Vercel and Supabase remain replaceable adapters. No new cache service, queue, da
 ## Current sequence
 
 1. Completed-result collection is live and production-proven for a native Daily Nine completion, including exact same-ID idempotent replay; preserve that 4A/4B/4C boundary unchanged unless a separate defect requires it.
-2. Browser 6A–6D is implemented and fully browser-proven; preserve its save → freeze → async delivery and ownership boundaries while comparison work proceeds.
-3. Follow `tasks/plans/resolved-at-bat-comparison.md` for measured independent-population reads and asynchronous reveal/final UI. Supabase is the provider; engine owns scoring; React renders.
+2. Browser 6A–6D is implemented and normal-path browser-proven; review repairs R1–R3 are implemented. Complete R4 current-authority/re-bootstrap persistence fencing before extending the hook or starting comparison work.
+3. Then follow `tasks/plans/resolved-at-bat-comparison.md` for measured independent-population reads and asynchronous reveal/final UI. Supabase is the provider; engine owns scoring; React renders.
 4. Apply settled strict-lower-score tie semantics and initial presentation thresholds; keep them separate from persistence.
 5. Continue outstanding interactive/physical-device QA plus timed editorial rollover/fallback observations without blocking the result pipeline.
 6. Build Permanent archive/local-history infrastructure from the future explicit launch Daily #1, then finish broad-launch game/rules/epoch and launch polish.

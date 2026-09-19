@@ -30,7 +30,7 @@ describe('Daily at-bat ownership coordinator', () => {
     first.start(); second.start();
     await tick();
 
-    expect(first.getState()).toEqual({ status: 'owner', generation: null });
+    expect(first.getState()).toEqual({ status: 'owner', contribution: 'enabled', generation: null });
     expect(second.getState()).toEqual({ status: 'follower' });
     expect(locks.names).toEqual([
       getDailyAtBatOwnershipLockName(IDENTITY),
@@ -38,7 +38,7 @@ describe('Daily at-bat ownership coordinator', () => {
     ]);
 
     first.stop(); await tick();
-    expect(second.getState()).toEqual({ status: 'owner', generation: null });
+    expect(second.getState()).toEqual({ status: 'owner', contribution: 'enabled', generation: null });
     second.stop();
   });
 
@@ -49,11 +49,11 @@ describe('Daily at-bat ownership coordinator', () => {
     const second = makeCoordinator({ locks, journal });
 
     first.start(); second.start(); await tick();
-    expect(first.getState()).toEqual({ status: 'owner', generation: 2 });
+    expect(first.getState()).toEqual({ status: 'owner', contribution: 'enabled', generation: 2 });
     expect(journal.current()?.generation).toBe(2);
 
     first.stop(); await tick();
-    expect(second.getState()).toEqual({ status: 'owner', generation: 3 });
+    expect(second.getState()).toEqual({ status: 'owner', contribution: 'enabled', generation: 3 });
     expect(journal.current()?.generation).toBe(3);
     second.stop();
   });
@@ -71,7 +71,7 @@ describe('Daily at-bat ownership coordinator', () => {
     expect(coordinator.getState()).toEqual({ status: 'follower' });
 
     reload.resolve(); await tick();
-    expect(coordinator.getState()).toEqual({ status: 'owner', generation: null });
+    expect(coordinator.getState()).toEqual({ status: 'owner', contribution: 'enabled', generation: null });
     coordinator.stop();
   });
 
@@ -87,7 +87,7 @@ describe('Daily at-bat ownership coordinator', () => {
 
     first.start(); await tick();
     first.stop(); second.start(); await tick();
-    expect(second.getState()).toEqual({ status: 'owner', generation: null });
+    expect(second.getState()).toEqual({ status: 'owner', contribution: 'enabled', generation: null });
 
     reload.resolve(); await tick();
     expect(first.getState()).toEqual({ status: 'follower' });
@@ -132,14 +132,92 @@ describe('Daily at-bat ownership coordinator', () => {
     coordinator.stop();
   });
 
-  it('fails closed when an existing journal cannot be safely fenced', async () => {
+  it('keeps corrupt-journal gameplay exclusive while contribution is disabled', async () => {
+    const locks = new FakeLocks();
     const journal = {
       read: vi.fn((): JournalRead => ({ kind: 'invalid' })),
       advanceGeneration: vi.fn((): JournalMutationStatus => 'invalid'),
     };
-    const coordinator = makeCoordinator({ locks: new FakeLocks(), journal });
+    const first = makeCoordinator({ locks, journal });
+    const second = makeCoordinator({ locks, journal });
+
+    first.start(); second.start(); await tick();
+    expect(first.getState()).toEqual({
+      status: 'owner', contribution: 'disabled', generation: null, reason: 'journal_unavailable',
+    });
+    expect(second.getState()).toEqual({ status: 'follower' });
+
+    first.stop(); await tick();
+    expect(second.getState()).toEqual({
+      status: 'owner', contribution: 'disabled', generation: null, reason: 'journal_unavailable',
+    });
+    second.stop();
+  });
+
+  it('recovers generation fencing only on a later ownership acquisition', async () => {
+    const locks = new FakeLocks();
+    const durable = memoryJournal({ attemptId: 'attempt-one', generation: 1 });
+    let failGenerationWrite = true;
+    const journal = {
+      read: durable.read,
+      advanceGeneration: (): JournalMutationStatus => failGenerationWrite
+        ? 'unavailable'
+        : durable.advanceGeneration(),
+    };
+    const first = makeCoordinator({ locks, journal });
+    const second = makeCoordinator({ locks, journal });
+
+    first.start(); second.start(); await tick();
+    expect(first.getState()).toEqual({
+      status: 'owner', contribution: 'disabled', generation: null, reason: 'journal_unavailable',
+    });
+    expect(second.getState()).toEqual({ status: 'follower' });
+    expect(durable.current()?.generation).toBe(1);
+
+    failGenerationWrite = false;
+    await tick();
+    expect(first.getState()).toMatchObject({ status: 'owner', contribution: 'disabled' });
+    expect(durable.current()?.generation).toBe(1);
+
+    first.stop(); await tick();
+    expect(second.getState()).toEqual({ status: 'owner', contribution: 'enabled', generation: 2 });
+    expect(durable.current()?.generation).toBe(2);
+    second.stop();
+  });
+
+  it('holds the lock after durable reload failure until the failed owner stops', async () => {
+    const locks = new FakeLocks();
+    const journal = memoryJournal();
+    const first = makeCoordinator({
+      locks, journal, reloadDurableState: () => { throw new Error('reload failed'); },
+    });
+    const second = makeCoordinator({ locks, journal });
+
+    first.start(); second.start(); await tick();
+    expect(first.getState()).toEqual({ status: 'blocked', reason: 'owner_reload_failed' });
+    expect(second.getState()).toEqual({ status: 'follower' });
+
+    first.stop(); await tick();
+    expect(second.getState()).toEqual({
+      status: 'owner', contribution: 'enabled', generation: null,
+    });
+    second.stop();
+  });
+
+  it('blocks writes after an unexpected lock-request failure', async () => {
+    const coordinator = createDailyAtBatOwnershipCoordinator({
+      identity: IDENTITY,
+      journal: memoryJournal(),
+      lockPort: {
+        async requestExclusive() { throw new Error('request failed'); },
+      },
+      createAbortController: () => new AbortController(),
+      reloadDurableState: () => {},
+    });
+
     coordinator.start(); await tick();
-    expect(coordinator.getState()).toEqual({ status: 'unsupported', reason: 'journal_unavailable' });
+    expect(coordinator.getState()).toEqual({ status: 'blocked', reason: 'lock_request_failed' });
+    coordinator.stop();
   });
 });
 
