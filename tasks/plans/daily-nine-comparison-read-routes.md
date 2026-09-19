@@ -1,6 +1,6 @@
 # Daily Nine comparison read routes
 
-Status: scoped for implementation  
+Status: implemented on this PR; merge verification pending  
 Date: 2026-09-19
 
 ## Scope contract
