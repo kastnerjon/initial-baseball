@@ -1,8 +1,8 @@
 # Resolved-at-bat browser lifecycle
 
-Status: Approved architecture; 6A–6D merged and normal-path production/device proof complete; review R1–R3 repaired, R4 remains open
+Status: Approved architecture; 6A–6D merged and normal-path production/device proof complete; review R1–R4 repaired
 Date: 2026-09-18
-Review update: 2026-09-19 — see `docs/engineering/resolved-at-bat-review-2026-09-19.md`. R1 owner-lifetime delivery, R2 gameplay request-lifetime, and R3 persistence-authorization gaps are repaired. Journal failure under a held Web Lock now disables contribution without releasing exclusive gameplay authority; reload/lock-request failures are non-writable. R4 still gates persistence-hook extension and comparison work.
+Review update: 2026-09-19 — see `docs/engineering/resolved-at-bat-review-2026-09-19.md`. R1–R4 are repaired. R4 adds stable semantic session identity, per-session readiness, and exact live-vs-render authority checks at persistence/reset boundaries so effect re-bootstrap cannot write stale state after ownership teardown. Comparison work may resume only in its own bounded PRs.
 
 ## Scope contract for this planning PR
 

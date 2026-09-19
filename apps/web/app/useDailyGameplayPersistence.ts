@@ -28,8 +28,11 @@ import {
   type SaveDailyGameInput,
 } from './dailyLocalStorage';
 import { getDailyModeStorage, isDailyModeSaveCompatible } from './dailyModeStorage';
-
-export type DailyGameplayAccess = 'checking' | 'owner' | 'follower' | 'compatibility' | 'blocked';
+import {
+  canPersistCurrentDailyGameplay,
+  getDailyGameplayPersistenceSessionKey,
+  type DailyGameplayAccess,
+} from './dailyGameplayPersistenceAuthority';
 
 export function useDailyGameplayPersistence({
   puzzle,
@@ -53,9 +56,13 @@ export function useDailyGameplayPersistence({
     creationSubmissionId?: string | null;
   }) => void;
 }) {
+  const sessionKey = getDailyGameplayPersistenceSessionKey(puzzle, rulesetVersion);
   const [access, setAccess] = useState<DailyGameplayAccess>('checking');
+  const [readySessionKey, setReadySessionKey] = useState<string | null>(null);
   const [contribution, setContribution] = useState<DailyAtBatContributionSession | null>(null);
-  const accessRef = useRef(access);
+  const accessRef = useRef<DailyGameplayAccess>('checking');
+  const activeSessionKeyRef = useRef<string | null>(null);
+  const readySessionKeyRef = useRef<string | null>(null);
   const contributionRef = useRef(contribution);
   const identityRef = useRef<DailyAtBatAttemptIdentity | null>(null);
   const lifecycleRef = useRef<ReturnType<typeof createBrowserDailyAtBatGameplayLifecycle> | null>(null);
@@ -68,7 +75,6 @@ export function useDailyGameplayPersistence({
     allowCreate: false,
     creationSubmissionId: null as string | null,
   });
-  accessRef.current = access;
   contributionRef.current = contribution;
   restoreRef.current = onRestore;
   persistenceSessionInvalidatedRef.current = onPersistenceSessionInvalidated;
@@ -76,6 +82,9 @@ export function useDailyGameplayPersistence({
 
   useEffect(() => {
     let cancelled = false;
+    const ownedSessionKey = sessionKey;
+    activeSessionKeyRef.current = ownedSessionKey;
+    markSessionNotReady(ownedSessionKey);
     const storage = getDailyModeStorage(rulesetVersion);
     const initialLoaded = loadCompatible(puzzle, rulesetVersion, initialProgressionToken, storage);
     const coordinate = rulesetVersion === POINTS_V3_DAILY_RULESET_VERSION
@@ -91,12 +100,12 @@ export function useDailyGameplayPersistence({
     completionPolicyRef.current = { allowCreate: false, creationSubmissionId: null };
 
     if (!coordinate) {
-      applyAccess('compatibility');
       restoreCompatibility(initialLoaded);
+      markSessionReady(ownedSessionKey);
+      applyAccess('compatibility');
       return () => {
         cancelled = true;
-        accessRef.current = 'checking';
-        persistenceSessionInvalidatedRef.current();
+        releasePersistenceSession(ownedSessionKey);
       };
     }
 
@@ -128,9 +137,10 @@ export function useDailyGameplayPersistence({
               loaded,
               totalAtBats: puzzle.pitches.length,
             });
-        if (cancelled) return;
+        if (cancelled || activeSessionKeyRef.current !== ownedSessionKey) return;
         applyContribution(next);
         restoreRef.current(loaded);
+        markSessionReady(ownedSessionKey);
       },
     });
     const unsubscribe = coordinator.subscribe((state) => {
@@ -155,17 +165,18 @@ export function useDailyGameplayPersistence({
         }
       } else if (state.status === 'follower') {
         replaceDeliverySession(null);
+        markSessionNotReady(ownedSessionKey);
         applyAccess('follower');
         completionPolicyRef.current = { allowCreate: false, creationSubmissionId: null };
       } else if (state.status === 'blocked') {
         replaceDeliverySession(null);
+        markSessionNotReady(ownedSessionKey);
         applyAccess('blocked');
         setContribution(null);
         contributionRef.current = null;
         completionPolicyRef.current = { allowCreate: false, creationSubmissionId: null };
       } else {
         replaceDeliverySession(null);
-        applyAccess('compatibility');
         setContribution(null);
         contributionRef.current = null;
         restoreCompatibility(loadCompatible(
@@ -174,6 +185,8 @@ export function useDailyGameplayPersistence({
           initialProgressionToken,
           storage,
         ));
+        markSessionReady(ownedSessionKey);
+        applyAccess('compatibility');
       }
     });
     applyAccess('follower');
@@ -181,8 +194,7 @@ export function useDailyGameplayPersistence({
 
     return () => {
       cancelled = true;
-      accessRef.current = 'checking';
-      persistenceSessionInvalidatedRef.current();
+      releasePersistenceSession(ownedSessionKey);
       replaceDeliverySession(null);
       unsubscribe();
       coordinator.stop();
@@ -196,14 +208,17 @@ export function useDailyGameplayPersistence({
       completionPolicyRef.current = { allowCreate: allow, creationSubmissionId: null };
       restoreRef.current(loaded);
     }
-  }, [
-    initialProgressionToken,
-    puzzle,
-    rulesetVersion,
-  ]);
+  }, [sessionKey]);
 
   useEffect(() => {
-    if (!hasLoadedSavedState || !canPersistDailyGameplay(access)) return;
+    if (!hasLoadedSavedState || !canPersistCurrentDailyGameplay({
+      renderAccess: access,
+      currentAccess: accessRef.current,
+      renderSessionKey: sessionKey,
+      currentSessionKey: activeSessionKeyRef.current,
+      renderReadySessionKey: readySessionKey,
+      currentReadySessionKey: readySessionKeyRef.current,
+    })) return;
 
     const storage = getDailyModeStorage(rulesetVersion);
     if (access === 'compatibility') {
@@ -217,10 +232,7 @@ export function useDailyGameplayPersistence({
     const identity = identityRef.current;
     const resultClient = resultClientRef.current;
     const ownerDelivery = deliverySessionRef.current;
-    if (identity === null || resultClient === null) {
-      saveDailyGame(puzzle, saveInput, storage);
-      return;
-    }
+    if (identity === null || resultClient === null) return;
 
     const commit = persistGameplayThenFreezeDailyAtBats({
       persistGameplay: () => saveDailyGame(puzzle, saveInput, storage),
@@ -263,8 +275,8 @@ export function useDailyGameplayPersistence({
   }, [
     access,
     hasLoadedSavedState,
-    puzzle,
-    rulesetVersion,
+    readySessionKey,
+    sessionKey,
     saveInput.atBatState,
     saveInput.currentPitchIndex,
     saveInput.gameState,
@@ -276,6 +288,26 @@ export function useDailyGameplayPersistence({
   function replaceDeliverySession(next: DailyAtBatOwnerDeliverySession | null) {
     deliverySessionRef.current?.dispose();
     deliverySessionRef.current = next;
+  }
+
+  function markSessionReady(expectedSessionKey: string) {
+    if (activeSessionKeyRef.current !== expectedSessionKey) return;
+    readySessionKeyRef.current = expectedSessionKey;
+    setReadySessionKey(expectedSessionKey);
+  }
+
+  function markSessionNotReady(expectedSessionKey: string) {
+    if (activeSessionKeyRef.current !== expectedSessionKey) return;
+    readySessionKeyRef.current = null;
+    setReadySessionKey(null);
+  }
+
+  function releasePersistenceSession(expectedSessionKey: string) {
+    if (activeSessionKeyRef.current !== expectedSessionKey) return;
+    activeSessionKeyRef.current = null;
+    readySessionKeyRef.current = null;
+    accessRef.current = 'checking';
+    persistenceSessionInvalidatedRef.current();
   }
 
   function applyAccess(next: DailyGameplayAccess) {
@@ -311,7 +343,14 @@ export function useDailyGameplayPersistence({
   }
 
   function resetPersistedState(): boolean {
-    if (!canPersistDailyGameplay(accessRef.current)) return false;
+    if (!canPersistCurrentDailyGameplay({
+      renderAccess: access,
+      currentAccess: accessRef.current,
+      renderSessionKey: sessionKey,
+      currentSessionKey: activeSessionKeyRef.current,
+      renderReadySessionKey: readySessionKey,
+      currentReadySessionKey: readySessionKeyRef.current,
+    })) return false;
 
     if (accessRef.current === 'owner') {
       const lifecycle = lifecycleRef.current;
@@ -327,7 +366,9 @@ export function useDailyGameplayPersistence({
     return true;
   }
 
-  return { access, contribution, resetPersistedState };
+  const exposedAccess = activeSessionKeyRef.current === sessionKey ? access : 'checking';
+  const exposedContribution = activeSessionKeyRef.current === sessionKey ? contribution : null;
+  return { access: exposedAccess, contribution: exposedContribution, resetPersistedState };
 }
 
 function sameOwnerDeliverySession(
@@ -382,6 +423,3 @@ function compatibilityCompletedResultEligibility(
   });
 }
 
-export function canPersistDailyGameplay(access: DailyGameplayAccess): boolean {
-  return access === 'owner' || access === 'compatibility';
-}
