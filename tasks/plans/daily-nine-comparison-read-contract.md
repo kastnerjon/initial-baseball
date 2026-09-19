@@ -10,7 +10,7 @@ Date: 2026-09-19
 - **In scope:** exact puzzle + `points-v3` comparison identity; one-slot resolved-AB count/point-sum read; separate completed-game score-bucket read; null empty averages; bounded 0–63 histogram; strict-lower finishers rate; provider snapshot freshness metadata; runtime validation; focused tests; package exports and canonical docs.
 - **Out of scope:** Supabase queries/functions/migrations, API routes, browser fetching/retry/cache, React/UI, sample-size presentation thresholds, R5/R6/R8, Classic comparison, result writes, scoring changes, rollups, performance claims.
 - **Acceptance checks:** partial-game slot counts may differ freely; no completed-game read occurs for an at-bat request; empty averages are null; malformed sufficient statistics fail closed; score buckets normalize deterministically; ties are not counted as beaten; provider `sourceReadAt` is preserved; focused/full CI and preview pass.
-- **Stop conditions:** provider-specific query code, new database objects, API/React work, new dependencies, or a need to alter result-write/scoring contracts becomes a separate PR.
+- **Stop conditions:** provider-specific query code, new database objects, API/React work, external dependencies, or a need to alter result-write/scoring contracts becomes a separate PR. The existing allowed Daily → engine dependency is used only for the canonical points-v3 maximum constant.
 
 ## First-principles decisions
 
@@ -20,7 +20,7 @@ The live product asks for one slot comparison after each terminal AB but needs t
 
 ### Persisted points are already authoritative enough for aggregation
 
-`daily_at_bat_results.awarded_points` is engine-derived at write time. The provider returns only the received row count and sum for one slot. Daily divides them; it does not re-run scoring and SQL does not copy the formula.
+`daily_at_bat_results.awarded_points` is engine-derived at write time. The provider returns only the received row count and sum for one slot. Daily divides them; it does not re-run scoring and SQL does not copy the formula. Bounds use the engine-exported `POINTS_V3_MAX_POINTS_PER_AT_BAT` constant rather than duplicating a scoring number.
 
 ### Completed scores are buckets
 

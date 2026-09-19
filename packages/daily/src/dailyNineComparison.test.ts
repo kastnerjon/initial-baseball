@@ -100,7 +100,7 @@ describe('Daily Nine comparison service', () => {
     const comparison = await service.getCompletedGames(KEY);
 
     expect(comparison.completedGameCount).toBe(0);
-    expect(comparison.averagePoints).toBeNull();
+    expect(comparison.averageTotalPoints).toBeNull();
     expect(comparison.scoreHistogram).toHaveLength(64);
     expect(comparison.scoreHistogram.every(count => count === 0)).toBe(true);
   });
@@ -122,7 +122,7 @@ describe('Daily Nine comparison service', () => {
     const comparison = await service.getCompletedGames(KEY);
 
     expect(comparison.completedGameCount).toBe(7);
-    expect(comparison.averagePoints).toBe(163 / 7);
+    expect(comparison.averageTotalPoints).toBe(163 / 7);
     expect(comparison.scoreHistogram[10]).toBe(2);
     expect(comparison.scoreHistogram[20]).toBe(4);
     expect(comparison.scoreHistogram[63]).toBe(1);

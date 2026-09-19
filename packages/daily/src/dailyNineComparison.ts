@@ -1,11 +1,9 @@
-import {
-  DEFAULT_DAILY_POINTS_SUMMARY,
-  POINTS_V3_DAILY_RULESET_VERSION,
-} from '@initial-baseball/shared';
+import { POINTS_V3_MAX_POINTS_PER_AT_BAT } from '@initial-baseball/engine';
+import { POINTS_V3_DAILY_RULESET_VERSION } from '@initial-baseball/shared';
 import { DAILY_AT_BAT_COUNT } from './dailyPuzzleSelection';
 
-const DAILY_NINE_MAX_POINTS = DEFAULT_DAILY_POINTS_SUMMARY.maximumPoints;
-const DAILY_NINE_MAX_POINTS_PER_AT_BAT = DAILY_NINE_MAX_POINTS / DAILY_AT_BAT_COUNT;
+const DAILY_NINE_MAX_POINTS_PER_AT_BAT = POINTS_V3_MAX_POINTS_PER_AT_BAT;
+const DAILY_NINE_MAX_POINTS = DAILY_NINE_MAX_POINTS_PER_AT_BAT * DAILY_AT_BAT_COUNT;
 const DAILY_NINE_SCORE_HISTOGRAM_LENGTH = DAILY_NINE_MAX_POINTS + 1;
 
 export type DailyNineComparisonKey = {
@@ -58,7 +56,7 @@ export type DailyNineAtBatComparison = DailyNineAtBatComparisonQuery & {
 export type DailyNineCompletedComparison = DailyNineComparisonKey & {
   sourceReadAt: string;
   completedGameCount: number;
-  averagePoints: number | null;
+  averageTotalPoints: number | null;
   /** Index is the final Daily Nine score, from 0 through the points-v3 maximum. */
   scoreHistogram: number[];
 };
@@ -121,7 +119,7 @@ export function createDailyNineComparisonService(
         ...key,
         sourceReadAt: source.sourceReadAt,
         completedGameCount,
-        averagePoints: completedGameCount === 0 ? null : totalPoints / completedGameCount,
+        averageTotalPoints: completedGameCount === 0 ? null : totalPoints / completedGameCount,
         scoreHistogram,
       };
     },
