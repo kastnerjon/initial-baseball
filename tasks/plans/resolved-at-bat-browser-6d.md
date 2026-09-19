@@ -1,6 +1,6 @@
 # Resolved-at-bat browser 6D: delivery activation and identity unification
 
-Status: Implementation merged; production deploy + AB route/database proof complete; browser multi-tab + completion-identity proof pending
+Status: Complete; production deploy/database proof, real two-tab takeover, fresh completion-ID equality, physical Safari restore, cleanup, and runtime health are verified
 Date: 2026-09-18
 
 ## Scope contract
@@ -94,9 +94,9 @@ Comparison reads/UI can then consume independently arriving immutable AB rows wi
 - production deployment is READY on exact merge SHA — verified: `1965258055eecbf501de82d6f0aed395aea33867` / `dpl_7Ceu1nwPYZQgUrJaPdsiBQqrLmPa`;
 - one controlled production AB insert plus exact retry/readback proves first-write-wins delivery — verified: production 201 then 200, one normalized disposable row with one receipt timestamp, then cleanup;
 - runtime-error scan is clean after the proof — verified for `/api/daily/at-bats` and `/api/daily/results`;
-- browser multi-tab proof confirms one owner/follower takeover — pending physical/current-browser verification;
-- fresh full-completion identity proof confirms a new completed-result `submissionId` equals the active AB `attemptId` — pending;
-- only after the two remaining browser proofs may collection be documented fully browser-proven.
+- browser multi-tab proof confirms one owner/follower takeover — verified in Chrome Incognito on a physical iPhone; exact browser version was not captured;
+- fresh full-completion identity proof confirms a new completed-result `submissionId` equals the active AB `attemptId` — verified with attempt `6da8d6b7-aedd-457c-82e4-1be0b1e3ac7f`;
+- physical Safari Private restore is verified on a fresh iPhone run; collection is now documented fully browser-proven for the current anonymous beta model.
 
 ## Stop conditions
 
@@ -111,5 +111,10 @@ Stop and split before adding comparison contracts/UI, server schema/API changes,
 - Database readback between those requests/cleanup showed one normalized row for disposable attempt `proof6d_19652580_p1`, puzzle `daily-2026-09-18-editorial-f5f968b7`, `points-v3`, pitch 1, initials `GC`, outcome `K`, resolution `give_up`, awarded points 0, receipt `2026-09-18 23:23:50.838102+00`.
 - The disposable row was cleaned up; no persistent proof pollution remains.
 - A post-proof runtime-error scan for the resolved-AB and completed-result routes was clean.
-- No post-6D `/api/daily/results` request was observed during the verification window, so fresh attempt/completed-result identity reuse is not yet production-proven.
-- This environment does not expose an interactive multi-tab browser runner, so owner/follower/takeover behavior still requires a physical/current-browser verification rather than being inferred from unit tests.
+- Final physical-browser proof ran against production deployment `dpl_2DLJ5461tmLVVVewcVdDpezaxJtU` on main SHA `f6a88ca9f0b5c95171108c17d81e21303fca2f27`.
+- Chrome Incognito on a physical iPhone (exact version not captured) showed one interactive owner and one passive follower with the expected message. After batter 1 Give Up, Supabase contained exactly one pitch-1 row under attempt `6da8d6b7-aedd-457c-82e4-1be0b1e3ac7f` and Vercel logged one HTTP 201. Closing the owner allowed the follower to take over and restore at batter 2 without creating another attempt or POST.
+- Finishing the same run with Give Up on batters 2–9 produced exactly nine AB rows, pitches 1–9 once each, all under that attempt ID. Vercel logged nine total successful AB HTTP 201 responses.
+- The terminal `POST /api/daily/results` returned HTTP 201 and created exactly one completed-result row whose `submission_id` was the same `6da8d6b7-aedd-457c-82e4-1be0b1e3ac7f`; its nine native facts and zero-point summary matched the AB rows.
+- The post-proof runtime-error scan for `/api/daily/at-bats` and `/api/daily/results` was clean.
+- A separate fresh physical iPhone Safari Private run created attempt `3d112236-c6df-4416-981b-8f193eb2ab7e`, persisted pitch 1 with HTTP 201, and restored at batter 2 after refresh; no runtime errors were found.
+- Privileged cleanup deleted only those two exact disposable QA identities, including the completed-result row for the full run; authoritative readback confirmed zero remaining QA rows.

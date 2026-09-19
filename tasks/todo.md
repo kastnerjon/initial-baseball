@@ -5,7 +5,7 @@ Last updated: 2026-09-18
 
 Completed history belongs in PRs, canonical docs, or `tasks/lessons.md`. Durable resumption context belongs in `docs/START-HERE.md`.
 
-Current order: the routine conversational future-lineup path and completed-result 4A/4B/4C stack are operationally complete, including live production idempotency proof. Daily Nine comparison now has portable validation, repository/service, hosted-but-inactive Supabase provider and an authoritative server submission API. Browser lifecycle architecture is settled and split into journal/outbox, cross-tab ownership, gameplay integration and activation PRs; gameplay collection remains off through the first three. Draft #161 must not be merged unchanged. Remaining authenticated-editor slot QA, timed public editorial rollover/fallback checks, and physical iPhone/iPad QA stay open but do not block the results pipeline. Permanent archive/local history remain subsequent concerns. Current beta numbering is disposable; broad launch later restarts at Daily #1 after the owner chooses the surviving game/final rules.
+Current order: the routine conversational future-lineup path and completed-result 4A/4B/4C stack are operationally complete, including live production idempotency proof. Daily Nine comparison now has portable validation, repository/service, hosted-but-inactive Supabase provider and an authoritative server submission API. Browser 6A–6D is implemented and fully browser-proven; resolved-AB collection is live for fresh points-v3 runs while comparison reads/UI remain inactive. Draft #161 must not be merged unchanged. Remaining authenticated-editor slot QA, timed public editorial rollover/fallback checks, and physical iPhone/iPad QA stay open but do not block the results pipeline. Permanent archive/local history remain subsequent concerns. Current beta numbering is disposable; broad launch later restarts at Daily #1 after the owner chooses the surviving game/final rules.
 
 ## September 15–16 approved product work
 
@@ -160,7 +160,7 @@ Admin redesign is deferred. The user may supply a future date and nine ordered p
 - [x] Pass final focused/full CI, documentation-impact, exact-head Vercel preview, merge, and exact production deployment.
 - [x] Verify live result collection end to end in production: real-browser Daily #144 / `points-v3` completion created one row; exact same-ID replay returned `existing`; row count remained one.
 
-### 4D. Daily Nine resolved-AB comparison — portable foundations; collection pending
+### 4D. Daily Nine resolved-AB comparison — collection browser-proven; comparison reads next
 
 Replacement plan: `tasks/plans/resolved-at-bat-comparison.md`. PR #174 is held as draft; its completion-only AB population is superseded. Complete one owning concern per PR.
 
@@ -177,9 +177,9 @@ Replacement plan: `tasks/plans/resolved-at-bat-comparison.md`. PR #174 is held a
 - [x] Browser 6D production deployment proof: PR #185 merge `1965258055eecbf501de82d6f0aed395aea33867` is READY as production deployment `dpl_7Ceu1nwPYZQgUrJaPdsiBQqrLmPa`.
 - [x] Browser 6D production AB route/database proof: exact disposable payload returned 201 then 200; one normalized row was read back with one receipt timestamp and then cleaned up.
 - [x] Browser 6D post-proof runtime-error scan for resolved-AB/completed-result routes is clean.
-- [ ] Browser 6D physical/current-browser multi-tab proof: one owner, passive follower, release/takeover rehydrate, no duplicate actor. Runbook: `docs/operations/resolved-at-bat-browser-proof.md`.
-- [ ] Browser 6D fresh full-completion identity proof: verify new `daily_completed_results.submission_id` equals the active `daily_at_bat_results.attempt_id` for the same run while existing records remain untouched. Runbook: `docs/operations/resolved-at-bat-browser-proof.md`.
-- [ ] Browser 6D final canonical-doc declaration after both remaining browser proofs; only then call collection fully browser-proven.
+- [x] Browser 6D physical/current-browser multi-tab proof: Chrome Incognito on a physical iPhone showed one owner plus passive follower; after batter-1 persistence, closing the owner let the follower rehydrate at batter 2 with the same attempt and no duplicate actor. Runbook/evidence: `docs/operations/resolved-at-bat-browser-proof.md`.
+- [x] Browser 6D fresh full-completion identity proof: attempt `6da8d6b7-aedd-457c-82e4-1be0b1e3ac7f` produced exactly nine pitches 1–9 and one completed-result row with the identical `submission_id`; all ten POSTs returned 201 and no route runtime errors were found.
+- [x] Browser 6D final browser/device gate: physical iPhone Safari Private restored the same fresh run at batter 2 after refresh; exact current-browser and Safari QA identities were cleaned from Supabase with zero rows remaining. Collection is now fully browser-proven for the current anonymous beta model.
 - [ ] Independent-population comparison contracts/provider/API, read-only recovery, freshness and representative isolated performance measurements.
 - [ ] Asynchronous YOU / AVG after every terminal AB; final nine-row scorecard, whole-game average and strict-lower finishers percentage with low-sample/outage states.
 - [ ] Verify mobile, answer integrity, failed delivery/read recovery and unchanged gameplay critical path before declaring live.

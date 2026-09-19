@@ -1,6 +1,6 @@
 # Daily Nine resolved-at-bat comparison
 
-Status: Approved direction; browser lifecycle architecture settled, implementation pending
+Status: Approved direction; browser collection lifecycle proven, comparison reads pending
 Date: 2026-09-18
 
 ## Scope contract for this PR

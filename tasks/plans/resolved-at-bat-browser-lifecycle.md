@@ -166,7 +166,7 @@ Out of scope: resolved-AB POST calls, comparison reads/UI, server changes and Cl
 
 ### 6D. Delivery activation and identity unification
 
-Status: Implementation merged. Exact production deployment, AB 201→200 retry/readback, cleanup, and post-proof runtime-error scan are verified; physical multi-tab/takeover, Safari support/restore, and fresh completion-ID unification remain pending. Verification runbook: `docs/operations/resolved-at-bat-browser-proof.md`. Scope: `tasks/plans/resolved-at-bat-browser-6d.md`.
+Status: Complete and browser-proven in production. Exact deployment/database first-write proof, physical current-browser owner/follower/takeover, fresh completed-result ID reuse, physical Safari restore, exact cleanup, and post-proof runtime health are verified. Verification record: `docs/operations/resolved-at-bat-browser-proof.md`. Scope: `tasks/plans/resolved-at-bat-browser-6d.md`.
 
 Owning concern: resolved-AB browser activation.
 
