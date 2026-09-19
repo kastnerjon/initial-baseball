@@ -5,17 +5,17 @@ Last updated: 2026-09-19
 
 Completed history belongs in PRs, canonical docs, or `tasks/lessons.md`. Durable resumption context belongs in `docs/START-HERE.md`.
 
-Current order: the routine conversational future-lineup path and completed-result 4A/4B/4C stack are operationally complete, including live production idempotency proof. Daily Nine comparison now has portable validation, repository/service, hosted Supabase provider and an authoritative server submission API. Browser 6A–6D is implemented with successful normal-path production proof; September 19 source-review findings R1–R3 must be fixed before comparison implementation; resolved-AB collection is live for fresh points-v3 runs while comparison reads/UI remain inactive. Draft #161 must not be merged unchanged. Remaining authenticated-editor slot QA, timed public editorial rollover/fallback checks, and physical iPhone/iPad QA stay open but do not block the results pipeline. Permanent archive/local history remain subsequent concerns. Current beta numbering is disposable; broad launch later restarts at Daily #1 after the owner chooses the surviving game/final rules.
+Current order: the routine conversational future-lineup path and completed-result 4A/4B/4C stack are operationally complete, including live production idempotency proof. Daily Nine comparison now has portable validation, repository/service, hosted Supabase provider and an authoritative server submission API. Browser 6A–6D is implemented with successful normal-path production proof; September 19 source-review R1 is repaired and R2–R3 must still be fixed before comparison implementation; resolved-AB collection is live for fresh points-v3 runs while comparison reads/UI remain inactive. Draft #161 must not be merged unchanged. Remaining authenticated-editor slot QA, timed public editorial rollover/fallback checks, and physical iPhone/iPad QA stay open but do not block the results pipeline. Permanent archive/local history remain subsequent concerns. Current beta numbering is disposable; broad launch later restarts at Daily #1 after the owner chooses the surviving game/final rules.
 
 ## September 19 review prerequisites
 
-Review: `docs/engineering/resolved-at-bat-review-2026-09-19.md`. Findings are open; no runtime fix is included in the review documentation.
+Review: `docs/engineering/resolved-at-bat-review-2026-09-19.md`. R1 is repaired; the remaining findings are open.
 
-- [ ] R1: fence outbox sends and acknowledgment mutations to the exact owner lifetime; stop old retry loops after release/takeover.
+- [x] R1: fence outbox sends and acknowledgment mutations to the exact owner lifetime; stop old retry loops after release/takeover.
 - [ ] R2: fence gameplay Guess/Give Up responses, errors and cleanup across reset/restore/ownership changes.
 - [ ] R3: keep shared gameplay writes exclusive when journal/generation handling fails; distinguish analytics ineligibility from missing lock capability.
 - [ ] R4: guard persistence against stale effect-render authority during re-bootstrap before extending the hook.
-- [ ] Add mounted React lifecycle regressions in those owning fix PRs; existing helper tests and happy-path phone proof do not exercise these interleavings.
+- [ ] Add mounted React lifecycle regressions in the R2/R3/R4 owning fix PRs; the R1 non-React delivery interleaving is covered by deterministic client regressions, while existing happy-path phone proof does not exercise the remaining React interleavings.
 - [ ] Follow up separately on bounded pending-delivery recovery (R5), malformed-save decoding (R6), request/comparison module boundaries (R7), and write-admission/observability (R8).
 
 ## September 15–16 approved product work

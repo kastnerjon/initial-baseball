@@ -80,7 +80,7 @@ describe('resolved-at-bat browser journal and outbox', () => {
     const client = makeClient(storage, request);
     client.establishAttempt(IDENTITY);
     client.freezeObservation({ identity: IDENTITY, generation: 1, atBat: atBat(1) });
-    await expect(client.deliverObservation(IDENTITY, 1)).resolves.toBe(expected);
+    await expect(ownerDelivery(client).deliverObservation(1)).resolves.toBe(expected);
     expect(storage.record()).toMatchObject({
       contributionState: state,
       observations: { 1: { delivery: expected, submission: { attemptId: 'attempt-one' } } },
@@ -92,11 +92,11 @@ describe('resolved-at-bat browser journal and outbox', () => {
     const first = makeClient(storage, vi.fn().mockRejectedValue(new Error('offline')));
     first.establishAttempt(IDENTITY);
     first.freezeObservation({ identity: IDENTITY, generation: 1, atBat: atBat(1) });
-    await expect(first.deliverObservation(IDENTITY, 1)).resolves.toBe('pending');
+    await expect(ownerDelivery(first).deliverObservation(1)).resolves.toBe('pending');
     const frozen = JSON.stringify(storage.record().observations['1'].submission);
     const request = vi.fn().mockResolvedValue({ ok: true, status: 200 });
     const retry = makeClient(storage, request, () => 'wrong-new-id');
-    await expect(retry.retryPending(IDENTITY)).resolves.toEqual(['submitted']);
+    await expect(ownerDelivery(retry).retryPending()).resolves.toEqual(['submitted']);
     expect(JSON.stringify(request.mock.calls[0]?.[0])).toBe(frozen);
   });
 
@@ -107,8 +107,9 @@ describe('resolved-at-bat browser journal and outbox', () => {
     const client = makeClient(storage, request);
     client.establishAttempt(IDENTITY);
     client.freezeObservation({ identity: IDENTITY, generation: 1, atBat: atBat(1) });
-    const first = client.deliverObservation(IDENTITY, 1);
-    const second = client.deliverObservation(IDENTITY, 1);
+    const delivery = ownerDelivery(client);
+    const first = delivery.deliverObservation(1);
+    const second = delivery.deliverObservation(1);
     expect(request).toHaveBeenCalledTimes(1);
     expect(client.advanceGeneration(IDENTITY)).toBe('updated');
     pending.resolve({ ok: true, status: 201 });
@@ -123,12 +124,72 @@ describe('resolved-at-bat browser journal and outbox', () => {
     client.establishAttempt(IDENTITY);
     client.freezeObservation({ identity: IDENTITY, generation: 1, atBat: atBat(2) });
     client.freezeObservation({ identity: IDENTITY, generation: 1, atBat: atBat(1) });
-    await expect(client.deliverObservation(IDENTITY, 1)).resolves.toBe('submitted');
+    await expect(ownerDelivery(client).deliverObservation(1)).resolves.toBe('submitted');
     request.mockClear();
-    await expect(client.retryPending(IDENTITY)).resolves.toEqual(['submitted']);
+    await expect(ownerDelivery(client).retryPending()).resolves.toEqual(['submitted']);
     expect(request.mock.calls[0]?.[0].atBat.pitchNumber).toBe(2);
-    await expect(client.deliverObservation(IDENTITY, 3)).resolves.toBe('not_started');
+    await expect(ownerDelivery(client).deliverObservation(3)).resolves.toBe('not_started');
     expect(request).toHaveBeenCalledTimes(1);
+  });
+
+  it('stops a disposed owner retry before it can adopt a successor generation', async () => {
+    const storage = memoryStorage();
+    const firstResponse = deferred<{ ok: boolean; status: number }>();
+    const oldRequest = vi.fn()
+      .mockImplementationOnce(() => firstResponse.promise)
+      .mockResolvedValue({ ok: true, status: 201 });
+    const oldClient = makeClient(storage, oldRequest);
+    oldClient.establishAttempt(IDENTITY);
+    oldClient.freezeObservation({ identity: IDENTITY, generation: 1, atBat: atBat(1) });
+    oldClient.freezeObservation({ identity: IDENTITY, generation: 1, atBat: atBat(2) });
+
+    const oldOwner = ownerDelivery(oldClient);
+    const retry = oldOwner.retryPending();
+    expect(oldRequest).toHaveBeenCalledTimes(1);
+
+    oldOwner.dispose();
+    expect(oldClient.advanceGeneration(IDENTITY)).toBe('updated');
+    expect(oldClient.freezeObservation({ identity: IDENTITY, generation: 2, atBat: atBat(3) }))
+      .toBe('created');
+
+    firstResponse.resolve({ ok: true, status: 201 });
+    await expect(retry).resolves.toEqual(['stale']);
+    expect(oldRequest).toHaveBeenCalledTimes(1);
+    expect(storage.record()).toMatchObject({
+      generation: 2,
+      observations: {
+        1: { delivery: 'pending' },
+        2: { delivery: 'pending' },
+        3: { delivery: 'pending' },
+      },
+    });
+
+    const successorRequest = vi.fn().mockResolvedValue({ ok: true, status: 200 });
+    const successor = makeClient(storage, successorRequest);
+    await expect(ownerDelivery(successor).retryPending())
+      .resolves.toEqual(['submitted', 'submitted', 'submitted']);
+    expect(successorRequest).toHaveBeenCalledTimes(3);
+  });
+
+  it('keeps a late request error inert after owner disposal', async () => {
+    const storage = memoryStorage();
+    const response = deferred<{ ok: boolean; status: number }>();
+    const request = vi.fn(() => response.promise);
+    const client = makeClient(storage, request);
+    client.establishAttempt(IDENTITY);
+    client.freezeObservation({ identity: IDENTITY, generation: 1, atBat: atBat(1) });
+
+    const owner = ownerDelivery(client);
+    const delivery = owner.deliverObservation(1);
+    owner.dispose();
+    expect(client.advanceGeneration(IDENTITY)).toBe('updated');
+
+    response.reject(new Error('offline'));
+    await expect(delivery).resolves.toBe('stale');
+    expect(storage.record()).toMatchObject({
+      generation: 2,
+      observations: { 1: { delivery: 'pending' } },
+    });
   });
 });
 
@@ -144,6 +205,12 @@ function makeClient(storage: ReturnType<typeof memoryStorage>, submitRequest: Re
   createAttemptId: () => string | null = () => 'attempt-one') {
   return createDailyAtBatResultClient({ storage, createAttemptId, submitRequest });
 }
+function ownerDelivery(client: ReturnType<typeof makeClient>) {
+  const delivery = client.createOwnerDeliverySession(IDENTITY);
+  if (delivery === null) throw new Error('Expected owner delivery session');
+  return delivery;
+}
+
 function atBat(pitchNumber: number): DailyCompletedAtBat {
   return { pitchNumber, initials: 'P' + pitchNumber, outcome: 'HR', hintsRevealed: 0,
     wrongGuesses: 0, resolution: 'correct' };
@@ -159,6 +226,10 @@ function memoryStorage() {
 }
 function deferred<T>() {
   let resolve!: (value: T) => void;
-  const promise = new Promise<T>(done => { resolve = done; });
-  return { promise, resolve };
+  let reject!: (reason?: unknown) => void;
+  const promise = new Promise<T>((done, fail) => {
+    resolve = done;
+    reject = fail;
+  });
+  return { promise, resolve, reject };
 }

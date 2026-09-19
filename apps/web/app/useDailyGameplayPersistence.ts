@@ -16,6 +16,7 @@ import { persistGameplayThenFreezeDailyAtBats } from './dailyAtBatGameplayCommit
 import {
   createBrowserDailyAtBatResultClient,
   type DailyAtBatDeliveryState,
+  type DailyAtBatOwnerDeliverySession,
 } from './dailyAtBatResultClient';
 import { createBrowserDailyAtBatOwnershipCoordinator } from './dailyAtBatOwnershipCoordinator';
 import {
@@ -57,6 +58,7 @@ export function useDailyGameplayPersistence({
   const identityRef = useRef<DailyAtBatAttemptIdentity | null>(null);
   const lifecycleRef = useRef<ReturnType<typeof createBrowserDailyAtBatGameplayLifecycle> | null>(null);
   const resultClientRef = useRef<ReturnType<typeof createBrowserDailyAtBatResultClient> | null>(null);
+  const deliverySessionRef = useRef<DailyAtBatOwnerDeliverySession | null>(null);
   const restoreRef = useRef(onRestore);
   const completedResultRef = useRef(submitCompletedResultCreationIfEligible);
   const completionPolicyRef = useRef({
@@ -76,6 +78,7 @@ export function useDailyGameplayPersistence({
       && (initialLoaded === null
         || initialLoaded.savedGame.gameState.rulesetVersion === POINTS_V3_DAILY_RULESET_VERSION);
 
+    replaceDeliverySession(null);
     identityRef.current = null;
     lifecycleRef.current = null;
     resultClientRef.current = null;
@@ -120,17 +123,25 @@ export function useDailyGameplayPersistence({
     const unsubscribe = coordinator.subscribe((state) => {
       if (cancelled) return;
       if (state.status === 'owner') {
+        const ownerDelivery = resultClient.createOwnerDeliverySession(identity);
+        replaceDeliverySession(ownerDelivery);
         applyAccess('owner');
         const expected = contributionRef.current;
-        void resultClient.retryPending(identity).then((results) => {
+        if (ownerDelivery === null) {
+          if (expected?.status === 'active') failCurrentContribution(expected);
+          return;
+        }
+        void ownerDelivery.retryPending().then((results) => {
           if (!cancelled && results.some(isContributionDeliveryFailure)) {
             failCurrentContribution(expected);
           }
         });
       } else if (state.status === 'follower') {
+        replaceDeliverySession(null);
         applyAccess('follower');
         completionPolicyRef.current = { allowCreate: false, creationSubmissionId: null };
       } else {
+        replaceDeliverySession(null);
         applyAccess('unsupported');
         setContribution(null);
         contributionRef.current = null;
@@ -147,6 +158,7 @@ export function useDailyGameplayPersistence({
 
     return () => {
       cancelled = true;
+      replaceDeliverySession(null);
       unsubscribe();
       coordinator.stop();
       identityRef.current = null;
@@ -179,6 +191,7 @@ export function useDailyGameplayPersistence({
     const current = contributionRef.current;
     const identity = identityRef.current;
     const resultClient = resultClientRef.current;
+    const ownerDelivery = deliverySessionRef.current;
     if (identity === null || resultClient === null) {
       saveDailyGame(puzzle, saveInput, storage);
       return;
@@ -201,11 +214,22 @@ export function useDailyGameplayPersistence({
       return;
     }
 
+    const deliveryForCommit = commit.deliveryPitchNumbers.length === 0
+      ? null
+      : sameOwnerDeliverySession(ownerDelivery, current)
+        ? ownerDelivery
+        : null;
+    if (commit.deliveryPitchNumbers.length > 0 && deliveryForCommit === null) {
+      failCurrentContribution(current);
+      return;
+    }
+
     completedResultRef.current(completionPolicyRef.current);
 
+    if (deliveryForCommit === null) return;
     for (const pitchNumber of commit.deliveryPitchNumbers) {
       const expected = current;
-      void resultClient.deliverObservation(identity, pitchNumber).then((result) => {
+      void deliveryForCommit.deliverObservation(pitchNumber).then((result) => {
         if (isContributionDeliveryFailure(result)) {
           failCurrentContribution(expected);
         }
@@ -223,6 +247,11 @@ export function useDailyGameplayPersistence({
     saveInput.progressionToken,
     saveInput.scorecardAnswers,
   ]);
+
+  function replaceDeliverySession(next: DailyAtBatOwnerDeliverySession | null) {
+    deliverySessionRef.current?.dispose();
+    deliverySessionRef.current = next;
+  }
 
   function applyAccess(next: DailyGameplayAccess) {
     accessRef.current = next;
@@ -271,6 +300,16 @@ export function useDailyGameplayPersistence({
   }
 
   return { access, contribution, resetPersistedState };
+}
+
+function sameOwnerDeliverySession(
+  delivery: DailyAtBatOwnerDeliverySession | null,
+  contribution: DailyAtBatContributionSession | null,
+): delivery is DailyAtBatOwnerDeliverySession {
+  return delivery !== null
+    && contribution?.status === 'active'
+    && delivery.attemptId === contribution.attemptId
+    && delivery.generation === contribution.generation;
 }
 
 function sameActiveContribution(

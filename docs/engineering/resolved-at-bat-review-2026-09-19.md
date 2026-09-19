@@ -18,6 +18,8 @@ This review does not invalidate the recorded successful production proof or clai
 
 ### R1 — Retired ownership can continue delivery under the next generation (high)
 
+Repair status: implemented by the bounded owner-delivery-lifetime repair. Delivery sessions now snapshot one attempt/generation, are disposed synchronously before Web Lock release, stop retry iteration after disposal, and make late success/error callbacks locally inert. Deterministic regressions cover takeover between queued retry slots, preservation of a successor append, and safe retry by the new owner.
+
 Files/functions:
 - `apps/web/app/dailyAtBatResultClient.ts`: `retryPending`, `deliverObservation`, `deliver` (baseline lines 51–95, 116–153).
 - `apps/web/app/useDailyGameplayPersistence.ts`: owner-acquisition retry and effect cleanup (120–154).
