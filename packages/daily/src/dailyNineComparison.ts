@@ -135,7 +135,6 @@ export function getDailyNineStrictLowerFinishersRate(
   userPoints: number,
 ): number | null {
   requireIntegerWithin(userPoints, 0, DAILY_NINE_MAX_POINTS, 'user points');
-  if (comparison.completedGameCount === 0) return null;
   if (comparison.scoreHistogram.length !== DAILY_NINE_SCORE_HISTOGRAM_LENGTH) {
     throw new Error('Daily Nine comparison score histogram has an invalid length.');
   }
@@ -151,6 +150,7 @@ export function getDailyNineStrictLowerFinishersRate(
   if (histogramCount !== comparison.completedGameCount) {
     throw new Error('Daily Nine comparison score histogram count does not match completion count.');
   }
+  if (comparison.completedGameCount === 0) return null;
 
   return lowerCount / comparison.completedGameCount;
 }
