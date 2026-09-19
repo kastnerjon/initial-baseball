@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 
@@ -13,7 +13,27 @@ vi.mock('../../../../serverDailyNineComparison', () => ({
 import { GET } from './route';
 
 describe('GET /api/daily/comparison/completed', () => {
-  beforeEach(() => server.readDailyNineCompletedComparison.mockReset());
+  beforeEach(() => {
+    server.readDailyNineCompletedComparison.mockReset();
+    vi.stubEnv('DAILY_NINE_COMPARISON_READS_ENABLED', 'true');
+  });
+  afterEach(() => vi.unstubAllEnvs());
+
+  it('fails closed before server composition when comparison reads are not activated', async () => {
+    vi.stubEnv('DAILY_NINE_COMPARISON_READS_ENABLED', 'false');
+
+    const response = await GET(new Request(
+      'http://localhost/api/daily/comparison/completed?date=2026-09-19&ruleset=points-v3',
+    ));
+
+    expect(response.status).toBe(404);
+    expect(response.headers.get('cache-control')).toBe('no-store');
+    await expect(response.json()).resolves.toEqual({
+      schemaVersion: 1,
+      error: 'comparison_unavailable',
+    });
+    expect(server.readDailyNineCompletedComparison).not.toHaveBeenCalled();
+  });
 
   it('passes only date and ruleset to authoritative server composition', async () => {
     const result = {
