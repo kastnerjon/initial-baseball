@@ -86,6 +86,7 @@ export function DailyInningGame({
       scorecardAnswers,
     },
     onRestore: restoreLoadedGame,
+    onPersistenceSessionInvalidated: () => resolutionRequestController.invalidate(),
     submitCompletedResultCreationIfEligible: completedResultSubmission.submitCreationIfEligible,
   });
 
