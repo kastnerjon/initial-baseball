@@ -25,7 +25,8 @@ describe('Supabase Daily Nine comparison repository', () => {
       resolvedAtBatCount: 4,
       awardedPointsSum: 17,
     });
-    expect(rpc).toHaveBeenCalledExactlyOnceWith('daily_nine_at_bat_comparison', {
+    expect(rpc).toHaveBeenCalledTimes(1);
+    expect(rpc).toHaveBeenCalledWith('daily_nine_at_bat_comparison', {
       p_puzzle_id: KEY.puzzleId,
       p_puzzle_date: KEY.puzzleDate,
       p_puzzle_number: KEY.puzzleNumber,
@@ -84,7 +85,8 @@ describe('Supabase Daily Nine comparison repository', () => {
         { points: 63, count: 1 },
       ],
     });
-    expect(rpc).toHaveBeenCalledExactlyOnceWith('daily_nine_completed_score_buckets', {
+    expect(rpc).toHaveBeenCalledTimes(1);
+    expect(rpc).toHaveBeenCalledWith('daily_nine_completed_score_buckets', {
       p_puzzle_id: KEY.puzzleId,
       p_puzzle_date: KEY.puzzleDate,
       p_puzzle_number: KEY.puzzleNumber,
