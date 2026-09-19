@@ -5,6 +5,16 @@ import { DailyRuntimeRequestError } from './dailyRuntimeService';
 import { ServerSupabaseConfigurationError } from './serverSupabaseClient';
 import { SupabaseDailyNineComparisonRepositoryError } from './supabaseDailyNineComparisonRepository';
 
+export function isDailyNineComparisonReadEnabled(
+  environment: Record<string, string | undefined> = process.env,
+): boolean {
+  return environment.DAILY_NINE_COMPARISON_READS_ENABLED?.trim().toLowerCase() === 'true';
+}
+
+export function dailyNineComparisonDisabledResponse(): NextResponse {
+  return errorResponse('comparison_unavailable', 404);
+}
+
 export function dailyNineComparisonNoStoreJson(value: unknown, status = 200): NextResponse {
   const response = NextResponse.json(value, { status });
   response.headers.set('cache-control', 'no-store');
@@ -16,7 +26,7 @@ export function mapDailyNineComparisonRouteError(error: unknown): NextResponse {
     return errorResponse(error.code, 400);
   }
   if (error instanceof DailyRuntimeRequestError) {
-    return errorResponse('invalid_puzzle', 400);
+    return errorResponse('comparison_unavailable', 503);
   }
   if (error instanceof ServerSupabaseConfigurationError
     || error instanceof SupabaseDailyNineComparisonRepositoryError) {
