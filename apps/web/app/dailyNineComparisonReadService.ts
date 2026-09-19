@@ -67,6 +67,7 @@ export function createDailyNineComparisonReadService({
       const puzzleDate = requireBaseRequest(request, getCurrentDailyDate());
       const pitchNumber = requirePitchNumber(request.pitchNumber);
       const puzzle = await loadComparisonPuzzle(puzzleDate);
+      const sourceReadAt = requireIsoTimestamp(now());
       const aggregate = await comparison.getAtBat({
         puzzleId: puzzle.id,
         puzzleDate: puzzle.puzzleDate,
@@ -80,7 +81,7 @@ export function createDailyNineComparisonReadService({
         kind: 'at-bat',
         comparison: aggregate,
         freshness: {
-          sourceReadAt: requireIsoTimestamp(now()),
+          sourceReadAt,
           cacheStatus: 'live',
         },
       };
@@ -91,6 +92,7 @@ export function createDailyNineComparisonReadService({
     ): Promise<DailyNineCompletedComparisonApiResponse> {
       const puzzleDate = requireBaseRequest(request, getCurrentDailyDate());
       const puzzle = await loadComparisonPuzzle(puzzleDate);
+      const sourceReadAt = requireIsoTimestamp(now());
       const aggregate = await comparison.getCompletedGames({
         puzzleId: puzzle.id,
         puzzleDate: puzzle.puzzleDate,
@@ -103,7 +105,7 @@ export function createDailyNineComparisonReadService({
         kind: 'completed',
         comparison: aggregate,
         freshness: {
-          sourceReadAt: requireIsoTimestamp(now()),
+          sourceReadAt,
           cacheStatus: 'live',
         },
       };
