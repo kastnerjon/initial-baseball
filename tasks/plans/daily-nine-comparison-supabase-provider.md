@@ -28,7 +28,7 @@ Both functions are `SECURITY INVOKER` and schema-qualified with an empty search 
 
 ### Use the existing indexes
 
-The AB query is aligned with `daily_at_bat_results_population_slot_idx` and can use an index-only scan. The completed query is aligned with `daily_completed_results_population_idx`. No new index is added before representative mixed-load evidence demonstrates a need.
+The AB query uses `daily_at_bat_results_population_slot_idx` to narrow by puzzle/ruleset/slot, then checks exact date/number metadata as a residual filter. The completed query uses `daily_completed_results_population_idx` for date/ruleset/puzzle and checks puzzle number residually. This favors exact-key correctness over widening indexes before measurement. No new index is added before representative mixed-load evidence demonstrates a need.
 
 ### Fail closed on malformed persisted aggregate data
 
