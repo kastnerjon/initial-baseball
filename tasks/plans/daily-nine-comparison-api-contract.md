@@ -1,6 +1,6 @@
 # Daily Nine comparison API transport contract
 
-Status: implemented on this PR; merge verification pending  
+Status: implemented on PR #199  
 Date: 2026-09-19
 
 ## Scope contract
