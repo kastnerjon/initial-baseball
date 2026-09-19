@@ -24,7 +24,7 @@ Each success response carries exact puzzle ID/date/number and `points-v3` rulese
 
 ### Freshness is explicit but caching is not implemented here
 
-Every success response carries `sourceReadAt`, `servedAt`, and `cacheStatus: live | cached`. A direct provider read will use `live`; a later cache may preserve the original `sourceReadAt` while updating `servedAt`. This contract does not select a TTL, cache store, or HTTP cache header.
+Every success response carries `sourceReadAt` and `cacheStatus: live | cached`. A direct provider read will use `live`; a later cache must preserve the original `sourceReadAt`. The contract deliberately avoids a second response timestamp so it works with either application-level or HTTP/CDN caching and does not select a TTL, cache store, or cache header.
 
 ### Completed comparison remains user-independent
 
