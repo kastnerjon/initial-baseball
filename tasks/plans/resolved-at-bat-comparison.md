@@ -1,7 +1,9 @@
 # Daily Nine resolved-at-bat comparison
 
-Status: Approved direction; browser collection lifecycle proven, comparison reads pending
+Status: Approved direction; normal-path collection proof recorded; September 19 browser review prerequisites precede comparison implementation
 Date: 2026-09-18
+
+September 19 review update: `docs/engineering/resolved-at-bat-review-2026-09-19.md` identifies R1–R3 prerequisites and conditional R4 effect-ordering risk. Preserve this comparison design; complete bounded browser correctness fixes before implementing the read layer.
 
 ## Scope contract for this PR
 

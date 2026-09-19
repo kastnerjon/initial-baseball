@@ -1,7 +1,8 @@
 # Resolved-at-bat browser lifecycle
 
-Status: Approved architecture; browser 6A–6D merged; production deploy + AB first-write/retry proof complete; browser multi-tab + completion-identity proof pending
+Status: Approved architecture; 6A–6D merged and normal-path production/device proof complete; September 19 lifecycle review findings remain open
 Date: 2026-09-18
+Review update: 2026-09-19 — see `docs/engineering/resolved-at-bat-review-2026-09-19.md` for R1–R4 ownership/request-lifetime gaps and prerequisites before comparison implementation.
 
 ## Scope contract for this planning PR
 
