@@ -1,6 +1,6 @@
 # Daily Nine Supabase comparison provider
 
-Status: implemented on PR #198; hosted migration/readback and merge verification pending  
+Status: implemented and hosted-verified on PR #198; merge verification pending  
 Date: 2026-09-19
 
 ## Scope contract
@@ -33,3 +33,15 @@ The AB query uses `daily_at_bat_results_population_slot_idx` to narrow by puzzle
 ### Fail closed on malformed persisted aggregate data
 
 The SQL does not copy scoring rules. It casts the persisted points-v3 summary value to an integer bucket; malformed persisted points cause a query/provider failure rather than being silently omitted. The adapter separately validates RPC response cardinality, non-negative safe counts/sums, and integer bucket shapes before the portable Daily service applies its 0–63 and points-v3 semantic validation.
+
+
+## Hosted verification
+
+- Applied migration history version: `20260919164818_create_daily_nine_comparison_reads`.
+- Both functions are `STABLE`, `SECURITY INVOKER`, and use an empty `search_path`.
+- `service_role` has EXECUTE; `PUBLIC`, `anon`, and `authenticated` do not.
+- A `service_role` execution proof returned the empty live AB population as count 0 and the real Daily #145 completed population as two score buckets.
+- Daily #145 completed buckets matched the persisted population: 31 → 1 and 38 → 1.
+- Current live EXPLAIN ANALYZE uses `daily_at_bat_results_population_slot_idx` for the AB aggregate and `daily_completed_results_population_idx` for the completed aggregate. The observed sub-millisecond execution on the tiny live population is plan evidence only, not a scale claim.
+- Supabase performance advisors returned no findings. Security advisors reported only pre-existing project findings; neither new comparison function was flagged.
+- Representative 100/1,000/10,000 mixed-load evidence remains the separately scoped performance concern.
