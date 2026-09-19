@@ -38,6 +38,7 @@ export function useDailyGameplayPersistence({
   hasLoadedSavedState,
   saveInput,
   onRestore,
+  onPersistenceSessionInvalidated,
   submitCompletedResultCreationIfEligible,
 }: {
   puzzle: DailyPublicPuzzle;
@@ -46,6 +47,7 @@ export function useDailyGameplayPersistence({
   hasLoadedSavedState: boolean;
   saveInput: SaveDailyGameInput;
   onRestore: (loaded: LoadedSavedDailyGame | null) => void;
+  onPersistenceSessionInvalidated: () => void;
   submitCompletedResultCreationIfEligible: (input: {
     allowCreate: boolean;
     creationSubmissionId?: string | null;
@@ -60,6 +62,7 @@ export function useDailyGameplayPersistence({
   const resultClientRef = useRef<ReturnType<typeof createBrowserDailyAtBatResultClient> | null>(null);
   const deliverySessionRef = useRef<DailyAtBatOwnerDeliverySession | null>(null);
   const restoreRef = useRef(onRestore);
+  const persistenceSessionInvalidatedRef = useRef(onPersistenceSessionInvalidated);
   const completedResultRef = useRef(submitCompletedResultCreationIfEligible);
   const completionPolicyRef = useRef({
     allowCreate: false,
@@ -68,6 +71,7 @@ export function useDailyGameplayPersistence({
   accessRef.current = access;
   contributionRef.current = contribution;
   restoreRef.current = onRestore;
+  persistenceSessionInvalidatedRef.current = onPersistenceSessionInvalidated;
   completedResultRef.current = submitCompletedResultCreationIfEligible;
 
   useEffect(() => {
@@ -89,7 +93,11 @@ export function useDailyGameplayPersistence({
     if (!coordinate) {
       applyAccess('compatibility');
       restoreCompatibility(initialLoaded);
-      return () => { cancelled = true; };
+      return () => {
+        cancelled = true;
+        accessRef.current = 'checking';
+        persistenceSessionInvalidatedRef.current();
+      };
     }
 
     const identity: DailyAtBatAttemptIdentity = {
@@ -158,6 +166,8 @@ export function useDailyGameplayPersistence({
 
     return () => {
       cancelled = true;
+      accessRef.current = 'checking';
+      persistenceSessionInvalidatedRef.current();
       replaceDeliverySession(null);
       unsubscribe();
       coordinator.stop();
@@ -254,6 +264,9 @@ export function useDailyGameplayPersistence({
   }
 
   function applyAccess(next: DailyGameplayAccess) {
+    if (accessRef.current === 'owner' && next !== 'owner') {
+      persistenceSessionInvalidatedRef.current();
+    }
     accessRef.current = next;
     setAccess(next);
   }

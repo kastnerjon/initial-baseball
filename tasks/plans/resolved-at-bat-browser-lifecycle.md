@@ -2,7 +2,7 @@
 
 Status: Approved architecture; 6A–6D merged and normal-path production/device proof complete; review R1–R2 repaired, R3–R4 remain open
 Date: 2026-09-18
-Review update: 2026-09-19 — see `docs/engineering/resolved-at-bat-review-2026-09-19.md`. R1 owner-lifetime delivery and R2 gameplay request-lifetime gaps are repaired; R3 remains a prerequisite before comparison implementation and R4 still gates persistence-hook extension.
+Review update: 2026-09-19 — see `docs/engineering/resolved-at-bat-review-2026-09-19.md`. R1 owner-lifetime delivery and R2 gameplay request-lifetime gaps are repaired; R2 includes Reset/restore plus persistence-session teardown and owner-loss fencing. R3 remains a prerequisite before comparison implementation and R4 still gates persistence-hook extension.
 
 ## Scope contract for this planning PR
 

@@ -35,6 +35,8 @@ Required regression: queued retry loses ownership after its first await; old suc
 
 ### R2 — Reset fences hint restoration but not gameplay resolution (high)
 
+Repair status: implemented across PR #192 plus the bounded R2 boundary-completion follow-up. The request controller provides synchronous single-flight and identity-checked success/error/settled callbacks. Reset and durable restore invalidate directly; persistence-session teardown invalidates the controller before coordinator release, and an owner-to-non-owner access transition also invalidates synchronously. This closes the original relevant-identity/ownership-loss requirement without moving scoring or persistence authority into the controller.
+
 File: `apps/web/app/components/DailyInningGame.tsx`: `handleSubmit`, `handleGiveUp`, `handleResetToday`, `resetToInitialState`, `requestJson` (229–276, 316–334, 422–447).
 
 Reset increments `restoreGenerationRef`, but only `fetchHintBundle` callbacks check it. The Reset button remains enabled during a pending Guess/Give Up. A response from the prior run still updates the progression token, hint bundle, reveal and `pendingAdvance` using its captured old game/pitch. Its `finally` can also clear a newer request's pending state.

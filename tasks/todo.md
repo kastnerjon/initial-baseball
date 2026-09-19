@@ -12,7 +12,7 @@ Current order: the routine conversational future-lineup path and completed-resul
 Review: `docs/engineering/resolved-at-bat-review-2026-09-19.md`. Findings are open; no runtime fix is included in the review documentation.
 
 - [x] R1: fence outbox sends and acknowledgment mutations to the exact owner lifetime; owner delivery is bound to one disposable attempt/generation session, invalidated before lock release, with takeover/late-response regressions.
-- [x] R2: fence gameplay Guess/Give Up success, error and finally callbacks across Reset/restore with a synchronous single-flight request generation; stale cleanup cannot clear a newer pending request, and the shared Daily/Classic request path is preserved.
+- [x] R2: fence gameplay Guess/Give Up success, error and finally callbacks across Reset/restore, persistence-session teardown and owner loss with a synchronous single-flight request generation; stale cleanup cannot clear a newer pending request, and the shared Daily/Classic request path is preserved.
 - [ ] R3: keep shared gameplay writes exclusive when journal/generation handling fails; distinguish analytics ineligibility from missing lock capability.
 - [ ] R4: guard persistence against stale effect-render authority during re-bootstrap before extending the hook.
 - [ ] Add mounted React lifecycle regressions in those owning fix PRs; existing helper tests and happy-path phone proof do not exercise these interleavings.
