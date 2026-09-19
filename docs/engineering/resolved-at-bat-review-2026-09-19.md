@@ -49,6 +49,8 @@ Required regression: delayed Guess/Give Up success and failure after reset; a ne
 
 ### R3 — Journal failure releases the lock but enables shared writers (high)
 
+Repair status: implemented in the bounded R3 persistence-authorization follow-up. Journal/generation failure after lock acquisition no longer releases exclusivity: the coordinator publishes a degraded owner that may persist gameplay but cannot contribute resolved-AB data. Recovery is recognized only on a later ownership acquisition. Durable reload failure retains the acquired lock in a non-writable blocked state, and unexpected lock-request failure is non-writable. The hook's writable set is explicit: owner or the pre-existing missing-capability compatibility path only. Deterministic tests cover corrupt-journal two-tab exclusion, generation-write recovery, reload-failure takeover, degraded completion eligibility, and access write policy. R4 remains separate because stale React effect-render authority can still outlive coordinator teardown during re-bootstrap.
+
 Files/functions:
 - `dailyAtBatOwnershipCoordinator.ts`: `runAsOwner`, `claimExistingGeneration` (113–148, 182–201).
 - `useDailyGameplayPersistence.ts`: unsupported branch and non-owner save branch (133–142, 168–176).
@@ -128,7 +130,7 @@ Preserve the approved direction, with browser correctness prerequisites:
 
 1. **Web delivery ownership:** R1, owner-lifetime fencing of outbox delivery/acknowledgment, focused interleaving tests. No schema, scoring, UI or comparison work.
 2. **Web gameplay request lifetime:** R2, stale resolution/reset/restore fencing and request guard. No outbox format change.
-3. **Web persistence authorization:** R3 and, if scope stays bounded, R4; contribution failures do not relinquish exclusive shared-write authority. Add mounted lifecycle integration tests. Split conditional re-bootstrap handling if this crosses scope thresholds.
+3. **Web persistence authorization:** R3 is implemented: contribution failures under a held lock do not relinquish exclusive shared-write authority, and unsafe preparation failures are non-writable. R4 is the next separate concern: guard the persistence write boundary against stale effect-render authority during re-bootstrap and add the mounted lifecycle regression there.
 4. **Portable comparison contracts/service:** separate read port from write repositories. Return per-slot count and point sum, plus completed-game count and a bounded 0–63 score histogram. Scope by stable puzzle and exact ruleset; empty average null; strict-lower percentile; no count equality/monotonicity assumption. No provider or React.
 5. **Supabase comparison provider:** aggregate stored engine-derived points in SQL; do not download/rescore raw populations. Keep privilege checks, additive migrations, read correctness and disposable fixture proof in this concern. Exact AVG still scans matching rows. Existing completed-result index leads with date, so include exact date or evaluate a matching index through EXPLAIN rather than assuming puzzle/ruleset alone is selective.
 6. **Read-only API and recovery contract:** bounded identifier validation, deliberate unavailable/empty/freshness responses, no write side effects. Include freshness semantics in step 4's contract; expose them here. Prefer the separate read path first instead of enlarging POSTs. Client requests/results must be keyed to puzzle/ruleset/slot; never reveal answers or raw participant rows.

@@ -1,8 +1,8 @@
 # Resolved-at-bat browser lifecycle
 
-Status: Approved architecture; 6A–6D merged and normal-path production/device proof complete; review R1–R2 repaired, R3–R4 remain open
+Status: Approved architecture; 6A–6D merged and normal-path production/device proof complete; review R1–R3 repaired, R4 remains open
 Date: 2026-09-18
-Review update: 2026-09-19 — see `docs/engineering/resolved-at-bat-review-2026-09-19.md`. R1 owner-lifetime delivery and R2 gameplay request-lifetime gaps are repaired; R2 includes Reset/restore plus persistence-session teardown and owner-loss fencing. R3 remains a prerequisite before comparison implementation and R4 still gates persistence-hook extension.
+Review update: 2026-09-19 — see `docs/engineering/resolved-at-bat-review-2026-09-19.md`. R1 owner-lifetime delivery, R2 gameplay request-lifetime, and R3 persistence-authorization gaps are repaired. Journal failure under a held Web Lock now disables contribution without releasing exclusive gameplay authority; reload/lock-request failures are non-writable. R4 still gates persistence-hook extension and comparison work.
 
 ## Scope contract for this planning PR
 
@@ -41,7 +41,9 @@ Use one long-lived exclusive Web Lock per stable puzzle + exact ruleset while a 
 - A non-owner tab is passive: it shows that this Daily is active in another tab, exposes no gameplay actions, and cannot write the shared save or create any contribution.
 - A queued tab may become owner only after the prior lock is released. It must discard its in-memory branch and reload the persisted gameplay save and journal before enabling persistence or contribution.
 - Do not use timeout leases, clock-based expiry or forced lock stealing. A backgrounded but live owner remains owner; closing/crashing it releases browser ownership.
-- If Web Locks, durable storage or secure random IDs are unavailable, gameplay remains available under existing compatibility behavior but new resolved-AB contribution fails closed.
+- If Web Locks or abortable queued-lock cleanup are unavailable, gameplay retains the explicit pre-existing compatibility behavior and new resolved-AB contribution fails closed.
+- If a supported tab holds the Web Lock but journal/generation handling fails, it remains the only gameplay writer for that owner lifetime while resolved-AB contribution is disabled; storage recovery does not silently re-enable contribution mid-lifetime.
+- If durable owner reload fails after lock acquisition, the tab retains exclusion but exposes no writable gameplay state until its lifecycle ends. An unexpected lock-request failure is likewise non-writable.
 - Feature detection plus physical iPhone/iPad Safari and current desktop browser verification is required before activation. Do not infer support from TypeScript or emulation alone.
 
 This is narrower than adding IndexedDB or a server session table. Revisit storage only if implementation or device testing disproves the assumptions above.
@@ -196,7 +198,10 @@ Out of scope: comparison read contracts, averages, UI, background workers, accou
 - Reset after local observation creation, before or after acknowledgment: replay is non-contributing and original pending data survives.
 - Pre-rollout active/completed/compatibility saves: no fabricated ABs; existing completion-only behavior remains.
 - Existing pending completed-result record: unchanged ID/payload and independent retry.
-- Unsupported lock/storage/random ID: no AB journal or POST; gameplay retains existing compatibility behavior.
+- Missing Web Locks/abort capability: no AB contribution; gameplay retains the explicit existing compatibility behavior.
+- Corrupt/unavailable journal or generation write under a held lock: one exclusive non-contributing gameplay owner; queued tabs remain followers.
+- Owner durable-reload or unexpected lock-request failure: no shared gameplay write or completion creation from that blocked state; reload failure retains the acquired lock until cleanup.
+- Missing secure random ID after otherwise valid ownership: gameplay remains owner-exclusive while attempt creation/contribution fails closed.
 - Daily Nine and Classic saves/completed results remain isolated; Classic gains no AB collection.
 - Hidden answers, answer names, search terms and wrong-player identities never enter the journal or request.
 
