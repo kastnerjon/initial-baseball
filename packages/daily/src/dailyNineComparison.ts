@@ -2,8 +2,7 @@ import { POINTS_V3_MAX_POINTS_PER_AT_BAT } from '@initial-baseball/engine';
 import { POINTS_V3_DAILY_RULESET_VERSION } from '@initial-baseball/shared';
 import { DAILY_AT_BAT_COUNT } from './dailyPuzzleSelection';
 
-const DAILY_NINE_MAX_POINTS_PER_AT_BAT = POINTS_V3_MAX_POINTS_PER_AT_BAT;
-const DAILY_NINE_MAX_POINTS = DAILY_NINE_MAX_POINTS_PER_AT_BAT * DAILY_AT_BAT_COUNT;
+const DAILY_NINE_MAX_POINTS = POINTS_V3_MAX_POINTS_PER_AT_BAT * DAILY_AT_BAT_COUNT;
 const DAILY_NINE_SCORE_HISTOGRAM_LENGTH = DAILY_NINE_MAX_POINTS + 1;
 
 export type DailyNineComparisonKey = {
@@ -31,13 +30,14 @@ export type DailyNineScoreBucket = {
   count: number;
 };
 
-/**
- * Provider sufficient statistics for the independent completed-game population.
- */
+/** Provider sufficient statistics for the independent completed-game population. */
 export type DailyNineCompletedComparisonSource = {
   scoreBuckets: DailyNineScoreBucket[];
 };
 
+/**
+ * Read-only comparison port. Each method reads one independent population.
+ */
 export interface DailyNineComparisonRepository {
   readAtBat(query: DailyNineAtBatComparisonQuery): Promise<DailyNineAtBatComparisonSource>;
   readCompletedGames(key: DailyNineComparisonKey): Promise<DailyNineCompletedComparisonSource>;
@@ -45,12 +45,10 @@ export interface DailyNineComparisonRepository {
 
 export type DailyNineAtBatComparison = DailyNineAtBatComparisonQuery & {
   resolvedAtBatCount: number;
-  awardedPointsSum: number;
   averagePoints: number | null;
 };
 
 export type DailyNineCompletedComparison = DailyNineComparisonKey & {
-  sourceReadAt: string;
   completedGameCount: number;
   averageTotalPoints: number | null;
   /** Index is the final Daily Nine score, from 0 through the points-v3 maximum. */
@@ -67,23 +65,27 @@ export function createDailyNineComparisonService(
 ): DailyNineComparisonService {
   return {
     async getAtBat(query) {
-      requirePitchNumber(query.pitchNumber);
+      requireIntegerWithin(query.pitchNumber, 1, DAILY_AT_BAT_COUNT, 'pitch number');
       const source = await repository.readAtBat(query);
-      requireNonNegativeInteger(source.resolvedAtBatCount, 'resolved-at-bat count');
-      requireNonNegativeInteger(source.awardedPointsSum, 'awarded-points sum');
+      requireNonNegativeSafeInteger(source.resolvedAtBatCount, 'resolved-at-bat count');
+      requireNonNegativeSafeInteger(source.awardedPointsSum, 'awarded-points sum');
 
       if (source.resolvedAtBatCount === 0) {
         if (source.awardedPointsSum !== 0) {
           throw new Error('Daily Nine comparison cannot have points without resolved at-bats.');
         }
-      } else if (source.awardedPointsSum > source.resolvedAtBatCount * DAILY_NINE_MAX_POINTS_PER_AT_BAT) {
-        throw new Error('Daily Nine comparison awarded-points sum exceeds the points-v3 slot maximum.');
+      } else if (
+        source.awardedPointsSum
+        > source.resolvedAtBatCount * POINTS_V3_MAX_POINTS_PER_AT_BAT
+      ) {
+        throw new Error(
+          'Daily Nine comparison awarded-points sum exceeds the points-v3 slot maximum.',
+        );
       }
 
       return {
         ...query,
         resolvedAtBatCount: source.resolvedAtBatCount,
-        awardedPointsSum: source.awardedPointsSum,
         averagePoints: source.resolvedAtBatCount === 0
           ? null
           : source.awardedPointsSum / source.resolvedAtBatCount,
@@ -101,14 +103,16 @@ export function createDailyNineComparisonService(
 
       for (const bucket of source.scoreBuckets) {
         requireIntegerWithin(bucket.points, 0, DAILY_NINE_MAX_POINTS, 'score bucket');
-        requirePositiveInteger(bucket.count, 'score bucket count');
+        requirePositiveSafeInteger(bucket.count, 'score bucket count');
+
         const nextBucketCount = (scoreHistogram[bucket.points] ?? 0) + bucket.count;
-        requireNonNegativeInteger(nextBucketCount, 'score histogram count');
+        requireNonNegativeSafeInteger(nextBucketCount, 'score histogram count');
         scoreHistogram[bucket.points] = nextBucketCount;
+
         completedGameCount += bucket.count;
         totalPoints += bucket.points * bucket.count;
-        requireNonNegativeInteger(completedGameCount, 'completed-game count');
-        requireNonNegativeInteger(totalPoints, 'completed-game point sum');
+        requireNonNegativeSafeInteger(completedGameCount, 'completed-game count');
+        requireNonNegativeSafeInteger(totalPoints, 'completed-game point sum');
       }
 
       return {
@@ -130,7 +134,8 @@ export function getDailyNineStrictLowerFinishRate(
   userPoints: number,
 ): number | null {
   requireIntegerWithin(userPoints, 0, DAILY_NINE_MAX_POINTS, 'user points');
-  requireNonNegativeInteger(comparison.completedGameCount, 'completed-game count');
+  requireNonNegativeSafeInteger(comparison.completedGameCount, 'completed-game count');
+
   if (comparison.scoreHistogram.length !== DAILY_NINE_SCORE_HISTOGRAM_LENGTH) {
     throw new Error('Daily Nine comparison score histogram has an invalid length.');
   }
@@ -139,11 +144,12 @@ export function getDailyNineStrictLowerFinishRate(
   let histogramCount = 0;
   for (let points = 0; points < comparison.scoreHistogram.length; points += 1) {
     const count = comparison.scoreHistogram[points] ?? 0;
-    requireNonNegativeInteger(count, 'score histogram count');
+    requireNonNegativeSafeInteger(count, 'score histogram count');
     histogramCount += count;
-    requireNonNegativeInteger(histogramCount, 'score histogram total');
+    requireNonNegativeSafeInteger(histogramCount, 'score histogram total');
     if (points < userPoints) lowerCount += count;
   }
+
   if (histogramCount !== comparison.completedGameCount) {
     throw new Error('Daily Nine comparison score histogram count does not match completion count.');
   }
@@ -152,17 +158,13 @@ export function getDailyNineStrictLowerFinishRate(
   return lowerCount / comparison.completedGameCount;
 }
 
-function requirePitchNumber(value: number): void {
-  requireIntegerWithin(value, 1, DAILY_AT_BAT_COUNT, 'pitch number');
-}
-
-function requirePositiveInteger(value: number, field: string): void {
+function requirePositiveSafeInteger(value: number, field: string): void {
   if (!Number.isSafeInteger(value) || value <= 0) {
     throw new Error(`Daily Nine comparison ${field} must be a positive safe integer.`);
   }
 }
 
-function requireNonNegativeInteger(value: number, field: string): void {
+function requireNonNegativeSafeInteger(value: number, field: string): void {
   if (!Number.isSafeInteger(value) || value < 0) {
     throw new Error(`Daily Nine comparison ${field} must be a non-negative safe integer.`);
   }
