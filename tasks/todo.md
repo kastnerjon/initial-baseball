@@ -1,11 +1,22 @@
 # Initial Baseball Current Work
 
 Status: Active ordered implementation plan  
-Last updated: 2026-09-18
+Last updated: 2026-09-19
 
 Completed history belongs in PRs, canonical docs, or `tasks/lessons.md`. Durable resumption context belongs in `docs/START-HERE.md`.
 
-Current order: the routine conversational future-lineup path and completed-result 4A/4B/4C stack are operationally complete, including live production idempotency proof. Daily Nine comparison now has portable validation, repository/service, hosted-but-inactive Supabase provider and an authoritative server submission API. Browser 6A–6D is implemented and fully browser-proven; resolved-AB collection is live for fresh points-v3 runs while comparison reads/UI remain inactive. Draft #161 must not be merged unchanged. Remaining authenticated-editor slot QA, timed public editorial rollover/fallback checks, and physical iPhone/iPad QA stay open but do not block the results pipeline. Permanent archive/local history remain subsequent concerns. Current beta numbering is disposable; broad launch later restarts at Daily #1 after the owner chooses the surviving game/final rules.
+Current order: the routine conversational future-lineup path and completed-result 4A/4B/4C stack are operationally complete, including live production idempotency proof. Daily Nine comparison now has portable validation, repository/service, hosted Supabase provider and an authoritative server submission API. Browser 6A–6D is implemented with successful normal-path production proof; September 19 source-review findings R1–R3 must be fixed before comparison implementation; resolved-AB collection is live for fresh points-v3 runs while comparison reads/UI remain inactive. Draft #161 must not be merged unchanged. Remaining authenticated-editor slot QA, timed public editorial rollover/fallback checks, and physical iPhone/iPad QA stay open but do not block the results pipeline. Permanent archive/local history remain subsequent concerns. Current beta numbering is disposable; broad launch later restarts at Daily #1 after the owner chooses the surviving game/final rules.
+
+## September 19 review prerequisites
+
+Review: `docs/engineering/resolved-at-bat-review-2026-09-19.md`. Findings are open; no runtime fix is included in the review documentation.
+
+- [ ] R1: fence outbox sends and acknowledgment mutations to the exact owner lifetime; stop old retry loops after release/takeover.
+- [ ] R2: fence gameplay Guess/Give Up responses, errors and cleanup across reset/restore/ownership changes.
+- [ ] R3: keep shared gameplay writes exclusive when journal/generation handling fails; distinguish analytics ineligibility from missing lock capability.
+- [ ] R4: guard persistence against stale effect-render authority during re-bootstrap before extending the hook.
+- [ ] Add mounted React lifecycle regressions in those owning fix PRs; existing helper tests and happy-path phone proof do not exercise these interleavings.
+- [ ] Follow up separately on bounded pending-delivery recovery (R5), malformed-save decoding (R6), request/comparison module boundaries (R7), and write-admission/observability (R8).
 
 ## September 15–16 approved product work
 
@@ -179,8 +190,8 @@ Replacement plan: `tasks/plans/resolved-at-bat-comparison.md`. PR #174 is held a
 - [x] Browser 6D post-proof runtime-error scan for resolved-AB/completed-result routes is clean.
 - [x] Browser 6D physical/current-browser multi-tab proof: Chrome Incognito on a physical iPhone showed one owner plus passive follower; after batter-1 persistence, closing the owner let the follower rehydrate at batter 2 with the same attempt and no duplicate actor. Runbook/evidence: `docs/operations/resolved-at-bat-browser-proof.md`.
 - [x] Browser 6D fresh full-completion identity proof: attempt `6da8d6b7-aedd-457c-82e4-1be0b1e3ac7f` produced exactly nine pitches 1–9 and one completed-result row with the identical `submission_id`; all ten POSTs returned 201 and no route runtime errors were found.
-- [x] Browser 6D final browser/device gate: physical iPhone Safari Private restored the same fresh run at batter 2 after refresh; exact current-browser and Safari QA identities were cleaned from Supabase with zero rows remaining. Collection is now fully browser-proven for the current anonymous beta model.
-- [ ] Independent-population comparison contracts/provider/API, read-only recovery, freshness and representative isolated performance measurements.
+- [x] Browser 6D final browser/device gate: physical iPhone Safari Private restored the same fresh run at batter 2 after refresh; exact current-browser and Safari QA identities were cleaned from Supabase with zero rows remaining. These normal-path scenarios passed; the September 19 review prerequisites remain open.
+- [ ] After review prerequisites: independent-population comparison contracts, provider, read-only API/recovery/freshness, then representative isolated performance measurements; one owning concern per PR.
 - [ ] Asynchronous YOU / AVG after every terminal AB; final nine-row scorecard, whole-game average and strict-lower finishers percentage with low-sample/outage states.
 - [ ] Verify mobile, answer integrity, failed delivery/read recovery and unchanged gameplay critical path before declaring live.
 
