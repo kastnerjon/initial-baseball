@@ -144,7 +144,7 @@ describe('Daily Nine comparison read service', () => {
     })).rejects.toBeInstanceOf(DailyNineComparisonRequestError);
   });
 
-  it('stamps sourceReadAt only after a successful comparison read', async () => {
+  it('captures sourceReadAt immediately before the comparison source read', async () => {
     const order: string[] = [];
     const comparison = comparisonService();
     comparison.getAtBat = vi.fn().mockImplementation(async () => {
@@ -175,7 +175,7 @@ describe('Daily Nine comparison read service', () => {
       pitchNumber: '1',
     });
 
-    expect(order).toEqual(['read', 'clock']);
+    expect(order).toEqual(['clock', 'read']);
   });
 
   it('does not turn provider failures into request errors', async () => {
