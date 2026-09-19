@@ -1,6 +1,6 @@
 # Daily Nine Supabase comparison provider
 
-Status: implemented and hosted-verified on PR #198; merge verification pending  
+Status: implemented and hosted-verified on PR #198  
 Date: 2026-09-19
 
 ## Scope contract
