@@ -1,6 +1,6 @@
 # Daily Nine comparison read API adapters
 
-Status: implemented on PR #202; merge verification pending  
+Status: implemented on PR #202  
 Date: 2026-09-19
 
 ## Scope contract
