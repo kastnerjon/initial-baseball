@@ -1,6 +1,6 @@
 # Daily Nine Supabase comparison provider
 
-Status: scoped for implementation  
+Status: implemented on PR #198; hosted migration/readback and merge verification pending  
 Date: 2026-09-19
 
 ## Scope contract
@@ -28,7 +28,7 @@ Both functions are `SECURITY INVOKER` and schema-qualified with an empty search 
 
 ### Use the existing indexes
 
-The AB query uses `daily_at_bat_results_population_slot_idx` to narrow by puzzle/ruleset/slot, then checks exact date/number metadata as a residual filter. The completed query uses `daily_completed_results_population_idx` for date/ruleset/puzzle and checks puzzle number residually. This favors exact-key correctness over widening indexes before measurement. No new index is added before representative mixed-load evidence demonstrates a need.
+The AB query uses `daily_at_bat_results_population_slot_idx` to narrow by puzzle/ruleset/slot, then checks exact date/number metadata as a residual filter. Hosted EXPLAIN shows an Index Scan with those residual checks. The completed query uses `daily_completed_results_population_idx` for date/ruleset/puzzle and checks puzzle number residually; hosted EXPLAIN shows the population index feeding the grouped score-bucket read. This favors exact-key correctness over widening indexes before measurement. No new index is added before representative mixed-load evidence demonstrates a need.
 
 ### Fail closed on malformed persisted aggregate data
 

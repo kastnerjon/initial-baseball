@@ -1,6 +1,6 @@
 # Daily Nine resolved-at-bat comparison
 
-Status: Approved direction; collection and R1–R4 browser prerequisites complete; portable comparison read contract implemented; provider/API/UI remain
+Status: Approved direction; collection and R1–R4 browser prerequisites complete; portable comparison read contract implemented; Supabase aggregate provider in current verification PR; API/UI remain
 Date: 2026-09-18
 
 September 19 review update: `docs/engineering/resolved-at-bat-review-2026-09-19.md` identified R1–R4 browser prerequisites; all four are repaired. The portable comparison contract is now implemented without provider/API/React work. Continue one owning concern per PR.
@@ -99,8 +99,8 @@ If scans miss the measured budget, first evaluate a brief bounded shared cache w
 9. Browser 6C: owner-gated gameplay persistence plus fresh/reset/legacy lifecycle integration; collection remains off.
 10. Browser 6D: freeze/send/retry terminal ABs, reuse the fresh attempt ID for a new completion record, then complete multi-tab/device/production proof.
 11. Complete: portable Daily Nine comparison read contract/service. One slot read is independent from completed-game reads; providers supply count + stored point sum or score buckets; Daily derives null empty averages, bounded histogram, strict-lower rate. Scope: `tasks/plans/daily-nine-comparison-read-contract.md`.
-12. Next: Supabase aggregate provider only. Aggregate stored engine-derived points; no raw-population download or read-time rescoring. Keep provider verification and query-plan evidence in this concern.
-13. Then: read-only API and recovery/freshness response contract. Keep read failure separate from write acknowledgment and do not add React.
+12. Current: Supabase aggregate provider only. Two server-only SECURITY INVOKER RPCs aggregate stored engine-derived points into one-slot count/sum or completed score buckets; raw population rows are not downloaded. Hosted migration/ACL/function readback and query-plan evidence complete this concern. Scope: `tasks/plans/daily-nine-comparison-supabase-provider.md`.
+13. Next after provider merge: read-only API and recovery/freshness response contract. Keep read failure separate from write acknowledgment and do not add React.
 14. Then: representative isolated performance evidence and any measured cache/rollup decision as separate scope if needed.
 15. Reveal/final-scorecard UI: asynchronous YOU / AVG after every AB, low samples/outages, final refresh, stale-response protection, mobile and answer-integrity verification.
 
