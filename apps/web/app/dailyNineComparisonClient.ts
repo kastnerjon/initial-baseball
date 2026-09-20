@@ -19,10 +19,6 @@ export type DailyNineCompletedComparisonRequestKey = DailyNineComparisonApiKey &
   kind: 'completed';
 };
 
-export type DailyNineComparisonRequestKey =
-  | DailyNineAtBatComparisonRequestKey
-  | DailyNineCompletedComparisonRequestKey;
-
 type ComparisonHttpResponse = {
   ok: boolean;
   status: number;
@@ -31,11 +27,7 @@ type ComparisonHttpResponse = {
 
 type ComparisonRequest = (
   input: string,
-  init: {
-    method: 'GET';
-    cache: 'no-store';
-    signal: AbortSignal;
-  },
+  init: { method: 'GET'; cache: 'no-store'; signal: AbortSignal },
 ) => Promise<ComparisonHttpResponse>;
 
 export type DailyNineComparisonClientErrorKind =
@@ -56,31 +48,21 @@ export class DailyNineComparisonClientError extends Error {
 }
 
 export function createBrowserDailyNineComparisonClient() {
-  return createDailyNineComparisonClient({
-    request: (input, init) => fetch(input, init),
-  });
+  return createDailyNineComparisonClient({ request: (input, init) => fetch(input, init) });
 }
 
-export function createDailyNineComparisonClient({
-  request,
-}: {
-  request: ComparisonRequest;
-}) {
+export function createDailyNineComparisonClient({ request }: { request: ComparisonRequest }) {
   return {
     async readAtBat(
       key: DailyNineAtBatComparisonRequestKey,
       signal: AbortSignal,
     ): Promise<DailyNineAtBatComparisonApiResponse> {
-      requirePointsV3(key.rulesetVersion);
-      const response = await request(atBatPath(key), {
-        method: 'GET',
-        cache: 'no-store',
-        signal,
-      });
+      const response = await request(atBatPath(key), requestInit(signal));
       const payload = await readPayload(response);
       if (!response.ok) throwHttpError(response.status, payload);
       const decoded = decodeAtBatResponse(payload);
-      requireAtBatIdentity(key, decoded);
+      if (!sameBaseIdentity(key, decoded.comparison)
+        || key.pitchNumber !== decoded.comparison.pitchNumber) identityMismatch();
       return decoded;
     },
 
@@ -88,36 +70,33 @@ export function createDailyNineComparisonClient({
       key: DailyNineCompletedComparisonRequestKey,
       signal: AbortSignal,
     ): Promise<DailyNineCompletedComparisonApiResponse> {
-      requirePointsV3(key.rulesetVersion);
-      const response = await request(completedPath(key), {
-        method: 'GET',
-        cache: 'no-store',
-        signal,
-      });
+      const response = await request(completedPath(key), requestInit(signal));
       const payload = await readPayload(response);
       if (!response.ok) throwHttpError(response.status, payload);
       const decoded = decodeCompletedResponse(payload);
-      requireCompletedIdentity(key, decoded);
+      if (!sameBaseIdentity(key, decoded.comparison)) identityMismatch();
       return decoded;
     },
   };
 }
 
+function requestInit(signal: AbortSignal) {
+  return { method: 'GET' as const, cache: 'no-store' as const, signal };
+}
+
 function atBatPath(key: DailyNineAtBatComparisonRequestKey): string {
-  const search = new URLSearchParams({
+  return `/api/daily/comparison/at-bat?${new URLSearchParams({
     date: key.puzzleDate,
     ruleset: key.rulesetVersion,
     pitch: String(key.pitchNumber),
-  });
-  return `/api/daily/comparison/at-bat?${search.toString()}`;
+  })}`;
 }
 
 function completedPath(key: DailyNineCompletedComparisonRequestKey): string {
-  const search = new URLSearchParams({
+  return `/api/daily/comparison/completed?${new URLSearchParams({
     date: key.puzzleDate,
     ruleset: key.rulesetVersion,
-  });
-  return `/api/daily/comparison/completed?${search.toString()}`;
+  })}`;
 }
 
 async function readPayload(response: ComparisonHttpResponse): Promise<unknown> {
@@ -129,11 +108,8 @@ async function readPayload(response: ComparisonHttpResponse): Promise<unknown> {
 }
 
 function decodeAtBatResponse(value: unknown): DailyNineAtBatComparisonApiResponse {
-  const record = responseRecord(value, 'at-bat');
-  const comparison = comparisonRecord(record.comparison);
-  const freshness = decodeFreshness(record.freshness);
-
-  const decoded: DailyNineAtBatComparisonApiResponse = {
+  const { comparison, freshness } = decodeEnvelope(value, 'at-bat');
+  return {
     schemaVersion: DAILY_NINE_COMPARISON_API_SCHEMA_VERSION,
     kind: 'at-bat',
     comparison: {
@@ -143,25 +119,17 @@ function decodeAtBatResponse(value: unknown): DailyNineAtBatComparisonApiRespons
         comparison.resolvedAtBatCount,
         'resolvedAtBatCount',
       ),
-      averagePoints: nullableNonNegativeFiniteNumber(
-        comparison.averagePoints,
-        'averagePoints',
-      ),
+      averagePoints: nullableNonNegativeFiniteNumber(comparison.averagePoints, 'averagePoints'),
     },
     freshness,
   };
-  return decoded;
 }
 
 function decodeCompletedResponse(value: unknown): DailyNineCompletedComparisonApiResponse {
-  const record = responseRecord(value, 'completed');
-  const comparison = comparisonRecord(record.comparison);
-  const freshness = decodeFreshness(record.freshness);
-
+  const { comparison, freshness } = decodeEnvelope(value, 'completed');
   if (!Array.isArray(comparison.scoreHistogram)) {
     invalidResponse('Daily Nine comparison scoreHistogram must be an array.');
   }
-
   return {
     schemaVersion: DAILY_NINE_COMPARISON_API_SCHEMA_VERSION,
     kind: 'completed',
@@ -182,10 +150,7 @@ function decodeCompletedResponse(value: unknown): DailyNineCompletedComparisonAp
   };
 }
 
-function responseRecord(
-  value: unknown,
-  kind: 'at-bat' | 'completed',
-): Record<string, unknown> {
+function decodeEnvelope(value: unknown, kind: 'at-bat' | 'completed') {
   const record = object(value, 'response');
   if (record.schemaVersion !== DAILY_NINE_COMPARISON_API_SCHEMA_VERSION) {
     invalidResponse('Daily Nine comparison response has an unsupported schema version.');
@@ -193,7 +158,10 @@ function responseRecord(
   if (record.kind !== kind) {
     invalidResponse(`Daily Nine comparison response kind must be ${kind}.`);
   }
-  return record;
+  return {
+    comparison: object(record.comparison, 'comparison'),
+    freshness: decodeFreshness(record.freshness),
+  };
 }
 
 function decodeBaseKey(value: Record<string, unknown>): DailyNineComparisonApiKey {
@@ -217,23 +185,6 @@ function decodeFreshness(value: unknown): DailyNineComparisonApiFreshness {
   return { sourceReadAt, cacheStatus: record.cacheStatus };
 }
 
-function requireAtBatIdentity(
-  expected: DailyNineAtBatComparisonRequestKey,
-  response: DailyNineAtBatComparisonApiResponse,
-): void {
-  if (!sameBaseIdentity(expected, response.comparison)
-    || expected.pitchNumber !== response.comparison.pitchNumber) {
-    identityMismatch();
-  }
-}
-
-function requireCompletedIdentity(
-  expected: DailyNineCompletedComparisonRequestKey,
-  response: DailyNineCompletedComparisonApiResponse,
-): void {
-  if (!sameBaseIdentity(expected, response.comparison)) identityMismatch();
-}
-
 function sameBaseIdentity(
   expected: DailyNineComparisonApiKey,
   actual: DailyNineComparisonApiKey,
@@ -245,12 +196,11 @@ function sameBaseIdentity(
 }
 
 function throwHttpError(status: number, payload: unknown): never {
-  const code = decodeErrorCode(payload);
   throw new DailyNineComparisonClientError(
     'http',
     `Daily Nine comparison request failed with ${status}.`,
     status,
-    code,
+    decodeErrorCode(payload),
   );
 }
 
@@ -263,10 +213,6 @@ function decodeErrorCode(value: unknown): DailyNineComparisonApiErrorCode | null
     || value.error === 'comparison_unavailable'
     ? value.error
     : null;
-}
-
-function comparisonRecord(value: unknown): Record<string, unknown> {
-  return object(value, 'comparison');
 }
 
 function object(value: unknown, field: string): Record<string, unknown> {
