@@ -41,7 +41,7 @@ On the exact current deployment, runtime logs in the same reviewed window contai
 - `GET /api/daily/comparison/at-bat` — HTTP 200
 - `GET /api/daily/comparison/completed` — HTTP 200
 
-Multiple at-bat reads were visible between 18:39 and 18:47 UTC; completed reads were visible at 18:47 and 19:01 UTC. This proves that the deployed browser/API path is being exercised successfully. It does not by itself prove client-visible latency, mobile layout, request deduplication or failure behavior.
+Multiple at-bat reads were visible between 18:39 and 18:47 UTC; completed reads were visible at 18:47 and 19:01 UTC. This proves that the deployed API path is being exercised successfully. The runtime logs do not identify the initiating client, so they do not by themselves prove browser-consumer execution, client-visible latency, mobile layout, request deduplication or failure behavior.
 
 Earlier PR #209 Preview errors were explicitly reported by Vercel as the external free-tier deployment limit (`api-deployments-free-per-day`). The final production deployment above is a separate successful build and must not be conflated with those Preview refusals.
 
