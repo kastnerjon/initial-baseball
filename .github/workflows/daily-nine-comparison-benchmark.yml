@@ -86,9 +86,9 @@ jobs:
           {
             echo "## Daily Nine comparison benchmark"
             echo
-            echo '\`\`\`text'
+            echo '```text'
             grep -E '^(CHECK|SIZE|RESULT)\|' "$output"
-            echo '\`\`\`'
+            echo '```'
             echo
             echo "Full EXPLAIN/BUFFERS output is attached as the workflow artifact."
           } >> "$GITHUB_STEP_SUMMARY"
