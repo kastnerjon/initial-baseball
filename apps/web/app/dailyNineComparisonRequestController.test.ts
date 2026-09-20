@@ -148,8 +148,7 @@ describe('Daily Nine comparison request controller', () => {
     const completed = deferred<string>();
     const atBatSuccess = vi.fn();
     const completedSuccess = vi.fn();
-    let atBatSignal: AbortSignal | undefined;
-    let completedSignal: AbortSignal | undefined;
+    const signals: { atBat?: AbortSignal; completed?: AbortSignal } = {};
 
     const runs = [
       controller.request(atBatKey(5), {
