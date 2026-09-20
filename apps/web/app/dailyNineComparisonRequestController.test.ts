@@ -28,12 +28,12 @@ describe('Daily Nine comparison request controller', () => {
     const staleSuccess = vi.fn();
     const staleSettled = vi.fn();
     const freshSuccess = vi.fn();
-    let staleSignal: AbortSignal | undefined;
+    const signals: { stale?: AbortSignal } = {};
     let pending: string | null = null;
 
     const staleRun = controller.request(atBatKey(2), {
       execute: (signal) => {
-        staleSignal = signal;
+        signals.stale = signal;
         return stale.promise;
       },
       onStart: () => { pending = 'pitch-2'; },
@@ -45,7 +45,7 @@ describe('Daily Nine comparison request controller', () => {
       },
     });
 
-    expect(staleSignal?.aborted).toBe(false);
+    expect(signals.stale?.aborted).toBe(false);
 
     const freshRun = controller.request(atBatKey(3), {
       execute: () => fresh.promise,
@@ -55,7 +55,7 @@ describe('Daily Nine comparison request controller', () => {
       onSettled: () => { pending = null; },
     });
 
-    expect(staleSignal?.aborted).toBe(true);
+    expect(signals.stale?.aborted).toBe(true);
     expect(pending).toBe('pitch-3');
 
     stale.resolve('obsolete');
@@ -78,11 +78,11 @@ describe('Daily Nine comparison request controller', () => {
     const stale = deferred<string>();
     const staleError = vi.fn();
     const staleSettled = vi.fn();
-    let signal: AbortSignal | undefined;
+    const signals: { request?: AbortSignal } = {};
 
     const run = controller.request(atBatKey(4), {
       execute: (requestSignal) => {
-        signal = requestSignal;
+        signals.request = requestSignal;
         return stale.promise;
       },
       onStart: vi.fn(),
@@ -92,7 +92,7 @@ describe('Daily Nine comparison request controller', () => {
     });
 
     controller.invalidate('at-bat');
-    expect(signal?.aborted).toBe(true);
+    expect(signals.request?.aborted).toBe(true);
 
     stale.reject(new Error('late failure'));
     await run;
@@ -106,12 +106,11 @@ describe('Daily Nine comparison request controller', () => {
     const atBat = deferred<string>();
     const completed = deferred<string>();
     const completedSuccess = vi.fn();
-    let atBatSignal: AbortSignal | undefined;
-    let completedSignal: AbortSignal | undefined;
+    const signals: { atBat?: AbortSignal; completed?: AbortSignal } = {};
 
     const atBatRun = controller.request(atBatKey(9), {
       execute: (signal) => {
-        atBatSignal = signal;
+        signals.atBat = signal;
         return atBat.promise;
       },
       onStart: vi.fn(),
@@ -121,7 +120,7 @@ describe('Daily Nine comparison request controller', () => {
     });
     const completedRun = controller.request(COMPLETED_KEY, {
       execute: (signal) => {
-        completedSignal = signal;
+        signals.completed = signal;
         return completed.promise;
       },
       onStart: vi.fn(),
@@ -132,8 +131,8 @@ describe('Daily Nine comparison request controller', () => {
 
     controller.invalidate('at-bat');
 
-    expect(atBatSignal?.aborted).toBe(true);
-    expect(completedSignal?.aborted).toBe(false);
+    expect(signals.atBat?.aborted).toBe(true);
+    expect(signals.completed?.aborted).toBe(false);
 
     atBat.resolve('obsolete');
     completed.resolve('final');
@@ -155,7 +154,7 @@ describe('Daily Nine comparison request controller', () => {
     const runs = [
       controller.request(atBatKey(5), {
         execute: (signal) => {
-          atBatSignal = signal;
+          signals.atBat = signal;
           return atBat.promise;
         },
         onStart: vi.fn(),
@@ -165,7 +164,7 @@ describe('Daily Nine comparison request controller', () => {
       }),
       controller.request(COMPLETED_KEY, {
         execute: (signal) => {
-          completedSignal = signal;
+          signals.completed = signal;
           return completed.promise;
         },
         onStart: vi.fn(),
@@ -177,8 +176,8 @@ describe('Daily Nine comparison request controller', () => {
 
     controller.invalidateAll();
 
-    expect(atBatSignal?.aborted).toBe(true);
-    expect(completedSignal?.aborted).toBe(true);
+    expect(signals.atBat?.aborted).toBe(true);
+    expect(signals.completed?.aborted).toBe(true);
 
     atBat.resolve('obsolete AB');
     completed.resolve('obsolete completed');
