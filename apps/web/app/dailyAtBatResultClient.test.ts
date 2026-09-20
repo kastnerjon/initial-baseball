@@ -145,11 +145,11 @@ describe('resolved-at-bat browser journal and outbox', () => {
       const storage = memoryStorage();
       const signals: AbortSignal[] = [];
       const request = vi.fn()
-        .mockImplementationOnce((_submission, signal: AbortSignal) => {
+        .mockImplementationOnce((_submission: DailyAtBatResultSubmission, signal: AbortSignal) => {
           signals.push(signal);
           return new Promise<{ ok: boolean; status: number }>(() => undefined);
         })
-        .mockImplementationOnce((_submission, signal: AbortSignal) => {
+        .mockImplementationOnce((_submission: DailyAtBatResultSubmission, signal: AbortSignal) => {
           signals.push(signal);
           return Promise.resolve({ ok: true, status: 201 });
         });
