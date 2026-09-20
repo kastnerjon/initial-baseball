@@ -3,16 +3,25 @@ import { isDailyPointsRulesetVersion, type DailyShareResult } from '@initial-bas
 import { PitchResultList } from './PitchResultList';
 import { DailyShareCard } from './DailyShareCard';
 import type { DailyScorecardAnswers } from '../dailyScorecard';
+import type { DailyNineCompletedComparisonState } from '../useDailyNineCompletedComparison';
+import { DailyNineCompletedComparison } from './DailyNineCompletedComparison';
 import { ScoreLine } from './ScoreLine';
 
 type GameCompleteViewProps = {
   shareResult: DailyShareResult;
   shareText: string;
   scorecardAnswers?: DailyScorecardAnswers;
+  comparison?: DailyNineCompletedComparisonState;
   onResetToday?: () => void;
 };
 
-export function GameCompleteView({ shareResult, shareText, scorecardAnswers = {}, onResetToday }: GameCompleteViewProps): JSX.Element {
+export function GameCompleteView({
+  shareResult,
+  shareText,
+  scorecardAnswers = {},
+  comparison = { status: 'idle' },
+  onResetToday,
+}: GameCompleteViewProps): JSX.Element {
   return (
     <div className="game-shell">
       <section className="complete-card">
@@ -26,6 +35,7 @@ export function GameCompleteView({ shareResult, shareText, scorecardAnswers = {}
         ) : (
           <ScoreLine summary={shareResult.summary} />
         )}
+        <DailyNineCompletedComparison state={comparison} />
       </section>
       <PitchResultList
         answers={scorecardAnswers}
