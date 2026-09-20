@@ -204,6 +204,7 @@ Replacement plan: `tasks/plans/resolved-at-bat-comparison.md`. PR #174 is closed
 - [x] Add the separate completed-game comparison: prefetch from the final points-v3 engine transition, keep unchanged requests alive through View Results, refresh current data on restored completions, show whole-game YOU / AVG with settled sample states, and show Daily-owned strict-lower BEAT only at 20+ completed results.
 - [ ] Measure real browser/server/provider comparison latency against the provisional end-to-end target after the browser consumer is live.
 - [ ] Verify mobile, answer integrity, failed delivery/read recovery and unchanged gameplay critical path before declaring live.
+- [x] Record the exact PR #209 hosted checkpoint before interactive QA: main/CI/production deployment identity, clean runtime-error scan, successful current-deployment comparison reads, Supabase migration/RPC access posture, exact-main bundle output and hidden-answer QA. This does **not** close either interactive item above. Evidence: `docs/engineering/daily-nine-comparison-hosted-verification-2026-09-20.md`.
 
 ### 4E. Classic comparison
 
