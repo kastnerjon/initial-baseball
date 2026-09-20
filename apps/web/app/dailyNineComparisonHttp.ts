@@ -13,7 +13,9 @@ import { SupabaseDailyNineComparisonRepositoryError } from './supabaseDailyNineC
 export function isDailyNineComparisonReadApiEnabled(
   environment: Record<string, string | undefined> = process.env,
 ): boolean {
-  return environment.DAILY_NINE_COMPARISON_READS_ENABLED?.trim() === 'true';
+  const disabled = environment.DAILY_NINE_COMPARISON_READS_DISABLED;
+  if (disabled === undefined) return true;
+  return disabled.trim() === 'false';
 }
 
 export function dailyNineComparisonPrivateJson(
