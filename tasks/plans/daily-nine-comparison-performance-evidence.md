@@ -1,6 +1,6 @@
 # Daily Nine comparison read performance evidence
 
-Status: in progress on the comparison performance PR  
+Status: in progress on PR #203; production-safe baseline captured, representative isolated indexed benchmark still required  
 Date: 2026-09-19
 
 ## Scope contract
