@@ -1,6 +1,6 @@
 # Daily Nine comparison read activation
 
-Status: in progress  
+Status: implemented and production-verified on PR #204  
 Date: 2026-09-19
 
 ## Scope contract
@@ -21,7 +21,7 @@ PR #203 established representative disposable PostgreSQL 17 evidence at the 10,0
 - resolved AB p95: 1.807 ms;
 - completed comparison p95: 6.254 ms.
 
-The activation gate can therefore move from opt-in to default-on.
+PR #204 therefore moved the activation gate from opt-in to default-on.
 
 Use a new server-only emergency switch:
 
@@ -76,6 +76,19 @@ Later browser/UI work must preserve:
 8. inspect comparison-route runtime errors;
 9. reconcile canonical docs if hosted reality differs from expected behavior.
 
+## Production verification
+
+PR #204 merged as `178e58cb6fcb8f09ad9ebc3e6ba69cca7a725a01`. Exact production deployment `dpl_F87hcE51cQT6zhoCp8MgGKwCSX38` reached `READY` and owns the canonical `https://initial-baseball-web.vercel.app` alias.
+
+Post-merge September 19 smoke verified:
+
+- `GET /api/daily/comparison/at-bat?date=2026-09-19&ruleset=points-v3&pitch=1` returned HTTP 200 with a schema-1 live payload; at verification time it reported puzzle #146, four observations, and average points 2;
+- `GET /api/daily/comparison/completed?date=2026-09-19&ruleset=points-v3` returned HTTP 200 with a schema-1 live payload; at verification time it reported two completed games, average total points 28.5, and the 64-entry points-v3 histogram;
+- both responses carried `Cache-Control: private, no-store`;
+- the comparison-route runtime-error scan was clean.
+
+This activates only the server read path. Browser/UI comparison consumption is still not implemented and remains the next bounded concern.
+
 ## Documentation impact
 
-Update `.env.example`, `docs/engineering/environments.md`, `docs/START-HERE.md`, `docs/architecture-and-scale-plan.md`, `tasks/todo.md`, and the prior read-API plan to record the new activation semantics and next bounded browser/UI concern.
+PR #204 updated `.env.example`, `docs/engineering/environments.md`, `docs/START-HERE.md`, `docs/architecture-and-scale-plan.md`, `tasks/todo.md`, and the prior read-API plan for the new activation semantics. The docs-only activation-proof follow-up reconciles those canonical files with the exact post-merge production proof and the next bounded browser/UI concern.

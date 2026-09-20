@@ -1,6 +1,6 @@
 # Daily Nine resolved-at-bat comparison
 
-Status: Approved direction; collection and R1–R4 browser prerequisites complete; portable comparison read contract and hosted Supabase aggregate provider implemented; API/UI remain
+Status: Approved direction; collection and R1–R4 browser prerequisites complete; comparison GET reads production-active; browser/UI consumption remains
 Date: 2026-09-18
 
 September 19 review update: `docs/engineering/resolved-at-bat-review-2026-09-19.md` identified R1–R4 browser prerequisites; all four are repaired. The portable comparison contract is now implemented without provider/API/React work. Continue one owning concern per PR.
@@ -104,8 +104,8 @@ Keep the read ports storage-strategy-neutral. If later browser/server telemetry 
 14. Complete: server-side comparison read composition (PR #200). Date/ruleset/pitch validation, authoritative puzzle binding, server-derived puzzle ID/number, Daily/Supabase composition, and conservative live freshness are implemented without public exposure. Scope: `tasks/plans/daily-nine-comparison-server-read.md`.
 15. Complete: thin default-off Next.js GET adapters (PR #202). At-bat/completed routes remain separate, HTTP errors are sanitized, all responses use `private, no-store`, and server-only `DAILY_NINE_COMPARISON_READS_ENABLED=true` is required; the deployment flag remains off. Scope: `tasks/plans/daily-nine-comparison-read-api.md`.
 16. Complete on PR #203: representative isolated performance evidence. Current raw reads stay; no cache/rollup/index optimization is justified at the 10,000-result checkpoint. Harness/evidence: `tasks/plans/daily-nine-comparison-performance-evidence.md` and `docs/engineering/daily-nine-comparison-performance-2026-09-19.md`.
-17. Next: explicit default-off comparison activation decision. Preserve immediate own-result rendering; comparison remains asynchronous and failure-isolated.
-18. Reveal/final-scorecard UI: asynchronous YOU / AVG after every AB, low samples/outages, final refresh, stale-response protection, mobile and answer-integrity verification; measure real end-to-end comparison latency after a browser consumer exists.
+17. Complete on PR #204: activate comparison GET reads by default after representative evidence, retaining the server-only fail-closed `DAILY_NINE_COMPARISON_READS_DISABLED` emergency switch. Exact merge `178e58cb6fcb8f09ad9ebc3e6ba69cca7a725a01` is production-verified READY as `dpl_F87hcE51cQT6zhoCp8MgGKwCSX38`; both routes returned versioned HTTP 200 live payloads with `private, no-store`, and the comparison-route runtime scan was clean.
+18. Next: reveal/final-scorecard browser UI. Add asynchronous YOU / AVG after every AB, low samples/outages, final refresh, stale-response protection, mobile and answer-integrity verification; measure real end-to-end comparison latency after a browser consumer exists. Preserve immediate own-result rendering and keep comparison failure isolated from gameplay/completion/share.
 
 Each PR starts from updated main, writes its own scope contract, updates canonical docs, and gets one bounded review plus applicable CI/preview verification. Do not batch all eight concerns into one implementation diff. Production migrations and activation require source/hosted reconciliation; no feature is called live based solely on passing unit tests.
 
