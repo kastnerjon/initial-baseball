@@ -1,0 +1,59 @@
+import 'server-only';
+import {
+  DAILY_NINE_COMPARISON_API_SCHEMA_VERSION,
+  type DailyNineComparisonApiErrorResponse,
+  type DailyNineComparisonApiSuccess,
+} from '@initial-baseball/shared';
+import { NextResponse } from 'next/server';
+import { DailyRuntimeRequestError } from './dailyRuntimeService';
+import { DailyNineComparisonRequestError } from './dailyNineComparisonReadService';
+import { ServerSupabaseConfigurationError } from './serverSupabaseClient';
+import { SupabaseDailyNineComparisonRepositoryError } from './supabaseDailyNineComparisonRepository';
+
+export function isDailyNineComparisonReadApiEnabled(
+  environment: Record<string, string | undefined> = process.env,
+): boolean {
+  return environment.DAILY_NINE_COMPARISON_READS_ENABLED?.trim() === 'true';
+}
+
+export function dailyNineComparisonPrivateJson(
+  value: DailyNineComparisonApiSuccess | DailyNineComparisonApiErrorResponse,
+  status = 200,
+): NextResponse {
+  const response = NextResponse.json(value, { status });
+  response.headers.set('cache-control', 'private, no-store');
+  return response;
+}
+
+export function dailyNineComparisonDisabledResponse(): NextResponse {
+  return errorResponse('comparison_unavailable', 404);
+}
+
+export function mapDailyNineComparisonRouteError(error: unknown): NextResponse {
+  if (error instanceof DailyNineComparisonRequestError) {
+    return errorResponse(error.code, error.code === 'invalid_puzzle' ? 404 : 400);
+  }
+
+  if (error instanceof DailyRuntimeRequestError) {
+    return errorResponse('invalid_puzzle', 404);
+  }
+
+  if (
+    error instanceof ServerSupabaseConfigurationError
+    || error instanceof SupabaseDailyNineComparisonRepositoryError
+  ) {
+    return errorResponse('comparison_unavailable', 503);
+  }
+
+  return errorResponse('comparison_unavailable', 500);
+}
+
+function errorResponse(
+  error: DailyNineComparisonApiErrorResponse['error'],
+  status: number,
+): NextResponse {
+  return dailyNineComparisonPrivateJson({
+    schemaVersion: DAILY_NINE_COMPARISON_API_SCHEMA_VERSION,
+    error,
+  }, status);
+}
