@@ -17,8 +17,8 @@ select
   1, 'benchmark-target', date '2099-01-01', 1, 'points-v3',
   pitch_number, 'AB', 'HR', 0, 0, 'correct',
   ((observation_number - 1) % 8)::smallint
-from generate_series(1, 9) as pitch_number
-cross join generate_series(1, :scale) as observation_number;
+from generate_series(1, 9) as pitch(pitch_number)
+cross join generate_series(1, :scale) as observation(observation_number);
 
 insert into public.daily_at_bat_results (
   attempt_id, schema_version, puzzle_id, puzzle_date, puzzle_number, ruleset_version,
@@ -29,8 +29,8 @@ select
   1, 'benchmark-noise', date '2099-01-02', 2, 'points-v3',
   pitch_number, 'CD', 'HR', 0, 0, 'correct',
   ((observation_number + 2) % 8)::smallint
-from generate_series(1, 9) as pitch_number
-cross join generate_series(1, :scale) as observation_number;
+from generate_series(1, 9) as pitch(pitch_number)
+cross join generate_series(1, :scale) as observation(observation_number);
 
 insert into public.daily_completed_results (
   submission_id, schema_version, puzzle_id, puzzle_date, puzzle_number, ruleset_version,
@@ -58,7 +58,7 @@ select
     'completed', true,
     'strikeouts', 2
   )
-from generate_series(1, :scale) as observation_number;
+from generate_series(1, :scale) as observation(observation_number);
 
 insert into public.daily_completed_results (
   submission_id, schema_version, puzzle_id, puzzle_date, puzzle_number, ruleset_version,
@@ -86,7 +86,7 @@ select
     'completed', true,
     'strikeouts', 2
   )
-from generate_series(1, :scale) as observation_number;
+from generate_series(1, :scale) as observation(observation_number);
 
 analyze public.daily_at_bat_results;
 analyze public.daily_completed_results;
