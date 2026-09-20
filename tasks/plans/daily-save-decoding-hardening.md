@@ -1,6 +1,6 @@
 # Daily save decoding hardening
 
-Status: Implemented on bounded R6 follow-up; awaiting review/merge
+Status: Implemented, verified and merged in PR #211
 Date: 2026-09-20
 
 ## Scope contract
@@ -34,7 +34,7 @@ The decoder remains browser-local and does not grant contribution eligibility or
 
 ## Verification
 
-Focused tests cover the status boundary and concrete nested-shape failures from R6. Full CI and the production package build remain required before merge. Because runtime behavior is only the failure path for local corruption, no Supabase migration or hosted database verification is applicable.
+Focused tests cover the status boundary and concrete nested-shape failures from R6. PR #211 merged as `2fa9c61a8eb84d007bebdf2df89e40c70be230c2`; exact-head CI and Vercel Preview passed, push CI #778 completed successfully, and production deployment `dpl_DeAjxY54ddhzBLfHe3GEcktZyGxb` was READY on that exact SHA before PR #212 advanced the runtime baseline. Because runtime behavior is only the failure path for local corruption, no Supabase migration or hosted database verification was applicable.
 
 ## Documentation impact
 
