@@ -17,6 +17,7 @@ import { GET as getAtBat } from './api/daily/comparison/at-bat/route';
 import { GET as getCompleted } from './api/daily/comparison/completed/route';
 
 const originalDisableFlag = process.env.DAILY_NINE_COMPARISON_READS_DISABLED;
+const originalLegacyEnableFlag = process.env.DAILY_NINE_COMPARISON_READS_ENABLED;
 
 describe('Daily Nine comparison GET adapters', () => {
   beforeEach(() => {
@@ -30,6 +31,11 @@ describe('Daily Nine comparison GET adapters', () => {
       delete process.env.DAILY_NINE_COMPARISON_READS_DISABLED;
     } else {
       process.env.DAILY_NINE_COMPARISON_READS_DISABLED = originalDisableFlag;
+    }
+    if (originalLegacyEnableFlag === undefined) {
+      delete process.env.DAILY_NINE_COMPARISON_READS_ENABLED;
+    } else {
+      process.env.DAILY_NINE_COMPARISON_READS_ENABLED = originalLegacyEnableFlag;
     }
   });
 
@@ -66,6 +72,18 @@ describe('Daily Nine comparison GET adapters', () => {
 
   it('allows an explicit false disable flag', async () => {
     process.env.DAILY_NINE_COMPARISON_READS_DISABLED = 'false';
+    server.readAtBat.mockResolvedValue(atBatResponse());
+
+    const response = await getAtBat(new Request(
+      'http://localhost/api/daily/comparison/at-bat?date=2026-09-19&ruleset=points-v3&pitch=1',
+    ));
+
+    expect(response.status).toBe(200);
+    expect(server.readAtBat).toHaveBeenCalledOnce();
+  });
+
+  it('ignores the retired pre-activation enable flag', async () => {
+    process.env.DAILY_NINE_COMPARISON_READS_ENABLED = 'false';
     server.readAtBat.mockResolvedValue(atBatResponse());
 
     const response = await getAtBat(new Request(
