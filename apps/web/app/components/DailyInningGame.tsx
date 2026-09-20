@@ -1,7 +1,7 @@
 'use client';
 
 import type { JSX } from 'react';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { createDailyShareResult, formatDailyShareText, getDailyAtBatPointsRemaining, type PlayerSearchResult } from '@initial-baseball/engine';
 import {
   CLASSIC_DAILY_RULESET_VERSION,
@@ -12,7 +12,8 @@ import {
 } from '@initial-baseball/shared';
 import { type PendingAtBatAdvance, resolveDailyTerminalAtBat } from '../dailyAtBatResolution';
 import { revealNextHintFromBundle } from '../dailyHintBundle';
-import type { LoadedSavedDailyGame } from '../dailyLocalStorage';
+import type { LoadedSavedDailyGame, SavedDailyGame } from '../dailyLocalStorage';
+import { createDailySavedGameRestoreController } from '../dailySavedGameRestoreController';
 import { useDailyGameplayPersistence } from '../useDailyGameplayPersistence';
 import { createDailyShareUrl } from '../dailyShareUrl';
 import type { CanonicalRevealViewModel } from '../canonicalRevealViewModel';
@@ -20,7 +21,6 @@ import { type DailyAtBatUiState, createInitialAtBatUiState, createInitialDailyGa
 import type {
   DailyBootstrapRulesetVersion,
   DailyHintBundle,
-  DailyHintBundleResponse,
   DailyResolutionResponse,
 } from '../dailyRuntimeContracts';
 import type { DailyScorecardAnswers } from '../dailyScorecard';
@@ -59,8 +59,8 @@ export function DailyInningGame({
   const [bundlePending, setBundlePending] = useState(false);
   const [pendingResolutionAction, setPendingResolutionAction] = useState<PendingResolutionAction | null>(null);
   const [requestError, setRequestError] = useState<string | null>(null);
-  const restoreGenerationRef = useRef(0);
   const [resolutionRequestController] = useState(createDailyGameplayRequestController);
+  const [savedGameRestoreController] = useState(createDailySavedGameRestoreController);
   const currentPitch = puzzle.pitches[currentPitchIndex] ?? null;
   const atBatComparison = useDailyNineAtBatComparison(createDailyNineAtBatComparisonInput({
     puzzle, rulesetVersion: gameState.rulesetVersion, pitch: currentPitch, result: atBatState.submittedResult,
@@ -89,9 +89,9 @@ export function DailyInningGame({
   });
 
   useEffect(() => () => {
-    restoreGenerationRef.current += 1;
+    savedGameRestoreController.invalidate();
     resolutionRequestController.invalidate();
-  }, []);
+  }, [resolutionRequestController, savedGameRestoreController]);
 
   const isPuzzleComplete = currentPitchIndex >= puzzle.pitches.length;
   const isGameComplete = gameState.points.completed || gameState.score.completed || isPuzzleComplete;
@@ -333,13 +333,13 @@ export function DailyInningGame({
     atBatComparison.invalidate();
     completedComparison.invalidate();
     invalidateResolutionRequests();
+    savedGameRestoreController.invalidate();
     resetToInitialState();
     setBundlePending(false);
     setHasLoadedSavedState(true);
   }
 
   function resetToInitialState(): void {
-    restoreGenerationRef.current += 1;
     setGameState(createInitialDailyGameState(puzzle, rulesetVersion));
     setScorecardAnswers({});
     setCurrentPitchIndex(0);
@@ -354,57 +354,27 @@ export function DailyInningGame({
     atBatComparison.invalidate();
     completedComparison.invalidate();
     invalidateResolutionRequests();
-    const restoreGeneration = ++restoreGenerationRef.current;
-    const savedGame = loaded?.savedGame ?? null;
-    if (savedGame === null) {
-      resetToInitialState();
-      setHasLoadedSavedState(true);
-      return;
-    }
+    savedGameRestoreController.restore({
+      loaded,
+      totalAtBats: puzzle.pitches.length,
+      initialProgressionToken,
+      initialHintBundle,
+      onApplyInitialState: resetToInitialState,
+      onApplySavedGame: applySavedGame,
+      onLoaded: () => setHasLoadedSavedState(true),
+      onHintBundleChange: setHintBundle,
+      onPendingChange: setBundlePending,
+      onErrorChange: setRequestError,
+    });
+  }
 
-    const savedGameComplete = savedGame.gameState.points.completed
-      || savedGame.gameState.score.completed
-      || savedGame.currentPitchIndex >= puzzle.pitches.length
-      || savedGame.pendingAdvance?.points.completed === true
-      || savedGame.pendingAdvance?.score.completed === true
-      || (savedGame.pendingAdvance?.nextPitchIndex ?? 0) >= puzzle.pitches.length;
-
+  function applySavedGame(savedGame: SavedDailyGame): void {
     setGameState(savedGame.gameState);
     setScorecardAnswers(savedGame.scorecardAnswers ?? {});
     setCurrentPitchIndex(savedGame.currentPitchIndex);
     setAtBatState(savedGame.atBatState);
     setPendingAdvance(savedGame.pendingAdvance);
     setProgressionToken(savedGame.progressionToken);
-    setHasLoadedSavedState(true);
-
-    const canReuseInitialBundle = savedGame.currentPitchIndex === 0
-      && savedGame.progressionToken === initialProgressionToken;
-    if (savedGameComplete) {
-      setHintBundle(null);
-      setBundlePending(false);
-      return;
-    }
-    if (canReuseInitialBundle) {
-      setHintBundle(initialHintBundle);
-      setBundlePending(false);
-      return;
-    }
-
-    setHintBundle(null);
-    setBundlePending(true);
-    void fetchHintBundle(savedGame.progressionToken)
-      .then((response) => {
-        if (restoreGenerationRef.current !== restoreGeneration) return;
-        setHintBundle(response.hintBundle);
-        setRequestError(null);
-      })
-      .catch(() => {
-        if (restoreGenerationRef.current !== restoreGeneration) return;
-        setRequestError('The saved at-bat could not be restored. Reset today’s game to continue.');
-      })
-      .finally(() => {
-        if (restoreGenerationRef.current === restoreGeneration) setBundlePending(false);
-      });
   }
 
   function handleRevealHint(): void {
@@ -464,19 +434,6 @@ export function DailyInningGame({
     resolutionRequestController.invalidate();
     setPendingResolutionAction(null);
   }
-}
-
-async function fetchHintBundle(progressionToken: string): Promise<DailyHintBundleResponse> {
-  const response = await fetch('/api/daily/hints', {
-    method: 'POST',
-    headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ progressionToken }),
-  });
-  const payload = await response.json() as DailyHintBundleResponse & { error?: string };
-  if (!response.ok) {
-    throw new Error(payload.error ?? `Hint restoration failed with ${response.status}.`);
-  }
-  return payload;
 }
 
 function requireHintBundle(bundle: DailyHintBundle | null): DailyHintBundle {
