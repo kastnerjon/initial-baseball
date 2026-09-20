@@ -6,7 +6,6 @@ import {
 } from '@initial-baseball/shared';
 import {
   createDailyNineComparisonClient,
-  DailyNineComparisonClientError,
   type DailyNineAtBatComparisonRequestKey,
   type DailyNineCompletedComparisonRequestKey,
 } from './dailyNineComparisonClient';
@@ -79,7 +78,7 @@ describe('Daily Nine browser comparison client', () => {
     const client = createDailyNineComparisonClient({ request });
 
     await expect(client.readAtBat(AT_BAT_KEY, new AbortController().signal))
-      .rejects.toMatchObject<Partial<DailyNineComparisonClientError>>({
+      .rejects.toMatchObject({
         kind: 'invalid_response',
       });
   });
@@ -92,7 +91,7 @@ describe('Daily Nine browser comparison client', () => {
     const client = createDailyNineComparisonClient({ request });
 
     await expect(client.readCompleted(COMPLETED_KEY, new AbortController().signal))
-      .rejects.toMatchObject<Partial<DailyNineComparisonClientError>>({
+      .rejects.toMatchObject({
         kind: 'http',
         status: 503,
         code: 'comparison_unavailable',
@@ -108,7 +107,7 @@ describe('Daily Nine browser comparison client', () => {
     const client = createDailyNineComparisonClient({ request });
 
     await expect(client.readCompleted(COMPLETED_KEY, new AbortController().signal))
-      .rejects.toMatchObject<Partial<DailyNineComparisonClientError>>({
+      .rejects.toMatchObject({
         kind: 'invalid_response',
       });
   });
