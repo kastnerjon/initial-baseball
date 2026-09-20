@@ -38,10 +38,7 @@ import type {
 import type { DailyScorecardAnswers } from '../dailyScorecard';
 import { useCompletedDailyResultSubmission } from '../useCompletedDailyResultSubmission';
 import { createDailyGameplayRequestController, postDailyGameplayJson } from '../dailyGameplayRequestController';
-import {
-  createDailyNineAtBatComparisonInput,
-  useDailyNineAtBatComparison,
-} from '../useDailyNineAtBatComparison';
+import { createDailyNineAtBatComparisonInput, useDailyNineAtBatComparison } from '../useDailyNineAtBatComparison';
 import { AtBatCard } from './AtBatCard';
 import { DailyScorebug } from './DailyScorebug';
 import { GameCompleteView } from './GameCompleteView';
@@ -77,12 +74,8 @@ export function DailyInningGame({
   const [resolutionRequestController] = useState(createDailyGameplayRequestController);
   const currentPitch = puzzle.pitches[currentPitchIndex] ?? null;
   const atBatComparison = useDailyNineAtBatComparison(createDailyNineAtBatComparisonInput({
-    puzzle,
-    rulesetVersion: gameState.rulesetVersion,
-    pitch: currentPitch,
-    result: atBatState.submittedResult,
-    currentPoints: gameState.points.points,
-    terminalPoints: pendingAdvance?.points.points ?? null,
+    puzzle, rulesetVersion: gameState.rulesetVersion, pitch: currentPitch, result: atBatState.submittedResult,
+    currentPoints: gameState.points.points, terminalPoints: pendingAdvance?.points.points ?? null,
   }));
   const completedResultSubmission = useCompletedDailyResultSubmission(hasLoadedSavedState, gameState);
   const gameplayPersistence = useDailyGameplayPersistence({
