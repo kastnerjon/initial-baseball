@@ -46,6 +46,7 @@ Add durable corrections here when product review, QA, production verification, o
 - Large work starts with a plan and a bounded issue-like scope.
 - Codex review supplements human product judgment; it does not replace it.
 - Repeated review feedback should become a test, lint, script, or durable rule.
+- GitHub connector content writes can create one commit per file and trigger one Vercel build per push. For coherent multi-file work, batch blobs into one tree/commit and move the branch ref once so CI/Preview exercise the checkpoint rather than burning build-rate quota on intermediate edits.
 - When Turbo owns build prerequisites, do not duplicate the same output-writing build in an npm `pretest` lifecycle hook; concurrent package builds can corrupt shared `dist/**` artifacts and create misleading test flakes.
 - A browser-safe puzzle is a separate contract from the authoritative server puzzle.
 - Production bundle/network inspection is part of answer-leakage QA.
