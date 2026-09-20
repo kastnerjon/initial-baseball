@@ -16,7 +16,10 @@ Review: `docs/engineering/resolved-at-bat-review-2026-09-19.md`. R1–R4 are rep
 - [x] R3: keep shared gameplay writes exclusive when journal/generation handling fails; a held-lock journal failure yields one non-contributing owner, reload/lock-request failure is non-writable, and only explicit missing-capability cases retain compatibility persistence.
 - [x] R4: guard persistence against stale effect-render authority during re-bootstrap with stable semantic session identity, per-session hydration readiness, and live authority checks at save/reset.
 - [ ] A mounted React rerender/StrictMode harness is still absent because the repo has no DOM-capable test dependency and adding one crosses the explicit dependency decomposition trigger. R4 instead has deterministic stale-render/session-authority regressions; reconsider dedicated test infrastructure only as its own bounded concern if future hook work needs it.
-- [ ] Follow up separately on bounded pending-delivery recovery (R5).\n- [x] Repair malformed-save decoding (R6): persisted-state decoding is isolated from storage I/O, malformed nested state degrades to unusable without throwing, and missing/unreadable/unusable/loaded remain distinct.\n- [ ] Follow up separately on request/comparison module boundaries (R7).\n- [ ] Follow up separately on write-admission/observability (R8).
+- [ ] Follow up separately on bounded pending-delivery recovery (R5).
+- [x] Repair malformed-save decoding (R6): persisted-state decoding is isolated from storage I/O, malformed nested state degrades to unusable without throwing, and missing/unreadable/unusable/loaded remain distinct.
+- [ ] Follow up separately on request/comparison module boundaries (R7).
+- [ ] Follow up separately on write-admission/observability (R8).
 
 ## September 15–16 approved product work
 

@@ -85,7 +85,9 @@ Transient failures retain exact payloads correctly. Automatic retry happens on o
 
 Choose/document a bounded owner-scoped delivery opportunity and timeout policy, separate from comparison-read retry. Fix R1 first. No tight timers, background service or daily-history scan is needed. Same-puzzle refresh/takeover retry already works; pending results from an old day are not globally drained.
 
-### R6 — Malformed gameplay saves can throw instead of degrading safely\n\nRepair status: implemented in the bounded malformed-save decoding follow-up. Browser-local persistence now has an explicit missing/unreadable/unusable/loaded boundary; compatibility decode/normalization is isolated from storage I/O, validates the nested structures it dereferences, and has deterministic regressions for the original `shareResult` failure plus other malformed nested values. No save is auto-deleted or reconstructed.
+### R6 — Malformed gameplay saves can throw instead of degrading safely
+
+Repair status: implemented in the bounded malformed-save decoding follow-up. Browser-local persistence now has an explicit missing/unreadable/unusable/loaded boundary; compatibility decode/normalization is isolated from storage I/O, validates the nested structures it dereferences, and has deterministic regressions for the original `shareResult` failure plus other malformed nested values. No save is auto-deleted or reconstructed.
 
 File: `dailyLocalStorage.ts:loadSavedDailyGameWithProvenance`, `isSavedDailyGameForPuzzle`, `normalizeSavedDailyGame`, `normalizeShareResult`; initial read in `useDailyGameplayPersistence.ts` occurs before coordinator error handling.
 
