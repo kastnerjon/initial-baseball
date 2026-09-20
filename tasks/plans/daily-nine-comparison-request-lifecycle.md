@@ -1,6 +1,6 @@
 # Daily Nine comparison request lifecycle
 
-Status: in progress  
+Status: implemented on PR #207; verification pending  
 Date: 2026-09-19
 
 ## Scope contract
