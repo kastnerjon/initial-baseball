@@ -2,12 +2,7 @@
 
 import type { JSX } from 'react';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  createDailyShareResult,
-  formatDailyShareText,
-  getDailyAtBatPointsRemaining,
-  type PlayerSearchResult,
-} from '@initial-baseball/engine';
+import { createDailyShareResult, formatDailyShareText, getDailyAtBatPointsRemaining, type PlayerSearchResult } from '@initial-baseball/engine';
 import {
   CLASSIC_DAILY_RULESET_VERSION,
   type DailyAtBatResolution,
@@ -15,20 +10,13 @@ import {
   type DailyGuessResult,
   type DailyPublicPuzzle,
 } from '@initial-baseball/shared';
-import {
-  type PendingAtBatAdvance,
-  resolveDailyTerminalAtBat,
-} from '../dailyAtBatResolution';
+import { type PendingAtBatAdvance, resolveDailyTerminalAtBat } from '../dailyAtBatResolution';
 import { revealNextHintFromBundle } from '../dailyHintBundle';
 import type { LoadedSavedDailyGame } from '../dailyLocalStorage';
 import { useDailyGameplayPersistence } from '../useDailyGameplayPersistence';
 import { createDailyShareUrl } from '../dailyShareUrl';
 import type { CanonicalRevealViewModel } from '../canonicalRevealViewModel';
-import {
-  type DailyAtBatUiState,
-  createInitialAtBatUiState,
-  createInitialDailyGameState,
-} from '../dailyClientState';
+import { type DailyAtBatUiState, createInitialAtBatUiState, createInitialDailyGameState } from '../dailyClientState';
 import type {
   DailyBootstrapRulesetVersion,
   DailyHintBundle,
@@ -39,6 +27,7 @@ import type { DailyScorecardAnswers } from '../dailyScorecard';
 import { useCompletedDailyResultSubmission } from '../useCompletedDailyResultSubmission';
 import { createDailyGameplayRequestController, postDailyGameplayJson } from '../dailyGameplayRequestController';
 import { createDailyNineAtBatComparisonInput, useDailyNineAtBatComparison } from '../useDailyNineAtBatComparison';
+import { createDailyNineCompletedComparisonInput, useDailyNineCompletedComparison } from '../useDailyNineCompletedComparison';
 import { AtBatCard } from './AtBatCard';
 import { DailyScorebug } from './DailyScorebug';
 import { GameCompleteView } from './GameCompleteView';
@@ -76,6 +65,9 @@ export function DailyInningGame({
   const atBatComparison = useDailyNineAtBatComparison(createDailyNineAtBatComparisonInput({
     puzzle, rulesetVersion: gameState.rulesetVersion, pitch: currentPitch, result: atBatState.submittedResult,
     currentPoints: gameState.points.points, terminalPoints: pendingAdvance?.points.points ?? null,
+  }));
+  const completedComparison = useDailyNineCompletedComparison(createDailyNineCompletedComparisonInput({
+    puzzle, rulesetVersion: gameState.rulesetVersion, points: gameState.points, terminalPoints: pendingAdvance?.points ?? null,
   }));
   const completedResultSubmission = useCompletedDailyResultSubmission(hasLoadedSavedState, gameState);
   const gameplayPersistence = useDailyGameplayPersistence({
@@ -148,6 +140,7 @@ export function DailyInningGame({
         scorecardAnswers={scorecardAnswers}
         shareResult={shareResult}
         shareText={formatDailyShareText(shareResult)}
+        comparison={completedComparison.state}
         onResetToday={handleResetToday}
       />
     );
@@ -338,6 +331,7 @@ export function DailyInningGame({
   function handleResetToday(): void {
     if (!gameplayPersistence.resetPersistedState()) return;
     atBatComparison.invalidate();
+    completedComparison.invalidate();
     invalidateResolutionRequests();
     resetToInitialState();
     setBundlePending(false);
@@ -358,6 +352,7 @@ export function DailyInningGame({
 
   function restoreLoadedGame(loaded: LoadedSavedDailyGame | null): void {
     atBatComparison.invalidate();
+    completedComparison.invalidate();
     invalidateResolutionRequests();
     const restoreGeneration = ++restoreGenerationRef.current;
     const savedGame = loaded?.savedGame ?? null;

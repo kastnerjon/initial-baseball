@@ -309,6 +309,39 @@
   font-size: 14px;
   font-variant-numeric: tabular-nums;
 }
+.completed-comparison {
+  display: grid;
+  gap: 6px;
+  padding-top: 14px;
+  border-top: 1px solid rgb(255 255 255 / 18%);
+}
+.completed-comparison-values {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 18px;
+}
+.completed-comparison-metric {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.completed-comparison-label {
+  color: rgb(255 255 255 / 68%);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+.completed-comparison-value {
+  color: var(--paper-light);
+  font-size: 18px;
+  font-variant-numeric: tabular-nums;
+}
+.completed-comparison-note {
+  margin: 0;
+  color: rgb(255 255 255 / 68%);
+  font-size: 11px;
+}
 .share-card {
   padding: 20px 0;
 }

@@ -18,5 +18,15 @@
   },
   "devDependencies": {
     "vitest": "^3.0.0"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./comparison": {
+      "types": "./dist/dailyNineComparison.d.ts",
+      "import": "./dist/dailyNineComparison.js"
+    }
   }
 }
