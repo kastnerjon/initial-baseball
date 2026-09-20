@@ -85,13 +85,13 @@ Transient failures retain exact payloads correctly. Automatic retry happens on o
 
 Choose/document a bounded owner-scoped delivery opportunity and timeout policy, separate from comparison-read retry. Fix R1 first. No tight timers, background service or daily-history scan is needed. Same-puzzle refresh/takeover retry already works; pending results from an old day are not globally drained.
 
-### R6 — Malformed gameplay saves can throw instead of degrading safely
+### R6 — Malformed gameplay saves can throw instead of degrading safely\n\nRepair status: implemented in the bounded malformed-save decoding follow-up. Browser-local persistence now has an explicit missing/unreadable/unusable/loaded boundary; compatibility decode/normalization is isolated from storage I/O, validates the nested structures it dereferences, and has deterministic regressions for the original `shareResult` failure plus other malformed nested values. No save is auto-deleted or reconstructed.
 
 File: `dailyLocalStorage.ts:loadSavedDailyGameWithProvenance`, `isSavedDailyGameForPuzzle`, `normalizeSavedDailyGame`, `normalizeShareResult`; initial read in `useDailyGameplayPersistence.ts` occurs before coordinator error handling.
 
 The envelope guard does not validate nested values used by normalization. For example, remove `gameState.shareResult` from an otherwise valid saved game: the guard accepts it, then normalization dereferences `undefined.pitchLines` and throws. A diagnostic reproduced the TypeError. Other unchecked nested arrays have similar risk. This is pre-existing surrounding persistence debt, not newly introduced server validation weakness.
 
-Return an explicit unusable save without throwing; validate the structures normalization consumes and preserve the distinction between missing, unreadable and unusable storage. Do not reconstruct AB observations. Keep compatibility migration/decoding in its own module rather than expanding the 487-line file.
+Implemented direction: malformed or incompatible parsed values return an explicit unusable state without throwing; storage-access/JSON failures remain unreadable and absence remains missing. Compatibility migration/normalization now lives behind `dailySavedGameCodec.ts` instead of expanding the storage adapter. Existing nullable callers preserve behavior, and no AB observations are reconstructed.
 
 ### R7 — Browser responsibilities remain too concentrated for comparison UI
 
@@ -147,8 +147,8 @@ R6 and R8 are separate follow-ups; do not bundle them into comparison or a gener
 - Read current main in required order, inspected merge sequence #182–#188, full browser lifecycle modules, completion stack, engine normalization, Daily ports, server adapters/routes, migrations, relevant plans and tests. Open PR search still found held #161/#174.
 - Built local shared/engine/baseball-data/Daily TypeScript outputs to resolve test imports; no production bundle or full data pipeline was needed for this review.
 - **227 existing focused tests passed:** 101 web browser/service/provider tests, 93 engine validator tests, 33 Daily idempotency tests.
-- **Six additional diagnostic counterexamples passed:** stale retry adoption; injected lost journal append; lock release on journal failure; late gameplay resolution after reset; save after re-bootstrap cleanup; malformed-save TypeError. The first, second, third and sixth exercise real non-React modules. Reset/effect cases use the real component/hook with a minimal deterministic hook scheduler, not mounted React or physical-browser execution. Convert them into real mounted regression tests in the owning fix PRs.
+- **Six additional diagnostic counterexamples passed:** stale retry adoption; injected lost journal append; lock release on journal failure; late gameplay resolution after reset; save after re-bootstrap cleanup; malformed-save TypeError. The first, second, third and sixth exercise real non-React modules. Reset/effect cases use the real component/hook with a minimal deterministic hook scheduler, not mounted React or physical-browser execution. The malformed-save counterexample is now a deterministic regression in the R6 owning fix; mounted React coverage remains relevant only to the effect/request-lifecycle cases where a DOM-capable harness is actually required.
 - Diagnostic tests asserted existing bad behavior and were not added to the regression suite. No new browser/mobile/production proof was performed. Existing server/provider mocks are not a new hosted atomicity/performance test.
 - Documentation drift: lifecycle plan header still said physical proof pending; START-HERE and architecture called the whole lifecycle fully browser-proven. Preserve successful scenarios as evidence, qualify the broader claim and link these unresolved findings. The manual still calls the product one Daily Inning while canonical product docs describe two competing beta games; reconcile that vocabulary separately.
 
-Review completion means evidence and next work are recorded. It does not mean these bugs are fixed or comparison activation is ready.
+Review completion means evidence and next work are recorded. R1–R4 and R6 now have bounded repairs; R5, R7, R8 and the remaining interactive/mobile verification are still open.
