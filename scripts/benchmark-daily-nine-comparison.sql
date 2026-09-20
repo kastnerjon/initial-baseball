@@ -150,6 +150,31 @@ from public.daily_nine_completed_score_buckets(
   'benchmark-target', date '2099-01-01', 1, 'points-v3'
 );
 
+select format('BODY_PLAN|scale=%s|shape=at_bat', :scale);
+explain (analyze, buffers, settings, summary)
+select
+  count(*)::bigint as resolved_at_bat_count,
+  coalesce(sum(result.awarded_points), 0)::bigint as awarded_points_sum
+from public.daily_at_bat_results as result
+where result.puzzle_id = 'benchmark-target'
+  and result.puzzle_date = date '2099-01-01'
+  and result.puzzle_number = 1
+  and result.ruleset_version = 'points-v3'
+  and result.pitch_number = 1;
+
+select format('BODY_PLAN|scale=%s|shape=completed', :scale);
+explain (analyze, buffers, settings, summary)
+select
+  (result.summary->>'points')::smallint as points,
+  count(*)::bigint as result_count
+from public.daily_completed_results as result
+where result.puzzle_id = 'benchmark-target'
+  and result.puzzle_date = date '2099-01-01'
+  and result.puzzle_number = 1
+  and result.ruleset_version = 'points-v3'
+group by (result.summary->>'points')::smallint
+order by points;
+
 create temp table benchmark_latency (
   shape text not null,
   sample_number integer not null,
