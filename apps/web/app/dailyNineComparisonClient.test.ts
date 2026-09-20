@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   DAILY_NINE_COMPARISON_API_SCHEMA_VERSION,
   POINTS_V3_DAILY_RULESET_VERSION,
+  type DailyNineComparisonApiKey,
 } from '@initial-baseball/shared';
 import {
   createDailyNineComparisonClient,
@@ -35,7 +36,8 @@ describe('Daily Nine browser comparison client', () => {
     const client = createDailyNineComparisonClient({ request });
 
     await expect(client.readAtBat(AT_BAT_KEY, signal)).resolves.toEqual(atBatPayload());
-    expect(request).toHaveBeenCalledExactlyOnceWith(
+    expect(request).toHaveBeenCalledTimes(1);
+    expect(request).toHaveBeenCalledWith(
       '/api/daily/comparison/at-bat?date=2026-09-19&ruleset=points-v3&pitch=3',
       { method: 'GET', cache: 'no-store', signal },
     );
@@ -47,7 +49,8 @@ describe('Daily Nine browser comparison client', () => {
     const client = createDailyNineComparisonClient({ request });
 
     await expect(client.readCompleted(COMPLETED_KEY, signal)).resolves.toEqual(completedPayload());
-    expect(request).toHaveBeenCalledExactlyOnceWith(
+    expect(request).toHaveBeenCalledTimes(1);
+    expect(request).toHaveBeenCalledWith(
       '/api/daily/comparison/completed?date=2026-09-19&ruleset=points-v3',
       { method: 'GET', cache: 'no-store', signal },
     );
@@ -60,7 +63,7 @@ describe('Daily Nine browser comparison client', () => {
     const client = createDailyNineComparisonClient({ request });
 
     await expect(client.readAtBat(AT_BAT_KEY, new AbortController().signal))
-      .rejects.toMatchObject<Partial<DailyNineComparisonClientError>>({
+      .rejects.toMatchObject({
         kind: 'identity_mismatch',
       });
   });
@@ -161,6 +164,6 @@ function completedPayload() {
   };
 }
 
-function baseComparison() {
+function baseComparison(): DailyNineComparisonApiKey {
   return { ...BASE };
 }
