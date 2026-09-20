@@ -1,8 +1,8 @@
 # Resolved-at-bat browser lifecycle
 
-Status: Approved architecture; 6A–6D merged and normal-path production/device proof complete; review R1–R4 repaired
+Status: Approved architecture; 6A–6D merged and normal-path production/device proof complete; review R1–R6 repaired
 Date: 2026-09-18
-Review update: 2026-09-19 — see `docs/engineering/resolved-at-bat-review-2026-09-19.md`. R1–R4 are repaired. R4 adds stable semantic session identity, per-session readiness, and exact live-vs-render authority checks at persistence/reset boundaries so effect re-bootstrap cannot write stale state after ownership teardown. Comparison work may resume only in its own bounded PRs.
+Review update: 2026-09-20 — see `docs/engineering/resolved-at-bat-review-2026-09-19.md`. R1–R4 repair owner/request/persistence authority, R5 adds bounded owner-scoped pending delivery recovery, and R6 makes malformed saved-state decoding fail safely. Comparison reads/UI remain separate from persistence; R7 module-boundary work and R8 write-admission/observability remain separate follow-ups.
 
 ## Scope contract for this planning PR
 

@@ -1,6 +1,6 @@
 # Resolved-AB pending delivery recovery
 
-Status: Implemented on bounded R5 follow-up; awaiting review/merge
+Status: Implemented, verified and merged in PR #212
 Date: 2026-09-20
 
 ## Scope contract
@@ -32,7 +32,7 @@ R1 ownership fencing remains the correctness mechanism. Abort/timeout only bound
 
 ## Verification
 
-Focused client regressions cover exclusion and a never-settling first request followed by a successful later slot. Existing R1 generation/disposal tests remain unchanged. Full repository CI, file-size checks, production package build, hidden-answer QA, and Vercel Preview are required before merge. No Supabase migration is applicable.
+Focused client regressions cover exclusion and a never-settling first request followed by a successful later slot. Existing R1 generation/disposal tests remain unchanged. PR #212 merged as `4bb66d5bb93051dfb88559cfc58a524e06824f4a`; exact-head CI and Vercel Preview passed, push CI #782 completed successfully, and production deployment `dpl_6rCfeRkUngD48ftT1FM8UgzjtCoZ` is READY on that exact runtime SHA. No Supabase migration was applicable.
 
 ## Documentation impact
 
