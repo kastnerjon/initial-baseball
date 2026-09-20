@@ -1,0 +1,101 @@
+name: Daily Nine comparison benchmark
+
+on:
+  workflow_dispatch:
+  pull_request:
+    paths:
+      - .github/workflows/daily-nine-comparison-benchmark.yml
+      - scripts/benchmark-daily-nine-comparison.sql
+      - supabase/migrations/20260917132147_create_daily_completed_results.sql
+      - supabase/migrations/20260918004822_harden_daily_completed_results_privileges.sql
+      - supabase/migrations/20260918185110_create_daily_at_bat_results.sql
+      - supabase/migrations/20260919164818_create_daily_nine_comparison_reads.sql
+
+jobs:
+  benchmark:
+    if: github.event_name == 'workflow_dispatch' || github.head_ref == 'perf/daily-nine-comparison-read-evidence'
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_DB: initial_baseball_benchmark
+          POSTGRES_PASSWORD: postgres
+          POSTGRES_USER: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U postgres -d initial_baseball_benchmark"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    env:
+      PGHOST: localhost
+      PGPORT: 5432
+      PGDATABASE: initial_baseball_benchmark
+      PGUSER: postgres
+      PGPASSWORD: postgres
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install PostgreSQL client
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes postgresql-client
+
+      - name: Prepare Supabase roles
+        run: |
+          psql --set=ON_ERROR_STOP=1 <<'SQL'
+          create role anon nologin;
+          create role authenticated nologin;
+          create role service_role nologin;
+          SQL
+
+      - name: Apply exact relevant repository migrations
+        run: |
+          psql --set=ON_ERROR_STOP=1 --file supabase/migrations/20260917132147_create_daily_completed_results.sql
+          psql --set=ON_ERROR_STOP=1 --file supabase/migrations/20260918004822_harden_daily_completed_results_privileges.sql
+          psql --set=ON_ERROR_STOP=1 --file supabase/migrations/20260918185110_create_daily_at_bat_results.sql
+          psql --set=ON_ERROR_STOP=1 --file supabase/migrations/20260919164818_create_daily_nine_comparison_reads.sql
+
+      - name: Run representative indexed benchmark
+        shell: bash
+        run: |
+          set -euo pipefail
+          output="daily-nine-comparison-benchmark.txt"
+          : > "$output"
+
+          {
+            echo "PostgreSQL server:"
+            psql --tuples-only --no-align --command "select version();"
+            echo
+          } | tee -a "$output"
+
+          for scale in 100 1000 10000; do
+            echo "=== observations-per-population: $scale ===" | tee -a "$output"
+            psql \
+              --set=ON_ERROR_STOP=1 \
+              --set="scale=$scale" \
+              --file scripts/benchmark-daily-nine-comparison.sql \
+              2>&1 | tee -a "$output"
+            echo | tee -a "$output"
+          done
+
+          {
+            echo "## Daily Nine comparison benchmark"
+            echo
+            echo '```text'
+            grep -E '^[[:space:]]*(CHECK|SIZE|RESULT)\|' "$output" | sed -E 's/^[[:space:]]*//'
+            echo '```'
+            echo
+            echo "Full EXPLAIN/BUFFERS output is attached as the workflow artifact."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Upload benchmark evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: daily-nine-comparison-benchmark
+          path: daily-nine-comparison-benchmark.txt
+          if-no-files-found: error
