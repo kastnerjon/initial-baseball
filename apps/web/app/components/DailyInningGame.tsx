@@ -10,6 +10,7 @@ import {
 } from '@initial-baseball/engine';
 import {
   CLASSIC_DAILY_RULESET_VERSION,
+  POINTS_V3_DAILY_RULESET_VERSION,
   type DailyAtBatResolution,
   type DailyGameState,
   type DailyGuessResult,
@@ -38,6 +39,7 @@ import type {
 import type { DailyScorecardAnswers } from '../dailyScorecard';
 import { useCompletedDailyResultSubmission } from '../useCompletedDailyResultSubmission';
 import { createDailyGameplayRequestController, postDailyGameplayJson } from '../dailyGameplayRequestController';
+import { useDailyNineAtBatComparison } from '../useDailyNineAtBatComparison';
 import { AtBatCard } from './AtBatCard';
 import { DailyScorebug } from './DailyScorebug';
 import { GameCompleteView } from './GameCompleteView';
@@ -71,6 +73,26 @@ export function DailyInningGame({
   const [requestError, setRequestError] = useState<string | null>(null);
   const restoreGenerationRef = useRef(0);
   const [resolutionRequestController] = useState(createDailyGameplayRequestController);
+  const currentPitch = puzzle.pitches[currentPitchIndex] ?? null;
+  const atBatComparison = useDailyNineAtBatComparison(
+    currentPitch !== null
+      && pendingAdvance !== null
+      && atBatState.submittedResult !== null
+      && atBatState.submittedResult.kind !== 'incorrect'
+      && gameState.rulesetVersion === POINTS_V3_DAILY_RULESET_VERSION
+      ? {
+          key: {
+            kind: 'at-bat',
+            puzzleId: puzzle.id,
+            puzzleDate: puzzle.puzzleDate,
+            puzzleNumber: puzzle.puzzleNumber,
+            rulesetVersion: POINTS_V3_DAILY_RULESET_VERSION,
+            pitchNumber: currentPitch.pitchNumber,
+          },
+          ownPoints: Math.max(0, pendingAdvance.points.points - gameState.points.points),
+        }
+      : null,
+  );
   const completedResultSubmission = useCompletedDailyResultSubmission(hasLoadedSavedState, gameState);
   const gameplayPersistence = useDailyGameplayPersistence({
     puzzle,
@@ -95,7 +117,6 @@ export function DailyInningGame({
     resolutionRequestController.invalidate();
   }, []);
 
-  const currentPitch = puzzle.pitches[currentPitchIndex] ?? null;
   const isPuzzleComplete = currentPitchIndex >= puzzle.pitches.length;
   const isGameComplete = gameState.points.completed || gameState.score.completed || isPuzzleComplete;
   const requestPending = pendingResolutionAction !== null;
@@ -193,6 +214,7 @@ export function DailyInningGame({
         requestPending={requestPending}
         giveUpPending={pendingResolutionAction === 'give_up'}
         requestError={requestError}
+        comparison={atBatComparison.state}
         nextActionLabel={terminalPending ? 'View Results' : 'Next At Bat'}
         onQueryChange={(query) => {
           setAtBatState(currentState => ({
@@ -310,6 +332,7 @@ export function DailyInningGame({
       return;
     }
 
+    atBatComparison.invalidate();
     setGameState(currentGameState => ({
       ...currentGameState,
       status: pendingAdvance.points.completed || pendingAdvance.score.completed || pendingAdvance.nextPitchIndex >= puzzle.pitches.length
@@ -330,6 +353,7 @@ export function DailyInningGame({
 
   function handleResetToday(): void {
     if (!gameplayPersistence.resetPersistedState()) return;
+    atBatComparison.invalidate();
     invalidateResolutionRequests();
     resetToInitialState();
     setBundlePending(false);
@@ -349,6 +373,7 @@ export function DailyInningGame({
   }
 
   function restoreLoadedGame(loaded: LoadedSavedDailyGame | null): void {
+    atBatComparison.invalidate();
     invalidateResolutionRequests();
     const restoreGeneration = ++restoreGenerationRef.current;
     const savedGame = loaded?.savedGame ?? null;

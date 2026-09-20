@@ -13,6 +13,8 @@ import type {
 } from '@initial-baseball/shared';
 import type { CanonicalRevealViewModel } from '../canonicalRevealViewModel';
 import type { DailyHintResponse } from '../dailyRuntimeContracts';
+import type { DailyNineAtBatComparisonState } from '../useDailyNineAtBatComparison';
+import { DailyNineAtBatComparison } from './DailyNineAtBatComparison';
 import { PlayerRevealCard } from './PlayerRevealCard';
 import { ResultDisplay } from './ResultDisplay';
 import { ResultsDropdown } from './ResultsDropdown';
@@ -33,6 +35,7 @@ type AtBatCardProps = {
   requestPending: boolean;
   giveUpPending: boolean;
   requestError: string | null;
+  comparison: DailyNineAtBatComparisonState;
   nextActionLabel?: string;
   onQueryChange: (query: string) => void;
   onSelectPlayer: (result: PlayerSearchResult) => void;
@@ -49,6 +52,7 @@ export function AtBatCard({
   requestPending,
   giveUpPending,
   requestError,
+  comparison,
   nextActionLabel = 'Next At Bat',
   onQueryChange,
   onSelectPlayer,
@@ -95,12 +99,15 @@ export function AtBatCard({
           <span className="pitch-number">{`At Bat ${atBat.pitchNumber}`}</span>
           <CountIndicator label="Strikes" filledCount={state.strikeCount} total={3} />
         </div>
-        <ResultDisplay
-          result={resolvedTerminalResult}
-          rulesetVersion={rulesetVersion}
-          revealedCount={state.revealCount}
-          wrongGuesses={state.strikeCount}
-        />
+        <div className="terminal-result-stack">
+          <ResultDisplay
+            result={resolvedTerminalResult}
+            rulesetVersion={rulesetVersion}
+            revealedCount={state.revealCount}
+            wrongGuesses={state.strikeCount}
+          />
+          <DailyNineAtBatComparison state={comparison} />
+        </div>
         <button
           type="button"
           className="button-primary button-next-at-bat"

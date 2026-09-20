@@ -30,6 +30,43 @@
 .result-card-incorrect .result-value {
   font-size: 16px;
 }
+.terminal-result-stack {
+  display: grid;
+  gap: 8px;
+  min-width: 0;
+}
+.at-bat-comparison {
+  display: grid;
+  gap: 4px;
+  padding-top: 8px;
+  border-top: 1px solid var(--line-soft);
+}
+.at-bat-comparison-values {
+  display: flex;
+  align-items: baseline;
+  gap: 16px;
+}
+.at-bat-comparison-metric {
+  display: flex;
+  align-items: baseline;
+  gap: 5px;
+}
+.at-bat-comparison-label {
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+}
+.at-bat-comparison-value {
+  color: var(--clubhouse);
+  font-size: 16px;
+  font-variant-numeric: tabular-nums;
+}
+.at-bat-comparison-note {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 11px;
+}
 .player-reveal-card {
   display: grid;
   gap: 18px;

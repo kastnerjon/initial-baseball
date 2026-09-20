@@ -1,6 +1,7 @@
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
+import type { DailyNineAtBatComparisonState } from '../useDailyNineAtBatComparison';
 import { AtBatCard } from './AtBatCard';
 
 (globalThis as Record<string, unknown>).React = React;
@@ -60,6 +61,65 @@ describe('AtBatCard pending resolution feedback', () => {
     expect(html).not.toContain('Next At Bat');
   });
 
+  it('renders terminal YOU / AVG loading without changing the next action', () => {
+    const html = renderCard({
+      requestPending: false,
+      giveUpPending: false,
+      submittedResult: {
+        kind: 'strikeout',
+        revealedCount: 0,
+        strikeCount: 3,
+        outcome: 'K',
+        source: 'strikeout',
+      },
+      comparison: { status: 'loading', ownPoints: 0 },
+    });
+
+    expect(html).toContain('YOU');
+    expect(html).toContain('AVG');
+    expect(html).toContain('Loading comparison…');
+    expect(html).toContain('Next At Bat');
+  });
+
+  it('hides tiny-sample averages and labels early averages explicitly', () => {
+    const waiting = renderTerminalComparison({
+      status: 'success',
+      ownPoints: 5,
+      resolvedAtBatCount: 1,
+      averagePoints: 4,
+    });
+    const early = renderTerminalComparison({
+      status: 'success',
+      ownPoints: 5,
+      resolvedAtBatCount: 7,
+      averagePoints: 3.428,
+    });
+
+    expect(waiting).toContain('Waiting for more results · 1 result');
+    expect(waiting).not.toContain('4.0');
+    expect(early).toContain('3.4');
+    expect(early).toContain('Early average · 7 results');
+  });
+
+  it('renders normal and quiet unavailable comparison states', () => {
+    const normal = renderTerminalComparison({
+      status: 'success',
+      ownPoints: 6,
+      resolvedAtBatCount: 10,
+      averagePoints: 4.25,
+    });
+    const unavailable = renderTerminalComparison({
+      status: 'unavailable',
+      ownPoints: 6,
+    });
+
+    expect(normal).toContain('4.3');
+    expect(normal).toContain('10 results');
+    expect(normal).not.toContain('Early average');
+    expect(unavailable).toContain('Comparison unavailable');
+    expect(unavailable).toContain('Next At Bat');
+  });
+
   it('announces the current strike count and does not render a hidden reveal while active', () => {
     const html = renderCard({ requestPending: false, giveUpPending: false });
     expect(html).toContain('aria-label="0 of 3 strikes"');
@@ -94,6 +154,7 @@ function renderCard(input: {
     source: 'strikeout';
   };
   nextActionLabel?: string;
+  comparison?: DailyNineAtBatComparisonState;
 }): string {
   return renderToStaticMarkup(
     <AtBatCard
@@ -111,6 +172,7 @@ function renderCard(input: {
       requestPending={input.requestPending}
       giveUpPending={input.giveUpPending}
       requestError={null}
+      comparison={input.comparison ?? { status: 'idle' }}
       {...(input.nextActionLabel === undefined ? {} : { nextActionLabel: input.nextActionLabel })}
       onQueryChange={() => undefined}
       onSelectPlayer={() => undefined}
@@ -120,4 +182,20 @@ function renderCard(input: {
       onNextPitch={() => undefined}
     />,
   );
+}
+
+
+function renderTerminalComparison(comparison: DailyNineAtBatComparisonState): string {
+  return renderCard({
+    requestPending: false,
+    giveUpPending: false,
+    submittedResult: {
+      kind: 'strikeout',
+      revealedCount: 0,
+      strikeCount: 3,
+      outcome: 'K',
+      source: 'strikeout',
+    },
+    comparison,
+  });
 }
