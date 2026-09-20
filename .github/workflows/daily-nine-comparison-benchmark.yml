@@ -87,7 +87,7 @@ jobs:
             echo "## Daily Nine comparison benchmark"
             echo
             echo '```text'
-            grep -E '^(CHECK|SIZE|RESULT)\|' "$output"
+            grep -E '^[[:space:]]*(CHECK|SIZE|RESULT)\|' "$output" | sed -E 's/^[[:space:]]*//'
             echo '```'
             echo
             echo "Full EXPLAIN/BUFFERS output is attached as the workflow artifact."
