@@ -10,7 +10,6 @@ import {
 } from '@initial-baseball/engine';
 import {
   CLASSIC_DAILY_RULESET_VERSION,
-  POINTS_V3_DAILY_RULESET_VERSION,
   type DailyAtBatResolution,
   type DailyGameState,
   type DailyGuessResult,
@@ -39,7 +38,10 @@ import type {
 import type { DailyScorecardAnswers } from '../dailyScorecard';
 import { useCompletedDailyResultSubmission } from '../useCompletedDailyResultSubmission';
 import { createDailyGameplayRequestController, postDailyGameplayJson } from '../dailyGameplayRequestController';
-import { useDailyNineAtBatComparison } from '../useDailyNineAtBatComparison';
+import {
+  createDailyNineAtBatComparisonInput,
+  useDailyNineAtBatComparison,
+} from '../useDailyNineAtBatComparison';
 import { AtBatCard } from './AtBatCard';
 import { DailyScorebug } from './DailyScorebug';
 import { GameCompleteView } from './GameCompleteView';
@@ -74,25 +76,14 @@ export function DailyInningGame({
   const restoreGenerationRef = useRef(0);
   const [resolutionRequestController] = useState(createDailyGameplayRequestController);
   const currentPitch = puzzle.pitches[currentPitchIndex] ?? null;
-  const atBatComparison = useDailyNineAtBatComparison(
-    currentPitch !== null
-      && pendingAdvance !== null
-      && atBatState.submittedResult !== null
-      && atBatState.submittedResult.kind !== 'incorrect'
-      && gameState.rulesetVersion === POINTS_V3_DAILY_RULESET_VERSION
-      ? {
-          key: {
-            kind: 'at-bat',
-            puzzleId: puzzle.id,
-            puzzleDate: puzzle.puzzleDate,
-            puzzleNumber: puzzle.puzzleNumber,
-            rulesetVersion: POINTS_V3_DAILY_RULESET_VERSION,
-            pitchNumber: currentPitch.pitchNumber,
-          },
-          ownPoints: Math.max(0, pendingAdvance.points.points - gameState.points.points),
-        }
-      : null,
-  );
+  const atBatComparison = useDailyNineAtBatComparison(createDailyNineAtBatComparisonInput({
+    puzzle,
+    rulesetVersion: gameState.rulesetVersion,
+    pitch: currentPitch,
+    result: atBatState.submittedResult,
+    currentPoints: gameState.points.points,
+    terminalPoints: pendingAdvance?.points.points ?? null,
+  }));
   const completedResultSubmission = useCompletedDailyResultSubmission(hasLoadedSavedState, gameState);
   const gameplayPersistence = useDailyGameplayPersistence({
     puzzle,

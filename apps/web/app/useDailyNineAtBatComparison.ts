@@ -2,6 +2,13 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import {
+  POINTS_V3_DAILY_RULESET_VERSION,
+  type DailyGuessResult,
+  type DailyPublicPuzzle,
+  type DailyPublicPuzzlePitch,
+  type DailyRulesetVersion,
+} from '@initial-baseball/shared';
+import {
   createBrowserDailyNineComparisonClient,
   type DailyNineAtBatComparisonRequestKey,
 } from './dailyNineComparisonClient';
@@ -22,6 +29,42 @@ export type DailyNineAtBatComparisonInput = {
   key: DailyNineAtBatComparisonRequestKey;
   ownPoints: number;
 } | null;
+
+type DailyNineTerminalAtBatComparisonInput = {
+  puzzle: Pick<DailyPublicPuzzle, 'id' | 'puzzleDate' | 'puzzleNumber'>;
+  rulesetVersion: DailyRulesetVersion;
+  pitch: Pick<DailyPublicPuzzlePitch, 'pitchNumber'> | null;
+  result: DailyGuessResult | null;
+  currentPoints: number;
+  terminalPoints: number | null;
+};
+
+export function createDailyNineAtBatComparisonInput({
+  puzzle,
+  rulesetVersion,
+  pitch,
+  result,
+  currentPoints,
+  terminalPoints,
+}: DailyNineTerminalAtBatComparisonInput): DailyNineAtBatComparisonInput {
+  if (rulesetVersion !== POINTS_V3_DAILY_RULESET_VERSION
+    || pitch === null
+    || result === null
+    || result.kind === 'incorrect'
+    || terminalPoints === null) return null;
+
+  return {
+    key: {
+      kind: 'at-bat',
+      puzzleId: puzzle.id,
+      puzzleDate: puzzle.puzzleDate,
+      puzzleNumber: puzzle.puzzleNumber,
+      rulesetVersion: POINTS_V3_DAILY_RULESET_VERSION,
+      pitchNumber: pitch.pitchNumber,
+    },
+    ownPoints: Math.max(0, terminalPoints - currentPoints),
+  };
+}
 
 export function useDailyNineAtBatComparison(input: DailyNineAtBatComparisonInput) {
   const [client] = useState(createBrowserDailyNineComparisonClient);
