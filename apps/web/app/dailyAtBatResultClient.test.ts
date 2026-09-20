@@ -117,6 +117,66 @@ describe('resolved-at-bat browser journal and outbox', () => {
     expect(storage.record()).toMatchObject({ generation: 2, observations: { 1: { delivery: 'pending' } } });
   });
 
+  it('skips excluded pending slots during a bounded retry sweep', async () => {
+    const storage = memoryStorage();
+    const request = vi.fn().mockResolvedValue({ ok: true, status: 201 });
+    const client = makeClient(storage, request);
+    client.establishAttempt(IDENTITY);
+    client.freezeObservation({ identity: IDENTITY, generation: 1, atBat: atBat(1) });
+    client.freezeObservation({ identity: IDENTITY, generation: 1, atBat: atBat(2) });
+
+    await expect(ownerDelivery(client).retryPending({
+      excludePitchNumbers: [2],
+    })).resolves.toEqual(['submitted']);
+
+    expect(request).toHaveBeenCalledTimes(1);
+    expect(request.mock.calls[0]?.[0].atBat.pitchNumber).toBe(1);
+    expect(storage.record()).toMatchObject({
+      observations: {
+        1: { delivery: 'submitted' },
+        2: { delivery: 'pending' },
+      },
+    });
+  });
+
+  it('times out a stuck pending request and continues to later slots', async () => {
+    vi.useFakeTimers();
+    try {
+      const storage = memoryStorage();
+      const signals: AbortSignal[] = [];
+      const request = vi.fn()
+        .mockImplementationOnce((_submission: DailyAtBatResultSubmission, signal: AbortSignal) => {
+          signals.push(signal);
+          return new Promise<{ ok: boolean; status: number }>(() => undefined);
+        })
+        .mockImplementationOnce((_submission: DailyAtBatResultSubmission, signal: AbortSignal) => {
+          signals.push(signal);
+          return Promise.resolve({ ok: true, status: 201 });
+        });
+      const client = makeClient(storage, request, () => 'attempt-one', 50);
+      client.establishAttempt(IDENTITY);
+      client.freezeObservation({ identity: IDENTITY, generation: 1, atBat: atBat(1) });
+      client.freezeObservation({ identity: IDENTITY, generation: 1, atBat: atBat(2) });
+
+      const retry = ownerDelivery(client).retryPending();
+      expect(request).toHaveBeenCalledTimes(1);
+
+      await vi.advanceTimersByTimeAsync(50);
+
+      await expect(retry).resolves.toEqual(['pending', 'submitted']);
+      expect(request).toHaveBeenCalledTimes(2);
+      expect(signals[0]?.aborted).toBe(true);
+      expect(storage.record()).toMatchObject({
+        observations: {
+          1: { delivery: 'pending' },
+          2: { delivery: 'submitted' },
+        },
+      });
+    } finally {
+      vi.useRealTimers();
+    }
+  });
+
   it('retries pending slots once in pitch order and never sends an unfrozen slot', async () => {
     const storage = memoryStorage();
     const request = vi.fn().mockResolvedValue({ ok: true, status: 201 });
@@ -202,8 +262,11 @@ function validJournal(store: ReturnType<typeof makeStore>) {
   return result.journal;
 }
 function makeClient(storage: ReturnType<typeof memoryStorage>, submitRequest: ReturnType<typeof vi.fn>,
-  createAttemptId: () => string | null = () => 'attempt-one') {
-  return createDailyAtBatResultClient({ storage, createAttemptId, submitRequest });
+  createAttemptId: () => string | null = () => 'attempt-one', requestTimeoutMs?: number) {
+  const options = { storage, createAttemptId, submitRequest };
+  return requestTimeoutMs === undefined
+    ? createDailyAtBatResultClient(options)
+    : createDailyAtBatResultClient({ ...options, requestTimeoutMs });
 }
 function ownerDelivery(client: ReturnType<typeof makeClient>) {
   const delivery = client.createOwnerDeliverySession(IDENTITY);

@@ -79,11 +79,13 @@ Use stable semantic session identity and a current ownership/readiness capabilit
 
 ### R5 — Pending delivery recovery is much narrower than “retryable” suggests
 
+Repair status: implemented in the bounded owner-scoped delivery-recovery follow-up. Resolved-AB POSTs now have a five-second deadline; timeout/transport ambiguity leaves the exact immutable payload pending. Owner acquisition still retries all pending slots, and every newly frozen terminal AB starts its own immediate delivery plus a sweep of older pending slots, excluding the newly created slots so they are not immediately retried. The sweep is owner/generation fenced through the existing R1 session and remains off the gameplay critical path.
+
 Files: `dailyAtBatResultClient.ts:retryPending`; `dailyAtBatGameplayCommit.ts:persistGameplayThenFreezeDailyAtBats`; `useDailyGameplayPersistence.ts` retry/commit effects.
 
 Transient failures retain exact payloads correctly. Automatic retry happens on owner acquisition. Later autosaves return `existing` for a frozen pending slot and only newly `created` slots enter the delivery list. There is no online-event trigger, bounded retry scheduler or request deadline. A slot that gets 503 may remain pending for the whole open session even after later slots succeed. Sequential hydration retry also stops progressing behind a never-settling first request.
 
-Choose/document a bounded owner-scoped delivery opportunity and timeout policy, separate from comparison-read retry. Fix R1 first. No tight timers, background service or daily-history scan is needed. Same-puzzle refresh/takeover retry already works; pending results from an old day are not globally drained.
+Implemented direction: use owner acquisition plus subsequent durable terminal freezes as bounded delivery opportunities. A stuck request is aborted after five seconds so sequential recovery can continue to later slots. There is no periodic retry timer, online-event listener, background service or old-day scan. A final transient failure may remain pending until a later owner acquisition/refresh; that is intentional undercount-over-background-work behavior, and exact payload/idempotency semantics are preserved.
 
 ### R6 — Malformed gameplay saves can throw instead of degrading safely
 
@@ -153,4 +155,4 @@ R6 and R8 are separate follow-ups; do not bundle them into comparison or a gener
 - Diagnostic tests asserted existing bad behavior and were not added to the regression suite. No new browser/mobile/production proof was performed. Existing server/provider mocks are not a new hosted atomicity/performance test.
 - Documentation drift: lifecycle plan header still said physical proof pending; START-HERE and architecture called the whole lifecycle fully browser-proven. Preserve successful scenarios as evidence, qualify the broader claim and link these unresolved findings. The manual still calls the product one Daily Inning while canonical product docs describe two competing beta games; reconcile that vocabulary separately.
 
-Review completion means evidence and next work are recorded. R1–R4 and R6 now have bounded repairs; R5, R7, R8 and the remaining interactive/mobile verification are still open.
+Review completion means evidence and next work are recorded. R1–R6 now have bounded repairs; R7, R8 and the remaining interactive/mobile verification are still open.

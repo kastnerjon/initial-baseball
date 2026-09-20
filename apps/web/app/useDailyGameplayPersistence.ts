@@ -264,14 +264,21 @@ export function useDailyGameplayPersistence({
     completedResultRef.current(completionPolicyRef.current);
 
     if (deliveryForCommit === null) return;
+    const expected = current;
     for (const pitchNumber of commit.deliveryPitchNumbers) {
-      const expected = current;
       void deliveryForCommit.deliverObservation(pitchNumber).then((result) => {
         if (isContributionDeliveryFailure(result)) {
           failCurrentContribution(expected);
         }
       });
     }
+    void deliveryForCommit.retryPending({
+      excludePitchNumbers: commit.deliveryPitchNumbers,
+    }).then((results) => {
+      if (results.some(isContributionDeliveryFailure)) {
+        failCurrentContribution(expected);
+      }
+    });
   }, [
     access,
     hasLoadedSavedState,

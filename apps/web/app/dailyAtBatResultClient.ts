@@ -11,7 +11,10 @@ import {
 type StoragePort = Pick<Storage, 'getItem' | 'setItem'>;
 type SubmissionRequest = (
   submission: DailyAtBatResultSubmission,
+  signal: AbortSignal,
 ) => Promise<{ ok: boolean; status: number }>;
+
+const DEFAULT_DAILY_AT_BAT_DELIVERY_TIMEOUT_MS = 5_000;
 
 export type DailyAtBatDeliveryState =
   | DailyAtBatDeliveryStatus
@@ -23,7 +26,9 @@ export type DailyAtBatOwnerDeliverySession = {
   readonly attemptId: string;
   readonly generation: number;
   deliverObservation(pitchNumber: number): Promise<DailyAtBatDeliveryState>;
-  retryPending(): Promise<DailyAtBatDeliveryState[]>;
+  retryPending(options?: {
+    excludePitchNumbers?: readonly number[];
+  }): Promise<DailyAtBatDeliveryState[]>;
   dispose(): void;
 };
 
@@ -33,11 +38,12 @@ export function createBrowserDailyAtBatResultClient(storage: StoragePort | null)
     createAttemptId: () => {
       try { return globalThis.crypto?.randomUUID?.() ?? null; } catch { return null; }
     },
-    submitRequest: async (submission) => {
+    submitRequest: async (submission, signal) => {
       const response = await fetch('/api/daily/at-bats', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify(submission),
+        signal,
       });
       return { ok: response.ok, status: response.status };
     },
@@ -48,10 +54,12 @@ export function createDailyAtBatResultClient({
   storage,
   createAttemptId,
   submitRequest,
+  requestTimeoutMs = DEFAULT_DAILY_AT_BAT_DELIVERY_TIMEOUT_MS,
 }: {
   storage: StoragePort | null;
   createAttemptId: () => string | null;
   submitRequest: SubmissionRequest;
+  requestTimeoutMs?: number;
 }) {
   const journalStore = createDailyAtBatAttemptJournalStore({ storage, createAttemptId });
   const inFlight = new Map<string, Promise<DailyAtBatDeliveryState>>();
@@ -96,6 +104,7 @@ export function createDailyAtBatResultClient({
         submission: cloneSubmission(observation.submission),
         journalStore,
         submitRequest,
+        requestTimeoutMs,
         isOwnerCurrent: () => readOwnedJournal() !== null,
       }).finally(() => {
         if (inFlight.get(flightKey) === request) inFlight.delete(flightKey);
@@ -104,12 +113,16 @@ export function createDailyAtBatResultClient({
       return request;
     }
 
-    async function retryPending(): Promise<DailyAtBatDeliveryState[]> {
+    async function retryPending(options: {
+      excludePitchNumbers?: readonly number[];
+    } = {}): Promise<DailyAtBatDeliveryState[]> {
       const current = readOwnedJournal();
       if (current === null) return [];
 
+      const excluded = new Set(options.excludePitchNumbers ?? []);
       const pitchNumbers = Object.values(current.observations)
-        .filter(observation => observation.delivery === 'pending')
+        .filter(observation => observation.delivery === 'pending'
+          && !excluded.has(observation.submission.atBat.pitchNumber))
         .map(observation => observation.submission.atBat.pitchNumber)
         .sort((a, b) => a - b);
 
@@ -155,6 +168,7 @@ async function deliver({
   submission,
   journalStore,
   submitRequest,
+  requestTimeoutMs,
   isOwnerCurrent,
 }: {
   identity: DailyAtBatAttemptIdentity;
@@ -162,14 +176,21 @@ async function deliver({
   submission: DailyAtBatResultSubmission;
   journalStore: ReturnType<typeof createDailyAtBatAttemptJournalStore>;
   submitRequest: SubmissionRequest;
+  requestTimeoutMs: number;
   isOwnerCurrent: () => boolean;
 }): Promise<DailyAtBatDeliveryState> {
-  let response: { ok: boolean; status: number };
+  let response: { ok: boolean; status: number } | null;
   try {
-    response = await submitRequest(cloneSubmission(submission));
+    response = await submitWithDeadline(
+      cloneSubmission(submission),
+      submitRequest,
+      requestTimeoutMs,
+    );
   } catch {
     return isOwnerCurrent() ? 'pending' : 'stale';
   }
+
+  if (response === null) return isOwnerCurrent() ? 'pending' : 'stale';
 
   if (!isOwnerCurrent()) return 'stale';
 
@@ -190,6 +211,39 @@ async function deliver({
   if (current.kind !== 'valid') return 'unavailable';
   const observation = current.journal.observations[String(submission.atBat.pitchNumber)];
   return observation?.delivery ?? 'stale';
+}
+
+async function submitWithDeadline(
+  submission: DailyAtBatResultSubmission,
+  submitRequest: SubmissionRequest,
+  requestTimeoutMs: number,
+): Promise<{ ok: boolean; status: number } | null> {
+  const controller = new AbortController();
+  let timeoutId: ReturnType<typeof setTimeout> | null = null;
+
+  const request = submitRequest(submission, controller.signal).then(
+    response => ({ kind: 'response' as const, response }),
+    error => ({ kind: 'error' as const, error }),
+  );
+  const timeout = new Promise<{ kind: 'timeout' }>((resolve) => {
+    timeoutId = setTimeout(() => {
+      resolve({ kind: 'timeout' });
+      controller.abort();
+    }, normalizeRequestTimeoutMs(requestTimeoutMs));
+  });
+
+  const outcome = await Promise.race([request, timeout]);
+  if (timeoutId !== null) clearTimeout(timeoutId);
+
+  if (outcome.kind === 'response') return outcome.response;
+  if (outcome.kind === 'error') throw outcome.error;
+  return null;
+}
+
+function normalizeRequestTimeoutMs(value: number): number {
+  return Number.isFinite(value) && value > 0
+    ? value
+    : DEFAULT_DAILY_AT_BAT_DELIVERY_TIMEOUT_MS;
 }
 
 function responseStatus(response: { ok: boolean; status: number }): DailyAtBatDeliveryStatus {
