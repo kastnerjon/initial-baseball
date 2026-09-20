@@ -98,6 +98,22 @@ describe('Daily Nine browser comparison client', () => {
       });
   });
 
+  it('preserves HTTP status when an error response body is not valid JSON', async () => {
+    const request = vi.fn().mockResolvedValue({
+      ok: false,
+      status: 502,
+      json: vi.fn().mockRejectedValue(new SyntaxError('bad gateway body')),
+    });
+    const client = createDailyNineComparisonClient({ request });
+
+    await expect(client.readCompleted(COMPLETED_KEY, new AbortController().signal))
+      .rejects.toMatchObject({
+        kind: 'http',
+        status: 502,
+        code: null,
+      });
+  });
+
   it('rejects malformed JSON bodies as unavailable client data', async () => {
     const request = vi.fn().mockResolvedValue({
       ok: true,
