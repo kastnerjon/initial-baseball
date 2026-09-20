@@ -1,6 +1,6 @@
 # Daily Nine terminal at-bat comparison UI
 
-Status: implemented; verification pending
+Status: implemented on PR #208
 Date: 2026-09-19
 
 ## Scope contract

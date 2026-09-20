@@ -371,6 +371,7 @@ function renderAtBatCard({
       requestPending: false,
       giveUpPending: false,
       requestError: null,
+      comparison: { status: 'idle' },
       onQueryChange: () => undefined,
       onSelectPlayer: () => undefined,
       onRevealHint: () => undefined,
