@@ -16,25 +16,31 @@ import { DailyNineComparisonRequestError } from './dailyNineComparisonReadServic
 import { GET as getAtBat } from './api/daily/comparison/at-bat/route';
 import { GET as getCompleted } from './api/daily/comparison/completed/route';
 
-const originalFlag = process.env.DAILY_NINE_COMPARISON_READS_ENABLED;
+const originalDisableFlag = process.env.DAILY_NINE_COMPARISON_READS_DISABLED;
+const originalLegacyEnableFlag = process.env.DAILY_NINE_COMPARISON_READS_ENABLED;
 
 describe('Daily Nine comparison GET adapters', () => {
   beforeEach(() => {
-    process.env.DAILY_NINE_COMPARISON_READS_ENABLED = 'true';
+    delete process.env.DAILY_NINE_COMPARISON_READS_DISABLED;
     server.readAtBat.mockReset();
     server.readCompleted.mockReset();
   });
 
   afterAll(() => {
-    if (originalFlag === undefined) {
+    if (originalDisableFlag === undefined) {
+      delete process.env.DAILY_NINE_COMPARISON_READS_DISABLED;
+    } else {
+      process.env.DAILY_NINE_COMPARISON_READS_DISABLED = originalDisableFlag;
+    }
+    if (originalLegacyEnableFlag === undefined) {
       delete process.env.DAILY_NINE_COMPARISON_READS_ENABLED;
     } else {
-      process.env.DAILY_NINE_COMPARISON_READS_ENABLED = originalFlag;
+      process.env.DAILY_NINE_COMPARISON_READS_ENABLED = originalLegacyEnableFlag;
     }
   });
 
-  it('fails closed before loading server comparison work when the flag is off', async () => {
-    delete process.env.DAILY_NINE_COMPARISON_READS_ENABLED;
+  it('fails closed before loading server comparison work when the disable flag is true', async () => {
+    process.env.DAILY_NINE_COMPARISON_READS_DISABLED = 'true';
 
     const response = await getAtBat(new Request(
       'http://localhost/api/daily/comparison/at-bat?date=2026-09-19&ruleset=points-v3&pitch=1',
@@ -48,6 +54,44 @@ describe('Daily Nine comparison GET adapters', () => {
     });
     expect(server.readAtBat).not.toHaveBeenCalled();
     expect(server.readCompleted).not.toHaveBeenCalled();
+  });
+
+  it.each(['', 'TRUE', '0', 'disabled'])(
+    'fails closed for malformed explicit disable configuration %j',
+    async (value) => {
+      process.env.DAILY_NINE_COMPARISON_READS_DISABLED = value;
+
+      const response = await getAtBat(new Request(
+        'http://localhost/api/daily/comparison/at-bat?date=2026-09-19&ruleset=points-v3&pitch=1',
+      ));
+
+      expect(response.status).toBe(404);
+      expect(server.readAtBat).not.toHaveBeenCalled();
+    },
+  );
+
+  it('allows an explicit false disable flag', async () => {
+    process.env.DAILY_NINE_COMPARISON_READS_DISABLED = 'false';
+    server.readAtBat.mockResolvedValue(atBatResponse());
+
+    const response = await getAtBat(new Request(
+      'http://localhost/api/daily/comparison/at-bat?date=2026-09-19&ruleset=points-v3&pitch=1',
+    ));
+
+    expect(response.status).toBe(200);
+    expect(server.readAtBat).toHaveBeenCalledOnce();
+  });
+
+  it('ignores the retired pre-activation enable flag', async () => {
+    process.env.DAILY_NINE_COMPARISON_READS_ENABLED = 'false';
+    server.readAtBat.mockResolvedValue(atBatResponse());
+
+    const response = await getAtBat(new Request(
+      'http://localhost/api/daily/comparison/at-bat?date=2026-09-19&ruleset=points-v3&pitch=1',
+    ));
+
+    expect(response.status).toBe(200);
+    expect(server.readAtBat).toHaveBeenCalledOnce();
   });
 
   it('passes only routing fields to the authoritative at-bat read boundary', async () => {

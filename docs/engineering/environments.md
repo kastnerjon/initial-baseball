@@ -38,6 +38,6 @@ Feature flags let us disable a broken/risky feature without removing code.
 
 ## Daily Nine comparison read activation
 
-`DAILY_NINE_COMPARISON_READS_ENABLED` is a server-only web flag and defaults off. Only the trimmed literal `true` enables the comparison GET adapters. Do not prefix it with `NEXT_PUBLIC_`.
+`DAILY_NINE_COMPARISON_READS_DISABLED` is the server-only emergency kill switch for the comparison GET adapters. After the September 19 performance/activation checkpoint, reads are enabled by default when the variable is absent. The exact trimmed value `false` also leaves reads enabled; `true`, blank, or malformed explicit values fail closed and return the versioned unavailable response before server comparison composition. Do not prefix it with `NEXT_PUBLIC_`.
 
-The route code may deploy while the flag remains off. Representative isolated read-performance evidence and an explicit activation checkpoint are required before setting it to `true` in Production.
+The pre-activation `DAILY_NINE_COMPARISON_READS_ENABLED` flag is no longer consulted after activation. Keep environment-based disabling in Vercel Project Settings rather than `vercel.json`, so an operational kill switch can override normal deployment behavior without a code change. Environment-setting changes require a redeploy to affect a deployment.

@@ -15,13 +15,16 @@ import { SupabaseDailyNineComparisonRepositoryError } from './supabaseDailyNineC
 
 describe('Daily Nine comparison HTTP helpers', () => {
   it.each([
-    [{}, false],
-    [{ DAILY_NINE_COMPARISON_READS_ENABLED: '' }, false],
-    [{ DAILY_NINE_COMPARISON_READS_ENABLED: 'false' }, false],
-    [{ DAILY_NINE_COMPARISON_READS_ENABLED: 'TRUE' }, false],
-    [{ DAILY_NINE_COMPARISON_READS_ENABLED: ' true ' }, true],
-    [{ DAILY_NINE_COMPARISON_READS_ENABLED: 'true' }, true],
-  ])('uses an explicit default-off server activation flag', (environment, expected) => {
+    [{}, true],
+    [{ DAILY_NINE_COMPARISON_READS_DISABLED: '' }, false],
+    [{ DAILY_NINE_COMPARISON_READS_DISABLED: 'false' }, true],
+    [{ DAILY_NINE_COMPARISON_READS_DISABLED: ' false ' }, true],
+    [{ DAILY_NINE_COMPARISON_READS_DISABLED: 'true' }, false],
+    [{ DAILY_NINE_COMPARISON_READS_DISABLED: ' true ' }, false],
+    [{ DAILY_NINE_COMPARISON_READS_DISABLED: 'TRUE' }, false],
+    [{ DAILY_NINE_COMPARISON_READS_DISABLED: '0' }, false],
+    [{ DAILY_NINE_COMPARISON_READS_ENABLED: 'false' }, true],
+  ])('defaults on and fails closed for explicit disable configuration', (environment, expected) => {
     expect(isDailyNineComparisonReadApiEnabled(environment)).toBe(expected);
   });
 

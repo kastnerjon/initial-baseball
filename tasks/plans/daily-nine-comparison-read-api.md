@@ -35,3 +35,10 @@ Request errors preserve only the shared error code. Authoritative puzzle/runtime
 ### Activation is a later checkpoint
 
 This PR adds the gate but does not configure it in Vercel. Representative isolated performance evidence is required before a separate production-activation decision.
+
+
+## Post-implementation activation note — September 19, 2026
+
+PR #203 completed the required representative performance checkpoint and supports the current raw-read provider at the 10,000-result beta target.
+
+The separate activation scope is `tasks/plans/daily-nine-comparison-read-activation.md`. It does not rewrite these route contracts. It changes availability from the pre-review default-off `DAILY_NINE_COMPARISON_READS_ENABLED` model to a post-review default-on model with server-only fail-closed `DAILY_NINE_COMPARISON_READS_DISABLED` as the emergency switch. Browser/UI consumption remains separate.
