@@ -7,8 +7,8 @@ Date: 2026-09-19
 
 - **Goal:** show current completed-game Daily Nine comparison on the final results screen without delaying the ninth-player reveal, View Results, sharing, or completion delivery.
 - **Owning layer:** `apps/web`.
-- **In scope:** a dedicated completed-comparison React hook over the existing comparison client/controller; prefetch from the final engine-complete transition; current-read refresh on restored completed games; whole-game YOU / AVG presentation; strict-lower BEAT percentage using the existing Daily-domain helper; settled 0–1 / 2–9 / 10+ average thresholds and 20-completion BEAT threshold; quiet unavailable state; reset/restore fencing; focused pure/static-render tests; canonical handoff/todo/architecture updates.
-- **Out of scope:** per-row historical at-bat averages on the final scorecard, comparison caching/coalescing/backoff, result-write retry changes, persistence authority changes, server/shared/Daily/engine/database changes, Classic comparison, latency instrumentation, R5/R6/R8, new dependencies or mounted DOM test infrastructure.
+- **In scope:** a narrow browser-safe `@initial-baseball/daily/comparison` export for the existing strict-lower helper; a dedicated completed-comparison React hook over the existing comparison client/controller; prefetch from the final engine-complete transition; current-read refresh on restored completed games; whole-game YOU / AVG presentation; strict-lower BEAT percentage using the existing Daily-domain helper; settled 0–1 / 2–9 / 10+ average thresholds and 20-completion BEAT threshold; quiet unavailable state; reset/restore fencing; focused pure/static-render tests; canonical handoff/todo/architecture updates.
+- **Out of scope:** per-row historical at-bat averages on the final scorecard, comparison caching/coalescing/backoff, result-write retry changes, persistence authority changes, Daily comparison semantic changes, server/shared/engine/database changes, Classic comparison, latency instrumentation, R5/R6/R8, new dependencies or mounted DOM test infrastructure.
 - **Acceptance checks:** the completed read can start while the ninth terminal reveal is still visible; moving to View Results does not restart a semantically identical request; restore fetches current comparison; ties are not counted as beaten; BEAT stays hidden below 20 completed results; comparison failure affects only comparison UI; focused tests, typecheck, full CI, file-size checks and applicable Preview verification pass.
 - **Stop conditions:** any need to change scoring, comparison contracts, persistence/write authority, result delivery, Supabase, dependencies, or Classic behavior moves to another PR.
 
@@ -27,7 +27,7 @@ final points-v3 engine transition / restored completion
 
 The hook owns browser read state only. The completed population remains independent from resolved-at-bat observations and from completed-result write delivery.
 
-The browser does not reimplement tie semantics: `getDailyNineStrictLowerFinishRate` remains the portable Daily owner. React only formats the returned fraction for display.
+The browser does not reimplement tie semantics: `getDailyNineStrictLowerFinishRate` remains the portable Daily owner. React imports it through the narrow `@initial-baseball/daily/comparison` subpath rather than the broad Daily barrel, so lineup/baseball-data exports are not part of this client dependency. React only formats the returned fraction for display.
 
 ## Request timing
 

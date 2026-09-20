@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { getDailyNineStrictLowerFinishRate } from '@initial-baseball/daily';
+import { getDailyNineStrictLowerFinishRate } from '@initial-baseball/daily/comparison';
 import {
   POINTS_V3_DAILY_RULESET_VERSION,
   type DailyPointsSummary,
