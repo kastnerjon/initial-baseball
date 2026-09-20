@@ -263,7 +263,10 @@ function validJournal(store: ReturnType<typeof makeStore>) {
 }
 function makeClient(storage: ReturnType<typeof memoryStorage>, submitRequest: ReturnType<typeof vi.fn>,
   createAttemptId: () => string | null = () => 'attempt-one', requestTimeoutMs?: number) {
-  return createDailyAtBatResultClient({ storage, createAttemptId, submitRequest, requestTimeoutMs });
+  const options = { storage, createAttemptId, submitRequest };
+  return requestTimeoutMs === undefined
+    ? createDailyAtBatResultClient(options)
+    : createDailyAtBatResultClient({ ...options, requestTimeoutMs });
 }
 function ownerDelivery(client: ReturnType<typeof makeClient>) {
   const delivery = client.createOwnerDeliverySession(IDENTITY);
