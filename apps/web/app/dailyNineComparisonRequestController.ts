@@ -28,6 +28,7 @@ type RequestIdentity = {
 
 type ChannelState = {
   generation: number;
+  nextRequestId: number;
   active: RequestIdentity | null;
 };
 
@@ -42,10 +43,9 @@ export type DailyNineComparisonRequestController = {
 
 export function createDailyNineComparisonRequestController(): DailyNineComparisonRequestController {
   const channels: Record<DailyNineComparisonRequestChannel, ChannelState> = {
-    'at-bat': { generation: 0, active: null },
-    completed: { generation: 0, active: null },
+    'at-bat': { generation: 0, nextRequestId: 0, active: null },
+    completed: { generation: 0, nextRequestId: 0, active: null },
   };
-  let nextRequestId = 0;
 
   return { request, invalidate, invalidateAll };
 
@@ -59,7 +59,7 @@ export function createDailyNineComparisonRequestController(): DailyNineCompariso
     const state = channels[channel];
     const identity: RequestIdentity = {
       generation: state.generation,
-      requestId: ++nextRequestId,
+      requestId: ++state.nextRequestId,
       key: cloneKey(key),
       abortController: new AbortController(),
     };
