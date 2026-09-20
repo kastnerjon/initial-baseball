@@ -1,6 +1,6 @@
 # Daily Nine browser comparison client
 
-Status: in progress  
+Status: implemented on PR #206; verification pending  
 Date: 2026-09-19
 
 ## Scope contract
