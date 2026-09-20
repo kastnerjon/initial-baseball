@@ -81,7 +81,9 @@ describe('GameCompleteView comparison', () => {
   });
 });
 
-function render(comparison: Parameters<typeof GameCompleteView>[0]['comparison']): string {
+function render(
+  comparison: NonNullable<Parameters<typeof GameCompleteView>[0]['comparison']>,
+): string {
   return renderToStaticMarkup(
     <GameCompleteView
       shareResult={shareResult}
