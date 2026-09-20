@@ -27,7 +27,7 @@ final points-v3 engine transition / restored completion
 
 The hook owns browser read state only. The completed population remains independent from resolved-at-bat observations and from completed-result write delivery.
 
-The browser does not reimplement tie semantics: `getDailyNineStrictLowerFinishRate` remains the portable Daily owner. React imports it through the narrow `@initial-baseball/daily/comparison` subpath rather than the broad Daily barrel, so lineup/baseball-data exports are not part of this client dependency. React only formats the returned fraction for display.
+The browser does not reimplement tie semantics: `getDailyNineStrictLowerFinishRate` remains the portable Daily owner. React imports it through the narrow `@initial-baseball/daily/comparison` subpath rather than the broad Daily barrel. The shared nine-at-bat constant now lives in a data-free Daily constants module so the comparison module no longer reaches `dailyPuzzleSelection` and its baseball-data imports. React only formats the returned fraction for display.
 
 ## Request timing
 

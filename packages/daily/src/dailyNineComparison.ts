@@ -1,6 +1,6 @@
 import { POINTS_V3_MAX_POINTS_PER_AT_BAT } from '@initial-baseball/engine';
 import { POINTS_V3_DAILY_RULESET_VERSION } from '@initial-baseball/shared';
-import { DAILY_AT_BAT_COUNT } from './dailyPuzzleSelection';
+import { DAILY_AT_BAT_COUNT } from './dailyConstants';
 
 const DAILY_NINE_MAX_POINTS = POINTS_V3_MAX_POINTS_PER_AT_BAT * DAILY_AT_BAT_COUNT;
 const DAILY_NINE_SCORE_HISTOGRAM_LENGTH = DAILY_NINE_MAX_POINTS + 1;

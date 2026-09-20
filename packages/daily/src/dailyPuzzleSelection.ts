@@ -3,9 +3,10 @@ import {
   dailyEligiblePlayers,
 } from '@initial-baseball/baseball-data';
 import type { Player } from '@initial-baseball/shared';
+import { DAILY_AT_BAT_COUNT } from './dailyConstants';
 
+export { DAILY_AT_BAT_COUNT };
 export const DAILY_PUZZLE_EPOCH = '2026-04-27';
-export const DAILY_AT_BAT_COUNT = 9;
 const LEGACY_OVERRIDE_COUNT = 6;
 const RECOGNIZABILITY_POOL_SIZES = [250, 250, 1000, 1000, 2500, 2500, 5000, 5000, 5000] as const;
 
