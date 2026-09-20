@@ -58,9 +58,8 @@ export function createDailyNineComparisonClient({ request }: { request: Comparis
       signal: AbortSignal,
     ): Promise<DailyNineAtBatComparisonApiResponse> {
       const response = await request(atBatPath(key), requestInit(signal));
-      const payload = await readPayload(response);
-      if (!response.ok) throwHttpError(response.status, payload);
-      const decoded = decodeAtBatResponse(payload);
+      if (!response.ok) throwHttpError(response.status, await readOptionalPayload(response));
+      const decoded = decodeAtBatResponse(await readPayload(response));
       if (!sameBaseIdentity(key, decoded.comparison)
         || key.pitchNumber !== decoded.comparison.pitchNumber) identityMismatch();
       return decoded;
@@ -71,9 +70,8 @@ export function createDailyNineComparisonClient({ request }: { request: Comparis
       signal: AbortSignal,
     ): Promise<DailyNineCompletedComparisonApiResponse> {
       const response = await request(completedPath(key), requestInit(signal));
-      const payload = await readPayload(response);
-      if (!response.ok) throwHttpError(response.status, payload);
-      const decoded = decodeCompletedResponse(payload);
+      if (!response.ok) throwHttpError(response.status, await readOptionalPayload(response));
+      const decoded = decodeCompletedResponse(await readPayload(response));
       if (!sameBaseIdentity(key, decoded.comparison)) identityMismatch();
       return decoded;
     },
@@ -104,6 +102,14 @@ async function readPayload(response: ComparisonHttpResponse): Promise<unknown> {
     return await response.json();
   } catch {
     invalidResponse('Daily Nine comparison response is not valid JSON.');
+  }
+}
+
+async function readOptionalPayload(response: ComparisonHttpResponse): Promise<unknown> {
+  try {
+    return await response.json();
+  } catch {
+    return null;
   }
 }
 
