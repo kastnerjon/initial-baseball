@@ -1,6 +1,6 @@
 # Anonymous result-write hardening
 
-Status: R8A is implemented and production-verified. R8B architecture is settled as a Vercel WAF control; log-only publication, observation, and later 429 enforcement remain operational steps. R8C remains separate.
+Status: R8A is implemented and production-verified. R8B architecture is settled as a Vercel WAF control; log-only publication, observation, and later 429 enforcement remain operational steps. R8C is implemented in this branch as sanitized handled-failure diagnostics.
 
 ## Goal
 
@@ -72,13 +72,22 @@ Do not mark R8B complete until the active Vercel rule is observed and production
 
 ### R8C — sanitized diagnostics
 
-Separate PR.
+Owning layer: apps/web result-write HTTP error mapping.
 
-Record structured, low-cardinality failure categories for handled route/provider failures so a clean platform runtime-error scan is no longer mistaken for proof that no caught internal failures occurred.
+Only caught internal failures that already map to HTTP 503 or 500 emit a diagnostic. Successful writes, ordinary validation failures, malformed JSON, oversized bodies, authoritative-puzzle request errors, and idempotency conflicts remain silent.
 
-Do not log request bodies, answer/hint data, credentials, raw Supabase errors, IP addresses, user agents, attempt IDs, submission IDs, or persistent browser identifiers.
+The event is one JSON string at error level with exactly these fields:
 
-Prefer route + coarse category + status/count semantics. Avoid success-per-write logging unless later evidence justifies the volume.
+- event: daily_result_write_failure;
+- route: at_bat or completed;
+- category: provider_configuration, provider_repository, or unexpected;
+- status: 503 or 500.
+
+The raw exception is never passed to the diagnostic helper. This structurally prevents request bodies, answers/hints, Supabase messages, credentials, attempt IDs, submission IDs, IP addresses, user agents, stack traces, or persistent browser identifiers from entering this event.
+
+Provider-configuration and repository failures remain distinguishable without exposing repository operation/details. Unexpected failures use one coarse category. Public HTTP status/body and private, no-store behavior remain unchanged.
+
+No success-per-write logging, request-rejection logging, analytics table, new dependency, Supabase schema, external drain, or logging vendor is introduced. If later volume or retention requirements justify a dedicated metrics sink, that is a separate observability decision.
 
 ## Verification
 
@@ -102,4 +111,15 @@ R8B:
 - production enforcement must return 429 when deliberately exceeded while normal result writes continue;
 - ordinary gameplay latency and comparison reads remain outside the rate-admission path.
 
-R8C requires its own scope contract and verification. Supabase migrations are not expected for R8B or R8C unless later evidence changes the design.
+R8C:
+
+- focused mapper regressions prove 400/409/413/success paths remain silent;
+- provider configuration maps to provider_configuration / 503;
+- provider repository errors map to provider_repository / 503;
+- unexpected faults map to unexpected / 500;
+- tests assert raw sensitive exception messages are absent from emitted diagnostics;
+- public error responses remain unchanged and private, no-store;
+- full CI/build and exact-head Vercel Preview remain required;
+- no synthetic production 500/503 is created merely to generate a log. Hosted runtime evidence can be collected from a naturally occurring handled failure or a separately approved safe fault-injection mechanism later.
+
+Supabase migrations are not expected for R8B or R8C unless later evidence changes the design.
