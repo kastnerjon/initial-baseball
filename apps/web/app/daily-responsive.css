@@ -121,9 +121,9 @@
     grid-template-columns: 36px minmax(0, 1fr) max-content;
     gap: 12px;
   }
-  .scorecard-row-points {
-    grid-template-columns: 36px minmax(0, 1fr) max-content max-content;
-    gap: 8px;
+  .daily-nine-scorecard-table th,
+  .daily-nine-scorecard-table td {
+    padding-block: 8px;
   }
   .daily-footer {
     flex-wrap: wrap;

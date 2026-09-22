@@ -1,13 +1,13 @@
 # Daily Nine scorecard/share average
 
-Status: final points-native presentation follow-up after PR #231
+Status: final shared-grid presentation follow-up after PR #232
 Date: 2026-09-22
 
 ## Scope contract
 
 - **Goal:** make Daily Nine user-facing result presentation consistently points-native wherever personal performance is shown or compared.
 - **Owning layer:** `apps/web` presentation, reusing existing engine scoring authority and existing comparison reads.
-- **In scope:** immediate terminal result uses `N PTS` rather than `Outcome HR/K/...`; ongoing/completed private rows remain initials + answer + personal AB points + `AVG x.x`; spoiler-safe per-AB share rows remain `BB: 0 • AVG: 7.0`; completed private headline becomes `X PTS • AVG Y.Y` when the whole-game AVG is displayable and `X PTS` otherwise; share header uses the same whole-game line; BEAT/sample-status remain secondary and keep existing thresholds; mobile private rows stay single-line; focused tests and canonical docs.
+- **In scope:** immediate terminal result remains `N PTS`; ongoing/completed Daily Nine scorecards use one shared initials / SCORE / AVG row model; in-app renders that model as a semantic table; share output renders the same model as a fixed-width monospace table; player names are omitted from the scorecard table and remain in the reveal experience; withheld/unavailable AVG renders `—`; completed private/share headline remains `X PTS • AVG Y.Y` when displayable and `X PTS` otherwise; BEAT/sample-status remain secondary; focused tests and canonical docs.
 - **Out of scope:** scoring-rule changes, new score calculations, new persisted scorecard fields, Supabase/API/shared contract changes, comparison population or threshold changes, onset-of-AB AVG display, baseball-style `.700` notation, Classic presentation changes, or unrelated browser/mobile verification.
 - **Acceptance checks:** no Daily Nine terminal/completed/share personal-performance surface uses `HR/3B/2B/1B/BB/K` as the user's score; terminal strikeout displays `0 PTS`; successful terminal display uses existing engine-derived points; completed private/share header displays `X PTS • AVG Y.Y` with current completed comparison data; withheld/unavailable AVG leaves `X PTS`; BEAT still appears only at 20+ completions; Classic remains baseball-native; focused tests, typecheck, file-size/full CI and exact-head Preview pass.
 - **Stop conditions:** any need to change scoring semantics, portable native facts, persistence, result submission, comparison API/provider or Classic rules becomes separate work.
@@ -24,13 +24,15 @@ not:
 
 `Outcome   3B`
 
-Private per-AB scorecard:
+Private and share scorecards use the same logical table:
 
-`BB   Barry Bonds   0   AVG 7.0`
+```text
+       SCORE   AVG
+BB:        0   7.0
+KGJ:       7     —
+```
 
-Spoiler-safe per-AB share output:
-
-`BB: 0 • AVG: 7.0`
+The in-app version is a semantic visual table; the share version is fixed-width text. Player names are not repeated in the scorecard because the reveal surface already provides them.
 
 Completed private/share headline:
 
@@ -79,14 +81,13 @@ No player answer name, raw observation, participant identifier or private browse
 
 ## Mobile layout
 
-Daily Nine point-comparison rows keep four columns on one line:
+Daily Nine scorecards use three columns in both app and share:
 
 1. initials;
-2. player answer;
-3. personal AB points;
-4. AVG.
+2. SCORE;
+3. AVG.
 
-The answer column owns flexible width and truncates with ellipsis before score/AVG wrap.
+The in-app table uses fixed logical numeric columns; the share table pads the same row model for monospace alignment. Missing AVG uses an em dash.
 
 ## Documentation impact
 

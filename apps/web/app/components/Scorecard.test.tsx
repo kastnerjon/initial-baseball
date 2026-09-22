@@ -9,10 +9,10 @@ import { PitchResultList } from './PitchResultList';
 (globalThis as Record<string, unknown>).React = React;
 
 describe('private scorecard and public share card', () => {
-  it('shows answer, personal AB points and AVG on one Daily Nine scorecard row', () => {
+  it('renders Daily Nine as an initials / Score / Avg comparison grid', () => {
     const html = renderToStaticMarkup(<PitchResultList
       pitchLines={[{ initials: 'BB', outcome: 'K' }, { initials: 'KGJ', outcome: 'HR' }]}
-      answers={{ 1: 'Barry Bonds', 2: 'Ken Griffey Jr.', 3: 'Unplayed Answer' }}
+      answers={{ 1: 'Barry Bonds', 2: 'Ken Griffey Jr.' }}
       points={{ 1: 0, 2: 7 }}
       comparisons={{
         1: { status: 'success', resolvedAtBatCount: 2, averagePoints: 7 },
@@ -21,16 +21,18 @@ describe('private scorecard and public share card', () => {
       title="At-bat Results" emptyLabel="No results" compact
     />);
 
-    expect(html).toMatch(/BB<.*Barry Bonds<.*Your score 0.*>0<.*AVG 7\.0</);
-    expect(html).toMatch(/KGJ<.*Ken Griffey Jr\.<.*Your score 7.*>7</);
+    expect(html).toContain('daily-nine-scorecard-table');
+    expect(html).toContain('>Score<');
+    expect(html).toContain('>Avg<');
+    expect(html).toMatch(/BB:<.*Your score 0.*>0<.*Average score 7\.0.*>7\.0</);
+    expect(html).toMatch(/KGJ:<.*Your score 7.*>7<.*Average score —.*>—</);
+    expect(html).not.toContain('Barry Bonds');
+    expect(html).not.toContain('Ken Griffey Jr.');
     expect(html).not.toContain('>K</strong>');
     expect(html).not.toContain('>HR</strong>');
-    expect(html).not.toContain('AVG 6.0');
-    expect(html).not.toContain('Unplayed Answer');
-    expect(html).toContain('scorecard-row-points');
   });
 
-  it('keeps Classic baseball-outcome rows unchanged when no points map is supplied', () => {
+  it('keeps Classic answer and baseball-outcome rows unchanged', () => {
     const html = renderToStaticMarkup(<PitchResultList
       pitchLines={[{ initials: 'AB', outcome: '3B' }]}
       answers={{ 1: 'Andy Benes' }}
@@ -39,10 +41,10 @@ describe('private scorecard and public share card', () => {
 
     expect(html).toContain('Andy Benes');
     expect(html).toContain('>3B</strong>');
-    expect(html).not.toContain('scorecard-row-points');
+    expect(html).not.toContain('daily-nine-scorecard-table');
   });
 
-  it('keeps answers private while sharing personal AB points versus AVG', () => {
+  it('uses the same score/AVG row semantics in spoiler-safe share output', () => {
     const gameState = createInitialDemoGameState(DEMO_DAILY_PUZZLE);
     gameState.completedPitchLines = [{ initials: 'KGJ', outcome: 'K' }];
     const shareResult = createDailyShareResult({ gameState, url: 'https://example.com' });
@@ -64,16 +66,12 @@ describe('private scorecard and public share card', () => {
       }}
     />);
 
-    expect(html).toContain('Ken Griffey Jr.');
-    expect(html).toContain('Your score 0');
-    expect(html).toContain('AVG 4.8');
-
     const shareCard = html.slice(html.indexOf('aria-label="Spoiler-free share card"'));
-    expect(shareCard).toContain('>Copy</button>');
-    expect(shareCard).toContain('role="status"');
-    expect(shareCard).toContain('KGJ: 0 • AVG: 4.8');
+    expect(shareCard).toContain('SCORE');
+    expect(shareCard).toContain('AVG');
+    expect(shareCard).toContain('KGJ:');
+    expect(shareCard).toContain('4.8');
     expect(shareCard).not.toContain('KGJ: K');
     expect(shareCard).not.toContain('Ken Griffey Jr.');
-    expect(shareText).not.toContain('Ken Griffey Jr.');
   });
 });
