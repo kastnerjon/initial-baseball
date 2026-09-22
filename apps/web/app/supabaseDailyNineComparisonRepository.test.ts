@@ -131,6 +131,45 @@ describe('Supabase Daily Nine comparison repository', () => {
       .rejects.toMatchObject({ kind: 'invalid-row' });
   });
 
+  it('records RPC wait and local decode as separate provider sub-stages', async () => {
+    const rpc = vi.fn().mockResolvedValue({
+      data: [{ resolved_at_bat_count: 2, awarded_points_sum: 9 }],
+      error: null,
+    });
+    const timings = {};
+    const repository = createSupabaseDailyNineComparisonRepository(asClient(rpc), {
+      timings,
+      now: clock([100, 145, 200, 203]),
+    });
+
+    await expect(repository.readAtBat({ ...KEY, pitchNumber: 2 })).resolves.toEqual({
+      resolvedAtBatCount: 2,
+      awardedPointsSum: 9,
+    });
+
+    expect(timings).toEqual({
+      'provider-rpc': 45,
+      'provider-decode': 3,
+    });
+  });
+
+  it('records RPC wait without inventing decode time when the RPC returns an error', async () => {
+    const timings = {};
+    const repository = createSupabaseDailyNineComparisonRepository(asClient(
+      vi.fn().mockResolvedValue({ data: null, error: { message: 'provider failure' } }),
+    ), {
+      timings,
+      now: clock([10, 88]),
+    });
+
+    await expect(repository.readCompletedGames(KEY)).rejects.toMatchObject({
+      kind: 'query',
+    });
+    expect(timings).toEqual({
+      'provider-rpc': 78,
+    });
+  });
+
   it('maps provider failures to query errors for each independent read', async () => {
     const atBat = createSupabaseDailyNineComparisonRepository(asClient(
       vi.fn().mockResolvedValue({ data: null, error: { message: 'at-bat failure' } }),
@@ -153,3 +192,14 @@ describe('Supabase Daily Nine comparison repository', () => {
 function asClient(rpc: ReturnType<typeof vi.fn>): SupabaseClient {
   return { rpc } as unknown as SupabaseClient;
 }
+
+function clock(values: number[]): () => number {
+  let index = 0;
+  return () => {
+    const value = values[index];
+    if (value === undefined) throw new Error('Test clock exhausted.');
+    index += 1;
+    return value;
+  };
+}
+

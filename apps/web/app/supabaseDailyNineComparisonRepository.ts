@@ -8,6 +8,11 @@ import type {
   DailyNineScoreBucket,
 } from '@initial-baseball/daily';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import {
+  measureDailyNineComparisonStage,
+  measureDailyNineComparisonSyncStage,
+  type DailyNineComparisonStageTimings,
+} from './dailyNineComparisonTiming';
 
 const AT_BAT_COMPARISON_FUNCTION = 'daily_nine_at_bat_comparison';
 const COMPLETED_COMPARISON_FUNCTION = 'daily_nine_completed_score_buckets';
@@ -24,26 +29,58 @@ export class SupabaseDailyNineComparisonRepositoryError extends Error {
   }
 }
 
+type SupabaseDailyNineComparisonRepositoryOptions = {
+  timings?: DailyNineComparisonStageTimings;
+  now?: () => number;
+};
+
 export function createSupabaseDailyNineComparisonRepository(
   client: SupabaseClient,
+  options: SupabaseDailyNineComparisonRepositoryOptions = {},
 ): DailyNineComparisonRepository {
+  const now = options.now ?? Date.now;
+
+  async function measureRpc<T>(operation: () => Promise<T>): Promise<T> {
+    if (options.timings === undefined) return operation();
+    return measureDailyNineComparisonStage(
+      options.timings,
+      'provider-rpc',
+      operation,
+      now,
+    );
+  }
+
+  function measureDecode<T>(operation: () => T): T {
+    if (options.timings === undefined) return operation();
+    return measureDailyNineComparisonSyncStage(
+      options.timings,
+      'provider-decode',
+      operation,
+      now,
+    );
+  }
+
   return {
     async readAtBat(query) {
-      const { data, error } = await client.rpc(
-        AT_BAT_COMPARISON_FUNCTION,
-        atBatParams(query),
+      const { data, error } = await measureRpc(
+        async () => client.rpc(
+          AT_BAT_COMPARISON_FUNCTION,
+          atBatParams(query),
+        ),
       );
       if (error !== null) throwQueryError('read Daily Nine at-bat comparison', error);
-      return decodeAtBatSource(data);
+      return measureDecode(() => decodeAtBatSource(data));
     },
 
     async readCompletedGames(key) {
-      const { data, error } = await client.rpc(
-        COMPLETED_COMPARISON_FUNCTION,
-        completedParams(key),
+      const { data, error } = await measureRpc(
+        async () => client.rpc(
+          COMPLETED_COMPARISON_FUNCTION,
+          completedParams(key),
+        ),
       );
       if (error !== null) throwQueryError('read Daily Nine completed comparison', error);
-      return decodeCompletedSource(data);
+      return measureDecode(() => decodeCompletedSource(data));
     },
   };
 }

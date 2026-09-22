@@ -103,6 +103,9 @@ describe('Daily Nine comparison GET adapters', () => {
     server.readAtBat.mockImplementation(async (_request, timings) => {
       timings.puzzle = 12;
       timings.provider = 34;
+      timings['provider-setup'] = 1;
+      timings['provider-rpc'] = 31;
+      timings['provider-decode'] = 2;
       return atBatResponse();
     });
 
@@ -114,7 +117,7 @@ describe('Daily Nine comparison GET adapters', () => {
     expect(response.status).toBe(200);
     expect(response.headers.get('cache-control')).toBe('private, no-store');
     expect(response.headers.get('server-timing')).toMatch(
-      /^daily-comparison-at-bat;dur=\d+, daily-comparison-compose;dur=\d+, daily-comparison-puzzle;dur=12, daily-comparison-provider;dur=34$/,
+      /^daily-comparison-at-bat;dur=\d+, daily-comparison-compose;dur=\d+, daily-comparison-puzzle;dur=12, daily-comparison-provider;dur=34, daily-comparison-provider-setup;dur=1, daily-comparison-provider-rpc;dur=31, daily-comparison-provider-decode;dur=2$/,
     );
     expect(server.readAtBat).toHaveBeenCalledWith({
       puzzleDate: '2026-09-19',

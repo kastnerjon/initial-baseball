@@ -110,15 +110,15 @@ Those statistics cover the matching PostgREST statements over their current stat
 
 Together, the two measurements materially narrow the slow path: the observed multi-second handler tail sits inside the web provider boundary, while PostgreSQL execution for the same RPC statements remains in the low-millisecond range. That is evidence against changing the aggregate SQL, indexes, rollups or puzzle-loading path as the next response.
 
-The remaining unresolved provider time is between the web adapter entering the provider boundary and PostgreSQL's measured execution. The provider currently consists of synchronous lazy Supabase client/repository construction when needed, `await client.rpc(...)`, and local row decoding. The next bounded measurement should split that boundary into local setup, RPC wait and local decode before any behavioral optimization.
+The remaining unresolved provider time is between the web adapter entering the provider boundary and PostgreSQL's measured execution. The provider currently consists of synchronous lazy Supabase client/repository construction when needed, `await client.rpc(...)`, and local row decoding. The next bounded measurement should split that boundary into local setup, RPC wait and local decode before any behavioral optimization. The provider sub-timing implementation checkpoint does exactly that with `provider-setup`, `provider-rpc`, and `provider-decode` while preserving the parent provider metric and lazy module-level client reuse; production sub-timing evidence remains open.
 
 ## Next bounded measurement
 
 Before changing storage or comparison product behavior:
 
 1. preserve the current raw-read architecture and aggregate SQL/indexes;
-2. split the already-identified provider boundary into local setup, RPC wait and local decode;
-3. use production evidence from that split before changing transport/provider behavior;
+2. use the request-local provider sub-timing seam to separate local setup, RPC wait and local decode;
+3. re-sample production with those nested metrics before changing transport/provider behavior;
 4. separately perform ordinary mobile/browser trigger-to-visible QA, including delayed/failed reads and stale-request behavior.
 
 Any actual performance change should target the measured slow stage rather than guessing. The stage seam is specified in `tasks/plans/daily-nine-comparison-stage-timing.md`; it does not itself change performance behavior.

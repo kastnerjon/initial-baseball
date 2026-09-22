@@ -57,6 +57,8 @@ describe('server Daily Nine comparison timing composition', () => {
     dependencies.getPublicPuzzle.mockReset();
     dependencies.repository.readAtBat.mockReset();
     dependencies.repository.readCompletedGames.mockReset();
+    dependencies.createRepository.mockClear();
+    dependencies.createServerSupabaseClient.mockClear();
   });
 
   it('records puzzle and provider stages around an at-bat read', async () => {
@@ -77,6 +79,7 @@ describe('server Daily Nine comparison timing composition', () => {
     expect(timings).toEqual({
       puzzle: expect.any(Number),
       provider: expect.any(Number),
+      'provider-setup': expect.any(Number),
     });
     expect(dependencies.getPublicPuzzle).toHaveBeenCalledWith(PUZZLE.puzzleDate);
     expect(dependencies.repository.readAtBat).toHaveBeenCalledOnce();
@@ -97,6 +100,7 @@ describe('server Daily Nine comparison timing composition', () => {
     expect(timings).toEqual({
       puzzle: expect.any(Number),
       provider: expect.any(Number),
+      'provider-setup': expect.any(Number),
     });
   });
 
@@ -113,5 +117,6 @@ describe('server Daily Nine comparison timing composition', () => {
     expect(timings).toEqual({
       puzzle: expect.any(Number),
     });
+    expect(dependencies.createRepository).not.toHaveBeenCalled();
   });
 });
