@@ -90,10 +90,10 @@ Admin redesign is deferred. The user may supply a future date and nine ordered p
 - [x] Exercise routine owner-supplied future-lineup entry through Dailies #149–#151: exact nine-player order persisted, explicit scheduling reached revision 2 with `chatops:assistant` attribution, and a `pg_net` timeout-after-commit case was safely reconciled by authoritative readback before retry.
 - [x] Verify seven-day Supabase horizon and missing-record creation: Dailies #145–#151 are persisted, all seven are public-consumable lifecycle states, and owner-supplied #149–#151 were created/replaced/scheduled through the private ChatOps path.
 - [x] Make public scheduled/published resolution use the existing manual editorial candidate universe without changing the automatic pool; add rejection/fallback/order regression coverage.
-- [ ] Preview/search/replace/revalidate one future slot through the authenticated editor workflow.
+- [ ] Manual pre-launch QA (non-blocking for feature work): preview/search/replace/revalidate one future slot through the authenticated editor workflow. Current connected tooling can verify the Basic-auth challenge but cannot supply the owner credential interactively.
 - [x] Verify public scheduled/published consumption for an editorially scheduled future puzzle. Production Daily #149 consumed the still-`scheduled` revision-2 editorial row; stored canonical IDs recomputed to the exact public fingerprint `83a0294e`. Evidence: `docs/engineering/daily-editorial-public-selection-verification-2026-09-22.md`.
 - [x] Verify deterministic fallback for missing/draft records. Live authoritative reads used `daily-2026-08-01` for a hosted draft row and `daily-2026-09-14` for an absent row. Evidence: `docs/engineering/daily-editorial-public-selection-verification-2026-09-22.md`.
-- [ ] Reconcile issues #97, #91, and #86 after the full hosted checklist.
+- [x] Reconcile issues #97, #91, and #86: #91 was already completed; stale deployment/recovery trackers #97 and #86 were closed September 22 after current Preview/Production and progression behavior were reverified.
 
 ### Timed production observation
 
@@ -120,7 +120,7 @@ Admin redesign is deferred. The user may supply a future date and nine ordered p
 - [x] Legacy one-hint route removed from active client path.
 - [x] Answer-integrity/product/API/architecture docs amended.
 - [x] Focused tests, full CI, preview, P1 review fixes, merge, production payload/build QA, and runtime-error verification.
-- [ ] Real-browser saved hydration and interaction QA remains under hosted verification.
+- [ ] Manual pre-launch QA (non-blocking for feature work): real-browser saved hydration and interaction verification.
 
 ## 4. Completed-game results and comparison
 
@@ -219,8 +219,8 @@ Replacement plan: `tasks/plans/resolved-at-bat-comparison.md`. PR #174 is closed
 - [x] Re-sample production using provider sub-timing (PR #226 evidence checkpoint): 15 successful reads per route show setup/decode negligible and multi-second tails inside awaited `client.rpc(...)`; matching PostgreSQL execution remains low-millisecond. Stop SQL/index/rollup/cache optimization at this beta checkpoint.
 - [x] Prefetch the exact hydrated active points-v3 AB comparison while keeping it undisclosed until terminal reveal; terminal own-point projection reuses the same read state rather than restarting the GET.
 - [x] Record the #227 post-merge hosted/source checkpoint: exact main/CI/production identity, canonical aliases, live schema-1 comparison HTTP 200 + `private, no-store`, clean exact-deployment error/fatal scan, source/test verification, and an explicit statement of what browser/mobile behavior is still unproven. Evidence: `docs/engineering/daily-nine-comparison-prefetch-verification-2026-09-22.md`.
-- [ ] In an ordinary browser, verify one GET across active AB → terminal projection, trigger-to-visible latency, controlled delayed/failed reads, and stale-response behavior across Next / Reset / restore.
-- [ ] Complete physical/mobile interaction and answer/spoiler-integrity QA; confirm comparison delay never blocks gameplay actions or result delivery.
+- [ ] Manual pre-launch QA (non-blocking for feature work): in an ordinary browser, verify active AB → terminal comparison request behavior, trigger-to-visible latency, controlled delayed/failed reads, and stale-response behavior across Next / Reset / restore.
+- [ ] Manual pre-launch QA (non-blocking for feature work): physical/mobile interaction and answer/spoiler-integrity check; confirm comparison delay never blocks gameplay actions or result delivery.
 - [x] Record the exact PR #209 hosted checkpoint before interactive QA: main/CI/production deployment identity, clean runtime-error scan, successful current-deployment comparison reads, Supabase migration/RPC access posture, exact-main bundle output and hidden-answer QA. This does **not** close either interactive item above. Evidence: `docs/engineering/daily-nine-comparison-hosted-verification-2026-09-20.md`.
 
 ### 4E. Classic comparison
@@ -229,6 +229,10 @@ Replacement plan: `tasks/plans/resolved-at-bat-comparison.md`. PR #174 is closed
 - [ ] Keep later-batter reach population distinct from all Classic completions.
 - [ ] Do not invent a single Classic percentile/ordering metric until explicitly settled.
 - [ ] Avoid elaborate Classic-only analytics until beta feedback justifies retaining Classic.
+
+## Feature-development resumption checkpoint
+
+Hosted architecture/storage/comparison/editorial verification is sufficient to resume product work. Do not expand QA scope merely because an interactive/manual check remains open; the explicit manual pre-launch items above stay deferred unless a concrete defect or launch blocker appears. Next implementation track: permanent archive and local history, one bounded PR at a time.
 
 ## 5. Permanent archive and local history
 

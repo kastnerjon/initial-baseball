@@ -37,7 +37,11 @@ PR #227 post-merge hosted/source verification is now recorded in `docs/engineeri
 
 ## Current editorial public-selection checkpoint
 
-September 22 hosted verification closes two remaining public-selection checks without runtime changes. Production Daily #149 is served from the still-`scheduled` revision-2 editorial row: Daily Nine, Classic and both comparison boundaries bind to `daily-2026-09-22-editorial-83a0294e`, and independently recomputing the editorial fingerprint from the nine stored canonical IDs yields the same `83a0294e`. Deterministic fallback is also live-proven for both branches: hosted draft Daily #97 resolves as `daily-2026-08-01`, and missing-record Daily #141 resolves as `daily-2026-09-14`. Authenticated-editor preview/search/replace/revalidate remains open. Evidence: `docs/engineering/daily-editorial-public-selection-verification-2026-09-22.md`.
+September 22 hosted verification closes two remaining public-selection checks without runtime changes. Production Daily #149 is served from the still-`scheduled` revision-2 editorial row: Daily Nine, Classic and both comparison boundaries bind to `daily-2026-09-22-editorial-83a0294e`, and independently recomputing the editorial fingerprint from the nine stored canonical IDs yields the same `83a0294e`. Deterministic fallback is also live-proven for both branches: hosted draft Daily #97 resolves as `daily-2026-08-01`, and missing-record Daily #141 resolves as `daily-2026-09-14`. Authenticated-editor preview/search/replace/revalidate remains a manual pre-launch check because the connected tooling cannot supply the owner Basic-auth credential interactively; it is not a feature-development blocker. Issues #97 and #86 are now closed as completed, while #91 was already closed. Evidence: `docs/engineering/daily-editorial-public-selection-verification-2026-09-22.md`.
+
+## Feature-development resumption checkpoint
+
+The September 22 QA pass has a hard stop. Remaining ordinary-browser, physical-mobile, saved-hydration, and authenticated-editor interaction checks are retained as manual pre-launch QA; they are not reasons to keep adding verification work in the absence of a concrete defect. Current `points-v3` scoring remains unchanged. Feature development resumes with **Permanent archive and local history**, preserving the existing one-bounded-concern-per-PR and fresh-eye review discipline.
 
 ## Architecture map
 
