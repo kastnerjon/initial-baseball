@@ -8,6 +8,10 @@ import {
   type DailyNineAtBatComparisonReadRequest,
   type DailyNineCompletedComparisonReadRequest,
 } from './dailyNineComparisonReadService';
+import {
+  measureDailyNineComparisonStage,
+  type DailyNineComparisonStageTimings,
+} from './dailyNineComparisonTiming';
 import { getPacificDailyDateString } from './getPacificDailyDateString';
 import { dailyRuntime } from './serverCanonicalRuntime';
 import { createServerSupabaseClient } from './serverSupabaseClient';
@@ -26,20 +30,41 @@ const lazyRepository: DailyNineComparisonRepository = {
   },
 };
 
-const service = createDailyNineComparisonReadService({
-  comparison: createDailyNineComparisonService(lazyRepository),
-  loadAuthoritativePuzzle: puzzleDate => dailyRuntime.getPublicPuzzle(puzzleDate),
-  getCurrentDailyDate: getPacificDailyDateString,
-});
-
 export function readDailyNineAtBatComparison(
   request: DailyNineAtBatComparisonReadRequest,
+  timings: DailyNineComparisonStageTimings = {},
 ) {
-  return service.readAtBat(request);
+  return createReadService(timings).readAtBat(request);
 }
 
 export function readDailyNineCompletedComparison(
   request: DailyNineCompletedComparisonReadRequest,
+  timings: DailyNineComparisonStageTimings = {},
 ) {
-  return service.readCompleted(request);
+  return createReadService(timings).readCompleted(request);
+}
+
+function createReadService(timings: DailyNineComparisonStageTimings) {
+  const timedRepository: DailyNineComparisonRepository = {
+    readAtBat: query => measureDailyNineComparisonStage(
+      timings,
+      'provider',
+      () => lazyRepository.readAtBat(query),
+    ),
+    readCompletedGames: key => measureDailyNineComparisonStage(
+      timings,
+      'provider',
+      () => lazyRepository.readCompletedGames(key),
+    ),
+  };
+
+  return createDailyNineComparisonReadService({
+    comparison: createDailyNineComparisonService(timedRepository),
+    loadAuthoritativePuzzle: puzzleDate => measureDailyNineComparisonStage(
+      timings,
+      'puzzle',
+      () => dailyRuntime.getPublicPuzzle(puzzleDate),
+    ),
+    getCurrentDailyDate: getPacificDailyDateString,
+  });
 }

@@ -81,7 +81,9 @@ describe('Daily Nine comparison GET adapters', () => {
     ));
 
     expect(response.status).toBe(200);
-    expect(response.headers.get('server-timing')).toMatch(/^daily-comparison-at-bat;dur=\d+$/);
+    expect(response.headers.get('server-timing')).toMatch(
+      /^daily-comparison-at-bat;dur=\d+, daily-comparison-compose;dur=\d+$/,
+    );
     expect(server.readAtBat).toHaveBeenCalledOnce();
   });
 
@@ -98,7 +100,11 @@ describe('Daily Nine comparison GET adapters', () => {
   });
 
   it('passes only routing fields to the authoritative at-bat read boundary', async () => {
-    server.readAtBat.mockResolvedValue(atBatResponse());
+    server.readAtBat.mockImplementation(async (_request, timings) => {
+      timings.puzzle = 12;
+      timings.provider = 34;
+      return atBatResponse();
+    });
 
     const response = await getAtBat(new Request(
       'http://localhost/api/daily/comparison/at-bat'
@@ -107,17 +113,23 @@ describe('Daily Nine comparison GET adapters', () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get('cache-control')).toBe('private, no-store');
-    expect(response.headers.get('server-timing')).toMatch(/^daily-comparison-at-bat;dur=\d+$/);
+    expect(response.headers.get('server-timing')).toMatch(
+      /^daily-comparison-at-bat;dur=\d+, daily-comparison-compose;dur=\d+, daily-comparison-puzzle;dur=12, daily-comparison-provider;dur=34$/,
+    );
     expect(server.readAtBat).toHaveBeenCalledWith({
       puzzleDate: '2026-09-19',
       rulesetVersion: 'points-v3',
       pitchNumber: '4',
-    });
+    }, expect.any(Object));
     expect(server.readCompleted).not.toHaveBeenCalled();
   });
 
   it('keeps completed reads independent and ignores user score/puzzle identity query data', async () => {
-    server.readCompleted.mockResolvedValue(completedResponse());
+    server.readCompleted.mockImplementation(async (_request, timings) => {
+      timings.puzzle = 8;
+      timings.provider = 21;
+      return completedResponse();
+    });
 
     const response = await getCompleted(new Request(
       'http://localhost/api/daily/comparison/completed'
@@ -126,11 +138,13 @@ describe('Daily Nine comparison GET adapters', () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get('cache-control')).toBe('private, no-store');
-    expect(response.headers.get('server-timing')).toMatch(/^daily-comparison-completed;dur=\d+$/);
+    expect(response.headers.get('server-timing')).toMatch(
+      /^daily-comparison-completed;dur=\d+, daily-comparison-compose;dur=\d+, daily-comparison-puzzle;dur=8, daily-comparison-provider;dur=21$/,
+    );
     expect(server.readCompleted).toHaveBeenCalledWith({
       puzzleDate: '2026-09-19',
       rulesetVersion: 'points-v3',
-    });
+    }, expect.any(Object));
     expect(server.readAtBat).not.toHaveBeenCalled();
   });
 
@@ -144,7 +158,9 @@ describe('Daily Nine comparison GET adapters', () => {
     ));
 
     expect(response.status).toBe(400);
-    expect(response.headers.get('server-timing')).toMatch(/^daily-comparison-at-bat;dur=\d+$/);
+    expect(response.headers.get('server-timing')).toMatch(
+      /^daily-comparison-at-bat;dur=\d+, daily-comparison-compose;dur=\d+$/,
+    );
     await expect(response.json()).resolves.toEqual({
       schemaVersion: 1,
       error: 'invalid_request',
@@ -159,7 +175,9 @@ describe('Daily Nine comparison GET adapters', () => {
     ));
 
     expect(response.status).toBe(500);
-    expect(response.headers.get('server-timing')).toMatch(/^daily-comparison-completed;dur=\d+$/);
+    expect(response.headers.get('server-timing')).toMatch(
+      /^daily-comparison-completed;dur=\d+, daily-comparison-compose;dur=\d+$/,
+    );
     await expect(response.json()).resolves.toEqual({
       schemaVersion: 1,
       error: 'comparison_unavailable',
