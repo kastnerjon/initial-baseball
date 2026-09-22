@@ -3,6 +3,7 @@ import {
   createDailyNineComparisonService,
   type DailyNineComparisonRepository,
 } from '@initial-baseball/daily';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   createDailyNineComparisonReadService,
   type DailyNineAtBatComparisonReadRequest,
@@ -10,6 +11,7 @@ import {
 } from './dailyNineComparisonReadService';
 import {
   measureDailyNineComparisonStage,
+  measureDailyNineComparisonSyncStage,
   type DailyNineComparisonStageTimings,
 } from './dailyNineComparisonTiming';
 import { getPacificDailyDateString } from './getPacificDailyDateString';
@@ -17,18 +19,7 @@ import { dailyRuntime } from './serverCanonicalRuntime';
 import { createServerSupabaseClient } from './serverSupabaseClient';
 import { createSupabaseDailyNineComparisonRepository } from './supabaseDailyNineComparisonRepository';
 
-let repository: DailyNineComparisonRepository | null = null;
-
-const lazyRepository: DailyNineComparisonRepository = {
-  readAtBat(query) {
-    repository ??= createSupabaseDailyNineComparisonRepository(createServerSupabaseClient());
-    return repository.readAtBat(query);
-  },
-  readCompletedGames(key) {
-    repository ??= createSupabaseDailyNineComparisonRepository(createServerSupabaseClient());
-    return repository.readCompletedGames(key);
-  },
-};
+let supabaseClient: SupabaseClient | null = null;
 
 export function readDailyNineAtBatComparison(
   request: DailyNineAtBatComparisonReadRequest,
@@ -49,12 +40,12 @@ function createReadService(timings: DailyNineComparisonStageTimings) {
     readAtBat: query => measureDailyNineComparisonStage(
       timings,
       'provider',
-      () => lazyRepository.readAtBat(query),
+      () => requestRepository(timings).readAtBat(query),
     ),
     readCompletedGames: key => measureDailyNineComparisonStage(
       timings,
       'provider',
-      () => lazyRepository.readCompletedGames(key),
+      () => requestRepository(timings).readCompletedGames(key),
     ),
   };
 
@@ -67,4 +58,17 @@ function createReadService(timings: DailyNineComparisonStageTimings) {
     ),
     getCurrentDailyDate: getPacificDailyDateString,
   });
+}
+
+function requestRepository(
+  timings: DailyNineComparisonStageTimings,
+): DailyNineComparisonRepository {
+  return measureDailyNineComparisonSyncStage(
+    timings,
+    'provider-setup',
+    () => {
+      supabaseClient ??= createServerSupabaseClient();
+      return createSupabaseDailyNineComparisonRepository(supabaseClient, { timings });
+    },
+  );
 }

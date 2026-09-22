@@ -4,6 +4,9 @@ export const DAILY_NINE_COMPARISON_TIMING_STAGES = [
   'compose',
   'puzzle',
   'provider',
+  'provider-setup',
+  'provider-rpc',
+  'provider-decode',
 ] as const;
 
 export type DailyNineComparisonTimingStage =
@@ -21,6 +24,20 @@ export async function measureDailyNineComparisonStage<T>(
   const startedAt = now();
   try {
     return await operation();
+  } finally {
+    timings[stage] = Math.max(0, now() - startedAt);
+  }
+}
+
+export function measureDailyNineComparisonSyncStage<T>(
+  timings: DailyNineComparisonStageTimings,
+  stage: DailyNineComparisonTimingStage,
+  operation: () => T,
+  now: () => number = Date.now,
+): T {
+  const startedAt = now();
+  try {
+    return operation();
   } finally {
     timings[stage] = Math.max(0, now() - startedAt);
   }
