@@ -91,8 +91,8 @@ Admin redesign is deferred. The user may supply a future date and nine ordered p
 - [x] Verify seven-day Supabase horizon and missing-record creation: Dailies #145–#151 are persisted, all seven are public-consumable lifecycle states, and owner-supplied #149–#151 were created/replaced/scheduled through the private ChatOps path.
 - [x] Make public scheduled/published resolution use the existing manual editorial candidate universe without changing the automatic pool; add rejection/fallback/order regression coverage.
 - [ ] Preview/search/replace/revalidate one future slot through the authenticated editor workflow.
-- [ ] Verify public scheduled/published consumption for an editorially scheduled future puzzle.
-- [ ] Verify deterministic fallback for missing/draft records.
+- [x] Verify public scheduled/published consumption for an editorially scheduled future puzzle. Production Daily #149 consumed the still-`scheduled` revision-2 editorial row; stored canonical IDs recomputed to the exact public fingerprint `83a0294e`. Evidence: `docs/engineering/daily-editorial-public-selection-verification-2026-09-22.md`.
+- [x] Verify deterministic fallback for missing/draft records. Live authoritative reads used `daily-2026-08-01` for a hosted draft row and `daily-2026-09-14` for an absent row. Evidence: `docs/engineering/daily-editorial-public-selection-verification-2026-09-22.md`.
 - [ ] Reconcile issues #97, #91, and #86 after the full hosted checklist.
 
 ### Timed production observation
