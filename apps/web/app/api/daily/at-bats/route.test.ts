@@ -12,6 +12,7 @@ import { DailyRuntimeRequestError } from '../../../dailyRuntimeService';
 import { ServerSupabaseConfigurationError } from '../../../serverSupabaseClient';
 import { SupabaseDailyAtBatResultRepositoryError } from '../../../supabaseDailyAtBatResultRepository';
 import { mapAtBatResultRouteError } from '../../../dailyAtBatResultHttp';
+import { DAILY_RESULT_REQUEST_BODY_MAX_BYTES } from '../../../dailyResultRequestBody';
 import { POST } from './route';
 
 describe('POST /api/daily/at-bats', () => {
@@ -40,6 +41,19 @@ describe('POST /api/daily/at-bats', () => {
     }));
 
     expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ error: 'invalid_submission' });
+    expect(server.submitDailyAtBatResult).not.toHaveBeenCalled();
+  });
+
+  it('rejects oversized request bodies before server composition', async () => {
+    const response = await POST(new Request('http://localhost/api/daily/at-bats', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify('a'.repeat(DAILY_RESULT_REQUEST_BODY_MAX_BYTES)),
+    }));
+
+    expect(response.status).toBe(413);
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
     await expect(response.json()).resolves.toEqual({ error: 'invalid_submission' });
     expect(server.submitDailyAtBatResult).not.toHaveBeenCalled();
   });
