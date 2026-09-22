@@ -49,11 +49,13 @@ export function GameCompleteView({
         pitchLines={shareResult.pitchLines}
         title="At-bat Results"
         emptyLabel="No at-bat results were recorded."
-        summaryMetric={scorecardAverage === null ? undefined : {
-          label: scorecardAverage.label,
-          value: scorecardAverage.value,
-          note: scorecardAverage.note,
-        }}
+        {...(scorecardAverage === null ? {} : {
+          summaryMetric: {
+            label: scorecardAverage.label,
+            value: scorecardAverage.value,
+            note: scorecardAverage.note,
+          },
+        })}
       />
       <DailyShareCard shareText={shareCardText} />
       {onResetToday !== undefined ? (
