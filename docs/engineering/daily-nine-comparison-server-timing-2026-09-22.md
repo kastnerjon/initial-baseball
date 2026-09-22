@@ -1,6 +1,6 @@
 # Daily Nine comparison production Server-Timing evidence — September 22, 2026
 
-Status: handler-level and stage-decomposed production samples recorded; provider boundary owns the strongest observed tail while some at-bat residual variance remains; provider sub-decomposition and browser trigger-to-visible remain open
+Status: handler, stage, and provider-subtimed production samples recorded; multi-second tail is localized to awaited RPC while matching PostgreSQL execution remains low-millisecond; storage/query optimization is stopped for this beta checkpoint
 
 ## Purpose
 
@@ -112,16 +112,70 @@ Together, the two measurements materially narrow the slow path: the observed mul
 
 The remaining unresolved provider time is between the web adapter entering the provider boundary and PostgreSQL's measured execution. The provider currently consists of synchronous lazy Supabase client/repository construction when needed, `await client.rpc(...)`, and local row decoding. The next bounded measurement should split that boundary into local setup, RPC wait and local decode before any behavioral optimization. The provider sub-timing implementation checkpoint does exactly that with `provider-setup`, `provider-rpc`, and `provider-decode` while preserving the parent provider metric and lazy module-level client reuse; production sub-timing evidence remains open.
 
+
+## Provider-subtimed production re-sample after PR #225
+
+Exact checkpoint:
+
+- Git main: `90073bccd67002fdaf6fa85f5707be5f8968051b` (PR #225).
+- Production deployment: `dpl_ABUyV3qrm2sEg2KAx7ULNAfGdLwo`, READY on that exact SHA.
+- Fifteen successful public-production samples were retained per route across two collection batches after the nested provider metrics were live.
+- Every retained request returned HTTP 200 with `Cache-Control: private, no-store`.
+- Each tuple below is `total / compose / puzzle / provider / setup / rpc / decode` in milliseconds. The provider metric is the parent boundary; setup/RPC/decode are nested inside it.
+
+At-bat tuples, in collection order:
+
+`992/5/50/666/5/661/0; 1502/0/7/1495/0/1495/0; 176/2/52/87/1/86/0; 38/0/7/31/0/31/0; 63/0/7/56/0/56/0; 985/2/41/736/6/730/0; 55/0/6/49/0/49/0; 44/0/5/38/0/38/0; 53/0/5/46/0/46/0; 77/0/20/40/0/40/0; 61/0/6/54/0/54/0; 1178/0/11/1166/0/1166/0; 46/0/5/41/0/41/0; 45/0/6/38/0/38/0; 77/0/5/71/0/71/0`
+
+Completed tuples, in collection order:
+
+`72/0/7/65/0/65/0; 2141/0/15/2125/0/2125/0; 85/0/15/69/0/68/1; 54/0/7/47/0/47/0; 92/0/12/80/0/80/0; 385/0/7/377/0/377/0; 39/0/4/34/0/34/0; 144/0/5/138/0/138/0; 107/0/32/75/0/75/0; 46/0/5/40/0/40/0; 88/0/5/83/0/83/0; 52/1/5/45/0/45/0; 60/0/6/54/0/54/0; 46/0/5/41/0/41/0; 71/0/11/59/0/59/0`
+
+Summary:
+
+| Route/stage | n | Median | Nearest-rank p95 | Max |
+| --- | ---: | ---: | ---: | ---: |
+| At-bat total | 15 | 63 ms | 1,502 ms | 1,502 ms |
+| At-bat provider | 15 | 54 ms | 1,495 ms | 1,495 ms |
+| At-bat provider setup | 15 | 0 ms | 6 ms | 6 ms |
+| At-bat provider RPC | 15 | 54 ms | 1,495 ms | 1,495 ms |
+| At-bat provider decode | 15 | 0 ms | 0 ms | 0 ms |
+| At-bat puzzle | 15 | 7 ms | 52 ms | 52 ms |
+| At-bat residual | 15 | 1 ms | 271 ms | 271 ms |
+| Completed total | 15 | 72 ms | 2,141 ms | 2,141 ms |
+| Completed provider | 15 | 65 ms | 2,125 ms | 2,125 ms |
+| Completed provider setup | 15 | 0 ms | 0 ms | 0 ms |
+| Completed provider RPC | 15 | 65 ms | 2,125 ms | 2,125 ms |
+| Completed provider decode | 15 | 0 ms | 1 ms | 1 ms |
+| Completed puzzle | 15 | 7 ms | 32 ms | 32 ms |
+| Completed residual | 15 | 1 ms | 1 ms | 1 ms |
+
+With `n=15`, nearest-rank p95 is the maximum and is deliberately treated as unstable exploratory evidence, not a production SLO estimate.
+
+The nested measurement closes the provider-localization question for this beta checkpoint. Local provider setup and response decoding are negligible. The multi-second cases are almost entirely time spent awaiting `client.rpc(...)`: the 1,502 ms at-bat request spent 1,495 ms in RPC wait, and the 2,141 ms completed request spent 2,125 ms there. A separate fresh at-bat outlier reached 1,178 ms total / 1,166 ms RPC.
+
+Combined with the hosted `pg_stat_statements` evidence above—matching PostgreSQL statements remain low-millisecond—this is strong evidence that the observed long tail is not caused by aggregate SQL execution, local Supabase-client setup, local row decoding, or puzzle loading. The unresolved interval is inside the managed Vercel → Supabase/PostgREST/API/connection/response boundary represented by the awaited RPC call. This checkpoint does not assign that interval to one internal Supabase component.
+
+### Decision at this checkpoint
+
+Stop backend storage/query optimization for comparison reads. Do **not** add rollups, caches, indexes, materialized views, or a transport rewrite from this evidence.
+
+The next product-facing performance change should instead hide this non-critical managed-RPC latency behind gameplay by prefetching the exact per-at-bat comparison when an at-bat becomes active, while keeping the average undisclosed until terminal reveal. For ordinary live play this also makes the reveal use a pre-result snapshot. A separately restored terminal state may refresh the current aggregate rather than claiming to reconstruct that historical snapshot. The prefetch must remain independent of Guess/Give Up/Next, be fenced to exact puzzle/ruleset/pitch identity, and preserve quiet failure behavior.
+
+Ordinary browser/mobile trigger-to-visible verification remains a separate acceptance check after that behavior change.
+
 ## Next bounded measurement
 
-Before changing storage or comparison product behavior:
+The provider-localization measurement is complete. Preserve the raw-read architecture and current aggregate SQL/indexes.
 
-1. preserve the current raw-read architecture and aggregate SQL/indexes;
-2. use the request-local provider sub-timing seam to separate local setup, RPC wait and local decode;
-3. re-sample production with those nested metrics before changing transport/provider behavior;
-4. separately perform ordinary mobile/browser trigger-to-visible QA, including delayed/failed reads and stale-request behavior.
+Next:
 
-Any actual performance change should target the measured slow stage rather than guessing. The stage seam is specified in `tasks/plans/daily-nine-comparison-stage-timing.md`; it does not itself change performance behavior.
+1. prefetch the exact per-at-bat comparison when an at-bat becomes active, without showing it before terminal reveal;
+2. keep that read off gameplay's critical path and fence it to exact puzzle/ruleset/pitch identity;
+3. verify slow/failed/stale reads, Reset/restore/Next transitions and ordinary browser/mobile trigger-to-visible behavior;
+4. revisit provider transport or storage only if later measured user-facing evidence still warrants it.
+
+The timing seams remain diagnostic evidence; they do not themselves define a performance SLO.
 
 ## Non-conclusions
 
