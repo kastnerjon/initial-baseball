@@ -15,7 +15,7 @@ Date: 2026-09-19
 ## Architecture
 
 ```text
-DailyInningGame terminal identity + engine-derived point delta
+DailyInningGame hydrated active identity + nullable engine-derived point delta
   -> useDailyNineAtBatComparison
      -> Daily Nine comparison request controller   [PR #207]
      -> Daily Nine comparison browser client       [PR #206]
@@ -30,7 +30,7 @@ The hook owns only browser read state. It does not persist comparison data, rese
 
 ## UX
 
-The user's outcome and awarded points continue to render immediately from the existing terminal result path. The comparison read begins after that render.
+The user's outcome and awarded points continue to render immediately from the existing terminal result path. A September 22 follow-up moves only the comparison **read** earlier: once saved-game hydration is complete, the exact points-v3 slot is prefetched while the AB is active. The prefetched read state is never exposed by the active card or public hook state before terminal resolution.
 
 Presentation policy:
 
@@ -46,9 +46,9 @@ Next At Bat / View Results remains independent from comparison state.
 
 ## Lifecycle
 
-The request key is exact puzzle ID/date/number + points-v3 + pitch number. The PR #207 controller remains the stale-callback authority.
+The request key is exact puzzle ID/date/number + points-v3 + pitch number. The PR #207 controller remains the stale-callback authority. The network effect depends only on that key; engine-derived own points are a separate nullable presentation input and intentionally do not restart the request.
 
-Advance, Reset and durable restore fence the prior at-bat read synchronously before changing terminal identity. A page restore with a terminal pending at-bat naturally starts a current read from the restored identity. Comparison state stays outside gameplay persistence and result-delivery hooks.
+Prefetch does not begin until saved-game hydration has selected the authoritative current pitch, preventing a throwaway pitch-1 read from initial React defaults. Advance, Reset and durable restore fence the prior at-bat read synchronously before changing identity. Live play normally moves the aggregate read ahead of the player's result write, but no exact self-exclusion guarantee is claimed if that read is still in flight when the write lands. A separately restored terminal pending at-bat starts a fresh current read from the restored identity; comparison snapshots are not persisted. Comparison state stays outside gameplay persistence and result-delivery hooks.
 
 ## Testing boundary
 
