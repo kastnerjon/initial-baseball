@@ -3,17 +3,19 @@ import {
   atBatResultPrivateJson,
   mapAtBatResultRouteError,
 } from '../../../dailyAtBatResultHttp';
+import { readDailyResultJsonBody } from '../../../dailyResultRequestBody';
 
 export async function POST(request: Request) {
-  let submission: unknown;
-  try {
-    submission = await request.json();
-  } catch {
-    return atBatResultPrivateJson({ error: 'invalid_submission' }, 400);
+  const body = await readDailyResultJsonBody(request);
+  if (!body.ok) {
+    return atBatResultPrivateJson(
+      { error: 'invalid_submission' },
+      body.error === 'payload_too_large' ? 413 : 400,
+    );
   }
 
   try {
-    const result = await submitDailyAtBatResult(submission);
+    const result = await submitDailyAtBatResult(body.value);
     if (result.ok) {
       return atBatResultPrivateJson(
         { status: result.status },
