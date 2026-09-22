@@ -2,6 +2,8 @@ import {
   formatDailyScorecardPoints,
   type DailyScorecardPoints,
 } from './dailyScorecard';
+import { createDailyNineCompletedComparisonPresentation } from './dailyNineCompletedComparisonPresentation';
+import type { DailyNineCompletedComparisonState } from './useDailyNineCompletedComparison';
 import type {
   DailyNineScorecardComparisonState,
   DailyNineScorecardComparisons,
@@ -19,6 +21,8 @@ export function createDailyNineScorecardAtBatAverage(
 
 export function createDailyNineScorecardShareText(
   shareText: string,
+  totalPoints: number,
+  completedComparison: DailyNineCompletedComparisonState,
   points: DailyScorecardPoints,
   comparisons: DailyNineScorecardComparisons,
 ): string {
@@ -27,8 +31,13 @@ export function createDailyNineScorecardShareText(
   if (firstBlank < 0) return shareText;
 
   const scoreLineIndex = firstBlank + 1;
+  const completedAverage = createDisplayableCompletedAverage(completedComparison);
+  lines[scoreLineIndex] = completedAverage === null
+    ? `${formatDailyScorecardPoints(totalPoints)} PTS`
+    : `${formatDailyScorecardPoints(totalPoints)} PTS • AVG ${completedAverage}`;
+
   const pitchSectionStart = lines.indexOf('', scoreLineIndex + 1) + 1;
-  if (pitchSectionStart <= 0) return shareText;
+  if (pitchSectionStart <= 0) return lines.join('\n');
 
   for (let lineIndex = pitchSectionStart, pitchNumber = 1;
     lineIndex < lines.length && lines[lineIndex] !== '';
@@ -49,4 +58,12 @@ export function createDailyNineScorecardShareText(
   }
 
   return lines.join('\n');
+}
+
+function createDisplayableCompletedAverage(
+  state: DailyNineCompletedComparisonState,
+): string | null {
+  if (state.status === 'idle') return null;
+  const average = createDailyNineCompletedComparisonPresentation(state).average;
+  return average === '—' ? null : average;
 }
