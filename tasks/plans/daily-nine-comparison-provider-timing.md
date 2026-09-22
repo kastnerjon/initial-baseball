@@ -1,6 +1,6 @@
 # Daily Nine comparison provider sub-timing
 
-Status: implementation checkpoint
+Status: implemented and production-evidenced
 
 ## Scope contract
 
@@ -27,4 +27,6 @@ A query error records setup + RPC but no decode. A configuration/setup failure r
 
 The integer-millisecond nested timings need not sum exactly to the parent provider duration because of rounding and tiny uninstrumented call overhead. The parent remains the authoritative provider boundary.
 
-Production must be re-sampled after this seam is merged before any provider behavior change is considered.
+Production re-sampling is complete on PR #225 / main `90073bccd67002fdaf6fa85f5707be5f8968051b`. Across 15 successful samples per route, provider setup was 0 ms median, decode was 0 ms median, and the provider long tail tracked `client.rpc(...)` wait: at-bat RPC median 54 ms with 1,495 ms max; completed RPC median 65 ms with 2,125 ms max. Matching hosted PostgreSQL statements remain low-millisecond. No SQL/index/rollup/cache change is justified by this checkpoint.
+
+The next bounded behavior change is an at-bat-onset comparison prefetch that hides managed RPC latency behind gameplay while withholding AVG presentation until terminal reveal.
