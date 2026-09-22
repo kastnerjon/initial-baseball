@@ -235,7 +235,7 @@ export function DailyInningGame({
       {gameState.completedPitchLines.length > 0 ? (
         <PitchResultList
           answers={scorecardAnswers}
-          points={isDailyPointsRulesetVersion(gameState.rulesetVersion) ? scorecardPoints : undefined}
+          {...(isDailyPointsRulesetVersion(gameState.rulesetVersion) ? { points: scorecardPoints } : {})}
           comparisons={scorecardComparisons.comparisons}
           pitchLines={gameState.completedPitchLines}
           title="Completed At-bats"

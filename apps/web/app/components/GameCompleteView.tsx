@@ -55,7 +55,7 @@ export function GameCompleteView({
       </section>
       <PitchResultList
         answers={scorecardAnswers}
-        points={isPointsGame ? atBatPoints : undefined}
+        {...(isPointsGame ? { points: atBatPoints } : {})}
         comparisons={atBatComparisons}
         pitchLines={shareResult.pitchLines}
         title="At-bat Results"
