@@ -154,7 +154,7 @@ These are web/server runtime optimizations only. They do not change scoring, lif
 
 ## Private recap presentation
 
-The web adapter retains terminal canonical display names in a browser-local `scorecardAnswers` map keyed by pitch number, separate from portable game facts and `DailyShareResult`. Only resolved slots survive restoration. Scorecard and share-card components receive separate inputs; clipboard copies only the existing engine-formatted spoiler-safe text. No server payload, data dependency, or answer-authority change is required.
+The web adapter retains terminal canonical display names in a browser-local `scorecardAnswers` map keyed by pitch number, separate from portable game facts and `DailyShareResult`. Only resolved slots survive restoration. Scorecard and share-card components receive separate inputs. The engine-formatted spoiler-safe share text remains the portable base; for Daily Nine completion, web presentation may decorate that base with the already-read whole-game comparison AVG/count once the settled sample threshold allows display. That decoration contains no answer names, per-at-bat averages or raw population data and introduces no second comparison calculation. No server payload, data dependency, or answer-authority change is required.
 
 ## Completed-result and comparison architecture
 

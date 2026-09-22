@@ -6,6 +6,17 @@ import { GameCompleteView } from './GameCompleteView';
 
 (globalThis as Record<string, unknown>).React = React;
 
+const shareText = [
+  'Daily Nine #146',
+  'by Initial Baseball',
+  '',
+  '41/63 PTS · 2 K',
+  '',
+  'JR: HR',
+  '',
+  'https://example.test/',
+].join('\n');
+
 const shareResult: DailyShareResult = {
   rulesetVersion: 'points-v3',
   summary: { runs: 5, hits: 7, outs: 2, strikeouts: 2, completed: true },
@@ -26,7 +37,7 @@ describe('GameCompleteView comparison', () => {
     expect(html).toContain('Share');
   });
 
-  it('withholds tiny-sample averages and labels early averages', () => {
+  it('withholds tiny-sample scorecard AVG and labels early averages', () => {
     const waiting = render({
       status: 'success',
       ownPoints: 41,
@@ -44,8 +55,11 @@ describe('GameCompleteView comparison', () => {
 
     expect(waiting).toContain('Waiting for more completed results · 1 result');
     expect(waiting).not.toContain('35.0');
+    expect(waiting).not.toContain('scorecard-summary-metric');
     expect(early).toContain('34.3');
     expect(early).toContain('Early average · 7 completed results');
+    expect(early).toContain('Early AVG 34.3');
+    expect(early).toContain('Early AVG 34.3 · 7 completed results');
     expect(early).not.toContain('BEAT');
   });
 
@@ -66,6 +80,7 @@ describe('GameCompleteView comparison', () => {
     });
 
     expect(nineteen).toContain('BEAT appears at 20');
+    expect(nineteen).toContain('AVG 33.5 · 19 completed results');
     expect(nineteen).not.toContain('63%');
     expect(twenty).toContain('BEAT');
     expect(twenty).toContain('63%');
@@ -78,6 +93,7 @@ describe('GameCompleteView comparison', () => {
     expect(html).toContain('Comparison unavailable');
     expect(html).toContain('41/63 PTS');
     expect(html).toContain('At-bat Results');
+    expect(html).not.toContain('scorecard-summary-metric');
   });
 });
 
@@ -87,7 +103,7 @@ function render(
   return renderToStaticMarkup(
     <GameCompleteView
       shareResult={shareResult}
-      shareText="Daily Nine #146"
+      shareText={shareText}
       comparison={comparison}
     />,
   );

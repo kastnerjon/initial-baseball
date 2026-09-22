@@ -28,17 +28,33 @@ describe('private scorecard and public share card', () => {
     expect(html).toContain('Answer unavailable');
   });
 
-  it('renders names only in the scorecard and Copy in the separate spoiler-free card', () => {
+  it('keeps answers private while adding whole-game AVG to both completed scorecards', () => {
     const gameState = createInitialDemoGameState(DEMO_DAILY_PUZZLE);
     gameState.completedPitchLines = [{ initials: 'KGJ', outcome: 'HR' }];
     const shareResult = createDailyShareResult({ gameState, url: 'https://example.com' });
     const shareText = formatDailyShareText(shareResult);
-    const html = renderToStaticMarkup(<GameCompleteView shareResult={shareResult}
-      shareText={shareText} scorecardAnswers={{ 1: 'Ken Griffey Jr.' }} />);
+    const html = renderToStaticMarkup(<GameCompleteView
+      shareResult={shareResult}
+      shareText={shareText}
+      scorecardAnswers={{ 1: 'Ken Griffey Jr.' }}
+      comparison={{
+        status: 'success',
+        ownPoints: shareResult.points.points,
+        completedGameCount: 12,
+        averageTotalPoints: 30.5,
+        strictLowerFinishRate: 0.5,
+      }}
+    />);
+
     expect(html).toContain('Ken Griffey Jr.');
+    expect(html).toContain('scorecard-summary-metric');
+    expect(html).toContain('AVG');
+    expect(html).toContain('30.5');
+
     const shareCard = html.slice(html.indexOf('aria-label="Spoiler-free share card"'));
     expect(shareCard).toContain('>Copy</button>');
     expect(shareCard).toContain('role="status"');
+    expect(shareCard).toContain('AVG 30.5 · 12 completed results');
     expect(shareCard).not.toContain('Ken Griffey Jr.');
     expect(shareText).not.toContain('Ken Griffey Jr.');
   });
