@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { restoreDailyScorecardAnswers } from './dailyScorecard';
+import { POINTS_V3_DAILY_RULESET_VERSION } from '@initial-baseball/shared';
+import {
+  createDailyScorecardPoints,
+  restoreDailyScorecardAnswers,
+} from './dailyScorecard';
 import { saveDailyGame, loadSavedDailyGame, clearSavedDailyGame } from './dailyLocalStorage';
 import { createGiveUpResult, resolveDailyTerminalAtBat } from './dailyAtBatResolution';
 import { createInitialAtBatUiState, createInitialDemoGameState, DEMO_DAILY_PUZZLE } from './mockDailyPuzzle';
@@ -35,5 +39,44 @@ describe('scorecard answer retention', () => {
       .toEqual({ 1: 'Ken Griffey Jr.' });
     clearSavedDailyGame(DEMO_DAILY_PUZZLE, storage);
     expect(loadSavedDailyGame(DEMO_DAILY_PUZZLE, 'start', storage)).toBeNull();
+  });
+});
+
+describe('scorecard points', () => {
+  it('uses the engine scoring rule over stored completed-at-bat facts', () => {
+    expect(createDailyScorecardPoints([
+      {
+        pitchNumber: 1,
+        initials: 'BB',
+        outcome: 'K',
+        hintsRevealed: 0,
+        wrongGuesses: 0,
+        resolution: 'strikeout',
+      },
+      {
+        pitchNumber: 2,
+        initials: 'KGJ',
+        outcome: 'HR',
+        hintsRevealed: 1,
+        wrongGuesses: 2,
+        resolution: 'correct',
+      },
+    ], POINTS_V3_DAILY_RULESET_VERSION)).toEqual({
+      1: 0,
+      2: 4,
+    });
+  });
+
+  it('does not replace Classic baseball-outcome presentation with points', () => {
+    expect(createDailyScorecardPoints([
+      {
+        pitchNumber: 1,
+        initials: 'BB',
+        outcome: 'HR',
+        hintsRevealed: 0,
+        wrongGuesses: 0,
+        resolution: 'correct',
+      },
+    ], 'classic-inning-v1')).toEqual({});
   });
 });

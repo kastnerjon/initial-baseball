@@ -254,17 +254,31 @@
 }
 .scorecard-row {
   display: grid;
-  grid-template-columns: 48px minmax(0, 1fr) minmax(64px, max-content) max-content;
+  grid-template-columns: 48px minmax(0, 1fr) max-content;
   align-items: baseline;
   gap: 12px;
   padding: 10px 0;
   border-bottom: 1px solid var(--line-soft);
   font-size: 14px;
 }
+.scorecard-row-points {
+  grid-template-columns: 48px minmax(0, 1fr) max-content minmax(64px, max-content);
+}
 .scorecard-answer {
   min-width: 0;
   overflow-wrap: anywhere;
   text-align: left;
+}
+.scorecard-row-points .scorecard-answer {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.scorecard-points {
+  color: var(--clubhouse);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 .scorecard-average {
   color: var(--ink-soft);

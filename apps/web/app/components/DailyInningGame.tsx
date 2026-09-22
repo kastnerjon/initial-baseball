@@ -22,7 +22,7 @@ import type {
   DailyBootstrapRulesetVersion,
   DailyHintBundle,
 } from '../dailyRuntimeContracts';
-import type { DailyScorecardAnswers } from '../dailyScorecard';
+import { createDailyScorecardPoints, type DailyScorecardAnswers } from '../dailyScorecard';
 import { useCompletedDailyResultSubmission } from '../useCompletedDailyResultSubmission';
 import { useDailyGameplayResolutionRequests } from '../useDailyGameplayResolutionRequests';
 import { createDailyNineAtBatComparisonInput, useDailyNineAtBatComparison } from '../useDailyNineAtBatComparison';
@@ -80,6 +80,10 @@ export function DailyInningGame({
     rulesetVersion: gameState.rulesetVersion,
     completedPitchNumbers,
   });
+  const scorecardPoints = useMemo(
+    () => createDailyScorecardPoints(gameState.completedAtBats, gameState.rulesetVersion),
+    [gameState.completedAtBats, gameState.rulesetVersion],
+  );
   const completedResultSubmission = useCompletedDailyResultSubmission(hasLoadedSavedState, gameState);
   const gameplayPersistence = useDailyGameplayPersistence({
     puzzle,
@@ -151,6 +155,7 @@ export function DailyInningGame({
         shareResult={shareResult}
         shareText={formatDailyShareText(shareResult)}
         comparison={completedComparison.state}
+        atBatPoints={scorecardPoints}
         atBatComparisons={scorecardComparisons.comparisons}
         onResetToday={handleResetToday}
       />
@@ -229,6 +234,7 @@ export function DailyInningGame({
       {gameState.completedPitchLines.length > 0 ? (
         <PitchResultList
           answers={scorecardAnswers}
+          points={scorecardPoints}
           comparisons={scorecardComparisons.comparisons}
           pitchLines={gameState.completedPitchLines}
           title="Completed At-bats"

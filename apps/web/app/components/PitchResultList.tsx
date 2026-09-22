@@ -1,6 +1,10 @@
 import type { JSX } from 'react';
 import type { DailySharePitchLine } from '@initial-baseball/shared';
-import type { DailyScorecardAnswers } from '../dailyScorecard';
+import {
+  formatDailyScorecardPoints,
+  type DailyScorecardAnswers,
+  type DailyScorecardPoints,
+} from '../dailyScorecard';
 import {
   createDailyNineScorecardAtBatAverage,
 } from '../dailyNineScorecardComparisonPresentation';
@@ -12,6 +16,7 @@ type PitchResultListProps = {
   emptyLabel: string;
   compact?: boolean;
   answers?: DailyScorecardAnswers;
+  points?: DailyScorecardPoints;
   comparisons?: DailyNineScorecardComparisons;
 };
 
@@ -21,6 +26,7 @@ export function PitchResultList({
   emptyLabel,
   compact = false,
   answers = {},
+  points = {},
   comparisons = {},
 }: PitchResultListProps): JSX.Element {
   if (compact && pitchLines.length > 0) {
@@ -34,6 +40,7 @@ export function PitchResultList({
           pitchLines={pitchLines}
           title={title}
           answers={answers}
+          points={points}
           comparisons={comparisons}
         />
       </details>
@@ -53,6 +60,7 @@ export function PitchResultList({
           pitchLines={pitchLines}
           title={title}
           answers={answers}
+          points={points}
           comparisons={comparisons}
         />
       )}
@@ -64,11 +72,13 @@ function PitchList({
   pitchLines,
   title,
   answers,
+  points,
   comparisons,
 }: {
   pitchLines: DailySharePitchLine[];
   title: string;
   answers: DailyScorecardAnswers;
+  points: DailyScorecardPoints;
   comparisons: DailyNineScorecardComparisons;
 }): JSX.Element {
   return (
@@ -76,12 +86,28 @@ function PitchList({
       {pitchLines.map((line, index) => {
         const pitchNumber = index + 1;
         const average = createDailyNineScorecardAtBatAverage(comparisons[pitchNumber]);
+        const awardedPoints = points[pitchNumber];
+        const personalScore = awardedPoints === undefined
+          ? null
+          : formatDailyScorecardPoints(awardedPoints);
+
         return (
-          <li key={`${line.initials}-${line.outcome}-${index}`} className="scorecard-row">
+          <li
+            key={`${line.initials}-${line.outcome}-${index}`}
+            className={personalScore === null ? 'scorecard-row' : 'scorecard-row scorecard-row-points'}
+          >
             <span className="pitch-initials">{line.initials}</span>
             <span className="scorecard-answer">{answers[pitchNumber] ?? 'Answer unavailable'}</span>
-            <span className="scorecard-average">{average === null ? '' : `AVG ${average}`}</span>
-            <strong className="pitch-outcome">{line.outcome}</strong>
+            {personalScore === null ? (
+              <strong className="pitch-outcome">{line.outcome}</strong>
+            ) : (
+              <>
+                <strong className="scorecard-points" aria-label={`Your score ${personalScore}`}>
+                  {personalScore}
+                </strong>
+                <span className="scorecard-average">{average === null ? '' : `AVG ${average}`}</span>
+              </>
+            )}
           </li>
         );
       })}

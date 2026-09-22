@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
-  addDailyNineAtBatAveragesToShareText,
   createDailyNineScorecardAtBatAverage,
+  createDailyNineScorecardShareText,
 } from './dailyNineScorecardComparisonPresentation';
 
 describe('Daily Nine per-at-bat scorecard comparison presentation', () => {
@@ -24,7 +24,7 @@ describe('Daily Nine per-at-bat scorecard comparison presentation', () => {
     })).toBe('4.8');
   });
 
-  it('decorates each share-safe AB line without adding answers', () => {
+  it('replaces baseball outcomes with personal points in spoiler-safe Daily Nine share rows', () => {
     const base = [
       'Daily Nine #149',
       'by Initial Baseball',
@@ -37,17 +37,21 @@ describe('Daily Nine per-at-bat scorecard comparison presentation', () => {
       'https://example.test/',
     ].join('\n');
 
-    expect(addDailyNineAtBatAveragesToShareText(base, {
-      1: { status: 'success', resolvedAtBatCount: 2, averagePoints: 4.76 },
-      2: { status: 'success', resolvedAtBatCount: 1, averagePoints: 7 },
-    })).toBe([
+    expect(createDailyNineScorecardShareText(
+      base,
+      { 1: 0, 2: 7 },
+      {
+        1: { status: 'success', resolvedAtBatCount: 2, averagePoints: 7 },
+        2: { status: 'success', resolvedAtBatCount: 1, averagePoints: 6 },
+      },
+    )).toBe([
       'Daily Nine #149',
       'by Initial Baseball',
       '',
       '38/63 PTS · 1 K',
       '',
-      'BB: K · AVG 4.8',
-      'KGJ: HR',
+      'BB: 0 • AVG: 7.0',
+      'KGJ: 7',
       '',
       'https://example.test/',
     ].join('\n'));
