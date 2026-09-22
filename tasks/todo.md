@@ -218,8 +218,9 @@ Replacement plan: `tasks/plans/resolved-at-bat-comparison.md`. PR #174 is closed
 - [x] Split the provider boundary into request-local `provider-setup`, `provider-rpc`, and `provider-decode` metrics while preserving the parent provider timer and lazy module-level Supabase client reuse. Scope: `tasks/plans/daily-nine-comparison-provider-timing.md`.
 - [x] Re-sample production using provider sub-timing (PR #226 evidence checkpoint): 15 successful reads per route show setup/decode negligible and multi-second tails inside awaited `client.rpc(...)`; matching PostgreSQL execution remains low-millisecond. Stop SQL/index/rollup/cache optimization at this beta checkpoint.
 - [x] Prefetch the exact hydrated active points-v3 AB comparison while keeping it undisclosed until terminal reveal; terminal own-point projection reuses the same read state rather than restarting the GET.
-- [ ] Measure real browser trigger-to-visible comparison latency against the provisional end-to-end target with active-AB prefetch live.
-- [ ] Verify mobile, answer integrity, failed delivery/read recovery and unchanged gameplay critical path before declaring live.
+- [x] Record the #227 post-merge hosted/source checkpoint: exact main/CI/production identity, canonical aliases, live schema-1 comparison HTTP 200 + `private, no-store`, clean exact-deployment error/fatal scan, source/test verification, and an explicit statement of what browser/mobile behavior is still unproven. Evidence: `docs/engineering/daily-nine-comparison-prefetch-verification-2026-09-22.md`.
+- [ ] In an ordinary browser, verify one GET across active AB → terminal projection, trigger-to-visible latency, controlled delayed/failed reads, and stale-response behavior across Next / Reset / restore.
+- [ ] Complete physical/mobile interaction and answer/spoiler-integrity QA; confirm comparison delay never blocks gameplay actions or result delivery.
 - [x] Record the exact PR #209 hosted checkpoint before interactive QA: main/CI/production deployment identity, clean runtime-error scan, successful current-deployment comparison reads, Supabase migration/RPC access posture, exact-main bundle output and hidden-answer QA. This does **not** close either interactive item above. Evidence: `docs/engineering/daily-nine-comparison-hosted-verification-2026-09-20.md`.
 
 ### 4E. Classic comparison
