@@ -56,15 +56,27 @@ export function resolvePermanentDailyIdentityForNumber(
   }
 
   const puzzleDay = launchDay + dailyNumber - 1;
-  const puzzleDate = new Date(puzzleDay * MILLISECONDS_PER_DAY)
-    .toISOString()
-    .slice(0, 10);
+  const puzzleDate = formatUtcCalendarDay(puzzleDay);
 
   return {
     seriesVersion: PERMANENT_DAILY_SERIES_VERSION,
     puzzleDate,
     dailyNumber,
   };
+}
+
+function formatUtcCalendarDay(day: number): string {
+  const date = new Date(day * MILLISECONDS_PER_DAY);
+  if (!Number.isFinite(date.getTime())) {
+    throw new Error('Permanent Daily number resolves outside the supported calendar range.');
+  }
+
+  const value = date.toISOString().slice(0, 10);
+  if (!ISO_CALENDAR_DATE_PATTERN.test(value)) {
+    throw new Error('Permanent Daily number resolves outside the supported calendar range.');
+  }
+
+  return value;
 }
 
 function requirePermanentSeries(epoch: PermanentDailyLaunchEpoch): void {

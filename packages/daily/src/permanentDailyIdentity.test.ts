@@ -67,6 +67,13 @@ describe('Permanent Daily identity', () => {
     },
   );
 
+  it('rejects a safe integer that resolves outside the supported calendar range', () => {
+    const epoch = createPermanentDailyLaunchEpoch('2030-04-05');
+    expect(() => resolvePermanentDailyIdentityForNumber(Number.MAX_SAFE_INTEGER, epoch)).toThrow(
+      'Permanent Daily number resolves outside the supported calendar range.',
+    );
+  });
+
   it('rejects an unsupported series version at the portable boundary', () => {
     const invalidEpoch = {
       seriesVersion: 'future-series',
