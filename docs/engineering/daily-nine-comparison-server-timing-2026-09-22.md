@@ -160,7 +160,7 @@ Combined with the hosted `pg_stat_statements` evidence above—matching PostgreS
 
 Stop backend storage/query optimization for comparison reads. Do **not** add rollups, caches, indexes, materialized views, or a transport rewrite from this evidence.
 
-The next product-facing performance change should instead hide this non-critical managed-RPC latency behind gameplay by prefetching the exact per-at-bat comparison when an at-bat becomes active, while keeping the average undisclosed until terminal reveal. The prefetch must remain independent of Guess/Give Up/Next, be fenced to exact puzzle/ruleset/pitch identity, and preserve quiet failure behavior.
+The next product-facing performance change should instead hide this non-critical managed-RPC latency behind gameplay by prefetching the exact per-at-bat comparison when an at-bat becomes active, while keeping the average undisclosed until terminal reveal. For ordinary live play this also makes the reveal use a pre-result snapshot. A separately restored terminal state may refresh the current aggregate rather than claiming to reconstruct that historical snapshot. The prefetch must remain independent of Guess/Give Up/Next, be fenced to exact puzzle/ruleset/pitch identity, and preserve quiet failure behavior.
 
 Ordinary browser/mobile trigger-to-visible verification remains a separate acceptance check after that behavior change.
 
