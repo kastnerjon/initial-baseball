@@ -36,7 +36,7 @@ Review: `docs/engineering/resolved-at-bat-review-2026-09-19.md`. R1–R6 are rep
 - [x] Settle permanent-history direction: current numbering is beta; broad launch explicitly restarts at Daily #1 and only post-launch Dailies enter the permanent archive.
 - [x] Settle comparison direction: result populations are stable-puzzle + ruleset/game specific; Daily Nine gets per-AB/whole-game comparison, while Classic gets separate baseball-native comparison.
 - [ ] Issue #216: show existing Daily Nine comparison AVG on both the normal completed scorecard and spoiler-safe share output; reuse the same comparison population/sample semantics rather than recalculating a second metric.
-- [ ] Prefetch each per-AB AVG read when that AB becomes active, but keep the value undisclosed until terminal reveal; use the prefetched snapshot to hide managed RPC latency and make self-inclusion semantics deterministic. Do not put comparison reads on gameplay's critical path.
+- [ ] Prefetch each per-AB AVG read when that AB becomes active, but keep the value undisclosed until terminal reveal; use the prefetched snapshot to hide managed RPC latency and make live-play self-inclusion semantics deterministic; a separately restored terminal state may refresh the current aggregate rather than claiming to reproduce the historical pre-result snapshot. Do not put comparison reads on gameplay's critical path.
 - [x] Settle initial personal-history direction: archive completion/scores are remembered on the current browser/device; cross-device history waits for accounts.
 
 ## 0. Continuity
