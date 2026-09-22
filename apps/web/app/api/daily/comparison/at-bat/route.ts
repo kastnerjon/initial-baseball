@@ -3,11 +3,18 @@ import {
   dailyNineComparisonPrivateJson,
   isDailyNineComparisonReadApiEnabled,
   mapDailyNineComparisonRouteError,
+  withDailyNineComparisonTiming,
 } from '../../../../dailyNineComparisonHttp';
 
 export async function GET(request: Request) {
+  const startedAt = Date.now();
+
   if (!isDailyNineComparisonReadApiEnabled()) {
-    return dailyNineComparisonDisabledResponse();
+    return withDailyNineComparisonTiming(
+      dailyNineComparisonDisabledResponse(),
+      startedAt,
+      'at-bat',
+    );
   }
 
   const search = new URL(request.url).searchParams;
@@ -18,8 +25,16 @@ export async function GET(request: Request) {
       rulesetVersion: search.get('ruleset'),
       pitchNumber: search.get('pitch'),
     });
-    return dailyNineComparisonPrivateJson(result);
+    return withDailyNineComparisonTiming(
+      dailyNineComparisonPrivateJson(result),
+      startedAt,
+      'at-bat',
+    );
   } catch (error) {
-    return mapDailyNineComparisonRouteError(error);
+    return withDailyNineComparisonTiming(
+      mapDailyNineComparisonRouteError(error),
+      startedAt,
+      'at-bat',
+    );
   }
 }

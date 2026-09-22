@@ -199,6 +199,8 @@ This benchmark does **not** establish:
 
 Those are separate questions.
 
+A later bounded web observability checkpoint adds handler-level `Server-Timing` to both comparison GET routes. That timing includes route/server/provider work and is intended for decomposition against a real browser trace; it does not by itself establish the approximately 500 ms p95 trigger-to-visible target or isolate Supabase/PostgREST from the rest of handler execution.
+
 Concurrent-read/mixed-insert testing is no longer treated as a prerequisite for choosing between raw reads and rollups at this beta checkpoint. The current write model is immutable insert-only and does not introduce the shared mutable counter that would itself create a hot-row concurrency concern. If production load later reveals contention or resource pressure, measure that concrete bottleneck then.
 
 ## Decision

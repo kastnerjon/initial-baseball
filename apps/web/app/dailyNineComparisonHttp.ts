@@ -10,6 +10,8 @@ import { DailyNineComparisonRequestError } from './dailyNineComparisonReadServic
 import { ServerSupabaseConfigurationError } from './serverSupabaseClient';
 import { SupabaseDailyNineComparisonRepositoryError } from './supabaseDailyNineComparisonRepository';
 
+export type DailyNineComparisonTimingKind = 'at-bat' | 'completed';
+
 export function isDailyNineComparisonReadApiEnabled(
   environment: Record<string, string | undefined> = process.env,
 ): boolean {
@@ -24,6 +26,21 @@ export function dailyNineComparisonPrivateJson(
 ): NextResponse {
   const response = NextResponse.json(value, { status });
   response.headers.set('cache-control', 'private, no-store');
+  return response;
+}
+
+export function withDailyNineComparisonTiming(
+  response: NextResponse,
+  startedAt: number,
+  kind: DailyNineComparisonTimingKind,
+): NextResponse {
+  const metric = kind === 'at-bat'
+    ? 'daily-comparison-at-bat'
+    : 'daily-comparison-completed';
+  response.headers.set(
+    'server-timing',
+    `${metric};dur=${Math.max(0, Date.now() - startedAt)}`,
+  );
   return response;
 }
 

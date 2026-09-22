@@ -41,7 +41,7 @@ Still required before comparison is called fully browser/mobile verified:
 9. recheck client/network payloads for hidden answer/player data;
 10. inspect the final YOU / AVG / BEAT layout at common iPhone CSS widths.
 
-If those observations expose a code defect, fix that defect in a separate bounded PR. If the only missing datum is a timing boundary that existing browser/server/provider evidence cannot expose, decide on a narrow observability seam separately rather than adding a generic analytics framework here.
+If those observations expose a code defect, fix that defect in a separate bounded PR. The missing server-boundary timing datum is now addressed by the bounded comparison `Server-Timing` seam in `tasks/plans/daily-nine-comparison-server-timing.md`; it still does not replace the required real-browser trigger-to-visible samples or justify a generic analytics framework.
 
 ## Documentation impact
 
