@@ -27,6 +27,7 @@ import { useCompletedDailyResultSubmission } from '../useCompletedDailyResultSub
 import { useDailyGameplayResolutionRequests } from '../useDailyGameplayResolutionRequests';
 import { createDailyNineAtBatComparisonInput, useDailyNineAtBatComparison } from '../useDailyNineAtBatComparison';
 import { createDailyNineCompletedComparisonInput, useDailyNineCompletedComparison } from '../useDailyNineCompletedComparison';
+import { useDailyNineScorecardComparisons } from '../useDailyNineScorecardComparisons';
 import { AtBatCard } from './AtBatCard';
 import { DailyScorebug } from './DailyScorebug';
 import { GameCompleteView } from './GameCompleteView';
@@ -67,6 +68,18 @@ export function DailyInningGame({
   const completedComparison = useDailyNineCompletedComparison(createDailyNineCompletedComparisonInput({
     puzzle, rulesetVersion: gameState.rulesetVersion, points: gameState.points, terminalPoints: pendingAdvance?.points ?? null,
   }));
+  const completedPitchNumbers = useMemo(
+    () => puzzle.pitches
+      .slice(0, gameState.completedPitchLines.length)
+      .map(pitch => pitch.pitchNumber),
+    [gameState.completedPitchLines.length, puzzle.pitches],
+  );
+  const scorecardComparisons = useDailyNineScorecardComparisons({
+    enabled: hasLoadedSavedState,
+    puzzle,
+    rulesetVersion: gameState.rulesetVersion,
+    completedPitchNumbers,
+  });
   const completedResultSubmission = useCompletedDailyResultSubmission(hasLoadedSavedState, gameState);
   const gameplayPersistence = useDailyGameplayPersistence({
     puzzle,
@@ -138,6 +151,7 @@ export function DailyInningGame({
         shareResult={shareResult}
         shareText={formatDailyShareText(shareResult)}
         comparison={completedComparison.state}
+        atBatComparisons={scorecardComparisons.comparisons}
         onResetToday={handleResetToday}
       />
     );
@@ -215,6 +229,7 @@ export function DailyInningGame({
       {gameState.completedPitchLines.length > 0 ? (
         <PitchResultList
           answers={scorecardAnswers}
+          comparisons={scorecardComparisons.comparisons}
           pitchLines={gameState.completedPitchLines}
           title="Completed At-bats"
           emptyLabel="No completed at-bats yet."
@@ -331,6 +346,7 @@ export function DailyInningGame({
     if (!gameplayPersistence.resetPersistedState()) return;
     atBatComparison.invalidate();
     completedComparison.invalidate();
+    scorecardComparisons.invalidate();
     resolutionRequests.invalidate();
     savedGameRestoreController.invalidate();
     resetToInitialState();
@@ -352,6 +368,7 @@ export function DailyInningGame({
   function restoreLoadedGame(loaded: LoadedSavedDailyGame | null): void {
     atBatComparison.invalidate();
     completedComparison.invalidate();
+    scorecardComparisons.invalidate();
     resolutionRequests.invalidate();
     savedGameRestoreController.restore({
       loaded,

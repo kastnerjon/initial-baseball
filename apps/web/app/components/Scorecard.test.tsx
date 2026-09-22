@@ -9,14 +9,20 @@ import { PitchResultList } from './PitchResultList';
 (globalThis as Record<string, unknown>).React = React;
 
 describe('private scorecard and public share card', () => {
-  it('shows resolved answers in order, including Ks, without exposing unplayed answers', () => {
+  it('shows resolved answers and per-AB AVG in row order', () => {
     const html = renderToStaticMarkup(<PitchResultList
       pitchLines={[{ initials: 'AB', outcome: '3B' }, { initials: 'MP', outcome: 'K' }]}
       answers={{ 1: 'Andy Benes', 2: 'Mike Piazza', 3: 'Unplayed Answer' }}
+      comparisons={{
+        1: { status: 'success', resolvedAtBatCount: 2, averagePoints: 4.76 },
+        2: { status: 'success', resolvedAtBatCount: 1, averagePoints: 7 },
+      }}
       title="At-bat Results" emptyLabel="No results" compact
     />);
-    expect(html).toMatch(/AB<.*Andy Benes<.*3B</);
+
+    expect(html).toMatch(/AB<.*Andy Benes<.*AVG 4\.8<.*3B</);
     expect(html).toMatch(/MP<.*Mike Piazza<.*K</);
+    expect(html).not.toContain('AVG 7.0');
     expect(html).not.toContain('Unplayed Answer');
     expect(html).toContain('<details');
   });
@@ -28,7 +34,7 @@ describe('private scorecard and public share card', () => {
     expect(html).toContain('Answer unavailable');
   });
 
-  it('keeps answers private while adding whole-game AVG to both completed scorecards', () => {
+  it('keeps answers private while adding the same per-AB AVG to the share output', () => {
     const gameState = createInitialDemoGameState(DEMO_DAILY_PUZZLE);
     gameState.completedPitchLines = [{ initials: 'KGJ', outcome: 'HR' }];
     const shareResult = createDailyShareResult({ gameState, url: 'https://example.com' });
@@ -44,18 +50,20 @@ describe('private scorecard and public share card', () => {
         averageTotalPoints: 30.5,
         strictLowerFinishRate: 0.5,
       }}
+      atBatComparisons={{
+        1: { status: 'success', resolvedAtBatCount: 4, averagePoints: 4.76 },
+      }}
     />);
 
     expect(html).toContain('Ken Griffey Jr.');
-    expect(html).toContain('scorecard-summary-metric');
-    expect(html).toContain('AVG');
-    expect(html).toContain('30.5');
+    expect(html).toContain('AVG 4.8');
 
     const shareCard = html.slice(html.indexOf('aria-label="Spoiler-free share card"'));
     expect(shareCard).toContain('>Copy</button>');
     expect(shareCard).toContain('role="status"');
-    expect(shareCard).toContain('AVG 30.5 · 12 completed results');
+    expect(shareCard).toContain('KGJ: HR · AVG 4.8');
     expect(shareCard).not.toContain('Ken Griffey Jr.');
+    expect(shareCard).not.toContain('AVG 30.5 ·');
     expect(shareText).not.toContain('Ken Griffey Jr.');
   });
 });
