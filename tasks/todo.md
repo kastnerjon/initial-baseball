@@ -21,7 +21,9 @@ Review: `docs/engineering/resolved-at-bat-review-2026-09-19.md`. R1–R6 are rep
 - [x] R7A: extract mutable persistence owner-session mechanics into one concrete web controller while keeping `useDailyGameplayPersistence` as the sole React authority for restore → save → freeze → async delivery ordering.
 - [x] R7B: extract saved-game restore plus authorized-hint hydration/stale-response fencing from `DailyInningGame` into a concrete web-only controller with deterministic tests.
 - [x] R7C: extract Daily resolve transport/single-flight/pending-state lifecycle behind a concrete web client/hook; authority invalidation now clears pending UI immediately while late callbacks remain fenced. R7 is structurally complete; do not pursue a generic state-machine rewrite for line-count alone.
-- [x] R8A: bound actual request-body bytes before JSON parsing on both anonymous result-write routes; oversized bodies return terminal HTTP 413 without reaching server composition.\n- [ ] R8B: add generous route-scoped Vercel rate admission as coarse abuse-cost protection, separate from identity/honest-play claims.\n- [ ] R8C: add sanitized low-cardinality diagnostics for handled result-write failures without logging payloads, answers, credentials, IPs, user agents, or result IDs.
+- [x] R8A: bound actual request-body bytes before JSON parsing on both anonymous result-write routes; oversized bodies return terminal HTTP 413 without reaching server composition.
+- [ ] R8B: add generous route-scoped Vercel rate admission as coarse abuse-cost protection, separate from identity/honest-play claims.
+- [ ] R8C: add sanitized low-cardinality diagnostics for handled result-write failures without logging payloads, answers, credentials, IPs, user agents, or result IDs.
 
 ## September 15–16 approved product work
 
