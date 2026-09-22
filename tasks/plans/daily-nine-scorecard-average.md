@@ -1,38 +1,42 @@
 # Daily Nine scorecard/share average
 
-Status: issue #216 final presentation correction after PR #230
+Status: final points-native presentation follow-up after PR #231
 Date: 2026-09-22
 
 ## Scope contract
 
-- **Goal:** compare the user's awarded points for each resolved Daily Nine at-bat against the crowd's average points for that same at-bat on the ongoing private scorecard, completed private scorecard and spoiler-safe share output.
-- **Owning layer:** `apps/web` presentation, reusing existing engine scoring authority and browser comparison reads.
-- **In scope:** derive a `pitchNumber -> awardedPoints` presentation map from persisted `completedAtBats` through the existing engine `getDailyAtBatPoints` function; replace Daily Nine baseball outcome presentation in private/share scorecard rows with personal AB points; preserve the existing exact-pitch AVG read and 0–1 withholding policy; format private rows as initials + answer + personal score + `AVG x.x`; format share rows like `BB: 0 • AVG: 7.0`; keep all four private fields on one mobile line with player-name truncation as the pressure-release valve; focused tests and canonical docs.
-- **Out of scope:** any scoring-rule change, new scoring calculation, new persisted scorecard field, Supabase/API/shared contract changes, comparison population changes, onset-of-AB AVG display, baseball-style `.700` notation, completed-game YOU / AVG / BEAT changes, Classic presentation changes, or unrelated browser/mobile verification.
-- **Acceptance checks:** a strikeout/give-up worth 0 renders as personal score `0` rather than `K`; a successful AB uses the engine-computed awarded points from its stored terminal facts; share output uses personal points and never answer names; 0–1 comparison samples omit AVG while retaining personal score; Daily Nine private mobile rows stay one line; Classic still shows baseball outcomes; focused tests, typecheck, file-size/full CI and exact-head Preview pass.
-- **Stop conditions:** any need to change scoring semantics, portable completed-at-bat facts, persistence schema, result submission, comparison API/provider or Classic rules becomes separate work.
+- **Goal:** make Daily Nine user-facing result presentation consistently points-native wherever personal performance is shown or compared.
+- **Owning layer:** `apps/web` presentation, reusing existing engine scoring authority and existing comparison reads.
+- **In scope:** immediate terminal result uses `N PTS` rather than `Outcome HR/K/...`; ongoing/completed private rows remain initials + answer + personal AB points + `AVG x.x`; spoiler-safe per-AB share rows remain `BB: 0 • AVG: 7.0`; completed private headline becomes `X PTS • AVG Y.Y` when the whole-game AVG is displayable and `X PTS` otherwise; share header uses the same whole-game line; BEAT/sample-status remain secondary and keep existing thresholds; mobile private rows stay single-line; focused tests and canonical docs.
+- **Out of scope:** scoring-rule changes, new score calculations, new persisted scorecard fields, Supabase/API/shared contract changes, comparison population or threshold changes, onset-of-AB AVG display, baseball-style `.700` notation, Classic presentation changes, or unrelated browser/mobile verification.
+- **Acceptance checks:** no Daily Nine terminal/completed/share personal-performance surface uses `HR/3B/2B/1B/BB/K` as the user's score; terminal strikeout displays `0 PTS`; successful terminal display uses existing engine-derived points; completed private/share header displays `X PTS • AVG Y.Y` with current completed comparison data; withheld/unavailable AVG leaves `X PTS`; BEAT still appears only at 20+ completions; Classic remains baseball-native; focused tests, typecheck, file-size/full CI and exact-head Preview pass.
+- **Stop conditions:** any need to change scoring semantics, portable native facts, persistence, result submission, comparison API/provider or Classic rules becomes separate work.
 
 ## Product semantics
 
-The scorecard comparison is:
+Daily Nine has native baseball outcome facts because the game engine still needs them, but points-v3 scoring is not one-to-one with those outcomes. User-facing personal performance therefore speaks in points.
 
-`YOUR AB POINTS vs CROWD AB AVG`
+Immediate terminal result:
+
+`Score   4 PTS`
 
 not:
 
-`BASEBALL OUTCOME vs CROWD AB AVG`.
+`Outcome   3B`
 
-Examples:
-
-Private Daily Nine scorecard:
+Private per-AB scorecard:
 
 `BB   Barry Bonds   0   AVG 7.0`
 
-Spoiler-safe share output:
+Spoiler-safe per-AB share output:
 
 `BB: 0 • AVG: 7.0`
 
-When the comparison population has fewer than two observations, the user's score still appears but AVG is omitted.
+Completed private/share headline:
+
+`38 PTS • AVG 32.5`
+
+When whole-game comparison is loading, unavailable or has fewer than two completed observations, the headline remains `38 PTS`; existing note text explains the comparison state. BEAT remains secondary and appears only under the existing 20-completion threshold.
 
 ## Personal score authority
 
@@ -46,42 +50,44 @@ Each resolved Daily Nine AB already persists the native terminal facts required 
 - resolution;
 - pitch identity.
 
-The web scorecard passes those facts back through the existing engine `getDailyAtBatPoints` rule. This is the same scoring authority used by at-bat result validation. Therefore refresh/restore reconstructs the same personal AB score without duplicating formulas or translating `K/HR/etc.` into points in React.
+The web presentation passes those facts through the existing engine `getDailyAtBatPoints` rule. This is the same scoring authority used by at-bat result validation. Therefore terminal display and refresh/restore scorecards use one scoring authority without translating baseball outcome into points inside React.
 
-Classic does not receive this points map and continues to render baseball outcomes.
+Classic remains baseball-native.
 
 ## Comparison read lifecycle
 
-The existing scorecard comparison lifecycle remains unchanged:
+The existing comparison lifecycle remains unchanged:
 
-1. each completed pitch may read the current exact-pitch aggregate asynchronously;
-2. 0–1 observations withhold AVG;
-3. one bounded delayed retry may catch the independent result-write race;
-4. low-sample/unavailable rows may refresh as later ABs complete;
-5. restore/refill is capped at three concurrent reads;
-6. comparison never blocks Guess, Give Up, Next, result delivery or sharing.
+1. active exact-pitch comparison may prefetch while hidden;
+2. terminal own points reveal the existing read state without restarting it;
+3. scorecard rows may read/refill current exact-pitch aggregates asynchronously;
+4. 0–1 observations withhold AVG;
+5. completed-game comparison uses the existing whole-game aggregate and thresholds;
+6. BEAT remains strict-lower and appears only at 20+ completed results;
+7. comparison never blocks Guess, Give Up, Next, result delivery or sharing.
 
 ## Share safety
 
-The engine-owned `DailyShareResult` and `formatDailyShareText` remain unchanged and portable. Their baseball-outcome pitch lines remain the base representation.
+Portable `DailyShareResult` and engine `formatDailyShareText` remain unchanged as native/base representations.
 
-For Daily Nine only, web presentation replaces the displayed/share-copied pitch token with the engine-derived personal points and appends AVG when displayable:
+For Daily Nine only, web presentation transforms that base into points-native copy:
 
-`BB: K` -> `BB: 0 • AVG: 7.0`
+- base header such as `38/63 PTS · 1 K` becomes `38 PTS • AVG 32.5` when AVG is displayable, otherwise `38 PTS`;
+- base per-AB `BB: K` becomes `BB: 0 • AVG: 7.0` when AVG is displayable, otherwise `BB: 0`.
 
-No player answer name, raw observation, participant identifier or completed-game BEAT value enters the share text.
+No player answer name, raw observation, participant identifier or private browser fact enters the share text.
 
 ## Mobile layout
 
-Daily Nine point-comparison rows have four columns:
+Daily Nine point-comparison rows keep four columns on one line:
 
 1. initials;
 2. player answer;
 3. personal AB points;
 4. AVG.
 
-All four stay on one line on narrow screens. The answer column owns flexible width and truncates with ellipsis before score/AVG are allowed to wrap.
+The answer column owns flexible width and truncates with ellipsis before score/AVG wrap.
 
 ## Documentation impact
 
-Reconcile START-HERE, todo, architecture and the comparison roadmap so the authoritative scorecard contract is personal AB points versus crowd AB AVG.
+Reconcile START-HERE, todo, architecture and the comparison roadmap so Daily Nine's authoritative presentation rule is points-native while Classic remains baseball-native.

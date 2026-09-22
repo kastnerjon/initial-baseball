@@ -1,34 +1,39 @@
 import type { JSX } from 'react';
 import type { DailyNineCompletedComparisonState } from '../useDailyNineCompletedComparison';
 import { createDailyNineCompletedComparisonPresentation } from '../dailyNineCompletedComparisonPresentation';
+import { formatDailyScorecardPoints } from '../dailyScorecard';
 
 type DailyNineCompletedComparisonProps = {
+  points: number;
   state: DailyNineCompletedComparisonState;
 };
 
 export function DailyNineCompletedComparison({
+  points,
   state,
-}: DailyNineCompletedComparisonProps): JSX.Element | null {
-  if (state.status === 'idle') return null;
+}: DailyNineCompletedComparisonProps): JSX.Element {
+  const presentation = state.status === 'idle'
+    ? null
+    : createDailyNineCompletedComparisonPresentation(state);
+  const average = presentation?.average === '—' ? null : presentation?.average ?? null;
 
-  const presentation = createDailyNineCompletedComparisonPresentation(state);
   return (
     <section className="completed-comparison" aria-label="Final score comparison" aria-live="polite">
-      <div className="completed-comparison-values">
-        <Metric label="YOU" value={String(state.ownPoints)} />
-        <Metric label="AVG" value={presentation.average} />
-        {presentation.beat === null ? null : <Metric label="BEAT" value={presentation.beat} />}
+      <div className="completed-comparison-headline">
+        <strong className="completed-comparison-score">{`${formatDailyScorecardPoints(points)} PTS`}</strong>
+        {average === null ? null : (
+          <>
+            <span className="completed-comparison-separator" aria-hidden="true">•</span>
+            <span className="completed-comparison-average">{`AVG ${average}`}</span>
+          </>
+        )}
       </div>
-      <p className="completed-comparison-note">{presentation.note}</p>
+      {presentation?.beat === null || presentation?.beat === undefined ? null : (
+        <strong className="completed-comparison-beat">{`BEAT ${presentation.beat}`}</strong>
+      )}
+      {presentation === null ? null : (
+        <p className="completed-comparison-note">{presentation.note}</p>
+      )}
     </section>
-  );
-}
-
-function Metric({ label, value }: { label: string; value: string }): JSX.Element {
-  return (
-    <span className="completed-comparison-metric">
-      <span className="completed-comparison-label">{label}</span>
-      <strong className="completed-comparison-value">{value}</strong>
-    </span>
   );
 }

@@ -27,17 +27,19 @@ const shareResult: DailyShareResult = {
 };
 
 describe('GameCompleteView comparison', () => {
-  it('shows loading without blocking the final score or share surface', () => {
+  it('shows personal points without baseball-summary residue while comparison loads', () => {
     const html = render({ status: 'loading', ownPoints: 41 });
 
-    expect(html).toContain('41/63 PTS');
-    expect(html).toContain('YOU');
-    expect(html).toContain('AVG');
+    expect(html).toContain('41 PTS');
+    expect(html).not.toContain('41/63 PTS');
+    expect(html).not.toContain('9/9 AB');
+    expect(html).not.toContain('2 K');
+    expect(html).not.toContain('>YOU<');
     expect(html).toContain('Loading comparison…');
     expect(html).toContain('Share');
   });
 
-  it('keeps the completed-game comparison policy separate from scorecard rows', () => {
+  it('puts completed-game AVG beside personal points when displayable', () => {
     const waiting = render({
       status: 'success',
       ownPoints: 41,
@@ -53,12 +55,14 @@ describe('GameCompleteView comparison', () => {
       strictLowerFinishRate: 0.5,
     });
 
+    expect(waiting).toContain('41 PTS');
+    expect(waiting).not.toContain('AVG 35.0');
     expect(waiting).toContain('Waiting for more completed results · 1 result');
-    expect(waiting).not.toContain('35.0');
-    expect(early).toContain('34.3');
+
+    expect(early).toContain('41 PTS');
+    expect(early).toContain('AVG 34.3');
     expect(early).toContain('Early average · 7 completed results');
     expect(early).not.toContain('Early AVG 34.3');
-    expect(early).not.toContain('AVG 34.3 · 7 completed results');
   });
 
   it('waits until 20 completions before showing strict-lower BEAT', () => {
@@ -77,18 +81,24 @@ describe('GameCompleteView comparison', () => {
       strictLowerFinishRate: 0.63,
     });
 
+    expect(nineteen).toContain('41 PTS');
+    expect(nineteen).toContain('AVG 33.5');
     expect(nineteen).toContain('BEAT appears at 20');
     expect(nineteen).not.toContain('63%');
-    expect(twenty).toContain('BEAT');
-    expect(twenty).toContain('63%');
+
+    expect(twenty).toContain('41 PTS');
+    expect(twenty).toContain('AVG 33.5');
+    expect(twenty).toContain('BEAT 63%');
     expect(twenty).toContain("ties aren&#x27;t counted as beaten");
   });
 
-  it('degrades comparison failure without removing final results', () => {
+  it('degrades comparison failure without removing personal points', () => {
     const html = render({ status: 'unavailable', ownPoints: 41 });
 
     expect(html).toContain('Comparison unavailable');
-    expect(html).toContain('41/63 PTS');
+    expect(html).toContain('41 PTS');
+    expect(html).not.toContain('41/63 PTS');
+    expect(html).not.toContain('2 K');
     expect(html).toContain('At-bat Results');
   });
 });

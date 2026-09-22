@@ -24,7 +24,7 @@ describe('Daily Nine per-at-bat scorecard comparison presentation', () => {
     })).toBe('4.8');
   });
 
-  it('replaces baseball outcomes with personal points in spoiler-safe Daily Nine share rows', () => {
+  it('uses personal total points and completed AVG in the share header', () => {
     const base = [
       'Daily Nine #149',
       'by Initial Baseball',
@@ -39,6 +39,14 @@ describe('Daily Nine per-at-bat scorecard comparison presentation', () => {
 
     expect(createDailyNineScorecardShareText(
       base,
+      38,
+      {
+        status: 'success',
+        ownPoints: 38,
+        completedGameCount: 12,
+        averageTotalPoints: 32.5,
+        strictLowerFinishRate: 0.5,
+      },
       { 1: 0, 2: 7 },
       {
         1: { status: 'success', resolvedAtBatCount: 2, averagePoints: 7 },
@@ -48,12 +56,39 @@ describe('Daily Nine per-at-bat scorecard comparison presentation', () => {
       'Daily Nine #149',
       'by Initial Baseball',
       '',
-      '38/63 PTS · 1 K',
+      '38 PTS • AVG 32.5',
       '',
       'BB: 0 • AVG: 7.0',
       'KGJ: 7',
       '',
       'https://example.test/',
     ].join('\n'));
+  });
+
+  it('keeps personal total points when completed AVG is withheld', () => {
+    const base = [
+      'Daily Nine #149',
+      'by Initial Baseball',
+      '',
+      '38/63 PTS · 1 K',
+      '',
+      'BB: K',
+      '',
+      'https://example.test/',
+    ].join('\n');
+
+    expect(createDailyNineScorecardShareText(
+      base,
+      38,
+      {
+        status: 'success',
+        ownPoints: 38,
+        completedGameCount: 1,
+        averageTotalPoints: 32.5,
+        strictLowerFinishRate: 0,
+      },
+      { 1: 0 },
+      {},
+    )).toContain('\n38 PTS\n');
   });
 });

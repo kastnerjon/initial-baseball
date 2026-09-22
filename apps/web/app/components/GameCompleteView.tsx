@@ -28,26 +28,29 @@ export function GameCompleteView({
   atBatComparisons = {},
   onResetToday,
 }: GameCompleteViewProps): JSX.Element {
-  const shareCardText = createDailyNineScorecardShareText(
-    shareText,
-    atBatPoints,
-    atBatComparisons,
-  );
+  const isPointsGame = isDailyPointsRulesetVersion(shareResult.rulesetVersion);
+  const shareCardText = isPointsGame
+    ? createDailyNineScorecardShareText(
+        shareText,
+        shareResult.points.points,
+        comparison,
+        atBatPoints,
+        atBatComparisons,
+      )
+    : shareText;
 
   return (
     <div className="game-shell">
       <section className="complete-card">
         <h2>Game Complete</h2>
-        {isDailyPointsRulesetVersion(shareResult.rulesetVersion) ? (
-          <div className="score-line" aria-label="Final Daily score">
-            <span>{`${shareResult.points.points}/${shareResult.points.maximumPoints} PTS`}</span>
-            <span>{`${shareResult.points.atBatsCompleted}/${shareResult.points.totalAtBats} AB`}</span>
-            <span>{`${shareResult.summary.strikeouts} K`}</span>
-          </div>
+        {isPointsGame ? (
+          <DailyNineCompletedComparison
+            points={shareResult.points.points}
+            state={comparison}
+          />
         ) : (
           <ScoreLine summary={shareResult.summary} />
         )}
-        <DailyNineCompletedComparison state={comparison} />
       </section>
       <PitchResultList
         answers={scorecardAnswers}
