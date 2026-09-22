@@ -1,6 +1,6 @@
 # Daily Nine comparison stage-level Server-Timing
 
-Status: implementation checkpoint
+Status: implemented and production-sampled
 
 ## Scope contract
 
@@ -32,3 +32,14 @@ A stage is emitted only if it was attempted. Therefore:
 - provider failures expose total + compose + puzzle + provider.
 
 This is still a measurement seam. Production must be re-sampled before any performance conclusion or optimization.
+
+
+## Production result
+
+PR #223 merged as `128e52702b98247af81f2f8230a335dd24d1b5e4`. Exact production deployment `dpl_FrAYsxTB3HXih3HkU52SrwsiXtbq` is READY and post-merge CI #804 passed.
+
+A 15-sample-per-route production re-sample shows that puzzle loading is not the observed extreme-tail owner. The strongest completed request measured 2,502 ms total with 2,495 ms in `provider`, 7 ms in `puzzle`, 0 ms in `compose`, and 0 ms residual at millisecond resolution. Other slow completed reads were similarly provider-dominant (400/406 ms and 271/280 ms). At-bat reads also showed provider-heavy tails, although the two largest at-bat samples retained about 260–269 ms of residual runtime/handler time.
+
+A read-only production `pg_stat_statements` check separately shows the matching PostgREST SQL statements remain low-millisecond: completed mean 1.921 ms / max 19.696 ms over 67 calls; at-bat mean 1.594 ms / max 17.332 ms over 127 calls. Those database statistics do not include Vercel-to-Supabase transit, API/PostgREST handling outside database execution, pool/connection acquisition, or response transit.
+
+Conclusion: preserve the raw-read SQL/index architecture. The next bounded measurement is inside the web provider adapter itself: separate local client/repository setup, `client.rpc(...)` wait, and local decode. Any provider behavior change remains a later PR after that evidence.
