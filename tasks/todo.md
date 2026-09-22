@@ -236,7 +236,7 @@ Hosted architecture/storage/comparison/editorial verification is sufficient to r
 
 ## 5. Permanent archive and local history
 
-- [ ] Define stable permanent Daily identity/launch-epoch contract without choosing the launch date yet.
+- [x] Define stable permanent Daily identity/launch-epoch contract without choosing the launch date yet: portable `permanent-v1` date/number mapping lives in `packages/daily`; no launch-date constant is configured and beta numbering is untouched. Scope: `tasks/plans/permanent-daily-identity.md`.
 - [ ] Build archive infrastructure to begin at future permanent Daily #1; do not import current beta history.
 - [ ] Freeze each issued permanent Daily so later lineup-generation/profile changes cannot change historical answers.
 - [ ] Add archive routes/navigation with Daily Nine/Classic choice while both games remain supported.

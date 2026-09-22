@@ -43,6 +43,10 @@ September 22 hosted verification closes two remaining public-selection checks wi
 
 The September 22 QA pass has a hard stop. Remaining ordinary-browser, physical-mobile, saved-hydration, and authenticated-editor interaction checks are retained as manual pre-launch QA; they are not reasons to keep adding verification work in the absence of a concrete defect. Current `points-v3` scoring remains unchanged. Feature development resumes with **Permanent archive and local history**, preserving the existing one-bounded-concern-per-PR and fresh-eye review discipline.
 
+## Permanent archive foundation
+
+Archive PR 1 defines the portable `permanent-v1` series identity in `packages/daily` without choosing a launch date. An explicitly supplied launch epoch maps its date to permanent Daily #1, supports exact date/number round-trips, and returns no permanent identity for pre-launch dates. This does **not** make current beta puzzles archival: frozen issued-puzzle persistence remains the next boundary, and current beta `DAILY_PUZZLE_EPOCH` numbering remains disposable. Scope: `tasks/plans/permanent-daily-identity.md`.
+
 ## Architecture map
 
 ```text

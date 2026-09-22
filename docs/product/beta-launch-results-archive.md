@@ -65,6 +65,12 @@ Because Classic can end after three outs, later-batter aggregates distinguish pl
 
 ## Archive and local personal history
 
+### Permanent series identity foundation
+
+The portable Daily layer now defines a versioned `permanent-v1` identity contract. The actual launch date is deliberately not configured yet: callers must supply an explicit launch epoch, whose Pacific Daily date becomes permanent Daily #1. Date-to-number and number-to-date mappings use calendar-day arithmetic, so daylight-saving/time-of-day differences cannot change numbering. Dates before the chosen epoch are not members of the permanent series.
+
+This identity is separate from the immutable puzzle snapshot. A numbered date is not considered archived merely because it can be mapped to Daily #N; later archive persistence must bind that identity to frozen issued puzzle content before historical replay is exposed. Current beta `DAILY_PUZZLE_EPOCH` numbering remains unchanged and is not imported.
+
 The archive begins with the eventual permanent Daily #1, not with the current beta history.
 
 After launch, every prior permanent Daily remains playable and shareable. An archived Daily should expose whichever games are currently supported for that historical puzzle; while both beta games remain supported, both Daily Nine and Classic can be played independently for the same Daily.
