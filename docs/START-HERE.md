@@ -1,7 +1,7 @@
 # Initial Baseball — Start Here
 
 Status: Active project handoff  
-Last updated: 2026-09-20
+Last updated: 2026-09-22
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
@@ -26,6 +26,12 @@ Current Daily numbering is beta. At a later explicit broad-launch decision, the 
 Standard Daily should be difficult because recall and hints are difficult, not because players are arbitrarily obscure. Except for a possible final deep-challenge slot, a reveal should normally prompt: **“I could have gotten that.”**
 
 The game should feel immediate, accurate, and recognizably baseball.
+
+## Current Daily Nine comparison performance checkpoint
+
+PR #225 is production-verified on main `90073bccd67002fdaf6fa85f5707be5f8968051b` / deployment `dpl_ABUyV3qrm2sEg2KAx7ULNAfGdLwo`. Provider sub-timing has now been sampled in production across 15 successful reads per route. Local provider setup and decode are negligible; the observed multi-second tail is inside awaited `client.rpc(...)` (at-bat max 1,495 ms, completed max 2,125 ms), while matching hosted PostgreSQL execution remains low-millisecond. Do not respond with SQL/index/rollup/cache work.
+
+The next bounded comparison change is UX-oriented rather than storage-oriented: prefetch the exact per-at-bat comparison when the AB becomes active, keep it undisclosed while the user plays, and reveal the prefetched snapshot only after terminal resolution. Comparison remains asynchronous and must never block Guess, Give Up, Next, result persistence, or gameplay progression. After that change, verify delayed/failed/stale reads and ordinary browser/mobile trigger-to-visible behavior before declaring the comparison backend beta-complete.
 
 ## Architecture map
 
