@@ -1,6 +1,10 @@
 import type { JSX } from 'react';
-import type { DailyScorecardAnswers } from '../dailyScorecard';
 import type { DailySharePitchLine } from '@initial-baseball/shared';
+import type { DailyScorecardAnswers } from '../dailyScorecard';
+import {
+  createDailyNineScorecardAtBatAverage,
+} from '../dailyNineScorecardComparisonPresentation';
+import type { DailyNineScorecardComparisons } from '../useDailyNineScorecardComparisons';
 
 type PitchResultListProps = {
   pitchLines: DailySharePitchLine[];
@@ -8,7 +12,7 @@ type PitchResultListProps = {
   emptyLabel: string;
   compact?: boolean;
   answers?: DailyScorecardAnswers;
-  summaryMetric?: { label: string; value: string; note: string };
+  comparisons?: DailyNineScorecardComparisons;
 };
 
 export function PitchResultList({
@@ -17,7 +21,7 @@ export function PitchResultList({
   emptyLabel,
   compact = false,
   answers = {},
-  summaryMetric,
+  comparisons = {},
 }: PitchResultListProps): JSX.Element {
   if (compact && pitchLines.length > 0) {
     return (
@@ -26,7 +30,12 @@ export function PitchResultList({
           <span className="pitch-results-kicker">Scorecard</span>
           <span className="pitch-results-title">{`${pitchLines.length} completed`}</span>
         </summary>
-        <PitchList pitchLines={pitchLines} title={title} answers={answers} />
+        <PitchList
+          pitchLines={pitchLines}
+          title={title}
+          answers={answers}
+          comparisons={comparisons}
+        />
       </details>
     );
   }
@@ -37,17 +46,15 @@ export function PitchResultList({
         <span className="pitch-results-kicker">Scorecard</span>
         <h2>{title}</h2>
       </div>
-      {summaryMetric === undefined ? null : (
-        <div className="scorecard-summary-metric" aria-label="Scorecard comparison average">
-          <span className="scorecard-summary-label">{summaryMetric.label}</span>
-          <strong className="scorecard-summary-value">{summaryMetric.value}</strong>
-          <span className="scorecard-summary-note">{summaryMetric.note}</span>
-        </div>
-      )}
       {pitchLines.length === 0 ? (
         <p className="pitch-results-empty">{emptyLabel}</p>
       ) : (
-        <PitchList pitchLines={pitchLines} title={title} answers={answers} />
+        <PitchList
+          pitchLines={pitchLines}
+          title={title}
+          answers={answers}
+          comparisons={comparisons}
+        />
       )}
     </section>
   );
@@ -57,20 +64,27 @@ function PitchList({
   pitchLines,
   title,
   answers,
+  comparisons,
 }: {
   pitchLines: DailySharePitchLine[];
   title: string;
   answers: DailyScorecardAnswers;
+  comparisons: DailyNineScorecardComparisons;
 }): JSX.Element {
   return (
     <ul className="scorecard-list" aria-label={title}>
-      {pitchLines.map((line, index) => (
-        <li key={`${line.initials}-${line.outcome}-${index}`} className="scorecard-row">
-          <span className="pitch-initials">{line.initials}</span>
-          <span className="scorecard-answer">{answers[index + 1] ?? 'Answer unavailable'}</span>
-          <strong className="pitch-outcome">{line.outcome}</strong>
-        </li>
-      ))}
+      {pitchLines.map((line, index) => {
+        const pitchNumber = index + 1;
+        const average = createDailyNineScorecardAtBatAverage(comparisons[pitchNumber]);
+        return (
+          <li key={`${line.initials}-${line.outcome}-${index}`} className="scorecard-row">
+            <span className="pitch-initials">{line.initials}</span>
+            <span className="scorecard-answer">{answers[pitchNumber] ?? 'Answer unavailable'}</span>
+            <span className="scorecard-average">{average === null ? '' : `AVG ${average}`}</span>
+            <strong className="pitch-outcome">{line.outcome}</strong>
+          </li>
+        );
+      })}
     </ul>
   );
 }

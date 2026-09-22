@@ -4,18 +4,17 @@ import { PitchResultList } from './PitchResultList';
 import { DailyShareCard } from './DailyShareCard';
 import type { DailyScorecardAnswers } from '../dailyScorecard';
 import type { DailyNineCompletedComparisonState } from '../useDailyNineCompletedComparison';
+import type { DailyNineScorecardComparisons } from '../useDailyNineScorecardComparisons';
+import { addDailyNineAtBatAveragesToShareText } from '../dailyNineScorecardComparisonPresentation';
 import { DailyNineCompletedComparison } from './DailyNineCompletedComparison';
 import { ScoreLine } from './ScoreLine';
-import {
-  addDailyNineAverageToShareText,
-  createDailyNineScorecardAverage,
-} from '../dailyNineCompletedComparisonPresentation';
 
 type GameCompleteViewProps = {
   shareResult: DailyShareResult;
   shareText: string;
   scorecardAnswers?: DailyScorecardAnswers;
   comparison?: DailyNineCompletedComparisonState;
+  atBatComparisons?: DailyNineScorecardComparisons;
   onResetToday?: () => void;
 };
 
@@ -24,10 +23,10 @@ export function GameCompleteView({
   shareText,
   scorecardAnswers = {},
   comparison = { status: 'idle' },
+  atBatComparisons = {},
   onResetToday,
 }: GameCompleteViewProps): JSX.Element {
-  const scorecardAverage = createDailyNineScorecardAverage(comparison);
-  const shareCardText = addDailyNineAverageToShareText(shareText, scorecardAverage);
+  const shareCardText = addDailyNineAtBatAveragesToShareText(shareText, atBatComparisons);
 
   return (
     <div className="game-shell">
@@ -46,16 +45,10 @@ export function GameCompleteView({
       </section>
       <PitchResultList
         answers={scorecardAnswers}
+        comparisons={atBatComparisons}
         pitchLines={shareResult.pitchLines}
         title="At-bat Results"
         emptyLabel="No at-bat results were recorded."
-        {...(scorecardAverage === null ? {} : {
-          summaryMetric: {
-            label: scorecardAverage.label,
-            value: scorecardAverage.value,
-            note: scorecardAverage.note,
-          },
-        })}
       />
       <DailyShareCard shareText={shareCardText} />
       {onResetToday !== undefined ? (
