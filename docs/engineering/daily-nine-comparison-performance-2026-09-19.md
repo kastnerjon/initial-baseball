@@ -199,7 +199,7 @@ This benchmark does **not** establish:
 
 Those are separate questions.
 
-A later bounded web observability checkpoint adds handler-level `Server-Timing` to both comparison GET routes. That timing includes route/server/provider work and is intended for decomposition against a real browser trace; it does not by itself establish the approximately 500 ms p95 trigger-to-visible target or isolate Supabase/PostgREST from the rest of handler execution.
+A later bounded web observability checkpoint adds handler-level `Server-Timing` to both comparison GET routes. That timing includes route/server/provider work and is intended for decomposition against a real browser trace; it does not by itself establish the approximately 500 ms p95 trigger-to-visible target or isolate Supabase/PostgREST from the rest of handler execution. The first production sample after that seam, recorded in `docs/engineering/daily-nine-comparison-server-timing-2026-09-22.md`, retained 20 successful samples per route: AB median 65 ms / nearest-rank p95 582 ms / max 1,626 ms; completed median 58 ms / p95 430 ms / max 1,525 ms. These handler values do not overturn the isolated raw-read benchmark; instead they motivate stage-level decomposition of authoritative-puzzle loading versus managed provider work before any storage optimization.
 
 Concurrent-read/mixed-insert testing is no longer treated as a prerequisite for choosing between raw reads and rollups at this beta checkpoint. The current write model is immutable insert-only and does not introduce the shared mutable counter that would itself create a hot-row concurrency concern. If production load later reveals contention or resource pressure, measure that concrete bottleneck then.
 
