@@ -8,6 +8,7 @@ type PitchResultListProps = {
   emptyLabel: string;
   compact?: boolean;
   answers?: DailyScorecardAnswers;
+  summaryMetric?: { label: string; value: string; note: string };
 };
 
 export function PitchResultList({
@@ -16,6 +17,7 @@ export function PitchResultList({
   emptyLabel,
   compact = false,
   answers = {},
+  summaryMetric,
 }: PitchResultListProps): JSX.Element {
   if (compact && pitchLines.length > 0) {
     return (
@@ -35,6 +37,13 @@ export function PitchResultList({
         <span className="pitch-results-kicker">Scorecard</span>
         <h2>{title}</h2>
       </div>
+      {summaryMetric === undefined ? null : (
+        <div className="scorecard-summary-metric" aria-label="Scorecard comparison average">
+          <span className="scorecard-summary-label">{summaryMetric.label}</span>
+          <strong className="scorecard-summary-value">{summaryMetric.value}</strong>
+          <span className="scorecard-summary-note">{summaryMetric.note}</span>
+        </div>
+      )}
       {pitchLines.length === 0 ? (
         <p className="pitch-results-empty">{emptyLabel}</p>
       ) : (
