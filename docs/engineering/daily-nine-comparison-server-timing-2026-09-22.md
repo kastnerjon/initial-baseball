@@ -1,6 +1,6 @@
 # Daily Nine comparison production Server-Timing evidence — September 22, 2026
 
-Status: handler-level production sample recorded; stage-decomposition instrumentation implemented; production stage re-sample and browser trigger-to-visible remain open
+Status: handler-level and stage-decomposed production samples recorded; provider boundary owns the strongest observed tail while some at-bat residual variance remains; provider sub-decomposition and browser trigger-to-visible remain open
 
 ## Purpose
 
@@ -62,13 +62,63 @@ This does **not** establish that ordinary-mobile end-to-end p95 misses the targe
 
 The earlier PR #203 database benchmark remains valid: raw PostgreSQL aggregation at 10,000 target observations was 1.807 ms p95 for one AB aggregate and 6.254 ms p95 for completed buckets. Therefore these production outliers do not justify a rollup, cache, materialized view or new index. The unresolved time is above the isolated query body and may come from authoritative-puzzle loading, managed Supabase/PostgREST/provider round-trip, lazy/runtime work, or another handler-internal source. Current evidence does not distinguish those possibilities.
 
+
+## Stage-decomposed production re-sample after PR #223
+
+Exact checkpoint:
+
+- Git main: `128e52702b98247af81f2f8230a335dd24d1b5e4` (PR #223).
+- Production deployment: `dpl_FrAYsxTB3HXih3HkU52SrwsiXtbq`, READY with canonical production alias and no alias error.
+- Post-merge CI: run #804 / run ID `35746435678`, successful on the first attempt.
+- Production error/fatal runtime-log scan for the exact deployment: clean.
+- Fifteen successful public-production samples were retained per route after the stage metrics were live.
+- Each tuple below is `total / compose / puzzle / provider / residual` in milliseconds. Residual is arithmetic difference and includes request parsing, Daily validation/normalization, response construction and any handler/runtime time not covered by the three named stages.
+
+At-bat tuples, in collection order:
+
+`594/4/68/253/269; 57/0/5/51/1; 58/0/22/34/2; 217/1/43/140/33; 54/0/9/45/0; 1070/7/48/755/260; 62/0/6/55/1; 57/0/6/51/0; 101/0/6/94/1; 79/0/7/72/0; 366/0/13/352/1; 88/0/5/82/1; 45/0/6/39/0; 56/0/6/50/0; 245/0/5/239/1`
+
+Completed tuples, in collection order:
+
+`67/0/8/58/1; 69/0/6/63/0; 406/0/6/400/0; 181/2/60/86/33; 47/0/9/37/1; 76/0/13/61/2; 45/0/7/36/2; 86/0/7/78/1; 217/0/21/195/1; 47/0/6/40/1; 192/1/6/185/0; 58/0/5/51/2; 62/0/6/55/1; 280/0/8/271/1; 2502/0/7/2495/0`
+
+Summary:
+
+| Route/stage | n | Median | Nearest-rank p95 | Max |
+| --- | ---: | ---: | ---: | ---: |
+| At-bat total | 15 | 79 ms | 1,070 ms | 1,070 ms |
+| At-bat provider | 15 | 72 ms | 755 ms | 755 ms |
+| At-bat puzzle | 15 | 6 ms | 68 ms | 68 ms |
+| At-bat residual | 15 | 1 ms | 269 ms | 269 ms |
+| Completed total | 15 | 76 ms | 2,502 ms | 2,502 ms |
+| Completed provider | 15 | 63 ms | 2,495 ms | 2,495 ms |
+| Completed puzzle | 15 | 7 ms | 60 ms | 60 ms |
+| Completed residual | 15 | 1 ms | 33 ms | 33 ms |
+
+With only 15 samples, nearest-rank p95 is the maximum and is highly unstable; it is shown only for continuity with the earlier small-sample checkpoint.
+
+The most diagnostic request was the 2,502 ms completed read: 2,495 ms was inside the provider boundary, 7 ms in authoritative-puzzle loading, 0 ms in dynamic composition and 0 ms residual at millisecond resolution. Another 406 ms completed read spent 400 ms in the provider boundary. On the at-bat route, the provider also drove several slow reads (352/366 ms and 239/245 ms), while the two largest at-bat samples also carried about 260–269 ms of residual handler/runtime time. Puzzle loading did not own any observed production extreme: its maxima were 68 ms for at-bat and 60 ms for completed.
+
+### Production PostgreSQL execution evidence
+
+A read-only `pg_stat_statements` inspection on the hosted production project provides a second, independent boundary check. For the PostgREST wrapper statements that invoke the two comparison RPCs:
+
+- completed comparison: 67 calls, mean database execution 1.921 ms, max 19.696 ms;
+- at-bat comparison: 127 calls, mean database execution 1.594 ms, max 17.332 ms.
+
+Those statistics cover the matching PostgREST statements over their current statistics window, not just the 15+15 handler sample above. They measure PostgreSQL execution, not Vercel-to-Supabase network time, PostgREST/API-gateway handling before/after database execution, connection/pool acquisition, or response transit.
+
+Together, the two measurements materially narrow the slow path: the observed multi-second handler tail sits inside the web provider boundary, while PostgreSQL execution for the same RPC statements remains in the low-millisecond range. That is evidence against changing the aggregate SQL, indexes, rollups or puzzle-loading path as the next response.
+
+The remaining unresolved provider time is between the web adapter entering the provider boundary and PostgreSQL's measured execution. The provider currently consists of synchronous lazy Supabase client/repository construction when needed, `await client.rpc(...)`, and local row decoding. The next bounded measurement should split that boundary into local setup, RPC wait and local decode before any behavioral optimization.
+
 ## Next bounded measurement
 
 Before changing storage or comparison product behavior:
 
-1. preserve the current raw-read architecture;
-2. use the bounded stage-level timing seam to separate server composition, authoritative-puzzle loading and the exact provider repository call;
-3. re-sample production after that decomposition;
+1. preserve the current raw-read architecture and aggregate SQL/indexes;
+2. split the already-identified provider boundary into local setup, RPC wait and local decode;
+3. use production evidence from that split before changing transport/provider behavior;
 4. separately perform ordinary mobile/browser trigger-to-visible QA, including delayed/failed reads and stale-request behavior.
 
 Any actual performance change should target the measured slow stage rather than guessing. The stage seam is specified in `tasks/plans/daily-nine-comparison-stage-timing.md`; it does not itself change performance behavior.
