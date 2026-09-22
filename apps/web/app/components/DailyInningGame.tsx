@@ -58,10 +58,12 @@ export function DailyInningGame({
   const resolutionRequests = useDailyGameplayResolutionRequests(setRequestError);
   const [savedGameRestoreController] = useState(createDailySavedGameRestoreController);
   const currentPitch = puzzle.pitches[currentPitchIndex] ?? null;
-  const atBatComparison = useDailyNineAtBatComparison(createDailyNineAtBatComparisonInput({
-    puzzle, rulesetVersion: gameState.rulesetVersion, pitch: currentPitch, result: atBatState.submittedResult,
-    currentPoints: gameState.points.points, terminalPoints: pendingAdvance?.points.points ?? null,
-  }));
+  const atBatComparison = useDailyNineAtBatComparison(hasLoadedSavedState
+    ? createDailyNineAtBatComparisonInput({
+        puzzle, rulesetVersion: gameState.rulesetVersion, pitch: currentPitch, result: atBatState.submittedResult,
+        currentPoints: gameState.points.points, terminalPoints: pendingAdvance?.points.points ?? null,
+      })
+    : null);
   const completedComparison = useDailyNineCompletedComparison(createDailyNineCompletedComparisonInput({
     puzzle, rulesetVersion: gameState.rulesetVersion, points: gameState.points, terminalPoints: pendingAdvance?.points ?? null,
   }));

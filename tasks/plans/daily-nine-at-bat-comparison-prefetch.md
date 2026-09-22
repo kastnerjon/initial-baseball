@@ -1,6 +1,6 @@
 # Daily Nine active-at-bat comparison prefetch
 
-Status: implementation plan
+Status: implemented
 Date: 2026-09-22
 
 ## Scope contract
@@ -25,8 +25,16 @@ The network effect depends only on exact puzzle/ruleset/pitch identity, not on `
 
 Prefetch begins only after saved-game hydration is complete. This avoids firing a pitch-1 read from the initial default React state before a restored session has applied its authoritative current pitch.
 
-Ordinary live play therefore reveals a pre-result snapshot. A separately restored terminal state may perform a fresh current read; this PR does not persist historical comparison snapshots and does not claim to reconstruct them.
+Live play normally starts the aggregate read before the current AB result write, which materially reduces the prior terminal race, but request initiation is not an atomic self-exclusion boundary: if the managed read remains in flight while the independent result write lands, the returned aggregate may still include that row. A separately restored terminal state may also perform a fresh current read. This PR does not persist historical comparison snapshots or add exclusion semantics to the API/SQL.
+
+## Implementation
+
+- `createDailyNineAtBatComparisonInput` now activates the exact points-v3 slot before terminal resolution and carries nullable own points separately.
+- `useDailyNineAtBatComparison` owns hidden key-scoped read state and projects the existing terminal presentation state only when own points exist. Its request effect intentionally excludes own points from its dependencies.
+- `DailyInningGame` gates prefetch on completed saved-game hydration so restored sessions do not briefly request the default initial slot.
+- `AtBatCard` still renders comparison only in its terminal branch; static-render coverage explicitly guards against active-state disclosure.
+- No shared/API/Daily/engine/Supabase/persistence contract changed.
 
 ## Documentation impact
 
-Update the existing terminal-at-bat comparison plan, resolved-at-bat comparison roadmap, architecture-and-scale plan, START-HERE and todo to record hidden active-at-bat prefetch as the current browser policy while preserving asynchronous/non-blocking comparison semantics.
+The existing terminal-at-bat comparison plan, resolved-at-bat comparison roadmap, architecture-and-scale plan, START-HERE and todo record hidden active-at-bat prefetch as the current browser policy while preserving asynchronous/non-blocking comparison semantics.

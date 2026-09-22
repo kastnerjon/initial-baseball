@@ -25,12 +25,21 @@ export type DailyNineAtBatComparisonState =
     }
   | { status: 'unavailable'; ownPoints: number };
 
+export type DailyNineAtBatComparisonReadState =
+  | { status: 'idle' | 'loading' }
+  | {
+      status: 'success';
+      resolvedAtBatCount: number;
+      averagePoints: number | null;
+    }
+  | { status: 'unavailable' };
+
 export type DailyNineAtBatComparisonInput = {
   key: DailyNineAtBatComparisonRequestKey;
-  ownPoints: number;
+  ownPoints: number | null;
 } | null;
 
-type DailyNineTerminalAtBatComparisonInput = {
+type DailyNineAtBatComparisonActivationInput = {
   puzzle: Pick<DailyPublicPuzzle, 'id' | 'puzzleDate' | 'puzzleNumber'>;
   rulesetVersion: DailyRulesetVersion;
   pitch: Pick<DailyPublicPuzzlePitch, 'pitchNumber'> | null;
@@ -46,12 +55,14 @@ export function createDailyNineAtBatComparisonInput({
   result,
   currentPoints,
   terminalPoints,
-}: DailyNineTerminalAtBatComparisonInput): DailyNineAtBatComparisonInput {
-  if (rulesetVersion !== POINTS_V3_DAILY_RULESET_VERSION
-    || pitch === null
-    || result === null
-    || result.kind === 'incorrect'
-    || terminalPoints === null) return null;
+}: DailyNineAtBatComparisonActivationInput): DailyNineAtBatComparisonInput {
+  if (rulesetVersion !== POINTS_V3_DAILY_RULESET_VERSION || pitch === null) return null;
+
+  const ownPoints = result !== null
+    && result.kind !== 'incorrect'
+    && terminalPoints !== null
+    ? Math.max(0, terminalPoints - currentPoints)
+    : null;
 
   return {
     key: {
@@ -62,14 +73,33 @@ export function createDailyNineAtBatComparisonInput({
       rulesetVersion: POINTS_V3_DAILY_RULESET_VERSION,
       pitchNumber: pitch.pitchNumber,
     },
-    ownPoints: Math.max(0, terminalPoints - currentPoints),
+    ownPoints,
   };
+}
+
+export function createDailyNineAtBatComparisonState(
+  readState: DailyNineAtBatComparisonReadState,
+  ownPoints: number | null,
+): DailyNineAtBatComparisonState {
+  if (ownPoints === null) return { status: 'idle' };
+  if (readState.status === 'success') {
+    return {
+      status: 'success',
+      ownPoints,
+      resolvedAtBatCount: readState.resolvedAtBatCount,
+      averagePoints: readState.averagePoints,
+    };
+  }
+  if (readState.status === 'unavailable') {
+    return { status: 'unavailable', ownPoints };
+  }
+  return { status: 'loading', ownPoints };
 }
 
 export function useDailyNineAtBatComparison(input: DailyNineAtBatComparisonInput) {
   const [client] = useState(createBrowserDailyNineComparisonClient);
   const [controller] = useState(createDailyNineComparisonRequestController);
-  const [state, setState] = useState<DailyNineAtBatComparisonState>({ status: 'idle' });
+  const [readState, setReadState] = useState<DailyNineAtBatComparisonReadState>({ status: 'idle' });
 
   const puzzleId = input?.key.puzzleId ?? null;
   const puzzleDate = input?.key.puzzleDate ?? null;
@@ -77,9 +107,11 @@ export function useDailyNineAtBatComparison(input: DailyNineAtBatComparisonInput
   const rulesetVersion = input?.key.rulesetVersion ?? null;
   const pitchNumber = input?.key.pitchNumber ?? null;
   const ownPoints = input?.ownPoints ?? null;
+  const state = createDailyNineAtBatComparisonState(readState, ownPoints);
 
   const invalidate = useCallback(() => {
     controller.invalidate('at-bat');
+    setReadState({ status: 'idle' });
   }, [controller]);
 
   useEffect(() => {
@@ -87,10 +119,9 @@ export function useDailyNineAtBatComparison(input: DailyNineAtBatComparisonInput
       || puzzleDate === null
       || puzzleNumber === null
       || rulesetVersion === null
-      || pitchNumber === null
-      || ownPoints === null) {
+      || pitchNumber === null) {
       controller.invalidate('at-bat');
-      setState({ status: 'idle' });
+      setReadState({ status: 'idle' });
       return;
     }
 
@@ -104,27 +135,27 @@ export function useDailyNineAtBatComparison(input: DailyNineAtBatComparisonInput
     };
 
     void controller.request(key, {
-      onStart: () => setState({ status: 'loading', ownPoints }),
+      onStart: () => setReadState({ status: 'loading' }),
       execute: signal => client.readAtBat(key, signal),
       onSuccess: ({ comparison }) => {
-        setState({
+        setReadState({
           status: 'success',
-          ownPoints,
           resolvedAtBatCount: comparison.resolvedAtBatCount,
           averagePoints: comparison.averagePoints,
         });
       },
-      onError: () => setState({ status: 'unavailable', ownPoints }),
+      onError: () => setReadState({ status: 'unavailable' }),
       onSettled: () => undefined,
     });
 
     return () => {
       controller.invalidate('at-bat');
     };
+    // ownPoints is intentionally excluded: terminal reveal projects the existing
+    // active-slot read instead of restarting the comparison request.
   }, [
     client,
     controller,
-    ownPoints,
     pitchNumber,
     puzzleDate,
     puzzleId,

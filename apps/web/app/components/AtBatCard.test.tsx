@@ -61,6 +61,24 @@ describe('AtBatCard pending resolution feedback', () => {
     expect(html).not.toContain('Next At Bat');
   });
 
+  it('never reveals a prefetched comparison while the at-bat is active', () => {
+    const html = renderCard({
+      requestPending: false,
+      giveUpPending: false,
+      comparison: {
+        status: 'success',
+        ownPoints: 7,
+        resolvedAtBatCount: 12,
+        averagePoints: 4.5,
+      },
+    });
+
+    expect(html).not.toContain('At-bat comparison');
+    expect(html).not.toContain('>AVG<');
+    expect(html).not.toContain('12 results');
+    expect(html).not.toContain('4.5');
+  });
+
   it('renders terminal YOU / AVG loading without changing the next action', () => {
     const html = renderCard({
       requestPending: false,
