@@ -3,17 +3,19 @@ import {
   completedResultPrivateJson,
   mapCompletedResultRouteError,
 } from '../../../dailyCompletedResultHttp';
+import { readDailyResultJsonBody } from '../../../dailyResultRequestBody';
 
 export async function POST(request: Request) {
-  let submission: unknown;
-  try {
-    submission = await request.json();
-  } catch {
-    return completedResultPrivateJson({ error: 'invalid_submission' }, 400);
+  const body = await readDailyResultJsonBody(request);
+  if (!body.ok) {
+    return completedResultPrivateJson(
+      { error: 'invalid_submission' },
+      body.error === 'payload_too_large' ? 413 : 400,
+    );
   }
 
   try {
-    const result = await submitDailyCompletedResult(submission);
+    const result = await submitDailyCompletedResult(body.value);
 
     if (result.ok) {
       return completedResultPrivateJson(

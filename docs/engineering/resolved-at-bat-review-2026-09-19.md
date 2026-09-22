@@ -113,6 +113,8 @@ Routes parse JSON before an application-level byte limit and preflight only rout
 
 HTTP error mappers deliberately sanitize responses, but catch exceptions without recording a structured diagnostic. Consequently a clean runtime-error scan alone cannot prove no internally handled storage/route failures happened. Add safe status/category/count observability without logging answer data, full request bodies or credentials. Do not expose individual result rows for comparison recovery.
 
+R8 is intentionally decomposed rather than implemented as one generic hardening PR. R8A owns only bounded body admission: both anonymous result-write routes now use one concrete web ingress reader with a 16 KiB actual-byte ceiling before JSON parsing, a Content-Length fast reject that is never trusted as sole enforcement, preserved 400 malformed-JSON behavior, and terminal 413 handling for oversized bodies. Current first-party schema-1 payloads are roughly 0.4 KiB for a padded single-AB observation and 1.3 KiB for a padded nine-AB completion, leaving substantial headroom. R8B remains a separate hosting-specific coarse rate-admission checkpoint; R8C remains a separate sanitized diagnostics checkpoint. None of the three is evidence of honest human play.
+
 ## Acceptable tradeoffs and decisions to preserve
 
 - **Undercount over reconstruction:** save-success/freeze-crash retires on reload; no inferred historical ABs. Two localStorage records are not a transaction, and the declared one-way durability guarantee is appropriate.
@@ -157,4 +159,4 @@ R6 and R8 are separate follow-ups; do not bundle them into comparison or a gener
 - Diagnostic tests asserted existing bad behavior and were not added to the regression suite. No new browser/mobile/production proof was performed. Existing server/provider mocks are not a new hosted atomicity/performance test.
 - Documentation drift found during the review included lifecycle-proof wording and the operating manual's one-product vocabulary. The September 20 documentation checkpoint reconciles the current R1–R6 status, runtime baseline and two-beta-game vocabulary while preserving the original evidence and unresolved interactive/mobile limits.
 
-Review completion means evidence and next work are recorded. R1–R6 have bounded repairs and R7 is structurally complete through the bounded R7A/R7B/R7C browser checkpoints. R8 and the remaining interactive/mobile verification are still open.
+Review completion means evidence and next work are recorded. R1–R6 have bounded repairs and R7 is structurally complete through the bounded R7A/R7B/R7C browser checkpoints. R8A bounded body admission is implemented; R8B coarse rate admission, R8C sanitized diagnostics, and the remaining interactive/mobile verification are still open.

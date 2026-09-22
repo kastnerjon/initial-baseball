@@ -14,6 +14,7 @@ import { DailyRuntimeRequestError } from '../../../dailyRuntimeService';
 import { ServerSupabaseConfigurationError } from '../../../serverSupabaseClient';
 import { SupabaseDailyCompletedResultRepositoryError } from '../../../supabaseDailyCompletedResultRepository';
 import { mapCompletedResultRouteError } from '../../../dailyCompletedResultHttp';
+import { DAILY_RESULT_REQUEST_BODY_MAX_BYTES } from '../../../dailyResultRequestBody';
 import { POST } from './route';
 
 describe('POST /api/daily/results', () => {
@@ -42,6 +43,19 @@ describe('POST /api/daily/results', () => {
     }));
 
     expect(response.status).toBe(400);
+    await expect(response.json()).resolves.toEqual({ error: 'invalid_submission' });
+    expect(server.submitDailyCompletedResult).not.toHaveBeenCalled();
+  });
+
+  it('rejects oversized request bodies before the server service', async () => {
+    const response = await POST(new Request('http://localhost/api/daily/results', {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify('a'.repeat(DAILY_RESULT_REQUEST_BODY_MAX_BYTES)),
+    }));
+
+    expect(response.status).toBe(413);
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
     await expect(response.json()).resolves.toEqual({ error: 'invalid_submission' });
     expect(server.submitDailyCompletedResult).not.toHaveBeenCalled();
   });
