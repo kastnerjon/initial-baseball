@@ -9,6 +9,10 @@ import { DailyRuntimeRequestError } from './dailyRuntimeService';
 import { DailyNineComparisonRequestError } from './dailyNineComparisonReadService';
 import { ServerSupabaseConfigurationError } from './serverSupabaseClient';
 import { SupabaseDailyNineComparisonRepositoryError } from './supabaseDailyNineComparisonRepository';
+import {
+  DAILY_NINE_COMPARISON_TIMING_STAGES,
+  type DailyNineComparisonStageTimings,
+} from './dailyNineComparisonTiming';
 
 export type DailyNineComparisonTimingKind = 'at-bat' | 'completed';
 
@@ -33,15 +37,26 @@ export function withDailyNineComparisonTiming(
   response: NextResponse,
   startedAt: number,
   kind: DailyNineComparisonTimingKind,
+  stageTimings: DailyNineComparisonStageTimings = {},
 ): NextResponse {
   const metric = kind === 'at-bat'
     ? 'daily-comparison-at-bat'
     : 'daily-comparison-completed';
-  response.headers.set(
-    'server-timing',
-    `${metric};dur=${Math.max(0, Date.now() - startedAt)}`,
-  );
+  const metrics = [
+    `${metric};dur=${timingDuration(Date.now() - startedAt)}`,
+  ];
+  for (const stage of DAILY_NINE_COMPARISON_TIMING_STAGES) {
+    const duration = stageTimings[stage];
+    if (duration === undefined) continue;
+    metrics.push(`daily-comparison-${stage};dur=${timingDuration(duration)}`);
+  }
+  response.headers.set('server-timing', metrics.join(', '));
   return response;
+}
+
+function timingDuration(value: number): number {
+  if (!Number.isFinite(value)) return 0;
+  return Math.max(0, Math.round(value));
 }
 
 export function dailyNineComparisonDisabledResponse(): NextResponse {

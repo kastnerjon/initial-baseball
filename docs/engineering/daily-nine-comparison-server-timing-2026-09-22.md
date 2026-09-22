@@ -1,6 +1,6 @@
 # Daily Nine comparison production Server-Timing evidence — September 22, 2026
 
-Status: handler-level production sample recorded; browser trigger-to-visible and stage decomposition remain open
+Status: handler-level production sample recorded; stage-decomposition instrumentation implemented; production stage re-sample and browser trigger-to-visible remain open
 
 ## Purpose
 
@@ -67,11 +67,11 @@ The earlier PR #203 database benchmark remains valid: raw PostgreSQL aggregation
 Before changing storage or comparison product behavior:
 
 1. preserve the current raw-read architecture;
-2. add only enough stage-level server timing to distinguish authoritative-puzzle load from comparison-provider work;
+2. use the bounded stage-level timing seam to separate server composition, authoritative-puzzle loading and the exact provider repository call;
 3. re-sample production after that decomposition;
 4. separately perform ordinary mobile/browser trigger-to-visible QA, including delayed/failed reads and stale-request behavior.
 
-Any actual performance change should target the measured slow stage rather than guessing.
+Any actual performance change should target the measured slow stage rather than guessing. The stage seam is specified in `tasks/plans/daily-nine-comparison-stage-timing.md`; it does not itself change performance behavior.
 
 ## Non-conclusions
 
