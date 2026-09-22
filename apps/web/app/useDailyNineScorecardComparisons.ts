@@ -36,6 +36,7 @@ type UseDailyNineScorecardComparisonsInput = {
 };
 
 const EMPTY_COMPARISONS: DailyNineScorecardComparisons = {};
+const MAX_CONCURRENT_SCORECARD_READS = 3;
 
 export function useDailyNineScorecardComparisons({
   enabled,
@@ -91,11 +92,23 @@ export function useDailyNineScorecardComparisons({
 
     const completionAdvanced = lastPitchSignatureRef.current !== pitchSignature;
     lastPitchSignatureRef.current = pitchSignature;
+    const loadingCount = Object.values(cache.byPitch)
+      .filter(state => state.status === 'loading').length;
+    let availableSlots = Math.max(0, MAX_CONCURRENT_SCORECARD_READS - loadingCount);
+    if (availableSlots === 0) return;
 
-    for (const pitchNumber of normalizedPitchNumbers) {
-      const current = cache.byPitch[pitchNumber];
-      if (current !== undefined
-        && !(completionAdvanced && shouldRefreshWithNewCompletion(current))) continue;
+    const missingPitchNumbers = normalizedPitchNumbers
+      .filter(pitchNumber => cache.byPitch[pitchNumber] === undefined);
+    const refreshPitchNumbers = completionAdvanced
+      ? normalizedPitchNumbers.filter((pitchNumber) => {
+          const state = cache.byPitch[pitchNumber];
+          return state !== undefined && shouldRefreshWithNewCompletion(state);
+        })
+      : [];
+
+    for (const pitchNumber of [...missingPitchNumbers, ...refreshPitchNumbers]) {
+      if (availableSlots === 0) break;
+      availableSlots -= 1;
 
       const key: DailyNineAtBatComparisonRequestKey = {
         kind: 'at-bat',
