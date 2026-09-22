@@ -2,10 +2,10 @@ import type { JSX } from 'react';
 import { isDailyPointsRulesetVersion, type DailyShareResult } from '@initial-baseball/shared';
 import { PitchResultList } from './PitchResultList';
 import { DailyShareCard } from './DailyShareCard';
-import type { DailyScorecardAnswers } from '../dailyScorecard';
+import type { DailyScorecardAnswers, DailyScorecardPoints } from '../dailyScorecard';
 import type { DailyNineCompletedComparisonState } from '../useDailyNineCompletedComparison';
 import type { DailyNineScorecardComparisons } from '../useDailyNineScorecardComparisons';
-import { addDailyNineAtBatAveragesToShareText } from '../dailyNineScorecardComparisonPresentation';
+import { createDailyNineScorecardShareText } from '../dailyNineScorecardComparisonPresentation';
 import { DailyNineCompletedComparison } from './DailyNineCompletedComparison';
 import { ScoreLine } from './ScoreLine';
 
@@ -13,6 +13,7 @@ type GameCompleteViewProps = {
   shareResult: DailyShareResult;
   shareText: string;
   scorecardAnswers?: DailyScorecardAnswers;
+  atBatPoints?: DailyScorecardPoints;
   comparison?: DailyNineCompletedComparisonState;
   atBatComparisons?: DailyNineScorecardComparisons;
   onResetToday?: () => void;
@@ -22,11 +23,16 @@ export function GameCompleteView({
   shareResult,
   shareText,
   scorecardAnswers = {},
+  atBatPoints = {},
   comparison = { status: 'idle' },
   atBatComparisons = {},
   onResetToday,
 }: GameCompleteViewProps): JSX.Element {
-  const shareCardText = addDailyNineAtBatAveragesToShareText(shareText, atBatComparisons);
+  const shareCardText = createDailyNineScorecardShareText(
+    shareText,
+    atBatPoints,
+    atBatComparisons,
+  );
 
   return (
     <div className="game-shell">
@@ -45,6 +51,7 @@ export function GameCompleteView({
       </section>
       <PitchResultList
         answers={scorecardAnswers}
+        points={atBatPoints}
         comparisons={atBatComparisons}
         pitchLines={shareResult.pitchLines}
         title="At-bat Results"

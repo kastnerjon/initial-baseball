@@ -1,53 +1,87 @@
 # Daily Nine scorecard/share average
 
-Status: issue #216 correction after PR #229
+Status: issue #216 final presentation correction after PR #230
 Date: 2026-09-22
 
 ## Scope contract
 
-- **Goal:** show each resolved Daily Nine at-bat's existing comparison AVG on the ongoing private scorecard, completed private scorecard, and spoiler-safe share output.
-- **Owning layer:** `apps/web` presentation and browser comparison-read lifecycle.
-- **In scope:** read the existing same-puzzle/same-ruleset/same-pitch aggregate for completed scorecard rows; format displayable averages as ordinary one-decimal points such as `AVG 4.8`; withhold 0–1 observation averages; refill missing rows after restore; quietly retry low-sample/unavailable rows when another AB is completed; decorate the existing spoiler-safe share pitch lines with the same per-AB AVG; remove PR #229's mistaken whole-game AVG decoration from the scorecard/share surfaces while preserving the separate completed-game YOU / AVG / BEAT panel; focused tests and canonical docs.
-- **Out of scope:** onset-of-AB AVG display, new aggregate calculations, Supabase/API/shared/engine changes, scoring changes, result-write behavior, persistence-schema changes, historical comparison snapshots, Classic comparison, or unrelated browser/mobile verification.
-- **Acceptance checks:** ongoing and completed private scorecard rows show `AVG x.x` only at 2+ observations; share output adds the same per-AB value without answer names; 0–1/loading/unavailable states fail quietly; restore can repopulate completed rows from current aggregates; different pitch reads may complete independently; stale/replaced/session-invalidated callbacks cannot populate rows; comparison reads never block Guess/Give Up/Next/result delivery/sharing; focused tests, typecheck, file-size/full CI and exact-head Preview pass.
-- **Stop conditions:** any need to change comparison population semantics, scoring, storage, result authority, provider SQL, or portable share/game contracts becomes separate work.
+- **Goal:** compare the user's awarded points for each resolved Daily Nine at-bat against the crowd's average points for that same at-bat on the ongoing private scorecard, completed private scorecard and spoiler-safe share output.
+- **Owning layer:** `apps/web` presentation, reusing existing engine scoring authority and browser comparison reads.
+- **In scope:** derive a `pitchNumber -> awardedPoints` presentation map from persisted `completedAtBats` through the existing engine `getDailyAtBatPoints` function; replace Daily Nine baseball outcome presentation in private/share scorecard rows with personal AB points; preserve the existing exact-pitch AVG read and 0–1 withholding policy; format private rows as initials + answer + personal score + `AVG x.x`; format share rows like `BB: 0 • AVG: 7.0`; keep all four private fields on one mobile line with player-name truncation as the pressure-release valve; focused tests and canonical docs.
+- **Out of scope:** any scoring-rule change, new scoring calculation, new persisted scorecard field, Supabase/API/shared contract changes, comparison population changes, onset-of-AB AVG display, baseball-style `.700` notation, completed-game YOU / AVG / BEAT changes, Classic presentation changes, or unrelated browser/mobile verification.
+- **Acceptance checks:** a strikeout/give-up worth 0 renders as personal score `0` rather than `K`; a successful AB uses the engine-computed awarded points from its stored terminal facts; share output uses personal points and never answer names; 0–1 comparison samples omit AVG while retaining personal score; Daily Nine private mobile rows stay one line; Classic still shows baseball outcomes; focused tests, typecheck, file-size/full CI and exact-head Preview pass.
+- **Stop conditions:** any need to change scoring semantics, portable completed-at-bat facts, persistence schema, result submission, comparison API/provider or Classic rules becomes separate work.
 
-## Corrected product semantics
+## Product semantics
 
-PR #229 interpreted issue #216 as an additional whole-game AVG inside the scorecard/share surfaces. That was not the intended requirement.
+The scorecard comparison is:
 
-The scorecard comparison is per AB. For example, after BB resolves, its row may read:
+`YOUR AB POINTS vs CROWD AB AVG`
 
-`BB  Barry Bonds  AVG 4.8  K`
+not:
 
-The separate completed-game comparison card remains whole-game YOU / AVG / BEAT. It is not the scorecard AVG.
+`BASEBALL OUTCOME vs CROWD AB AVG`.
 
-For now, AB averages use ordinary points formatting to one decimal place. Baseball-style notation such as `.480` is not used.
+Examples:
 
-## Read lifecycle
+Private Daily Nine scorecard:
 
-The active-AB prefetch remains unchanged and continues to support terminal YOU / AVG presentation without putting comparison on gameplay's critical path.
+`BB   Barry Bonds   0   AVG 7.0`
 
-Scorecard rows have a distinct read lifecycle because they survive after the active hook moves to the next pitch. The web consumer therefore keeps an ephemeral per-pitch scorecard comparison cache:
+Spoiler-safe share output:
 
-1. when a pitch enters the completed scorecard, read the existing at-bat comparison endpoint for that exact pitch;
-2. store only presentation read state in memory, never in gameplay persistence;
-3. on a restored game, fetch the currently completed pitch rows again from the current aggregate;
-4. if the first post-resolution read is unavailable or still has only 0–1 observations, allow one bounded delayed retry to catch the independent result-write race; if it is still unavailable/low-sample, allow another quiet refresh only when the scorecard gains another completed AB;
-5. stable 2+ rows are not repeatedly re-read during the same session.
+`BB: 0 • AVG: 7.0`
 
-A small per-pitch request controller permits independent row reads while fencing replaced or invalidated callbacks. Restore/refill work is capped at three concurrent scorecard reads, with never-read rows prioritized ahead of low-sample retries. These reads are asynchronous and fail quiet.
+When the comparison population has fewer than two observations, the user's score still appears but AVG is omitted.
+
+## Personal score authority
+
+No new personal-score state is stored.
+
+Each resolved Daily Nine AB already persists the native terminal facts required by scoring:
+
+- outcome;
+- hints revealed;
+- wrong guesses;
+- resolution;
+- pitch identity.
+
+The web scorecard passes those facts back through the existing engine `getDailyAtBatPoints` rule. This is the same scoring authority used by at-bat result validation. Therefore refresh/restore reconstructs the same personal AB score without duplicating formulas or translating `K/HR/etc.` into points in React.
+
+Classic does not receive this points map and continues to render baseball outcomes.
+
+## Comparison read lifecycle
+
+The existing scorecard comparison lifecycle remains unchanged:
+
+1. each completed pitch may read the current exact-pitch aggregate asynchronously;
+2. 0–1 observations withhold AVG;
+3. one bounded delayed retry may catch the independent result-write race;
+4. low-sample/unavailable rows may refresh as later ABs complete;
+5. restore/refill is capped at three concurrent reads;
+6. comparison never blocks Guess, Give Up, Next, result delivery or sharing.
 
 ## Share safety
 
-The engine-owned `DailyShareResult` and `formatDailyShareText` remain unchanged and portable. Web presentation decorates only existing spoiler-safe pitch lines, for example:
+The engine-owned `DailyShareResult` and `formatDailyShareText` remain unchanged and portable. Their baseball-outcome pitch lines remain the base representation.
 
-`BB: K · AVG 4.8`
+For Daily Nine only, web presentation replaces the displayed/share-copied pitch token with the engine-derived personal points and appends AVG when displayable:
 
-No player answer names, raw observations, participant identifiers, BEAT percentages, or per-user details enter the share text.
+`BB: K` -> `BB: 0 • AVG: 7.0`
 
-Because comparison rows can arrive after the share surface is already usable, the existing exact-text clipboard state remains important: if displayed share text changes after an earlier copy, the UI no longer claims the updated text was already copied.
+No player answer name, raw observation, participant identifier or completed-game BEAT value enters the share text.
+
+## Mobile layout
+
+Daily Nine point-comparison rows have four columns:
+
+1. initials;
+2. player answer;
+3. personal AB points;
+4. AVG.
+
+All four stay on one line on narrow screens. The answer column owns flexible width and truncates with ellipsis before score/AVG are allowed to wrap.
 
 ## Documentation impact
 
-Reconcile START-HERE, todo, architecture and the comparison roadmap so issue #216 records per-AB scorecard/share AVG as the intended requirement and PR #229's whole-game scorecard interpretation is superseded.
+Reconcile START-HERE, todo, architecture and the comparison roadmap so the authoritative scorecard contract is personal AB points versus crowd AB AVG.

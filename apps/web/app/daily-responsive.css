@@ -121,6 +121,10 @@
     grid-template-columns: 36px minmax(0, 1fr) max-content;
     gap: 12px;
   }
+  .scorecard-row-points {
+    grid-template-columns: 36px minmax(0, 1fr) max-content max-content;
+    gap: 8px;
+  }
   .daily-footer {
     flex-wrap: wrap;
     gap: 4px 12px;

@@ -1,3 +1,7 @@
+import {
+  formatDailyScorecardPoints,
+  type DailyScorecardPoints,
+} from './dailyScorecard';
 import type {
   DailyNineScorecardComparisonState,
   DailyNineScorecardComparisons,
@@ -13,8 +17,9 @@ export function createDailyNineScorecardAtBatAverage(
   return state.averagePoints.toFixed(1);
 }
 
-export function addDailyNineAtBatAveragesToShareText(
+export function createDailyNineScorecardShareText(
   shareText: string,
+  points: DailyScorecardPoints,
   comparisons: DailyNineScorecardComparisons,
 ): string {
   const lines = shareText.split('\n');
@@ -28,8 +33,19 @@ export function addDailyNineAtBatAveragesToShareText(
   for (let lineIndex = pitchSectionStart, pitchNumber = 1;
     lineIndex < lines.length && lines[lineIndex] !== '';
     lineIndex += 1, pitchNumber += 1) {
+    const awardedPoints = points[pitchNumber];
+    if (awardedPoints === undefined) continue;
+
+    const currentLine = lines[lineIndex] ?? '';
+    const separatorIndex = currentLine.indexOf(':');
+    if (separatorIndex <= 0) continue;
+
+    const initials = currentLine.slice(0, separatorIndex).trim();
+    const personalScore = formatDailyScorecardPoints(awardedPoints);
     const average = createDailyNineScorecardAtBatAverage(comparisons[pitchNumber]);
-    if (average !== null) lines[lineIndex] = `${lines[lineIndex]} · AVG ${average}`;
+    lines[lineIndex] = average === null
+      ? `${initials}: ${personalScore}`
+      : `${initials}: ${personalScore} • AVG: ${average}`;
   }
 
   return lines.join('\n');
