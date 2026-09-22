@@ -171,7 +171,7 @@ describe('AtBatCard terminal output', () => {
     expect(html).toContain('Guess the player');
   });
 
-  it('reveals the correct answer and zero points after Give Up', () => {
+  it('reveals the correct answer and zero-point score after Give Up', () => {
     const html = renderAtBatCard({
       submittedResult: createGiveUpResult(0, 3),
       strikeCount: 3,
@@ -181,8 +181,10 @@ describe('AtBatCard terminal output', () => {
     expect(html).toContain('Next At Bat');
     expect(html.indexOf('Next At Bat')).toBeLessThan(html.indexOf('Player Reveal'));
     expect(html).not.toContain('Next Pitch');
-    expect(html).toContain('K');
-    expect(html).toContain('Strikeout · 0 points');
+    expect(html).toContain('>Score<');
+    expect(html).toContain('0 PTS');
+    expect(html).not.toContain('>K<');
+    expect(html).not.toContain('Strikeout');
     expect(html).toContain('Player Reveal');
     expect(html).toContain(firstReveal.displayName);
     expect(html).toContain(`${firstReveal.yearsPlayedDisplay} · Hitter · ${firstReveal.primaryPosition}`);
@@ -205,12 +207,15 @@ describe('AtBatCard terminal output', () => {
       strikeCount: 3,
     });
 
-    expect(html).toContain('Strikeout · 0 points');
+    expect(html).toContain('>Score<');
+    expect(html).toContain('0 PTS');
+    expect(html).not.toContain('>K<');
+    expect(html).not.toContain('Strikeout');
     expect(html).toContain('Player Reveal');
     expect(html).toContain(firstReveal.displayName);
   });
 
-  it('shows both a correct baseball outcome and awarded points', () => {
+  it('shows awarded points rather than a baseball outcome', () => {
     const correctResult = getGuessOutcome({
       isCorrect: true,
       revealCount: 1,
@@ -228,8 +233,10 @@ describe('AtBatCard terminal output', () => {
       revealCount: 1,
     });
 
-    expect(html).toContain('3B');
-    expect(html).toContain('6 points');
+    expect(html).toContain('>Score<');
+    expect(html).toContain('6 PTS');
+    expect(html).not.toContain('>3B<');
+    expect(html).not.toContain('>Outcome<');
     expect(html).toContain('Player Reveal');
     expect(html).toContain(firstReveal.displayName);
     expect(html).toContain(firstReveal.yearsPlayedDisplay);
