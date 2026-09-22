@@ -33,7 +33,7 @@ Scorecard rows have a distinct read lifecycle because they survive after the act
 1. when a pitch enters the completed scorecard, read the existing at-bat comparison endpoint for that exact pitch;
 2. store only presentation read state in memory, never in gameplay persistence;
 3. on a restored game, fetch the currently completed pitch rows again from the current aggregate;
-4. if a row was unavailable or still had only 0–1 observations, allow a quiet refresh when the scorecard gains another completed AB;
+4. if the first post-resolution read is unavailable or still has only 0–1 observations, allow one bounded delayed retry to catch the independent result-write race; if it is still unavailable/low-sample, allow another quiet refresh only when the scorecard gains another completed AB;
 5. stable 2+ rows are not repeatedly re-read during the same session.
 
 A small per-pitch request controller permits independent row reads while fencing replaced or invalidated callbacks. Restore/refill work is capped at three concurrent scorecard reads, with never-read rows prioritized ahead of low-sample retries. These reads are asynchronous and fail quiet.
