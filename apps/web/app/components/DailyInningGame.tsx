@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { createDailyShareResult, formatDailyShareText, getDailyAtBatPointsRemaining, type PlayerSearchResult } from '@initial-baseball/engine';
 import {
   CLASSIC_DAILY_RULESET_VERSION,
+  isDailyPointsRulesetVersion,
   type DailyAtBatResolution,
   type DailyGameState,
   type DailyGuessResult,
@@ -234,7 +235,7 @@ export function DailyInningGame({
       {gameState.completedPitchLines.length > 0 ? (
         <PitchResultList
           answers={scorecardAnswers}
-          points={scorecardPoints}
+          points={isDailyPointsRulesetVersion(gameState.rulesetVersion) ? scorecardPoints : undefined}
           comparisons={scorecardComparisons.comparisons}
           pitchLines={gameState.completedPitchLines}
           title="Completed At-bats"

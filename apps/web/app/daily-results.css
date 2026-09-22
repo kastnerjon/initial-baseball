@@ -261,30 +261,51 @@
   border-bottom: 1px solid var(--line-soft);
   font-size: 14px;
 }
-.scorecard-row-points {
-  grid-template-columns: 48px minmax(0, 1fr) max-content minmax(64px, max-content);
-}
 .scorecard-answer {
   min-width: 0;
   overflow-wrap: anywhere;
   text-align: left;
 }
-.scorecard-row-points .scorecard-answer {
-  overflow: hidden;
-  text-overflow: ellipsis;
+.daily-nine-scorecard-table {
+  width: 100%;
+  margin-top: 10px;
+  border-collapse: collapse;
+  table-layout: fixed;
+  font-variant-numeric: tabular-nums;
+}
+.daily-nine-scorecard-initials-column {
+  width: 34%;
+}
+.daily-nine-scorecard-number-column {
+  width: 33%;
+}
+.daily-nine-scorecard-table th,
+.daily-nine-scorecard-table td {
+  padding: 9px 4px;
+  border-bottom: 1px solid var(--line-soft);
   white-space: nowrap;
 }
-.scorecard-points {
+.daily-nine-scorecard-table thead th {
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-align: right;
+  text-transform: uppercase;
+}
+.daily-nine-scorecard-table thead th:first-child,
+.daily-nine-scorecard-table tbody th {
+  text-align: left;
+}
+.daily-nine-scorecard-table tbody th {
   color: var(--clubhouse);
   font-size: 14px;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
+  font-weight: 600;
 }
-.scorecard-average {
-  color: var(--ink-soft);
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
+.daily-nine-scorecard-table tbody td {
+  color: var(--ink);
+  font-size: 14px;
+  text-align: right;
 }
 .scorecard-row .pitch-outcome {
   text-align: right;
