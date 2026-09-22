@@ -48,6 +48,7 @@ describe('Daily Nine comparison GET adapters', () => {
 
     expect(response.status).toBe(404);
     expect(response.headers.get('cache-control')).toBe('private, no-store');
+    expect(response.headers.get('server-timing')).toMatch(/^daily-comparison-at-bat;dur=\d+$/);
     await expect(response.json()).resolves.toEqual({
       schemaVersion: 1,
       error: 'comparison_unavailable',
@@ -66,6 +67,7 @@ describe('Daily Nine comparison GET adapters', () => {
       ));
 
       expect(response.status).toBe(404);
+      expect(response.headers.get('server-timing')).toMatch(/^daily-comparison-at-bat;dur=\d+$/);
       expect(server.readAtBat).not.toHaveBeenCalled();
     },
   );
@@ -79,6 +81,7 @@ describe('Daily Nine comparison GET adapters', () => {
     ));
 
     expect(response.status).toBe(200);
+    expect(response.headers.get('server-timing')).toMatch(/^daily-comparison-at-bat;dur=\d+$/);
     expect(server.readAtBat).toHaveBeenCalledOnce();
   });
 
@@ -104,6 +107,7 @@ describe('Daily Nine comparison GET adapters', () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get('cache-control')).toBe('private, no-store');
+    expect(response.headers.get('server-timing')).toMatch(/^daily-comparison-at-bat;dur=\d+$/);
     expect(server.readAtBat).toHaveBeenCalledWith({
       puzzleDate: '2026-09-19',
       rulesetVersion: 'points-v3',
@@ -122,6 +126,7 @@ describe('Daily Nine comparison GET adapters', () => {
 
     expect(response.status).toBe(200);
     expect(response.headers.get('cache-control')).toBe('private, no-store');
+    expect(response.headers.get('server-timing')).toMatch(/^daily-comparison-completed;dur=\d+$/);
     expect(server.readCompleted).toHaveBeenCalledWith({
       puzzleDate: '2026-09-19',
       rulesetVersion: 'points-v3',
@@ -139,6 +144,7 @@ describe('Daily Nine comparison GET adapters', () => {
     ));
 
     expect(response.status).toBe(400);
+    expect(response.headers.get('server-timing')).toMatch(/^daily-comparison-at-bat;dur=\d+$/);
     await expect(response.json()).resolves.toEqual({
       schemaVersion: 1,
       error: 'invalid_request',
@@ -153,6 +159,7 @@ describe('Daily Nine comparison GET adapters', () => {
     ));
 
     expect(response.status).toBe(500);
+    expect(response.headers.get('server-timing')).toMatch(/^daily-comparison-completed;dur=\d+$/);
     await expect(response.json()).resolves.toEqual({
       schemaVersion: 1,
       error: 'comparison_unavailable',
