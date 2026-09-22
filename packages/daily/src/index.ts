@@ -97,3 +97,12 @@ export {
   type DailyNineCompletedComparisonSource,
   type DailyNineScoreBucket,
 } from './dailyNineComparison';
+
+export {
+  PERMANENT_DAILY_SERIES_VERSION,
+  createPermanentDailyLaunchEpoch,
+  resolvePermanentDailyIdentityForDate,
+  resolvePermanentDailyIdentityForNumber,
+  type PermanentDailyIdentity,
+  type PermanentDailyLaunchEpoch,
+} from './permanentDailyIdentity';
