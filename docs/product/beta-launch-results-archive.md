@@ -73,6 +73,8 @@ This identity is separate from the immutable puzzle snapshot. A numbered date is
 
 The portable Daily layer now also defines that immutable issued-puzzle contract. One `permanent-v1` identity maps to stable puzzle ID `permanent-v1-daily-N`, an exact ordered nine-player canonical lineup, and the first successful issue timestamp. Storage is first-write-wins: an exact retry is idempotent and retains the original timestamp, while any attempt to rewrite the frozen lineup is an immutable conflict. The snapshot deliberately does not freeze today's beta game/ruleset choice; supported archive game/ruleset contracts remain separate until the launch decision.
 
+Portable issuance orchestration is also defined without choosing the launch date. A caller must first supply an explicit permanent identity; issuance then accepts only the authoritative same-date editorial lineup in `scheduled` or `published` state, validates exact slots 1-9, and freezes those canonical IDs through the existing immutable service. Beta puzzle number/ID and today's game/ruleset do not enter permanent puzzle identity.
+
 The archive begins with the eventual permanent Daily #1, not with the current beta history.
 
 After launch, every prior permanent Daily remains playable and shareable. An archived Daily should expose whichever retained game contracts are currently enabled for public web availability. Classic archive support should remain compatible with one-setting restoration while Classic is retained, but hidden Classic must not create a second normal archive choice merely because its code/data still exist.

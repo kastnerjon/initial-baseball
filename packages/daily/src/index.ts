@@ -119,3 +119,11 @@ export {
   type PermanentDailyIssuedPuzzleService,
   type PermanentDailyIssuedPuzzleStoreResult,
 } from './permanentDailyIssuedPuzzle';
+
+
+export {
+  createPermanentDailyIssuanceService,
+  type PermanentDailyIssuanceEditorialPuzzle,
+  type PermanentDailyIssuanceInput,
+  type PermanentDailyIssuanceService,
+} from './permanentDailyIssuance';
