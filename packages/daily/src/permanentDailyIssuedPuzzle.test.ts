@@ -21,7 +21,7 @@ describe('Permanent Daily issued puzzle', () => {
     expect(createPermanentDailyIssuedPuzzle({
       identity,
       canonicalPlayerIds: PLAYER_IDS,
-      issuedAt: '2030-04-05T07:00:00.000Z',
+      issuedAt: '2030-04-05T03:00:00-04:00',
     })).toEqual({
       schemaVersion: PERMANENT_DAILY_ISSUED_PUZZLE_SCHEMA_VERSION,
       puzzleId: 'permanent-v1-daily-1',

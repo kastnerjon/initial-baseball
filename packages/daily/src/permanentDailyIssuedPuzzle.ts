@@ -89,14 +89,14 @@ export function createPermanentDailyIssuedPuzzle(
 ): PermanentDailyIssuedPuzzle {
   validatePermanentDailyIdentity(input.identity);
   validateCanonicalPlayerIds(input.canonicalPlayerIds);
-  validateIssuedAt(input.issuedAt);
+  const issuedAt = normalizeIssuedAt(input.issuedAt);
 
   return {
     schemaVersion: PERMANENT_DAILY_ISSUED_PUZZLE_SCHEMA_VERSION,
     puzzleId: createPermanentDailyPuzzleId(input.identity),
     identity: { ...input.identity },
     canonicalPlayerIds: [...input.canonicalPlayerIds],
-    issuedAt: input.issuedAt,
+    issuedAt,
   };
 }
 
@@ -176,10 +176,12 @@ function validateCanonicalPlayerIds(canonicalPlayerIds: readonly string[]): void
   }
 }
 
-function validateIssuedAt(issuedAt: string): void {
-  if (!Number.isFinite(Date.parse(issuedAt))) {
+function normalizeIssuedAt(issuedAt: string): string {
+  const timestamp = Date.parse(issuedAt);
+  if (!Number.isFinite(timestamp)) {
     throw new Error(`Invalid permanent Daily issued timestamp: ${issuedAt}.`);
   }
+  return new Date(timestamp).toISOString();
 }
 
 function cloneIssuedPuzzle(
