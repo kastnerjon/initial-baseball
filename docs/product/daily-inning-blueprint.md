@@ -44,6 +44,9 @@ Daily Nine remains the default points-v3 game at `/`. Classic Inning is availabl
 
 Daily Nine and Classic are independently modeled beta games, not two score views of one completion. Playing one does not count as playing the other. Their result/comparison populations never mix. The owner may later keep only one game, disable Classic, or separate their lineups; current infrastructure should preserve those inexpensive seams without building a generic mode framework.
 
+
+Daily Nine's in-app completed-at-bat scorecard shows initials, the revealed player name, personal score, and same-at-bat average. Copied/share text deliberately omits player names so sharing does not reveal answers.
+
 ## Hint and answer boundary
 
 Current-batter hints are gameplay inputs, not answers, and may be present in browser memory/initial props. The browser must not receive:
