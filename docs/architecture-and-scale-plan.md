@@ -1,11 +1,11 @@
 # Architecture and launch-scale plan
 
 Status: Living architecture source of truth  
-Last updated: 2026-09-19
+Last updated: 2026-09-23
 
 ## Product goal
 
-Build a polished daily baseball guessing product that supports at least 10,000 plays per day without a rewrite. Daily Nine and Classic Inning are currently distinct beta games over the same daily puzzle; beta feedback will determine the primary/sole broad-launch game. Infrastructure should preserve inexpensive game/ruleset seams without assuming both games survive launch.
+Build a polished daily baseball guessing product that supports at least 10,000 plays per day without a rewrite. Daily Nine is the normal/default public game. Classic Inning remains a distinct retained beta implementation over the same daily puzzle but is hidden by default at the web availability boundary. Infrastructure preserves inexpensive game/ruleset seams without requiring both games to be publicly exposed or to survive launch.
 
 Current Daily numbering is beta. A later explicit launch decision restarts the permanent sequence at Daily #1; beta history is not the permanent archive. Product details: `docs/product/beta-launch-results-archive.md`.
 
@@ -36,7 +36,7 @@ Canonical identity, aliases, teams, seasons, career facts, enrichment, provenanc
 Puzzle identity/numbering, future gameplay profiles and lineup recipes, selection, recognizability/difficulty policy, repeat/diversity constraints, validation, editorial lifecycle, provider-neutral puzzle/result orchestration boundaries, public eligibility, and seven-day orchestration.
 
 ### `apps/web`
-Next.js/React rendering, browser persistence, search/hint/resolve/admin/result routes, signed-token authorization, current-batter hint bundles, server-only canonical runtime composition, sharing, HTTP Basic editor boundary, and Supabase adapters.
+Next.js/React rendering, browser persistence, public game availability, search/hint/resolve/admin/result routes, signed-token authorization, current-batter hint bundles, server-only canonical runtime composition, sharing, HTTP Basic editor boundary, and Supabase adapters.
 
 ### Supabase/Postgres
 Operational persistence behind provider-neutral ports: current editorial puzzles and future profiles, recipes, and compact completed results. It does not own baseball facts, scoring, comparison semantics, recipe semantics, or lifecycle rules.
@@ -69,7 +69,7 @@ Native completed-at-bat facts preserve slot, initials, HR/3B/2B/1B/BB/K, hints r
 
 Ruleset version flows through shared state, engine, signed progression, local persistence, final result, and share output. Point totals and resolved-result copy are derived from the engine policy and verified reveal/strike facts rather than duplicated in React. The pure engine completion policy is reusable by signed progression so server and client agree. Do not build a generic plugin framework.
 
-Daily Nine and Classic are independently modeled games. Playing one never completes the other, and completed-result/comparison populations never mix. Their current shared lineup is not an architectural identity requirement. Either game may later be disabled/removed without corrupting the other game's data; separate lineups remain possible without being current scope.
+Daily Nine and Classic are independently modeled games. Playing one never completes the other, and completed-result/comparison populations never mix. Their current shared lineup is not an architectural identity requirement. Public availability is a narrower `apps/web` concern: the server-only `CLASSIC_INNING_ENABLED` setting defaults fail-closed, suppresses mode navigation, and redirects `/classic` before Classic bootstrap composition unless its exact value is `true`. No availability state enters shared/engine/Daily contracts, browser persistence, or Supabase. Either game may later be re-enabled, disabled, or removed without corrupting the other game's data; separate lineups remain possible without being current scope.
 
 ## Immediate active-at-bat hint architecture
 

@@ -1,7 +1,7 @@
 # Initial Baseball — Start Here
 
 Status: Active project handoff  
-Last updated: 2026-09-22
+Last updated: 2026-09-23
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
@@ -19,7 +19,7 @@ Do not restart settled discussions because the conversation changed. Correct dri
 
 ## Product promise
 
-Initial Baseball is currently beta-testing **Daily Nine** and **Classic Inning** as two distinct browser-first games over the same daily nine-player puzzle. The owner expects friend/beta feedback to determine which game becomes the primary/sole broad-launch product. The shared lineup is a current choice, not a permanent identity constraint; either game must remain removable without corrupting the other game's data.
+Initial Baseball currently presents **Daily Nine** as the only normal/default browser game. **Classic Inning** remains fully implemented and data-compatible but is hidden by default at the web boundary; the owner can restore the existing Classic route and mode navigation with the server-side availability setting. The games remain distinct over the same current daily nine-player puzzle, and Classic rules, saves, results, comparison infrastructure, and historical data are retained.
 
 Current Daily numbering is beta. At a later explicit broad-launch decision, the permanent sequence restarts at **Daily #1** and current beta history is not imported into the permanent archive. Settled launch/results/archive direction: `docs/product/beta-launch-results-archive.md`.
 
@@ -50,6 +50,10 @@ Archive PR 1 defines the portable `permanent-v1` series identity in `packages/da
 ## Daily Nine scorecard presentation
 
 The in-app Daily Nine scorecard now renders the already-persisted revealed player name between initials and SCORE/AVG. Share text remains initials + SCORE + AVG only, so copied results do not disclose answers.
+
+## Classic availability checkpoint
+
+Classic Inning is retained but hidden by default through the server-only web setting `CLASSIC_INNING_ENABLED`. With the setting absent or anything other than the exact value `true`, the Daily/Classic mode navigation is not rendered and `/classic` redirects to `/` before Classic bootstrap composition. Setting it to `true` restores the existing Classic route and navigation. No Classic engine rules, browser storage, results, comparison contracts, or database data are removed.
 
 ## Architecture map
 

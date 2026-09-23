@@ -1,7 +1,7 @@
 # Beta, launch, results, and archive product model
 
 Status: Settled product direction  
-Last updated: 2026-09-18
+Last updated: 2026-09-23
 
 ## Purpose
 
@@ -29,7 +29,7 @@ Daily Nine and Classic Inning are currently two distinct beta games that happen 
 
 The owner expects to use beta feedback to choose one of these games as the primary/sole public product before broad launch. Therefore new infrastructure should be game-aware but should avoid expensive duplicated mode-specific systems before that decision.
 
-Classic must remain independently removable/disableable without corrupting Daily Nine data or requiring deletion of historical Classic code/results. Likewise, the architecture must not prevent a future decision to give the games separate lineups. Neither separation nor a disable control is current implementation scope.
+Classic is now disabled from normal web presentation by default through the server-only `CLASSIC_INNING_ENABLED` setting. When disabled, the mode navigation is absent and `/classic` redirects to Daily Nine before Classic bootstrap composition. This availability seam does not delete or reinterpret Classic rules, browser saves, completed results, comparison infrastructure, or historical data; setting the value to the exact string `true` restores the existing route/navigation. The architecture must still permit later independent removal or separate lineups without corrupting Daily Nine data.
 
 `points-v3` is the current Daily Nine beta policy, not yet a promise that the permanent launch scoring policy can never change. Any scoring change before/after launch still uses explicit ruleset versioning; completed results are never reinterpreted silently.
 
@@ -75,7 +75,7 @@ The portable Daily layer now also defines that immutable issued-puzzle contract.
 
 The archive begins with the eventual permanent Daily #1, not with the current beta history.
 
-After launch, every prior permanent Daily remains playable and shareable. An archived Daily should expose whichever games are currently supported for that historical puzzle; while both beta games remain supported, both Daily Nine and Classic can be played independently for the same Daily.
+After launch, every prior permanent Daily remains playable and shareable. An archived Daily should expose whichever retained game contracts are currently enabled for public web availability. Classic archive support should remain compatible with one-setting restoration while Classic is retained, but hidden Classic must not create a second normal archive choice merely because its code/data still exist.
 
 Archived play uses the ruleset associated with the supported game contract rather than attempting to recreate discarded beta-era scoring. The exact launch rules will be frozen only when the launch product decision is made.
 

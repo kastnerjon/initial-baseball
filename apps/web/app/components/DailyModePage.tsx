@@ -1,9 +1,11 @@
 import type { JSX } from 'react';
 import { CLASSIC_DAILY_RULESET_VERSION } from '@initial-baseball/shared';
 import type { DailyBootstrapRulesetVersion } from '../dailyRuntimeContracts';
+import { isClassicInningEnabled } from '../gameAvailability';
 import { getPacificDailyDateString } from '../getPacificDailyDateString';
 import { dailyRuntime } from '../serverCanonicalRuntime';
 import { DailyInningGame } from './DailyInningGame';
+import { DailyModeNavigation } from './DailyModeNavigation';
 
 type DailyModePageProps = {
   rulesetVersion: DailyBootstrapRulesetVersion;
@@ -43,22 +45,10 @@ export async function DailyModePage({ rulesetVersion }: DailyModePageProps): Pro
           </div>
         </header>
 
-        <nav className="daily-mode-nav" aria-label="Game mode">
-          <a
-            className="daily-mode-link"
-            href="/"
-            aria-current={mode.path === '/' ? 'page' : undefined}
-          >
-            Daily Nine
-          </a>
-          <a
-            className="daily-mode-link"
-            href="/classic"
-            aria-current={mode.path === '/classic' ? 'page' : undefined}
-          >
-            Classic Inning
-          </a>
-        </nav>
+        <DailyModeNavigation
+          currentPath={mode.path}
+          classicInningEnabled={isClassicInningEnabled()}
+        />
 
         <DailyInningGame
           puzzle={bootstrap.puzzle}

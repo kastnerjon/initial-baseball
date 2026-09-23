@@ -1,7 +1,7 @@
 # Initial Baseball Current Work
 
 Status: Active ordered implementation plan  
-Last updated: 2026-09-22
+Last updated: 2026-09-23
 
 Completed history belongs in PRs, canonical docs, or `tasks/lessons.md`. Durable resumption context belongs in `docs/START-HERE.md`.
 
@@ -33,6 +33,7 @@ Review: `docs/engineering/resolved-at-bat-review-2026-09-19.md`. R1–R6 are rep
 - [x] Merge PR #156: activate `/classic` with navigation, isolated saves, compatible default keys, game-aware refresh/reset/results/sharing, and hidden unplayed answers; exact production deployment is READY and both public routes return the same Daily puzzle with their correct signed ruleset identities.
 - [ ] Verify both games interactively through terminal/complete refresh, clipboard success/failure, answer safety and responsive layouts; retain physical-device QA as distinct.
 - [x] Settle beta/launch direction: Daily Nine and Classic are distinct beta games sharing a lineup today; either may ultimately be removed or separated, and infrastructure must not require both forever.
+- [x] Hide Classic from the normal product UI behind the server-only `CLASSIC_INNING_ENABLED` web availability setting, default OFF: no mode toggle while off and `/classic` redirects to `/`; preserve Classic rules, storage, results, comparison infrastructure, and data for one-setting restoration.
 - [x] Settle permanent-history direction: current numbering is beta; broad launch explicitly restarts at Daily #1 and only post-launch Dailies enter the permanent archive.
 - [x] Settle comparison direction: result populations are stable-puzzle + ruleset/game specific; Daily Nine gets per-AB/whole-game comparison, while Classic gets separate baseball-native comparison.
 - [x] Daily Nine result presentation is points-native: terminal AB result shows `N PTS` rather than baseball outcome; in-app and share scorecards use the same initials / SCORE / AVG grid; player names are omitted from the scorecard table, and withheld AVG renders `—`; completed private/share header is `X PTS • AVG Y.Y` when displayable and `X PTS` otherwise. Existing 0–1 AVG withholding and 20+ BEAT threshold remain; refresh/restore recomputes personal AB points from persisted completed-at-bat facts through the engine rule; Classic remains baseball-native; mobile private rows stay single-line. Scope: `tasks/plans/daily-nine-scorecard-average.md`.
@@ -239,7 +240,7 @@ Hosted architecture/storage/comparison/editorial verification is sufficient to r
 - [x] Define stable permanent Daily identity/launch-epoch contract without choosing the launch date yet: portable `permanent-v1` date/number mapping lives in `packages/daily`; no launch-date constant is configured and beta numbering is untouched. Scope: `tasks/plans/permanent-daily-identity.md`.
 - [ ] Build archive infrastructure to begin at future permanent Daily #1; do not import current beta history.
 - [ ] Freeze each issued permanent Daily so later lineup-generation/profile changes cannot change historical answers. Portable first-write-wins snapshot contract and append-only Supabase provider are complete; explicit issuance orchestration remains next. Scopes: `tasks/plans/permanent-daily-issued-puzzle.md`, `tasks/plans/permanent-daily-issued-puzzle-supabase.md`.
-- [ ] Add archive routes/navigation with Daily Nine/Classic choice while both games remain supported.
+- [ ] Add archive routes/navigation for the game(s) currently exposed by web availability; keep retained Classic archive support compatible with one-setting restoration rather than deleting Classic contracts.
 - [ ] Isolate archived-game saves from current Daily and from the other game.
 - [ ] Remember per-browser/device completion and recorded score/result for each stable Daily + game/ruleset.
 - [ ] Keep archived results shareable and eligible for same-Daily/same-ruleset global comparison.

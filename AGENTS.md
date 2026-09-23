@@ -4,7 +4,7 @@ Read this before touching code. This repository is maintained primarily through 
 
 ## Current product
 
-Initial Baseball is currently beta-testing two distinct browser-first games over the same daily nine-player puzzle: **Daily Nine** and **Classic Inning**. The owner expects beta feedback to determine which game becomes the primary or sole broad-launch product. The shared lineup is a current choice, not a permanent identity constraint; either game must remain independently removable without corrupting the other game's data.
+Initial Baseball currently presents **Daily Nine** as the only normal/default browser game. **Classic Inning** remains fully implemented as a distinct beta game over the same daily nine-player puzzle, but the web availability setting hides it by default and redirects `/classic` to `/`. Re-enabling that web setting restores the existing Classic route and mode navigation without changing Classic rules, saves, results, comparison infrastructure, or data. The shared lineup is a current choice, not a permanent identity constraint; either game must remain independently removable without corrupting the other game's data.
 
 A future native client or head-to-head mode is possible, but neither is a committed roadmap item. Preserve inexpensive portability seams; do not add infrastructure or abstractions solely for hypothetical products.
 
