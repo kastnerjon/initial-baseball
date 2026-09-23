@@ -90,30 +90,18 @@ export function generateDailyLineup({
   const selections: DailyLineupSelection[] = [];
 
   for (const policy of DAILY_RECOGNIZABILITY_POLICY) {
-    const eligible = candidates.filter(candidate => (
-      candidate.recognizabilityRank !== null
-      && candidate.recognizabilityRank >= policy.minimumRank
-      && candidate.recognizabilityRank <= policy.maximumRank
-      && !selectedCanonicalIds.has(candidate.canonicalPlayerId)
-      && !recentCanonicalIds.has(candidate.canonicalPlayerId)
-    ));
+    const selected = selectLowestEligibleCandidate(
+      seed,
+      candidates,
+      policy,
+      selectedCanonicalIds,
+      recentCanonicalIds,
+    );
 
-    if (eligible.length === 0) {
+    if (selected === null) {
       throw new Error(
         `Insufficient eligible Daily players for slot ${policy.slot} (ranks ${policy.minimumRank}-${policy.maximumRank}).`,
       );
-    }
-
-    const selected = [...eligible].sort((left, right) => (
-      compareHashedValues(
-        buildSeed(seed, policy.slot, left.canonicalPlayerId),
-        buildSeed(seed, policy.slot, right.canonicalPlayerId),
-      )
-      || left.canonicalPlayerId.localeCompare(right.canonicalPlayerId)
-    ))[0];
-
-    if (selected === undefined) {
-      throw new Error(`Could not select Daily player for slot ${policy.slot}.`);
     }
 
     selections.push({ ...selected, slot: policy.slot, source: 'generated' });
@@ -121,6 +109,45 @@ export function generateDailyLineup({
   }
 
   return selections;
+}
+
+function selectLowestEligibleCandidate(
+  seed: DailyLineupSeedContext,
+  candidates: readonly DailyLineupCandidate[],
+  policy: (typeof DAILY_RECOGNIZABILITY_POLICY)[number],
+  selectedCanonicalIds: ReadonlySet<string>,
+  recentCanonicalIds: ReadonlySet<string>,
+): DailyLineupCandidate | null {
+  let selected: DailyLineupCandidate | null = null;
+  let selectedHash = Number.POSITIVE_INFINITY;
+
+  for (const candidate of candidates) {
+    const rank = candidate.recognizabilityRank;
+    if (
+      rank === null
+      || rank < policy.minimumRank
+      || rank > policy.maximumRank
+      || selectedCanonicalIds.has(candidate.canonicalPlayerId)
+      || recentCanonicalIds.has(candidate.canonicalPlayerId)
+    ) {
+      continue;
+    }
+
+    const candidateHash = hashString(buildSeed(seed, policy.slot, candidate.canonicalPlayerId));
+    if (
+      selected === null
+      || candidateHash < selectedHash
+      || (
+        candidateHash === selectedHash
+        && candidate.canonicalPlayerId.localeCompare(selected.canonicalPlayerId) < 0
+      )
+    ) {
+      selected = candidate;
+      selectedHash = candidateHash;
+    }
+  }
+
+  return selected;
 }
 
 export function validateDailyLineup(
