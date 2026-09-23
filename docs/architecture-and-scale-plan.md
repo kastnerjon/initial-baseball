@@ -1,7 +1,7 @@
 # Architecture and launch-scale plan
 
 Status: Living architecture source of truth  
-Last updated: 2026-09-19
+Last updated: 2026-09-23
 
 ## Product goal
 
@@ -34,6 +34,8 @@ Canonical identity, aliases, teams, seasons, career facts, enrichment, provenanc
 
 ### `packages/daily`
 Puzzle identity/numbering, future gameplay profiles and lineup recipes, selection, recognizability/difficulty policy, repeat/diversity constraints, validation, editorial lifecycle, provider-neutral puzzle/result orchestration boundaries, public eligibility, and seven-day orchestration.
+
+Automatic Daily slot selection must preserve the versioned deterministic ordering contract without unnecessary full-array sorts. For each recognizability band, the implementation may scan eligible candidates once and retain the minimum under the existing seeded-hash + canonical-ID comparator. Because this is exactly equivalent to sorting by that comparator and taking the first candidate, it is a performance implementation detail and does not require a lineup algorithm-version bump or alter published/generated puzzle identity.
 
 ### `apps/web`
 Next.js/React rendering, browser persistence, search/hint/resolve/admin/result routes, signed-token authorization, current-batter hint bundles, server-only canonical runtime composition, sharing, HTTP Basic editor boundary, and Supabase adapters.
