@@ -21,6 +21,25 @@ describe('Daily lineup quality', () => {
     expect(generateDailyLineup(input)).toEqual(generateDailyLineup(input));
   });
 
+  it('preserves the established deterministic lineup for the current algorithm version', () => {
+    const lineup = generateDailyLineup({
+      seed: { dailyDate: '2026-07-21', reviewedDataVersion: 'data-v1' },
+      candidates: buildCandidates(5000),
+    });
+
+    expect(lineup.map(selection => selection.canonicalPlayerId)).toEqual([
+      'canonical:157',
+      'canonical:123',
+      'canonical:901',
+      'canonical:681',
+      'canonical:2198',
+      'canonical:1743',
+      'canonical:2740',
+      'canonical:3697',
+      'canonical:3602',
+    ]);
+  });
+
   it('changes seed context when the date or reviewed version changes', () => {
     const candidates = buildCandidates(5000);
     const base = generateDailyLineup({ seed: { dailyDate: '2026-07-21', reviewedDataVersion: 'data-v1' }, candidates });
