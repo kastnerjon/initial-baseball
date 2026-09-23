@@ -92,6 +92,18 @@ describe('GameCompleteView comparison', () => {
     expect(twenty).toContain("ties aren&#x27;t counted as beaten");
   });
 
+  it('shows the revealed player name in the in-app Daily Nine scorecard without adding it to share text', () => {
+    const html = render(
+      { status: 'loading', ownPoints: 41 },
+      { 1: 'Jackie Robinson' },
+    );
+
+    expect(html).toContain('Player');
+    expect(html).toContain('Jackie Robinson');
+    expect(html).toContain('JR');
+    expect(html).not.toContain('JR: Jackie Robinson');
+  });
+
   it('degrades comparison failure without removing personal points', () => {
     const html = render({ status: 'unavailable', ownPoints: 41 });
 
@@ -105,12 +117,14 @@ describe('GameCompleteView comparison', () => {
 
 function render(
   comparison: NonNullable<Parameters<typeof GameCompleteView>[0]['comparison']>,
+  scorecardAnswers: NonNullable<Parameters<typeof GameCompleteView>[0]['scorecardAnswers']> = {},
 ): string {
   return renderToStaticMarkup(
     <GameCompleteView
       shareResult={shareResult}
       shareText={shareText}
       comparison={comparison}
+      scorecardAnswers={scorecardAnswers}
     />,
   );
 }

@@ -274,10 +274,13 @@
   font-variant-numeric: tabular-nums;
 }
 .daily-nine-scorecard-initials-column {
-  width: 34%;
+  width: 16%;
+}
+.daily-nine-scorecard-player-column {
+  width: 46%;
 }
 .daily-nine-scorecard-number-column {
-  width: 33%;
+  width: 19%;
 }
 .daily-nine-scorecard-table th,
 .daily-nine-scorecard-table td {
@@ -294,7 +297,9 @@
   text-transform: uppercase;
 }
 .daily-nine-scorecard-table thead th:first-child,
-.daily-nine-scorecard-table tbody th {
+.daily-nine-scorecard-table thead th:nth-child(2),
+.daily-nine-scorecard-table tbody th,
+.daily-nine-scorecard-table .daily-nine-scorecard-player {
   text-align: left;
 }
 .daily-nine-scorecard-table tbody th {
@@ -307,6 +312,11 @@
   font-size: 14px;
   text-align: right;
 }
+.daily-nine-scorecard-table .daily-nine-scorecard-player {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .scorecard-row .pitch-outcome {
   text-align: right;
 }

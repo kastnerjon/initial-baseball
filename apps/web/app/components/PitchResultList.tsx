@@ -40,7 +40,7 @@ export function PitchResultList({
         {dailyNineRows === null ? (
           <ClassicPitchList pitchLines={pitchLines} title={title} answers={answers} />
         ) : (
-          <DailyNineScorecardTable rows={dailyNineRows} title={title} />
+          <DailyNineScorecardTable rows={dailyNineRows} title={title} answers={answers} />
         )}
       </details>
     );
@@ -57,7 +57,7 @@ export function PitchResultList({
       ) : dailyNineRows === null ? (
         <ClassicPitchList pitchLines={pitchLines} title={title} answers={answers} />
       ) : (
-        <DailyNineScorecardTable rows={dailyNineRows} title={title} />
+        <DailyNineScorecardTable rows={dailyNineRows} title={title} answers={answers} />
       )}
     </section>
   );
@@ -66,20 +66,24 @@ export function PitchResultList({
 function DailyNineScorecardTable({
   rows,
   title,
+  answers,
 }: {
   rows: DailyNineScorecardRow[];
   title: string;
+  answers: DailyScorecardAnswers;
 }): JSX.Element {
   return (
     <table className="daily-nine-scorecard-table" aria-label={title}>
       <colgroup>
         <col className="daily-nine-scorecard-initials-column" />
+        <col className="daily-nine-scorecard-player-column" />
         <col className="daily-nine-scorecard-number-column" />
         <col className="daily-nine-scorecard-number-column" />
       </colgroup>
       <thead>
         <tr>
           <th scope="col" aria-label="At-bat" />
+          <th scope="col">Player</th>
           <th scope="col">Score</th>
           <th scope="col">Avg</th>
         </tr>
@@ -88,6 +92,9 @@ function DailyNineScorecardTable({
         {rows.map(row => (
           <tr key={row.pitchNumber}>
             <th scope="row">{`${row.initials}:`}</th>
+            <td className="daily-nine-scorecard-player">
+              {answers[row.pitchNumber] ?? 'Answer unavailable'}
+            </td>
             <td aria-label={`Your score ${row.score}`}>{row.score}</td>
             <td aria-label={`Average score ${row.average}`}>{row.average}</td>
           </tr>

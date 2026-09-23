@@ -47,6 +47,10 @@ The September 22 QA pass has a hard stop. Remaining ordinary-browser, physical-m
 
 Archive PR 1 defines the portable `permanent-v1` series identity in `packages/daily` without choosing a launch date. Archive PR 2 adds the provider-neutral immutable issued-puzzle contract: stable `permanent-v1-daily-N` puzzle identity, exact ordered nine canonical player IDs, first issue timestamp, idempotent exact reissue, and conflict rejection for any rewrite. Append-only Supabase persistence now implements that contract through `public.permanent_daily_issued_puzzles`, with server-only SELECT/INSERT access and no application update/delete path. No permanent issuance orchestration or archive route exists yet; issuance is the next boundary. Current beta `DAILY_PUZZLE_EPOCH` numbering remains disposable. Scopes: `tasks/plans/permanent-daily-identity.md` and `tasks/plans/permanent-daily-issued-puzzle.md`.
 
+## Daily Nine scorecard presentation
+
+The in-app Daily Nine scorecard now renders the already-persisted revealed player name between initials and SCORE/AVG. Share text remains initials + SCORE + AVG only, so copied results do not disclose answers.
+
 ## Architecture map
 
 ```text
