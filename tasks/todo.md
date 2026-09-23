@@ -238,7 +238,7 @@ Hosted architecture/storage/comparison/editorial verification is sufficient to r
 
 - [x] Define stable permanent Daily identity/launch-epoch contract without choosing the launch date yet: portable `permanent-v1` date/number mapping lives in `packages/daily`; no launch-date constant is configured and beta numbering is untouched. Scope: `tasks/plans/permanent-daily-identity.md`.
 - [ ] Build archive infrastructure to begin at future permanent Daily #1; do not import current beta history.
-- [ ] Freeze each issued permanent Daily so later lineup-generation/profile changes cannot change historical answers. Portable first-write-wins snapshot contract is complete; Supabase persistence remains next. Scope: `tasks/plans/permanent-daily-issued-puzzle.md`.
+- [ ] Freeze each issued permanent Daily so later lineup-generation/profile changes cannot change historical answers. Portable first-write-wins snapshot contract and append-only Supabase provider are complete; explicit issuance orchestration remains next. Scopes: `tasks/plans/permanent-daily-issued-puzzle.md`, `tasks/plans/permanent-daily-issued-puzzle-supabase.md`.
 - [ ] Add archive routes/navigation with Daily Nine/Classic choice while both games remain supported.
 - [ ] Isolate archived-game saves from current Daily and from the other game.
 - [ ] Remember per-browser/device completion and recorded score/result for each stable Daily + game/ruleset.
