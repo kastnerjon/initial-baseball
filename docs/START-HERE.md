@@ -1,7 +1,7 @@
 # Initial Baseball — Start Here
 
 Status: Active project handoff  
-Last updated: 2026-09-22
+Last updated: 2026-09-23
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
@@ -19,7 +19,7 @@ Do not restart settled discussions because the conversation changed. Correct dri
 
 ## Product promise
 
-Initial Baseball is currently beta-testing **Daily Nine** and **Classic Inning** as two distinct browser-first games over the same daily nine-player puzzle. The owner expects friend/beta feedback to determine which game becomes the primary/sole broad-launch product. The shared lineup is a current choice, not a permanent identity constraint; either game must remain removable without corrupting the other game's data.
+Initial Baseball currently presents **Daily Nine** as the only normal/default browser game. **Classic Inning** remains fully implemented and data-compatible but is hidden by default at the web boundary; the owner can restore the existing Classic route and mode navigation with the server-side availability setting. The games remain distinct over the same current daily nine-player puzzle, and Classic rules, saves, results, comparison infrastructure, and historical data are retained.
 
 Current Daily numbering is beta. At a later explicit broad-launch decision, the permanent sequence restarts at **Daily #1** and current beta history is not imported into the permanent archive. Settled launch/results/archive direction: `docs/product/beta-launch-results-archive.md`.
 
@@ -33,7 +33,7 @@ PR #225 is production-verified on main `90073bccd67002fdaf6fa85f5707be5f8968051b
 
 The browser comparison policy now uses the measured tail rather than changing storage: after saved-game hydration, the exact per-at-bat comparison is prefetched as soon as a points-v3 AB becomes active, but the hook projects an idle public state until engine-derived own points exist at terminal resolution. The same exact-slot request/result is therefore reused at reveal instead of restarting merely because own points became known. This normally moves the aggregate read ahead of the player's result write, but it does not claim deterministic self-exclusion if the managed read is still in flight when that write lands. A separately restored terminal state may also perform a fresh current read. Comparison remains asynchronous and must never block Guess, Give Up, Next, result persistence, or gameplay progression.
 
-PR #227 post-merge hosted/source verification is now recorded in `docs/engineering/daily-nine-comparison-prefetch-verification-2026-09-22.md`: exact main/CI/production identity is clean, both live comparison routes remain versioned HTTP 200 with `private, no-store`, exact-deployment error/fatal logs are clean, and source/tests confirm hidden active presentation plus existing stale-response fencing. Ordinary-browser request-count/trigger-to-visible, controlled delayed/failed-read rendering, and physical/mobile interaction remain explicitly unverified. Close those with real browser evidence when tooling permits; do not redesign storage or scoring to compensate. Daily Nine result presentation is points-native even though baseball outcomes remain native internal facts. The immediate terminal card shows `N PTS`, not `Outcome HR/K/...`; Daily Nine scorecards use one shared initials / SCORE / AVG row model in-app and in share output; player names stay in the reveal experience rather than the scorecard. Missing/withheld AVG renders `—` so the grid remains structurally stable. The completed Daily Nine headline uses the same whole-game comparison as `X PTS • AVG Y.Y` when the AVG is displayable, with BEAT/sample context secondary; the share header uses that same points/AVG line and falls back to `X PTS` while comparison is withheld/unavailable. Personal AB values are recomputed from stored completed-at-bat facts through the existing engine `getDailyAtBatPoints` rule, so refresh/restore needs no new score persistence. Exact-pitch and completed comparison reads remain ephemeral/non-blocking with existing sample thresholds. Classic remains baseball-native. Onset-of-AB AVG remains deliberately unimplemented; ordinary-browser/mobile comparison verification remains open.
+PR #227 post-merge hosted/source verification is now recorded in `docs/engineering/daily-nine-comparison-prefetch-verification-2026-09-22.md`: exact main/CI/production identity is clean, both live comparison routes remain versioned HTTP 200 with `private, no-store`, exact-deployment error/fatal logs are clean, and source/tests confirm hidden active presentation plus existing stale-response fencing. Ordinary-browser request-count/trigger-to-visible, controlled delayed/failed-read rendering, and physical/mobile interaction remain explicitly unverified. Close those with real browser evidence when tooling permits; do not redesign storage or scoring to compensate. Daily Nine result presentation is points-native even though baseball outcomes remain native internal facts. The immediate terminal card shows `N PTS`, not `Outcome HR/K/...`; Daily Nine scorecards use one shared initials / SCORE / AVG scoring row model, with the in-app table additionally joining already-persisted revealed player names while copied share output remains initials / SCORE / AVG only. Missing/withheld AVG renders `—` so the grid remains structurally stable. The completed Daily Nine headline uses the same whole-game comparison as `X PTS • AVG Y.Y` when the AVG is displayable, with BEAT/sample context secondary; the share header uses that same points/AVG line and falls back to `X PTS` while comparison is withheld/unavailable. Personal AB values are recomputed from stored completed-at-bat facts through the existing engine `getDailyAtBatPoints` rule, so refresh/restore needs no new score persistence. Exact-pitch and completed comparison reads remain ephemeral/non-blocking with existing sample thresholds. Classic remains baseball-native. Onset-of-AB AVG remains deliberately unimplemented; ordinary-browser/mobile comparison verification remains open.
 
 ## Current editorial public-selection checkpoint
 
@@ -50,6 +50,10 @@ Archive PR 1 defines the portable `permanent-v1` series identity in `packages/da
 ## Daily Nine scorecard presentation
 
 The in-app Daily Nine scorecard now renders the already-persisted revealed player name between initials and SCORE/AVG. Share text remains initials + SCORE + AVG only, so copied results do not disclose answers.
+
+## Classic availability checkpoint
+
+Classic Inning is retained but hidden by default through the server-only web setting `CLASSIC_INNING_ENABLED`. With the setting absent or anything other than the exact value `true`, the Daily/Classic mode navigation is not rendered and `/classic` redirects to `/` before Classic bootstrap composition. Setting it to `true` restores the existing Classic route and navigation. No Classic engine rules, browser storage, results, comparison contracts, or database data are removed.
 
 ## Architecture map
 

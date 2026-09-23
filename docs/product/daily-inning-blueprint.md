@@ -1,11 +1,11 @@
 # Daily Inning end-to-end blueprint
 
 Status: Living product source of truth  
-Last updated: 2026-09-16
+Last updated: 2026-09-23
 
 ## Product decision
 
-Initial Baseball is currently testing two distinct browser-first beta games over the same daily baseball puzzle: **Daily Nine** and **Classic Inning**. The owner expects beta feedback to determine which game becomes the primary/sole broad-launch product. Shared lineup content is a current product choice, not a permanent identity constraint, and either game must remain removable without corrupting the other game's data.
+Initial Baseball currently exposes **Daily Nine** as the normal/default browser game. **Classic Inning** remains a distinct implemented beta game over the same daily baseball puzzle, but it is hidden by default through a server-only web availability setting. This is a reversible presentation/route decision, not deletion: Classic rules, saves, results, comparison infrastructure, and data remain intact. Shared lineup content is a current product choice, not a permanent identity constraint.
 
 Current Daily numbering is beta and is not the permanent historical sequence. At a later explicit launch decision, permanent numbering restarts at **Daily #1** and prior beta history is not imported into the public archive. Detailed settled direction: `docs/product/beta-launch-results-archive.md`.
 
@@ -40,9 +40,9 @@ Compatible `points-v1` sessions retain `5/4/3/2/1/0` and a 45-point maximum. Com
 
 ## Alternate beta game: Classic Inning
 
-Daily Nine remains the default points-v3 game at `/`. Classic Inning is available at `/classic` and uses `classic-inning-v1`: the same ordered daily nine, runner advancement and run scoring, ending at three outs or nine at-bats. Players may play both games, accepting the spoiler interaction. Only faced players appear in the Classic scorecard. Results/shares identify the game/ruleset, Classic shares return to `/classic`, and Classic browser saves/reset are isolated from the existing default Daily storage key. Both games reuse the same browser game implementation and signed server progression; legacy and points-v1 rules remain unchanged.
+Daily Nine remains the default points-v3 game at `/`. Classic Inning uses `classic-inning-v1`: the same ordered daily nine, runner advancement and run scoring, ending at three outs or nine at-bats. Its implementation is retained, but normal web availability defaults OFF. While `CLASSIC_INNING_ENABLED` is absent or not exactly `true`, no Daily/Classic mode navigation is rendered and `/classic` redirects to `/` before Classic bootstrap composition. Setting it to `true` restores the existing route and navigation without changing Classic code or stored data. Classic browser saves/reset remain isolated from the existing default Daily storage key, and its results/shares remain game/ruleset-specific.
 
-Daily Nine and Classic are independently modeled beta games, not two score views of one completion. Playing one does not count as playing the other. Their result/comparison populations never mix. The owner may later keep only one game, disable Classic, or separate their lineups; current infrastructure should preserve those inexpensive seams without building a generic mode framework.
+Daily Nine and Classic remain independently modeled games, not two score views of one completion. Their result/comparison populations never mix. Hiding Classic does not delete or reinterpret prior Classic saves, results, comparison infrastructure, or rules. The owner may later re-enable Classic, remove it separately, or separate the lineups; current infrastructure preserves those seams without building a generic mode framework.
 
 
 Daily Nine's in-app completed-at-bat scorecard shows initials, the revealed player name, personal score, and same-at-bat average. Copied/share text deliberately omits player names so sharing does not reveal answers.
@@ -80,8 +80,8 @@ Statistical accomplishment is not recognizability. The current weighted-stat ran
 
 ## Current surfaces
 
-- Daily Nine at `/` and Classic Inning at `/classic`, with shared daily puzzle content and explicit game navigation;
-- isolated Classic/default browser saves and game-safe reset/refresh restoration;
+- Daily Nine at `/` as the normal/default game; Classic implementation retained behind server-only availability, with `/classic` redirecting to `/` and no mode navigation while disabled;
+- isolated Classic/default browser saves and game-safe reset/refresh restoration retained for reversible Classic restoration;
 - point-focused Daily Nine scorebug and all-nine game;
 - Classic runs/hits/bases/outs scorebug and three-out-or-nine-batter completion;
 - resolved outcome plus awarded-point display;
