@@ -71,6 +71,8 @@ The portable Daily layer now defines a versioned `permanent-v1` identity contrac
 
 This identity is separate from the immutable puzzle snapshot. A numbered date is not considered archived merely because it can be mapped to Daily #N; later archive persistence must bind that identity to frozen issued puzzle content before historical replay is exposed. Current beta `DAILY_PUZZLE_EPOCH` numbering remains unchanged and is not imported.
 
+The portable Daily layer now also defines that immutable issued-puzzle contract. One `permanent-v1` identity maps to stable puzzle ID `permanent-v1-daily-N`, an exact ordered nine-player canonical lineup, and the first successful issue timestamp. Storage is first-write-wins: an exact retry is idempotent and retains the original timestamp, while any attempt to rewrite the frozen lineup is an immutable conflict. The snapshot deliberately does not freeze today's beta game/ruleset choice; supported archive game/ruleset contracts remain separate until the launch decision.
+
 The archive begins with the eventual permanent Daily #1, not with the current beta history.
 
 After launch, every prior permanent Daily remains playable and shareable. An archived Daily should expose whichever games are currently supported for that historical puzzle; while both beta games remain supported, both Daily Nine and Classic can be played independently for the same Daily.
