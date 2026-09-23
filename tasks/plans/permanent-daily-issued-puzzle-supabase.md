@@ -27,4 +27,4 @@ Malformed persisted rows, mismatched puzzle IDs, unsupported schema/series value
 
 ## Next boundary
 
-Wire an explicit permanent-issuance orchestration path only after the launch epoch/configuration policy is settled enough to know which scheduled/published puzzle becomes a permanent issued snapshot. Public archive reads come after issuance exists.
+Portable issuance orchestration is now implemented in `packages/daily` without configuring a launch epoch: the caller supplies an explicit permanent identity and a same-date scheduled/published editorial puzzle. The next bounded concern is server-only web composition with this Supabase repository while still requiring that explicit identity. Automatic date-driven issuance waits for the owner to choose the launch epoch/configuration policy. Public archive reads come after persisted issuance can be composed.

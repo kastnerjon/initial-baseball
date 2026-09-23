@@ -1,0 +1,157 @@
+import { describe, expect, it } from 'vitest';
+import type { DailyEditorialSelection } from './dailyPuzzleLifecycle';
+import {
+  createPermanentDailyIssuanceService,
+  type PermanentDailyIssuanceEditorialPuzzle,
+} from './permanentDailyIssuance';
+import {
+  type PermanentDailyIssuedPuzzle,
+  type PermanentDailyIssuedPuzzleRepository,
+} from './permanentDailyIssuedPuzzle';
+import {
+  createPermanentDailyLaunchEpoch,
+  resolvePermanentDailyIdentityForDate,
+} from './permanentDailyIdentity';
+
+const PLAYER_IDS = Array.from({ length: 9 }, (_, index) => `player-${index + 1}`);
+
+describe('Permanent Daily issuance orchestration', () => {
+  it('freezes a scheduled editorial lineup in exact slot order for an explicit permanent identity', async () => {
+    const repository = new InMemoryIssuedPuzzleRepository();
+    const service = createPermanentDailyIssuanceService(repository);
+    const identity = requireIdentity('2030-04-05');
+
+    const result = await service.issue({
+      identity,
+      editorialPuzzle: createEditorialPuzzle(
+        '2030-04-05',
+        'scheduled',
+        createSelections().reverse(),
+      ),
+      issuedAt: '2030-04-05T07:00:00.000Z',
+    });
+
+    expect(result).toMatchObject({
+      ok: true,
+      status: 'created',
+      puzzle: {
+        puzzleId: 'permanent-v1-daily-1',
+        identity,
+        canonicalPlayerIds: PLAYER_IDS,
+      },
+    });
+  });
+
+  it('accepts published editorial content and preserves existing idempotent issue semantics', async () => {
+    const repository = new InMemoryIssuedPuzzleRepository();
+    const service = createPermanentDailyIssuanceService(repository);
+    const identity = requireIdentity('2030-04-05');
+    const editorialPuzzle = createEditorialPuzzle('2030-04-05', 'published');
+
+    await service.issue({
+      identity,
+      editorialPuzzle,
+      issuedAt: '2030-04-05T07:00:00.000Z',
+    });
+    const retry = await service.issue({
+      identity,
+      editorialPuzzle,
+      issuedAt: '2030-04-05T08:00:00.000Z',
+    });
+
+    expect(retry).toMatchObject({
+      ok: true,
+      status: 'existing',
+      puzzle: { issuedAt: '2030-04-05T07:00:00.000Z' },
+    });
+  });
+
+  it('rejects draft and archived editorial records before persistence', async () => {
+    for (const status of ['draft', 'archived'] as const) {
+      const repository = new InMemoryIssuedPuzzleRepository();
+      const service = createPermanentDailyIssuanceService(repository);
+
+      await expect(service.issue({
+        identity: requireIdentity('2030-04-05'),
+        editorialPuzzle: createEditorialPuzzle('2030-04-05', status),
+        issuedAt: '2030-04-05T07:00:00.000Z',
+      })).rejects.toThrow('scheduled or published');
+
+      expect(repository.insertCalls).toBe(0);
+    }
+  });
+
+  it('rejects a permanent identity that does not match the editorial puzzle date', async () => {
+    const repository = new InMemoryIssuedPuzzleRepository();
+    const service = createPermanentDailyIssuanceService(repository);
+
+    await expect(service.issue({
+      identity: requireIdentity('2030-04-06'),
+      editorialPuzzle: createEditorialPuzzle('2030-04-05', 'scheduled'),
+      issuedAt: '2030-04-06T07:00:00.000Z',
+    })).rejects.toThrow('does not match editorial puzzle');
+
+    expect(repository.insertCalls).toBe(0);
+  });
+
+  it('rejects malformed editorial slot sets before freezing the lineup', async () => {
+    const repository = new InMemoryIssuedPuzzleRepository();
+    const service = createPermanentDailyIssuanceService(repository);
+    const selections = createSelections();
+    selections[1] = { ...selections[1]!, slot: 1 };
+
+    await expect(service.issue({
+      identity: requireIdentity('2030-04-05'),
+      editorialPuzzle: createEditorialPuzzle('2030-04-05', 'scheduled', selections),
+      issuedAt: '2030-04-05T07:00:00.000Z',
+    })).rejects.toThrow('exact editorial slots 1 through 9');
+
+    expect(repository.insertCalls).toBe(0);
+  });
+});
+
+function createEditorialPuzzle(
+  puzzleDate: string,
+  status: PermanentDailyIssuanceEditorialPuzzle['status'],
+  selections: readonly DailyEditorialSelection[] = createSelections(),
+): PermanentDailyIssuanceEditorialPuzzle {
+  return {
+    puzzleDate,
+    status,
+    selections,
+  };
+}
+
+function createSelections(): DailyEditorialSelection[] {
+  return PLAYER_IDS.map((canonicalPlayerId, index) => ({
+    slot: index + 1,
+    canonicalPlayerId,
+    source: 'generated',
+  }));
+}
+
+function requireIdentity(puzzleDate: string) {
+  const epoch = createPermanentDailyLaunchEpoch('2030-04-05');
+  const identity = resolvePermanentDailyIdentityForDate(puzzleDate, epoch);
+  if (identity === null) throw new Error('Expected permanent identity.');
+  return identity;
+}
+
+class InMemoryIssuedPuzzleRepository implements PermanentDailyIssuedPuzzleRepository {
+  private stored: PermanentDailyIssuedPuzzle | null = null;
+  insertCalls = 0;
+
+  async insertIfAbsent(
+    puzzle: PermanentDailyIssuedPuzzle,
+  ): Promise<
+    | { status: 'inserted'; puzzle: PermanentDailyIssuedPuzzle }
+    | { status: 'existing'; puzzle: PermanentDailyIssuedPuzzle }
+  > {
+    this.insertCalls += 1;
+    if (this.stored !== null) {
+      return { status: 'existing', puzzle: this.stored };
+    }
+    this.stored = puzzle;
+    return { status: 'inserted', puzzle };
+  }
+}
