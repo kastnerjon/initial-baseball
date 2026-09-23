@@ -106,3 +106,16 @@ export {
   type PermanentDailyIdentity,
   type PermanentDailyLaunchEpoch,
 } from './permanentDailyIdentity';
+
+export {
+  PERMANENT_DAILY_ISSUED_PUZZLE_SCHEMA_VERSION,
+  createPermanentDailyIssuedPuzzle,
+  createPermanentDailyIssuedPuzzleService,
+  createPermanentDailyPuzzleId,
+  type PermanentDailyIssuedPuzzle,
+  type PermanentDailyIssuedPuzzleInput,
+  type PermanentDailyIssuedPuzzleRepository,
+  type PermanentDailyIssuedPuzzleRepositoryInsertResult,
+  type PermanentDailyIssuedPuzzleService,
+  type PermanentDailyIssuedPuzzleStoreResult,
+} from './permanentDailyIssuedPuzzle';

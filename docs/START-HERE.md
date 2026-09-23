@@ -45,7 +45,7 @@ The September 22 QA pass has a hard stop. Remaining ordinary-browser, physical-m
 
 ## Permanent archive foundation
 
-Archive PR 1 defines the portable `permanent-v1` series identity in `packages/daily` without choosing a launch date. An explicitly supplied launch epoch maps its date to permanent Daily #1, supports exact date/number round-trips, and returns no permanent identity for pre-launch dates. This does **not** make current beta puzzles archival: frozen issued-puzzle persistence remains the next boundary, and current beta `DAILY_PUZZLE_EPOCH` numbering remains disposable. Scope: `tasks/plans/permanent-daily-identity.md`.
+Archive PR 1 defines the portable `permanent-v1` series identity in `packages/daily` without choosing a launch date. Archive PR 2 adds the provider-neutral immutable issued-puzzle contract: stable `permanent-v1-daily-N` puzzle identity, exact ordered nine canonical player IDs, first issue timestamp, idempotent exact reissue, and conflict rejection for any rewrite. No provider persistence or archive route exists yet; Supabase implementation is the next boundary. Current beta `DAILY_PUZZLE_EPOCH` numbering remains disposable. Scopes: `tasks/plans/permanent-daily-identity.md` and `tasks/plans/permanent-daily-issued-puzzle.md`.
 
 ## Architecture map
 

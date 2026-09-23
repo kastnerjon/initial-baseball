@@ -1,0 +1,193 @@
+import { DAILY_AT_BAT_COUNT } from './dailyPuzzleSelection';
+import {
+  PERMANENT_DAILY_SERIES_VERSION,
+  type PermanentDailyIdentity,
+} from './permanentDailyIdentity';
+
+export const PERMANENT_DAILY_ISSUED_PUZZLE_SCHEMA_VERSION = 1 as const;
+
+export type PermanentDailyIssuedPuzzleInput = {
+  identity: PermanentDailyIdentity;
+  canonicalPlayerIds: readonly string[];
+  issuedAt: string;
+};
+
+export type PermanentDailyIssuedPuzzle = {
+  schemaVersion: typeof PERMANENT_DAILY_ISSUED_PUZZLE_SCHEMA_VERSION;
+  puzzleId: string;
+  identity: PermanentDailyIdentity;
+  canonicalPlayerIds: readonly string[];
+  issuedAt: string;
+};
+
+export type PermanentDailyIssuedPuzzleRepositoryInsertResult =
+  | { status: 'inserted'; puzzle: PermanentDailyIssuedPuzzle }
+  | { status: 'existing'; puzzle: PermanentDailyIssuedPuzzle };
+
+/**
+ * Provider-neutral first-write-wins persistence boundary for one permanent Daily.
+ *
+ * Implementations must atomically preserve the first puzzle stored for a permanent
+ * identity. A later write may return the existing row, but must never overwrite it.
+ */
+export interface PermanentDailyIssuedPuzzleRepository {
+  insertIfAbsent(
+    puzzle: PermanentDailyIssuedPuzzle,
+  ): Promise<PermanentDailyIssuedPuzzleRepositoryInsertResult>;
+}
+
+export type PermanentDailyIssuedPuzzleStoreResult =
+  | {
+      ok: true;
+      status: 'created' | 'existing';
+      puzzle: PermanentDailyIssuedPuzzle;
+    }
+  | {
+      ok: false;
+      error: 'immutable_conflict';
+      requested: PermanentDailyIssuedPuzzle;
+      existing: PermanentDailyIssuedPuzzle;
+    };
+
+export type PermanentDailyIssuedPuzzleService = {
+  issue(input: PermanentDailyIssuedPuzzleInput): Promise<PermanentDailyIssuedPuzzleStoreResult>;
+};
+
+export function createPermanentDailyIssuedPuzzleService(
+  repository: PermanentDailyIssuedPuzzleRepository,
+): PermanentDailyIssuedPuzzleService {
+  return {
+    async issue(input) {
+      const requested = createPermanentDailyIssuedPuzzle(input);
+      const stored = await repository.insertIfAbsent(requested);
+
+      if (stored.status === 'inserted') {
+        if (!arePermanentDailyIssuedPuzzlesExactlyEqual(stored.puzzle, requested)) {
+          throw new Error(
+            'Permanent Daily issued-puzzle repository returned a different inserted puzzle.',
+          );
+        }
+        return { ok: true, status: 'created', puzzle: cloneIssuedPuzzle(stored.puzzle) };
+      }
+
+      if (hasSameImmutablePuzzleContent(stored.puzzle, requested)) {
+        return { ok: true, status: 'existing', puzzle: cloneIssuedPuzzle(stored.puzzle) };
+      }
+
+      return {
+        ok: false,
+        error: 'immutable_conflict',
+        requested,
+        existing: cloneIssuedPuzzle(stored.puzzle),
+      };
+    },
+  };
+}
+
+export function createPermanentDailyIssuedPuzzle(
+  input: PermanentDailyIssuedPuzzleInput,
+): PermanentDailyIssuedPuzzle {
+  validatePermanentDailyIdentity(input.identity);
+  validateCanonicalPlayerIds(input.canonicalPlayerIds);
+  validateIssuedAt(input.issuedAt);
+
+  return {
+    schemaVersion: PERMANENT_DAILY_ISSUED_PUZZLE_SCHEMA_VERSION,
+    puzzleId: createPermanentDailyPuzzleId(input.identity),
+    identity: { ...input.identity },
+    canonicalPlayerIds: [...input.canonicalPlayerIds],
+    issuedAt: input.issuedAt,
+  };
+}
+
+export function createPermanentDailyPuzzleId(
+  identity: PermanentDailyIdentity,
+): string {
+  validatePermanentDailyIdentity(identity);
+  return `${identity.seriesVersion}-daily-${identity.dailyNumber}`;
+}
+
+function hasSameImmutablePuzzleContent(
+  left: PermanentDailyIssuedPuzzle,
+  right: PermanentDailyIssuedPuzzle,
+): boolean {
+  return left.schemaVersion === right.schemaVersion
+    && left.puzzleId === right.puzzleId
+    && left.identity.seriesVersion === right.identity.seriesVersion
+    && left.identity.puzzleDate === right.identity.puzzleDate
+    && left.identity.dailyNumber === right.identity.dailyNumber
+    && areCanonicalPlayerIdsEqual(left.canonicalPlayerIds, right.canonicalPlayerIds);
+}
+
+function arePermanentDailyIssuedPuzzlesExactlyEqual(
+  left: PermanentDailyIssuedPuzzle,
+  right: PermanentDailyIssuedPuzzle,
+): boolean {
+  return hasSameImmutablePuzzleContent(left, right)
+    && left.issuedAt === right.issuedAt;
+}
+
+function areCanonicalPlayerIdsEqual(
+  left: readonly string[],
+  right: readonly string[],
+): boolean {
+  return left.length === right.length
+    && left.every((value, index) => value === right[index]);
+}
+
+function validatePermanentDailyIdentity(identity: PermanentDailyIdentity): void {
+  if (identity.seriesVersion !== PERMANENT_DAILY_SERIES_VERSION) {
+    throw new Error(
+      `Unsupported Permanent Daily series version: ${String(identity.seriesVersion)}.`,
+    );
+  }
+  if (!Number.isSafeInteger(identity.dailyNumber) || identity.dailyNumber < 1) {
+    throw new Error('Permanent Daily number must be a positive safe integer.');
+  }
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(identity.puzzleDate)) {
+    throw new Error('Permanent Daily puzzle date must use YYYY-MM-DD.');
+  }
+
+  const timestamp = Date.parse(`${identity.puzzleDate}T00:00:00.000Z`);
+  if (
+    !Number.isFinite(timestamp)
+    || new Date(timestamp).toISOString().slice(0, 10) !== identity.puzzleDate
+  ) {
+    throw new Error('Permanent Daily puzzle date is not a valid calendar date.');
+  }
+}
+
+function validateCanonicalPlayerIds(canonicalPlayerIds: readonly string[]): void {
+  if (canonicalPlayerIds.length !== DAILY_AT_BAT_COUNT) {
+    throw new Error(
+      `Permanent Daily issued puzzle must contain exactly ${DAILY_AT_BAT_COUNT} players.`,
+    );
+  }
+
+  const seen = new Set<string>();
+  for (const canonicalPlayerId of canonicalPlayerIds) {
+    if (canonicalPlayerId.trim().length === 0) {
+      throw new Error('Permanent Daily canonical player ID is required.');
+    }
+    if (seen.has(canonicalPlayerId)) {
+      throw new Error(`Duplicate permanent Daily canonical player: ${canonicalPlayerId}.`);
+    }
+    seen.add(canonicalPlayerId);
+  }
+}
+
+function validateIssuedAt(issuedAt: string): void {
+  if (!Number.isFinite(Date.parse(issuedAt))) {
+    throw new Error(`Invalid permanent Daily issued timestamp: ${issuedAt}.`);
+  }
+}
+
+function cloneIssuedPuzzle(
+  puzzle: PermanentDailyIssuedPuzzle,
+): PermanentDailyIssuedPuzzle {
+  return {
+    ...puzzle,
+    identity: { ...puzzle.identity },
+    canonicalPlayerIds: [...puzzle.canonicalPlayerIds],
+  };
+}
