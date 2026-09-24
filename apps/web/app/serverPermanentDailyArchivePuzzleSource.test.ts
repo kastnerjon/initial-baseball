@@ -74,6 +74,26 @@ describe('server permanent Daily archive puzzle source', () => {
     expect(materializePuzzle).not.toHaveBeenCalled();
   });
 
+  it('does not reinterpret reader failures', async () => {
+    const readService = createReadService({});
+    const failure = new Error('archive provider unavailable');
+    readService.getByNumber.mockRejectedValue(failure);
+    const materializePuzzle = vi.fn(() => MATERIALIZED_PUZZLE);
+    const source = createServerPermanentDailyArchivePuzzleSource({
+      dependencies: {
+        createReadService: vi.fn(() => readService),
+        materializePuzzle,
+      },
+    });
+
+    await expect(source.getByNumber({
+      seriesVersion: 'permanent-v1',
+      dailyNumber: 1,
+    })).rejects.toBe(failure);
+
+    expect(materializePuzzle).not.toHaveBeenCalled();
+  });
+
   it('does not reinterpret materialization failures', async () => {
     const readService = createReadService({ byDate: ISSUED_PUZZLE });
     const failure = new Error('canonical player unavailable');
