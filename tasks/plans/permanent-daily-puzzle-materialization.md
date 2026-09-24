@@ -34,4 +34,4 @@ The immutable snapshot currently freezes answers, not a beta game/ruleset or hin
 
 ## Next boundary
 
-Compose the server permanent-puzzle reader with this materializer into one archive puzzle source/runtime seam. Keep public navigation/routes, browser history, and the permanent launch epoch separate.
+Server-only reader + materializer composition is implemented as the archive puzzle source in `tasks/plans/permanent-daily-archive-puzzle-source.md`. Next compose that source with the existing Daily runtime/progression-token machinery. Keep public navigation/routes, browser history, and the permanent launch epoch separate.
