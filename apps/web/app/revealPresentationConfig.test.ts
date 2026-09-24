@@ -6,15 +6,15 @@ import {
 } from './revealPresentationConfig';
 
 describe('revealPresentationConfig', () => {
-  it('keeps the launch hitter and pitcher defaults', () => {
+  it('orders supported hitter reveal fields like Baseball-Reference and preserves pitcher defaults', () => {
     expect(DEFAULT_REVEAL_COLUMNS.hitter).toEqual([
       'AB',
+      'R',
       'H',
       'HR',
-      'BA',
-      'R',
       'RBI',
       'SB',
+      'BA',
       'OBP',
       'SLG',
       'OPS',
