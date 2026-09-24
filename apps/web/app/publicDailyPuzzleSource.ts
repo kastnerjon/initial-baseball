@@ -36,7 +36,7 @@ export function createPublicDailyPuzzleSource(input: {
       statsHintConfig: DEFAULT_DAILY_STATS_HINT_CONFIG,
       pitches: decision.canonicalPlayerIds.map((canonicalPlayerId, index) => {
         const player = getCanonicalDailyPlayer(canonicalPlayerId);
-        if (player === undefined) {
+        if (player === null) {
           throw new Error(`Editorial Daily puzzle ${date} references unavailable canonical player ${canonicalPlayerId}.`);
         }
         const pitch = createDailyPuzzlePitch(index + 1, player);
