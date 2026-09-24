@@ -18,8 +18,10 @@ const pitchingByPlayerYear = aggregatePitching(pitchingRows, teamAbbreviations);
 const pitcherSaves = {};
 
 for (const [lahmanId, player] of playerByLahmanId) {
-  if (player.primaryRole === 'pitcher') {
-    const seasons = [...(pitchingByPlayerYear.get(lahmanId)?.values() ?? [])]
+  const pitchingSeasons = pitchingByPlayerYear.get(lahmanId);
+
+  if (player.primaryRole === 'pitcher' && pitchingSeasons !== undefined) {
+    const seasons = [...pitchingSeasons.values()]
       .sort((left, right) => right.year - left.year)
       .map(formatPitcherSeason);
     pitcherSaves[player.id] = seasons.reduce((total, season) => total + season.stats.SV, 0);
