@@ -36,10 +36,10 @@ describe('server permanent Daily issuance composition', () => {
     const createSupabaseClient = vi.fn(
       (_environment: Record<string, string | undefined>): SupabaseClient => client,
     );
-    const createEditorialRepository = vi.fn(
+    const createEditorialRepositoryFactory = vi.fn(
       (_client: SupabaseClient): DailyPuzzleRepository => editorialRepository,
     );
-    const createIssuedPuzzleRepository = vi.fn(
+    const createIssuedPuzzleRepositoryFactory = vi.fn(
       (_client: SupabaseClient): PermanentDailyIssuedPuzzleRepository => issuedRepository,
     );
 
@@ -47,8 +47,8 @@ describe('server permanent Daily issuance composition', () => {
       environment: ENVIRONMENT,
       dependencies: {
         createSupabaseClient,
-        createEditorialRepository,
-        createIssuedPuzzleRepository,
+        createEditorialRepository: createEditorialRepositoryFactory,
+        createIssuedPuzzleRepository: createIssuedPuzzleRepositoryFactory,
       },
     });
 
@@ -65,8 +65,8 @@ describe('server permanent Daily issuance composition', () => {
       },
     });
     expect(createSupabaseClient).toHaveBeenCalledWith(ENVIRONMENT);
-    expect(createEditorialRepository).toHaveBeenCalledWith(client);
-    expect(createIssuedPuzzleRepository).toHaveBeenCalledWith(client);
+    expect(createEditorialRepositoryFactory).toHaveBeenCalledWith(client);
+    expect(createIssuedPuzzleRepositoryFactory).toHaveBeenCalledWith(client);
     expect(editorialRepository.getByDate).toHaveBeenCalledWith(PUZZLE_DATE);
   });
 
