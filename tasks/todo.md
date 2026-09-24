@@ -248,9 +248,9 @@ Hosted architecture/storage/comparison/editorial verification is sufficient to r
 - [x] Compose the permanent-puzzle read service server-side through one service-role Supabase client and the existing provider, preserving portable validation/null semantics and adding no route or launch policy. Scope: `tasks/plans/permanent-daily-issued-puzzle-read-composition.md`.
 - [x] Materialize one already-frozen permanent puzzle into the minimum gameplay-ready `DailyPuzzle` shape without rerunning selection: preserve permanent ID/date/number/order, reuse the current canonical-ID Daily player + pitch/hint path, and fail closed on unavailable frozen players. Scope: `tasks/plans/permanent-daily-puzzle-materialization.md`.
 - [x] Compose the server permanent-puzzle reader with the materializer into one archive puzzle source: number/date lookup returns the existing gameplay-ready `DailyPuzzle` or null, without adding new validation, persistence, launch policy, or route behavior. Scope: `tasks/plans/permanent-daily-archive-puzzle-source.md`.
-- [ ] Compose the archive puzzle source with the existing Daily runtime/progression-token machinery, without adding public navigation or choosing the launch epoch.
-- [ ] Add archive routes/navigation for the game(s) currently exposed by web availability; keep retained Classic archive support compatible with one-setting restoration rather than deleting Classic contracts.
-- [ ] Isolate archived-game saves from current Daily and from the other game.
+- [x] Compose the archive puzzle source with the existing Daily runtime/progression-token machinery: reuse current redaction/hints/tokens/guess/completion behavior, bind archive gameplay to issued `permanent-v1` puzzle ID/date, and fail closed when no frozen puzzle exists. Scope: `tasks/plans/permanent-daily-archive-runtime.md`.
+- [ ] Isolate archived-game saves and browser gameplay-session keys from current Daily and retained game modes before exposing archive UI; current generic Daily local persistence is date-based.
+- [ ] Add archive routes/navigation for the game(s) currently exposed by web availability only after archive persistence/session identity is isolated; keep retained Classic archive support compatible with one-setting restoration rather than deleting Classic contracts.
 - [ ] Remember per-browser/device completion and recorded score/result for each stable Daily + game/ruleset.
 - [ ] Keep archived results shareable and eligible for same-Daily/same-ruleset global comparison.
 - [ ] Defer cross-device history until accounts.
