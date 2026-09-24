@@ -1,10 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
   createPermanentDailyIssuedPuzzle,
+  type PermanentDailyIssuedPuzzle,
+} from './permanentDailyIssuedPuzzle';
+import {
   createPermanentDailyLaunchEpoch,
   resolvePermanentDailyIdentityForDate,
-  type PermanentDailyIssuedPuzzle,
-} from './index';
+} from './permanentDailyIdentity';
 import {
   createPermanentDailyIssuedPuzzleReadService,
   type PermanentDailyIssuedPuzzleReadRepository,
