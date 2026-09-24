@@ -24,6 +24,10 @@ The service validates the supported `permanent-v1` series, positive safe Daily n
 
 The read port is separate from the first-write-wins repository. Issuance-only consumers therefore do not need read methods, and future archive-read implementations remain independently replaceable.
 
+## Supabase implementation
+
+The server-only provider implementation is recorded in `tasks/plans/permanent-daily-issued-puzzle-supabase-read.md`. It queries the existing immutable table by the durable unique number/date keys and reuses the established strict row codec; this portable module remains provider-agnostic.
+
 ## Next boundary
 
-Implement this read port in the existing server-only Supabase permanent-issued-puzzle adapter using the persisted unique number/date keys. Do not add a public archive route in that provider PR.
+Compose the portable read service server-side for archive gameplay/materialization. Do not add the public archive route or choose the launch epoch in that composition PR.
