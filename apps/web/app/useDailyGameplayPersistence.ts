@@ -77,7 +77,7 @@ export function useDailyGameplayPersistence({
     let cancelled = false;
     const ownedSessionKey = sessionKey;
     persistenceSession.beginSession(ownedSessionKey);
-    const storage = getDailyModeStorage(rulesetVersion);
+    const storage = getDailyModeStorage(rulesetVersion, undefined, puzzle.id);
     const initialLoaded = loadCompatible(puzzle, rulesetVersion, initialProgressionToken, storage);
     const coordinate = rulesetVersion === POINTS_V3_DAILY_RULESET_VERSION
       && (initialLoaded === null
@@ -193,7 +193,7 @@ export function useDailyGameplayPersistence({
       renderReadySessionKey: readySessionKey,
     })) return;
 
-    const storage = getDailyModeStorage(rulesetVersion);
+    const storage = getDailyModeStorage(rulesetVersion, undefined, puzzle.id);
     if (access === 'compatibility') {
       if (saveDailyGame(puzzle, saveInput, storage)) {
         completedResultRef.current(persistenceSession.getCompletionPolicy());
@@ -271,7 +271,7 @@ export function useDailyGameplayPersistence({
     })) return false;
 
     persistenceSession.resetContributionForCurrentAccess();
-    clearSavedDailyGame(puzzle, getDailyModeStorage(rulesetVersion));
+    clearSavedDailyGame(puzzle, getDailyModeStorage(rulesetVersion, undefined, puzzle.id));
     return true;
   }
 
@@ -299,7 +299,7 @@ function loadCompatible(
 ): LoadedSavedDailyGame | null {
   const loaded = loadSavedDailyGameWithProvenance(puzzle, initialProgressionToken, storage);
   return loaded !== null
-    && isDailyModeSaveCompatible(rulesetVersion, loaded.savedGame.gameState.rulesetVersion)
+    && isDailyModeSaveCompatible(rulesetVersion, loaded.savedGame.gameState.rulesetVersion, puzzle.id)
     ? loaded
     : null;
 }

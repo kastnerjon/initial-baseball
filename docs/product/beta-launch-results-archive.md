@@ -85,6 +85,8 @@ After launch, every prior permanent Daily remains playable and shareable. An arc
 
 Archived play uses the ruleset associated with the supported game contract rather than attempting to recreate discarded beta-era scoring. The exact launch rules will be frozen only when the launch product decision is made.
 
+September 24 clarification: each **new** archived play uses the then-current public scoring rules for its game. The issued lineup and clues remain fixed; the scoring ruleset is part of the play/result identity, not the permanent puzzle snapshot. An attempt begun under an older version keeps that version and its recorded score, even after the default changes. A later play under new rules gets a separate browser save and comparison population. Same-Daily archive comparisons require the exact permanent puzzle identity **and** played ruleset; no historical score is recalculated or mixed across rulesets.
+
 The initial no-account experience remembers the user's completed archive history and scores **on that browser/device**. Cross-device history remains deferred until accounts exist. Server-side anonymous completed-result records exist for aggregate comparison; they are not an account identity system.
 
 Archive gameplay must not overwrite the current Daily save. Personal completion/history is keyed by stable Daily identity plus game/ruleset.
