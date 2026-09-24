@@ -1,7 +1,7 @@
 # Initial Baseball — Start Here
 
 Status: Active project handoff  
-Last updated: 2026-09-23
+Last updated: 2026-09-24
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
@@ -42,6 +42,8 @@ September 22 hosted verification closes two remaining public-selection checks wi
 ## Feature-development resumption checkpoint
 
 The September 22 QA pass has a hard stop. Remaining ordinary-browser, physical-mobile, saved-hydration, and authenticated-editor interaction checks are retained as manual pre-launch QA; they are not reasons to keep adding verification work in the absence of a concrete defect. Current `points-v3` scoring remains unchanged. Feature development resumes with **Permanent archive and local history**, preserving the existing one-bounded-concern-per-PR and fresh-eye review discipline.
+
+September 24 owner decisions now add a coordinated archive/gameplay roadmap: isolate archive saves and session ownership first; reorder supported hitter reveal stats to match Baseball-Reference's relative order; align hint 4 and add supported pitcher saves; remove terminal Jr/Sr from generated initials; introduce a *new* Daily Nine scoring version (HR 4, 3B 3, 2B 2, 1B 1, BB 0, K/Give Up -1, no separate wrong-guess deduction); and open mode-appropriate How to play on every page entry. A future BB 0.5/K 0 rule remains reversible through another version, not historical rescore. Crucially, permanent snapshots currently freeze canonical IDs but not clues/hints; settle immutable issued-clue behavior before Daily #1 or archive routes. Full architecture, dependencies, PR scopes, rollout checks, and the initial no-code decision record: `tasks/plans/2026-09-24-archive-and-gameplay-roadmap.md`. The immediate implementation concern remains archive browser save/session isolation.
 
 ## Permanent archive foundation
 
