@@ -25,6 +25,10 @@ The provider attempts one insert. On PostgreSQL unique-key conflict it reads the
 
 Malformed persisted rows, mismatched puzzle IDs, unsupported schema/series values, and unreadable conflict winners fail closed.
 
+## Composition checkpoint
+
+Portable issuance orchestration and server-only web composition are now layered over this provider. The web composition constructs both the authoritative editorial repository and this immutable issued-puzzle repository from one service-role Supabase client, reads the editorial row by the explicitly supplied permanent identity date, and delegates to the portable issuance service. It does not configure or infer a launch epoch and does not add update/delete behavior.
+
 ## Next boundary
 
-Portable issuance orchestration is now implemented in `packages/daily` without configuring a launch epoch: the caller supplies an explicit permanent identity and a same-date scheduled/published editorial puzzle. The next bounded concern is server-only web composition with this Supabase repository while still requiring that explicit identity. Automatic date-driven issuance waits for the owner to choose the launch epoch/configuration policy. Public archive reads come after persisted issuance can be composed.
+Add provider-neutral reads for frozen permanent puzzles by stable identity/date/number. Automatic date-driven issuance waits for the owner to choose the launch epoch/configuration policy.
