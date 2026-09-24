@@ -127,3 +127,11 @@ export {
   type PermanentDailyIssuanceInput,
   type PermanentDailyIssuanceService,
 } from './permanentDailyIssuance';
+
+export {
+  createPermanentDailyIssuedPuzzleReadService,
+  type PermanentDailyIssuedPuzzleDateQuery,
+  type PermanentDailyIssuedPuzzleNumberQuery,
+  type PermanentDailyIssuedPuzzleReadRepository,
+  type PermanentDailyIssuedPuzzleReadService,
+} from './permanentDailyIssuedPuzzleRead';

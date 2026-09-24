@@ -31,4 +31,4 @@ Portable issuance orchestration and server-only web composition are now layered 
 
 ## Next boundary
 
-Add provider-neutral reads for frozen permanent puzzles by stable identity/date/number. Automatic date-driven issuance waits for the owner to choose the launch epoch/configuration policy.
+The provider-neutral read port is now defined in `packages/daily`. The next bounded concern is implementing that read port in this Supabase adapter using the existing indexed unique keys, without changing schema or write privileges. Automatic date-driven issuance still waits for the owner to choose the launch epoch/configuration policy.
