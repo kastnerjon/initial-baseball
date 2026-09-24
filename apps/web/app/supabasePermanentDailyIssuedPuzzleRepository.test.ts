@@ -147,6 +147,19 @@ describe('Supabase permanent Daily issued-puzzle reads', () => {
     })).resolves.toBeNull();
   });
 
+  it('fails closed when a persisted read row violates the immutable puzzle contract', async () => {
+    const malformed = toRow(PUZZLE);
+    malformed.puzzle_id = 'permanent-v1-daily-999';
+    const { client } = createReadClient(malformed);
+
+    await expect(
+      createSupabasePermanentDailyIssuedPuzzleReadRepository(client).getByNumber({
+        seriesVersion: 'permanent-v1',
+        dailyNumber: 1,
+      }),
+    ).rejects.toMatchObject({ kind: 'invalid-row' });
+  });
+
   it('maps read-provider failures to the existing query error type', async () => {
     const { client } = createReadClient(null, {
       code: '08006',
