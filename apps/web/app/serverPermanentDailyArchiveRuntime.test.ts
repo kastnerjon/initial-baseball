@@ -10,7 +10,7 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 
 import { createDailyProgressionTokenCodec } from './dailyProgressionToken';
-import { DailyRuntimeRequestError } from './dailyRuntimeService';
+import { DailyRuntimeRequestError, createDailyRuntimeService } from './dailyRuntimeService';
 import {
   createServerPermanentDailyArchiveRuntime,
 } from './serverPermanentDailyArchiveRuntime';
@@ -106,6 +106,36 @@ describe('server permanent Daily archive runtime', () => {
     await expect(
       runtime.getHintBundle(bootstrap.progressionToken),
     ).rejects.toThrow('does not match its puzzle');
+  });
+
+  it('rejects a signed current-Daily token for the same date', async () => {
+    const currentRuntime = createDailyRuntimeService({
+      createPuzzle: async () => ({ ...PUZZLE, id: `daily-${DATE}` }),
+      progressionTokens: TOKENS,
+    });
+    const currentBootstrap = await currentRuntime.getBootstrap(DATE);
+    const archiveRuntime = createRuntime(createSource(PUZZLE));
+
+    await expect(
+      archiveRuntime.getHintBundle(currentBootstrap.progressionToken),
+    ).rejects.toThrow('does not match its puzzle');
+  });
+
+  it('rejects a source returning a puzzle for a different date', async () => {
+    const runtime = createRuntime(createSource({
+      ...PUZZLE,
+      puzzleDate: '2030-04-06',
+    }));
+
+    await expect(runtime.getBootstrap(DATE)).rejects.toThrow('does not match requested date');
+  });
+
+  it('propagates a source read failure without serving a fallback puzzle', async () => {
+    const source = createSource(null);
+    const failure = new Error('archive read unavailable');
+    source.getByDate.mockRejectedValue(failure);
+
+    await expect(createRuntime(source).getBootstrap(DATE)).rejects.toBe(failure);
   });
 });
 
