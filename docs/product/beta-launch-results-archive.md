@@ -75,6 +75,8 @@ The portable Daily layer now also defines that immutable issued-puzzle contract.
 
 Portable issuance orchestration is also defined without choosing the launch date. A caller must first supply an explicit permanent identity; issuance then accepts only the authoritative same-date editorial lineup in `scheduled` or `published` state, validates exact slots 1-9, and freezes those canonical IDs through the existing immutable service. The server-only web composition binds that orchestration to the authoritative editorial and immutable permanent-puzzle Supabase repositories using one service-role client, but still requires the caller to supply the permanent identity explicitly. Beta puzzle number/ID, automatic date-driven issuance, the launch epoch, and today's game/ruleset do not enter permanent puzzle identity.
 
+Frozen permanent puzzles also have a provider-neutral read contract by permanent Daily number or permanent puzzle date within the versioned series. Reading an already-issued row does not require the application to know the launch epoch; that epoch is needed only to derive membership/identity for dates or numbers that are not already represented by a frozen record.
+
 The archive begins with the eventual permanent Daily #1, not with the current beta history.
 
 After launch, every prior permanent Daily remains playable and shareable. An archived Daily should expose whichever retained game contracts are currently enabled for public web availability. Classic archive support should remain compatible with one-setting restoration while Classic is retained, but hidden Classic must not create a second normal archive choice merely because its code/data still exist.

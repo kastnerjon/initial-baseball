@@ -31,4 +31,4 @@ The server-only web composition is implemented separately in `tasks/plans/perman
 
 ## Next boundary
 
-Add provider-neutral reads for frozen permanent puzzles by stable identity/date/number. Automatic date-driven issuance still waits for the owner to choose the launch date/configuration policy.
+Provider-neutral frozen-puzzle reads are now defined separately in `tasks/plans/permanent-daily-issued-puzzle-read.md`. The next boundary is the server-only Supabase read adapter. Automatic date-driven issuance still waits for the owner to choose the launch date/configuration policy.
