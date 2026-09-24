@@ -1,10 +1,13 @@
 import { describe, expect, it } from 'vitest';
+import generatedPitcherSaves from './generated/pitcher-saves.json';
 import {
   baseballPlayers,
   coreDailyEligiblePlayers,
   dailyEligiblePlayers,
   extendedDailyEligiblePlayers,
 } from './index.js';
+
+const GENERATED_PITCHER_SAVES = generatedPitcherSaves as Record<string, number>;
 
 const DEMO_PLAYER_NAMES = [
   'Ken Griffey Jr.',
@@ -153,6 +156,36 @@ describe('baseballPlayers', () => {
     for (const player of baseballPlayers) {
       expect(JSON.stringify(player.careerStats)).not.toMatch(/\b(?:WAR|OPS\+)\b/);
     }
+  });
+
+  it('distinguishes sourced zero saves from unavailable pitcher save totals', () => {
+    let sourcedPitchers = 0;
+    let unavailablePitchers = 0;
+    let sourcedZeroSaves = 0;
+
+    for (const player of baseballPlayers) {
+      if (player.careerStats?.kind !== 'pitcher') {
+        continue;
+      }
+
+      if (!Object.prototype.hasOwnProperty.call(GENERATED_PITCHER_SAVES, player.id)) {
+        unavailablePitchers += 1;
+        expect(player.careerStats.stats.SV).toBeUndefined();
+        continue;
+      }
+
+      const expectedSaves = GENERATED_PITCHER_SAVES[player.id];
+      sourcedPitchers += 1;
+      expect(player.careerStats.stats.SV).toBe(expectedSaves);
+
+      if (expectedSaves === 0) {
+        sourcedZeroSaves += 1;
+      }
+    }
+
+    expect(sourcedPitchers).toBeGreaterThan(0);
+    expect(unavailablePitchers).toBeGreaterThan(0);
+    expect(sourcedZeroSaves).toBeGreaterThan(0);
   });
 
   it('enriches current demo players with real position and teams data', () => {
