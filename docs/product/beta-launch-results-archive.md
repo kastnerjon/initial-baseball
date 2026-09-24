@@ -1,7 +1,7 @@
 # Beta, launch, results, and archive product model
 
 Status: Settled product direction  
-Last updated: 2026-09-23
+Last updated: 2026-09-24
 
 ## Purpose
 
@@ -32,6 +32,8 @@ The owner expects to use beta feedback to choose one of these games as the prima
 Classic is now disabled from normal web presentation by default through the server-only `CLASSIC_INNING_ENABLED` setting. When disabled, the mode navigation is absent and `/classic` redirects to Daily Nine before Classic bootstrap composition. This availability seam does not delete or reinterpret Classic rules, browser saves, completed results, comparison infrastructure, or historical data; setting the value to the exact string `true` restores the existing route/navigation. The architecture must still permit later independent removal or separate lineups without corrupting Daily Nine data.
 
 `points-v3` is the current Daily Nine beta policy, not yet a promise that the permanent launch scoring policy can never change. Any scoring change before/after launch still uses explicit ruleset versioning; completed results are never reinterpreted silently.
+
+The September 24 owner request proposes a later Daily Nine beta ruleset with HR 4, triple 3, double 2, single 1, walk 0, and strikeout/Give Up -1; wrong guesses alone do not deduct points. Negative totals are allowed. This is a *future* versioned policy, not yet live and not a reinterpretation of `points-v3` or historical `points-v2`. A later walk 0.5/strikeout 0 adjustment is permitted only as another explicit version, retaining old recorded scores and separate same-ruleset comparison populations. The owner also wants How to play on every game-page entry, terminal Jr/Sr omitted from generated initials, and supported stats shown in Baseball-Reference relative order with pitcher saves in hint 4. The implementation and clue-immutability consequences are scoped in `tasks/plans/2026-09-24-archive-and-gameplay-roadmap.md`.
 
 ## Completed-result model
 
