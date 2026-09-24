@@ -58,6 +58,10 @@ export type PitcherStatValues = {
   IP: string;
 };
 
+export type PitcherCareerStatValues = Omit<PitcherStatValues, 'SV'> & {
+  SV?: number;
+};
+
 export type HitterCareerStatStrip = {
   kind: 'hitter';
   stats: HitterStatValues;
@@ -65,7 +69,7 @@ export type HitterCareerStatStrip = {
 
 export type PitcherCareerStatStrip = {
   kind: 'pitcher';
-  stats: PitcherStatValues;
+  stats: PitcherCareerStatValues;
 };
 
 export type PlayerCareerStatStrip = HitterCareerStatStrip | PitcherCareerStatStrip;

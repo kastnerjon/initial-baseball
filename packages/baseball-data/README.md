@@ -70,6 +70,7 @@ Null and zero are different.
 
 - A known zero remains `0`.
 - An unavailable value remains `null`.
+- The legacy Daily player export attaches a pitcher career save total only when the generated Lahman save artifact has a sourced value; an absent source stays unavailable instead of being coerced to `0`.
 - OBP, SLG, and OPS are produced only when every contributing Lahman batting source row includes every required component.
 - Mixed known and unknown source rows do not produce a partial rate statistic.
 - Unsupported values such as WAR, OPS+, ERA+, awards, and All-Star selections remain explicitly `null` until an approved source or derivation is added.
