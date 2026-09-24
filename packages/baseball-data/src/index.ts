@@ -120,13 +120,15 @@ export const baseballPlayers = generatedPlayerRows.map(normalizePlayerDisplayNam
     return player;
   }
 
+  const saves = pitcherSaves[player.id];
+
   return {
     ...player,
     careerStats: {
       ...player.careerStats,
       stats: {
         ...player.careerStats.stats,
-        SV: pitcherSaves[player.id] ?? 0,
+        ...(saves === undefined ? {} : { SV: saves }),
       },
     },
   };
