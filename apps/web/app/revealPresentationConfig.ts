@@ -2,12 +2,12 @@ import type { RevealStatKind } from './canonicalRevealViewModel';
 
 export type HitterRevealColumn =
   | 'AB'
+  | 'R'
   | 'H'
   | 'HR'
-  | 'BA'
-  | 'R'
   | 'RBI'
   | 'SB'
+  | 'BA'
   | 'OBP'
   | 'SLG'
   | 'OPS';
@@ -29,7 +29,7 @@ export type RevealColumnConfig = {
 export type RevealColumnOverrides = Partial<RevealColumnConfig>;
 
 export const DEFAULT_REVEAL_COLUMNS: RevealColumnConfig = {
-  hitter: ['AB', 'H', 'HR', 'BA', 'R', 'RBI', 'SB', 'OBP', 'SLG', 'OPS'],
+  hitter: ['AB', 'R', 'H', 'HR', 'RBI', 'SB', 'BA', 'OBP', 'SLG', 'OPS'],
   pitcher: ['W', 'L', 'SV', 'ERA', 'WHIP', 'K', 'IP'],
 };
 

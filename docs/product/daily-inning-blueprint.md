@@ -47,6 +47,8 @@ Daily Nine and Classic remain independently modeled games, not two score views o
 
 Daily Nine's in-app completed-at-bat scorecard shows initials, the revealed player name, personal score, and same-at-bat average. Copied/share text deliberately omits player names so sharing does not reveal answers.
 
+The canonical hitter reveal uses the supported career and season column order `AB, R, H, HR, RBI, SB, BA, OBP, SLG, OPS`. Two-way players retain a separate pitching table, whose current column order is unchanged. The hint-4 stats composition and pitcher saves change is tracked separately.
+
 ## Hint and answer boundary
 
 Current-batter hints are gameplay inputs, not answers, and may be present in browser memory/initial props. The browser must not receive:
