@@ -28,4 +28,4 @@ The source establishes one authoritative path from durable archive identity to a
 
 ## Next boundary
 
-Compose this source with the existing Daily runtime/progression-token machinery so archived gameplay can bootstrap and resolve against the same frozen puzzle. Keep public archive navigation/routes, browser history, and permanent launch-epoch configuration separate.
+Server archive runtime composition is implemented in `tasks/plans/permanent-daily-archive-runtime.md`. Before public archive navigation/routes, isolate archive browser persistence/session identity from current Daily and retained game modes; keep the permanent launch epoch separate.
