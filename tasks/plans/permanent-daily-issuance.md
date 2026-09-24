@@ -25,6 +25,10 @@ The service accepts only `scheduled` or `published` editorial content. It valida
 
 The service deliberately ignores the editorial record's beta puzzle number/ID, revisions, audit metadata, and game/ruleset. It also does not create or resolve a launch epoch. This prevents current beta numbering from becoming permanent archive identity by accident.
 
+## Server composition
+
+The server-only web composition is implemented separately in `tasks/plans/permanent-daily-issuance-supabase-composition.md`. It reads the authoritative editorial row by the explicitly supplied permanent identity date and delegates to this portable service through the existing immutable Supabase repository. This portable module remains unaware of Supabase and launch-epoch configuration.
+
 ## Next boundary
 
-Compose this portable issuance service server-side with the existing Supabase permanent-issued-puzzle repository. That composition should still require an explicitly supplied permanent identity and must not configure or infer the broad-launch epoch. Automatic date-driven issuance waits for the owner to choose the launch date/configuration policy.
+Add provider-neutral reads for frozen permanent puzzles by stable identity/date/number. Automatic date-driven issuance still waits for the owner to choose the launch date/configuration policy.
