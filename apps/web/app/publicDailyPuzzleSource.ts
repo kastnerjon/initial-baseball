@@ -1,39 +1,23 @@
 import 'server-only';
 import {
-  createCanonicalDailyEditorialCandidates,
-  createCanonicalDailyLineupCandidates,
   createEditorialDailyPuzzleId,
-  rankPlayersByRecognizability,
   resolvePublicDailyPuzzleSelection,
   type DailyPuzzleRepository,
   type ProductionCanonicalDailySelector,
 } from '@initial-baseball/daily';
-import { baseballPlayers, dailyEligiblePlayers } from '@initial-baseball/baseball-data';
 import {
   DEFAULT_DAILY_HINT_CONFIG,
   DEFAULT_DAILY_STATS_HINT_CONFIG,
   type DailyPuzzle,
 } from '@initial-baseball/shared';
+import { getCanonicalDailyPlayer } from './canonicalDailyPlayerLookup';
 import { createCanonicalDailyPuzzleForDate } from './createDailyPuzzleForDate';
 import { createDailyPuzzlePitch } from './dailyPuzzleAdapters';
-import { resolveCanonicalPlayerId } from './serverCanonicalData';
 
 export function createPublicDailyPuzzleSource(input: {
   repository: Pick<DailyPuzzleRepository, 'getByDate'> | null;
   selectDeterministicPlayers: ProductionCanonicalDailySelector;
 }): (date: string) => Promise<DailyPuzzle> {
-  const automaticCandidates = createCanonicalDailyLineupCandidates(
-    rankPlayersByRecognizability(dailyEligiblePlayers),
-    resolveCanonicalPlayerId,
-  );
-  const candidatesById = new Map(
-    createCanonicalDailyEditorialCandidates(
-      automaticCandidates,
-      baseballPlayers,
-      resolveCanonicalPlayerId,
-    ).map(candidate => [candidate.canonicalPlayerId, candidate.player]),
-  );
-
   return async (date) => {
     const record = input.repository === null ? null : await input.repository.getByDate(date);
     const decision = resolvePublicDailyPuzzleSelection(date, record);
@@ -51,7 +35,7 @@ export function createPublicDailyPuzzleSource(input: {
       hintConfig: DEFAULT_DAILY_HINT_CONFIG,
       statsHintConfig: DEFAULT_DAILY_STATS_HINT_CONFIG,
       pitches: decision.canonicalPlayerIds.map((canonicalPlayerId, index) => {
-        const player = candidatesById.get(canonicalPlayerId);
+        const player = getCanonicalDailyPlayer(canonicalPlayerId);
         if (player === undefined) {
           throw new Error(`Editorial Daily puzzle ${date} references unavailable canonical player ${canonicalPlayerId}.`);
         }

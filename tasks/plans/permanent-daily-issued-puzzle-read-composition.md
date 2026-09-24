@@ -21,10 +21,10 @@ Construction itself does not read a puzzle. Callers explicitly choose `getByNumb
 
 ## Deliberate exclusions
 
-This service returns the immutable issued-puzzle contract: permanent identity, exact ordered canonical player IDs, and first issue timestamp. It does not yet join canonical baseball facts or produce a gameplay-ready `DailyPuzzle`. That materialization is the next bounded concern and should reuse canonical runtime data rather than reinterpreting facts in the archive layer.
+This service returns the immutable issued-puzzle contract: permanent identity, exact ordered canonical player IDs, and first issue timestamp. Gameplay materialization is implemented separately in `tasks/plans/permanent-daily-puzzle-materialization.md`, so this reader remains persistence composition only.
 
 No launch epoch is configured or inferred, and there is still no public archive route.
 
 ## Next boundary
 
-Materialize an already-frozen permanent puzzle into the minimum gameplay-ready archive puzzle shape using canonical runtime facts, still without adding public navigation/route behavior or choosing the permanent launch epoch.
+Compose this server reader with the separate permanent-puzzle materializer into one archive puzzle source/runtime seam. Still do not add public navigation/route behavior or choose the permanent launch epoch.
