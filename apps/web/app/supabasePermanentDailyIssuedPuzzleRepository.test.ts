@@ -10,6 +10,7 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 
 import {
+  createSupabasePermanentDailyIssuedPuzzleReadRepository,
   createSupabasePermanentDailyIssuedPuzzleRepository,
 } from './supabasePermanentDailyIssuedPuzzleRepository';
 
@@ -83,7 +84,7 @@ describe('Supabase permanent Daily issued-puzzle repository', () => {
     ).rejects.toMatchObject({ kind: 'query' });
   });
 
-  it('maps non-unique provider failures to a query error', async () => {
+  it('maps non-unique write-provider failures to a query error', async () => {
     const single = vi.fn().mockResolvedValue({
       data: null,
       error: { code: '08006', message: 'connection failure' },
@@ -102,6 +103,98 @@ describe('Supabase permanent Daily issued-puzzle repository', () => {
     });
   });
 });
+
+describe('Supabase permanent Daily issued-puzzle reads', () => {
+  it('reads one frozen puzzle by permanent series and Daily number', async () => {
+    const { client, match } = createReadClient(toRow(PUZZLE));
+
+    const result = await createSupabasePermanentDailyIssuedPuzzleReadRepository(client)
+      .getByNumber({
+        seriesVersion: 'permanent-v1',
+        dailyNumber: 1,
+      });
+
+    expect(result).toEqual(PUZZLE);
+    expect(match).toHaveBeenCalledWith({
+      series_version: 'permanent-v1',
+      daily_number: 1,
+    });
+  });
+
+  it('reads one frozen puzzle by permanent series and puzzle date', async () => {
+    const { client, match } = createReadClient(toRow(PUZZLE));
+
+    const result = await createSupabasePermanentDailyIssuedPuzzleReadRepository(client)
+      .getByDate({
+        seriesVersion: 'permanent-v1',
+        puzzleDate: '2030-04-05',
+      });
+
+    expect(result).toEqual(PUZZLE);
+    expect(match).toHaveBeenCalledWith({
+      series_version: 'permanent-v1',
+      puzzle_date: '2030-04-05',
+    });
+  });
+
+  it('returns null when no frozen permanent puzzle matches the requested key', async () => {
+    const { client } = createReadClient(null);
+    const repository = createSupabasePermanentDailyIssuedPuzzleReadRepository(client);
+
+    await expect(repository.getByNumber({
+      seriesVersion: 'permanent-v1',
+      dailyNumber: 2,
+    })).resolves.toBeNull();
+  });
+
+  it('fails closed when a persisted read row violates the immutable puzzle contract', async () => {
+    const malformed = toRow(PUZZLE);
+    malformed.puzzle_id = 'permanent-v1-daily-999';
+    const { client } = createReadClient(malformed);
+
+    await expect(
+      createSupabasePermanentDailyIssuedPuzzleReadRepository(client).getByNumber({
+        seriesVersion: 'permanent-v1',
+        dailyNumber: 1,
+      }),
+    ).rejects.toMatchObject({ kind: 'invalid-row' });
+  });
+
+  it('maps read-provider failures to the existing query error type', async () => {
+    const { client } = createReadClient(null, {
+      code: '08006',
+      message: 'connection failure',
+    });
+
+    await expect(
+      createSupabasePermanentDailyIssuedPuzzleReadRepository(client).getByDate({
+        seriesVersion: 'permanent-v1',
+        puzzleDate: '2030-04-05',
+      }),
+    ).rejects.toMatchObject({
+      kind: 'query',
+      message: expect.stringContaining('connection failure'),
+    });
+  });
+});
+
+function createReadClient(
+  data: Record<string, unknown> | null,
+  error: { code: string; message: string } | null = null,
+) {
+  const maybeSingle = vi.fn().mockResolvedValue({ data, error });
+  const match = vi.fn().mockReturnValue({ maybeSingle });
+  const select = vi.fn().mockReturnValue({ match });
+  const from = vi.fn().mockReturnValue({ select });
+
+  return {
+    client: asClient(from),
+    from,
+    select,
+    match,
+    maybeSingle,
+  };
+}
 
 function createPuzzle(): PermanentDailyIssuedPuzzle {
   const identity = resolvePermanentDailyIdentityForDate(

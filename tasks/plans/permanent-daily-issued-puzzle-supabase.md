@@ -21,14 +21,20 @@ RLS is enabled. Browser roles receive no privileges. `service_role` receives onl
 
 ## Adapter behavior
 
-The provider attempts one insert. On PostgreSQL unique-key conflict it reads the existing row by permanent identity and returns that row to the portable Daily service, which decides whether the retry is idempotent or an immutable conflict.
+The write provider attempts one insert. On PostgreSQL unique-key conflict it reads the existing row by permanent identity and returns that row to the portable Daily service, which decides whether the retry is idempotent or an immutable conflict.
 
-Malformed persisted rows, mismatched puzzle IDs, unsupported schema/series values, and unreadable conflict winners fail closed.
+A separate read factory in the same server-only adapter implements the portable read-only port. It performs zero-or-one-row lookup by `(series_version, daily_number)` or `(series_version, puzzle_date)`, both already unique in the immutable table, and decodes through the same strict row codec. It never inserts, updates, upserts, or deletes.
+
+Malformed persisted rows, mismatched puzzle IDs, unsupported schema/series values, unreadable conflict winners, and provider query failures fail closed.
 
 ## Composition checkpoint
 
 Portable issuance orchestration and server-only web composition are now layered over this provider. The web composition constructs both the authoritative editorial repository and this immutable issued-puzzle repository from one service-role Supabase client, reads the editorial row by the explicitly supplied permanent identity date, and delegates to the portable issuance service. It does not configure or infer a launch epoch and does not add update/delete behavior.
 
+## Read checkpoint
+
+The provider-neutral read port is implemented in this adapter without schema or privilege changes. Scope: `tasks/plans/permanent-daily-issued-puzzle-supabase-read.md`.
+
 ## Next boundary
 
-The provider-neutral read port is now defined in `packages/daily`. The next bounded concern is implementing that read port in this Supabase adapter using the existing indexed unique keys, without changing schema or write privileges. Automatic date-driven issuance still waits for the owner to choose the launch epoch/configuration policy.
+Compose the portable read service server-side for later archive gameplay/materialization. Automatic date-driven issuance still waits for the owner to choose the launch epoch/configuration policy.

@@ -27,4 +27,4 @@ This composition does not know the broad-launch date and does not derive a perma
 
 ## Next boundary
 
-Add provider-neutral read capability for frozen permanent puzzles by stable identity/date/number. That read boundary can support later archive gameplay without coupling archive routes directly to Supabase.
+Portable frozen-puzzle reads and their server-only Supabase adapter are now implemented. The next bounded concern is server-side read composition/materialization for later archive gameplay, still without exposing a public archive route or choosing the launch epoch.
