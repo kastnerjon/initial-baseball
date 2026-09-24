@@ -37,4 +37,4 @@ This PR adds no migration and inserts no archive data.
 
 ## Next boundary
 
-Compose the portable read service with this provider in a server-only archive-read service/materializer. Keep the public route/navigation and launch-epoch decision separate.
+Server-only composition with the portable read service is implemented in `tasks/plans/permanent-daily-issued-puzzle-read-composition.md`. The next bounded concern is canonical player/gameplay materialization of an already-frozen puzzle. Keep public route/navigation and the launch-epoch decision separate.

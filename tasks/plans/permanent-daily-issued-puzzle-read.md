@@ -30,4 +30,4 @@ The server-only provider implementation is recorded in `tasks/plans/permanent-da
 
 ## Next boundary
 
-Compose the portable read service server-side for archive gameplay/materialization. Do not add the public archive route or choose the launch epoch in that composition PR.
+Server-only read composition is implemented in `tasks/plans/permanent-daily-issued-puzzle-read-composition.md`. The next bounded concern is canonical player/gameplay materialization of an already-frozen puzzle; do not add the public archive route or choose the launch epoch in that materialization PR.

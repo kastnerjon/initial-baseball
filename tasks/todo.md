@@ -245,7 +245,8 @@ Hosted architecture/storage/comparison/editorial verification is sufficient to r
 - [x] Freeze each explicitly issued permanent Daily so later lineup-generation/profile changes cannot change historical answers. Portable snapshot, append-only Supabase provider, portable issuance orchestration, and server composition are complete; no fake permanent rows or beta history are inserted.
 - [x] Add provider-neutral read capability for frozen permanent puzzles by permanent series + Daily number or series + date, with null for not-yet-issued rows and fail-closed identity checks. Scope: `tasks/plans/permanent-daily-issued-puzzle-read.md`.
 - [x] Implement the permanent-puzzle read port in the existing server-only Supabase adapter using the immutable table's unique number/date keys and strict row codec; no migration or privilege change. Scope: `tasks/plans/permanent-daily-issued-puzzle-supabase-read.md`.
-- [ ] Compose the permanent-puzzle read service server-side for later archive gameplay without adding a public route or choosing the launch epoch.
+- [x] Compose the permanent-puzzle read service server-side through one service-role Supabase client and the existing provider, preserving portable validation/null semantics and adding no route or launch policy. Scope: `tasks/plans/permanent-daily-issued-puzzle-read-composition.md`.
+- [ ] Materialize one already-frozen permanent puzzle into the minimum gameplay-ready archive puzzle shape through canonical runtime facts, without adding public navigation or choosing the launch epoch.
 - [ ] Add archive routes/navigation for the game(s) currently exposed by web availability; keep retained Classic archive support compatible with one-setting restoration rather than deleting Classic contracts.
 - [ ] Isolate archived-game saves from current Daily and from the other game.
 - [ ] Remember per-browser/device completion and recorded score/result for each stable Daily + game/ruleset.
