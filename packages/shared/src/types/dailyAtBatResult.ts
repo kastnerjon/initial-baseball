@@ -1,6 +1,14 @@
-import type { DailyCompletedAtBat, POINTS_V3_DAILY_RULESET_VERSION } from './daily.js';
+import type {
+  DailyCompletedAtBat,
+  POINTS_V3_DAILY_RULESET_VERSION,
+  POINTS_V4_DAILY_RULESET_VERSION,
+} from './daily.js';
 
 export const DAILY_AT_BAT_RESULT_SCHEMA_VERSION = 1 as const;
+
+export type DailyAtBatResultRulesetVersion =
+  | typeof POINTS_V3_DAILY_RULESET_VERSION
+  | typeof POINTS_V4_DAILY_RULESET_VERSION;
 
 /** One terminal observation; neither a score claim nor a complete-game claim. */
 export type DailyAtBatResultSubmission = {
@@ -9,7 +17,7 @@ export type DailyAtBatResultSubmission = {
   puzzleId: string;
   puzzleDate: string;
   puzzleNumber: number;
-  rulesetVersion: typeof POINTS_V3_DAILY_RULESET_VERSION;
+  rulesetVersion: DailyAtBatResultRulesetVersion;
   atBat: DailyCompletedAtBat;
 };
 

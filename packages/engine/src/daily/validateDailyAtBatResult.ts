@@ -1,6 +1,7 @@
 import {
   DAILY_AT_BAT_RESULT_SCHEMA_VERSION,
   POINTS_V3_DAILY_RULESET_VERSION,
+  POINTS_V4_DAILY_RULESET_VERSION,
   type DailyAtBatResultError,
   type DailyAtBatResultValidation,
   type DailyPublicPuzzle,
@@ -24,7 +25,8 @@ export function validateDailyAtBatResult({
   if (submission.schemaVersion !== DAILY_AT_BAT_RESULT_SCHEMA_VERSION) return reject('unsupported_schema');
   if (typeof submission.attemptId !== 'string'
     || !/^[A-Za-z0-9_-]{1,128}$/.test(submission.attemptId)) return reject('invalid_attempt_id');
-  if (submission.rulesetVersion !== POINTS_V3_DAILY_RULESET_VERSION) return reject('unsupported_ruleset');
+  if (submission.rulesetVersion !== POINTS_V3_DAILY_RULESET_VERSION
+    && submission.rulesetVersion !== POINTS_V4_DAILY_RULESET_VERSION) return reject('unsupported_ruleset');
   if (submission.rulesetVersion !== rulesetVersion) return reject('ruleset_mismatch');
   if (puzzle.pitches.length !== 9 || puzzle.pitches.some((pitch, index) =>
     pitch.pitchNumber !== index + 1 || !pitch.initials.trim())) return reject('invalid_puzzle');
@@ -43,9 +45,9 @@ export function validateDailyAtBatResult({
       puzzleId: puzzle.id,
       puzzleDate: puzzle.puzzleDate,
       puzzleNumber: puzzle.puzzleNumber,
-      rulesetVersion: POINTS_V3_DAILY_RULESET_VERSION,
+      rulesetVersion: submission.rulesetVersion,
       atBat: normalized.atBat,
-      awardedPoints: getDailyAtBatPoints({ ...normalized.atBat, rulesetVersion: POINTS_V3_DAILY_RULESET_VERSION }),
+      awardedPoints: getDailyAtBatPoints({ ...normalized.atBat, rulesetVersion: submission.rulesetVersion }),
     },
   };
 }

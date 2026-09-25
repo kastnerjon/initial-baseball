@@ -4,13 +4,18 @@ import type {
   DailyPointsSummary,
   DailyScoreSummary,
   POINTS_V3_DAILY_RULESET_VERSION,
+  POINTS_V4_DAILY_RULESET_VERSION,
 } from './daily.js';
 
 export const DAILY_COMPLETED_RESULT_SCHEMA_VERSION = 1 as const;
 
 /** The ruleset also identifies the game; compatibility saves are not submissions. */
-export type DailyCompletedResultRulesetVersion =
+export type DailyCompletedPointsResultRulesetVersion =
   | typeof POINTS_V3_DAILY_RULESET_VERSION
+  | typeof POINTS_V4_DAILY_RULESET_VERSION;
+
+export type DailyCompletedResultRulesetVersion =
+  | DailyCompletedPointsResultRulesetVersion
   | typeof CLASSIC_DAILY_RULESET_VERSION;
 
 /** Native facts only. Scores and receipt timestamps are not client authority. */
@@ -28,6 +33,10 @@ export type DailyCompletedResultSubmission = {
 export type DailyCompletedResult = DailyCompletedResultSubmission & (
   | {
       rulesetVersion: typeof POINTS_V3_DAILY_RULESET_VERSION;
+      summary: DailyPointsSummary & { strikeouts: number };
+    }
+  | {
+      rulesetVersion: typeof POINTS_V4_DAILY_RULESET_VERSION;
       summary: DailyPointsSummary & { strikeouts: number };
     }
   | {

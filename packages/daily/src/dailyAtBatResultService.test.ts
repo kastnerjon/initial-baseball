@@ -48,6 +48,21 @@ describe('Daily at-bat result service', () => {
     expect(repository.rows).toEqual([first]);
   });
 
+  it('keeps points-v3 and points-v4 observations in distinct exact-version keys', async () => {
+    const repository = new Repository();
+    const service = createDailyAtBatResultService(repository);
+    const v3 = observation();
+    const v4: DailyAtBatResult = {
+      ...observation(),
+      rulesetVersion: 'points-v4',
+      awardedPoints: 3,
+    };
+
+    expect(await service.store(v3)).toMatchObject({ ok: true, status: 'created' });
+    expect(await service.store(v4)).toMatchObject({ ok: true, status: 'created' });
+    expect(repository.rows).toEqual([v3, v4]);
+  });
+
   it('handles overlapping identical calls through the atomic port', async () => {
     const repository = new Repository();
     const service = createDailyAtBatResultService(repository);
@@ -102,7 +117,7 @@ describe('Daily at-bat result service', () => {
     const repository = new Repository();
     const service = createDailyAtBatResultService(repository);
     const next = observation();
-    change(next); // Future ruleset checks key isolation only; engine still allows points-v3 only.
+    change(next); // Unsupported future ruleset checks repository-key isolation only.
     await service.store(observation());
     expect(await service.store(next)).toMatchObject({ ok: true, status: 'created' });
     expect(repository.rows).toHaveLength(2);

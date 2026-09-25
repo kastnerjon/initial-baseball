@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   CLASSIC_DAILY_RULESET_VERSION as CLASSIC,
   POINTS_V3_DAILY_RULESET_VERSION as NINE,
+  POINTS_V4_DAILY_RULESET_VERSION as NINE_V4,
   type DailyCompletedAtBat,
   type DailyCompletedResultRulesetVersion,
   type DailyCompletedResultSubmission,
@@ -57,17 +58,40 @@ describe('completed-result derivation', () => {
     } } });
   });
 
+  it('derives points-v4 from native facts while preserving negative terminal scores', () => {
+    const value = submission(NINE_V4, ['HR', '3B', '2B', '1B', 'BB', 'K', 'K', 'HR', 'BB']);
+    const wrongGuesses = [2, 1, 2, 0, 2, 3, 1, 2, 0];
+    value.completedAtBats = value.completedAtBats.map((fact, index) => ({
+      ...fact,
+      wrongGuesses: wrongGuesses[index]!,
+      ...(index === 6 ? { resolution: 'give_up' as const, hintsRevealed: 2 as const } : {}),
+    }));
+    expect(validate(value, NINE_V4)).toEqual({ ok: true, result: { ...value, summary: {
+      points: 12, maximumPoints: 36, atBatsCompleted: 9, totalAtBats: 9, completed: true, strikeouts: 2,
+    } } });
+  });
+
   it.each([
     [Array<DailyOutcome>(9).fill('HR'), 63, 0],
     [Array<DailyOutcome>(9).fill('K'), 0, 9],
     [['K', 'K', 'K', 'HR', 'HR', 'HR', 'HR', 'HR', 'HR'], 42, 3],
-  ] as [DailyOutcome[], number, number][])('plays the entire Daily Nine %j', (outcomes, points, strikeouts) => {
+  ] as [DailyOutcome[], number, number][])('plays the entire points-v3 Daily Nine %j', (outcomes, points, strikeouts) => {
     expect(validate(submission(NINE, outcomes))).toMatchObject({ ok: true, result: {
       summary: { points, maximumPoints: 63, strikeouts, completed: true },
     } });
   });
 
-  it.each([NINE, CLASSIC])('accepts every correct hint depth and pre-terminal wrong count for %s', ruleset => {
+  it.each([
+    [Array<DailyOutcome>(9).fill('HR'), 36, 0],
+    [Array<DailyOutcome>(9).fill('K'), -9, 9],
+    [['K', 'K', 'K', 'HR', 'HR', 'HR', 'HR', 'HR', 'HR'], 21, 3],
+  ] as [DailyOutcome[], number, number][])('plays the entire points-v4 Daily Nine %j', (outcomes, points, strikeouts) => {
+    expect(validate(submission(NINE_V4, outcomes), NINE_V4)).toMatchObject({ ok: true, result: {
+      summary: { points, maximumPoints: 36, strikeouts, completed: true },
+    } });
+  });
+
+  it.each([NINE, NINE_V4, CLASSIC])('accepts every correct hint depth and pre-terminal wrong count for %s', ruleset => {
     for (const outcome of ['HR', '3B', '2B', '1B', 'BB'] as const) {
       for (const wrongGuesses of [0, 1, 2]) {
         const value = withFact({ outcome, hintsRevealed: hints[outcome], wrongGuesses }, ruleset);
@@ -142,7 +166,7 @@ describe('completed-result rejection', () => {
     expect(validate({ ...submission(), submissionId })).toEqual({ ok: false, error: 'invalid_submission_id' });
   });
 
-  it.each(['points-v1', 'points-v2', 'legacy-inning-v1', 'points-v4', undefined])('rejects %s analytics', rulesetVersion => {
+  it.each(['points-v1', 'points-v2', 'legacy-inning-v1', undefined])('rejects %s analytics', rulesetVersion => {
     expect(validate({ ...submission(), rulesetVersion })).toEqual({ ok: false, error: 'unsupported_ruleset' });
   });
 
@@ -157,7 +181,7 @@ describe('completed-result rejection', () => {
     expect(validate({ ...submission(), completedAtBats })).toEqual({ ok: false, error: 'invalid_submission' });
   });
 
-  it.each([NINE, CLASSIC])('rejects incomplete %s games', ruleset => {
+  it.each([NINE, NINE_V4, CLASSIC])('rejects incomplete %s games', ruleset => {
     for (const outcomes of [[], ['K', 'K'], Array<DailyOutcome>(8).fill('HR')] as DailyOutcome[][]) {
       expect(validate(submission(ruleset, outcomes), ruleset)).toEqual({ ok: false, error: 'incomplete_game' });
     }
@@ -168,7 +192,7 @@ describe('completed-result rejection', () => {
       .toEqual({ ok: false, error: 'after_completion' });
   });
 
-  it.each([NINE, CLASSIC])('validates faced order and initials for %s', ruleset => {
+  it.each([NINE, NINE_V4, CLASSIC])('validates faced order and initials for %s', ruleset => {
     for (const change of [{ pitchNumber: 2 }, { pitchNumber: '1' }, { initials: 'ZZ' }, { initials: 'ab' }]) {
       expect(validate(withFact(change, ruleset), ruleset)).toEqual({ ok: false, error: 'at_bat_mismatch' });
     }
@@ -177,7 +201,7 @@ describe('completed-result rejection', () => {
     expect(validate(value, ruleset)).toEqual({ ok: false, error: 'at_bat_mismatch' });
   });
 
-  it.each([NINE, CLASSIC])('rejects malformed native facts for %s', ruleset => {
+  it.each([NINE, NINE_V4, CLASSIC])('rejects malformed native facts for %s', ruleset => {
     for (const field of ['hintsRevealed', 'wrongGuesses']) {
       for (const invalid of [undefined, null, '0', -1, 0.5, NaN, Infinity, 5]) {
         expect(validate(withFact({ [field]: invalid }, ruleset), ruleset))
@@ -191,7 +215,7 @@ describe('completed-result rejection', () => {
     }
   });
 
-  it.each([NINE, CLASSIC])('rejects inconsistent terminal facts for %s', ruleset => {
+  it.each([NINE, NINE_V4, CLASSIC])('rejects inconsistent terminal facts for %s', ruleset => {
     for (const change of [
       { outcome: 'SAC' }, { outcome: 'K' }, { outcome: '3B', hintsRevealed: 0 },
       { outcome: 'HR', hintsRevealed: 4 }, { wrongGuesses: 3 },

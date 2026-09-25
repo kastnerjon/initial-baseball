@@ -4,6 +4,7 @@ import {
   DEFAULT_DAILY_BASE_STATE,
   DEFAULT_DAILY_SCORE_SUMMARY,
   POINTS_V3_DAILY_RULESET_VERSION,
+  POINTS_V4_DAILY_RULESET_VERSION,
   type DailyCompletedAtBat,
   type DailyCompletedResultError,
   type DailyCompletedResultRulesetVersion,
@@ -35,6 +36,7 @@ export function validateDailyCompletedResult({
   if (typeof submission.submissionId !== 'string'
     || !/^[A-Za-z0-9_-]{1,128}$/.test(submission.submissionId)) return reject('invalid_submission_id');
   if (submission.rulesetVersion !== POINTS_V3_DAILY_RULESET_VERSION
+    && submission.rulesetVersion !== POINTS_V4_DAILY_RULESET_VERSION
     && submission.rulesetVersion !== CLASSIC_DAILY_RULESET_VERSION) return reject('unsupported_ruleset');
   if (submission.rulesetVersion !== rulesetVersion) return reject('ruleset_mismatch');
 
@@ -75,14 +77,33 @@ export function validateDailyCompletedResult({
     puzzleNumber: puzzle.puzzleNumber,
     completedAtBats,
   };
+  if (rulesetVersion === CLASSIC_DAILY_RULESET_VERSION) {
+    return {
+      ok: true,
+      result: {
+        ...normalized,
+        rulesetVersion,
+        summary: { ...state.score, atBatsCompleted: state.points.atBatsCompleted, totalAtBats },
+      },
+    };
+  }
+  if (rulesetVersion === POINTS_V3_DAILY_RULESET_VERSION) {
+    return {
+      ok: true,
+      result: {
+        ...normalized,
+        rulesetVersion,
+        summary: { ...state.points, strikeouts: state.score.strikeouts },
+      },
+    };
+  }
   return {
     ok: true,
-    result: rulesetVersion === POINTS_V3_DAILY_RULESET_VERSION
-      ? { ...normalized, rulesetVersion, summary: { ...state.points, strikeouts: state.score.strikeouts } }
-      : {
-          ...normalized, rulesetVersion,
-          summary: { ...state.score, atBatsCompleted: state.points.atBatsCompleted, totalAtBats },
-        },
+    result: {
+      ...normalized,
+      rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+      summary: { ...state.points, strikeouts: state.score.strikeouts },
+    },
   };
 }
 
