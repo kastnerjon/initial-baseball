@@ -108,6 +108,16 @@ export {
 } from './permanentDailyIdentity';
 
 export {
+  PERMANENT_DAILY_ISSUED_CLUE_SNAPSHOT_SCHEMA_VERSION,
+  clonePermanentDailyIssuedClueSnapshot,
+  createPermanentDailyIssuedClueSnapshot,
+  type PermanentDailyIssuedClueSnapshot,
+  type PermanentDailyIssuedClueSnapshotInput,
+  type PermanentDailyIssuedHintLayoutSlot,
+  type PermanentDailyIssuedPitchClueSnapshot,
+} from './permanentDailyIssuedClueSnapshot';
+
+export {
   PERMANENT_DAILY_ISSUED_PUZZLE_SCHEMA_VERSION,
   createPermanentDailyIssuedPuzzle,
   createPermanentDailyIssuedPuzzleService,
