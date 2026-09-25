@@ -1,7 +1,7 @@
 # Daily web API specification
 
 Status: Living source of truth  
-Last updated: 2026-09-17
+Last updated: 2026-09-25
 
 Daily routes are thin Next.js adapters over canonical baseball data, engine rules, and portable Daily logic. Answer-integrity rationale is in `docs/decisions/0001-daily-answer-integrity.md`.
 
@@ -150,7 +150,7 @@ Valid pre-ruleset tokens normalize to `legacy-inning-v1`. Valid `classic-inning-
 
 ### `POST /api/daily/results`
 
-This anonymous endpoint accepts exactly one completed-game submission after native `points-v3` Daily Nine or `classic-inning-v1` Classic completion. It is not called per hint, guess, or at-bat.
+This anonymous endpoint accepts exactly one completed-game submission for exact-version `points-v3` or `points-v4` Daily Nine, or `classic-inning-v1` Classic. It is not called per hint, guess, or at-bat. The server boundary is v4-compatible before browser v4 activation; the ordinary browser still starts and delivers current Daily Nine as `points-v3` until the later H cutover.
 
 Request contract:
 
@@ -187,7 +187,7 @@ The endpoint is consistency-authoritative, not proof of honest anonymous play. I
 
 ### `POST /api/daily/at-bats`
 
-This anonymous server boundary accepts one terminal points-v3 Daily Nine AB observation. It is separate from `/api/daily/resolve`; gameplay resolution never waits for this persistence path. The endpoint exists before browser activation so its server authority and failure mapping can be verified independently.
+This anonymous server boundary accepts one terminal exact-version `points-v3` or `points-v4` Daily Nine AB observation. It is separate from `/api/daily/resolve`; gameplay resolution never waits for this persistence path. H1 widens this server compatibility seam only; the current browser journal/outbox still emits `points-v3` until later H work.
 
 Request contract:
 
@@ -227,7 +227,7 @@ Every response is `private, no-store` and contains no normalized facts, points, 
 
 The browser persists public gameplay state and the current opaque token, not the full authorized hint bundle. On ordinary transitions, the server response supplies the next bundle. On refresh, `/api/daily/hints` hydrates the bundle before the restored at-bat becomes interactive. Daily Nine keeps the existing `initial-baseball:daily:<date>` namespace so points-v1/points-v2/points-v3/legacy saves remain compatible. Classic maps the same date key into a distinct Classic namespace, so load/save/clear/reset in one mode cannot overwrite the other. Persistence is a browser adapter concern; the signed token remains authoritative for ruleset/pitch/strike/reveal claims. Completed-result retry bookkeeping uses the separate `initial-baseball:daily-result-submission:v1:<ruleset>:<date>:<puzzle>` namespace and never mutates the Daily save. The record is written before the first POST and stores the exact submission payload, not merely the ID. A pending record survives refresh and retries the same ID **and the same raw facts** even if current gameplay/replay state differs. The client exposes `allowCreate=false` so activation code can retry an existing record without retroactively creating one from an old completed save. Gameplay reset preserves the independent delivery identity across local replay because a server aggregate row cannot be un-submitted. Resetting local gameplay therefore cannot mint another browser contribution for the same puzzle/ruleset. Terminal delivery status is local bookkeeping, not gameplay or aggregate authority.
 
-Before `POST /api/daily/at-bats` is called from gameplay, a separate versioned points-v3 attempt journal/outbox will be persisted under its own puzzle/ruleset namespace. One long-lived exclusive Web Lock owns the contributing run across tabs. Only the owner may write the shared gameplay save or journal; another tab remains passive until takeover, then reloads durable state before continuing. Each terminal commit persists gameplay first, appends the exact immutable schema-1 request second, and only then starts the POST. Reset after any local observation retires the journal before clearing gameplay. Hydration mismatches retire contribution without reconstructing facts. Pre-rollout saves remain completion-only, and existing completed-result records are never rewritten. Missing lock/storage/random-ID capability disables new AB contribution rather than weakening identity. Detailed implementation sequence: `tasks/plans/resolved-at-bat-browser-lifecycle.md`.
+Before `POST /api/daily/at-bats` is called from gameplay, a separate versioned points-v3 attempt journal/outbox is persisted under its own puzzle/ruleset namespace. H1 does not widen that browser journal/outbox to v4. One long-lived exclusive Web Lock owns the contributing run across tabs. Only the owner may write the shared gameplay save or journal; another tab remains passive until takeover, then reloads durable state before continuing. Each terminal commit persists gameplay first, appends the exact immutable schema-1 request second, and only then starts the POST. Reset after any local observation retires the journal before clearing gameplay. Hydration mismatches retire contribution without reconstructing facts. Pre-rollout saves remain completion-only, and existing completed-result records are never rewritten. Missing lock/storage/random-ID capability disables new AB contribution rather than weakening identity. Detailed implementation sequence: `tasks/plans/resolved-at-bat-browser-lifecycle.md`.
 
 ## Caching and privacy
 
