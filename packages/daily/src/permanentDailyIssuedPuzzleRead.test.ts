@@ -1,7 +1,10 @@
 import { describe, expect, it, vi } from 'vitest';
 import {
+  createPermanentDailyClueFrozenIssuedPuzzle,
+  createPermanentDailyIssuedClueSnapshot,
   createPermanentDailyIssuedPuzzle,
   type PermanentDailyIssuedPuzzle,
+  type PermanentDailyIssuedPuzzleRecord,
 } from './permanentDailyIssuedPuzzle';
 import {
   createPermanentDailyLaunchEpoch,
@@ -105,6 +108,16 @@ describe('Permanent Daily issued-puzzle reads', () => {
     })).rejects.toThrow('different date identity');
   });
 
+  it('fails closed on schema v2 until frozen-clue archive materialization is wired', async () => {
+    const repository = createRepository({ byNumber: createClueFrozenPuzzle() });
+    const service = createPermanentDailyIssuedPuzzleReadService(repository);
+
+    await expect(service.getByNumber({
+      seriesVersion: 'permanent-v1',
+      dailyNumber: 1,
+    })).rejects.toThrow('not materializable until frozen-clue archive wiring is enabled');
+  });
+
   it('returns a defensive copy of the provider value', async () => {
     const repository = createRepository({ byNumber: PUZZLE });
     const service = createPermanentDailyIssuedPuzzleReadService(repository);
@@ -125,8 +138,8 @@ function createRepository({
   byNumber = null,
   byDate = null,
 }: {
-  byNumber?: PermanentDailyIssuedPuzzle | null;
-  byDate?: PermanentDailyIssuedPuzzle | null;
+  byNumber?: PermanentDailyIssuedPuzzleRecord | null;
+  byDate?: PermanentDailyIssuedPuzzleRecord | null;
 }): PermanentDailyIssuedPuzzleReadRepository & {
   getByNumber: ReturnType<typeof vi.fn>;
   getByDate: ReturnType<typeof vi.fn>;
@@ -146,5 +159,35 @@ function createPuzzle(puzzleDate = '2030-04-05'): PermanentDailyIssuedPuzzle {
     identity,
     canonicalPlayerIds: Array.from({ length: 9 }, (_, index) => `player-${index + 1}`),
     issuedAt: `${puzzleDate}T07:00:00.000Z`,
+  });
+}
+
+
+function createClueFrozenPuzzle() {
+  const canonicalPlayerIds = Array.from({ length: 9 }, (_, index) => `player-${index + 1}`);
+  const identity = resolvePermanentDailyIdentityForDate(
+    '2030-04-05',
+    createPermanentDailyLaunchEpoch('2030-04-05'),
+  );
+  if (identity === null) throw new Error('Expected permanent identity.');
+
+  return createPermanentDailyClueFrozenIssuedPuzzle({
+    identity,
+    canonicalPlayerIds,
+    clueSnapshot: createPermanentDailyIssuedClueSnapshot({
+      hintLayout: [
+        { slot: 1, hintType: 'main_decade', displayLabel: 'Main decade played in' },
+        { slot: 2, hintType: 'teams', displayLabel: 'Teams' },
+        { slot: 3, hintType: 'position', displayLabel: 'Position' },
+        { slot: 4, hintType: 'stats', displayLabel: 'Stats' },
+      ],
+      pitches: canonicalPlayerIds.map((canonicalPlayerId, index) => ({
+        pitchNumber: index + 1,
+        canonicalPlayerId,
+        initials: `P${index + 1}`,
+        hintValues: ['2000s', 'SEA, CIN', index === 8 ? 'P' : 'CF', 'Career stats'],
+      })),
+    }),
+    issuedAt: '2030-04-05T07:00:00.000Z',
   });
 }

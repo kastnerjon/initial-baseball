@@ -43,8 +43,8 @@ export type PermanentDailyIssuedPuzzleRecord =
   | PermanentDailyClueFrozenIssuedPuzzle;
 
 export type PermanentDailyIssuedPuzzleRepositoryInsertResult =
-  | { status: 'inserted'; puzzle: PermanentDailyIssuedPuzzle }
-  | { status: 'existing'; puzzle: PermanentDailyIssuedPuzzle };
+  | { status: 'inserted'; puzzle: PermanentDailyIssuedPuzzleRecord }
+  | { status: 'existing'; puzzle: PermanentDailyIssuedPuzzleRecord };
 
 /**
  * Provider-neutral first-write-wins persistence boundary for one permanent Daily.
@@ -54,7 +54,7 @@ export type PermanentDailyIssuedPuzzleRepositoryInsertResult =
  */
 export interface PermanentDailyIssuedPuzzleRepository {
   insertIfAbsent(
-    puzzle: PermanentDailyIssuedPuzzle,
+    puzzle: PermanentDailyIssuedPuzzleRecord,
   ): Promise<PermanentDailyIssuedPuzzleRepositoryInsertResult>;
 }
 
@@ -68,7 +68,7 @@ export type PermanentDailyIssuedPuzzleStoreResult =
       ok: false;
       error: 'immutable_conflict';
       requested: PermanentDailyIssuedPuzzle;
-      existing: PermanentDailyIssuedPuzzle;
+      existing: PermanentDailyIssuedPuzzleRecord;
     };
 
 export type PermanentDailyIssuedPuzzleService = {
@@ -84,7 +84,10 @@ export function createPermanentDailyIssuedPuzzleService(
       const stored = await repository.insertIfAbsent(requested);
 
       if (stored.status === 'inserted') {
-        if (!arePermanentDailyIssuedPuzzlesExactlyEqual(stored.puzzle, requested)) {
+        if (
+          stored.puzzle.schemaVersion !== PERMANENT_DAILY_ISSUED_PUZZLE_SCHEMA_VERSION
+          || !arePermanentDailyIssuedPuzzlesExactlyEqual(stored.puzzle, requested)
+        ) {
           throw new Error(
             'Permanent Daily issued-puzzle repository returned a different inserted puzzle.',
           );
@@ -92,7 +95,10 @@ export function createPermanentDailyIssuedPuzzleService(
         return { ok: true, status: 'created', puzzle: cloneIssuedPuzzle(stored.puzzle) };
       }
 
-      if (hasSameImmutablePuzzleContent(stored.puzzle, requested)) {
+      if (
+        stored.puzzle.schemaVersion === PERMANENT_DAILY_ISSUED_PUZZLE_SCHEMA_VERSION
+        && hasSameImmutablePuzzleContent(stored.puzzle, requested)
+      ) {
         return { ok: true, status: 'existing', puzzle: cloneIssuedPuzzle(stored.puzzle) };
       }
 
@@ -100,7 +106,7 @@ export function createPermanentDailyIssuedPuzzleService(
         ok: false,
         error: 'immutable_conflict',
         requested,
-        existing: cloneIssuedPuzzle(stored.puzzle),
+        existing: clonePermanentDailyIssuedPuzzleRecord(stored.puzzle),
       };
     },
   };

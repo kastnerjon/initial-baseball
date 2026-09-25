@@ -1,4 +1,7 @@
-import type { PermanentDailyIssuedPuzzle } from './permanentDailyIssuedPuzzle';
+import type {
+  PermanentDailyIssuedPuzzle,
+  PermanentDailyIssuedPuzzleRecord,
+} from './permanentDailyIssuedPuzzle';
 import {
   PERMANENT_DAILY_SERIES_VERSION,
   type PermanentDailyIdentity,
@@ -24,10 +27,10 @@ export type PermanentDailyIssuedPuzzleDateQuery = Pick<
 export interface PermanentDailyIssuedPuzzleReadRepository {
   getByNumber(
     query: PermanentDailyIssuedPuzzleNumberQuery,
-  ): Promise<PermanentDailyIssuedPuzzle | null>;
+  ): Promise<PermanentDailyIssuedPuzzleRecord | null>;
   getByDate(
     query: PermanentDailyIssuedPuzzleDateQuery,
-  ): Promise<PermanentDailyIssuedPuzzle | null>;
+  ): Promise<PermanentDailyIssuedPuzzleRecord | null>;
 }
 
 export type PermanentDailyIssuedPuzzleReadService = {
@@ -47,8 +50,9 @@ export function createPermanentDailyIssuedPuzzleReadService(
       requireSeriesVersion(query.seriesVersion);
       requireDailyNumber(query.dailyNumber);
 
-      const puzzle = await repository.getByNumber({ ...query });
-      if (puzzle === null) return null;
+      const record = await repository.getByNumber({ ...query });
+      if (record === null) return null;
+      const puzzle = requireLegacyMaterializablePuzzle(record);
       if (
         puzzle.identity.seriesVersion !== query.seriesVersion
         || puzzle.identity.dailyNumber !== query.dailyNumber
@@ -64,8 +68,9 @@ export function createPermanentDailyIssuedPuzzleReadService(
       requireSeriesVersion(query.seriesVersion);
       requireCalendarDate(query.puzzleDate);
 
-      const puzzle = await repository.getByDate({ ...query });
-      if (puzzle === null) return null;
+      const record = await repository.getByDate({ ...query });
+      if (record === null) return null;
+      const puzzle = requireLegacyMaterializablePuzzle(record);
       if (
         puzzle.identity.seriesVersion !== query.seriesVersion
         || puzzle.identity.puzzleDate !== query.puzzleDate
@@ -77,6 +82,17 @@ export function createPermanentDailyIssuedPuzzleReadService(
       return cloneIssuedPuzzle(puzzle);
     },
   };
+}
+
+function requireLegacyMaterializablePuzzle(
+  puzzle: PermanentDailyIssuedPuzzleRecord,
+): PermanentDailyIssuedPuzzle {
+  if (puzzle.schemaVersion !== 1) {
+    throw new Error(
+      'Permanent Daily clue-frozen schema v2 is persisted but not materializable until frozen-clue archive wiring is enabled.',
+    );
+  }
+  return puzzle;
 }
 
 function requireSeriesVersion(value: string): void {

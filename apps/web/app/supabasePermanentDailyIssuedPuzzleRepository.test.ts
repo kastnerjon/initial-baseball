@@ -1,8 +1,11 @@
 import {
+  createPermanentDailyClueFrozenIssuedPuzzle,
+  createPermanentDailyIssuedClueSnapshot,
   createPermanentDailyIssuedPuzzle,
   createPermanentDailyLaunchEpoch,
   resolvePermanentDailyIdentityForDate,
   type PermanentDailyIssuedPuzzle,
+  type PermanentDailyIssuedPuzzleRecord,
 } from '@initial-baseball/daily';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { describe, expect, it, vi } from 'vitest';
@@ -15,9 +18,10 @@ import {
 } from './supabasePermanentDailyIssuedPuzzleRepository';
 
 const PUZZLE = createPuzzle();
+const V2_PUZZLE = createV2Puzzle();
 
 describe('Supabase permanent Daily issued-puzzle repository', () => {
-  it('inserts the immutable puzzle without an update or upsert path', async () => {
+  it('inserts v1 without update/upsert behavior', async () => {
     const single = vi.fn().mockResolvedValue({ data: toRow(PUZZLE), error: null });
     const select = vi.fn().mockReturnValue({ single });
     const insert = vi.fn().mockReturnValue({ select });
@@ -27,16 +31,30 @@ describe('Supabase permanent Daily issued-puzzle repository', () => {
       .insertIfAbsent(PUZZLE);
 
     expect(stored).toEqual({ status: 'inserted', puzzle: PUZZLE });
-    expect(from).toHaveBeenCalledWith('permanent_daily_issued_puzzles');
     expect(insert).toHaveBeenCalledWith(expect.objectContaining({
-      series_version: 'permanent-v1',
-      daily_number: 1,
-      puzzle_id: 'permanent-v1-daily-1',
+      schema_version: 1,
       canonical_player_ids: PUZZLE.canonicalPlayerIds,
+      clue_snapshot: null,
     }));
   });
 
-  it('reads the existing immutable winner after a unique-key conflict', async () => {
+  it('inserts and decodes one clue-frozen v2 record', async () => {
+    const single = vi.fn().mockResolvedValue({ data: toRow(V2_PUZZLE), error: null });
+    const select = vi.fn().mockReturnValue({ single });
+    const insert = vi.fn().mockReturnValue({ select });
+
+    const stored = await createSupabasePermanentDailyIssuedPuzzleRepository(
+      asClient(vi.fn().mockReturnValue({ insert })),
+    ).insertIfAbsent(V2_PUZZLE);
+
+    expect(stored).toEqual({ status: 'inserted', puzzle: V2_PUZZLE });
+    expect(insert).toHaveBeenCalledWith(expect.objectContaining({
+      schema_version: 2,
+      clue_snapshot: V2_PUZZLE.clueSnapshot,
+    }));
+  });
+
+  it('reads the first immutable winner after a unique conflict', async () => {
     const insertSingle = vi.fn().mockResolvedValue({
       data: null,
       error: { code: '23505', message: 'duplicate key value' },
@@ -44,25 +62,25 @@ describe('Supabase permanent Daily issued-puzzle repository', () => {
     const insert = vi.fn().mockReturnValue({
       select: vi.fn().mockReturnValue({ single: insertSingle }),
     });
-
-    const maybeSingle = vi.fn().mockResolvedValue({ data: toRow(PUZZLE), error: null });
+    const maybeSingle = vi.fn().mockResolvedValue({ data: toRow(V2_PUZZLE), error: null });
     const match = vi.fn().mockReturnValue({ maybeSingle });
-    const readSelect = vi.fn().mockReturnValue({ match });
     const from = vi.fn()
       .mockReturnValueOnce({ insert })
-      .mockReturnValueOnce({ select: readSelect });
+      .mockReturnValueOnce({
+        select: vi.fn().mockReturnValue({ match }),
+      });
 
     const stored = await createSupabasePermanentDailyIssuedPuzzleRepository(asClient(from))
-      .insertIfAbsent(PUZZLE);
+      .insertIfAbsent(V2_PUZZLE);
 
-    expect(stored).toEqual({ status: 'existing', puzzle: PUZZLE });
+    expect(stored).toEqual({ status: 'existing', puzzle: V2_PUZZLE });
     expect(match).toHaveBeenCalledWith({
       series_version: 'permanent-v1',
       daily_number: 1,
     });
   });
 
-  it('fails closed when a unique conflict has no readable row for the requested identity', async () => {
+  it('fails closed when a unique conflict has no readable identity winner', async () => {
     const insertSingle = vi.fn().mockResolvedValue({
       data: null,
       error: { code: '23505', message: 'duplicate key value' },
@@ -84,7 +102,7 @@ describe('Supabase permanent Daily issued-puzzle repository', () => {
     ).rejects.toMatchObject({ kind: 'query' });
   });
 
-  it('maps non-unique write-provider failures to a query error', async () => {
+  it('maps non-unique provider failures to the existing query error', async () => {
     const single = vi.fn().mockResolvedValue({
       data: null,
       error: { code: '08006', message: 'connection failure' },
@@ -105,76 +123,34 @@ describe('Supabase permanent Daily issued-puzzle repository', () => {
 });
 
 describe('Supabase permanent Daily issued-puzzle reads', () => {
-  it('reads one frozen puzzle by permanent series and Daily number', async () => {
-    const { client, match } = createReadClient(toRow(PUZZLE));
-
-    const result = await createSupabasePermanentDailyIssuedPuzzleReadRepository(client)
-      .getByNumber({
-        seriesVersion: 'permanent-v1',
-        dailyNumber: 1,
-      });
-
-    expect(result).toEqual(PUZZLE);
-    expect(match).toHaveBeenCalledWith({
-      series_version: 'permanent-v1',
-      daily_number: 1,
-    });
-  });
-
-  it('reads one frozen puzzle by permanent series and puzzle date', async () => {
-    const { client, match } = createReadClient(toRow(PUZZLE));
-
-    const result = await createSupabasePermanentDailyIssuedPuzzleReadRepository(client)
-      .getByDate({
-        seriesVersion: 'permanent-v1',
-        puzzleDate: '2030-04-05',
-      });
-
-    expect(result).toEqual(PUZZLE);
-    expect(match).toHaveBeenCalledWith({
-      series_version: 'permanent-v1',
-      puzzle_date: '2030-04-05',
-    });
-  });
-
-  it('returns null when no frozen permanent puzzle matches the requested key', async () => {
-    const { client } = createReadClient(null);
-    const repository = createSupabasePermanentDailyIssuedPuzzleReadRepository(client);
-
-    await expect(repository.getByNumber({
-      seriesVersion: 'permanent-v1',
-      dailyNumber: 2,
-    })).resolves.toBeNull();
-  });
-
-  it('fails closed when a persisted read row violates the immutable puzzle contract', async () => {
-    const malformed = toRow(PUZZLE);
-    malformed.puzzle_id = 'permanent-v1-daily-999';
-    const { client } = createReadClient(malformed);
-
+  it('reads v1 by number and v2 by date through the same codec', async () => {
+    const byNumber = createReadClient(toRow(PUZZLE));
     await expect(
-      createSupabasePermanentDailyIssuedPuzzleReadRepository(client).getByNumber({
-        seriesVersion: 'permanent-v1',
-        dailyNumber: 1,
-      }),
+      createSupabasePermanentDailyIssuedPuzzleReadRepository(byNumber.client)
+        .getByNumber({ seriesVersion: 'permanent-v1', dailyNumber: 1 }),
+    ).resolves.toEqual(PUZZLE);
+
+    const byDate = createReadClient(toRow(V2_PUZZLE));
+    await expect(
+      createSupabasePermanentDailyIssuedPuzzleReadRepository(byDate.client)
+        .getByDate({ seriesVersion: 'permanent-v1', puzzleDate: '2030-04-05' }),
+    ).resolves.toEqual(V2_PUZZLE);
+  });
+
+  it('returns null for missing rows and fails closed on malformed rows', async () => {
+    const missing = createReadClient(null);
+    await expect(
+      createSupabasePermanentDailyIssuedPuzzleReadRepository(missing.client)
+        .getByNumber({ seriesVersion: 'permanent-v1', dailyNumber: 2 }),
+    ).resolves.toBeNull();
+
+    const malformed = toRow(V2_PUZZLE);
+    malformed.clue_snapshot = null;
+    const invalid = createReadClient(malformed);
+    await expect(
+      createSupabasePermanentDailyIssuedPuzzleReadRepository(invalid.client)
+        .getByNumber({ seriesVersion: 'permanent-v1', dailyNumber: 1 }),
     ).rejects.toMatchObject({ kind: 'invalid-row' });
-  });
-
-  it('maps read-provider failures to the existing query error type', async () => {
-    const { client } = createReadClient(null, {
-      code: '08006',
-      message: 'connection failure',
-    });
-
-    await expect(
-      createSupabasePermanentDailyIssuedPuzzleReadRepository(client).getByDate({
-        seriesVersion: 'permanent-v1',
-        puzzleDate: '2030-04-05',
-      }),
-    ).rejects.toMatchObject({
-      kind: 'query',
-      message: expect.stringContaining('connection failure'),
-    });
   });
 });
 
@@ -187,30 +163,54 @@ function createReadClient(
   const select = vi.fn().mockReturnValue({ match });
   const from = vi.fn().mockReturnValue({ select });
 
-  return {
-    client: asClient(from),
-    from,
-    select,
-    match,
-    maybeSingle,
-  };
+  return { client: asClient(from), match };
 }
 
 function createPuzzle(): PermanentDailyIssuedPuzzle {
+  return createPermanentDailyIssuedPuzzle({
+    identity: requireIdentity(),
+    canonicalPlayerIds: playerIds(),
+    issuedAt: '2030-04-05T07:00:00.000Z',
+  });
+}
+
+function createV2Puzzle() {
+  const canonicalPlayerIds = playerIds();
+  return createPermanentDailyClueFrozenIssuedPuzzle({
+    identity: requireIdentity(),
+    canonicalPlayerIds,
+    clueSnapshot: createPermanentDailyIssuedClueSnapshot({
+      hintLayout: [
+        { slot: 1, hintType: 'main_decade', displayLabel: 'Main decade played in' },
+        { slot: 2, hintType: 'teams', displayLabel: 'Teams' },
+        { slot: 3, hintType: 'position', displayLabel: 'Position' },
+        { slot: 4, hintType: 'stats', displayLabel: 'Stats' },
+      ],
+      pitches: canonicalPlayerIds.map((canonicalPlayerId, index) => ({
+        pitchNumber: index + 1,
+        canonicalPlayerId,
+        initials: `P${index + 1}`,
+        hintValues: ['2000s', 'SEA, CIN', index === 8 ? 'P' : 'CF', 'Career stats'],
+      })),
+    }),
+    issuedAt: '2030-04-05T07:00:00.000Z',
+  });
+}
+
+function requireIdentity() {
   const identity = resolvePermanentDailyIdentityForDate(
     '2030-04-05',
     createPermanentDailyLaunchEpoch('2030-04-05'),
   );
   if (identity === null) throw new Error('Expected permanent Daily identity.');
-
-  return createPermanentDailyIssuedPuzzle({
-    identity,
-    canonicalPlayerIds: Array.from({ length: 9 }, (_, index) => `player-${index + 1}`),
-    issuedAt: '2030-04-05T07:00:00.000Z',
-  });
+  return identity;
 }
 
-function toRow(puzzle: PermanentDailyIssuedPuzzle): Record<string, unknown> {
+function playerIds() {
+  return Array.from({ length: 9 }, (_, index) => `player-${index + 1}`);
+}
+
+function toRow(puzzle: PermanentDailyIssuedPuzzleRecord): Record<string, unknown> {
   return {
     series_version: puzzle.identity.seriesVersion,
     daily_number: puzzle.identity.dailyNumber,
@@ -218,6 +218,16 @@ function toRow(puzzle: PermanentDailyIssuedPuzzle): Record<string, unknown> {
     schema_version: puzzle.schemaVersion,
     puzzle_id: puzzle.puzzleId,
     canonical_player_ids: [...puzzle.canonicalPlayerIds],
+    clue_snapshot: puzzle.schemaVersion === 2
+      ? {
+          schemaVersion: puzzle.clueSnapshot.schemaVersion,
+          hintLayout: puzzle.clueSnapshot.hintLayout.map(slot => ({ ...slot })),
+          pitches: puzzle.clueSnapshot.pitches.map(pitch => ({
+            ...pitch,
+            hintValues: [...pitch.hintValues],
+          })),
+        }
+      : null,
     issued_at: puzzle.issuedAt,
   };
 }

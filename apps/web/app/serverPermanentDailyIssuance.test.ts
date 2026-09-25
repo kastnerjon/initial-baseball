@@ -6,7 +6,7 @@ import {
   scheduleDailyPuzzle,
   type DailyPuzzleEditorialRecord,
   type DailyPuzzleRepository,
-  type PermanentDailyIssuedPuzzle,
+  type PermanentDailyIssuedPuzzleRecord,
   type PermanentDailyIssuedPuzzleRepository,
 } from '@initial-baseball/daily';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -179,10 +179,10 @@ function requireIdentity(puzzleDate: string) {
 }
 
 class InMemoryIssuedPuzzleRepository implements PermanentDailyIssuedPuzzleRepository {
-  private stored: PermanentDailyIssuedPuzzle | null = null;
+  private stored: PermanentDailyIssuedPuzzleRecord | null = null;
   insertCalls = 0;
 
-  async insertIfAbsent(puzzle: PermanentDailyIssuedPuzzle) {
+  async insertIfAbsent(puzzle: PermanentDailyIssuedPuzzleRecord) {
     this.insertCalls += 1;
     if (this.stored !== null) {
       return { status: 'existing' as const, puzzle: this.stored };

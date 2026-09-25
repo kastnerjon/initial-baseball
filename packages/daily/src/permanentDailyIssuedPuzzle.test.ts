@@ -4,7 +4,7 @@ import {
   createPermanentDailyIssuedPuzzle,
   createPermanentDailyIssuedPuzzleService,
   createPermanentDailyPuzzleId,
-  type PermanentDailyIssuedPuzzle,
+  type PermanentDailyIssuedPuzzleRecord,
   type PermanentDailyIssuedPuzzleRepository,
 } from './permanentDailyIssuedPuzzle';
 import {
@@ -124,14 +124,11 @@ function requireIdentity(puzzleDate: string) {
 }
 
 class InMemoryIssuedPuzzleRepository implements PermanentDailyIssuedPuzzleRepository {
-  private stored: PermanentDailyIssuedPuzzle | null = null;
+  private stored: PermanentDailyIssuedPuzzleRecord | null = null;
 
   async insertIfAbsent(
-    puzzle: PermanentDailyIssuedPuzzle,
-  ): Promise<
-    | { status: 'inserted'; puzzle: PermanentDailyIssuedPuzzle }
-    | { status: 'existing'; puzzle: PermanentDailyIssuedPuzzle }
-  > {
+    puzzle: PermanentDailyIssuedPuzzleRecord,
+  ) {
     if (this.stored !== null) {
       return { status: 'existing', puzzle: this.stored };
     }
