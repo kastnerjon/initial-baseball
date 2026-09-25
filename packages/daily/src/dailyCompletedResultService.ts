@@ -1,7 +1,9 @@
 import {
   CLASSIC_DAILY_RULESET_VERSION,
   POINTS_V3_DAILY_RULESET_VERSION,
+  POINTS_V4_DAILY_RULESET_VERSION,
   type DailyCompletedResult,
+  type DailyPointsSummary,
 } from '@initial-baseball/shared';
 
 export type DailyCompletedResultRepositoryInsertResult =
@@ -98,12 +100,11 @@ function areDailyCompletedResultsEqual(
   switch (left.rulesetVersion) {
     case POINTS_V3_DAILY_RULESET_VERSION:
       if (right.rulesetVersion !== POINTS_V3_DAILY_RULESET_VERSION) return false;
-      return left.summary.points === right.summary.points
-        && left.summary.maximumPoints === right.summary.maximumPoints
-        && left.summary.atBatsCompleted === right.summary.atBatsCompleted
-        && left.summary.totalAtBats === right.summary.totalAtBats
-        && left.summary.completed === right.summary.completed
-        && left.summary.strikeouts === right.summary.strikeouts;
+      return samePointsSummary(left.summary, right.summary);
+
+    case POINTS_V4_DAILY_RULESET_VERSION:
+      if (right.rulesetVersion !== POINTS_V4_DAILY_RULESET_VERSION) return false;
+      return samePointsSummary(left.summary, right.summary);
 
     case CLASSIC_DAILY_RULESET_VERSION:
       if (right.rulesetVersion !== CLASSIC_DAILY_RULESET_VERSION) return false;
@@ -118,6 +119,18 @@ function areDailyCompletedResultsEqual(
     default:
       return assertNever(left);
   }
+}
+
+function samePointsSummary(
+  left: DailyPointsSummary & { strikeouts: number },
+  right: DailyPointsSummary & { strikeouts: number },
+): boolean {
+  return left.points === right.points
+    && left.maximumPoints === right.maximumPoints
+    && left.atBatsCompleted === right.atBatsCompleted
+    && left.totalAtBats === right.totalAtBats
+    && left.completed === right.completed
+    && left.strikeouts === right.strikeouts;
 }
 
 function assertNever(value: never): never {

@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest';
-import { POINTS_V3_DAILY_RULESET_VERSION, type DailyAtBatResultSubmission } from '@initial-baseball/shared';
+import {
+  POINTS_V3_DAILY_RULESET_VERSION,
+  POINTS_V4_DAILY_RULESET_VERSION,
+  type DailyAtBatResultSubmission,
+} from '@initial-baseball/shared';
 import { validateDailyAtBatResult } from './validateDailyAtBatResult.js';
 import { validateDailyCompletedResult } from './validateDailyCompletedResult.js';
 
@@ -48,6 +52,58 @@ describe('independent terminal AB observations', () => {
         }
       }
     }
+  });
+
+  it('accepts points-v4 observations with outcome scoring and no nonterminal wrong-guess deduction', () => {
+    const expectedByHints = [4, 3, 2, 1, 0] as const;
+    const outcomeByHints = ['HR', '3B', '2B', '1B', 'BB'] as const;
+    for (const hintsRevealed of [0, 1, 2, 3, 4] as const) {
+      for (const wrongGuesses of [0, 1, 2]) {
+        const value: DailyAtBatResultSubmission = {
+          ...submission(),
+          rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+          atBat: {
+            ...submission().atBat,
+            outcome: outcomeByHints[hintsRevealed],
+            hintsRevealed,
+            wrongGuesses,
+          },
+        };
+        expect(validateDailyAtBatResult({
+          submission: value,
+          puzzle,
+          rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+        })).toEqual({
+          ok: true,
+          result: { ...value, awardedPoints: expectedByHints[hintsRevealed] },
+        });
+      }
+    }
+
+    for (const atBat of [
+      { ...submission().atBat, outcome: 'K' as const, wrongGuesses: 3, resolution: 'strikeout' as const },
+      { ...submission().atBat, outcome: 'K' as const, wrongGuesses: 2, resolution: 'give_up' as const },
+    ]) {
+      const value: DailyAtBatResultSubmission = {
+        ...submission(),
+        rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+        atBat,
+      };
+      expect(validateDailyAtBatResult({
+        submission: value,
+        puzzle,
+        rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+      })).toEqual({ ok: true, result: { ...value, awardedPoints: -1 } });
+    }
+  });
+
+  it('keeps v3 and v4 authoritative result populations isolated', () => {
+    const value: DailyAtBatResultSubmission = {
+      ...submission(),
+      rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+    };
+    expect(validateDailyAtBatResult({ submission: value, puzzle, rulesetVersion }))
+      .toEqual({ ok: false, error: 'ruleset_mismatch' });
   });
 
   it('whitelists, derives and copies rather than trusting score, answer or receipt claims', () => {

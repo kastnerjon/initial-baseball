@@ -7,6 +7,7 @@ import {
 } from './dailyCompletedResultService';
 
 type PointsCompletedResult = Extract<DailyCompletedResult, { rulesetVersion: 'points-v3' }>;
+type PointsV4CompletedResult = Extract<DailyCompletedResult, { rulesetVersion: 'points-v4' }>;
 type ClassicCompletedResult = Extract<DailyCompletedResult, { rulesetVersion: 'classic-inning-v1' }>;
 
 describe('Daily completed-result service', () => {
@@ -136,6 +137,31 @@ describe('Daily completed-result service', () => {
     expect(repository.records).toEqual([dailyNine]);
   });
 
+  it('stores and retries an identical points-v4 result without mixing versions', async () => {
+    const repository = new InMemoryDailyCompletedResultRepository();
+    const service = createDailyCompletedResultService(repository);
+    const result = buildPointsV4Result();
+
+    expect(await service.store(result)).toEqual({ ok: true, status: 'created', result });
+    expect(await service.store(buildPointsV4Result())).toEqual({ ok: true, status: 'existing', result });
+    expect(repository.records).toEqual([result]);
+  });
+
+  it('treats points-v3 and points-v4 with the same submission ID as conflicting payloads', async () => {
+    const repository = new InMemoryDailyCompletedResultRepository();
+    const service = createDailyCompletedResultService(repository);
+    const v3 = buildPointsResult('shared-points-id');
+    const v4 = buildPointsV4Result('shared-points-id');
+
+    await service.store(v3);
+    expect(await service.store(v4)).toEqual({
+      ok: false,
+      error: 'idempotency_conflict',
+      submissionId: 'shared-points-id',
+    });
+    expect(repository.records).toEqual([v3]);
+  });
+
   it('allows the same normalized game payload under a different submission ID', async () => {
     const repository = new InMemoryDailyCompletedResultRepository();
     const service = createDailyCompletedResultService(repository);
@@ -217,6 +243,36 @@ function buildPointsResult(submissionId = 'submission-1'): PointsCompletedResult
     summary: {
       points: 36,
       maximumPoints: 63,
+      atBatsCompleted: 9,
+      totalAtBats: 9,
+      completed: true,
+      strikeouts: 2,
+    },
+  };
+}
+
+function buildPointsV4Result(submissionId = 'v4-submission-1'): PointsV4CompletedResult {
+  return {
+    schemaVersion: 1,
+    submissionId,
+    puzzleId: 'daily-2026-09-16-editorial-8fed8bb1',
+    puzzleDate: '2026-09-16',
+    puzzleNumber: 143,
+    rulesetVersion: 'points-v4',
+    completedAtBats: [
+      completedAtBat(1, 'AA', 'HR', 0, 0, 'correct'),
+      completedAtBat(2, 'BB', '3B', 1, 2, 'correct'),
+      completedAtBat(3, 'CC', '2B', 2, 1, 'correct'),
+      completedAtBat(4, 'DD', '1B', 3, 2, 'correct'),
+      completedAtBat(5, 'EE', 'BB', 4, 1, 'correct'),
+      completedAtBat(6, 'FF', 'HR', 0, 2, 'correct'),
+      completedAtBat(7, 'GG', '3B', 1, 1, 'correct'),
+      completedAtBat(8, 'HH', 'K', 2, 3, 'strikeout'),
+      completedAtBat(9, 'II', 'K', 0, 0, 'give_up'),
+    ],
+    summary: {
+      points: 15,
+      maximumPoints: 36,
       atBatsCompleted: 9,
       totalAtBats: 9,
       completed: true,

@@ -124,7 +124,7 @@ Legacy saved lines that predate this contract are normalized conservatively for 
 
 `validateDailyCompletedResult` accepts an unknown submission plus the caller's authoritative public puzzle identity/ordered initials and expected ruleset. It does not look up puzzles, authorize a request, or write a result.
 
-The schema-1 transport/result types live in `shared` (`dailyCompletedResult.ts`). The first accepted rulesets are `points-v3` and `classic-inning-v1`; the exact ruleset is also the game discriminator. Compatibility `points-v1`, `points-v2`, and `legacy-inning-v1` submissions are rejected without changing their gameplay/local-display support.
+The schema-1 transport/result types live in `shared` (`dailyCompletedResult.ts`). Portable result validation accepts `points-v3`, `points-v4`, and `classic-inning-v1`; the exact ruleset is also the game discriminator. Compatibility `points-v1`, `points-v2`, and `legacy-inning-v1` submissions are rejected without changing their gameplay/local-display support. Accepting `points-v4` here does not make it writable to the current Supabase provider or reachable from the current browser; those remain later row-G/H boundaries.
 
 Validation requires:
 
@@ -135,7 +135,7 @@ Validation requires:
 - strikeout with exactly three wrong guesses and outcome K, or Give Up with fewer than three wrong guesses and outcome K;
 - completion under the existing engine policy: all nine Daily Nine at-bats, or exactly the Classic third out/ninth batter, with no facts after completion.
 
-Accepted facts replay through `applyDailyOutcomeForRuleset` and its existing scoring/runner/completion rules. Daily Nine returns points, maximum, at-bat counts, completion, and all strikeouts; Classic returns runs, hits, outs, strikeouts, completion, and reached/total at-bat counts, without inventing a points ranking.
+Accepted facts replay through `applyDailyOutcomeForRuleset` and its existing scoring/runner/completion rules. Both `points-v3` and `points-v4` Daily Nine results return their own engine-derived points, maximum, at-bat counts, completion, and strikeouts; Classic returns runs, hits, outs, strikeouts, completion, and reached/total at-bat counts, without inventing a points ranking. Exact-version identity is retained in the normalized result so v3 and v4 can never share one persistence or comparison population.
 
 The output retains freshly copied, whitelisted native facts and identity fields. Client scores, answer data, timestamps, and other extra fields are discarded. The same accepted facts produce the same normalized result; repository retry/conflict semantics remain a later concern.
 
