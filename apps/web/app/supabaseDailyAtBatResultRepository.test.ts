@@ -24,6 +24,20 @@ const RESULT: DailyAtBatResult = {
   awardedPoints: 5,
 };
 
+const V4_RESULT: DailyAtBatResult = {
+  ...RESULT,
+  attemptId: 'attempt-v4-1',
+  rulesetVersion: 'points-v4',
+  atBat: {
+    ...RESULT.atBat,
+    outcome: 'K',
+    hintsRevealed: 4,
+    wrongGuesses: 3,
+    resolution: 'strikeout',
+  },
+  awardedPoints: -1,
+};
+
 describe('Supabase resolved-at-bat repository', () => {
   it('inserts every normalized field without an update or upsert path', async () => {
     const single = vi.fn().mockResolvedValue({ data: toRow(RESULT), error: null });
@@ -38,6 +52,23 @@ describe('Supabase resolved-at-bat repository', () => {
     expect(from).toHaveBeenCalledWith('daily_at_bat_results');
     expect(insert).toHaveBeenCalledTimes(1);
     expect(insert).toHaveBeenCalledWith(toRow(RESULT));
+  });
+
+  it('round-trips a signed points-v4 observation through the same immutable provider path', async () => {
+    const single = vi.fn().mockResolvedValue({ data: toRow(V4_RESULT), error: null });
+    const insert = vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnValue({ single }),
+    });
+    const from = vi.fn().mockReturnValue({ insert });
+
+    const stored = await createSupabaseDailyAtBatResultRepository(asClient(from))
+      .insertIfAbsent(V4_RESULT);
+
+    expect(stored).toEqual({ status: 'inserted', result: V4_RESULT });
+    expect(insert).toHaveBeenCalledWith(expect.objectContaining({
+      ruleset_version: 'points-v4',
+      awarded_points: -1,
+    }));
   });
 
   it('reads the existing winner by the complete observation key after a unique conflict', async () => {

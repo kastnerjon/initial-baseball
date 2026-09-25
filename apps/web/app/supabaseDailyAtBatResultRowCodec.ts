@@ -1,8 +1,11 @@
+import { getDailyPointsRange } from '@initial-baseball/engine';
 import {
   DAILY_AT_BAT_RESULT_SCHEMA_VERSION,
   POINTS_V3_DAILY_RULESET_VERSION,
+  POINTS_V4_DAILY_RULESET_VERSION,
   type DailyAtBatResolution,
   type DailyAtBatResult,
+  type DailyAtBatResultRulesetVersion,
   type DailyOutcome,
   type DailyRevealCount,
 } from '@initial-baseball/shared';
@@ -61,8 +64,11 @@ export function decodeDailyAtBatResultRow(row: unknown): DailyAtBatResult {
   if (value.schema_version !== DAILY_AT_BAT_RESULT_SCHEMA_VERSION) {
     invalid(`Unsupported resolved-at-bat schema version ${String(value.schema_version)}.`);
   }
-  if (value.ruleset_version !== POINTS_V3_DAILY_RULESET_VERSION) {
-    invalid(`Unsupported resolved-at-bat ruleset ${String(value.ruleset_version)}.`);
+
+  const rulesetVersion = resultRuleset(value.ruleset_version);
+  const pointsRange = getDailyPointsRange(rulesetVersion, 1);
+  if (pointsRange === null || pointsRange.step !== 1) {
+    invalid(`Unsupported persisted point range for ${rulesetVersion}.`);
   }
 
   const outcome = value.outcome;
@@ -81,7 +87,7 @@ export function decodeDailyAtBatResultRow(row: unknown): DailyAtBatResult {
     puzzleId: text(value.puzzle_id, 'puzzle_id'),
     puzzleDate: calendarDate(value.puzzle_date),
     puzzleNumber: boundedInt(value.puzzle_number, 1, Number.MAX_SAFE_INTEGER, 'puzzle_number'),
-    rulesetVersion: POINTS_V3_DAILY_RULESET_VERSION,
+    rulesetVersion,
     atBat: {
       pitchNumber: boundedInt(value.pitch_number, 1, 9, 'pitch_number'),
       initials: text(value.initials, 'initials'),
@@ -90,8 +96,23 @@ export function decodeDailyAtBatResultRow(row: unknown): DailyAtBatResult {
       wrongGuesses: boundedInt(value.wrong_guesses, 0, 3, 'wrong_guesses'),
       resolution: resolution as DailyAtBatResolution,
     },
-    awardedPoints: boundedInt(value.awarded_points, 0, 7, 'awarded_points'),
+    awardedPoints: boundedInt(
+      value.awarded_points,
+      pointsRange.minimumPoints,
+      pointsRange.maximumPoints,
+      'awarded_points',
+    ),
   };
+}
+
+function resultRuleset(value: unknown): DailyAtBatResultRulesetVersion {
+  if (
+    value === POINTS_V3_DAILY_RULESET_VERSION
+    || value === POINTS_V4_DAILY_RULESET_VERSION
+  ) {
+    return value;
+  }
+  return invalid(`Unsupported resolved-at-bat ruleset ${String(value)}.`);
 }
 
 function attemptId(value: unknown): string {

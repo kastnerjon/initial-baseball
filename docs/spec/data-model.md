@@ -74,7 +74,7 @@ Fields are:
 - `submission_id`: immutable primary/idempotency key supplied by the browser transport contract;
 - `schema_version`: currently exactly schema 1;
 - stable `puzzle_id`, `puzzle_date`, and `puzzle_number`;
-- exact `ruleset_version` / game identity, initially `points-v3` or `classic-inning-v1`;
+- exact `ruleset_version` / game identity: `points-v3`, `points-v4`, or `classic-inning-v1`;
 - ordered `completed_at_bats` JSONB containing the normalized native facts;
 - engine-derived `summary` JSONB;
 - provider-owned `created_at` receipt timestamp.
@@ -86,6 +86,7 @@ Persistence/security contract:
 - the production creation migration `20260917132147_create_daily_completed_results` is reconciled into source control;
 - RLS is enabled and there are no `anon` or `authenticated` policies;
 - `service_role` has direct `SELECT` and `INSERT` only after migration `20260918004822_harden_daily_completed_results_privileges`;
+- G3A migration `20260925184454_widen_points_v4_result_persistence` widens only exact-version storage bounds: completed v3 `0..63`, completed v4 `-9..36`, at-bat v3 `0..7`, and at-bat v4 `-1..4`;
 - there is no provider update, delete, truncate, or upsert path;
 - the server-only row codec fails closed on malformed persisted contract rows;
 - the Supabase adapter implements the existing atomic `DailyCompletedResultRepository.insertIfAbsent` port and does not validate gameplay or derive summaries.
@@ -108,7 +109,7 @@ Current browser state includes:
 - ordered spoiler-safe raw completed-at-bat facts: pitch number, initials, outcome, hints revealed, wrong guesses, and correct/strikeout/Give Up resolution;
 - opaque signed progression token.
 
-New games still use `points-v3`: each at-bat starts at 7 points, each revealed hint or wrong guess deducts 1, and a third wrong guess or Give Up awards 0; nine at-bats have a 63-point maximum. Shared/engine also define `points-v4` as the future `4/3/2/1/0/-1` outcome policy with no deduction for the first two wrong guesses and a signed `-9..36` nine-at-bat range, but browser saves, result transports, persistence, comparison, and the public default do not accept it yet. Compatible `points-v2` saves retain `4/3/2/1/0.5/0` and a 36-point maximum; `points-v1` saves and signed tokens retain `5/4/3/2/1/0` and a 45-point maximum. Compatible pre-ruleset saves and signed tokens normalize to `legacy-inning-v1` so an already-started game is not silently changed from three-out completion to all-scheduled-at-bats completion.
+New games still use `points-v3`: each at-bat starts at 7 points, each revealed hint or wrong guess deducts 1, and a third wrong guess or Give Up awards 0; nine at-bats have a 63-point maximum. Shared/engine define `points-v4` as the future `4/3/2/1/0/-1` outcome policy with no deduction for the first two wrong guesses and a signed `-9..36` nine-at-bat range. G3A makes the server-only immutable result storage compatible with exact-version v4 rows, but browser saves/submission routes, comparison reads and the public default remain points-v3. Compatible `points-v2` saves retain `4/3/2/1/0.5/0` and a 36-point maximum; `points-v1` saves and signed tokens retain `5/4/3/2/1/0` and a 45-point maximum. Compatible pre-ruleset saves and signed tokens normalize to `legacy-inning-v1` so an already-started game is not silently changed from three-out completion to all-scheduled-at-bats completion.
 
 No Redis, replay cache, durable anonymous server session, or database write per hint/guess is part of the accepted launch model.
 
@@ -194,7 +195,7 @@ The implemented schema-1 `DailyCompletedResultSubmission` preserves:
 - correct, K, or Give Up resolution;
 - anonymous client-generated idempotency ID (`submissionId`, 1–128 ASCII letters, digits, underscores, or hyphens, preserved exactly; a UUID is accepted).
 
-Exact transport fields are `schemaVersion`, `submissionId`, `puzzleId`, `puzzleDate`, `puzzleNumber`, `rulesetVersion`, and `completedAtBats`. Portable schema-1 validation now accepts `points-v3`, `points-v4`, and `classic-inning-v1`. The ruleset identifies the game independently of the puzzle ID; neither game requires the other game or its lineup to exist. Current Supabase row codecs/constraints and browser submission paths remain v3/Classic-only until their separate rollout PRs.
+Exact transport fields are `schemaVersion`, `submissionId`, `puzzleId`, `puzzleDate`, `puzzleNumber`, `rulesetVersion`, and `completedAtBats`. Portable schema-1 validation now accepts `points-v3`, `points-v4`, and `classic-inning-v1`. The ruleset identifies the game independently of the puzzle ID; neither game requires the other game or its lineup to exist. G3A widens the Supabase row codecs/constraints to exact-version v4 storage while browser submission paths remain v3/Classic-only until H; comparison reads remain v3-only until G3B.
 
 `DailyCompletedResult` adds the engine-derived, ruleset-specific `summary`. Both v3 and v4 Daily Nine results have points/maximum, completed/total at-bats, completion, and strikeouts, with their exact ruleset retained; Classic has runs/hits/outs/strikeouts, completion, and completed/total at-bats. Client totals and unknown fields are discarded, not persisted as authority. No completion/receipt timestamp is created by the engine; server receipt metadata belongs to the provider boundary.
 
@@ -215,7 +216,7 @@ The repository contract is intentionally one atomic operation rather than `get` 
 
 The relational `daily_completed_results` table plus server-only Supabase row codec/repository adapter are implemented as the provider portion of 4C. The completed-game POST API validates against the authoritative public puzzle through engine 4A and stores through 4B/provider. The browser submission client stores a separate local record keyed by stable puzzle identity plus exact ruleset/game. The record contains the exact schema-1 submission payload, one stable client-generated ID, and local `pending`/`submitted`/`conflict`/`rejected` status. It is written before network I/O; every retry reuses the exact stored payload so replay changes cannot reuse an ID with different facts. The client can retry an existing pending record without creating a new one. Native activation uses hydration-only provenance without changing the persisted gameplay-save schema. A current compatible session with explicit native facts may create one delivery record when it genuinely completes. An already-completed restored save with no delivery record does not create one retroactively. Existing pending delivery records can retry after hydration. Legacy facts reconstructed from old local pitch lines remain compatibility display data and are never used to create a new aggregate submission. There are no per-action writes.
 
-Comparison populations are always scoped to stable puzzle identity plus exact ruleset/game identity. Daily Nine and Classic never share an aggregate population. `points-v1`, `points-v2`, `points-v3`, and future persisted `points-v4` results remain separate populations. Raw facts are retained so aggregates can be recalculated as presentation evolves.
+Comparison populations are always scoped to stable puzzle identity plus exact ruleset/game identity. Daily Nine and Classic never share an aggregate population. `points-v1`, `points-v2`, `points-v3`, and any persisted `points-v4` results remain separate populations. Raw facts are retained so aggregates can be recalculated as presentation evolves.
 
 Implemented provider entity: `daily_at_bat_results`, one immutable observation per attempt + stable puzzle + exact ruleset + slot. It stores normalized native terminal facts, server/engine-derived awarded points and receipt time; the browser does not supply authoritative points. First-write-wins identical retries return existing and differing facts conflict. Server-only `SELECT`/`INSERT`, RLS, schema/index details and hosted atomicity verification are recorded below. Browser collection is active and production-proven for eligible fresh points-v3 runs.
 
@@ -231,7 +232,7 @@ The original migration's database-player, original Daily, attempt/result, social
 
 ## Portable resolved-at-bat observations (4D foundation)
 
-`DailyAtBatResultSubmission` schema 1 carries attemptId, exact puzzle ID/date/number, an exact accepted Daily Nine ruleset (`points-v3` or `points-v4`), and one native `atBat`. `validateDailyAtBatResult` binds that observation to caller-supplied authoritative puzzle/ruleset context, validates terminal facts through the same engine normalizer used for completed games, and derives `awardedPoints` using the exact version's `getDailyAtBatPoints` rule. It accepts any isolated slot 1–9 without requiring earlier delivery or game completion. Classic and compatibility points rulesets are not accepted by this contract. Current Supabase/browser delivery remains points-v3-only until later rollout work.
+`DailyAtBatResultSubmission` schema 1 carries attemptId, exact puzzle ID/date/number, an exact accepted Daily Nine ruleset (`points-v3` or `points-v4`), and one native `atBat`. `validateDailyAtBatResult` binds that observation to caller-supplied authoritative puzzle/ruleset context, validates terminal facts through the same engine normalizer used for completed games, and derives `awardedPoints` using the exact version's `getDailyAtBatPoints` rule. It accepts any isolated slot 1–9 without requiring earlier delivery or game completion. Classic and compatibility points rulesets are not accepted by this contract. The G3A Supabase provider/constraints accept points-v3 and points-v4 exact-version observations; browser delivery remains points-v3-only until H.
 
 Normalization copies only approved fields and discards client scores, answers and timestamps. This validates internal consistency, not honest play, unique people or coherent multi-tab attempts. Idempotency and browser identity enforcement belong to subsequent layers. No repository, table, endpoint or collection activation is added here. Scope: `tasks/plans/resolved-at-bat-contract.md`; the replacement comparison roadmap is PR #175.
 
@@ -245,11 +246,12 @@ Scope: `tasks/plans/resolved-at-bat-repository.md`. This portable layer itself h
 
 ## Resolved-AB Supabase provider
 
-`public.daily_at_bat_results` stores one flat engine-normalized points-v3 terminal observation per row. It includes attempt and puzzle identity, schema/ruleset, pitch number/initials, outcome, hints, wrong guesses, resolution, engine-derived awarded points, and provider-owned `created_at`. It stores no answer name, search text, wrong-answer identity, IP/account identity, client score, or per-action event stream.
+`public.daily_at_bat_results` stores one flat engine-normalized points-v3 or points-v4 terminal observation per row. It includes attempt and puzzle identity, schema/ruleset, pitch number/initials, outcome, hints, wrong guesses, resolution, engine-derived awarded points, and provider-owned `created_at`. It stores no answer name, search text, wrong-answer identity, IP/account identity, client score, or per-action event stream.
 
 Persistence/security contract:
 
 - migration `20260918185110_create_daily_at_bat_results` is applied and reconciled with source;
+- G3A migration `20260925184454_widen_points_v4_result_persistence` widens the exact-version ruleset/awarded-point checks while preserving the same table/key/index/privilege shape;
 - composite primary key `(attempt_id, puzzle_id, ruleset_version, pitch_number)` makes the observation first-write-wins without letting date, number or schema version create duplicates;
 - population index `(puzzle_id, ruleset_version, pitch_number) INCLUDE (awarded_points)` supports later exact count/average reads without defining comparison semantics here;
 - RLS is enabled with no policies; `anon` and `authenticated` have no direct access; `service_role` has `SELECT, INSERT` only;
