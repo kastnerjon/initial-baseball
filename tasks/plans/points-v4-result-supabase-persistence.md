@@ -19,7 +19,7 @@ Live inspection showed two independently reviewable seams:
 1. result persistence: the result codecs and table constraints still reject v4;
 2. comparison reads: both aggregate RPCs explicitly gate on `points-v3`, while the web decoder accepts only non-negative sums/buckets and the deployed repository type still intentionally claims v3 only.
 
-This PR is G3A and changes only the first seam. G3B can widen the comparison RPC/provider boundary after storage truthfully supports signed v4 rows.
+This PR is G3A and changes only the first seam. G3B subsequently widens the comparison RPC/provider boundary after storage truthfully supports signed v4 rows; public HTTP/browser acceptance still remains H.
 
 ## Storage boundary
 

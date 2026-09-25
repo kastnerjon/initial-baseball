@@ -1,4 +1,7 @@
-import { POINTS_V3_DAILY_RULESET_VERSION } from '@initial-baseball/shared';
+import {
+  POINTS_V3_DAILY_RULESET_VERSION,
+  POINTS_V4_DAILY_RULESET_VERSION,
+} from '@initial-baseball/shared';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -11,6 +14,11 @@ const KEY = {
   puzzleDate: '2026-09-18',
   puzzleNumber: 145,
   rulesetVersion: POINTS_V3_DAILY_RULESET_VERSION,
+} as const;
+
+const V4_KEY = {
+  ...KEY,
+  rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
 } as const;
 
 describe('Supabase Daily Nine comparison repository', () => {
@@ -32,6 +40,26 @@ describe('Supabase Daily Nine comparison repository', () => {
       p_puzzle_number: KEY.puzzleNumber,
       p_ruleset_version: KEY.rulesetVersion,
       p_pitch_number: 7,
+    });
+  });
+
+  it('decodes a signed points-v4 at-bat aggregate', async () => {
+    const rpc = vi.fn().mockResolvedValue({
+      data: [{ resolved_at_bat_count: '3', awarded_points_sum: '-2' }],
+      error: null,
+    });
+    const repository = createSupabaseDailyNineComparisonRepository(asClient(rpc));
+
+    await expect(repository.readAtBat({ ...V4_KEY, pitchNumber: 2 })).resolves.toEqual({
+      resolvedAtBatCount: 3,
+      awardedPointsSum: -2,
+    });
+    expect(rpc).toHaveBeenCalledWith('daily_nine_at_bat_comparison', {
+      p_puzzle_id: V4_KEY.puzzleId,
+      p_puzzle_date: V4_KEY.puzzleDate,
+      p_puzzle_number: V4_KEY.puzzleNumber,
+      p_ruleset_version: V4_KEY.rulesetVersion,
+      p_pitch_number: 2,
     });
   });
 
@@ -91,6 +119,32 @@ describe('Supabase Daily Nine comparison repository', () => {
       p_puzzle_date: KEY.puzzleDate,
       p_puzzle_number: KEY.puzzleNumber,
       p_ruleset_version: KEY.rulesetVersion,
+    });
+  });
+
+  it('decodes signed points-v4 completed score buckets', async () => {
+    const rpc = vi.fn().mockResolvedValue({
+      data: [
+        { points: '-9', result_count: '2' },
+        { points: '-1', result_count: 3 },
+        { points: 36, result_count: '1' },
+      ],
+      error: null,
+    });
+    const repository = createSupabaseDailyNineComparisonRepository(asClient(rpc));
+
+    await expect(repository.readCompletedGames(V4_KEY)).resolves.toEqual({
+      scoreBuckets: [
+        { points: -9, count: 2 },
+        { points: -1, count: 3 },
+        { points: 36, count: 1 },
+      ],
+    });
+    expect(rpc).toHaveBeenCalledWith('daily_nine_completed_score_buckets', {
+      p_puzzle_id: V4_KEY.puzzleId,
+      p_puzzle_date: V4_KEY.puzzleDate,
+      p_puzzle_number: V4_KEY.puzzleNumber,
+      p_ruleset_version: V4_KEY.rulesetVersion,
     });
   });
 

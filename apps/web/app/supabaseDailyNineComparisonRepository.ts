@@ -115,7 +115,7 @@ function decodeAtBatSource(value: unknown): DailyNineAtBatComparisonSource {
       row.resolved_at_bat_count,
       'resolved_at_bat_count',
     ),
-    awardedPointsSum: nonNegativeSafeInteger(
+    awardedPointsSum: safeInteger(
       row.awarded_points_sum,
       'awarded_points_sum',
     ),
@@ -128,7 +128,7 @@ function decodeCompletedSource(value: unknown): DailyNineCompletedComparisonSour
     scoreBuckets: rows.map((candidate, index): DailyNineScoreBucket => {
       const row = record(candidate, `Daily Nine completed comparison row ${index}`);
       return {
-        points: nonNegativeSafeInteger(row.points, `scoreBuckets[${index}].points`),
+        points: safeInteger(row.points, `scoreBuckets[${index}].points`),
         count: positiveSafeInteger(row.result_count, `scoreBuckets[${index}].count`),
       };
     }),
@@ -153,13 +153,21 @@ function positiveSafeInteger(value: unknown, field: string): number {
   return parsed;
 }
 
-function nonNegativeSafeInteger(value: unknown, field: string): number {
+function safeInteger(value: unknown, field: string): number {
   const parsed = typeof value === 'number'
     ? value
-    : typeof value === 'string' && /^\d+$/.test(value)
+    : typeof value === 'string' && /^-?\d+$/.test(value)
       ? Number(value)
       : Number.NaN;
-  if (!Number.isSafeInteger(parsed) || parsed < 0) {
+  if (!Number.isSafeInteger(parsed)) {
+    invalid(`${field} must be a safe integer.`);
+  }
+  return parsed;
+}
+
+function nonNegativeSafeInteger(value: unknown, field: string): number {
+  const parsed = safeInteger(value, field);
+  if (parsed < 0) {
     invalid(`${field} must be a non-negative safe integer.`);
   }
   return parsed;

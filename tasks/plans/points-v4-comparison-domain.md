@@ -14,9 +14,9 @@ Date: 2026-09-25
 
 ## Boundary decision
 
-At G2, widening `DailyNineComparisonRepository` directly would have made the deployed Supabase implementation type-claim support for v4 while its storage/RPC/decoder boundary still rejected or mis-handled negative values. G2 therefore separated pure comparison normalization from the deployed read port. G3A later widens result storage only; the comparison RPCs/decoder/read port remain points-v3-only until G3B.
+At G2, widening `DailyNineComparisonRepository` directly would have made the deployed Supabase implementation type-claim support for v4 while its storage/RPC/decoder boundary still rejected or mis-handled negative values. G2 therefore separated pure comparison normalization from the deployed read port. G3A later widened result storage only. G3B now widens the comparison RPCs, signed provider decoder, and Daily repository/service read port together, so the type boundary matches the hosted provider capability.
 
-The new pure identity/math layer supports v3/v4. The existing repository/service query aliases remain points-v3-only and delegate to the same pure functions. G3 can widen the provider port only after its persistence/RPC/codec contract is actually capable of serving v4.
+The pure identity/math layer and deployed provider/service layer now both support exact-version v3/v4 populations. The shared comparison HTTP schema and browser/server request acceptance remain points-v3-only until H, so this backend-compatible checkpoint does not activate v4 publicly.
 
 ## Histogram contract
 
