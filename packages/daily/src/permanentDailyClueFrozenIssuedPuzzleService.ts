@@ -1,4 +1,5 @@
 import {
+  PERMANENT_DAILY_CLUE_FROZEN_ISSUED_PUZZLE_SCHEMA_VERSION,
   clonePermanentDailyIssuedPuzzleRecord,
   createPermanentDailyClueFrozenIssuedPuzzle,
   type PermanentDailyClueFrozenIssuedPuzzle,
@@ -42,7 +43,7 @@ export function createPermanentDailyClueFrozenIssuedPuzzleService(
 
       if (stored.status === 'inserted') {
         if (
-          stored.puzzle.schemaVersion !== 2
+          stored.puzzle.schemaVersion !== PERMANENT_DAILY_CLUE_FROZEN_ISSUED_PUZZLE_SCHEMA_VERSION
           || !areClueFrozenIssuedPuzzlesExactlyEqual(stored.puzzle, requested)
         ) {
           throw new Error(
@@ -57,7 +58,7 @@ export function createPermanentDailyClueFrozenIssuedPuzzleService(
       }
 
       if (
-        stored.puzzle.schemaVersion === 2
+        stored.puzzle.schemaVersion === PERMANENT_DAILY_CLUE_FROZEN_ISSUED_PUZZLE_SCHEMA_VERSION
         && hasSameImmutableClueFrozenContent(stored.puzzle, requested)
       ) {
         return {
@@ -136,7 +137,7 @@ function cloneClueFrozenIssuedPuzzle(
   puzzle: PermanentDailyClueFrozenIssuedPuzzle,
 ): PermanentDailyClueFrozenIssuedPuzzle {
   const cloned = clonePermanentDailyIssuedPuzzleRecord(puzzle);
-  if (cloned.schemaVersion !== 2) {
+  if (cloned.schemaVersion !== PERMANENT_DAILY_CLUE_FROZEN_ISSUED_PUZZLE_SCHEMA_VERSION) {
     throw new Error('Expected a clue-frozen permanent Daily puzzle.');
   }
   return cloned;
