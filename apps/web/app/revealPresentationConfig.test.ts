@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   DEFAULT_REVEAL_COLUMNS,
+  getDailyHintStatColumns,
   getRevealColumns,
   type RevealColumnOverrides,
 } from './revealPresentationConfig';
@@ -38,4 +39,10 @@ describe('revealPresentationConfig', () => {
     expect(getRevealColumns('hitter', overrides)).toEqual(['HR', 'BA', 'OPS']);
     expect(getRevealColumns('pitcher', overrides)).toEqual(DEFAULT_REVEAL_COLUMNS.pitcher);
   });
+
+  it('derives hint-4 stat subsets in reveal-relative order', () => {
+    expect(getDailyHintStatColumns('hitter')).toEqual(['HR', 'RBI', 'SB', 'BA', 'OBP']);
+    expect(getDailyHintStatColumns('pitcher')).toEqual(['W', 'L', 'SV', 'ERA', 'WHIP', 'K']);
+  });
+
 });

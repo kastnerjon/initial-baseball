@@ -43,7 +43,7 @@ describe('buildDefaultDailyHints', () => {
       { hintType: 'main_decade', hintLabel: 'Main Decade', hintValue: '1990s' },
       { hintType: 'teams', hintLabel: 'Teams', hintValue: 'SEA, CIN, CHW' },
       { hintType: 'position', hintLabel: 'Position', hintValue: 'CF' },
-      { hintType: 'stats', hintLabel: 'Stats', hintValue: 'HR 630 / RBI 1836 / BA .284 / OBP .370 / SB 184' },
+      { hintType: 'stats', hintLabel: 'Stats', hintValue: 'HR 630 / RBI 1836 / SB 184 / BA .284 / OBP .370' },
     ]);
   });
 
@@ -100,14 +100,18 @@ describe('DEMO_DAILY_PITCHES', () => {
     }
   });
 
-  it('uses the resolved generated player statsLine as the stats hint', () => {
+  it('uses the resolved generated player structured career stats as the stats hint', () => {
     for (const pitch of DEMO_DAILY_PITCHES) {
       const statsHint = pitch.hints[3];
       const generatedPlayer = baseballPlayers.find((player) => player.id === pitch.correctPlayerId);
 
       expect(statsHint?.hintType).toBe('stats');
       expect(generatedPlayer).toBeDefined();
-      expect(statsHint?.hintValue).toBe(generatedPlayer?.statsLine);
+      expect(statsHint?.hintValue).toBe(
+        generatedPlayer === undefined
+          ? undefined
+          : buildDefaultDailyHints(generatedPlayer).find((hint) => hint.hintType === 'stats')?.hintValue,
+      );
     }
   });
 
@@ -151,6 +155,7 @@ describe('DEMO_DAILY_PITCHES', () => {
 
     expect(kenGriffeyJrPitch?.hints[3]?.hintValue).toContain('HR 630');
     expect(ccSabathiaPitch?.hints[3]?.hintValue).toContain('W 251');
+    expect(ccSabathiaPitch?.hints[3]?.hintValue).toContain('SV 0');
     expect(ccSabathiaPitch?.hints[3]?.hintValue).toContain('K 3093');
   });
 

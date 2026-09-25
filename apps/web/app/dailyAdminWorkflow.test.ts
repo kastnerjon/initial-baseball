@@ -171,6 +171,21 @@ describe('Daily admin workflow', () => {
       yearsPlayedDisplay: '1989–2010',
       teamsDisplay: 'SEA, CIN, CWS',
       statsLine: 'HR 630 / RBI 1836 / BA .284 / OBP .370 / SB 184',
+      careerStats: {
+        kind: 'hitter',
+        stats: {
+          AB: 9801,
+          R: 1662,
+          H: 2781,
+          HR: 630,
+          RBI: 1836,
+          SB: 184,
+          BA: '.284',
+          OBP: '.370',
+          SLG: '.538',
+          OPS: '.908',
+        },
+      },
     });
     const workflow = createDailyAdminWorkflow(new InMemoryRepository(), dependencies(candidates));
 
@@ -181,7 +196,7 @@ describe('Daily admin workflow', () => {
       ['main_decade', '2000s'],
       ['teams', 'SEA, CIN, CWS'],
       ['position', 'CF'],
-      ['stats', 'HR 630 / RBI 1836 / BA .284 / OBP .370 / SB 184'],
+      ['stats', 'HR 630 / RBI 1836 / SB 184 / BA .284 / OBP .370'],
     ]);
     expect(preview?.reveal.playerId).toBe('griffey');
     expect(preview?.reveal.career.firstSeason).toBe(1989);

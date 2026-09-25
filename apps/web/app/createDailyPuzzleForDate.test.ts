@@ -7,6 +7,7 @@ import {
   getDailyPuzzleNumber,
   resolveDailyPuzzleOverridePlayers,
 } from './createDailyPuzzleForDate';
+import { buildDefaultDailyHints } from './buildDefaultDailyHints';
 import { createPlayerIdentity } from './dailyPuzzleAdapters';
 import { DAILY_PUZZLE_OVERRIDES } from './dailyPuzzleOverrides';
 
@@ -244,7 +245,7 @@ describe('Daily puzzle hints', () => {
       expect(pitch.hints.main_decade).toBe(player?.mainDecade);
       expect(pitch.hints.teams).toBe(player?.teamsDisplay);
       expect(pitch.hints.position).toBe(player?.primaryPosition);
-      expect(pitch.hints.stats).toBe(player?.statsLine);
+      expect(pitch.hints.stats).toBe(player === undefined ? undefined : getStatsHint(player));
     }
   });
 
@@ -258,7 +259,7 @@ describe('Daily puzzle hints', () => {
       expect(pitch.hints.main_decade).toBe(player?.mainDecade);
       expect(pitch.hints.teams).toBe(player?.teamsDisplay);
       expect(pitch.hints.position).toBe(player?.primaryPosition);
-      expect(pitch.hints.stats).toBe(player?.statsLine);
+      expect(pitch.hints.stats).toBe(player === undefined ? undefined : getStatsHint(player));
     }
   });
 });
@@ -271,6 +272,10 @@ describe('createPlayerIdentity', () => {
     expect(createPlayerIdentity(buildPlayer('Elly De La Cruz')).initials).toBe('EDLC');
   });
 });
+
+function getStatsHint(player: Player): string | undefined {
+  return buildDefaultDailyHints(player).find((hint) => hint.hintType === 'stats')?.hintValue;
+}
 
 function buildPlayer(displayName: string): Player {
   return {

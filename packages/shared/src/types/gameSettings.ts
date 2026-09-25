@@ -32,7 +32,7 @@ export const DEFAULT_ALPHA_SETTINGS: GameSettings = {
     { slot: 4, result: 'walk', hintType: 'stats', displayLabel: 'Stats' },
   ],
   statsHintConfig: {
-    hitter: ['bwar', 'hr', 'rbi', 'ba', 'obp', 'sb'],
-    pitcher: ['bwar', 'w', 'l', 'era', 'whip', 'k'],
+    hitter: ['hr', 'rbi', 'sb', 'ba', 'obp'],
+    pitcher: ['w', 'l', 'sv', 'era', 'whip', 'k'],
   },
 };
