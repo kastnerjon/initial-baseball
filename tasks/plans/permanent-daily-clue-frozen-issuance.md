@@ -27,4 +27,4 @@ The existing schema-v1 issuance service remains exported for compatible callers.
 
 The server-only web issuance composition has now been cut over to schema v2, materializing clues through the same canonical player lookup, `createDailyPuzzlePitch`, and shared Daily hint configuration used by runtime gameplay. Scope and tests: `tasks/plans/permanent-daily-server-clue-issuance.md`.
 
-Next, separately update archive materialization to consume those persisted frozen clues. Do not combine that read-path change with scoring, initials, or routes.
+Archive materialization now consumes those persisted frozen clues while retaining v1 reads. Scope: `tasks/plans/permanent-daily-archive-clue-materialization.md`. Keep scoring, initials, and routes separate.

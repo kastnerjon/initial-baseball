@@ -1,8 +1,8 @@
 import 'server-only';
 import type {
-  PermanentDailyIssuedPuzzle,
   PermanentDailyIssuedPuzzleDateQuery,
   PermanentDailyIssuedPuzzleNumberQuery,
+  PermanentDailyIssuedPuzzleRecord,
   PermanentDailyIssuedPuzzleReadService,
 } from '@initial-baseball/daily';
 import type { DailyPuzzle } from '@initial-baseball/shared';
@@ -22,7 +22,7 @@ export type ServerPermanentDailyArchivePuzzleSource = {
 
 interface ServerPermanentDailyArchivePuzzleSourceDependencies {
   createReadService: () => PermanentDailyIssuedPuzzleReadService;
-  materializePuzzle: (puzzle: PermanentDailyIssuedPuzzle) => DailyPuzzle;
+  materializePuzzle: (puzzle: PermanentDailyIssuedPuzzleRecord) => DailyPuzzle;
 }
 
 type CreateServerPermanentDailyArchivePuzzleSourceOptions = {
@@ -64,8 +64,8 @@ export function createServerPermanentDailyArchivePuzzleSource({
 }
 
 function materializeIfIssued(
-  issuedPuzzle: PermanentDailyIssuedPuzzle | null,
-  materializePuzzle: (puzzle: PermanentDailyIssuedPuzzle) => DailyPuzzle,
+  issuedPuzzle: PermanentDailyIssuedPuzzleRecord | null,
+  materializePuzzle: (puzzle: PermanentDailyIssuedPuzzleRecord) => DailyPuzzle,
 ): DailyPuzzle | null {
   return issuedPuzzle === null ? null : materializePuzzle(issuedPuzzle);
 }

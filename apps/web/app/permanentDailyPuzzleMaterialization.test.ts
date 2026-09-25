@@ -1,7 +1,13 @@
 import {
+  DEFAULT_DAILY_HINT_CONFIG,
+} from '@initial-baseball/shared';
+import {
+  createPermanentDailyClueFrozenIssuedPuzzle,
+  createPermanentDailyIssuedClueSnapshot,
   createPermanentDailyIssuedPuzzle,
   createPermanentDailyLaunchEpoch,
   resolvePermanentDailyIdentityForDate,
+  type PermanentDailyClueFrozenIssuedPuzzle,
   type PermanentDailyIssuedPuzzle,
 } from '@initial-baseball/daily';
 import type { Player } from '@initial-baseball/shared';
@@ -82,6 +88,72 @@ describe('permanent Daily puzzle materialization', () => {
       `Permanent Daily ${issuedPuzzle.puzzleId} references unavailable canonical player ${unavailableId}.`,
     );
   });
+
+  it('uses the v2 snapshot as the exact public clue source despite changed player clues', () => {
+    const issuedPuzzle = createClueFrozenIssuedPuzzle();
+    const puzzle = materializePermanentDailyIssuedPuzzle(
+      issuedPuzzle,
+      canonicalPlayerId => PLAYERS.get(canonicalPlayerId) ?? null,
+    );
+    const firstPitch = puzzle.pitches[0];
+
+    expect(puzzle).toMatchObject({
+      id: issuedPuzzle.puzzleId,
+      puzzleNumber: issuedPuzzle.identity.dailyNumber,
+      puzzleDate: issuedPuzzle.identity.puzzleDate,
+    });
+    expect(puzzle.hintConfig).toEqual(issuedPuzzle.clueSnapshot.hintLayout.map(slot => ({
+      ...slot,
+      result: DEFAULT_DAILY_HINT_CONFIG.find(candidate => candidate.slot === slot.slot)?.result,
+    })));
+    expect(puzzle.pitches.map(pitch => pitch.player.playerId)).toEqual(CANONICAL_IDS);
+    expect(puzzle.pitches.map(pitch => pitch.player.initials)).toEqual(
+      issuedPuzzle.clueSnapshot.pitches.map(clue => clue.initials),
+    );
+    expect(firstPitch?.hints).toEqual({
+      stats: 'Frozen stats clue',
+      main_decade: 'Frozen decade clue',
+      position: 'Frozen position clue',
+      teams: 'Frozen teams clue',
+    });
+    expect(firstPitch?.hints.main_decade).not.toBe(PLAYERS.get(CANONICAL_IDS[0]!)?.mainDecade);
+    expect(puzzle.statsHintConfig.hitter.length).toBeGreaterThan(0);
+    expect(puzzle).not.toHaveProperty('rulesetVersion');
+  });
+
+  it('fails closed when a frozen-clue pitch cannot be materialized', () => {
+    const issuedPuzzle = createClueFrozenIssuedPuzzle();
+    const unavailableId = CANONICAL_IDS[4]!;
+
+    expect(() => materializePermanentDailyIssuedPuzzle(
+      issuedPuzzle,
+      canonicalPlayerId => (
+        canonicalPlayerId === unavailableId
+          ? null
+          : PLAYERS.get(canonicalPlayerId) ?? null
+      ),
+    )).toThrow(
+      `Permanent Daily ${issuedPuzzle.puzzleId} references unavailable canonical player ${unavailableId}.`,
+    );
+  });
+
+  it('fails closed when frozen clue identity does not match the issued batting order', () => {
+    const issuedPuzzle = createClueFrozenIssuedPuzzle();
+    const malformedPuzzle = {
+      ...issuedPuzzle,
+      clueSnapshot: {
+        ...issuedPuzzle.clueSnapshot,
+        pitches: issuedPuzzle.clueSnapshot.pitches.map((pitch, index) => (
+          index === 0 ? { ...pitch, canonicalPlayerId: 'different-player' } : pitch
+        )),
+      },
+    };
+
+    expect(() => materializePermanentDailyIssuedPuzzle(
+      malformedPuzzle,
+      canonicalPlayerId => PLAYERS.get(canonicalPlayerId) ?? null,
+    )).toThrow('clue snapshot does not match frozen batting order at pitch 1');
+  });
 });
 
 function createIssuedPuzzle(): PermanentDailyIssuedPuzzle {
@@ -94,6 +166,39 @@ function createIssuedPuzzle(): PermanentDailyIssuedPuzzle {
   return createPermanentDailyIssuedPuzzle({
     identity,
     canonicalPlayerIds: CANONICAL_IDS,
+    issuedAt: '2030-04-05T07:00:00.000Z',
+  });
+}
+
+function createClueFrozenIssuedPuzzle(): PermanentDailyClueFrozenIssuedPuzzle {
+  const identity = resolvePermanentDailyIdentityForDate(
+    '2030-04-05',
+    createPermanentDailyLaunchEpoch('2030-04-05'),
+  );
+  if (identity === null) throw new Error('Expected permanent Daily identity.');
+
+  return createPermanentDailyClueFrozenIssuedPuzzle({
+    identity,
+    canonicalPlayerIds: CANONICAL_IDS,
+    clueSnapshot: createPermanentDailyIssuedClueSnapshot({
+      hintLayout: [
+        { slot: 1, hintType: 'stats', displayLabel: 'Frozen stats label' },
+        { slot: 2, hintType: 'main_decade', displayLabel: 'Frozen decade label' },
+        { slot: 3, hintType: 'position', displayLabel: 'Frozen position label' },
+        { slot: 4, hintType: 'teams', displayLabel: 'Frozen teams label' },
+      ],
+      pitches: CANONICAL_IDS.map((canonicalPlayerId, index) => ({
+        pitchNumber: index + 1,
+        canonicalPlayerId,
+        initials: `F${index + 1}`,
+        hintValues: [
+          'Frozen stats clue',
+          'Frozen decade clue',
+          'Frozen position clue',
+          'Frozen teams clue',
+        ],
+      })),
+    }),
     issuedAt: '2030-04-05T07:00:00.000Z',
   });
 }

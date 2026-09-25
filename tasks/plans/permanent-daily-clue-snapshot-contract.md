@@ -51,4 +51,4 @@ Focused contract tests, full repository tests/typecheck, file-size/docs gates, c
 
 ## Follow-on status
 
-This snapshot is attached to the schema-v2 issued-puzzle envelope, persisted through the append-only Supabase adapter, and now materialized by server issuance from the same current public clues used in gameplay. The server issuance scope is `tasks/plans/permanent-daily-server-clue-issuance.md`. Next, separately teach archive materialization to consume persisted v2 clues without rebuilding them from current player data.
+This snapshot is attached to the schema-v2 issued-puzzle envelope, persisted through the append-only Supabase adapter, materialized by server issuance from the same current public clues used in gameplay, and consumed by archive materialization without rebuilding mutable clue values. The server issuance scope is `tasks/plans/permanent-daily-server-clue-issuance.md`; archive consumption scope is `tasks/plans/permanent-daily-archive-clue-materialization.md`.

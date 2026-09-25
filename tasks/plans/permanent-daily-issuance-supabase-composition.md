@@ -19,7 +19,7 @@ Status: implemented schema-v2 server composition boundary
 - the existing `PermanentDailyIssuedPuzzleRepository` over `permanent_daily_issued_puzzles`;
 - the portable `createPermanentDailyClueFrozenIssuanceService` over the permanent repository.
 
-The caller supplies only an already-resolved `PermanentDailyIdentity` and attempted `issuedAt` timestamp. The service reads the authoritative editorial record for `identity.puzzleDate`. It orders canonical IDs by editorial slot and materializes each clue with the same canonical Daily player lookup, `createDailyPuzzlePitch`, and `DEFAULT_DAILY_HINT_CONFIG` used by public gameplay. This freezes the exact current initials, four hint types/labels, and four materialized values. Missing editorial content, unavailable players, and malformed clues fail before persistence. The portable service remains the sole owner of scheduled/published eligibility, exact slot validation, lineup/snapshot agreement, and immutable/idempotent semantics. The archive materializer continues to reject schema v2 until its separate consumer change.
+The caller supplies only an already-resolved `PermanentDailyIdentity` and attempted `issuedAt` timestamp. The service reads the authoritative editorial record for `identity.puzzleDate`. It orders canonical IDs by editorial slot and materializes each clue with the same canonical Daily player lookup, `createDailyPuzzlePitch`, and `DEFAULT_DAILY_HINT_CONFIG` used by public gameplay. This freezes the exact current initials, four hint types/labels, and four materialized values. Missing editorial content, unavailable players, and malformed clues fail before persistence. The portable service remains the sole owner of scheduled/published eligibility, exact slot validation, lineup/snapshot agreement, and immutable/idempotent semantics. Archive materialization now consumes schema-v2 snapshots; scope: `tasks/plans/permanent-daily-archive-clue-materialization.md`.
 
 ## Deliberate non-decisions
 
@@ -27,4 +27,4 @@ This composition does not know the broad-launch date and does not derive a perma
 
 ## Next boundary
 
-Portable frozen-puzzle reads, server-side read composition, and the archive runtime are implemented. The next bounded concern is to let archive materialization consume schema-v2 frozen clues rather than rebuilding clues from current player data. Keep this separate from public archive routes and launch-epoch configuration.
+Portable frozen-puzzle reads, server-side read composition, and the archive runtime are implemented. Archive materialization now consumes schema-v2 frozen clues rather than rebuilding clues from current player data. Keep public archive routes and launch-epoch configuration separate. Scope: `tasks/plans/permanent-daily-archive-clue-materialization.md`.

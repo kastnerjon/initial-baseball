@@ -31,7 +31,7 @@ Malformed persisted rows, mismatched puzzle IDs, unsupported schema/series value
 
 ## Compatibility checkpoint
 
-Current editorial issuance still creates schema-v1 records. The provider can persist schema v2, but the existing portable archive read service intentionally rejects v2 until the separate frozen-clue materialization work is complete. This prevents a v2 record from being rendered with mutable current hint generation during the transition.
+Current editorial issuance writes schema v2. The provider persists and reads both schema v1 and v2, while archive materialization consumes v2 frozen clues and preserves v1 backward reads. This prevents an issued clue snapshot from being rendered with mutable current hint generation.
 
 Detailed v2 persistence scope: `tasks/plans/permanent-daily-issued-puzzle-v2-supabase.md`.
 

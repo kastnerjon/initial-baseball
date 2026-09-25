@@ -30,4 +30,4 @@ The server-only provider implementation is recorded in `tasks/plans/permanent-da
 
 ## Next boundary
 
-Server-only read composition is implemented in `tasks/plans/permanent-daily-issued-puzzle-read-composition.md`. The next bounded concern is canonical player/gameplay materialization of an already-frozen puzzle; do not add the public archive route or choose the launch epoch in that materialization PR.
+Server-only read composition and canonical gameplay materialization are implemented in `tasks/plans/permanent-daily-issued-puzzle-read-composition.md` and `tasks/plans/permanent-daily-archive-clue-materialization.md`. The materializer supports v1 backward reads and consumes persisted v2 clues. Keep the public archive route and launch-epoch decision separate.
