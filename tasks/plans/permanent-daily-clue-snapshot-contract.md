@@ -49,6 +49,6 @@ Because exact clue presentation is frozen while scoring is not, later clue-gener
 
 Focused contract tests, full repository tests/typecheck, file-size/docs gates, canonical data pipeline, production package build order, exact-head Preview, and fresh-eye review must pass. Hosted permanent storage remains untouched and empty.
 
-## Next bounded PR
+## Follow-on status
 
-Attach this contract to a new permanent issued-puzzle persistence schema with a backward-compatible row decoder and append-only Supabase migration. Keep provider storage separate from later issuance/materialization wiring.
+This snapshot is attached to the schema-v2 issued-puzzle envelope, persisted through the append-only Supabase adapter, and now materialized by server issuance from the same current public clues used in gameplay. The server issuance scope is `tasks/plans/permanent-daily-server-clue-issuance.md`. Next, separately teach archive materialization to consume persisted v2 clues without rebuilding them from current player data.

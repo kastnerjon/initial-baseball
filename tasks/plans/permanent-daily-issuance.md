@@ -33,4 +33,4 @@ The server-only web composition is implemented separately in `tasks/plans/perman
 
 ## Next boundary
 
-Current server composition still invokes the retained schema-v1 service. Next, cut that server-only composition over to the clue-frozen v2 service by materializing the exact authorized public clues through existing web/player-data adapters. Keep archive materialization separate. Automatic date-driven issuance still waits for the owner to choose the launch date/configuration policy.
+Server composition now invokes the clue-frozen schema-v2 service and materializes the exact public clues through existing web/player-data adapters. Scope: `tasks/plans/permanent-daily-server-clue-issuance.md`. The next bounded concern is to make archive materialization consume persisted v2 clues rather than rebuild them from mutable player data. Automatic date-driven issuance still waits for the owner to choose the launch date/configuration policy.

@@ -31,4 +31,4 @@ The schema-v2 first-write-wins service and portable clue-frozen issuance orchest
 
 ## Next bounded PR
 
-Cut the server-only web issuance composition over to schema v2 by materializing the exact current public clues through existing canonical player and Daily hint adapters. Keep archive materialization changes separate.
+The server-only issuance composition now writes schema-v2 records after materializing clues through the existing canonical player and Daily hint adapters. Scope: `tasks/plans/permanent-daily-server-clue-issuance.md`. Next, separately update archive materialization to consume persisted v2 clues; until that lands, archive reads continue to reject v2 explicitly.
