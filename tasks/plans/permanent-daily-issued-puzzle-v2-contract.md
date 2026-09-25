@@ -1,22 +1,22 @@
 # Permanent Daily issued-puzzle v2 envelope
 
-Status: bounded portable-contract bridge between clue snapshot modeling and provider persistence.
+Status: implemented portable schema-v2 envelope; provider persistence and server issuance are implemented in follow-on steps.
 
 ## Goal
 
-Define a clue-frozen schema-v2 permanent issued-puzzle record without claiming that the current schema-v1 Supabase repository can persist it yet.
+Define the clue-frozen schema-v2 permanent issued-puzzle record. At this contract step, the existing schema-v1 Supabase repository remained unchanged; provider and server issuance support were added in separate follow-on steps.
 
 ## Compatibility strategy
 
 - Existing `PermanentDailyIssuedPuzzle`, its schema-v1 constant, factory, issuance service, repository port, and read port remain unchanged.
 - New `PermanentDailyClueFrozenIssuedPuzzle` is schema version 2 and carries the already-validated immutable clue snapshot.
-- `PermanentDailyIssuedPuzzleRecord` is the portable union the next provider PR can adopt when its storage/codec is ready.
+- `PermanentDailyIssuedPuzzleRecord` is the portable v1/v2 union adopted by the append-only storage codec and repository.
 - The v2 factory reuses v1 identity/date/order validation, normalizes `issuedAt`, defensively clones the clue snapshot, and requires each clue pitch's canonical player ID to match the frozen batting order at the same position.
 - A shared record clone handles v1 and v2 without sharing clue arrays.
 
 ## Why this is separate
 
-Widening the current repository port before the database and codec support schema v2 would make the provider contract untruthful. Conversely, changing Supabase first would require a domain shape that does not yet exist. This PR establishes that shape while leaving all live issuance/read paths on v1.
+Widening the repository port before the database and codec supported schema v2 would have made the provider contract untruthful. Conversely, changing Supabase first would have required a domain shape that did not yet exist. This contract established that shape; later PRs added persistence and server issuance while keeping archive materialization as a separate v2 consumer change.
 
 ## Scoring boundary
 
@@ -39,6 +39,6 @@ Append-only Supabase storage and the strict server row codec now support v1 and 
 
 Scope: `tasks/plans/permanent-daily-issued-puzzle-v2-supabase.md`.
 
-## Next bounded PR
+## Current status and next boundary
 
-Wire issuance to materialize the authorized public clue bundle once and store schema-v2 records. Do not change archive materialization in the same PR.
+The server issuance composition now materializes the authorized public clue bundle through the current gameplay lookup/pitch/hint path and stores schema-v2 records. Scope: `tasks/plans/permanent-daily-server-clue-issuance.md`. The next bounded change is to make archive materialization consume these persisted clues. Until then, the archive read path explicitly rejects schema v2.

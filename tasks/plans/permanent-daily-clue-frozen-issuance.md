@@ -21,8 +21,10 @@ The clue snapshot is already-materialized input by design. `packages/daily` does
 
 ## Transitional compatibility
 
-The existing schema-v1 issuance service remains exported so current server composition continues to compile until the next bounded PR. If a permanent identity already contains a v1 row, a v2 issuance attempt is an immutable conflict rather than an implicit upgrade.
+The existing schema-v1 issuance service remains exported for compatible callers. The server composition now uses schema v2. If a permanent identity already contains a v1 row, a v2 issuance attempt is an immutable conflict rather than an implicit upgrade.
 
-## Next bounded PR
+## Follow-on boundary
 
-Cut the server-only web issuance composition over to schema v2. Build the snapshot from the same canonical player lookup, `createDailyPuzzlePitch`, and shared Daily hint configuration used by runtime gameplay. Do not change archive materialization in that PR.
+The server-only web issuance composition has now been cut over to schema v2, materializing clues through the same canonical player lookup, `createDailyPuzzlePitch`, and shared Daily hint configuration used by runtime gameplay. Scope and tests: `tasks/plans/permanent-daily-server-clue-issuance.md`.
+
+Next, separately update archive materialization to consume those persisted frozen clues. Do not combine that read-path change with scoring, initials, or routes.

@@ -1,12 +1,19 @@
 import 'server-only';
 import {
-  createPermanentDailyIssuanceService,
+  createPermanentDailyClueFrozenIssuanceService,
   type DailyPuzzleRepository,
   type PermanentDailyIdentity,
+  type PermanentDailyClueFrozenIssuedPuzzleStoreResult,
   type PermanentDailyIssuedPuzzleRepository,
-  type PermanentDailyIssuedPuzzleStoreResult,
 } from '@initial-baseball/daily';
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { getCanonicalDailyPlayer } from './canonicalDailyPlayerLookup';
+import { createDailyPuzzlePitch } from './dailyPuzzleAdapters';
+import {
+  materializePermanentDailyIssuedClueSnapshot,
+  type DailyPitchFactory,
+  type PermanentDailyCluePlayerResolver,
+} from './materializePermanentDailyIssuedClueSnapshot';
 import { createServerSupabaseClient } from './serverSupabaseClient';
 import { createSupabaseDailyPuzzleRepository } from './supabaseDailyPuzzleRepository';
 import { createSupabasePermanentDailyIssuedPuzzleRepository } from './supabasePermanentDailyIssuedPuzzleRepository';
@@ -19,7 +26,7 @@ export type ServerPermanentDailyIssuanceInput = {
 export type ServerPermanentDailyIssuanceService = {
   issue(
     input: ServerPermanentDailyIssuanceInput,
-  ): Promise<PermanentDailyIssuedPuzzleStoreResult>;
+  ): Promise<PermanentDailyClueFrozenIssuedPuzzleStoreResult>;
 };
 
 export type ServerPermanentDailyIssuanceErrorKind = 'missing-editorial-puzzle';
@@ -42,6 +49,8 @@ interface ServerPermanentDailyIssuanceDependencies {
   createIssuedPuzzleRepository: (
     client: SupabaseClient,
   ) => PermanentDailyIssuedPuzzleRepository;
+  resolveCanonicalPlayer: PermanentDailyCluePlayerResolver;
+  createDailyPitch: DailyPitchFactory;
 }
 
 type CreateServerPermanentDailyIssuanceServiceOptions = {
@@ -53,6 +62,8 @@ const DEFAULT_DEPENDENCIES: ServerPermanentDailyIssuanceDependencies = {
   createSupabaseClient: createServerSupabaseClient,
   createEditorialRepository: createSupabaseDailyPuzzleRepository,
   createIssuedPuzzleRepository: createSupabasePermanentDailyIssuedPuzzleRepository,
+  resolveCanonicalPlayer: getCanonicalDailyPlayer,
+  createDailyPitch: createDailyPuzzlePitch,
 };
 
 /**
@@ -68,7 +79,7 @@ export function createServerPermanentDailyIssuanceService({
 }: CreateServerPermanentDailyIssuanceServiceOptions = {}): ServerPermanentDailyIssuanceService {
   const client = dependencies.createSupabaseClient(environment);
   const editorialRepository = dependencies.createEditorialRepository(client);
-  const issuanceService = createPermanentDailyIssuanceService(
+  const issuanceService = createPermanentDailyClueFrozenIssuanceService(
     dependencies.createIssuedPuzzleRepository(client),
   );
 
@@ -82,9 +93,19 @@ export function createServerPermanentDailyIssuanceService({
         );
       }
 
+      const orderedCanonicalPlayerIds = [...editorialPuzzle.selections]
+        .sort((left, right) => left.slot - right.slot)
+        .map(selection => selection.canonicalPlayerId);
+      const clueSnapshot = materializePermanentDailyIssuedClueSnapshot(
+        orderedCanonicalPlayerIds,
+        dependencies.resolveCanonicalPlayer,
+        dependencies.createDailyPitch,
+      );
+
       return issuanceService.issue({
         identity: input.identity,
         editorialPuzzle,
+        clueSnapshot,
         issuedAt: input.issuedAt,
       });
     },
