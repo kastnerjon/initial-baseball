@@ -1,7 +1,7 @@
+import { createPermanentDailyIssuedClueSnapshot } from './permanentDailyIssuedClueSnapshot';
 import { describe, expect, it, vi } from 'vitest';
 import {
   createPermanentDailyClueFrozenIssuedPuzzle,
-  createPermanentDailyIssuedClueSnapshot,
   createPermanentDailyIssuedPuzzle,
   type PermanentDailyIssuedPuzzle,
   type PermanentDailyIssuedPuzzleRecord,

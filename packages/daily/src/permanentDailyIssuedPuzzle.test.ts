@@ -6,6 +6,7 @@ import {
   createPermanentDailyPuzzleId,
   type PermanentDailyIssuedPuzzleRecord,
   type PermanentDailyIssuedPuzzleRepository,
+  type PermanentDailyIssuedPuzzleRepositoryInsertResult,
 } from './permanentDailyIssuedPuzzle';
 import {
   createPermanentDailyLaunchEpoch,
@@ -128,7 +129,7 @@ class InMemoryIssuedPuzzleRepository implements PermanentDailyIssuedPuzzleReposi
 
   async insertIfAbsent(
     puzzle: PermanentDailyIssuedPuzzleRecord,
-  ) {
+  ): Promise<PermanentDailyIssuedPuzzleRepositoryInsertResult> {
     if (this.stored !== null) {
       return { status: 'existing', puzzle: this.stored };
     }
