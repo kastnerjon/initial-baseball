@@ -5,6 +5,7 @@ import type {
 import {
   CLASSIC_DAILY_RULESET_VERSION,
   POINTS_V3_DAILY_RULESET_VERSION,
+  POINTS_V4_DAILY_RULESET_VERSION,
 } from '@initial-baseball/shared';
 import type { DailyCompletedResultRepository } from '@initial-baseball/daily';
 import { describe, expect, it, vi } from 'vitest';
@@ -58,6 +59,36 @@ describe('completed-result submission service', () => {
       },
     });
     expect(stored).not.toHaveProperty('answerName');
+  });
+
+  it('validates points-v4 and preserves a signed completed score', async () => {
+    const repository = passthroughRepository('inserted');
+    const loadAuthoritativePuzzle = vi.fn().mockResolvedValue(PUZZLE);
+    const service = createService(repository, loadAuthoritativePuzzle);
+    const submission = buildV4Submission();
+
+    await expect(service.submit(submission)).resolves.toEqual({
+      ok: true,
+      status: 'created',
+    });
+
+    expect(loadAuthoritativePuzzle).toHaveBeenCalledWith(
+      PUZZLE.puzzleDate,
+      POINTS_V4_DAILY_RULESET_VERSION,
+    );
+    expect(vi.mocked(repository.insertIfAbsent).mock.calls[0]?.[0]).toMatchObject({
+      submissionId: 'points-v4-result-1',
+      puzzleId: PUZZLE.id,
+      rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+      summary: {
+        points: -9,
+        maximumPoints: 36,
+        atBatsCompleted: 9,
+        totalAtBats: 9,
+        completed: true,
+        strikeouts: 9,
+      },
+    });
   });
 
   it('accepts Classic completion after three outs and stores only faced at-bats', async () => {
@@ -170,6 +201,25 @@ function buildPointsSubmission() {
       hintsRevealed: 0 as const,
       wrongGuesses: 0,
       resolution: 'correct' as const,
+    })),
+  };
+}
+
+function buildV4Submission() {
+  return {
+    schemaVersion: 1 as const,
+    submissionId: 'points-v4-result-1',
+    puzzleId: PUZZLE.id,
+    puzzleDate: PUZZLE.puzzleDate,
+    puzzleNumber: PUZZLE.puzzleNumber,
+    rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+    completedAtBats: PUZZLE.pitches.map(pitch => ({
+      pitchNumber: pitch.pitchNumber,
+      initials: pitch.initials,
+      outcome: 'K' as const,
+      hintsRevealed: 0 as const,
+      wrongGuesses: 3,
+      resolution: 'strikeout' as const,
     })),
   };
 }
