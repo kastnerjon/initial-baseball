@@ -296,7 +296,7 @@ describe('dailyLocalStorage', () => {
     storage.setItem(getDailyStorageKey(DEMO_DAILY_PUZZLE.puzzleDate), JSON.stringify(savedGame));
 
     const restored = load(storage);
-    expect(restored?.gameState.puzzle.pitches[0]).toEqual({ pitchNumber: 1, initials: 'KGJ' });
+    expect(restored?.gameState.puzzle.pitches[0]).toEqual({ pitchNumber: 1, initials: 'KG' });
     expect(JSON.stringify(restored?.gameState.puzzle)).not.toContain('Ken Griffey Jr.');
     expect(JSON.stringify(restored?.gameState.puzzle)).not.toContain('correctPlayerId');
   });

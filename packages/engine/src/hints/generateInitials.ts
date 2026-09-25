@@ -9,9 +9,13 @@ export function generateInitials(fullName: string): string {
 
   if (!cleaned) return '';
 
-  return cleaned
-    .split(/\s+/)
-    .filter(Boolean)
+  const parts = cleaned.split(/\s+/).filter(Boolean);
+  const lastPart = parts.at(-1)?.toLowerCase();
+  if (lastPart === 'jr' || lastPart === 'sr') {
+    parts.pop();
+  }
+
+  return parts
     .map((part) => part.replace(/[^A-Za-z0-9]/g, ''))
     .filter(Boolean)
     .map((part) => part[0]?.toUpperCase() ?? '')

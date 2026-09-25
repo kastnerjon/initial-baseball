@@ -265,8 +265,15 @@ describe('Daily puzzle hints', () => {
 });
 
 describe('createPlayerIdentity', () => {
+  it('omits terminal Jr. from initials without changing the display identity', () => {
+    const identity = createPlayerIdentity(buildPlayer('Ken Griffey Jr.'));
+
+    expect(identity.initials).toBe('KG');
+    expect(identity.fullName).toBe('Ken Griffey Jr.');
+    expect(identity.displayName).toBe('Ken Griffey Jr.');
+  });
+
   it('generates initials deterministically for representative names', () => {
-    expect(createPlayerIdentity(buildPlayer('Ken Griffey Jr.')).initials).toBe('KGJ');
     expect(createPlayerIdentity(buildPlayer('David Wright')).initials).toBe('DW');
     expect(createPlayerIdentity(buildPlayer('C.C. Sabathia')).initials).toBe('CS');
     expect(createPlayerIdentity(buildPlayer('Elly De La Cruz')).initials).toBe('EDLC');

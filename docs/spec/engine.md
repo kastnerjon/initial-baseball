@@ -159,7 +159,7 @@ Players select canonical search results. Correctness is exact canonical `playerI
 - resolved outcome plus awarded-point presentation;
 - settings validation;
 - spoiler-safe share output;
-- representative initials and hint generation.
+- representative initials and hint generation. Generated initials omit one terminal `Jr`/`Sr` token after punctuation/case normalization; `II`, `III`, interior tokens, and stored display names are preserved.
 
 ## Reuse
 

@@ -191,7 +191,7 @@ describe('Daily admin workflow', () => {
 
     const preview = workflow.previewPlayer('griffey');
 
-    expect(preview?.initials).toBe('KGJ');
+    expect(preview?.initials).toBe('KG');
     expect(preview?.hints.map(hint => [hint.hintType, hint.hintValue])).toEqual([
       ['main_decade', '2000s'],
       ['teams', 'SEA, CIN, CWS'],

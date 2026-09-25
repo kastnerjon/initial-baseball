@@ -15,7 +15,7 @@ export function createPlayerIdentity(player: Player): PlayerIdentity {
     playerId: player.id,
     fullName: player.fullName,
     displayName: player.displayName,
-    // Preserve the existing engine initials behavior for Daily, including suffix handling like KGJ for now.
+    // Keep current editorial clues on the shared engine initials rule.
     initials: generateInitials(player.displayName || player.fullName),
     kind: derivePlayerKind(player),
     primaryPosition: player.primaryPosition,
