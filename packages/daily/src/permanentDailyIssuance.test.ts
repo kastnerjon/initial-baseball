@@ -5,8 +5,9 @@ import {
   type PermanentDailyIssuanceEditorialPuzzle,
 } from './permanentDailyIssuance';
 import {
-  type PermanentDailyIssuedPuzzle,
+  type PermanentDailyIssuedPuzzleRecord,
   type PermanentDailyIssuedPuzzleRepository,
+  type PermanentDailyIssuedPuzzleRepositoryInsertResult,
 } from './permanentDailyIssuedPuzzle';
 import {
   createPermanentDailyLaunchEpoch,
@@ -138,15 +139,12 @@ function requireIdentity(puzzleDate: string) {
 }
 
 class InMemoryIssuedPuzzleRepository implements PermanentDailyIssuedPuzzleRepository {
-  private stored: PermanentDailyIssuedPuzzle | null = null;
+  private stored: PermanentDailyIssuedPuzzleRecord | null = null;
   insertCalls = 0;
 
   async insertIfAbsent(
-    puzzle: PermanentDailyIssuedPuzzle,
-  ): Promise<
-    | { status: 'inserted'; puzzle: PermanentDailyIssuedPuzzle }
-    | { status: 'existing'; puzzle: PermanentDailyIssuedPuzzle }
-  > {
+    puzzle: PermanentDailyIssuedPuzzleRecord,
+  ): Promise<PermanentDailyIssuedPuzzleRepositoryInsertResult> {
     this.insertCalls += 1;
     if (this.stored !== null) {
       return { status: 'existing', puzzle: this.stored };
