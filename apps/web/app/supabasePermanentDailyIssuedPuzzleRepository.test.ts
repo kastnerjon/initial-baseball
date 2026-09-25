@@ -152,6 +152,21 @@ describe('Supabase permanent Daily issued-puzzle reads', () => {
         .getByNumber({ seriesVersion: 'permanent-v1', dailyNumber: 1 }),
     ).rejects.toMatchObject({ kind: 'invalid-row' });
   });
+
+  it('maps read-provider failures to the existing query error type', async () => {
+    const failed = createReadClient(null, {
+      code: '08006',
+      message: 'connection failure',
+    });
+
+    await expect(
+      createSupabasePermanentDailyIssuedPuzzleReadRepository(failed.client)
+        .getByDate({ seriesVersion: 'permanent-v1', puzzleDate: '2030-04-05' }),
+    ).rejects.toMatchObject({
+      kind: 'query',
+      message: expect.stringContaining('connection failure'),
+    });
+  });
 });
 
 function createReadClient(
