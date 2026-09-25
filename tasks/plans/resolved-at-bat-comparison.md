@@ -125,3 +125,7 @@ Each PR starts from updated main, writes its own scope contract, updates canonic
 - Old active/completed/compatibility saves and old pending completion: no fabricated AB history or altered immutable payload.
 - Puzzle/ruleset separation, Classic preservation, null empty populations, tied scores, sample thresholds.
 - Slow/down comparison path: no blocked resolve, Next At Bat, completion or sharing; no premature answer exposure.
+
+## September 25 points-v4 comparison-domain checkpoint
+
+Portable comparison math now supports exact-version points-v3 and points-v4 without changing the deployed provider. V4 resolved-AB sufficient statistics may contain negative awarded-point sums within -1..4 per observation; completed v4 buckets span -9..36 and normalize into an offset histogram rather than using a score as a raw array index. Strict-lower semantics continue to count only actual lower scores and keep ties in the denominator. The production repository/Supabase/API/browser path remains points-v3 until the next bounded storage/provider PR. Scope: `tasks/plans/points-v4-comparison-domain.md`.
