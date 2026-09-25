@@ -1,7 +1,12 @@
-import { POINTS_V3_DAILY_RULESET_VERSION } from '@initial-baseball/shared';
+import {
+  POINTS_V3_DAILY_RULESET_VERSION,
+  POINTS_V4_DAILY_RULESET_VERSION,
+} from '@initial-baseball/shared';
 import { describe, expect, it, vi } from 'vitest';
 import {
   createDailyNineComparisonService,
+  deriveDailyNineAtBatComparison,
+  deriveDailyNineCompletedComparison,
   getDailyNineStrictLowerFinishRate,
   type DailyNineComparisonRepository,
 } from './dailyNineComparison';
@@ -11,6 +16,11 @@ const KEY = {
   puzzleDate: '2026-09-18',
   puzzleNumber: 145,
   rulesetVersion: POINTS_V3_DAILY_RULESET_VERSION,
+} as const;
+
+const V4_KEY = {
+  ...KEY,
+  rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
 } as const;
 
 function repository(
@@ -84,7 +94,7 @@ describe('Daily Nine comparison service', () => {
       awardedPointsSum: 15,
     }));
     await expect(impossible.getAtBat({ ...KEY, pitchNumber: 2 }))
-      .rejects.toThrow('exceeds the points-v3 slot maximum');
+      .rejects.toThrow('outside the points-v3 slot range');
 
     const pointsWithoutRows = createDailyNineComparisonService(repository({
       resolvedAtBatCount: 0,
@@ -92,6 +102,39 @@ describe('Daily Nine comparison service', () => {
     }));
     await expect(pointsWithoutRows.getAtBat({ ...KEY, pitchNumber: 2 }))
       .rejects.toThrow('cannot have points without resolved at-bats');
+  });
+
+  it('validates points-v4 negative at-bat sums against the exact ruleset range', () => {
+    expect(deriveDailyNineAtBatComparison(
+      { ...V4_KEY, pitchNumber: 2 },
+      { resolvedAtBatCount: 3, awardedPointsSum: -2 },
+    )).toMatchObject({
+      ...V4_KEY,
+      pitchNumber: 2,
+      resolvedAtBatCount: 3,
+      averagePoints: -2 / 3,
+    });
+
+    expect(() => deriveDailyNineAtBatComparison(
+      { ...V4_KEY, pitchNumber: 2 },
+      { resolvedAtBatCount: 3, awardedPointsSum: -4 },
+    )).toThrow('outside the points-v4 slot range');
+
+    expect(() => deriveDailyNineAtBatComparison(
+      { ...V4_KEY, pitchNumber: 2 },
+      { resolvedAtBatCount: 3, awardedPointsSum: 13 },
+    )).toThrow('outside the points-v4 slot range');
+  });
+
+  it('preserves the points-v3 non-negative at-bat domain', () => {
+    expect(() => deriveDailyNineAtBatComparison(
+      { ...KEY, pitchNumber: 3 },
+      { resolvedAtBatCount: 1, awardedPointsSum: -1 },
+    )).toThrow('outside the points-v3 slot range');
+    expect(deriveDailyNineAtBatComparison(
+      { ...KEY, pitchNumber: 3 },
+      { resolvedAtBatCount: 1, awardedPointsSum: 7 },
+    ).averagePoints).toBe(7);
   });
 
   it('builds a bounded 0-63 histogram and null empty completed-game average', async () => {
@@ -120,6 +163,35 @@ describe('Daily Nine comparison service', () => {
     expect(comparison.scoreHistogram[63]).toBe(1);
   });
 
+  it('builds an offset points-v4 histogram from -9 through 36', () => {
+    const comparison = deriveDailyNineCompletedComparison(V4_KEY, {
+      scoreBuckets: [
+        { points: -9, count: 2 },
+        { points: -1, count: 3 },
+        { points: 0, count: 1 },
+        { points: 36, count: 1 },
+        { points: -1, count: 1 },
+      ],
+    });
+
+    expect(comparison.completedGameCount).toBe(8);
+    expect(comparison.averageTotalPoints).toBe(14 / 8);
+    expect(comparison.scoreHistogram).toHaveLength(46);
+    expect(comparison.scoreHistogram[0]).toBe(2);
+    expect(comparison.scoreHistogram[8]).toBe(4);
+    expect(comparison.scoreHistogram[9]).toBe(1);
+    expect(comparison.scoreHistogram[45]).toBe(1);
+  });
+
+  it('rejects points-v4 completed buckets outside the signed score domain', () => {
+    expect(() => deriveDailyNineCompletedComparison(V4_KEY, {
+      scoreBuckets: [{ points: -10, count: 1 }],
+    })).toThrow('between -9 and 36');
+    expect(() => deriveDailyNineCompletedComparison(V4_KEY, {
+      scoreBuckets: [{ points: 37, count: 1 }],
+    })).toThrow('between -9 and 36');
+  });
+
   it('implements strict-lower finish semantics and excludes ties from numerator', async () => {
     const comparison = await createDailyNineComparisonService(repository(undefined, {
       scoreBuckets: [
@@ -132,6 +204,22 @@ describe('Daily Nine comparison service', () => {
     expect(getDailyNineStrictLowerFinishRate(comparison, 20)).toBe(2 / 6);
     expect(getDailyNineStrictLowerFinishRate(comparison, 10)).toBe(0);
     expect(getDailyNineStrictLowerFinishRate(comparison, 31)).toBe(1);
+  });
+
+  it('implements strict-lower finish semantics across negative points-v4 scores', () => {
+    const comparison = deriveDailyNineCompletedComparison(V4_KEY, {
+      scoreBuckets: [
+        { points: -9, count: 2 },
+        { points: -1, count: 3 },
+        { points: 0, count: 1 },
+        { points: 4, count: 2 },
+      ],
+    });
+
+    expect(getDailyNineStrictLowerFinishRate(comparison, -9)).toBe(0);
+    expect(getDailyNineStrictLowerFinishRate(comparison, -1)).toBe(2 / 8);
+    expect(getDailyNineStrictLowerFinishRate(comparison, 0)).toBe(5 / 8);
+    expect(getDailyNineStrictLowerFinishRate(comparison, 4)).toBe(6 / 8);
   });
 
   it('returns null strict-lower rate for an empty completed population', async () => {
@@ -167,6 +255,7 @@ describe('Daily Nine comparison service', () => {
 
   it('rejects malformed histogram input to strict-lower calculation even when empty', () => {
     expect(() => getDailyNineStrictLowerFinishRate({
+      rulesetVersion: POINTS_V3_DAILY_RULESET_VERSION,
       completedGameCount: 0,
       scoreHistogram: [],
     }, 20)).toThrow('invalid length');

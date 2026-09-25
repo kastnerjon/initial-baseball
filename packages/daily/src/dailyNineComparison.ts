@@ -1,20 +1,39 @@
-import { POINTS_V3_MAX_POINTS_PER_AT_BAT } from '@initial-baseball/engine';
-import { POINTS_V3_DAILY_RULESET_VERSION } from '@initial-baseball/shared';
+import { getDailyPointsRange, type DailyPointsRange } from '@initial-baseball/engine';
+import {
+  POINTS_V3_DAILY_RULESET_VERSION,
+  POINTS_V4_DAILY_RULESET_VERSION,
+} from '@initial-baseball/shared';
 import { DAILY_AT_BAT_COUNT } from './dailyConstants';
 
-const DAILY_NINE_MAX_POINTS = POINTS_V3_MAX_POINTS_PER_AT_BAT * DAILY_AT_BAT_COUNT;
-const DAILY_NINE_SCORE_HISTOGRAM_LENGTH = DAILY_NINE_MAX_POINTS + 1;
+export type DailyNineComparisonRulesetVersion =
+  | typeof POINTS_V3_DAILY_RULESET_VERSION
+  | typeof POINTS_V4_DAILY_RULESET_VERSION;
 
-export type DailyNineComparisonKey = {
+export type DailyNineComparisonIdentity<
+  Ruleset extends DailyNineComparisonRulesetVersion = DailyNineComparisonRulesetVersion,
+> = {
   puzzleId: string;
   puzzleDate: string;
   puzzleNumber: number;
-  rulesetVersion: typeof POINTS_V3_DAILY_RULESET_VERSION;
+  rulesetVersion: Ruleset;
 };
 
-export type DailyNineAtBatComparisonQuery = DailyNineComparisonKey & {
+/**
+ * Current provider-read key. The Supabase adapter remains points-v3-only until
+ * the separate storage/provider rollout widens its persisted score domain.
+ */
+export type DailyNineComparisonKey =
+  DailyNineComparisonIdentity<typeof POINTS_V3_DAILY_RULESET_VERSION>;
+
+export type DailyNineAtBatComparisonIdentity<
+  Ruleset extends DailyNineComparisonRulesetVersion = DailyNineComparisonRulesetVersion,
+> = DailyNineComparisonIdentity<Ruleset> & {
   pitchNumber: number;
 };
+
+/** Current provider-read query; v4 provider support is a later bounded concern. */
+export type DailyNineAtBatComparisonQuery =
+  DailyNineAtBatComparisonIdentity<typeof POINTS_V3_DAILY_RULESET_VERSION>;
 
 /**
  * Provider sufficient statistics for exactly one resolved-AB slot.
@@ -36,28 +55,40 @@ export type DailyNineCompletedComparisonSource = {
 };
 
 /**
- * Read-only comparison port. Each method reads one independent population.
+ * Read-only comparison port for the currently deployed provider population.
+ * It deliberately remains points-v3-only until the Supabase/provider PR.
  */
 export interface DailyNineComparisonRepository {
   readAtBat(query: DailyNineAtBatComparisonQuery): Promise<DailyNineAtBatComparisonSource>;
   readCompletedGames(key: DailyNineComparisonKey): Promise<DailyNineCompletedComparisonSource>;
 }
 
-export type DailyNineAtBatComparison = DailyNineAtBatComparisonQuery & {
+export type DailyNineAtBatComparison<
+  Ruleset extends DailyNineComparisonRulesetVersion = DailyNineComparisonRulesetVersion,
+> = DailyNineAtBatComparisonIdentity<Ruleset> & {
   resolvedAtBatCount: number;
   averagePoints: number | null;
 };
 
-export type DailyNineCompletedComparison = DailyNineComparisonKey & {
+export type DailyNineCompletedComparison<
+  Ruleset extends DailyNineComparisonRulesetVersion = DailyNineComparisonRulesetVersion,
+> = DailyNineComparisonIdentity<Ruleset> & {
   completedGameCount: number;
   averageTotalPoints: number | null;
-  /** Index is the final Daily Nine score, from 0 through the points-v3 maximum. */
+  /**
+   * Offset histogram: index 0 is the exact ruleset minimum score and the last
+   * index is the exact ruleset maximum score.
+   */
   scoreHistogram: number[];
 };
 
 export type DailyNineComparisonService = {
-  getAtBat(query: DailyNineAtBatComparisonQuery): Promise<DailyNineAtBatComparison>;
-  getCompletedGames(key: DailyNineComparisonKey): Promise<DailyNineCompletedComparison>;
+  getAtBat(
+    query: DailyNineAtBatComparisonQuery,
+  ): Promise<DailyNineAtBatComparison<typeof POINTS_V3_DAILY_RULESET_VERSION>>;
+  getCompletedGames(
+    key: DailyNineComparisonKey,
+  ): Promise<DailyNineCompletedComparison<typeof POINTS_V3_DAILY_RULESET_VERSION>>;
 };
 
 export function createDailyNineComparisonService(
@@ -65,63 +96,104 @@ export function createDailyNineComparisonService(
 ): DailyNineComparisonService {
   return {
     async getAtBat(query) {
-      requireIntegerWithin(query.pitchNumber, 1, DAILY_AT_BAT_COUNT, 'pitch number');
-      const source = await repository.readAtBat(query);
-      requireNonNegativeSafeInteger(source.resolvedAtBatCount, 'resolved-at-bat count');
-      requireNonNegativeSafeInteger(source.awardedPointsSum, 'awarded-points sum');
-
-      if (source.resolvedAtBatCount === 0) {
-        if (source.awardedPointsSum !== 0) {
-          throw new Error('Daily Nine comparison cannot have points without resolved at-bats.');
-        }
-      } else if (
-        source.awardedPointsSum
-        > source.resolvedAtBatCount * POINTS_V3_MAX_POINTS_PER_AT_BAT
-      ) {
-        throw new Error(
-          'Daily Nine comparison awarded-points sum exceeds the points-v3 slot maximum.',
-        );
-      }
-
-      return {
-        ...query,
-        resolvedAtBatCount: source.resolvedAtBatCount,
-        averagePoints: source.resolvedAtBatCount === 0
-          ? null
-          : source.awardedPointsSum / source.resolvedAtBatCount,
-      };
+      return deriveDailyNineAtBatComparison(query, await repository.readAtBat(query));
     },
 
     async getCompletedGames(key) {
-      const source = await repository.readCompletedGames(key);
-      const scoreHistogram = Array.from(
-        { length: DAILY_NINE_SCORE_HISTOGRAM_LENGTH },
-        () => 0,
+      return deriveDailyNineCompletedComparison(
+        key,
+        await repository.readCompletedGames(key),
       );
-      let completedGameCount = 0;
-      let totalPoints = 0;
-
-      for (const bucket of source.scoreBuckets) {
-        requireIntegerWithin(bucket.points, 0, DAILY_NINE_MAX_POINTS, 'score bucket');
-        requirePositiveSafeInteger(bucket.count, 'score bucket count');
-
-        const nextBucketCount = (scoreHistogram[bucket.points] ?? 0) + bucket.count;
-        requireNonNegativeSafeInteger(nextBucketCount, 'score histogram count');
-        scoreHistogram[bucket.points] = nextBucketCount;
-
-        completedGameCount += bucket.count;
-        totalPoints += bucket.points * bucket.count;
-        requireNonNegativeSafeInteger(completedGameCount, 'completed-game count');
-        requireNonNegativeSafeInteger(totalPoints, 'completed-game point sum');
-      }
-
-      return {
-        ...key,
-        completedGameCount,
-        averageTotalPoints: completedGameCount === 0 ? null : totalPoints / completedGameCount,
-        scoreHistogram,
-      };
     },
+  };
+}
+
+/**
+ * Pure, provider-neutral normalization for one exact-version at-bat population.
+ * This can validate v4 aggregates before any database adapter is widened.
+ */
+export function deriveDailyNineAtBatComparison<
+  Ruleset extends DailyNineComparisonRulesetVersion,
+>(
+  query: DailyNineAtBatComparisonIdentity<Ruleset>,
+  source: DailyNineAtBatComparisonSource,
+): DailyNineAtBatComparison<Ruleset> {
+  requireIntegerWithin(query.pitchNumber, 1, DAILY_AT_BAT_COUNT, 'pitch number');
+  requireNonNegativeSafeInteger(source.resolvedAtBatCount, 'resolved-at-bat count');
+  requireSafeInteger(source.awardedPointsSum, 'awarded-points sum');
+
+  if (source.resolvedAtBatCount === 0) {
+    if (source.awardedPointsSum !== 0) {
+      throw new Error('Daily Nine comparison cannot have points without resolved at-bats.');
+    }
+  } else {
+    const range = requireComparisonRange(query.rulesetVersion, 1);
+    const minimumSum = safeIntegerProduct(
+      range.minimumPoints,
+      source.resolvedAtBatCount,
+      'minimum awarded-points sum',
+    );
+    const maximumSum = safeIntegerProduct(
+      range.maximumPoints,
+      source.resolvedAtBatCount,
+      'maximum awarded-points sum',
+    );
+    if (source.awardedPointsSum < minimumSum || source.awardedPointsSum > maximumSum) {
+      throw new Error(
+        `Daily Nine comparison awarded-points sum is outside the ${query.rulesetVersion} slot range.`,
+      );
+    }
+  }
+
+  return {
+    ...query,
+    resolvedAtBatCount: source.resolvedAtBatCount,
+    averagePoints: source.resolvedAtBatCount === 0
+      ? null
+      : source.awardedPointsSum / source.resolvedAtBatCount,
+  };
+}
+
+/**
+ * Pure, provider-neutral normalization for an exact-version completed-game population.
+ * Histogram indices are offset from the ruleset minimum so negative v4 scores are safe.
+ */
+export function deriveDailyNineCompletedComparison<
+  Ruleset extends DailyNineComparisonRulesetVersion,
+>(
+  key: DailyNineComparisonIdentity<Ruleset>,
+  source: DailyNineCompletedComparisonSource,
+): DailyNineCompletedComparison<Ruleset> {
+  const range = requireComparisonRange(key.rulesetVersion, DAILY_AT_BAT_COUNT);
+  const histogramLength = getHistogramLength(range);
+  const scoreHistogram = Array.from({ length: histogramLength }, () => 0);
+  let completedGameCount = 0;
+  let totalPoints = 0;
+
+  for (const bucket of source.scoreBuckets) {
+    const histogramIndex = getHistogramIndex(bucket.points, range);
+    requirePositiveSafeInteger(bucket.count, 'score bucket count');
+
+    const nextBucketCount = (scoreHistogram[histogramIndex] ?? 0) + bucket.count;
+    requireNonNegativeSafeInteger(nextBucketCount, 'score histogram count');
+    scoreHistogram[histogramIndex] = nextBucketCount;
+
+    completedGameCount += bucket.count;
+    requireNonNegativeSafeInteger(completedGameCount, 'completed-game count');
+
+    const bucketPoints = safeIntegerProduct(
+      bucket.points,
+      bucket.count,
+      'score bucket point sum',
+    );
+    totalPoints = safeIntegerSum(totalPoints, bucketPoints, 'completed-game point sum');
+  }
+
+  return {
+    ...key,
+    completedGameCount,
+    averageTotalPoints: completedGameCount === 0 ? null : totalPoints / completedGameCount,
+    scoreHistogram,
   };
 }
 
@@ -130,23 +202,30 @@ export function createDailyNineComparisonService(
  * Ties remain in the denominator and are not counted as beaten.
  */
 export function getDailyNineStrictLowerFinishRate(
-  comparison: Pick<DailyNineCompletedComparison, 'completedGameCount' | 'scoreHistogram'>,
+  comparison: Pick<
+    DailyNineCompletedComparison,
+    'completedGameCount' | 'scoreHistogram' | 'rulesetVersion'
+  >,
   userPoints: number,
 ): number | null {
-  requireIntegerWithin(userPoints, 0, DAILY_NINE_MAX_POINTS, 'user points');
+  const range = requireComparisonRange(comparison.rulesetVersion, DAILY_AT_BAT_COUNT);
+  getHistogramIndex(userPoints, range);
   requireNonNegativeSafeInteger(comparison.completedGameCount, 'completed-game count');
 
-  if (comparison.scoreHistogram.length !== DAILY_NINE_SCORE_HISTOGRAM_LENGTH) {
+  const expectedLength = getHistogramLength(range);
+  if (comparison.scoreHistogram.length !== expectedLength) {
     throw new Error('Daily Nine comparison score histogram has an invalid length.');
   }
 
   let lowerCount = 0;
   let histogramCount = 0;
-  for (let points = 0; points < comparison.scoreHistogram.length; points += 1) {
-    const count = comparison.scoreHistogram[points] ?? 0;
+  for (let index = 0; index < comparison.scoreHistogram.length; index += 1) {
+    const count = comparison.scoreHistogram[index] ?? 0;
     requireNonNegativeSafeInteger(count, 'score histogram count');
     histogramCount += count;
     requireNonNegativeSafeInteger(histogramCount, 'score histogram total');
+
+    const points = range.minimumPoints + index * range.step;
     if (points < userPoints) lowerCount += count;
   }
 
@@ -158,6 +237,48 @@ export function getDailyNineStrictLowerFinishRate(
   return lowerCount / comparison.completedGameCount;
 }
 
+function requireComparisonRange(
+  rulesetVersion: DailyNineComparisonRulesetVersion,
+  totalAtBats: number,
+): DailyPointsRange {
+  const range = getDailyPointsRange(rulesetVersion, totalAtBats);
+  if (range === null || range.step !== 1) {
+    throw new Error(
+      `Daily Nine comparison ruleset ${rulesetVersion} must use integer score steps.`,
+    );
+  }
+  return range;
+}
+
+function getHistogramLength(range: DailyPointsRange): number {
+  const length = ((range.maximumPoints - range.minimumPoints) / range.step) + 1;
+  if (!Number.isSafeInteger(length) || length <= 0) {
+    throw new Error('Daily Nine comparison score histogram has an invalid range.');
+  }
+  return length;
+}
+
+function getHistogramIndex(points: number, range: DailyPointsRange): number {
+  requireIntegerWithin(points, range.minimumPoints, range.maximumPoints, 'score bucket');
+  const index = (points - range.minimumPoints) / range.step;
+  if (!Number.isSafeInteger(index)) {
+    throw new Error('Daily Nine comparison score must align to the ruleset step.');
+  }
+  return index;
+}
+
+function safeIntegerProduct(left: number, right: number, field: string): number {
+  const product = left * right;
+  requireSafeInteger(product, field);
+  return product;
+}
+
+function safeIntegerSum(left: number, right: number, field: string): number {
+  const sum = left + right;
+  requireSafeInteger(sum, field);
+  return sum;
+}
+
 function requirePositiveSafeInteger(value: number, field: string): void {
   if (!Number.isSafeInteger(value) || value <= 0) {
     throw new Error(`Daily Nine comparison ${field} must be a positive safe integer.`);
@@ -167,6 +288,12 @@ function requirePositiveSafeInteger(value: number, field: string): void {
 function requireNonNegativeSafeInteger(value: number, field: string): void {
   if (!Number.isSafeInteger(value) || value < 0) {
     throw new Error(`Daily Nine comparison ${field} must be a non-negative safe integer.`);
+  }
+}
+
+function requireSafeInteger(value: number, field: string): void {
+  if (!Number.isSafeInteger(value)) {
+    throw new Error(`Daily Nine comparison ${field} must be a safe integer.`);
   }
 }
 

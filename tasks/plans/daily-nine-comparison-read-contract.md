@@ -37,3 +37,15 @@ This portable layer has no clock or cache policy. The later read-only API/cache 
 ## Prior drafts
 
 PR #174 is closed as superseded. Its read-port separation was directionally useful, but its equal-population invariant, extra hint/outcome metrics, and read-time rescoring are intentionally not carried forward. PR #161 is also closed as superseded by the merged completed-result provider/API/browser stack.
+
+## September 25 points-v4 extension
+
+The original read service remains the production points-v3 boundary. Row G2 adds pure provider-neutral normalization alongside it rather than widening the repository contract before the provider is ready.
+
+- `DailyNineComparisonRulesetVersion` and exact-version comparison identities cover points-v3 and points-v4.
+- Pure at-bat normalization validates provider count/sum statistics against engine-owned per-AB ranges: v3 0..7 and v4 -1..4.
+- Pure completed normalization asks the engine for the nine-AB range and builds an offset histogram. V3 remains 64 entries for 0..63; v4 is 46 entries for -9..36, with index `score - minimumScore`.
+- Strict-lower finish rate resolves each histogram index back to its actual score, so negative v4 values and ties are handled correctly.
+- The existing `DailyNineComparisonRepository`, `DailyNineComparisonKey`, and service read methods remain points-v3-only until the separate Supabase/provider PR. This is intentional fail-closed staging, not partial provider support.
+
+Scope: `tasks/plans/points-v4-comparison-domain.md`.

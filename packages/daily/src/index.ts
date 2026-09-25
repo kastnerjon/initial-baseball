@@ -86,12 +86,17 @@ export {
 } from './dailyAtBatResultService';
 export {
   createDailyNineComparisonService,
+  deriveDailyNineAtBatComparison,
+  deriveDailyNineCompletedComparison,
   getDailyNineStrictLowerFinishRate,
   type DailyNineAtBatComparison,
+  type DailyNineAtBatComparisonIdentity,
   type DailyNineAtBatComparisonQuery,
   type DailyNineAtBatComparisonSource,
+  type DailyNineComparisonIdentity,
   type DailyNineComparisonKey,
   type DailyNineComparisonRepository,
+  type DailyNineComparisonRulesetVersion,
   type DailyNineComparisonService,
   type DailyNineCompletedComparison,
   type DailyNineCompletedComparisonSource,
