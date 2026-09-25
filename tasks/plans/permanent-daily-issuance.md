@@ -1,6 +1,6 @@
 # Permanent Daily issuance orchestration
 
-Status: implemented portable orchestration boundary
+Status: implemented portable v1 + clue-frozen v2 orchestration boundaries
 
 ## Scope contract
 
@@ -25,10 +25,12 @@ The service accepts only `scheduled` or `published` editorial content. It valida
 
 The service deliberately ignores the editorial record's beta puzzle number/ID, revisions, audit metadata, and game/ruleset. It also does not create or resolve a launch epoch. This prevents current beta numbering from becoming permanent archive identity by accident.
 
+A schema-v2 sibling, `createPermanentDailyClueFrozenIssuanceService`, now reuses the same editorial validation but requires an already-materialized `PermanentDailyIssuedClueSnapshot` and stores it through the clue-frozen first-write-wins service. That keeps clue generation outside `packages/daily`. Scope: `tasks/plans/permanent-daily-clue-frozen-issuance.md`.
+
 ## Server composition
 
 The server-only web composition is implemented separately in `tasks/plans/permanent-daily-issuance-supabase-composition.md`. It reads the authoritative editorial row by the explicitly supplied permanent identity date and delegates to this portable service through the existing immutable Supabase repository. This portable module remains unaware of Supabase and launch-epoch configuration.
 
 ## Next boundary
 
-Provider-neutral frozen-puzzle reads are now defined separately in `tasks/plans/permanent-daily-issued-puzzle-read.md`. The next boundary is the server-only Supabase read adapter. Automatic date-driven issuance still waits for the owner to choose the launch date/configuration policy.
+Current server composition still invokes the retained schema-v1 service. Next, cut that server-only composition over to the clue-frozen v2 service by materializing the exact authorized public clues through existing web/player-data adapters. Keep archive materialization separate. Automatic date-driven issuance still waits for the owner to choose the launch date/configuration policy.

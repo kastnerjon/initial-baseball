@@ -1,5 +1,10 @@
 import { DAILY_AT_BAT_COUNT } from './dailyPuzzleSelection';
 import type { DailyPuzzleEditorialRecord } from './dailyPuzzleLifecycle';
+import type { PermanentDailyIssuedClueSnapshot } from './permanentDailyIssuedClueSnapshot';
+import {
+  createPermanentDailyClueFrozenIssuedPuzzleService,
+  type PermanentDailyClueFrozenIssuedPuzzleStoreResult,
+} from './permanentDailyClueFrozenIssuedPuzzleService';
 import {
   createPermanentDailyIssuedPuzzleService,
   type PermanentDailyIssuedPuzzleRepository,
@@ -20,6 +25,16 @@ export type PermanentDailyIssuanceInput = {
 
 export type PermanentDailyIssuanceService = {
   issue(input: PermanentDailyIssuanceInput): Promise<PermanentDailyIssuedPuzzleStoreResult>;
+};
+
+export type PermanentDailyClueFrozenIssuanceInput = PermanentDailyIssuanceInput & {
+  clueSnapshot: PermanentDailyIssuedClueSnapshot;
+};
+
+export type PermanentDailyClueFrozenIssuanceService = {
+  issue(
+    input: PermanentDailyClueFrozenIssuanceInput,
+  ): Promise<PermanentDailyClueFrozenIssuedPuzzleStoreResult>;
 };
 
 /**
@@ -44,6 +59,35 @@ export function createPermanentDailyIssuanceService(
       return issuedPuzzleService.issue({
         identity: input.identity,
         canonicalPlayerIds,
+        issuedAt: input.issuedAt,
+      });
+    },
+  };
+}
+
+/**
+ * Portable schema-v2 issuance boundary.
+ *
+ * The caller supplies the already-materialized public clue snapshot. This layer
+ * owns editorial eligibility/order validation and immutable v2 persistence, but
+ * deliberately does not know how web/player-data code produced those clues.
+ */
+export function createPermanentDailyClueFrozenIssuanceService(
+  repository: PermanentDailyIssuedPuzzleRepository,
+): PermanentDailyClueFrozenIssuanceService {
+  const issuedPuzzleService = createPermanentDailyClueFrozenIssuedPuzzleService(repository);
+
+  return {
+    async issue(input) {
+      const canonicalPlayerIds = resolveIssuanceLineup(
+        input.identity,
+        input.editorialPuzzle,
+      );
+
+      return issuedPuzzleService.issue({
+        identity: input.identity,
+        canonicalPlayerIds,
+        clueSnapshot: input.clueSnapshot,
         issuedAt: input.issuedAt,
       });
     },

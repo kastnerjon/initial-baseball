@@ -136,9 +136,17 @@ export {
   type PermanentDailyIssuedPuzzleStoreResult,
 } from './permanentDailyIssuedPuzzle';
 
+export {
+  createPermanentDailyClueFrozenIssuedPuzzleService,
+  type PermanentDailyClueFrozenIssuedPuzzleService,
+  type PermanentDailyClueFrozenIssuedPuzzleStoreResult,
+} from './permanentDailyClueFrozenIssuedPuzzleService';
 
 export {
+  createPermanentDailyClueFrozenIssuanceService,
   createPermanentDailyIssuanceService,
+  type PermanentDailyClueFrozenIssuanceInput,
+  type PermanentDailyClueFrozenIssuanceService,
   type PermanentDailyIssuanceEditorialPuzzle,
   type PermanentDailyIssuanceInput,
   type PermanentDailyIssuanceService,

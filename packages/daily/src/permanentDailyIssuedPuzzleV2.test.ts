@@ -3,11 +3,15 @@ import {
   createPermanentDailyIssuedClueSnapshot,
   type PermanentDailyIssuedClueSnapshot,
 } from './permanentDailyIssuedClueSnapshot';
+import { createPermanentDailyClueFrozenIssuedPuzzleService } from './permanentDailyClueFrozenIssuedPuzzleService';
 import {
   PERMANENT_DAILY_CLUE_FROZEN_ISSUED_PUZZLE_SCHEMA_VERSION,
   clonePermanentDailyIssuedPuzzleRecord,
   createPermanentDailyClueFrozenIssuedPuzzle,
   createPermanentDailyIssuedPuzzle,
+  type PermanentDailyIssuedPuzzleRecord,
+  type PermanentDailyIssuedPuzzleRepository,
+  type PermanentDailyIssuedPuzzleRepositoryInsertResult,
 } from './permanentDailyIssuedPuzzle';
 import {
   createPermanentDailyLaunchEpoch,
@@ -53,6 +57,89 @@ describe('Permanent Daily clue-frozen issued puzzle envelope', () => {
       clueSnapshot: mismatched,
       issuedAt: '2030-04-05T07:00:00.000Z',
     })).toThrow('does not match frozen batting order');
+  });
+
+  it('treats an exact clue-frozen retry as idempotent while preserving first issue time', async () => {
+    const repository = new InMemoryIssuedPuzzleRepository();
+    const service = createPermanentDailyClueFrozenIssuedPuzzleService(repository);
+    const input = {
+      identity: requireIdentity(),
+      canonicalPlayerIds: PLAYER_IDS,
+      clueSnapshot: createClueSnapshot(),
+    };
+
+    const created = await service.issue({
+      ...input,
+      issuedAt: '2030-04-05T07:00:00.000Z',
+    });
+    const existing = await service.issue({
+      ...input,
+      issuedAt: '2030-04-05T08:00:00.000Z',
+    });
+
+    expect(created).toMatchObject({ ok: true, status: 'created' });
+    expect(existing).toMatchObject({
+      ok: true,
+      status: 'existing',
+      puzzle: { issuedAt: '2030-04-05T07:00:00.000Z' },
+    });
+  });
+
+  it('rejects a later attempt to rewrite frozen clue content', async () => {
+    const repository = new InMemoryIssuedPuzzleRepository();
+    const service = createPermanentDailyClueFrozenIssuedPuzzleService(repository);
+    const clueSnapshot = createClueSnapshot();
+
+    await service.issue({
+      identity: requireIdentity(),
+      canonicalPlayerIds: PLAYER_IDS,
+      clueSnapshot,
+      issuedAt: '2030-04-05T07:00:00.000Z',
+    });
+
+    const changedClues = {
+      ...clueSnapshot,
+      pitches: clueSnapshot.pitches.map((pitch, index) => (
+        index === 0 ? { ...pitch, initials: 'ZZ' } : pitch
+      )),
+    };
+    const result = await service.issue({
+      identity: requireIdentity(),
+      canonicalPlayerIds: PLAYER_IDS,
+      clueSnapshot: changedClues,
+      issuedAt: '2030-04-05T08:00:00.000Z',
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error('Expected immutable conflict.');
+    expect(result.existing.schemaVersion).toBe(2);
+    if (result.existing.schemaVersion !== 2) {
+      throw new Error('Expected existing clue-frozen puzzle.');
+    }
+    expect(result.existing.clueSnapshot.pitches[0]?.initials).toBe('P1');
+    expect(result.requested.clueSnapshot.pitches[0]?.initials).toBe('ZZ');
+  });
+
+  it('treats an existing schema-v1 row as an immutable conflict, not an idempotent v2 retry', async () => {
+    const existingV1 = createPermanentDailyIssuedPuzzle({
+      identity: requireIdentity(),
+      canonicalPlayerIds: PLAYER_IDS,
+      issuedAt: '2030-04-05T07:00:00.000Z',
+    });
+    const repository = new InMemoryIssuedPuzzleRepository(existingV1);
+    const service = createPermanentDailyClueFrozenIssuedPuzzleService(repository);
+
+    const result = await service.issue({
+      identity: requireIdentity(),
+      canonicalPlayerIds: PLAYER_IDS,
+      clueSnapshot: createClueSnapshot(),
+      issuedAt: '2030-04-05T08:00:00.000Z',
+    });
+
+    expect(result.ok).toBe(false);
+    if (result.ok) throw new Error('Expected schema collision conflict.');
+    expect(result.existing.schemaVersion).toBe(1);
+    expect(result.requested.schemaVersion).toBe(2);
   });
 
   it('defensively clones v2 clue data while retaining the existing v1 record shape', () => {
@@ -117,4 +204,19 @@ function createClueSnapshot(): PermanentDailyIssuedClueSnapshot {
       ],
     })),
   });
+}
+
+
+class InMemoryIssuedPuzzleRepository implements PermanentDailyIssuedPuzzleRepository {
+  constructor(private stored: PermanentDailyIssuedPuzzleRecord | null = null) {}
+
+  async insertIfAbsent(
+    puzzle: PermanentDailyIssuedPuzzleRecord,
+  ): Promise<PermanentDailyIssuedPuzzleRepositoryInsertResult> {
+    if (this.stored !== null) {
+      return { status: 'existing', puzzle: this.stored };
+    }
+    this.stored = puzzle;
+    return { status: 'inserted', puzzle };
+  }
 }

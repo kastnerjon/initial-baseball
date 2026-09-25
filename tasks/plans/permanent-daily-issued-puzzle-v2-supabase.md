@@ -25,6 +25,10 @@ The migration does not grant new privileges or add policies. Existing RLS plus s
 
 The provider repository/read port can store and decode both v1 and v2 records. The current portable archive read service still exposes schema v1 only and explicitly rejects v2 until frozen-clue materialization is wired. This avoids the dangerous intermediate behavior of persisting frozen clues and then silently rebuilding mutable clues for gameplay.
 
+## Portable issuance checkpoint
+
+The schema-v2 first-write-wins service and portable clue-frozen issuance orchestration are now implemented in `packages/daily`. They accept an already-materialized clue snapshot, preserve exact-retry idempotency, and reject clue changes or v1/v2 collisions as immutable conflicts. Scope: `tasks/plans/permanent-daily-clue-frozen-issuance.md`.
+
 ## Next bounded PR
 
-Wire permanent issuance to materialize the current authorized public clues once and store schema-v2 records. Keep archive materialization changes separate so the issuance write boundary can be reviewed independently.
+Cut the server-only web issuance composition over to schema v2 by materializing the exact current public clues through existing canonical player and Daily hint adapters. Keep archive materialization changes separate.
