@@ -1,15 +1,24 @@
 import { DAILY_AT_BAT_COUNT } from './dailyPuzzleSelection';
 import {
+  clonePermanentDailyIssuedClueSnapshot,
+  type PermanentDailyIssuedClueSnapshot,
+} from './permanentDailyIssuedClueSnapshot';
+import {
   PERMANENT_DAILY_SERIES_VERSION,
   type PermanentDailyIdentity,
 } from './permanentDailyIdentity';
 
 export const PERMANENT_DAILY_ISSUED_PUZZLE_SCHEMA_VERSION = 1 as const;
+export const PERMANENT_DAILY_CLUE_FROZEN_ISSUED_PUZZLE_SCHEMA_VERSION = 2 as const;
 
 export type PermanentDailyIssuedPuzzleInput = {
   identity: PermanentDailyIdentity;
   canonicalPlayerIds: readonly string[];
   issuedAt: string;
+};
+
+export type PermanentDailyClueFrozenIssuedPuzzleInput = PermanentDailyIssuedPuzzleInput & {
+  clueSnapshot: PermanentDailyIssuedClueSnapshot;
 };
 
 export type PermanentDailyIssuedPuzzle = {
@@ -19,6 +28,19 @@ export type PermanentDailyIssuedPuzzle = {
   canonicalPlayerIds: readonly string[];
   issuedAt: string;
 };
+
+export type PermanentDailyClueFrozenIssuedPuzzle = {
+  schemaVersion: typeof PERMANENT_DAILY_CLUE_FROZEN_ISSUED_PUZZLE_SCHEMA_VERSION;
+  puzzleId: string;
+  identity: PermanentDailyIdentity;
+  canonicalPlayerIds: readonly string[];
+  clueSnapshot: PermanentDailyIssuedClueSnapshot;
+  issuedAt: string;
+};
+
+export type PermanentDailyIssuedPuzzleRecord =
+  | PermanentDailyIssuedPuzzle
+  | PermanentDailyClueFrozenIssuedPuzzle;
 
 export type PermanentDailyIssuedPuzzleRepositoryInsertResult =
   | { status: 'inserted'; puzzle: PermanentDailyIssuedPuzzle }
@@ -97,6 +119,52 @@ export function createPermanentDailyIssuedPuzzle(
     identity: { ...input.identity },
     canonicalPlayerIds: [...input.canonicalPlayerIds],
     issuedAt,
+  };
+}
+
+export function createPermanentDailyClueFrozenIssuedPuzzle(
+  input: PermanentDailyClueFrozenIssuedPuzzleInput,
+): PermanentDailyClueFrozenIssuedPuzzle {
+  const legacyEnvelope = createPermanentDailyIssuedPuzzle(input);
+  const clueSnapshot = clonePermanentDailyIssuedClueSnapshot(input.clueSnapshot);
+
+  clueSnapshot.pitches.forEach((pitch, index) => {
+    const canonicalPlayerId = legacyEnvelope.canonicalPlayerIds[index];
+    if (pitch.canonicalPlayerId !== canonicalPlayerId) {
+      throw new Error(
+        `Permanent Daily clue snapshot player at pitch ${pitch.pitchNumber} does not match frozen batting order.`,
+      );
+    }
+  });
+
+  return {
+    ...legacyEnvelope,
+    schemaVersion: PERMANENT_DAILY_CLUE_FROZEN_ISSUED_PUZZLE_SCHEMA_VERSION,
+    clueSnapshot,
+  };
+}
+
+export function clonePermanentDailyIssuedPuzzleRecord(
+  puzzle: PermanentDailyIssuedPuzzleRecord,
+): PermanentDailyIssuedPuzzleRecord {
+  const common = {
+    puzzleId: puzzle.puzzleId,
+    identity: { ...puzzle.identity },
+    canonicalPlayerIds: [...puzzle.canonicalPlayerIds],
+    issuedAt: puzzle.issuedAt,
+  };
+
+  if (puzzle.schemaVersion === PERMANENT_DAILY_ISSUED_PUZZLE_SCHEMA_VERSION) {
+    return {
+      ...common,
+      schemaVersion: PERMANENT_DAILY_ISSUED_PUZZLE_SCHEMA_VERSION,
+    };
+  }
+
+  return {
+    ...common,
+    schemaVersion: PERMANENT_DAILY_CLUE_FROZEN_ISSUED_PUZZLE_SCHEMA_VERSION,
+    clueSnapshot: clonePermanentDailyIssuedClueSnapshot(puzzle.clueSnapshot),
   };
 }
 

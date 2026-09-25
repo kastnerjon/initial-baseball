@@ -118,12 +118,18 @@ export {
 } from './permanentDailyIssuedClueSnapshot';
 
 export {
+  PERMANENT_DAILY_CLUE_FROZEN_ISSUED_PUZZLE_SCHEMA_VERSION,
   PERMANENT_DAILY_ISSUED_PUZZLE_SCHEMA_VERSION,
+  clonePermanentDailyIssuedPuzzleRecord,
+  createPermanentDailyClueFrozenIssuedPuzzle,
   createPermanentDailyIssuedPuzzle,
   createPermanentDailyIssuedPuzzleService,
   createPermanentDailyPuzzleId,
+  type PermanentDailyClueFrozenIssuedPuzzle,
+  type PermanentDailyClueFrozenIssuedPuzzleInput,
   type PermanentDailyIssuedPuzzle,
   type PermanentDailyIssuedPuzzleInput,
+  type PermanentDailyIssuedPuzzleRecord,
   type PermanentDailyIssuedPuzzleRepository,
   type PermanentDailyIssuedPuzzleRepositoryInsertResult,
   type PermanentDailyIssuedPuzzleService,
