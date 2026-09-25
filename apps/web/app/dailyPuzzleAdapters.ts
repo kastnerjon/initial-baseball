@@ -2,21 +2,33 @@ import { generateInitials } from '@initial-baseball/engine';
 import type { DailyPuzzle, Player, PlayerIdentity } from '@initial-baseball/shared';
 import { buildDefaultDailyHints } from './buildDefaultDailyHints';
 
-export function createDailyPuzzlePitch(pitchNumber: number, player: Player): DailyPuzzle['pitches'][number] {
+// Beta dates before this rollout keep the initials players originally saw.
+export const TERMINAL_SUFFIX_INITIALS_START_DATE = '2026-09-28';
+
+export function createDailyPuzzlePitch(
+  pitchNumber: number,
+  player: Player,
+  puzzleDate?: string,
+): DailyPuzzle['pitches'][number] {
   return {
     pitchNumber,
-    player: createPlayerIdentity(player),
+    player: createPlayerIdentity(player, puzzleDate),
     hints: buildHintSet(buildDefaultDailyHints(player)),
   };
 }
 
-export function createPlayerIdentity(player: Player): PlayerIdentity {
+export function createPlayerIdentity(player: Player, puzzleDate?: string): PlayerIdentity {
   return {
     playerId: player.id,
     fullName: player.fullName,
     displayName: player.displayName,
-    // Preserve the existing engine initials behavior for Daily, including suffix handling like KGJ for now.
-    initials: generateInitials(player.displayName || player.fullName),
+    // Historical beta puzzles retain the initials generated before this rollout.
+    initials: generateInitials(
+      player.displayName || player.fullName,
+      puzzleDate !== undefined && puzzleDate < TERMINAL_SUFFIX_INITIALS_START_DATE
+        ? 'include'
+        : 'omit',
+    ),
     kind: derivePlayerKind(player),
     primaryPosition: player.primaryPosition,
   };

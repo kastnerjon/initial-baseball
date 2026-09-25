@@ -33,7 +33,7 @@ export type DemoDailyPitch = {
 export type DemoAtBatUiState = DailyAtBatUiState;
 
 export const DEMO_DAILY_PITCHES: DemoDailyPitch[] = [
-  buildDemoPitch(1, 'KGJ', requireDemoPlayer('Ken Griffey Jr.')),
+  buildDemoPitch(1, 'KG', requireDemoPlayer('Ken Griffey Jr.')),
   buildDemoPitch(2, 'DW', requireDemoPlayer('David Wright')),
   buildDemoPitch(3, 'CCS', requireDemoPlayer('CC Sabathia')),
   buildDemoPitch(4, 'AJ', requireDemoPlayer('Andruw Jones')),

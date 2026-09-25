@@ -29,7 +29,7 @@ Private and share scorecards use the same logical table:
 ```text
        SCORE   AVG
 BB:        0   7.0
-KGJ:       7     —
+KG:        7     —
 ```
 
 The in-app version is a semantic visual table; the share version is fixed-width text. Player names are not repeated in the scorecard because the reveal surface already provides them.

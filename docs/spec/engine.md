@@ -159,7 +159,7 @@ Players select canonical search results. Correctness is exact canonical `playerI
 - resolved outcome plus awarded-point presentation;
 - settings validation;
 - spoiler-safe share output;
-- representative initials and hint generation.
+- representative initials and hint generation. The portable generator supports both the historical terminal `Jr`/`Sr` initial and the new omission policy after punctuation/case normalization. The web adapter selects the historical policy for beta dates before September 28, 2026; `II`, `III`, interior tokens, and stored display names are preserved.
 
 ## Reuse
 

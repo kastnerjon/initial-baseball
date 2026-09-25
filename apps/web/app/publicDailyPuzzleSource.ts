@@ -39,7 +39,7 @@ export function createPublicDailyPuzzleSource(input: {
         if (player === null) {
           throw new Error(`Editorial Daily puzzle ${date} references unavailable canonical player ${canonicalPlayerId}.`);
         }
-        const pitch = createDailyPuzzlePitch(index + 1, player);
+        const pitch = createDailyPuzzlePitch(index + 1, player, date);
         return { ...pitch, player: { ...pitch.player, playerId: canonicalPlayerId } };
       }),
     };

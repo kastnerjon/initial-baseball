@@ -39,7 +39,7 @@ export function materializePermanentDailyIssuedPuzzle(
 
   const pitches = issuedPuzzle.canonicalPlayerIds.map((canonicalPlayerId, index) => {
     const player = requirePlayer(issuedPuzzle, canonicalPlayerId, resolvePlayer);
-    const pitch = createDailyPuzzlePitch(index + 1, player);
+    const pitch = createDailyPuzzlePitch(index + 1, player, issuedPuzzle.identity.puzzleDate);
     return {
       ...pitch,
       player: { ...pitch.player, playerId: canonicalPlayerId },

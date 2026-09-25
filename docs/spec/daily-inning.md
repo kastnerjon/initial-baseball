@@ -112,7 +112,7 @@ by Initial Baseball
 
 4 R / 5 H / 3 OUT
 
-KGJ: HR
+KG: HR
 PM: 2B
 DW: K
 EDLC: 1B
@@ -134,7 +134,7 @@ Example field comparison:
 
 | Initials | You | Field |
 |---|---|---|
-| KGJ | HR | 22% HR, 8% K, avg 2.6 bases |
+| KG | HR | 22% HR, 8% K, avg 2.6 bases |
 | PM | 2B | 14% HR, 31% 2B+, 12% K |
 
 ## Aggregate stats
