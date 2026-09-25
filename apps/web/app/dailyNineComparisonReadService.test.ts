@@ -101,6 +101,7 @@ describe('Daily Nine comparison read service', () => {
     [{ puzzleDate: '2026-02-30', rulesetVersion: 'points-v3', pitchNumber: '1' }, 'invalid_request'],
     [{ puzzleDate: '2026-09-19', rulesetVersion: null, pitchNumber: '1' }, 'invalid_request'],
     [{ puzzleDate: '2026-09-19', rulesetVersion: 'classic-inning-v1', pitchNumber: '1' }, 'unsupported_ruleset'],
+    [{ puzzleDate: '2026-09-19', rulesetVersion: 'points-v4', pitchNumber: '1' }, 'unsupported_ruleset'],
     [{ puzzleDate: '2026-09-19', rulesetVersion: 'points-v3', pitchNumber: null }, 'invalid_request'],
     [{ puzzleDate: '2026-09-19', rulesetVersion: 'points-v3', pitchNumber: '0' }, 'invalid_request'],
     [{ puzzleDate: '2026-09-19', rulesetVersion: 'points-v3', pitchNumber: '10' }, 'invalid_request'],

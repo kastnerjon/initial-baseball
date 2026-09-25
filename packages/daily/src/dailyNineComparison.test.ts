@@ -56,6 +56,30 @@ describe('Daily Nine comparison service', () => {
     expect(repo.readAtBat).toHaveBeenCalledExactlyOnceWith({ ...KEY, pitchNumber: 7 });
   });
 
+  it('routes points-v4 through the widened repository/service port', async () => {
+    const repo = repository(
+      { resolvedAtBatCount: 3, awardedPointsSum: -2 },
+      { scoreBuckets: [{ points: -9, count: 1 }, { points: 36, count: 1 }] },
+    );
+    const service = createDailyNineComparisonService(repo);
+
+    await expect(service.getAtBat({ ...V4_KEY, pitchNumber: 2 })).resolves.toMatchObject({
+      ...V4_KEY,
+      pitchNumber: 2,
+      resolvedAtBatCount: 3,
+      averagePoints: -2 / 3,
+    });
+
+    const completed = await service.getCompletedGames(V4_KEY);
+    expect(completed.rulesetVersion).toBe(POINTS_V4_DAILY_RULESET_VERSION);
+    expect(completed.completedGameCount).toBe(2);
+    expect(completed.averageTotalPoints).toBe(27 / 2);
+    expect(completed.scoreHistogram[0]).toBe(1);
+    expect(completed.scoreHistogram[45]).toBe(1);
+    expect(repo.readAtBat).toHaveBeenCalledExactlyOnceWith({ ...V4_KEY, pitchNumber: 2 });
+    expect(repo.readCompletedGames).toHaveBeenCalledExactlyOnceWith(V4_KEY);
+  });
+
   it('keeps partial-game slot populations independent from completions', async () => {
     const repo = repository(
       { resolvedAtBatCount: 11, awardedPointsSum: 55 },

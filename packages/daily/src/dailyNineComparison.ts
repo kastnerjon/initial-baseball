@@ -18,12 +18,8 @@ export type DailyNineComparisonIdentity<
   rulesetVersion: Ruleset;
 };
 
-/**
- * Current provider-read key. The Supabase adapter remains points-v3-only until
- * the separate storage/provider rollout widens its persisted score domain.
- */
-export type DailyNineComparisonKey =
-  DailyNineComparisonIdentity<typeof POINTS_V3_DAILY_RULESET_VERSION>;
+/** Exact-version provider-read key for supported Daily Nine scoring versions. */
+export type DailyNineComparisonKey = DailyNineComparisonIdentity;
 
 export type DailyNineAtBatComparisonIdentity<
   Ruleset extends DailyNineComparisonRulesetVersion = DailyNineComparisonRulesetVersion,
@@ -31,9 +27,8 @@ export type DailyNineAtBatComparisonIdentity<
   pitchNumber: number;
 };
 
-/** Current provider-read query; v4 provider support is a later bounded concern. */
-export type DailyNineAtBatComparisonQuery =
-  DailyNineAtBatComparisonIdentity<typeof POINTS_V3_DAILY_RULESET_VERSION>;
+/** Exact-version provider-read query for supported Daily Nine scoring versions. */
+export type DailyNineAtBatComparisonQuery = DailyNineAtBatComparisonIdentity;
 
 /**
  * Provider sufficient statistics for exactly one resolved-AB slot.
@@ -55,8 +50,8 @@ export type DailyNineCompletedComparisonSource = {
 };
 
 /**
- * Read-only comparison port for the currently deployed provider population.
- * It deliberately remains points-v3-only until the Supabase/provider PR.
+ * Read-only comparison port for exact-version Daily Nine populations.
+ * Providers return sufficient statistics only; Daily owns exact-version range validation.
  */
 export interface DailyNineComparisonRepository {
   readAtBat(query: DailyNineAtBatComparisonQuery): Promise<DailyNineAtBatComparisonSource>;
@@ -82,24 +77,28 @@ export type DailyNineCompletedComparison<
   scoreHistogram: number[];
 };
 
-export type DailyNineComparisonService = {
-  getAtBat(
-    query: DailyNineAtBatComparisonQuery,
-  ): Promise<DailyNineAtBatComparison<typeof POINTS_V3_DAILY_RULESET_VERSION>>;
-  getCompletedGames(
-    key: DailyNineComparisonKey,
-  ): Promise<DailyNineCompletedComparison<typeof POINTS_V3_DAILY_RULESET_VERSION>>;
-};
+export interface DailyNineComparisonService {
+  getAtBat<Ruleset extends DailyNineComparisonRulesetVersion>(
+    query: DailyNineAtBatComparisonIdentity<Ruleset>,
+  ): Promise<DailyNineAtBatComparison<Ruleset>>;
+  getCompletedGames<Ruleset extends DailyNineComparisonRulesetVersion>(
+    key: DailyNineComparisonIdentity<Ruleset>,
+  ): Promise<DailyNineCompletedComparison<Ruleset>>;
+}
 
 export function createDailyNineComparisonService(
   repository: DailyNineComparisonRepository,
 ): DailyNineComparisonService {
   return {
-    async getAtBat(query) {
+    async getAtBat<Ruleset extends DailyNineComparisonRulesetVersion>(
+      query: DailyNineAtBatComparisonIdentity<Ruleset>,
+    ): Promise<DailyNineAtBatComparison<Ruleset>> {
       return deriveDailyNineAtBatComparison(query, await repository.readAtBat(query));
     },
 
-    async getCompletedGames(key) {
+    async getCompletedGames<Ruleset extends DailyNineComparisonRulesetVersion>(
+      key: DailyNineComparisonIdentity<Ruleset>,
+    ): Promise<DailyNineCompletedComparison<Ruleset>> {
       return deriveDailyNineCompletedComparison(
         key,
         await repository.readCompletedGames(key),
