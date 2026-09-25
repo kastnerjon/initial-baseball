@@ -1,8 +1,14 @@
 import { baseballPlayers, dailyEligiblePlayers } from '@initial-baseball/baseball-data';
+import { validateDailyAtBatResult } from '@initial-baseball/engine';
+import {
+  DAILY_AT_BAT_RESULT_SCHEMA_VERSION,
+  POINTS_V3_DAILY_RULESET_VERSION,
+} from '@initial-baseball/shared';
 import {
   archiveDailyPuzzle,
   createDailyPuzzleDraft,
   createEditorialDailyPuzzleId,
+  getDailyPuzzleNumber,
   publishDailyPuzzle,
   scheduleDailyPuzzle,
   type DailyPuzzleEditorialRecord,
@@ -24,11 +30,14 @@ vi.mock('@initial-baseball/baseball-data', async (importOriginal) => {
     ...template, id: 'manual-only', fullName: 'Manual Player', displayName: 'Manual Player',
     dailyEligible: false, dailyEligibilityTier: 'none' as const,
   };
+  const suffix = {
+    ...manual, id: 'suffix', fullName: 'Ken Griffey Jr.', displayName: 'Ken Griffey Jr.',
+  };
   return {
     ...actual,
     dailyEligiblePlayers: automatic,
     baseballPlayers: [
-      ...automatic, manual,
+      ...automatic, manual, suffix,
       { ...manual, id: 'unavailable', careerStats: null },
       { ...manual, id: 'unmapped' },
     ],
@@ -103,5 +112,59 @@ describe('public Daily puzzle source editorial candidates', () => {
     const { source, selectDeterministicPlayers } = buildSource(archiveDailyPuzzle(published, actor));
     await expect(source(date)).rejects.toThrow('archived');
     expect(selectDeterministicPlayers).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['2026-09-27', 'KGJ'],
+    ['2026-09-28', 'KG'],
+  ])('keeps editorial and fallback initials for %s in their own date version', async (puzzleDate, initials) => {
+    const selectedIds = ['canonical:suffix', ...ids.slice(1)];
+    const draftForDate = createDailyPuzzleDraft({
+      id: `daily-${puzzleDate}-v1`, puzzleDate, puzzleNumber: getDailyPuzzleNumber(puzzleDate),
+      selections: selectedIds.map((canonicalPlayerId, index) => ({
+        slot: index + 1, canonicalPlayerId, source: 'manual',
+      })),
+      ...actor,
+    });
+    const editorial = createPublicDailyPuzzleSource({
+      repository: { getByDate: async () => scheduleDailyPuzzle(draftForDate, actor) },
+      selectDeterministicPlayers: () => { throw new Error('Unexpected fallback'); },
+    });
+    const fallback = createPublicDailyPuzzleSource({
+      repository: null,
+      selectDeterministicPlayers: () => [
+        { player: baseballPlayers.find(p => p.id === 'suffix')!, canonicalPlayerId: 'canonical:suffix' },
+        ...dailyEligiblePlayers.slice(0, 8).map(player => ({
+          player, canonicalPlayerId: `canonical:${player.id}`,
+        })),
+      ],
+    });
+
+    const persistedPuzzle = await editorial(puzzleDate);
+    expect(persistedPuzzle.pitches[0]?.player.initials).toBe(initials);
+    expect((await fallback(puzzleDate)).pitches[0]?.player.initials).toBe(initials);
+    if (puzzleDate === '2026-09-27') {
+      expect(validateDailyAtBatResult({
+        puzzle: {
+          ...persistedPuzzle,
+          pitches: persistedPuzzle.pitches.map(pitch => ({
+            pitchNumber: pitch.pitchNumber, initials: pitch.player.initials,
+          })),
+        },
+        rulesetVersion: POINTS_V3_DAILY_RULESET_VERSION,
+        submission: {
+          schemaVersion: DAILY_AT_BAT_RESULT_SCHEMA_VERSION,
+          attemptId: 'historical-suffix-result',
+          puzzleId: persistedPuzzle.id,
+          puzzleDate: persistedPuzzle.puzzleDate,
+          puzzleNumber: persistedPuzzle.puzzleNumber,
+          rulesetVersion: POINTS_V3_DAILY_RULESET_VERSION,
+          atBat: {
+            pitchNumber: 1, initials: 'KGJ', outcome: 'K',
+            hintsRevealed: 0, wrongGuesses: 0, resolution: 'give_up',
+          },
+        },
+      }).ok).toBe(true);
+    }
   });
 });

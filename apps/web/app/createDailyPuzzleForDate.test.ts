@@ -67,6 +67,23 @@ describe('createDailyPuzzleForDate', () => {
     expect(puzzle.pitches[0]?.player.fullName).toBe('A. J. Jiménez');
   });
 
+  it('preserves old beta initials before the suffix cutover and shortens them afterward', () => {
+    const lineup = [
+      'Ken Griffey Jr.', 'David Wright', 'CC Sabathia',
+      'Albert Pujols', 'Derek Jeter', 'Ichiro Suzuki',
+    ];
+    const before = createDailyPuzzleForDateWithOverrides('2026-09-27', {
+      '2026-09-27': lineup,
+    });
+    const after = createDailyPuzzleForDateWithOverrides('2026-09-28', {
+      '2026-09-28': lineup,
+    });
+
+    expect(before.pitches[0]?.player.initials).toBe('KGJ');
+    expect(after.pitches[0]?.player.initials).toBe('KG');
+    expect(before.pitches[0]?.player.fullName).toBe(after.pitches[0]?.player.fullName);
+  });
+
   it('usually returns a different player sequence for nearby dates', () => {
     const firstPuzzle = createDailyPuzzleForDate('2026-05-02');
     const secondPuzzle = createDailyPuzzleForDate('2026-05-03');

@@ -75,7 +75,7 @@ export interface DailyAdminWorkflow {
     days?: number;
   }): Promise<readonly DailyEditorialHorizonPuzzle[]>;
   searchPlayers(query: string): readonly DailyAdminPlayerSearchResult[];
-  previewPlayer(canonicalPlayerId: string): DailyAdminPlayerPreview | null;
+  previewPlayer(canonicalPlayerId: string, puzzleDate: string): DailyAdminPlayerPreview | null;
   replaceSelection(input: {
     puzzleDate: string;
     slot: number;
@@ -157,7 +157,7 @@ export function createDailyAdminWorkflow(
       });
     },
 
-    previewPlayer(canonicalPlayerId) {
+    previewPlayer(canonicalPlayerId, puzzleDate) {
       const candidate = candidatesById.get(canonicalPlayerId);
       if (candidate === undefined) return null;
 
@@ -166,7 +166,7 @@ export function createDailyAdminWorkflow(
           candidate,
           (visibleNameCounts.get(normalizeGuess(candidate.player.displayName)) ?? 0) > 1,
         ),
-        initials: createPlayerIdentity(candidate.player).initials,
+        initials: createPlayerIdentity(candidate.player, puzzleDate).initials,
         hints: buildDefaultDailyHints(candidate.player),
         reveal: resolvedDependencies.loadReveal(canonicalPlayerId),
       };

@@ -189,9 +189,10 @@ describe('Daily admin workflow', () => {
     });
     const workflow = createDailyAdminWorkflow(new InMemoryRepository(), dependencies(candidates));
 
-    const preview = workflow.previewPlayer('griffey');
+    const preview = workflow.previewPlayer('griffey', '2026-09-28');
 
     expect(preview?.initials).toBe('KG');
+    expect(workflow.previewPlayer('griffey', '2026-09-27')?.initials).toBe('KGJ');
     expect(preview?.hints.map(hint => [hint.hintType, hint.hintValue])).toEqual([
       ['main_decade', '2000s'],
       ['teams', 'SEA, CIN, CWS'],

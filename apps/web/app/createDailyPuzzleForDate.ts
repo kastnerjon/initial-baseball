@@ -43,7 +43,7 @@ export function createDailyPuzzleForDateWithOverrides(
     status: 'published',
     hintConfig: DEFAULT_DAILY_HINT_CONFIG,
     statsHintConfig: DEFAULT_DAILY_STATS_HINT_CONFIG,
-    pitches: selectedPlayers.map((player, index) => createDailyPuzzlePitch(index + 1, player)),
+    pitches: selectedPlayers.map((player, index) => createDailyPuzzlePitch(index + 1, player, date)),
   };
 }
 
@@ -61,7 +61,7 @@ export function createCanonicalDailyPuzzleForDate(
     hintConfig: DEFAULT_DAILY_HINT_CONFIG,
     statsHintConfig: DEFAULT_DAILY_STATS_HINT_CONFIG,
     pitches: selectedPlayers.map(({ player, canonicalPlayerId }, index) => {
-      const pitch = createDailyPuzzlePitch(index + 1, player);
+      const pitch = createDailyPuzzlePitch(index + 1, player, date);
       return {
         ...pitch,
         player: { ...pitch.player, playerId: canonicalPlayerId },

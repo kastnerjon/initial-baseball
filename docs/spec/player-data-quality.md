@@ -45,7 +45,7 @@ Requirements:
 - Search also works without accents or punctuation.
 - Do not show a middle or legal name merely because one source contains it.
 - Keep useful legal names, nicknames, shortened names, and former source display names as aliases when they are not the canonical display name.
-- Preserve suffixes such as Jr., Sr., II, and III in player display names. Generated Daily initials omit only a terminal Jr./Sr. token; II/III and all player identity/search data are unchanged.
+- Preserve suffixes such as Jr., Sr., II, and III in player display names. Beta puzzles before September 28, 2026 retain the original terminal Jr./Sr. initials; puzzles from that date onward omit that terminal initial. II/III and all player identity/search data are unchanged.
 - Store manual display-name decisions as auditable data under `packages/baseball-data`, not UI patches.
 - Runtime display payloads expose `displayName`, not `legalName`.
 

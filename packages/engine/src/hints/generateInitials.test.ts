@@ -29,4 +29,13 @@ describe('generateInitials', () => {
   ])('turns %s into %s', (name, expected) => {
     expect(generateInitials(name)).toBe(expected);
   });
+
+  it.each([
+    ['Ken Griffey Jr.', 'KGJ'],
+    ['Tony Gwynn SR.  ', 'TGS'],
+    ['Ken Jr. Griffey', 'KJG'],
+    ['Ken Griffey III', 'KGI'],
+  ])('preserves the previous initials for %s when the terminal suffix is included', (name, expected) => {
+    expect(generateInitials(name, 'include')).toBe(expected);
+  });
 });

@@ -1,4 +1,7 @@
-export function generateInitials(fullName: string): string {
+export function generateInitials(
+  fullName: string,
+  terminalSuffix: 'omit' | 'include' = 'omit',
+): string {
   const cleaned = fullName
     .normalize('NFKD')
     .replace(/[\u0300-\u036f]/g, '')
@@ -11,7 +14,7 @@ export function generateInitials(fullName: string): string {
 
   const parts = cleaned.split(/\s+/).filter(Boolean);
   const lastPart = parts.at(-1)?.toLowerCase();
-  if (lastPart === 'jr' || lastPart === 'sr') {
+  if (terminalSuffix === 'omit' && (lastPart === 'jr' || lastPart === 'sr')) {
     parts.pop();
   }
 
