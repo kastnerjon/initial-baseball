@@ -6,7 +6,9 @@ import {
 import {
   DAILY_AT_BAT_RESULT_SCHEMA_VERSION,
   POINTS_V3_DAILY_RULESET_VERSION,
+  POINTS_V4_DAILY_RULESET_VERSION,
   type DailyAtBatResultError,
+  type DailyAtBatResultRulesetVersion,
   type DailyPublicPuzzle,
 } from '@initial-baseball/shared';
 
@@ -16,7 +18,7 @@ export type DailyAtBatResultSubmissionOutcome =
 
 type LoadAuthoritativePuzzle = (
   puzzleDate: string,
-  rulesetVersion: typeof POINTS_V3_DAILY_RULESET_VERSION,
+  rulesetVersion: DailyAtBatResultRulesetVersion,
 ) => Promise<DailyPublicPuzzle>;
 
 type CreateDailyAtBatResultSubmissionServiceInput = {
@@ -39,12 +41,12 @@ export function createDailyAtBatResultSubmissionService({
 
       const puzzle = await loadAuthoritativePuzzle(
         routing.puzzleDate,
-        POINTS_V3_DAILY_RULESET_VERSION,
+        routing.rulesetVersion,
       );
       const validation = validateDailyAtBatResult({
         submission,
         puzzle,
-        rulesetVersion: POINTS_V3_DAILY_RULESET_VERSION,
+        rulesetVersion: routing.rulesetVersion,
       });
       if (!validation.ok) return validation;
 
@@ -60,7 +62,11 @@ function readRoutingFields(
   submission: unknown,
   currentDailyDate: string,
 ):
-  | { ok: true; puzzleDate: string }
+  | {
+      ok: true;
+      puzzleDate: string;
+      rulesetVersion: DailyAtBatResultRulesetVersion;
+    }
   | { ok: false; error: DailyAtBatResultError } {
   if (!isRecord(submission)) return reject('invalid_submission');
   if (submission.schemaVersion !== DAILY_AT_BAT_RESULT_SCHEMA_VERSION) {
@@ -70,11 +76,12 @@ function readRoutingFields(
   const puzzleDate = readCalendarDate(submission.puzzleDate);
   if (puzzleDate === null) return reject('invalid_submission');
   if (puzzleDate > currentDailyDate) return reject('invalid_puzzle');
-  if (submission.rulesetVersion !== POINTS_V3_DAILY_RULESET_VERSION) {
+  if (submission.rulesetVersion !== POINTS_V3_DAILY_RULESET_VERSION
+    && submission.rulesetVersion !== POINTS_V4_DAILY_RULESET_VERSION) {
     return reject('unsupported_ruleset');
   }
 
-  return { ok: true, puzzleDate };
+  return { ok: true, puzzleDate, rulesetVersion: submission.rulesetVersion };
 }
 
 function readCalendarDate(value: unknown): string | null {
