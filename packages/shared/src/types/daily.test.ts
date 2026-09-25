@@ -6,6 +6,11 @@ import {
   DEFAULT_DAILY_SCORING,
   DEFAULT_DAILY_SCORE_SUMMARY,
   DEFAULT_DAILY_STATS_HINT_CONFIG,
+  CURRENT_DAILY_RULESET_VERSION,
+  POINTS_V3_DAILY_RULESET_VERSION,
+  POINTS_V4_DAILY_RULESET_VERSION,
+  isDailyPointsRulesetVersion,
+  isDailyRulesetVersion,
 } from './daily.js';
 
 it('keeps the default daily hint ladder in the expected order', () => {
@@ -49,4 +54,10 @@ it('starts score and bases in an empty inning state', () => {
     second: false,
     third: false,
   });
+});
+
+it('recognizes points-v4 without changing the current Daily Nine default', () => {
+  expect(isDailyRulesetVersion(POINTS_V4_DAILY_RULESET_VERSION)).toBe(true);
+  expect(isDailyPointsRulesetVersion(POINTS_V4_DAILY_RULESET_VERSION)).toBe(true);
+  expect(CURRENT_DAILY_RULESET_VERSION).toBe(POINTS_V3_DAILY_RULESET_VERSION);
 });
