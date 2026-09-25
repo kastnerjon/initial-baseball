@@ -30,9 +30,9 @@ it('maps daily scoring points to the expected outcomes', () => {
   });
 });
 
-it('uses the shared bWAR-first stat defaults for daily stats hints', () => {
-  expect(DEFAULT_DAILY_STATS_HINT_CONFIG.hitter[0]).toBe('bwar');
-  expect(DEFAULT_DAILY_STATS_HINT_CONFIG.pitcher[0]).toBe('bwar');
+it('uses only the supported compact stat subsets for daily stats hints', () => {
+  expect(DEFAULT_DAILY_STATS_HINT_CONFIG.hitter).toEqual(['hr', 'rbi', 'sb', 'ba', 'obp']);
+  expect(DEFAULT_DAILY_STATS_HINT_CONFIG.pitcher).toEqual(['w', 'l', 'sv', 'era', 'whip', 'k']);
 });
 
 it('starts score and bases in an empty inning state', () => {

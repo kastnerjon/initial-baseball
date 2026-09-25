@@ -14,7 +14,8 @@ Make hint 4 use structured career statistics rather than the legacy preformatted
 
 - Keep hitter hint fields `HR, RBI, SB, BA, OBP`, ordered by the canonical reveal order.
 - Keep pitcher hint fields `W, L, ERA, WHIP, K`, add supported `SV`, and order them as `W, L, SV, ERA, WHIP, K`.
-- Derive hint ordering from the existing reveal-order declaration so future reorderings cannot drift silently.
+- Reconcile the shared default stats-hint metadata to the supported compact subsets, removing unsupported bWAR and adding pitcher saves.
+- Derive hint ordering from the existing reveal-order declaration while using the shared default config as the subset declaration, so metadata and presentation cannot drift silently.
 - Format values from `Player.careerStats`; do not parse `Player.statsLine`.
 - Preserve a sourced `SV 0`; omit `SV` when unavailable.
 - Fall back to `Stats unavailable` only when no structured career line is available.
