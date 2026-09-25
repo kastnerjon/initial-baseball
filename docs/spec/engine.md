@@ -42,7 +42,24 @@ Classic uses the existing hit/forced-walk runner advancement and run scoring. K 
 
 Each at-bat starts at 7 points. Every revealed hint and every wrong guess costs 1 point. The award is max(0, 7 - hints revealed - wrong guesses) for a correct resolution. A third wrong guess or Give Up records K and awards 0 points. Nine at-bats produce a maximum of 63 points. The UI derives the displayed award and live active-at-bat allowance from server-verified reveal/strike facts; the engine owns the formula.
 
-New Daily Nine sessions use points-v3. The prior points-v2 policy remains a compatibility contract for already-started or restored sessions.
+New Daily Nine sessions still use points-v3. The prior points-v2 policy remains a compatibility contract for already-started or restored sessions.
+
+### `points-v4` — defined portable policy, not yet live
+
+The shared ruleset identity and pure engine now define the next Daily Nine scoring policy without making it the public default:
+
+| Outcome | Points |
+|---|---:|
+| HR | 4 |
+| 3B | 3 |
+| 2B | 2 |
+| 1B | 1 |
+| BB | 0 |
+| K / Give Up | -1 |
+
+Wrong guesses one and two do not deduct points. A third wrong guess is terminal K and therefore scores -1. Give Up is normalized to the same K terminal fact and also scores -1. All nine scheduled at-bats are played. The engine exposes the live hint-based allowance plus the exact integer score range/step; nine standard at-bats span -9 through 36.
+
+`CURRENT_DAILY_RULESET_VERSION` remains `points-v3`. Schema-1 at-bat/completed-result validation, persistence, comparison, browser delivery, and public gameplay do not accept or activate points-v4 yet; those remain separate downstream concerns.
 
 ### `points-v2` — compatibility policy
 
@@ -150,9 +167,10 @@ Players select canonical search results. Correctness is exact canonical `playerI
 - single/double/triple/HR advancement;
 - legacy three-out completion;
 - `points-v3` deduction formula, seven-point at-bat maximum, 63-point nine-at-bat maximum, third-wrong-guess zero, and all-scheduled-at-bats completion;
+- `points-v4` outcome mapping, no nonterminal wrong-guess deduction, K/Give Up at -1, signed -9..36 nine-at-bat range, integer step, and all-scheduled-at-bats completion without changing the current public default;
 - `points-v2` compatibility mapping, fractional walks, 36-point maximum, and all-scheduled-at-bats completion;
 - `points-v1` compatibility mapping and 45-point maximum;
-- continuation after a third recorded out under both points policies;
+- continuation after a third recorded out under all point-based Daily policies;
 - ruleset-version token serialization and legacy normalization;
 - raw-fact preservation;
 - local saved-state compatibility;

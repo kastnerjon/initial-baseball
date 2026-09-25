@@ -108,7 +108,7 @@ Current browser state includes:
 - ordered spoiler-safe raw completed-at-bat facts: pitch number, initials, outcome, hints revealed, wrong guesses, and correct/strikeout/Give Up resolution;
 - opaque signed progression token.
 
-New games use `points-v3`: each at-bat starts at 7 points, each revealed hint or wrong guess deducts 1, and a third wrong guess or Give Up awards 0; nine at-bats have a 63-point maximum. Compatible `points-v2` saves retain `4/3/2/1/0.5/0` and a 36-point maximum; `points-v1` saves and signed tokens retain `5/4/3/2/1/0` and a 45-point maximum. Compatible pre-ruleset saves and signed tokens normalize to `legacy-inning-v1` so an already-started game is not silently changed from three-out completion to all-scheduled-at-bats completion.
+New games still use `points-v3`: each at-bat starts at 7 points, each revealed hint or wrong guess deducts 1, and a third wrong guess or Give Up awards 0; nine at-bats have a 63-point maximum. Shared/engine also define `points-v4` as the future `4/3/2/1/0/-1` outcome policy with no deduction for the first two wrong guesses and a signed `-9..36` nine-at-bat range, but browser saves, result transports, persistence, comparison, and the public default do not accept it yet. Compatible `points-v2` saves retain `4/3/2/1/0.5/0` and a 36-point maximum; `points-v1` saves and signed tokens retain `5/4/3/2/1/0` and a 45-point maximum. Compatible pre-ruleset saves and signed tokens normalize to `legacy-inning-v1` so an already-started game is not silently changed from three-out completion to all-scheduled-at-bats completion.
 
 No Redis, replay cache, durable anonymous server session, or database write per hint/guess is part of the accepted launch model.
 

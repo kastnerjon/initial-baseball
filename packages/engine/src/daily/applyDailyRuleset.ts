@@ -3,6 +3,7 @@ import {
   POINTS_V1_DAILY_RULESET_VERSION,
   POINTS_V2_DAILY_RULESET_VERSION,
   POINTS_V3_DAILY_RULESET_VERSION,
+  POINTS_V4_DAILY_RULESET_VERSION,
   type DailyInningState,
   type DailyOutcome,
   type DailyPointsSummary,
@@ -29,6 +30,19 @@ export const POINTS_V2_OUTCOME_POINTS: Readonly<Record<DailyOutcome, number>> = 
   K: 0,
 };
 
+export const POINTS_V4_MIN_POINTS_PER_AT_BAT = -1;
+export const POINTS_V4_MAX_POINTS_PER_AT_BAT = 4;
+export const POINTS_V4_SCORE_STEP = 1;
+
+export const POINTS_V4_OUTCOME_POINTS: Readonly<Record<DailyOutcome, number>> = {
+  HR: POINTS_V4_MAX_POINTS_PER_AT_BAT,
+  '3B': 3,
+  '2B': 2,
+  '1B': 1,
+  BB: 0,
+  K: POINTS_V4_MIN_POINTS_PER_AT_BAT,
+};
+
 export const POINTS_V3_MAX_POINTS_PER_AT_BAT = 7;
 
 export type DailyAtBatPointsInput = {
@@ -43,6 +57,12 @@ export type DailyAtBatPointsRemainingInput = {
   hintsRevealed?: number | undefined;
   wrongGuesses?: number | undefined;
   atBatComplete?: boolean | undefined;
+};
+
+export type DailyPointsRange = {
+  minimumPoints: number;
+  maximumPoints: number;
+  step: number;
 };
 
 export type DailyRulesetEngineState = {
@@ -90,6 +110,9 @@ export function getDailyAtBatPoints({
     if (outcome === 'K' || normalizedWrongGuesses >= 3) return 0;
     return Math.max(0, POINTS_V3_MAX_POINTS_PER_AT_BAT - clampNonNegative(hintsRevealed) - normalizedWrongGuesses);
   }
+  if (rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION && clampNonNegative(wrongGuesses) >= 3) {
+    return POINTS_V4_OUTCOME_POINTS.K;
+  }
   return getDailyOutcomePoints(rulesetVersion, outcome);
 }
 
@@ -100,18 +123,25 @@ export function getDailyAtBatPointsRemaining({
   wrongGuesses = 0,
   atBatComplete = false,
 }: DailyAtBatPointsRemainingInput): number | null {
-  if (rulesetVersion !== POINTS_V3_DAILY_RULESET_VERSION) {
-    return null;
+  if (rulesetVersion === POINTS_V3_DAILY_RULESET_VERSION) {
+    if (atBatComplete) return 0;
+    return getDailyAtBatPoints({
+      rulesetVersion,
+      outcome: 'HR',
+      hintsRevealed,
+      wrongGuesses,
+    });
   }
-  if (atBatComplete) {
-    return 0;
+  if (rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION) {
+    if (atBatComplete) return 0;
+    return getDailyAtBatPoints({
+      rulesetVersion,
+      outcome: getPointsV4LiveOutcome(hintsRevealed),
+      hintsRevealed,
+      wrongGuesses,
+    });
   }
-  return getDailyAtBatPoints({
-    rulesetVersion,
-    outcome: 'HR',
-    hintsRevealed,
-    wrongGuesses,
-  });
+  return null;
 }
 
 export function getDailyMaximumPoints(
@@ -119,6 +149,26 @@ export function getDailyMaximumPoints(
   totalAtBats: number,
 ): number {
   return totalAtBats * getDailyOutcomePoints(rulesetVersion, 'HR');
+}
+
+export function getDailyPointsRange(
+  rulesetVersion: DailyRulesetVersion,
+  totalAtBats: number,
+): DailyPointsRange | null {
+  if (!isDailyPointsRulesetVersion(rulesetVersion)) return null;
+  const outcomePoints = getOutcomePointsMapping(rulesetVersion);
+  if (outcomePoints === null) return null;
+
+  const values = Object.values(outcomePoints);
+  return {
+    minimumPoints: Math.min(...values) * totalAtBats,
+    maximumPoints: Math.max(...values) * totalAtBats,
+    step: rulesetVersion === POINTS_V2_DAILY_RULESET_VERSION
+      ? 0.5
+      : rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION
+        ? POINTS_V4_SCORE_STEP
+        : 1,
+  };
 }
 
 export function applyDailyOutcomeForRuleset(
@@ -200,7 +250,26 @@ function getOutcomePointsMapping(
       K: 0,
     };
   }
+  if (rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION) {
+    return POINTS_V4_OUTCOME_POINTS;
+  }
   return null;
+}
+
+function getPointsV4LiveOutcome(hintsRevealed: number): Exclude<DailyOutcome, 'K'> {
+  const revealCount = Math.min(4, Math.floor(clampNonNegative(hintsRevealed)));
+  switch (revealCount) {
+    case 0:
+      return 'HR';
+    case 1:
+      return '3B';
+    case 2:
+      return '2B';
+    case 3:
+      return '1B';
+    default:
+      return 'BB';
+  }
 }
 
 function clampNonNegative(value: number): number {
