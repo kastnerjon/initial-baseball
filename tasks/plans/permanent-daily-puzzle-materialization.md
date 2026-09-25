@@ -35,3 +35,7 @@ The immutable snapshot currently freezes answers, not a beta game/ruleset or hin
 ## Next boundary
 
 Server-only reader + materializer composition is implemented as the archive puzzle source in `tasks/plans/permanent-daily-archive-puzzle-source.md`. Next compose that source with the existing Daily runtime/progression-token machinery. Keep public navigation/routes, browser history, and the permanent launch epoch separate.
+
+## Archive clue immutability follow-on
+
+The archive materializer now accepts the persisted v1/v2 union. Schema-v1 records keep this plan's current-player clue construction; schema-v2 records use their frozen hint layout, labels, public initials, and values while resolving canonical player identity for runtime/reveal behavior. No scoring is frozen. Scope: `tasks/plans/permanent-daily-archive-clue-materialization.md`.

@@ -1,7 +1,7 @@
 import type {
-  PermanentDailyIssuedPuzzle,
   PermanentDailyIssuedPuzzleRecord,
 } from './permanentDailyIssuedPuzzle';
+import { clonePermanentDailyIssuedPuzzleRecord } from './permanentDailyIssuedPuzzle';
 import {
   PERMANENT_DAILY_SERIES_VERSION,
   type PermanentDailyIdentity,
@@ -36,10 +36,10 @@ export interface PermanentDailyIssuedPuzzleReadRepository {
 export type PermanentDailyIssuedPuzzleReadService = {
   getByNumber(
     query: PermanentDailyIssuedPuzzleNumberQuery,
-  ): Promise<PermanentDailyIssuedPuzzle | null>;
+  ): Promise<PermanentDailyIssuedPuzzleRecord | null>;
   getByDate(
     query: PermanentDailyIssuedPuzzleDateQuery,
-  ): Promise<PermanentDailyIssuedPuzzle | null>;
+  ): Promise<PermanentDailyIssuedPuzzleRecord | null>;
 };
 
 export function createPermanentDailyIssuedPuzzleReadService(
@@ -52,7 +52,7 @@ export function createPermanentDailyIssuedPuzzleReadService(
 
       const record = await repository.getByNumber({ ...query });
       if (record === null) return null;
-      const puzzle = requireLegacyMaterializablePuzzle(record);
+      const puzzle = requireSupportedIssuedPuzzle(record);
       if (
         puzzle.identity.seriesVersion !== query.seriesVersion
         || puzzle.identity.dailyNumber !== query.dailyNumber
@@ -61,7 +61,7 @@ export function createPermanentDailyIssuedPuzzleReadService(
           'Permanent Daily issued-puzzle reader returned a different number identity.',
         );
       }
-      return cloneIssuedPuzzle(puzzle);
+      return clonePermanentDailyIssuedPuzzleRecord(puzzle);
     },
 
     async getByDate(query) {
@@ -70,7 +70,7 @@ export function createPermanentDailyIssuedPuzzleReadService(
 
       const record = await repository.getByDate({ ...query });
       if (record === null) return null;
-      const puzzle = requireLegacyMaterializablePuzzle(record);
+      const puzzle = requireSupportedIssuedPuzzle(record);
       if (
         puzzle.identity.seriesVersion !== query.seriesVersion
         || puzzle.identity.puzzleDate !== query.puzzleDate
@@ -79,17 +79,18 @@ export function createPermanentDailyIssuedPuzzleReadService(
           'Permanent Daily issued-puzzle reader returned a different date identity.',
         );
       }
-      return cloneIssuedPuzzle(puzzle);
+      return clonePermanentDailyIssuedPuzzleRecord(puzzle);
     },
   };
 }
 
-function requireLegacyMaterializablePuzzle(
+function requireSupportedIssuedPuzzle(
   puzzle: PermanentDailyIssuedPuzzleRecord,
-): PermanentDailyIssuedPuzzle {
-  if (puzzle.schemaVersion !== 1) {
+): PermanentDailyIssuedPuzzleRecord {
+  const schemaVersion: unknown = (puzzle as { schemaVersion: unknown }).schemaVersion;
+  if (schemaVersion !== 1 && schemaVersion !== 2) {
     throw new Error(
-      'Permanent Daily clue-frozen schema v2 is persisted but not materializable until frozen-clue archive wiring is enabled.',
+      `Unsupported permanent Daily issued-puzzle schema version: ${String(schemaVersion)}.`,
     );
   }
   return puzzle;
@@ -119,14 +120,4 @@ function requireCalendarDate(value: string): void {
   ) {
     throw new Error('Permanent Daily puzzle date is not a valid calendar date.');
   }
-}
-
-function cloneIssuedPuzzle(
-  puzzle: PermanentDailyIssuedPuzzle,
-): PermanentDailyIssuedPuzzle {
-  return {
-    ...puzzle,
-    identity: { ...puzzle.identity },
-    canonicalPlayerIds: [...puzzle.canonicalPlayerIds],
-  };
 }

@@ -35,10 +35,10 @@ No Supabase migration, hosted schema change, row-codec change, repository wideni
 
 ## Provider persistence checkpoint
 
-Append-only Supabase storage and the strict server row codec now support v1 and v2 records while preserving service-role SELECT/INSERT-only access, RLS, existing v1 decoding, first-write-wins semantics, and the zero-row posture. The existing archive-facing read service still rejects v2 until frozen-clue materialization is wired.
+Append-only Supabase storage and the strict server row codec support v1 and v2 records while preserving service-role SELECT/INSERT-only access, RLS, existing v1 decoding, first-write-wins semantics, and the zero-row posture. The archive-facing read service returns defensive copies of both versions, and archive materialization consumes persisted v2 clues while retaining v1 reads. Scope: `tasks/plans/permanent-daily-archive-clue-materialization.md`.
 
 Scope: `tasks/plans/permanent-daily-issued-puzzle-v2-supabase.md`.
 
 ## Current status and next boundary
 
-The server issuance composition now materializes the authorized public clue bundle through the current gameplay lookup/pitch/hint path and stores schema-v2 records. Scope: `tasks/plans/permanent-daily-server-clue-issuance.md`. The next bounded change is to make archive materialization consume these persisted clues. Until then, the archive read path explicitly rejects schema v2.
+The server issuance composition materializes the authorized public clue bundle through the current gameplay lookup/pitch/hint path and stores schema-v2 records. Scope: `tasks/plans/permanent-daily-server-clue-issuance.md`. Archive consumption is now complete in `tasks/plans/permanent-daily-archive-clue-materialization.md`; there is still no archive public route or configured launch epoch.

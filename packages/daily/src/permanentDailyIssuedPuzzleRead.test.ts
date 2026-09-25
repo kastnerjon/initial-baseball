@@ -108,14 +108,35 @@ describe('Permanent Daily issued-puzzle reads', () => {
     })).rejects.toThrow('different date identity');
   });
 
-  it('fails closed on schema v2 until frozen-clue archive materialization is wired', async () => {
-    const repository = createRepository({ byNumber: createClueFrozenPuzzle() });
+  it('reads schema-v2 clues by number and returns a defensive nested copy', async () => {
+    const clueFrozenPuzzle = createClueFrozenPuzzle();
+    const repository = createRepository({ byNumber: clueFrozenPuzzle });
     const service = createPermanentDailyIssuedPuzzleReadService(repository);
 
-    await expect(service.getByNumber({
+    const result = await service.getByNumber({
       seriesVersion: 'permanent-v1',
       dailyNumber: 1,
-    })).rejects.toThrow('not materializable until frozen-clue archive wiring is enabled');
+    });
+
+    expect(result).toEqual(clueFrozenPuzzle);
+    if (result === null || result.schemaVersion !== 2) {
+      throw new Error('Expected a schema-v2 issued puzzle.');
+    }
+    expect(result).not.toBe(clueFrozenPuzzle);
+    expect(result.clueSnapshot).not.toBe(clueFrozenPuzzle.clueSnapshot);
+    expect(result.clueSnapshot.pitches).not.toBe(clueFrozenPuzzle.clueSnapshot.pitches);
+    expect(result.clueSnapshot.pitches[0]?.hintValues)
+      .not.toBe(clueFrozenPuzzle.clueSnapshot.pitches[0]?.hintValues);
+  });
+
+  it('fails closed when a schema-v2 provider result has the wrong date identity', async () => {
+    const repository = createRepository({ byDate: createClueFrozenPuzzle('2030-04-06') });
+    const service = createPermanentDailyIssuedPuzzleReadService(repository);
+
+    await expect(service.getByDate({
+      seriesVersion: 'permanent-v1',
+      puzzleDate: '2030-04-05',
+    })).rejects.toThrow('different date identity');
   });
 
   it('returns a defensive copy of the provider value', async () => {
@@ -163,11 +184,11 @@ function createPuzzle(puzzleDate = '2030-04-05'): PermanentDailyIssuedPuzzle {
 }
 
 
-function createClueFrozenPuzzle() {
+function createClueFrozenPuzzle(puzzleDate = '2030-04-05') {
   const canonicalPlayerIds = Array.from({ length: 9 }, (_, index) => `player-${index + 1}`);
   const identity = resolvePermanentDailyIdentityForDate(
-    '2030-04-05',
-    createPermanentDailyLaunchEpoch('2030-04-05'),
+    puzzleDate,
+    createPermanentDailyLaunchEpoch(puzzleDate),
   );
   if (identity === null) throw new Error('Expected permanent identity.');
 

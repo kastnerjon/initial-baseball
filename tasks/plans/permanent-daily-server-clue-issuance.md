@@ -19,7 +19,7 @@ No second initials algorithm or hint formatter is introduced. Clue values are fu
 
 ## Next bounded concern
 
-After this server issuance cutover is complete, separately teach archive materialization to consume persisted schema-v2 clues instead of rebuilding them from current player data.
+Archive reads now consume persisted schema-v2 clues instead of rebuilding them from current player data. Scope: `tasks/plans/permanent-daily-archive-clue-materialization.md`.
 
 ## Implemented behavior
 
