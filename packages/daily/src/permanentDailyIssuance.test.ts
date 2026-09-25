@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest';
 import type { DailyEditorialSelection } from './dailyPuzzleLifecycle';
+import { createPermanentDailyIssuedClueSnapshot } from './permanentDailyIssuedClueSnapshot';
 import {
+  createPermanentDailyClueFrozenIssuanceService,
   createPermanentDailyIssuanceService,
   type PermanentDailyIssuanceEditorialPuzzle,
 } from './permanentDailyIssuance';
@@ -15,6 +17,66 @@ import {
 } from './permanentDailyIdentity';
 
 const PLAYER_IDS = Array.from({ length: 9 }, (_, index) => `player-${index + 1}`);
+
+describe('Permanent Daily clue-frozen issuance orchestration', () => {
+  it('freezes an eligible editorial lineup with the supplied public clue snapshot as schema v2', async () => {
+    const repository = new InMemoryIssuedPuzzleRepository();
+    const service = createPermanentDailyClueFrozenIssuanceService(repository);
+    const identity = requireIdentity('2030-04-05');
+
+    const result = await service.issue({
+      identity,
+      editorialPuzzle: createEditorialPuzzle(
+        '2030-04-05',
+        'scheduled',
+        createSelections().reverse(),
+      ),
+      clueSnapshot: createClueSnapshot(),
+      issuedAt: '2030-04-05T07:00:00.000Z',
+    });
+
+    expect(result).toMatchObject({
+      ok: true,
+      status: 'created',
+      puzzle: {
+        schemaVersion: 2,
+        puzzleId: 'permanent-v1-daily-1',
+        identity,
+        canonicalPlayerIds: PLAYER_IDS,
+        clueSnapshot: {
+          pitches: [
+            {
+              pitchNumber: 1,
+              canonicalPlayerId: 'player-1',
+              initials: 'P1',
+            },
+          ],
+        },
+      },
+    });
+  });
+
+  it('rejects clue/player order drift before persistence', async () => {
+    const repository = new InMemoryIssuedPuzzleRepository();
+    const service = createPermanentDailyClueFrozenIssuanceService(repository);
+    const clueSnapshot = createClueSnapshot();
+    const mismatched = {
+      ...clueSnapshot,
+      pitches: clueSnapshot.pitches.map((pitch, index) => (
+        index === 3 ? { ...pitch, canonicalPlayerId: 'different-player' } : pitch
+      )),
+    };
+
+    await expect(service.issue({
+      identity: requireIdentity('2030-04-05'),
+      editorialPuzzle: createEditorialPuzzle('2030-04-05', 'published'),
+      clueSnapshot: mismatched,
+      issuedAt: '2030-04-05T07:00:00.000Z',
+    })).rejects.toThrow('does not match frozen batting order');
+
+    expect(repository.insertCalls).toBe(0);
+  });
+});
 
 describe('Permanent Daily issuance orchestration', () => {
   it('freezes a scheduled editorial lineup in exact slot order for an explicit permanent identity', async () => {
@@ -129,6 +191,23 @@ function createSelections(): DailyEditorialSelection[] {
     canonicalPlayerId,
     source: 'generated',
   }));
+}
+
+function createClueSnapshot() {
+  return createPermanentDailyIssuedClueSnapshot({
+    hintLayout: [
+      { slot: 1, hintType: 'main_decade', displayLabel: 'Main decade played in' },
+      { slot: 2, hintType: 'teams', displayLabel: 'Teams' },
+      { slot: 3, hintType: 'position', displayLabel: 'Position' },
+      { slot: 4, hintType: 'stats', displayLabel: 'Stats' },
+    ],
+    pitches: PLAYER_IDS.map((canonicalPlayerId, index) => ({
+      pitchNumber: index + 1,
+      canonicalPlayerId,
+      initials: `P${index + 1}`,
+      hintValues: ['2000s', 'SEA, CIN', index === 8 ? 'P' : 'CF', 'Career stats'],
+    })),
+  });
 }
 
 function requireIdentity(puzzleDate: string) {

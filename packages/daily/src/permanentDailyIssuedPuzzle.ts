@@ -75,6 +75,25 @@ export type PermanentDailyIssuedPuzzleService = {
   issue(input: PermanentDailyIssuedPuzzleInput): Promise<PermanentDailyIssuedPuzzleStoreResult>;
 };
 
+export type PermanentDailyClueFrozenIssuedPuzzleStoreResult =
+  | {
+      ok: true;
+      status: 'created' | 'existing';
+      puzzle: PermanentDailyClueFrozenIssuedPuzzle;
+    }
+  | {
+      ok: false;
+      error: 'immutable_conflict';
+      requested: PermanentDailyClueFrozenIssuedPuzzle;
+      existing: PermanentDailyIssuedPuzzleRecord;
+    };
+
+export type PermanentDailyClueFrozenIssuedPuzzleService = {
+  issue(
+    input: PermanentDailyClueFrozenIssuedPuzzleInput,
+  ): Promise<PermanentDailyClueFrozenIssuedPuzzleStoreResult>;
+};
+
 export function createPermanentDailyIssuedPuzzleService(
   repository: PermanentDailyIssuedPuzzleRepository,
 ): PermanentDailyIssuedPuzzleService {
@@ -100,6 +119,51 @@ export function createPermanentDailyIssuedPuzzleService(
         && hasSameImmutablePuzzleContent(stored.puzzle, requested)
       ) {
         return { ok: true, status: 'existing', puzzle: cloneIssuedPuzzle(stored.puzzle) };
+      }
+
+      return {
+        ok: false,
+        error: 'immutable_conflict',
+        requested,
+        existing: clonePermanentDailyIssuedPuzzleRecord(stored.puzzle),
+      };
+    },
+  };
+}
+
+export function createPermanentDailyClueFrozenIssuedPuzzleService(
+  repository: PermanentDailyIssuedPuzzleRepository,
+): PermanentDailyClueFrozenIssuedPuzzleService {
+  return {
+    async issue(input) {
+      const requested = createPermanentDailyClueFrozenIssuedPuzzle(input);
+      const stored = await repository.insertIfAbsent(requested);
+
+      if (stored.status === 'inserted') {
+        if (
+          stored.puzzle.schemaVersion !== PERMANENT_DAILY_CLUE_FROZEN_ISSUED_PUZZLE_SCHEMA_VERSION
+          || !arePermanentDailyClueFrozenIssuedPuzzlesExactlyEqual(stored.puzzle, requested)
+        ) {
+          throw new Error(
+            'Permanent Daily issued-puzzle repository returned a different inserted clue-frozen puzzle.',
+          );
+        }
+        return {
+          ok: true,
+          status: 'created',
+          puzzle: cloneClueFrozenIssuedPuzzle(stored.puzzle),
+        };
+      }
+
+      if (
+        stored.puzzle.schemaVersion === PERMANENT_DAILY_CLUE_FROZEN_ISSUED_PUZZLE_SCHEMA_VERSION
+        && hasSameClueFrozenImmutablePuzzleContent(stored.puzzle, requested)
+      ) {
+        return {
+          ok: true,
+          status: 'existing',
+          puzzle: cloneClueFrozenIssuedPuzzle(stored.puzzle),
+        };
       }
 
       return {
@@ -201,6 +265,51 @@ function arePermanentDailyIssuedPuzzlesExactlyEqual(
     && left.issuedAt === right.issuedAt;
 }
 
+function hasSameClueFrozenImmutablePuzzleContent(
+  left: PermanentDailyClueFrozenIssuedPuzzle,
+  right: PermanentDailyClueFrozenIssuedPuzzle,
+): boolean {
+  return left.puzzleId === right.puzzleId
+    && left.identity.seriesVersion === right.identity.seriesVersion
+    && left.identity.puzzleDate === right.identity.puzzleDate
+    && left.identity.dailyNumber === right.identity.dailyNumber
+    && areCanonicalPlayerIdsEqual(left.canonicalPlayerIds, right.canonicalPlayerIds)
+    && areClueSnapshotsEqual(left.clueSnapshot, right.clueSnapshot);
+}
+
+function arePermanentDailyClueFrozenIssuedPuzzlesExactlyEqual(
+  left: PermanentDailyClueFrozenIssuedPuzzle,
+  right: PermanentDailyClueFrozenIssuedPuzzle,
+): boolean {
+  return hasSameClueFrozenImmutablePuzzleContent(left, right)
+    && left.issuedAt === right.issuedAt;
+}
+
+function areClueSnapshotsEqual(
+  left: PermanentDailyIssuedClueSnapshot,
+  right: PermanentDailyIssuedClueSnapshot,
+): boolean {
+  return left.schemaVersion === right.schemaVersion
+    && left.hintLayout.length === right.hintLayout.length
+    && left.hintLayout.every((slot, index) => {
+      const other = right.hintLayout[index];
+      return other !== undefined
+        && slot.slot === other.slot
+        && slot.hintType === other.hintType
+        && slot.displayLabel === other.displayLabel;
+    })
+    && left.pitches.length === right.pitches.length
+    && left.pitches.every((pitch, index) => {
+      const other = right.pitches[index];
+      return other !== undefined
+        && pitch.pitchNumber === other.pitchNumber
+        && pitch.canonicalPlayerId === other.canonicalPlayerId
+        && pitch.initials === other.initials
+        && pitch.hintValues.length === other.hintValues.length
+        && pitch.hintValues.every((value, hintIndex) => value === other.hintValues[hintIndex]);
+    });
+}
+
 function areCanonicalPlayerIdsEqual(
   left: readonly string[],
   right: readonly string[],
@@ -265,5 +374,16 @@ function cloneIssuedPuzzle(
     ...puzzle,
     identity: { ...puzzle.identity },
     canonicalPlayerIds: [...puzzle.canonicalPlayerIds],
+  };
+}
+
+function cloneClueFrozenIssuedPuzzle(
+  puzzle: PermanentDailyClueFrozenIssuedPuzzle,
+): PermanentDailyClueFrozenIssuedPuzzle {
+  return {
+    ...puzzle,
+    identity: { ...puzzle.identity },
+    canonicalPlayerIds: [...puzzle.canonicalPlayerIds],
+    clueSnapshot: clonePermanentDailyIssuedClueSnapshot(puzzle.clueSnapshot),
   };
 }
