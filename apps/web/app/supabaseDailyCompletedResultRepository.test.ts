@@ -33,6 +33,27 @@ const RESULT: DailyCompletedResult = {
   },
 };
 
+const V4_RESULT: DailyCompletedResult = {
+  ...RESULT,
+  submissionId: 'submission-v4-1',
+  rulesetVersion: 'points-v4',
+  completedAtBats: RESULT.completedAtBats.map(atBat => ({
+    ...atBat,
+    outcome: 'K',
+    hintsRevealed: 4,
+    wrongGuesses: 3,
+    resolution: 'strikeout',
+  })),
+  summary: {
+    points: -9,
+    maximumPoints: 36,
+    atBatsCompleted: 9,
+    totalAtBats: 9,
+    completed: true,
+    strikeouts: 9,
+  },
+};
+
 describe('Supabase completed-result repository', () => {
   it('inserts the complete normalized result without an update or upsert path', async () => {
     const single = vi.fn().mockResolvedValue({ data: toRow(RESULT), error: null });
@@ -51,6 +72,23 @@ describe('Supabase completed-result repository', () => {
       ruleset_version: RESULT.rulesetVersion,
       completed_at_bats: RESULT.completedAtBats,
       summary: RESULT.summary,
+    }));
+  });
+
+  it('round-trips a points-v4 result through the same immutable provider path', async () => {
+    const single = vi.fn().mockResolvedValue({ data: toRow(V4_RESULT), error: null });
+    const insert = vi.fn().mockReturnValue({
+      select: vi.fn().mockReturnValue({ single }),
+    });
+    const from = vi.fn().mockReturnValue({ insert });
+
+    const stored = await createSupabaseDailyCompletedResultRepository(asClient(from))
+      .insertIfAbsent(V4_RESULT);
+
+    expect(stored).toEqual({ status: 'inserted', result: V4_RESULT });
+    expect(insert).toHaveBeenCalledWith(expect.objectContaining({
+      ruleset_version: 'points-v4',
+      summary: V4_RESULT.summary,
     }));
   });
 

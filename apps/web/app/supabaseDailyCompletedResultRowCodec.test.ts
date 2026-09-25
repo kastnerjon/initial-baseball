@@ -1,6 +1,7 @@
 import {
   CLASSIC_DAILY_RULESET_VERSION,
   POINTS_V3_DAILY_RULESET_VERSION,
+  POINTS_V4_DAILY_RULESET_VERSION,
   type DailyCompletedResult,
 } from '@initial-baseball/shared';
 import { describe, expect, it } from 'vitest';
@@ -31,6 +32,31 @@ const POINTS_RESULT: DailyCompletedResult = {
     totalAtBats: 9,
     completed: true,
     strikeouts: 0,
+  },
+};
+
+const V4_RESULT: DailyCompletedResult = {
+  schemaVersion: 1,
+  submissionId: 'submission_points_v4_1',
+  puzzleId: 'daily-2026-09-17-editorial-abcd1234',
+  puzzleDate: '2026-09-17',
+  puzzleNumber: 144,
+  rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+  completedAtBats: Array.from({ length: 9 }, (_, index) => ({
+    pitchNumber: index + 1,
+    initials: `V${index + 1}`,
+    outcome: 'K' as const,
+    hintsRevealed: 4 as const,
+    wrongGuesses: 3,
+    resolution: 'strikeout' as const,
+  })),
+  summary: {
+    points: -9,
+    maximumPoints: 36,
+    atBatsCompleted: 9,
+    totalAtBats: 9,
+    completed: true,
+    strikeouts: 9,
   },
 };
 
@@ -68,6 +94,12 @@ describe('completed-result Supabase row codec', () => {
     expect(decodeDailyCompletedResultRow(row)).toEqual(POINTS_RESULT);
   });
 
+  it('round-trips signed points-v4 summary values under the engine-owned range', () => {
+    const row = encodeDailyCompletedResultRow(V4_RESULT);
+
+    expect(decodeDailyCompletedResultRow(row)).toEqual(V4_RESULT);
+  });
+
   it('round-trips a shorter Classic result without assuming nine faced at-bats', () => {
     const row = encodeDailyCompletedResultRow(CLASSIC_RESULT);
 
@@ -78,6 +110,42 @@ describe('completed-result Supabase row codec', () => {
     const row = {
       ...encodeDailyCompletedResultRow(POINTS_RESULT),
       summary: { ...POINTS_RESULT.summary, points: '63' },
+    };
+
+    expectInvalidRow(() => decodeDailyCompletedResultRow(row));
+  });
+
+  it('preserves the v3 non-negative score range', () => {
+    const row = {
+      ...encodeDailyCompletedResultRow(POINTS_RESULT),
+      summary: { ...POINTS_RESULT.summary, points: -1 },
+    };
+
+    expectInvalidRow(() => decodeDailyCompletedResultRow(row));
+  });
+
+  it('rejects a v4 score outside the signed range', () => {
+    const row = {
+      ...encodeDailyCompletedResultRow(V4_RESULT),
+      summary: { ...V4_RESULT.summary, points: -10 },
+    };
+
+    expectInvalidRow(() => decodeDailyCompletedResultRow(row));
+  });
+
+  it('requires the exact engine maximum for a persisted points summary', () => {
+    const row = {
+      ...encodeDailyCompletedResultRow(V4_RESULT),
+      summary: { ...V4_RESULT.summary, maximumPoints: 63 },
+    };
+
+    expectInvalidRow(() => decodeDailyCompletedResultRow(row));
+  });
+
+  it('rejects a malformed points result that is not a nine-at-bat completion', () => {
+    const row = {
+      ...encodeDailyCompletedResultRow(V4_RESULT),
+      summary: { ...V4_RESULT.summary, totalAtBats: 10 },
     };
 
     expectInvalidRow(() => decodeDailyCompletedResultRow(row));
@@ -95,7 +163,7 @@ describe('completed-result Supabase row codec', () => {
   it('rejects an unsupported persisted ruleset instead of coercing it', () => {
     const row = {
       ...encodeDailyCompletedResultRow(POINTS_RESULT),
-      ruleset_version: 'points-v4',
+      ruleset_version: 'points-v2',
     };
 
     expectInvalidRow(() => decodeDailyCompletedResultRow(row));

@@ -1,9 +1,12 @@
+import { getDailyPointsRange } from '@initial-baseball/engine';
 import {
   CLASSIC_DAILY_RULESET_VERSION,
   DAILY_COMPLETED_RESULT_SCHEMA_VERSION,
   POINTS_V3_DAILY_RULESET_VERSION,
+  POINTS_V4_DAILY_RULESET_VERSION,
   type DailyAtBatResolution,
   type DailyCompletedAtBat,
+  type DailyCompletedPointsResultRulesetVersion,
   type DailyCompletedResult,
   type DailyOutcome,
   type DailyRevealCount,
@@ -64,11 +67,15 @@ export function decodeDailyCompletedResultRow(row: unknown): DailyCompletedResul
     completedAtBats: completedAtBats(value.completed_at_bats),
   };
 
-  if (value.ruleset_version === POINTS_V3_DAILY_RULESET_VERSION) {
+  if (
+    value.ruleset_version === POINTS_V3_DAILY_RULESET_VERSION
+    || value.ruleset_version === POINTS_V4_DAILY_RULESET_VERSION
+  ) {
+    const rulesetVersion = value.ruleset_version;
     return {
       ...common,
-      rulesetVersion: POINTS_V3_DAILY_RULESET_VERSION,
-      summary: pointsSummary(value.summary),
+      rulesetVersion,
+      summary: pointsSummary(value.summary, rulesetVersion),
     };
   }
 
@@ -117,13 +124,31 @@ function completedAtBats(value: unknown): DailyCompletedAtBat[] {
   });
 }
 
-function pointsSummary(value: unknown) {
-  const row = record(value, 'points-v3 summary');
+function pointsSummary(
+  value: unknown,
+  rulesetVersion: DailyCompletedPointsResultRulesetVersion,
+) {
+  const row = record(value, `${rulesetVersion} summary`);
+  const totalAtBats = exactInt(row.totalAtBats, 9, 'summary.totalAtBats');
+  const range = getDailyPointsRange(rulesetVersion, totalAtBats);
+  if (range === null || range.step !== 1) {
+    invalid(`Unsupported persisted point range for ${rulesetVersion}.`);
+  }
+
   return {
-    points: nonNegativeNumber(row.points, 'summary.points'),
-    maximumPoints: nonNegativeNumber(row.maximumPoints, 'summary.maximumPoints'),
+    points: boundedInt(
+      row.points,
+      range.minimumPoints,
+      range.maximumPoints,
+      'summary.points',
+    ),
+    maximumPoints: exactInt(
+      row.maximumPoints,
+      range.maximumPoints,
+      'summary.maximumPoints',
+    ),
     atBatsCompleted: nonNegativeInt(row.atBatsCompleted, 'summary.atBatsCompleted'),
-    totalAtBats: positiveInt(row.totalAtBats, 'summary.totalAtBats'),
+    totalAtBats,
     completed: bool(row.completed, 'summary.completed'),
     strikeouts: nonNegativeInt(row.strikeouts, 'summary.strikeouts'),
   };
@@ -181,19 +206,19 @@ function boundedInt(value: unknown, min: number, max: number, field: string): nu
   return value;
 }
 
+function exactInt(value: unknown, expected: number, field: string): number {
+  if (typeof value !== 'number' || !Number.isInteger(value) || value !== expected) {
+    invalid(`${field} must equal ${expected}.`);
+  }
+  return value;
+}
+
 function positiveInt(value: unknown, field: string): number {
   return boundedInt(value, 1, Number.MAX_SAFE_INTEGER, field);
 }
 
 function nonNegativeInt(value: unknown, field: string): number {
   return boundedInt(value, 0, Number.MAX_SAFE_INTEGER, field);
-}
-
-function nonNegativeNumber(value: unknown, field: string): number {
-  if (typeof value !== 'number' || !Number.isFinite(value) || value < 0) {
-    invalid(`${field} must be a non-negative finite number.`);
-  }
-  return value;
 }
 
 function bool(value: unknown, field: string): boolean {
