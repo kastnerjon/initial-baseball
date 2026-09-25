@@ -1,4 +1,5 @@
 import type { HintType, Player } from '@initial-baseball/shared';
+import { getDailyHintStatColumns } from './revealPresentationConfig';
 
 export type DefaultDailyHint = {
   hintType: HintType;
@@ -33,8 +34,25 @@ function getHintValue(hintType: HintType, player: Player): string {
     case 'position':
       return player.primaryPosition && player.primaryPosition !== 'Unknown' ? player.primaryPosition : 'Unknown';
     case 'stats':
-      return player.statsLine.trim() ? player.statsLine : 'Stats unavailable';
+      return formatStatsHint(player);
     default:
       return 'Unknown';
   }
+}
+
+
+function formatStatsHint(player: Player): string {
+  const careerStats = player.careerStats;
+
+  if (careerStats === null) {
+    return 'Stats unavailable';
+  }
+
+  const stats = careerStats.stats as Record<string, number | string | undefined>;
+  const values = getDailyHintStatColumns(careerStats.kind).flatMap((column) => {
+    const value = stats[column];
+    return value === undefined ? [] : [`${column} ${value}`];
+  });
+
+  return values.length === 0 ? 'Stats unavailable' : values.join(' / ');
 }
