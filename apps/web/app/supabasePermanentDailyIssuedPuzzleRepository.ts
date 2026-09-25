@@ -1,7 +1,7 @@
 import 'server-only';
 import type {
-  PermanentDailyIssuedPuzzle,
   PermanentDailyIssuedPuzzleReadRepository,
+  PermanentDailyIssuedPuzzleRecord,
   PermanentDailyIssuedPuzzleRepository,
   PermanentDailyIssuedPuzzleRepositoryInsertResult,
 } from '@initial-baseball/daily';
@@ -20,6 +20,7 @@ const COLUMNS = [
   'schema_version',
   'puzzle_id',
   'canonical_player_ids',
+  'clue_snapshot',
   'issued_at',
 ].join(',');
 
@@ -62,7 +63,7 @@ export function createSupabasePermanentDailyIssuedPuzzleReadRepository(
 
 async function tryInsert(
   client: SupabaseClient,
-  puzzle: PermanentDailyIssuedPuzzle,
+  puzzle: PermanentDailyIssuedPuzzleRecord,
 ): Promise<PermanentDailyIssuedPuzzleRepositoryInsertResult | null> {
   const { data, error } = await client
     .from(TABLE)
@@ -83,7 +84,7 @@ async function tryInsert(
 
 async function readExisting(
   client: SupabaseClient,
-  puzzle: PermanentDailyIssuedPuzzle,
+  puzzle: PermanentDailyIssuedPuzzleRecord,
 ): Promise<PermanentDailyIssuedPuzzleRepositoryInsertResult> {
   const existing = await readOne(client, {
     series_version: puzzle.identity.seriesVersion,
@@ -107,7 +108,7 @@ async function readOne(
   client: SupabaseClient,
   match: Record<string, string | number>,
   operation: string,
-): Promise<PermanentDailyIssuedPuzzle | null> {
+): Promise<PermanentDailyIssuedPuzzleRecord | null> {
   const { data, error } = await client
     .from(TABLE)
     .select(COLUMNS)

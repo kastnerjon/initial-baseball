@@ -33,6 +33,12 @@ No Supabase migration, hosted schema change, row-codec change, repository wideni
 - Full repository CI/data/build checks and exact-head Preview pass.
 - Hosted permanent table remains unchanged and empty.
 
+## Provider persistence checkpoint
+
+Append-only Supabase storage and the strict server row codec now support v1 and v2 records while preserving service-role SELECT/INSERT-only access, RLS, existing v1 decoding, first-write-wins semantics, and the zero-row posture. The existing archive-facing read service still rejects v2 until frozen-clue materialization is wired.
+
+Scope: `tasks/plans/permanent-daily-issued-puzzle-v2-supabase.md`.
+
 ## Next bounded PR
 
-Migrate append-only Supabase storage and the row codec/repository/read port to accept v1 and v2 records. The migration must preserve SELECT/INSERT-only service-role access, RLS, existing v1 decoding, and zero-row posture; it must not switch issuance/materialization yet.
+Wire issuance to materialize the authorized public clue bundle once and store schema-v2 records. Do not change archive materialization in the same PR.

@@ -1,8 +1,13 @@
 import {
+  PERMANENT_DAILY_CLUE_FROZEN_ISSUED_PUZZLE_SCHEMA_VERSION,
+  PERMANENT_DAILY_ISSUED_CLUE_SNAPSHOT_SCHEMA_VERSION,
   PERMANENT_DAILY_ISSUED_PUZZLE_SCHEMA_VERSION,
   PERMANENT_DAILY_SERIES_VERSION,
+  createPermanentDailyClueFrozenIssuedPuzzle,
+  createPermanentDailyIssuedClueSnapshot,
   createPermanentDailyIssuedPuzzle,
-  type PermanentDailyIssuedPuzzle,
+  type PermanentDailyIssuedHintLayoutSlot,
+  type PermanentDailyIssuedPuzzleRecord,
 } from '@initial-baseball/daily';
 
 export type SupabasePermanentDailyIssuedPuzzleRepositoryErrorKind = 'invalid-row' | 'query';
@@ -24,11 +29,12 @@ export type PermanentDailyIssuedPuzzleRow = {
   schema_version: number;
   puzzle_id: string;
   canonical_player_ids: unknown;
+  clue_snapshot: unknown | null;
   issued_at: string;
 };
 
 export function encodePermanentDailyIssuedPuzzleRow(
-  puzzle: PermanentDailyIssuedPuzzle,
+  puzzle: PermanentDailyIssuedPuzzleRecord,
 ): PermanentDailyIssuedPuzzleRow {
   return {
     series_version: puzzle.identity.seriesVersion,
@@ -37,38 +43,72 @@ export function encodePermanentDailyIssuedPuzzleRow(
     schema_version: puzzle.schemaVersion,
     puzzle_id: puzzle.puzzleId,
     canonical_player_ids: [...puzzle.canonicalPlayerIds],
+    clue_snapshot: puzzle.schemaVersion === PERMANENT_DAILY_CLUE_FROZEN_ISSUED_PUZZLE_SCHEMA_VERSION
+      ? {
+          schemaVersion: puzzle.clueSnapshot.schemaVersion,
+          hintLayout: puzzle.clueSnapshot.hintLayout.map(slot => ({ ...slot })),
+          pitches: puzzle.clueSnapshot.pitches.map(pitch => ({
+            ...pitch,
+            hintValues: [...pitch.hintValues],
+          })),
+        }
+      : null,
     issued_at: puzzle.issuedAt,
   };
 }
 
 export function decodePermanentDailyIssuedPuzzleRow(
   row: unknown,
-): PermanentDailyIssuedPuzzle {
-  const value = record(row);
+): PermanentDailyIssuedPuzzleRecord {
+  const value = record(row, 'Permanent Daily issued-puzzle row');
 
-  if (value.schema_version !== PERMANENT_DAILY_ISSUED_PUZZLE_SCHEMA_VERSION) {
-    invalid(`Unsupported permanent Daily issued-puzzle schema version ${String(value.schema_version)}.`);
-  }
   if (value.series_version !== PERMANENT_DAILY_SERIES_VERSION) {
     invalid(`Unsupported permanent Daily series version ${String(value.series_version)}.`);
   }
 
+  const schemaVersion = positiveInt(value.schema_version, 'schema_version');
   const persistedPuzzleId = text(value.puzzle_id, 'puzzle_id');
   const canonicalPlayerIds = stringArray(value.canonical_player_ids, 'canonical_player_ids');
+  const identity = {
+    seriesVersion: PERMANENT_DAILY_SERIES_VERSION,
+    dailyNumber: positiveInt(value.daily_number, 'daily_number'),
+    puzzleDate: calendarDate(value.puzzle_date),
+  };
+  const issuedAt = timestamp(value.issued_at, 'issued_at');
 
-  let puzzle: PermanentDailyIssuedPuzzle;
+  let puzzle: PermanentDailyIssuedPuzzleRecord;
   try {
-    puzzle = createPermanentDailyIssuedPuzzle({
-      identity: {
-        seriesVersion: PERMANENT_DAILY_SERIES_VERSION,
-        dailyNumber: positiveInt(value.daily_number, 'daily_number'),
-        puzzleDate: calendarDate(value.puzzle_date),
-      },
-      canonicalPlayerIds,
-      issuedAt: timestamp(value.issued_at, 'issued_at'),
-    });
+    if (schemaVersion === PERMANENT_DAILY_ISSUED_PUZZLE_SCHEMA_VERSION) {
+      if (value.clue_snapshot !== null && value.clue_snapshot !== undefined) {
+        invalid('Schema-v1 permanent Daily rows must not contain clue_snapshot.');
+      }
+      puzzle = createPermanentDailyIssuedPuzzle({
+        identity,
+        canonicalPlayerIds,
+        issuedAt,
+      });
+    } else if (
+      schemaVersion === PERMANENT_DAILY_CLUE_FROZEN_ISSUED_PUZZLE_SCHEMA_VERSION
+    ) {
+      if (value.clue_snapshot === null || value.clue_snapshot === undefined) {
+        invalid('Schema-v2 permanent Daily rows require clue_snapshot.');
+      }
+      puzzle = createPermanentDailyClueFrozenIssuedPuzzle({
+        identity,
+        canonicalPlayerIds,
+        clueSnapshot: decodeClueSnapshot(value.clue_snapshot),
+        issuedAt,
+      });
+    } else {
+      invalid(
+        `Unsupported permanent Daily issued-puzzle schema version ${String(schemaVersion)}.`,
+      );
+    }
   } catch (error) {
-    return invalid(error instanceof Error ? error.message : 'Persisted permanent Daily puzzle is invalid.');
+    if (error instanceof SupabasePermanentDailyIssuedPuzzleRepositoryError) throw error;
+    return invalid(
+      error instanceof Error ? error.message : 'Persisted permanent Daily puzzle is invalid.',
+    );
   }
 
   if (persistedPuzzleId !== puzzle.puzzleId) {
@@ -80,11 +120,77 @@ export function decodePermanentDailyIssuedPuzzleRow(
   return puzzle;
 }
 
-function record(value: unknown): Record<string, unknown> {
+function decodeClueSnapshot(value: unknown) {
+  const snapshot = record(value, 'clue_snapshot');
+  if (snapshot.schemaVersion !== PERMANENT_DAILY_ISSUED_CLUE_SNAPSHOT_SCHEMA_VERSION) {
+    invalid(
+      `Unsupported permanent Daily clue snapshot schema version ${String(snapshot.schemaVersion)}.`,
+    );
+  }
+
+  const hintLayout = array(snapshot.hintLayout, 'clue_snapshot.hintLayout')
+    .map((item, index) => {
+      const hint = record(item, `clue_snapshot.hintLayout[${index}]`);
+      return {
+        slot: positiveInt(
+          hint.slot,
+          `clue_snapshot.hintLayout[${index}].slot`,
+        ) as PermanentDailyIssuedHintLayoutSlot['slot'],
+        hintType: text(
+          hint.hintType,
+          `clue_snapshot.hintLayout[${index}].hintType`,
+        ) as PermanentDailyIssuedHintLayoutSlot['hintType'],
+        displayLabel: text(
+          hint.displayLabel,
+          `clue_snapshot.hintLayout[${index}].displayLabel`,
+        ),
+      };
+    });
+
+  const pitches = array(snapshot.pitches, 'clue_snapshot.pitches')
+    .map((item, index) => {
+      const pitch = record(item, `clue_snapshot.pitches[${index}]`);
+      return {
+        pitchNumber: positiveInt(
+          pitch.pitchNumber,
+          `clue_snapshot.pitches[${index}].pitchNumber`,
+        ),
+        canonicalPlayerId: text(
+          pitch.canonicalPlayerId,
+          `clue_snapshot.pitches[${index}].canonicalPlayerId`,
+        ),
+        initials: text(
+          pitch.initials,
+          `clue_snapshot.pitches[${index}].initials`,
+        ),
+        hintValues: stringArray(
+          pitch.hintValues,
+          `clue_snapshot.pitches[${index}].hintValues`,
+        ),
+      };
+    });
+
+  try {
+    return createPermanentDailyIssuedClueSnapshot({ hintLayout, pitches });
+  } catch (error) {
+    return invalid(
+      error instanceof Error ? error.message : 'Persisted permanent Daily clue snapshot is invalid.',
+    );
+  }
+}
+
+function record(value: unknown, field: string): Record<string, unknown> {
   if (typeof value !== 'object' || value === null || Array.isArray(value)) {
-    invalid('Permanent Daily issued-puzzle row must be an object.');
+    invalid(`${field} must be an object.`);
   }
   return value as Record<string, unknown>;
+}
+
+function array(value: unknown, field: string): unknown[] {
+  if (!Array.isArray(value)) {
+    invalid(`${field} must be an array.`);
+  }
+  return value;
 }
 
 function text(value: unknown, field: string): string {
