@@ -43,16 +43,13 @@ describe('Permanent Daily clue-frozen issuance orchestration', () => {
         puzzleId: 'permanent-v1-daily-1',
         identity,
         canonicalPlayerIds: PLAYER_IDS,
-        clueSnapshot: {
-          pitches: [
-            {
-              pitchNumber: 1,
-              canonicalPlayerId: 'player-1',
-              initials: 'P1',
-            },
-          ],
-        },
       },
+    });
+    if (!result.ok) throw new Error('Expected created clue-frozen puzzle.');
+    expect(result.puzzle.clueSnapshot.pitches[0]).toMatchObject({
+      pitchNumber: 1,
+      canonicalPlayerId: 'player-1',
+      initials: 'P1',
     });
   });
 

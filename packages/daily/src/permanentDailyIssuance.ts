@@ -3,8 +3,10 @@ import type { DailyPuzzleEditorialRecord } from './dailyPuzzleLifecycle';
 import type { PermanentDailyIssuedClueSnapshot } from './permanentDailyIssuedClueSnapshot';
 import {
   createPermanentDailyClueFrozenIssuedPuzzleService,
-  createPermanentDailyIssuedPuzzleService,
   type PermanentDailyClueFrozenIssuedPuzzleStoreResult,
+} from './permanentDailyClueFrozenIssuedPuzzleService';
+import {
+  createPermanentDailyIssuedPuzzleService,
   type PermanentDailyIssuedPuzzleRepository,
   type PermanentDailyIssuedPuzzleStoreResult,
 } from './permanentDailyIssuedPuzzle';

@@ -122,14 +122,11 @@ export {
   PERMANENT_DAILY_ISSUED_PUZZLE_SCHEMA_VERSION,
   clonePermanentDailyIssuedPuzzleRecord,
   createPermanentDailyClueFrozenIssuedPuzzle,
-  createPermanentDailyClueFrozenIssuedPuzzleService,
   createPermanentDailyIssuedPuzzle,
   createPermanentDailyIssuedPuzzleService,
   createPermanentDailyPuzzleId,
   type PermanentDailyClueFrozenIssuedPuzzle,
   type PermanentDailyClueFrozenIssuedPuzzleInput,
-  type PermanentDailyClueFrozenIssuedPuzzleService,
-  type PermanentDailyClueFrozenIssuedPuzzleStoreResult,
   type PermanentDailyIssuedPuzzle,
   type PermanentDailyIssuedPuzzleInput,
   type PermanentDailyIssuedPuzzleRecord,
@@ -139,6 +136,11 @@ export {
   type PermanentDailyIssuedPuzzleStoreResult,
 } from './permanentDailyIssuedPuzzle';
 
+export {
+  createPermanentDailyClueFrozenIssuedPuzzleService,
+  type PermanentDailyClueFrozenIssuedPuzzleService,
+  type PermanentDailyClueFrozenIssuedPuzzleStoreResult,
+} from './permanentDailyClueFrozenIssuedPuzzleService';
 
 export {
   createPermanentDailyClueFrozenIssuanceService,

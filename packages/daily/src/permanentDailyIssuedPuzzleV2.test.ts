@@ -3,11 +3,11 @@ import {
   createPermanentDailyIssuedClueSnapshot,
   type PermanentDailyIssuedClueSnapshot,
 } from './permanentDailyIssuedClueSnapshot';
+import { createPermanentDailyClueFrozenIssuedPuzzleService } from './permanentDailyClueFrozenIssuedPuzzleService';
 import {
   PERMANENT_DAILY_CLUE_FROZEN_ISSUED_PUZZLE_SCHEMA_VERSION,
   clonePermanentDailyIssuedPuzzleRecord,
   createPermanentDailyClueFrozenIssuedPuzzle,
-  createPermanentDailyClueFrozenIssuedPuzzleService,
   createPermanentDailyIssuedPuzzle,
   type PermanentDailyIssuedPuzzleRecord,
   type PermanentDailyIssuedPuzzleRepository,
@@ -112,10 +112,11 @@ describe('Permanent Daily clue-frozen issued puzzle envelope', () => {
 
     expect(result.ok).toBe(false);
     if (result.ok) throw new Error('Expected immutable conflict.');
-    expect(result.existing).toMatchObject({
-      schemaVersion: 2,
-      clueSnapshot: { pitches: [{ initials: 'P1' }] },
-    });
+    expect(result.existing.schemaVersion).toBe(2);
+    if (result.existing.schemaVersion !== 2) {
+      throw new Error('Expected existing clue-frozen puzzle.');
+    }
+    expect(result.existing.clueSnapshot.pitches[0]?.initials).toBe('P1');
     expect(result.requested.clueSnapshot.pitches[0]?.initials).toBe('ZZ');
   });
 
