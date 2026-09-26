@@ -1,4 +1,8 @@
-import type { DailyAtBatResult, DailyPublicPuzzle } from '@initial-baseball/shared';
+import {
+  POINTS_V4_DAILY_RULESET_VERSION,
+  type DailyAtBatResult,
+  type DailyPublicPuzzle,
+} from '@initial-baseball/shared';
 import type { DailyAtBatResultRepository } from '@initial-baseball/daily';
 import { describe, expect, it, vi } from 'vitest';
 import { createDailyAtBatResultSubmissionService } from './dailyAtBatResultSubmissionService';
@@ -43,6 +47,30 @@ describe('resolved-at-bat submission service', () => {
     expect(stored).not.toHaveProperty('createdAt');
   });
 
+  it('routes points-v4 and stores the engine-derived half-point walk', async () => {
+    const repository = passthroughRepository('inserted');
+    const loadAuthoritativePuzzle = vi.fn().mockResolvedValue(PUZZLE);
+    const service = createService(repository, loadAuthoritativePuzzle);
+    const submission = {
+      ...buildV4WalkSubmission(),
+      awardedPoints: 999,
+    };
+
+    await expect(service.submit(submission)).resolves.toEqual({
+      ok: true,
+      status: 'created',
+    });
+
+    expect(loadAuthoritativePuzzle).toHaveBeenCalledWith(
+      PUZZLE.puzzleDate,
+      POINTS_V4_DAILY_RULESET_VERSION,
+    );
+    expect(vi.mocked(repository.insertIfAbsent).mock.calls[0]?.[0]).toEqual({
+      ...buildV4WalkSubmission(),
+      awardedPoints: 0.5,
+    });
+  });
+
   it('accepts an isolated later slot without requiring prior observations or completion', async () => {
     const repository = passthroughRepository('existing');
     const service = createService(repository, vi.fn().mockResolvedValue(PUZZLE));
@@ -58,6 +86,7 @@ describe('resolved-at-bat submission service', () => {
     [null, 'invalid_submission'],
     [{ ...buildSubmission(), schemaVersion: 2 }, 'unsupported_schema'],
     [{ ...buildSubmission(), rulesetVersion: 'classic-inning-v1' }, 'unsupported_ruleset'],
+    [{ ...buildSubmission(), rulesetVersion: 'points-v2' }, 'unsupported_ruleset'],
     [{ ...buildSubmission(), puzzleDate: '2026-02-31' }, 'invalid_submission'],
     [{ ...buildSubmission(), puzzleDate: '2026-09-19' }, 'invalid_puzzle'],
   ])('rejects invalid routing before puzzle loading', async (submission, error) => {
@@ -130,6 +159,23 @@ function buildSubmission() {
       outcome: '3B' as const,
       hintsRevealed: 1 as const,
       wrongGuesses: 1,
+      resolution: 'correct' as const,
+    },
+  };
+}
+
+
+function buildV4WalkSubmission() {
+  const base = buildSubmission();
+  return {
+    ...base,
+    attemptId: 'attempt-v4-walk',
+    rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+    atBat: {
+      ...base.atBat,
+      outcome: 'BB' as const,
+      hintsRevealed: 4 as const,
+      wrongGuesses: 2,
       resolution: 'correct' as const,
     },
   };
