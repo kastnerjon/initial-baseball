@@ -145,6 +145,20 @@ After this PR merges:
 3. use a v4 walk (0.5) as the strongest write-boundary proof rather than a K;
 4. preserve H1's original scope: server result-write compatibility only.
 
+## H activation guardrails discovered in the high-level audit
+
+This PR deliberately stops below browser activation. The next H work must preserve these currently intentional seams:
+
+- `dailyAtBatAttemptJournal.ts` still owns a points-v3-only attempt identity/submission contract;
+- `dailyAtBatGameplayLifecycle.ts` still retires non-v3 durable Daily attempt state;
+- `useDailyGameplayPersistence.ts` still coordinates owner/outbox contribution only for points-v3;
+- `dailyCompletedResultClient.ts` still accepts only points-v3 or Classic;
+- shared comparison HTTP/request/browser layers remain points-v3-only;
+- `CURRENT_DAILY_RULESET_VERSION` remains points-v3;
+- most importantly, current non-archive `isDailyModeSaveCompatible` treats any non-Classic saved ruleset as compatible with any requested non-Classic ruleset. Before a v4 default cutover, H must make current-Daily save compatibility exact-version (or otherwise explicitly migrate/fence it) so an already-started v3 game is never silently restored as v4. Archive saves already use exact-version compatibility.
+
+These are not defects to broaden into this PR. They are explicit cutover prerequisites.
+
 ## Verification
 
 Required before merge:
