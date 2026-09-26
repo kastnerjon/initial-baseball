@@ -30,16 +30,16 @@ export const POINTS_V2_OUTCOME_POINTS: Readonly<Record<DailyOutcome, number>> = 
   K: 0,
 };
 
-export const POINTS_V4_MIN_POINTS_PER_AT_BAT = -1;
+export const POINTS_V4_MIN_POINTS_PER_AT_BAT = 0;
 export const POINTS_V4_MAX_POINTS_PER_AT_BAT = 4;
-export const POINTS_V4_SCORE_STEP = 1;
+export const POINTS_V4_SCORE_STEP = 0.5;
 
 export const POINTS_V4_OUTCOME_POINTS: Readonly<Record<DailyOutcome, number>> = {
   HR: POINTS_V4_MAX_POINTS_PER_AT_BAT,
   '3B': 3,
   '2B': 2,
   '1B': 1,
-  BB: 0,
+  BB: POINTS_V4_SCORE_STEP,
   K: POINTS_V4_MIN_POINTS_PER_AT_BAT,
 };
 
