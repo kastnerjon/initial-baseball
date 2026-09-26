@@ -48,6 +48,6 @@ The original read service remains the production points-v3 boundary. Row G2 adds
 - Pure at-bat normalization validates provider count/sum statistics against engine-owned per-AB ranges and score steps: v3 0..7 in integer steps and v4 0..4 in 0.5-point steps.
 - Pure completed normalization asks the engine for the nine-AB range/step and builds a step-aware histogram. V3 remains 64 entries for 0..63; v4 is 73 entries for 0..36 in 0.5-point steps, with index `(score - minimumScore) / step`.
 - Strict-lower finish rate resolves each histogram index back to its actual score, so fractional v4 values and ties are handled correctly.
-- The existing `DailyNineComparisonRepository`, `DailyNineComparisonKey`, and service read methods remain points-v3-only until the separate Supabase/provider PR. This is intentional fail-closed staging, not partial provider support.
+- At the G2 checkpoint, `DailyNineComparisonRepository`, `DailyNineComparisonKey`, and service read methods deliberately remained points-v3-only. G3B subsequently widened that server/provider read port to exact-version v3/v4; the shared HTTP/read-service/browser boundary still rejects v4 until H.
 
 Scope: `tasks/plans/points-v4-comparison-domain.md`.
