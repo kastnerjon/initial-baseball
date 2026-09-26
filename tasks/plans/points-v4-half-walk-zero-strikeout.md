@@ -36,7 +36,7 @@ The scoring change is not just an engine constant update. Earlier v4 infrastruct
 8. canonical docs/plans describing negative/integer v4 semantics;
 9. H1 server-write tests currently staged on a separate branch around -1/-9 behavior.
 
-Changing all already-merged v4 semantics in one bounded compatibility PR keeps the exact-version contract coherent before any public v4 data exists. H1 remains a separate activation-layer PR and will be rebased/adjusted after this PR merges.
+Changing all already-merged v4 semantics in one bounded compatibility PR kept the exact-version contract coherent before any public v4 data existed. Follow-up H1 was subsequently rebuilt on post-redefinition main and merged as the bounded server result-write checkpoint; H2 then added current-Daily v3/v4 gameplay-save isolation without activating browser contribution or the public default.
 
 ## Scope
 
@@ -139,7 +139,7 @@ For v3, existing integer behavior and 64-entry 0..63 histogram remain unchanged.
 
 H1 was rebuilt from post-redefinition `main` rather than merging the stale pre-redefinition branch. Its bounded server-write scope is documented in `tasks/plans/points-v4-result-write-api.md`.
 
-H1 proves the finalized contract at the write boundary with a 0.5-point v4 walk and a 4.5-point nine-walk completed game, while leaving browser producers, comparison HTTP/browser acceptance and the public default on v3. The activation guardrails below remain later H work.
+H1 proves the finalized contract at the write boundary with a 0.5-point v4 walk and a 4.5-point nine-walk completed game, while leaving browser producers, comparison HTTP/browser acceptance and the public default on v3. The remaining activation guardrails below are H3-H5 work; H2 save isolation is now complete.
 
 ## H activation guardrails discovered in the high-level audit
 
@@ -151,7 +151,7 @@ This PR deliberately stops below browser activation. The next H work must preser
 - `dailyCompletedResultClient.ts` still accepts only points-v3 or Classic;
 - shared comparison HTTP/request/browser layers remain points-v3-only;
 - `CURRENT_DAILY_RULESET_VERSION` remains points-v3;
-- most importantly, current non-archive `isDailyModeSaveCompatible` treats any non-Classic saved ruleset as compatible with any requested non-Classic ruleset. Before a v4 default cutover, H must make current-Daily save compatibility exact-version (or otherwise explicitly migrate/fence it) so an already-started v3 game is never silently restored as v4. Archive saves already use exact-version compatibility.
+- **H2 follow-up complete:** current-Daily v4 now uses a separate ruleset-keyed gameplay-save namespace and accepts only v4 saves. Points-v3 retains the explicit historical legacy/v1/v2/v3 restore family but rejects v4, so an old v3 value is neither silently restored as v4 nor overwritten by a v4 save/reset. Archive exact-version isolation remains unchanged. Scope: `tasks/plans/points-v4-current-daily-save-isolation.md`.
 
 These are not defects to broaden into this PR. They are explicit cutover prerequisites.
 
