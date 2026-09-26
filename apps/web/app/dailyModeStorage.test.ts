@@ -14,9 +14,16 @@ import {
 } from './dailyModeStorage';
 
 describe('dailyModeStorage', () => {
-  it('preserves the historical points-v3 key while versioning points-v4 and isolating Classic', () => {
-    expect(getDailyModeStorageKey('2026-09-18', POINTS_V3_DAILY_RULESET_VERSION))
-      .toBe('initial-baseball:daily:2026-09-18');
+  it('preserves the historical pre-v4 key while versioning points-v4 and isolating Classic', () => {
+    for (const rulesetVersion of [
+      LEGACY_DAILY_RULESET_VERSION,
+      POINTS_V1_DAILY_RULESET_VERSION,
+      POINTS_V2_DAILY_RULESET_VERSION,
+      POINTS_V3_DAILY_RULESET_VERSION,
+    ]) {
+      expect(getDailyModeStorageKey('2026-09-18', rulesetVersion))
+        .toBe('initial-baseball:daily:2026-09-18');
+    }
     expect(getDailyModeStorageKey('2026-09-18', POINTS_V4_DAILY_RULESET_VERSION))
       .toBe('initial-baseball:daily:ruleset:points-v4:2026-09-18');
     expect(getDailyModeStorageKey('2026-09-18', CLASSIC_DAILY_RULESET_VERSION))
@@ -54,6 +61,7 @@ describe('dailyModeStorage', () => {
     const v4 = getDailyModeStorage(POINTS_V4_DAILY_RULESET_VERSION, storage);
     if (v4 === null) throw new Error('Expected points-v4 storage adapter.');
 
+    expect(v4.getItem(key)).toBeNull();
     v4.setItem(key, 'points-v4-save');
 
     expect(storage.getItem(key)).toBe('points-v3-save');
