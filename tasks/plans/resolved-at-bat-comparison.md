@@ -128,4 +128,8 @@ Each PR starts from updated main, writes its own scope contract, updates canonic
 
 ## September 25 points-v4 comparison-domain checkpoint
 
-Portable comparison math now supports exact-version points-v3 and points-v4 without changing the deployed provider. V4 resolved-AB sufficient statistics may contain negative awarded-point sums within -1..4 per observation; completed v4 buckets span -9..36 and normalize into an offset histogram rather than using a score as a raw array index. Strict-lower semantics continue to count only actual lower scores and keep ties in the denominator. The production repository/Supabase/API/browser path remains points-v3 until the next bounded storage/provider PR. Scope: `tasks/plans/points-v4-comparison-domain.md`.
+Portable comparison math added exact-version points-v3 and points-v4 support without changing the deployed provider. That checkpoint initially targeted the inactive signed/integer v4 draft.
+
+## September 26 points-v4 scoring finalization
+
+Before public activation or any persisted v4 production result, v4 was finalized as 4/3/2/1/0.5/0. V4 resolved-AB sufficient statistics therefore span 0..4 per observation in 0.5-point steps; completed v4 buckets span 0..36 in 0.5-point steps and normalize into a 73-entry step-aware histogram. Strict-lower semantics continue to count only actual lower scores and keep ties in the denominator. Server-only result storage and comparison-provider reads now support this exact-version fractional contract; the public comparison HTTP/browser path remains points-v3 until H. Scopes: `tasks/plans/points-v4-comparison-domain.md` and `tasks/plans/points-v4-half-walk-zero-strikeout.md`.
