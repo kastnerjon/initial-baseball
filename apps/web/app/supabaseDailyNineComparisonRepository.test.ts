@@ -43,16 +43,16 @@ describe('Supabase Daily Nine comparison repository', () => {
     });
   });
 
-  it('decodes a signed points-v4 at-bat aggregate', async () => {
+  it('decodes a fractional points-v4 at-bat aggregate', async () => {
     const rpc = vi.fn().mockResolvedValue({
-      data: [{ resolved_at_bat_count: '3', awarded_points_sum: '-2' }],
+      data: [{ resolved_at_bat_count: '3', awarded_points_sum: '4.5' }],
       error: null,
     });
     const repository = createSupabaseDailyNineComparisonRepository(asClient(rpc));
 
     await expect(repository.readAtBat({ ...V4_KEY, pitchNumber: 2 })).resolves.toEqual({
       resolvedAtBatCount: 3,
-      awardedPointsSum: -2,
+      awardedPointsSum: 4.5,
     });
     expect(rpc).toHaveBeenCalledWith('daily_nine_at_bat_comparison', {
       p_puzzle_id: V4_KEY.puzzleId,
@@ -122,11 +122,11 @@ describe('Supabase Daily Nine comparison repository', () => {
     });
   });
 
-  it('decodes signed points-v4 completed score buckets', async () => {
+  it('decodes fractional points-v4 completed score buckets', async () => {
     const rpc = vi.fn().mockResolvedValue({
       data: [
-        { points: '-9', result_count: '2' },
-        { points: '-1', result_count: 3 },
+        { points: '0', result_count: '2' },
+        { points: '0.5', result_count: 3 },
         { points: 36, result_count: '1' },
       ],
       error: null,
@@ -135,8 +135,8 @@ describe('Supabase Daily Nine comparison repository', () => {
 
     await expect(repository.readCompletedGames(V4_KEY)).resolves.toEqual({
       scoreBuckets: [
-        { points: -9, count: 2 },
-        { points: -1, count: 3 },
+        { points: 0, count: 2 },
+        { points: 0.5, count: 3 },
         { points: 36, count: 1 },
       ],
     });
@@ -146,6 +146,26 @@ describe('Supabase Daily Nine comparison repository', () => {
       p_puzzle_number: V4_KEY.puzzleNumber,
       p_ruleset_version: V4_KEY.rulesetVersion,
     });
+  });
+
+  it('fails closed on quarter-point provider values', async () => {
+    const atBat = createSupabaseDailyNineComparisonRepository(asClient(
+      vi.fn().mockResolvedValue({
+        data: [{ resolved_at_bat_count: 2, awarded_points_sum: '0.25' }],
+        error: null,
+      }),
+    ));
+    await expect(atBat.readAtBat({ ...V4_KEY, pitchNumber: 1 }))
+      .rejects.toMatchObject({ kind: 'invalid-row' });
+
+    const completed = createSupabaseDailyNineComparisonRepository(asClient(
+      vi.fn().mockResolvedValue({
+        data: [{ points: '1.25', result_count: 1 }],
+        error: null,
+      }),
+    ));
+    await expect(completed.readCompletedGames(V4_KEY))
+      .rejects.toMatchObject({ kind: 'invalid-row' });
   });
 
   it('returns an empty completed population without inventing a score bucket', async () => {
