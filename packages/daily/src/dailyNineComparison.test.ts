@@ -58,8 +58,8 @@ describe('Daily Nine comparison service', () => {
 
   it('routes points-v4 through the widened repository/service port', async () => {
     const repo = repository(
-      { resolvedAtBatCount: 3, awardedPointsSum: -2 },
-      { scoreBuckets: [{ points: -9, count: 1 }, { points: 36, count: 1 }] },
+      { resolvedAtBatCount: 3, awardedPointsSum: 4.5 },
+      { scoreBuckets: [{ points: 0, count: 1 }, { points: 36, count: 1 }] },
     );
     const service = createDailyNineComparisonService(repo);
 
@@ -67,15 +67,15 @@ describe('Daily Nine comparison service', () => {
       ...V4_KEY,
       pitchNumber: 2,
       resolvedAtBatCount: 3,
-      averagePoints: -2 / 3,
+      averagePoints: 1.5,
     });
 
     const completed = await service.getCompletedGames(V4_KEY);
     expect(completed.rulesetVersion).toBe(POINTS_V4_DAILY_RULESET_VERSION);
     expect(completed.completedGameCount).toBe(2);
-    expect(completed.averageTotalPoints).toBe(27 / 2);
+    expect(completed.averageTotalPoints).toBe(18);
     expect(completed.scoreHistogram[0]).toBe(1);
-    expect(completed.scoreHistogram[45]).toBe(1);
+    expect(completed.scoreHistogram[72]).toBe(1);
     expect(repo.readAtBat).toHaveBeenCalledExactlyOnceWith({ ...V4_KEY, pitchNumber: 2 });
     expect(repo.readCompletedGames).toHaveBeenCalledExactlyOnceWith(V4_KEY);
   });
@@ -128,26 +128,31 @@ describe('Daily Nine comparison service', () => {
       .rejects.toThrow('cannot have points without resolved at-bats');
   });
 
-  it('validates points-v4 negative at-bat sums against the exact ruleset range', () => {
+  it('validates points-v4 half-point at-bat sums against the exact ruleset range and step', () => {
     expect(deriveDailyNineAtBatComparison(
       { ...V4_KEY, pitchNumber: 2 },
-      { resolvedAtBatCount: 3, awardedPointsSum: -2 },
+      { resolvedAtBatCount: 3, awardedPointsSum: 4.5 },
     )).toMatchObject({
       ...V4_KEY,
       pitchNumber: 2,
       resolvedAtBatCount: 3,
-      averagePoints: -2 / 3,
+      averagePoints: 1.5,
     });
 
     expect(() => deriveDailyNineAtBatComparison(
       { ...V4_KEY, pitchNumber: 2 },
-      { resolvedAtBatCount: 3, awardedPointsSum: -4 },
+      { resolvedAtBatCount: 3, awardedPointsSum: -0.5 },
     )).toThrow('outside the points-v4 slot range');
 
     expect(() => deriveDailyNineAtBatComparison(
       { ...V4_KEY, pitchNumber: 2 },
-      { resolvedAtBatCount: 3, awardedPointsSum: 13 },
+      { resolvedAtBatCount: 3, awardedPointsSum: 12.5 },
     )).toThrow('outside the points-v4 slot range');
+
+    expect(() => deriveDailyNineAtBatComparison(
+      { ...V4_KEY, pitchNumber: 2 },
+      { resolvedAtBatCount: 3, awardedPointsSum: 4.25 },
+    )).toThrow('0.5-point score step');
   });
 
   it('preserves the points-v3 non-negative at-bat domain', () => {
@@ -187,33 +192,36 @@ describe('Daily Nine comparison service', () => {
     expect(comparison.scoreHistogram[63]).toBe(1);
   });
 
-  it('builds an offset points-v4 histogram from -9 through 36', () => {
+  it('builds a half-point points-v4 histogram from 0 through 36', () => {
     const comparison = deriveDailyNineCompletedComparison(V4_KEY, {
       scoreBuckets: [
-        { points: -9, count: 2 },
-        { points: -1, count: 3 },
-        { points: 0, count: 1 },
+        { points: 0, count: 2 },
+        { points: 0.5, count: 3 },
+        { points: 1, count: 1 },
         { points: 36, count: 1 },
-        { points: -1, count: 1 },
+        { points: 0.5, count: 1 },
       ],
     });
 
     expect(comparison.completedGameCount).toBe(8);
-    expect(comparison.averageTotalPoints).toBe(14 / 8);
-    expect(comparison.scoreHistogram).toHaveLength(46);
+    expect(comparison.averageTotalPoints).toBe(39 / 8);
+    expect(comparison.scoreHistogram).toHaveLength(73);
     expect(comparison.scoreHistogram[0]).toBe(2);
-    expect(comparison.scoreHistogram[8]).toBe(4);
-    expect(comparison.scoreHistogram[9]).toBe(1);
-    expect(comparison.scoreHistogram[45]).toBe(1);
+    expect(comparison.scoreHistogram[1]).toBe(4);
+    expect(comparison.scoreHistogram[2]).toBe(1);
+    expect(comparison.scoreHistogram[72]).toBe(1);
   });
 
-  it('rejects points-v4 completed buckets outside the signed score domain', () => {
+  it('rejects points-v4 completed buckets outside or misaligned to the half-point domain', () => {
     expect(() => deriveDailyNineCompletedComparison(V4_KEY, {
-      scoreBuckets: [{ points: -10, count: 1 }],
-    })).toThrow('between -9 and 36');
+      scoreBuckets: [{ points: -0.5, count: 1 }],
+    })).toThrow('between 0 and 36');
     expect(() => deriveDailyNineCompletedComparison(V4_KEY, {
-      scoreBuckets: [{ points: 37, count: 1 }],
-    })).toThrow('between -9 and 36');
+      scoreBuckets: [{ points: 36.5, count: 1 }],
+    })).toThrow('between 0 and 36');
+    expect(() => deriveDailyNineCompletedComparison(V4_KEY, {
+      scoreBuckets: [{ points: 0.25, count: 1 }],
+    })).toThrow('0.5-point score step');
   });
 
   it('implements strict-lower finish semantics and excludes ties from numerator', async () => {
@@ -230,19 +238,19 @@ describe('Daily Nine comparison service', () => {
     expect(getDailyNineStrictLowerFinishRate(comparison, 31)).toBe(1);
   });
 
-  it('implements strict-lower finish semantics across negative points-v4 scores', () => {
+  it('implements strict-lower finish semantics across half-point points-v4 scores', () => {
     const comparison = deriveDailyNineCompletedComparison(V4_KEY, {
       scoreBuckets: [
-        { points: -9, count: 2 },
-        { points: -1, count: 3 },
-        { points: 0, count: 1 },
+        { points: 0, count: 2 },
+        { points: 0.5, count: 3 },
+        { points: 1, count: 1 },
         { points: 4, count: 2 },
       ],
     });
 
-    expect(getDailyNineStrictLowerFinishRate(comparison, -9)).toBe(0);
-    expect(getDailyNineStrictLowerFinishRate(comparison, -1)).toBe(2 / 8);
-    expect(getDailyNineStrictLowerFinishRate(comparison, 0)).toBe(5 / 8);
+    expect(getDailyNineStrictLowerFinishRate(comparison, 0)).toBe(0);
+    expect(getDailyNineStrictLowerFinishRate(comparison, 0.5)).toBe(2 / 8);
+    expect(getDailyNineStrictLowerFinishRate(comparison, 1)).toBe(5 / 8);
     expect(getDailyNineStrictLowerFinishRate(comparison, 4)).toBe(6 / 8);
   });
 
