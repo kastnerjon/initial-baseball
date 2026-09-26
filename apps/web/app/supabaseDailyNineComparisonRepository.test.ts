@@ -148,6 +148,29 @@ describe('Supabase Daily Nine comparison repository', () => {
     });
   });
 
+  it('accepts scaled textual numeric values from exact-numeric RPCs', async () => {
+    const atBat = createSupabaseDailyNineComparisonRepository(asClient(
+      vi.fn().mockResolvedValue({
+        data: [{ resolved_at_bat_count: 2, awarded_points_sum: '2.0' }],
+        error: null,
+      }),
+    ));
+    await expect(atBat.readAtBat({ ...V4_KEY, pitchNumber: 1 })).resolves.toEqual({
+      resolvedAtBatCount: 2,
+      awardedPointsSum: 2,
+    });
+
+    const completed = createSupabaseDailyNineComparisonRepository(asClient(
+      vi.fn().mockResolvedValue({
+        data: [{ points: '0.50', result_count: 1 }],
+        error: null,
+      }),
+    ));
+    await expect(completed.readCompletedGames(V4_KEY)).resolves.toEqual({
+      scoreBuckets: [{ points: 0.5, count: 1 }],
+    });
+  });
+
   it('fails closed on quarter-point provider values', async () => {
     const atBat = createSupabaseDailyNineComparisonRepository(asClient(
       vi.fn().mockResolvedValue({
