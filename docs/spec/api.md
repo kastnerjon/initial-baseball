@@ -1,7 +1,7 @@
 # Daily web API specification
 
 Status: Living source of truth  
-Last updated: 2026-09-17
+Last updated: 2026-09-26
 
 Daily routes are thin Next.js adapters over canonical baseball data, engine rules, and portable Daily logic. Answer-integrity rationale is in `docs/decisions/0001-daily-answer-integrity.md`.
 
@@ -150,7 +150,7 @@ Valid pre-ruleset tokens normalize to `legacy-inning-v1`. Valid `classic-inning-
 
 ### `POST /api/daily/results`
 
-This anonymous endpoint accepts exactly one completed-game submission after native `points-v3` Daily Nine or `classic-inning-v1` Classic completion. It is not called per hint, guess, or at-bat.
+This anonymous endpoint accepts exactly one completed-game submission for an exact supported result ruleset: `points-v3`, `points-v4`, or `classic-inning-v1`. It is not called per hint, guess, or at-bat. The ordinary browser still creates new completed-result delivery records only for the currently active points-v3 Daily Nine path (plus retained Classic where enabled); accepting points-v4 here is server compatibility, not public activation.
 
 Request contract:
 
@@ -166,7 +166,7 @@ Request contract:
 }
 ```
 
-The route performs only transport handling. Server composition first rejects unsupported schema/ruleset values, invalid calendar dates, and future Pacific dates before loading a puzzle. It then loads the same authoritative public puzzle used by gameplay through the server Daily runtime, without minting a progression token or building an active hint bundle.
+The route performs only transport handling. Server composition first rejects unsupported schema/ruleset values, invalid calendar dates, and future Pacific dates before loading a puzzle. It then loads the same authoritative public puzzle used by gameplay through the server Daily runtime using the exact routed ruleset, without minting a progression token or building an active hint bundle.
 
 Engine `validateDailyCompletedResult` remains the authority for puzzle identity, ordered native facts, completion consistency, and summary derivation. Client-supplied totals, answer fields, and unknown extras are never persisted as authority. A successful normalized result flows through the 4B first-write-wins service and the server-only Supabase provider.
 
@@ -187,7 +187,7 @@ The endpoint is consistency-authoritative, not proof of honest anonymous play. I
 
 ### `POST /api/daily/at-bats`
 
-This anonymous server boundary accepts one terminal points-v3 Daily Nine AB observation. It is separate from `/api/daily/resolve`; gameplay resolution never waits for this persistence path. The endpoint exists before browser activation so its server authority and failure mapping can be verified independently.
+This anonymous server boundary accepts one terminal Daily Nine AB observation for exactly `points-v3` or `points-v4`. It is separate from `/api/daily/resolve`; gameplay resolution never waits for this persistence path. The ordinary browser journal/outbox still produces points-v3 observations only. Accepting points-v4 here is server compatibility ahead of browser/default activation.
 
 Request contract:
 
@@ -210,7 +210,7 @@ Request contract:
 }
 ```
 
-Server composition preflights only object/schema/date/ruleset fields required to route the request and rejects future Pacific dates before puzzle loading. It then loads the same authoritative cached public puzzle used by gameplay, calls engine `validateDailyAtBatResult`, and stores the normalized result through the Daily first-write-wins service and server-only Supabase provider. Client points, answers, timestamps and unknown extras are discarded; the engine derives `awardedPoints`.
+Server composition preflights only object/schema/date/ruleset fields required to route the request and rejects future Pacific dates before puzzle loading. It then loads the same authoritative cached public puzzle used by gameplay using the exact routed ruleset, calls engine `validateDailyAtBatResult` with that exact version, and stores the normalized result through the Daily first-write-wins service and server-only Supabase provider. Client points, answers, timestamps and unknown extras are discarded; the engine derives `awardedPoints`.
 
 Responses expose only status/error codes:
 
@@ -221,7 +221,7 @@ Responses expose only status/error codes:
 - `503 {"error":"at_bat_result_unavailable"}`: known provider/configuration unavailability;
 - `500 {"error":"at_bat_result_unavailable"}`: unexpected server fault.
 
-Every response is `private, no-store` and contains no normalized facts, points, answer IDs/names, hints, credentials or provider details. This consistency boundary is not proof of a unique person or honest play. Browser attempt identity, atomic cross-tab ownership, immutable outbox/retry and reset/legacy behavior remain required before the app begins sending observations.
+Every response is `private, no-store` and contains no normalized facts, points, answer IDs/names, hints, credentials or provider details. This consistency boundary is not proof of a unique person or honest play. Browser attempt identity, atomic cross-tab ownership, immutable outbox/retry and reset/legacy behavior remain authoritative for whether the app sends observations. Those browser producer paths remain points-v3-only until the separate v4 activation work.
 
 ## Browser persistence
 

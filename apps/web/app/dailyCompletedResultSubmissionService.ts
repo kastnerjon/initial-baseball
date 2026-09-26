@@ -2,6 +2,7 @@ import {
   CLASSIC_DAILY_RULESET_VERSION,
   DAILY_COMPLETED_RESULT_SCHEMA_VERSION,
   POINTS_V3_DAILY_RULESET_VERSION,
+  POINTS_V4_DAILY_RULESET_VERSION,
   type DailyCompletedResultError,
   type DailyCompletedResultRulesetVersion,
   type DailyPublicPuzzle,
@@ -78,6 +79,7 @@ function readRoutingFields(
   if (puzzleDate > currentDailyDate) return reject('invalid_puzzle');
 
   if (submission.rulesetVersion !== POINTS_V3_DAILY_RULESET_VERSION
+    && submission.rulesetVersion !== POINTS_V4_DAILY_RULESET_VERSION
     && submission.rulesetVersion !== CLASSIC_DAILY_RULESET_VERSION) {
     return reject('unsupported_ruleset');
   }
