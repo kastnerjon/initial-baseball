@@ -137,13 +137,9 @@ For v3, existing integer behavior and 64-entry 0..63 histogram remain unchanged.
 
 ## H1 interaction
 
-The separate `h1-points-v4-result-write-api` branch was created from pre-redefinition main and contains tests/documentation expecting -1 K / -9 nine-K behavior. Do not merge that branch unchanged.
+H1 was rebuilt from post-redefinition `main` rather than merging the stale pre-redefinition branch. Its bounded server-write scope is documented in `tasks/plans/points-v4-result-write-api.md`.
 
-After this PR merges:
-1. update/rebase H1 onto new main;
-2. replace negative-v4 server-write expectations with fractional/nonnegative v4 expectations;
-3. use a v4 walk (0.5) as the strongest write-boundary proof rather than a K;
-4. preserve H1's original scope: server result-write compatibility only.
+H1 proves the finalized contract at the write boundary with a 0.5-point v4 walk and a 4.5-point nine-walk completed game, while leaving browser producers, comparison HTTP/browser acceptance and the public default on v3. The activation guardrails below remain later H work.
 
 ## H activation guardrails discovered in the high-level audit
 
