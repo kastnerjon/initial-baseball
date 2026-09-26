@@ -3,7 +3,7 @@
 Status: row G3A implementation scope; result storage only, not comparison/browser activation  
 Date: 2026-09-25
 
-> September 26 follow-up: the storage seam remains the same, but inactive v4 was redefined before activation as a half-point nonnegative ruleset. Migration `20260926220726_redefine_points_v4_fractional_scoring` supersedes the original v4 bounds/type assumptions without rewriting this historical migration. See `tasks/plans/points-v4-half-walk-zero-strikeout.md`.
+> September 26 follow-up: the storage seam remains the same, but inactive v4 was redefined before activation as a half-point nonnegative ruleset. Migration `20260926220726_redefine_points_v4_fractional_scoring` supersedes the original v4 bounds/type assumptions without rewriting this historical migration. H1 now routes exact-version v4 through the existing server result-write boundary without another migration; browser producers remain gated. See `tasks/plans/points-v4-half-walk-zero-strikeout.md` and `tasks/plans/points-v4-result-write-api.md`.
 
 ## Scope contract
 
