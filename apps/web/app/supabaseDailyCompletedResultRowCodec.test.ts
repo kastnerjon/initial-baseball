@@ -45,18 +45,18 @@ const V4_RESULT: DailyCompletedResult = {
   completedAtBats: Array.from({ length: 9 }, (_, index) => ({
     pitchNumber: index + 1,
     initials: `V${index + 1}`,
-    outcome: 'K' as const,
+    outcome: 'BB' as const,
     hintsRevealed: 4 as const,
-    wrongGuesses: 3,
-    resolution: 'strikeout' as const,
+    wrongGuesses: 2,
+    resolution: 'correct' as const,
   })),
   summary: {
-    points: -9,
+    points: 4.5,
     maximumPoints: 36,
     atBatsCompleted: 9,
     totalAtBats: 9,
     completed: true,
-    strikeouts: 9,
+    strikeouts: 0,
   },
 };
 
@@ -94,7 +94,7 @@ describe('completed-result Supabase row codec', () => {
     expect(decodeDailyCompletedResultRow(row)).toEqual(POINTS_RESULT);
   });
 
-  it('round-trips signed points-v4 summary values under the engine-owned range', () => {
+  it('round-trips fractional points-v4 summary values under the engine-owned range', () => {
     const row = encodeDailyCompletedResultRow(V4_RESULT);
 
     expect(decodeDailyCompletedResultRow(row)).toEqual(V4_RESULT);
@@ -124,10 +124,10 @@ describe('completed-result Supabase row codec', () => {
     expectInvalidRow(() => decodeDailyCompletedResultRow(row));
   });
 
-  it('rejects a v4 score outside the signed range', () => {
+  it.each([-0.5, 36.5, 4.25])('rejects a v4 score %s outside or misaligned to the half-point range', points => {
     const row = {
       ...encodeDailyCompletedResultRow(V4_RESULT),
-      summary: { ...V4_RESULT.summary, points: -10 },
+      summary: { ...V4_RESULT.summary, points },
     };
 
     expectInvalidRow(() => decodeDailyCompletedResultRow(row));
