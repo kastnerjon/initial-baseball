@@ -116,7 +116,7 @@ Before merge, verify the hosted database still has:
 
 These are intentionally **not** fixed in H1, but must stay tracked in canonical docs/todo until completed:
 
-1. **Current-Daily save isolation:** non-archive `isDailyModeSaveCompatible` currently treats any non-Classic saved ruleset as compatible with any requested non-Classic ruleset. Before default cutover, make compatibility exact-version or explicitly migrate/fence old saves. Never hydrate an in-progress v3 save as v4.
+1. **Current-Daily save isolation — complete in H2:** points-v4 now uses its own ruleset-keyed gameplay-save namespace and only accepts v4 saves. Points-v3 retains the explicit historical legacy/v1/v2/v3 restore family but rejects v4. Existing v3 values are not copied, deleted, reinterpreted or overwritten by v4. Scope: `tasks/plans/points-v4-current-daily-save-isolation.md`.
 2. **Attempt journal/outbox:** `dailyAtBatAttemptJournal.ts` and related contribution identity are still points-v3-only. Widen exact-version identity without merging populations.
 3. **Gameplay ownership/lifecycle:** owner/takeover contribution logic remains deliberately v3-gated. Preserve one-owner semantics and generation fencing when widening.
 4. **Completed-result browser delivery:** `dailyCompletedResultClient.ts` still accepts points-v3/Classic only. Widen only when browser v4 gameplay is ready.
