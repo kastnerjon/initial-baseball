@@ -4,6 +4,7 @@ import {
   POINTS_V1_DAILY_RULESET_VERSION,
   POINTS_V2_DAILY_RULESET_VERSION,
   POINTS_V3_DAILY_RULESET_VERSION,
+  POINTS_V4_DAILY_RULESET_VERSION,
 } from '@initial-baseball/shared';
 import { describe, expect, it } from 'vitest';
 import {
@@ -13,9 +14,11 @@ import {
 } from './dailyModeStorage';
 
 describe('dailyModeStorage', () => {
-  it('preserves the existing Daily Nine key and gives Classic an isolated namespace', () => {
+  it('preserves the historical points-v3 key while versioning points-v4 and isolating Classic', () => {
     expect(getDailyModeStorageKey('2026-09-18', POINTS_V3_DAILY_RULESET_VERSION))
       .toBe('initial-baseball:daily:2026-09-18');
+    expect(getDailyModeStorageKey('2026-09-18', POINTS_V4_DAILY_RULESET_VERSION))
+      .toBe('initial-baseball:daily:ruleset:points-v4:2026-09-18');
     expect(getDailyModeStorageKey('2026-09-18', CLASSIC_DAILY_RULESET_VERSION))
       .toBe('initial-baseball:daily:classic:2026-09-18');
   });
@@ -41,6 +44,26 @@ describe('dailyModeStorage', () => {
     daily.setItem('initial-baseball:daily:2026-09-18', 'daily-save');
     expect(storage.getItem('initial-baseball:daily:2026-09-18')).toBe('daily-save');
     expect(storage.getItem('initial-baseball:daily:classic:2026-09-18')).toBeNull();
+  });
+
+  it('keeps a points-v4 current-Daily save physically isolated from the historical points-v3 key', () => {
+    const storage = new FakeStorage();
+    const key = 'initial-baseball:daily:2026-09-18';
+    storage.setItem(key, 'points-v3-save');
+
+    const v4 = getDailyModeStorage(POINTS_V4_DAILY_RULESET_VERSION, storage);
+    if (v4 === null) throw new Error('Expected points-v4 storage adapter.');
+
+    v4.setItem(key, 'points-v4-save');
+
+    expect(storage.getItem(key)).toBe('points-v3-save');
+    expect(storage.getItem('initial-baseball:daily:ruleset:points-v4:2026-09-18'))
+      .toBe('points-v4-save');
+    expect(v4.getItem(key)).toBe('points-v4-save');
+
+    v4.removeItem(key);
+    expect(storage.getItem('initial-baseball:daily:ruleset:points-v4:2026-09-18')).toBeNull();
+    expect(storage.getItem(key)).toBe('points-v3-save');
   });
 
   it('isolates each permanent puzzle and ruleset from current Daily and Classic saves', () => {
@@ -98,7 +121,7 @@ describe('dailyModeStorage', () => {
       'permanent-v1-daily-1')).toBe(true);
   });
 
-  it('keeps old default-key rulesets compatible while isolating Classic saves', () => {
+  it('preserves the historical pre-v4 restore family under points-v3 but fences the v4 cutover', () => {
     for (const rulesetVersion of [
       LEGACY_DAILY_RULESET_VERSION,
       POINTS_V1_DAILY_RULESET_VERSION,
@@ -106,9 +129,12 @@ describe('dailyModeStorage', () => {
       POINTS_V3_DAILY_RULESET_VERSION,
     ]) {
       expect(isDailyModeSaveCompatible(POINTS_V3_DAILY_RULESET_VERSION, rulesetVersion)).toBe(true);
+      expect(isDailyModeSaveCompatible(POINTS_V4_DAILY_RULESET_VERSION, rulesetVersion)).toBe(false);
       expect(isDailyModeSaveCompatible(CLASSIC_DAILY_RULESET_VERSION, rulesetVersion)).toBe(false);
     }
 
+    expect(isDailyModeSaveCompatible(POINTS_V4_DAILY_RULESET_VERSION, POINTS_V4_DAILY_RULESET_VERSION)).toBe(true);
+    expect(isDailyModeSaveCompatible(POINTS_V3_DAILY_RULESET_VERSION, POINTS_V4_DAILY_RULESET_VERSION)).toBe(false);
     expect(isDailyModeSaveCompatible(CLASSIC_DAILY_RULESET_VERSION, CLASSIC_DAILY_RULESET_VERSION)).toBe(true);
     expect(isDailyModeSaveCompatible(POINTS_V3_DAILY_RULESET_VERSION, CLASSIC_DAILY_RULESET_VERSION)).toBe(false);
   });
