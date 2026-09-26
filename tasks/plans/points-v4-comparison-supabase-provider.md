@@ -3,20 +3,22 @@
 Status: row G3B implementation scope; server/provider compatibility only, not public browser activation  
 Date: 2026-09-25
 
+> September 26 follow-up: the provider seam and access model remain intact, but inactive v4 was redefined before activation to 0.5-point nonnegative scoring. Migration `20260926220726_redefine_points_v4_fractional_scoring` changes the point-valued RPC returns to exact numeric values; the original signed-integer proof below remains historical evidence for the earlier draft only. See `tasks/plans/points-v4-half-walk-zero-strikeout.md`.
+
 ## Scope contract
 
-- **Goal:** make the deployed Daily Nine comparison provider truthfully support exact-version `points-v3` and `points-v4` populations, including signed v4 at-bat sums and completed-score buckets, without exposing v4 through the existing HTTP/browser comparison contract.
+- **Goal:** make the deployed Daily Nine comparison provider truthfully support exact-version `points-v3` and `points-v4` populations, including exact half-point v4 at-bat sums and completed-score buckets, without exposing v4 through the existing HTTP/browser comparison contract.
 - **Owning layers:** `packages/daily` comparison read port/service plus the server-only Supabase comparison adapter and its two aggregate functions.
-- **In scope:** widen Daily repository/service query types from v3-only to supported Daily Nine v3/v4; accept signed safe integer provider sums/scores; keep exact score-domain validation in Daily/engine-owned math; widen both SQL aggregate functions to the explicit supported set `points-v3`/`points-v4`; preserve service-role-only function execution; focused provider/domain tests; hosted migration/readback/rollback-only signed-data proof; canonical docs.
+- **In scope:** widen Daily repository/service query types from v3-only to supported Daily Nine v3/v4; accept safe half-point provider sums/scores while retaining integer counts; keep exact score-domain validation in Daily/engine-owned math; widen both SQL aggregate functions to the explicit supported set `points-v3`/`points-v4`; preserve service-role-only function execution; focused provider/domain tests; hosted migration/readback/rollback-only signed-data proof; canonical docs.
 - **Out of scope:** shared comparison HTTP schema; `dailyNineComparisonReadService` v4 acceptance; browser client/hooks/prefetch; scorecards/shares; result submission activation; archive routes; current scoring default; rollups/cache/index changes; Classic comparison semantics.
-- **Acceptance checks:** v3 provider reads remain unchanged; a v4 AB aggregate may carry a negative signed sum; v4 completed buckets may contain -9..36 values; Daily still rejects impossible exact-version aggregates; Classic/unknown rulesets do not become Daily Nine comparison populations; SQL remains aggregation-only and contains no scoring formula; function ACL remains postgres/service_role only; no durable verification rows remain.
+- **Acceptance checks:** v3 provider reads remain unchanged; a v4 AB aggregate may carry half-point sums; v4 completed buckets may contain 0..36 half-point values; Daily still rejects impossible exact-version aggregates; Classic/unknown rulesets do not become Daily Nine comparison populations; SQL remains aggregation-only and contains no scoring formula; function ACL remains postgres/service_role only; no durable verification rows remain.
 - **Stop conditions:** any need to change the shared HTTP API, browser accepted ruleset, scoring formula, result-write routing, public default, or storage strategy becomes H/later work.
 
 ## Boundary decision
 
-G2 intentionally kept `DailyNineComparisonRepository` and `DailyNineComparisonService` v3-only because the deployed Supabase provider could not truthfully serve negative v4 values. G3A then made immutable result storage exact-version v3/v4-capable. G3B widens the provider and port together, eliminating that temporary type mismatch.
+G2 intentionally kept `DailyNineComparisonRepository` and `DailyNineComparisonService` v3-only because the deployed Supabase provider could not truthfully serve the then-defined v4 value domain. G3A then made immutable result storage exact-version v3/v4-capable. G3B widens the provider and port together, eliminating that temporary type mismatch.
 
-The Supabase decoder is deliberately structural rather than scoring-aware: counts remain positive/non-negative as appropriate, while aggregate point sums and bucket scores may be any safe signed integer. The Daily comparison normalizer remains the owner of exact-version score-range validation through `getDailyPointsRange`. This avoids copying 4/3/2/1/0/-1 or -9..36 scoring policy into the adapter.
+The Supabase decoder is deliberately structural rather than scoring-aware: counts remain positive/non-negative as appropriate, while aggregate point sums and bucket scores may be safe half-point values. The Daily comparison normalizer remains the owner of exact-version score-range validation through `getDailyPointsRange`. This avoids copying 4/3/2/1/0.5/0 or 0..36 scoring policy into the adapter.
 
 ## SQL contract
 
@@ -40,13 +42,13 @@ Existing production populations are not rewritten. The migration changes only re
 
 ## Public activation boundary
 
-The schema-1 comparison HTTP contract still names `points-v3`, `dailyNineComparisonReadService` still rejects `points-v4`, and browser comparison consumers therefore remain v3-only. A regression test explicitly preserves that rejection. H can widen those layers only after browser persistence/result delivery/scorecard handling is ready for negative v4 values.
+The schema-1 comparison HTTP contract still names `points-v3`, `dailyNineComparisonReadService` still rejects `points-v4`, and browser comparison consumers therefore remain v3-only. A regression test explicitly preserves that rejection. H can widen those layers only after browser persistence/result delivery/scorecard handling is ready for fractional v4 values.
 
 ## Verification
 
 Focused tests cover:
 - generic v3/v4 Daily comparison service routing;
-- signed v4 Supabase AB sums and completed buckets;
+- fractional v4 Supabase AB sums and completed buckets;
 - v3 compatibility and malformed provider rows;
 - explicit continued HTTP read-service rejection of v4.
 
