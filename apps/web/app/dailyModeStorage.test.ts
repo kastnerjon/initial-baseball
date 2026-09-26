@@ -108,10 +108,16 @@ describe('dailyModeStorage', () => {
   it('leaves identity-keyed journal and outbox keys unchanged', () => {
     const storage = new FakeStorage();
     const archived = getDailyModeStorage(POINTS_V3_DAILY_RULESET_VERSION, storage, 'permanent-v1-daily-1');
-    if (!archived) throw new Error('Storage unavailable');
-    const key = 'initial-baseball:daily-at-bat-attempt:v1:points-v3:2030-04-05:permanent-v1-daily-1';
-    archived.setItem(key, 'journal');
-    expect(storage.getItem(key)).toBe('journal');
+    const currentV4 = getDailyModeStorage(POINTS_V4_DAILY_RULESET_VERSION, storage);
+    if (!archived || !currentV4) throw new Error('Storage unavailable');
+
+    const archiveKey = 'initial-baseball:daily-at-bat-attempt:v1:points-v3:2030-04-05:permanent-v1-daily-1';
+    const currentV4Key = 'initial-baseball:daily-at-bat-attempt:v1:points-v4:2026-09-18:daily-2026-09-18-editorial-v1';
+    archived.setItem(archiveKey, 'archive-journal');
+    currentV4.setItem(currentV4Key, 'v4-journal');
+
+    expect(storage.getItem(archiveKey)).toBe('archive-journal');
+    expect(storage.getItem(currentV4Key)).toBe('v4-journal');
   });
 
   it('restores archive saves only with the exact scoring version', () => {
