@@ -55,7 +55,7 @@ describe('independent terminal AB observations', () => {
   });
 
   it('accepts points-v4 observations with outcome scoring and no nonterminal wrong-guess deduction', () => {
-    const expectedByHints = [4, 3, 2, 1, 0] as const;
+    const expectedByHints = [4, 3, 2, 1, 0.5] as const;
     const outcomeByHints = ['HR', '3B', '2B', '1B', 'BB'] as const;
     for (const hintsRevealed of [0, 1, 2, 3, 4] as const) {
       for (const wrongGuesses of [0, 1, 2]) {
@@ -93,7 +93,7 @@ describe('independent terminal AB observations', () => {
         submission: value,
         puzzle,
         rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
-      })).toEqual({ ok: true, result: { ...value, awardedPoints: -1 } });
+      })).toEqual({ ok: true, result: { ...value, awardedPoints: 0 } });
     }
   });
 

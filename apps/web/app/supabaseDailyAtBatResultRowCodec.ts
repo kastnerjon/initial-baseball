@@ -67,7 +67,7 @@ export function decodeDailyAtBatResultRow(row: unknown): DailyAtBatResult {
 
   const rulesetVersion = resultRuleset(value.ruleset_version);
   const pointsRange = getDailyPointsRange(rulesetVersion, 1);
-  if (pointsRange === null || pointsRange.step !== 1) {
+  if (pointsRange === null) {
     invalid(`Unsupported persisted point range for ${rulesetVersion}.`);
   }
 
@@ -96,10 +96,11 @@ export function decodeDailyAtBatResultRow(row: unknown): DailyAtBatResult {
       wrongGuesses: boundedInt(value.wrong_guesses, 0, 3, 'wrong_guesses'),
       resolution: resolution as DailyAtBatResolution,
     },
-    awardedPoints: boundedInt(
+    awardedPoints: boundedPoints(
       value.awarded_points,
       pointsRange.minimumPoints,
       pointsRange.maximumPoints,
+      pointsRange.step,
       'awarded_points',
     ),
   };
@@ -150,6 +151,24 @@ function text(value: unknown, field: string): string {
 function boundedInt(value: unknown, min: number, max: number, field: string): number {
   if (typeof value !== 'number' || !Number.isInteger(value) || value < min || value > max) {
     invalid(`${field} must be an integer between ${min} and ${max}.`);
+  }
+  return value;
+}
+
+function boundedPoints(
+  value: unknown,
+  min: number,
+  max: number,
+  step: number,
+  field: string,
+): number {
+  if (typeof value !== 'number'
+    || !Number.isFinite(value)
+    || Math.abs(value) > Number.MAX_SAFE_INTEGER
+    || value < min
+    || value > max
+    || !Number.isSafeInteger(value / step)) {
+    invalid(`${field} must be between ${min} and ${max} in ${step}-point steps.`);
   }
   return value;
 }

@@ -39,18 +39,18 @@ const V4_RESULT: DailyCompletedResult = {
   rulesetVersion: 'points-v4',
   completedAtBats: RESULT.completedAtBats.map(atBat => ({
     ...atBat,
-    outcome: 'K',
+    outcome: 'BB',
     hintsRevealed: 4,
-    wrongGuesses: 3,
-    resolution: 'strikeout',
+    wrongGuesses: 2,
+    resolution: 'correct',
   })),
   summary: {
-    points: -9,
+    points: 4.5,
     maximumPoints: 36,
     atBatsCompleted: 9,
     totalAtBats: 9,
     completed: true,
-    strikeouts: 9,
+    strikeouts: 0,
   },
 };
 
@@ -75,7 +75,7 @@ describe('Supabase completed-result repository', () => {
     }));
   });
 
-  it('round-trips a points-v4 result through the same immutable provider path', async () => {
+  it('round-trips a fractional points-v4 result through the same immutable provider path', async () => {
     const single = vi.fn().mockResolvedValue({ data: toRow(V4_RESULT), error: null });
     const insert = vi.fn().mockReturnValue({
       select: vi.fn().mockReturnValue({ single }),

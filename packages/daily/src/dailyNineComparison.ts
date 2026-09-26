@@ -119,22 +119,24 @@ export function deriveDailyNineAtBatComparison<
 ): DailyNineAtBatComparison<Ruleset> {
   requireIntegerWithin(query.pitchNumber, 1, DAILY_AT_BAT_COUNT, 'pitch number');
   requireNonNegativeSafeInteger(source.resolvedAtBatCount, 'resolved-at-bat count');
-  requireSafeInteger(source.awardedPointsSum, 'awarded-points sum');
+  const range = requireComparisonRange(query.rulesetVersion, 1);
+  requireScoreAligned(source.awardedPointsSum, range.step, 'awarded-points sum');
 
   if (source.resolvedAtBatCount === 0) {
     if (source.awardedPointsSum !== 0) {
       throw new Error('Daily Nine comparison cannot have points without resolved at-bats.');
     }
   } else {
-    const range = requireComparisonRange(query.rulesetVersion, 1);
-    const minimumSum = safeIntegerProduct(
+    const minimumSum = safeScoreProduct(
       range.minimumPoints,
       source.resolvedAtBatCount,
+      range.step,
       'minimum awarded-points sum',
     );
-    const maximumSum = safeIntegerProduct(
+    const maximumSum = safeScoreProduct(
       range.maximumPoints,
       source.resolvedAtBatCount,
+      range.step,
       'maximum awarded-points sum',
     );
     if (source.awardedPointsSum < minimumSum || source.awardedPointsSum > maximumSum) {
@@ -155,7 +157,7 @@ export function deriveDailyNineAtBatComparison<
 
 /**
  * Pure, provider-neutral normalization for an exact-version completed-game population.
- * Histogram indices are offset from the ruleset minimum so negative v4 scores are safe.
+ * Histogram indices follow the exact engine-owned minimum and score step.
  */
 export function deriveDailyNineCompletedComparison<
   Ruleset extends DailyNineComparisonRulesetVersion,
@@ -180,12 +182,18 @@ export function deriveDailyNineCompletedComparison<
     completedGameCount += bucket.count;
     requireNonNegativeSafeInteger(completedGameCount, 'completed-game count');
 
-    const bucketPoints = safeIntegerProduct(
+    const bucketPoints = safeScoreProduct(
       bucket.points,
       bucket.count,
+      range.step,
       'score bucket point sum',
     );
-    totalPoints = safeIntegerSum(totalPoints, bucketPoints, 'completed-game point sum');
+    totalPoints = safeScoreSum(
+      totalPoints,
+      bucketPoints,
+      range.step,
+      'completed-game point sum',
+    );
   }
 
   return {
@@ -241,9 +249,9 @@ function requireComparisonRange(
   totalAtBats: number,
 ): DailyPointsRange {
   const range = getDailyPointsRange(rulesetVersion, totalAtBats);
-  if (range === null || range.step !== 1) {
+  if (range === null || (range.step !== 1 && range.step !== 0.5)) {
     throw new Error(
-      `Daily Nine comparison ruleset ${rulesetVersion} must use integer score steps.`,
+      `Daily Nine comparison ruleset ${rulesetVersion} has an unsupported score step.`,
     );
   }
   return range;
@@ -258,24 +266,53 @@ function getHistogramLength(range: DailyPointsRange): number {
 }
 
 function getHistogramIndex(points: number, range: DailyPointsRange): number {
-  requireIntegerWithin(points, range.minimumPoints, range.maximumPoints, 'score bucket');
-  const index = (points - range.minimumPoints) / range.step;
-  if (!Number.isSafeInteger(index)) {
-    throw new Error('Daily Nine comparison score must align to the ruleset step.');
-  }
-  return index;
+  requireScoreWithin(points, range, 'score bucket');
+  return (points - range.minimumPoints) / range.step;
 }
 
-function safeIntegerProduct(left: number, right: number, field: string): number {
+function safeScoreProduct(
+  left: number,
+  right: number,
+  step: number,
+  field: string,
+): number {
   const product = left * right;
-  requireSafeInteger(product, field);
+  requireScoreAligned(product, step, field);
   return product;
 }
 
-function safeIntegerSum(left: number, right: number, field: string): number {
+function safeScoreSum(
+  left: number,
+  right: number,
+  step: number,
+  field: string,
+): number {
   const sum = left + right;
-  requireSafeInteger(sum, field);
+  requireScoreAligned(sum, step, field);
   return sum;
+}
+
+function requireScoreWithin(
+  value: number,
+  range: DailyPointsRange,
+  field: string,
+): void {
+  requireScoreAligned(value, range.step, field);
+  if (value < range.minimumPoints || value > range.maximumPoints) {
+    throw new Error(
+      `Daily Nine comparison ${field} must be between ${range.minimumPoints} and ${range.maximumPoints}.`,
+    );
+  }
+}
+
+function requireScoreAligned(value: number, step: number, field: string): void {
+  if (!Number.isFinite(value)
+    || Math.abs(value) > Number.MAX_SAFE_INTEGER
+    || !Number.isSafeInteger(value / step)) {
+    throw new Error(
+      `Daily Nine comparison ${field} must align to the ${step}-point score step.`,
+    );
+  }
 }
 
 function requirePositiveSafeInteger(value: number, field: string): void {
@@ -287,12 +324,6 @@ function requirePositiveSafeInteger(value: number, field: string): void {
 function requireNonNegativeSafeInteger(value: number, field: string): void {
   if (!Number.isSafeInteger(value) || value < 0) {
     throw new Error(`Daily Nine comparison ${field} must be a non-negative safe integer.`);
-  }
-}
-
-function requireSafeInteger(value: number, field: string): void {
-  if (!Number.isSafeInteger(value)) {
-    throw new Error(`Daily Nine comparison ${field} must be a safe integer.`);
   }
 }
 

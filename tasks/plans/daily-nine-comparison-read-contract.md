@@ -40,12 +40,14 @@ PR #174 is closed as superseded. Its read-port separation was directionally usef
 
 ## September 25 points-v4 extension
 
+> Historical note: the September 25 extension was first implemented against the inactive signed/integer v4 draft. Before public activation or any persisted v4 production result, v4 was finalized on September 26 as 4/3/2/1/0.5/0. The comparison architecture remains exact-version; the current v4 domain below reflects that final pre-activation contract.
+
 The original read service remains the production points-v3 boundary. Row G2 adds pure provider-neutral normalization alongside it rather than widening the repository contract before the provider is ready.
 
 - `DailyNineComparisonRulesetVersion` and exact-version comparison identities cover points-v3 and points-v4.
-- Pure at-bat normalization validates provider count/sum statistics against engine-owned per-AB ranges: v3 0..7 and v4 -1..4.
-- Pure completed normalization asks the engine for the nine-AB range and builds an offset histogram. V3 remains 64 entries for 0..63; v4 is 46 entries for -9..36, with index `score - minimumScore`.
-- Strict-lower finish rate resolves each histogram index back to its actual score, so negative v4 values and ties are handled correctly.
-- The existing `DailyNineComparisonRepository`, `DailyNineComparisonKey`, and service read methods remain points-v3-only until the separate Supabase/provider PR. This is intentional fail-closed staging, not partial provider support.
+- Pure at-bat normalization validates provider count/sum statistics against engine-owned per-AB ranges and score steps: v3 0..7 in integer steps and v4 0..4 in 0.5-point steps.
+- Pure completed normalization asks the engine for the nine-AB range/step and builds a step-aware histogram. V3 remains 64 entries for 0..63; v4 is 73 entries for 0..36 in 0.5-point steps, with index `(score - minimumScore) / step`.
+- Strict-lower finish rate resolves each histogram index back to its actual score, so fractional v4 values and ties are handled correctly.
+- At the G2 checkpoint, `DailyNineComparisonRepository`, `DailyNineComparisonKey`, and service read methods deliberately remained points-v3-only. G3B subsequently widened that server/provider read port to exact-version v3/v4; the shared HTTP/read-service/browser boundary still rejects v4 until H.
 
 Scope: `tasks/plans/points-v4-comparison-domain.md`.

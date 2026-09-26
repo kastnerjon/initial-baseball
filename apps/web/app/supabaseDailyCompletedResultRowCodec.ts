@@ -131,15 +131,16 @@ function pointsSummary(
   const row = record(value, `${rulesetVersion} summary`);
   const totalAtBats = exactInt(row.totalAtBats, 9, 'summary.totalAtBats');
   const range = getDailyPointsRange(rulesetVersion, totalAtBats);
-  if (range === null || range.step !== 1) {
+  if (range === null) {
     invalid(`Unsupported persisted point range for ${rulesetVersion}.`);
   }
 
   return {
-    points: boundedInt(
+    points: boundedPoints(
       row.points,
       range.minimumPoints,
       range.maximumPoints,
+      range.step,
       'summary.points',
     ),
     maximumPoints: exactInt(
@@ -202,6 +203,24 @@ function text(value: unknown, field: string): string {
 function boundedInt(value: unknown, min: number, max: number, field: string): number {
   if (typeof value !== 'number' || !Number.isInteger(value) || value < min || value > max) {
     invalid(`${field} must be an integer between ${min} and ${max}.`);
+  }
+  return value;
+}
+
+function boundedPoints(
+  value: unknown,
+  min: number,
+  max: number,
+  step: number,
+  field: string,
+): number {
+  if (typeof value !== 'number'
+    || !Number.isFinite(value)
+    || Math.abs(value) > Number.MAX_SAFE_INTEGER
+    || value < min
+    || value > max
+    || !Number.isSafeInteger(value / step)) {
+    invalid(`${field} must be between ${min} and ${max} in ${step}-point steps.`);
   }
   return value;
 }

@@ -30,12 +30,12 @@ const V4_RESULT: DailyAtBatResult = {
   rulesetVersion: 'points-v4',
   atBat: {
     ...RESULT.atBat,
-    outcome: 'K',
+    outcome: 'BB',
     hintsRevealed: 4,
-    wrongGuesses: 3,
-    resolution: 'strikeout',
+    wrongGuesses: 2,
+    resolution: 'correct',
   },
-  awardedPoints: -1,
+  awardedPoints: 0.5,
 };
 
 describe('Supabase resolved-at-bat repository', () => {
@@ -54,7 +54,7 @@ describe('Supabase resolved-at-bat repository', () => {
     expect(insert).toHaveBeenCalledWith(toRow(RESULT));
   });
 
-  it('round-trips a signed points-v4 observation through the same immutable provider path', async () => {
+  it('round-trips a fractional points-v4 observation through the same immutable provider path', async () => {
     const single = vi.fn().mockResolvedValue({ data: toRow(V4_RESULT), error: null });
     const insert = vi.fn().mockReturnValue({
       select: vi.fn().mockReturnValue({ single }),
@@ -67,7 +67,7 @@ describe('Supabase resolved-at-bat repository', () => {
     expect(stored).toEqual({ status: 'inserted', result: V4_RESULT });
     expect(insert).toHaveBeenCalledWith(expect.objectContaining({
       ruleset_version: 'points-v4',
-      awarded_points: -1,
+      awarded_points: 0.5,
     }));
   });
 

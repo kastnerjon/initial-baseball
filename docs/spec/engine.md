@@ -54,12 +54,12 @@ The shared ruleset identity and pure engine now define the next Daily Nine scori
 | 3B | 3 |
 | 2B | 2 |
 | 1B | 1 |
-| BB | 0 |
-| K / Give Up | -1 |
+| BB | 0.5 |
+| K / Give Up | 0 |
 
-Wrong guesses one and two do not deduct points. A third wrong guess is terminal K and therefore scores -1. Give Up is normalized to the same K terminal fact and also scores -1. All nine scheduled at-bats are played. The engine exposes the live hint-based allowance plus the exact integer score range/step; nine standard at-bats span -9 through 36.
+Wrong guesses one and two do not deduct points. A third wrong guess is terminal K and therefore scores 0. Give Up is normalized to the same K terminal fact and also scores 0. All nine scheduled at-bats are played. The engine exposes the live hint-based allowance plus the exact score range/step; nine standard at-bats span 0 through 36 in 0.5-point steps.
 
-`CURRENT_DAILY_RULESET_VERSION` remains `points-v3`. Portable schema-1 validation already accepts points-v4, and the G3A Supabase result-storage layer can persist its exact-version signed values. Comparison RPC/provider reads, browser/API delivery, scorecards and public gameplay remain points-v3-only until their separate downstream changes.
+`CURRENT_DAILY_RULESET_VERSION` remains `points-v3`. Portable schema-1 validation accepts points-v4, exact numeric Supabase result storage persists its half-point values, and the server-only comparison provider can aggregate the same exact-version values. Browser/API delivery, scorecards and public gameplay remain points-v3-only until their separate downstream changes.
 
 ### `points-v2` — compatibility policy
 
@@ -124,7 +124,7 @@ Legacy saved lines that predate this contract are normalized conservatively for 
 
 `validateDailyCompletedResult` accepts an unknown submission plus the caller's authoritative public puzzle identity/ordered initials and expected ruleset. It does not look up puzzles, authorize a request, or write a result.
 
-The schema-1 transport/result types live in `shared` (`dailyCompletedResult.ts`). Portable result validation accepts `points-v3`, `points-v4`, and `classic-inning-v1`; the exact ruleset is also the game discriminator. Compatibility `points-v1`, `points-v2`, and `legacy-inning-v1` submissions are rejected without changing their gameplay/local-display support. Accepting `points-v4` here now has a matching G3A Supabase persistence codec/constraint path, but it is still unreachable from the current public browser/API and from the deployed comparison read provider; those remain G3B/H boundaries.
+The schema-1 transport/result types live in `shared` (`dailyCompletedResult.ts`). Portable result validation accepts `points-v3`, `points-v4`, and `classic-inning-v1`; the exact ruleset is also the game discriminator. Compatibility `points-v1`, `points-v2`, and `legacy-inning-v1` submissions are rejected without changing their gameplay/local-display support. Accepting `points-v4` here has matching Supabase persistence and server-only comparison-provider paths, including exact half-point storage/aggregation, but it is still unreachable from the current public browser/API; browser/result-delivery/comparison-HTTP/default activation remain H boundaries.
 
 Validation requires:
 
@@ -167,7 +167,7 @@ Players select canonical search results. Correctness is exact canonical `playerI
 - single/double/triple/HR advancement;
 - legacy three-out completion;
 - `points-v3` deduction formula, seven-point at-bat maximum, 63-point nine-at-bat maximum, third-wrong-guess zero, and all-scheduled-at-bats completion;
-- `points-v4` outcome mapping, no nonterminal wrong-guess deduction, K/Give Up at -1, signed -9..36 nine-at-bat range, integer step, and all-scheduled-at-bats completion without changing the current public default;
+- `points-v4` outcome mapping, no nonterminal wrong-guess deduction, BB at 0.5, K/Give Up at 0, 0..36 nine-at-bat range, 0.5-point step, and all-scheduled-at-bats completion without changing the current public default;
 - `points-v2` compatibility mapping, fractional walks, 36-point maximum, and all-scheduled-at-bats completion;
 - `points-v1` compatibility mapping and 45-point maximum;
 - continuation after a third recorded out under all point-based Daily policies;
@@ -187,4 +187,4 @@ Practice or future modes reuse the same outcome, hint, search, and policy functi
 
 `DailyAtBatResultSubmission` schema 1 carries attemptId, exact puzzle ID/date/number, an exact accepted Daily Nine ruleset (`points-v3` or `points-v4`), and one native `atBat`. `validateDailyAtBatResult` binds that observation to caller-supplied authoritative puzzle/ruleset context, validates terminal facts through the same engine normalizer used for completed games, and derives `awardedPoints` using the exact version's `getDailyAtBatPoints` rule. It accepts any isolated slot 1–9 without requiring earlier delivery or game completion. Classic and compatibility rulesets are not accepted by this contract; their existing completed-result behavior is unchanged.
 
-Normalization copies only approved fields and discards client scores, answers and timestamps. This validates internal consistency, not honest play, unique people or coherent multi-tab attempts. Idempotency and browser identity enforcement remain separate layers. G3A gives the portable contract a matching server-only Supabase storage path; it still does not activate v4 browser/API delivery or comparison reads. Scope: `tasks/plans/resolved-at-bat-contract.md` and `tasks/plans/points-v4-result-supabase-persistence.md`.
+Normalization copies only approved fields and discards client scores, answers and timestamps. This validates internal consistency, not honest play, unique people or coherent multi-tab attempts. Idempotency and browser identity enforcement remain separate layers. The server-only Supabase storage and comparison-provider paths support the finalized v4 half-point contract; they still do not activate v4 browser/API delivery. Scope: `tasks/plans/resolved-at-bat-contract.md` and `tasks/plans/points-v4-result-supabase-persistence.md`.

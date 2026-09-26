@@ -37,12 +37,12 @@ const V4_RESULT: DailyAtBatResult = {
   atBat: {
     pitchNumber: 7,
     initials: 'RH',
-    outcome: 'K',
+    outcome: 'BB',
     hintsRevealed: 4,
-    wrongGuesses: 3,
-    resolution: 'strikeout',
+    wrongGuesses: 2,
+    resolution: 'correct',
   },
-  awardedPoints: -1,
+  awardedPoints: 0.5,
 };
 
 describe('resolved-at-bat Supabase row codec', () => {
@@ -53,7 +53,7 @@ describe('resolved-at-bat Supabase row codec', () => {
     expect(decodeDailyAtBatResultRow(row)).toEqual(RESULT);
   });
 
-  it('round-trips a signed points-v4 terminal observation', () => {
+  it('round-trips a fractional points-v4 walk observation', () => {
     expect(decodeDailyAtBatResultRow(
       encodeDailyAtBatResultRow(V4_RESULT),
     )).toEqual(V4_RESULT);
@@ -86,7 +86,7 @@ describe('resolved-at-bat Supabase row codec', () => {
     expectInvalidRow(() => decodeDailyAtBatResultRow(row));
   });
 
-  it.each([-2, 5])('rejects v4 awarded_points %s outside -1..4', awardedPoints => {
+  it.each([-0.5, 4.5, 0.25])('rejects v4 awarded_points %s outside or misaligned to 0..4 by 0.5', awardedPoints => {
     const row = { ...encodeDailyAtBatResultRow(V4_RESULT), awarded_points: awardedPoints };
 
     expectInvalidRow(() => decodeDailyAtBatResultRow(row));

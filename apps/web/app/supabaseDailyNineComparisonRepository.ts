@@ -115,7 +115,7 @@ function decodeAtBatSource(value: unknown): DailyNineAtBatComparisonSource {
       row.resolved_at_bat_count,
       'resolved_at_bat_count',
     ),
-    awardedPointsSum: safeInteger(
+    awardedPointsSum: safeHalfPoint(
       row.awarded_points_sum,
       'awarded_points_sum',
     ),
@@ -128,7 +128,7 @@ function decodeCompletedSource(value: unknown): DailyNineCompletedComparisonSour
     scoreBuckets: rows.map((candidate, index): DailyNineScoreBucket => {
       const row = record(candidate, `Daily Nine completed comparison row ${index}`);
       return {
-        points: safeInteger(row.points, `scoreBuckets[${index}].points`),
+        points: safeHalfPoint(row.points, `scoreBuckets[${index}].points`),
         count: positiveSafeInteger(row.result_count, `scoreBuckets[${index}].count`),
       };
     }),
@@ -150,6 +150,20 @@ function record(value: unknown, field: string): Record<string, unknown> {
 function positiveSafeInteger(value: unknown, field: string): number {
   const parsed = nonNegativeSafeInteger(value, field);
   if (parsed === 0) invalid(`${field} must be positive.`);
+  return parsed;
+}
+
+function safeHalfPoint(value: unknown, field: string): number {
+  const parsed = typeof value === 'number'
+    ? value
+    : typeof value === 'string' && /^-?\d+(?:\.\d+)?$/.test(value)
+      ? Number(value)
+      : Number.NaN;
+  if (!Number.isFinite(parsed)
+    || Math.abs(parsed) > Number.MAX_SAFE_INTEGER
+    || !Number.isSafeInteger(parsed * 2)) {
+    invalid(`${field} must be a safe half-point value.`);
+  }
   return parsed;
 }
 
