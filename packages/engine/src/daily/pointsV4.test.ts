@@ -20,7 +20,7 @@ describe('points-v4 Daily Nine scoring', () => {
     [1, '3B', 3],
     [2, '2B', 2],
     [3, '1B', 1],
-    [4, 'BB', 0],
+    [4, 'BB', 0.5],
   ] as const)('maps %s revealed hints to %s worth %s points', (hintsRevealed, outcome, expected) => {
     expect(getDailyAtBatPoints({
       rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
@@ -39,22 +39,22 @@ describe('points-v4 Daily Nine scoring', () => {
     })).toBe(2);
   });
 
-  it('scores a third wrong guess and any K terminal outcome at minus one', () => {
+  it('scores a third wrong guess and any K terminal outcome at zero', () => {
     expect(getDailyAtBatPoints({
       rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
       outcome: 'HR',
       hintsRevealed: 0,
       wrongGuesses: 3,
-    })).toBe(-1);
+    })).toBe(0);
     expect(getDailyAtBatPoints({
       rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
       outcome: 'K',
       hintsRevealed: 4,
       wrongGuesses: 0,
-    })).toBe(-1);
+    })).toBe(0);
   });
 
-  it('normalizes Give Up to K so it uses the same minus-one terminal rule', () => {
+  it('normalizes Give Up to K so it uses the same zero-point terminal rule', () => {
     const normalized = normalizeDailyTerminalAtBat({
       pitchNumber: 1,
       initials: 'AB',
@@ -72,7 +72,7 @@ describe('points-v4 Daily Nine scoring', () => {
     expect(getDailyAtBatPoints({
       ...normalized.atBat,
       rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
-    })).toBe(-1);
+    })).toBe(0);
   });
 
   it.each([
@@ -80,7 +80,7 @@ describe('points-v4 Daily Nine scoring', () => {
     [1, 3],
     [2, 2],
     [3, 1],
-    [4, 0],
+    [4, 0.5],
   ] as const)('reports %s-hint live allowance as %s points', (hintsRevealed, expected) => {
     expect(getDailyAtBatPointsRemaining({
       rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
@@ -94,7 +94,7 @@ describe('points-v4 Daily Nine scoring', () => {
       rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
       hintsRevealed: 0,
       wrongGuesses: 3,
-    })).toBe(-1);
+    })).toBe(0);
     expect(getDailyAtBatPointsRemaining({
       rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
       hintsRevealed: 0,
@@ -103,16 +103,16 @@ describe('points-v4 Daily Nine scoring', () => {
     })).toBe(0);
   });
 
-  it('defines the signed nine-at-bat score range and integer step', () => {
+  it('defines the non-negative nine-at-bat score range and half-point step', () => {
     expect(getDailyMaximumPoints(POINTS_V4_DAILY_RULESET_VERSION, 9)).toBe(36);
     expect(getDailyPointsRange(POINTS_V4_DAILY_RULESET_VERSION, 9)).toEqual({
-      minimumPoints: -9,
+      minimumPoints: 0,
       maximumPoints: 36,
-      step: 1,
+      step: 0.5,
     });
   });
 
-  it('plays all nine at-bats despite strikeouts and reaches the minimum total', () => {
+  it('plays all nine at-bats despite strikeouts and reaches the zero-point minimum', () => {
     let state = createInitialState(POINTS_V4_DAILY_RULESET_VERSION);
     for (let index = 0; index < 9; index += 1) {
       state = applyDailyOutcomeForRuleset({
@@ -129,7 +129,28 @@ describe('points-v4 Daily Nine scoring', () => {
     }
 
     expect(state.points).toMatchObject({
-      points: -9,
+      points: 0,
+      maximumPoints: 36,
+      atBatsCompleted: 9,
+      completed: true,
+    });
+  });
+
+  it('accumulates half-point walks exactly across the game', () => {
+    let state = createInitialState(POINTS_V4_DAILY_RULESET_VERSION);
+    for (let index = 0; index < 9; index += 1) {
+      state = applyDailyOutcomeForRuleset({
+        ...state,
+        rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+        outcome: 'BB',
+        hintsRevealed: 4,
+        wrongGuesses: 2,
+        totalAtBats: 9,
+      });
+    }
+
+    expect(state.points).toMatchObject({
+      points: 4.5,
       maximumPoints: 36,
       atBatsCompleted: 9,
       completed: true,
