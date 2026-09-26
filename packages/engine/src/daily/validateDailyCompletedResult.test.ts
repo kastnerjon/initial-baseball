@@ -58,7 +58,7 @@ describe('completed-result derivation', () => {
     } } });
   });
 
-  it('derives points-v4 from native facts while preserving negative terminal scores', () => {
+  it('derives points-v4 from native facts with half-point walks and zero terminal scores', () => {
     const value = submission(NINE_V4, ['HR', '3B', '2B', '1B', 'BB', 'K', 'K', 'HR', 'BB']);
     const wrongGuesses = [2, 1, 2, 0, 2, 3, 1, 2, 0];
     value.completedAtBats = value.completedAtBats.map((fact, index) => ({
@@ -67,7 +67,7 @@ describe('completed-result derivation', () => {
       ...(index === 6 ? { resolution: 'give_up' as const, hintsRevealed: 2 as const } : {}),
     }));
     expect(validate(value, NINE_V4)).toEqual({ ok: true, result: { ...value, summary: {
-      points: 12, maximumPoints: 36, atBatsCompleted: 9, totalAtBats: 9, completed: true, strikeouts: 2,
+      points: 15, maximumPoints: 36, atBatsCompleted: 9, totalAtBats: 9, completed: true, strikeouts: 2,
     } } });
   });
 
@@ -83,8 +83,8 @@ describe('completed-result derivation', () => {
 
   it.each([
     [Array<DailyOutcome>(9).fill('HR'), 36, 0],
-    [Array<DailyOutcome>(9).fill('K'), -9, 9],
-    [['K', 'K', 'K', 'HR', 'HR', 'HR', 'HR', 'HR', 'HR'], 21, 3],
+    [Array<DailyOutcome>(9).fill('K'), 0, 9],
+    [['K', 'K', 'K', 'HR', 'HR', 'HR', 'HR', 'HR', 'HR'], 24, 3],
   ] as [DailyOutcome[], number, number][])('plays the entire points-v4 Daily Nine %j', (outcomes, points, strikeouts) => {
     expect(validate(submission(NINE_V4, outcomes), NINE_V4)).toMatchObject({ ok: true, result: {
       summary: { points, maximumPoints: 36, strikeouts, completed: true },
