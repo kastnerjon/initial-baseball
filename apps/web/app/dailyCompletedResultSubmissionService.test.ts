@@ -5,6 +5,7 @@ import type {
 import {
   CLASSIC_DAILY_RULESET_VERSION,
   POINTS_V3_DAILY_RULESET_VERSION,
+  POINTS_V4_DAILY_RULESET_VERSION,
 } from '@initial-baseball/shared';
 import type { DailyCompletedResultRepository } from '@initial-baseball/daily';
 import { describe, expect, it, vi } from 'vitest';
@@ -58,6 +59,38 @@ describe('completed-result submission service', () => {
       },
     });
     expect(stored).not.toHaveProperty('answerName');
+  });
+
+  it('routes points-v4 and stores an engine-derived fractional completed total', async () => {
+    const repository = passthroughRepository('inserted');
+    const loadAuthoritativePuzzle = vi.fn().mockResolvedValue(PUZZLE);
+    const service = createService(repository, loadAuthoritativePuzzle);
+    const submission = {
+      ...buildPointsV4WalkSubmission(),
+      points: 999,
+    };
+
+    await expect(service.submit(submission)).resolves.toEqual({
+      ok: true,
+      status: 'created',
+    });
+
+    expect(loadAuthoritativePuzzle).toHaveBeenCalledWith(
+      PUZZLE.puzzleDate,
+      POINTS_V4_DAILY_RULESET_VERSION,
+    );
+    expect(vi.mocked(repository.insertIfAbsent).mock.calls[0]?.[0]).toMatchObject({
+      submissionId: 'points-v4-result-1',
+      rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+      summary: {
+        points: 4.5,
+        maximumPoints: 36,
+        atBatsCompleted: 9,
+        totalAtBats: 9,
+        completed: true,
+        strikeouts: 0,
+      },
+    });
   });
 
   it('accepts Classic completion after three outs and stores only faced at-bats', async () => {
@@ -169,6 +202,25 @@ function buildPointsSubmission() {
       outcome: 'HR' as const,
       hintsRevealed: 0 as const,
       wrongGuesses: 0,
+      resolution: 'correct' as const,
+    })),
+  };
+}
+
+function buildPointsV4WalkSubmission() {
+  return {
+    schemaVersion: 1 as const,
+    submissionId: 'points-v4-result-1',
+    puzzleId: PUZZLE.id,
+    puzzleDate: PUZZLE.puzzleDate,
+    puzzleNumber: PUZZLE.puzzleNumber,
+    rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+    completedAtBats: PUZZLE.pitches.map(pitch => ({
+      pitchNumber: pitch.pitchNumber,
+      initials: pitch.initials,
+      outcome: 'BB' as const,
+      hintsRevealed: 4 as const,
+      wrongGuesses: 2,
       resolution: 'correct' as const,
     })),
   };
