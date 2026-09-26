@@ -271,7 +271,7 @@ function buildPointsV4Result(submissionId = 'v4-submission-1'): PointsV4Complete
       completedAtBat(9, 'II', 'K', 0, 0, 'give_up'),
     ],
     summary: {
-      points: 15,
+      points: 17.5,
       maximumPoints: 36,
       atBatsCompleted: 9,
       totalAtBats: 9,
