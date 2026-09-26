@@ -156,7 +156,7 @@ function positiveSafeInteger(value: unknown, field: string): number {
 function safeHalfPoint(value: unknown, field: string): number {
   const parsed = typeof value === 'number'
     ? value
-    : typeof value === 'string' && /^-?\d+(?:\.5)?$/.test(value)
+    : typeof value === 'string' && /^-?\d+(?:\.\d+)?$/.test(value)
       ? Number(value)
       : Number.NaN;
   if (!Number.isFinite(parsed)
