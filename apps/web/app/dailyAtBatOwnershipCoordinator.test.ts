@@ -1,4 +1,7 @@
-import { POINTS_V3_DAILY_RULESET_VERSION } from '@initial-baseball/shared';
+import {
+  POINTS_V3_DAILY_RULESET_VERSION,
+  POINTS_V4_DAILY_RULESET_VERSION,
+} from '@initial-baseball/shared';
 import { describe, expect, it, vi } from 'vitest';
 import type {
   DailyAtBatAttemptIdentity,
@@ -21,6 +24,20 @@ const IDENTITY: DailyAtBatAttemptIdentity = {
 };
 
 describe('Daily at-bat ownership coordinator', () => {
+  it('uses distinct exact-version locks for points-v3 and points-v4', () => {
+    const v4Identity: DailyAtBatAttemptIdentity = {
+      ...IDENTITY,
+      rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+    };
+
+    expect(getDailyAtBatOwnershipLockName(IDENTITY))
+      .toBe('initial-baseball:daily-at-bat-owner:v1:points-v3:2026-09-18:daily-2026-09-18-editorial-v1');
+    expect(getDailyAtBatOwnershipLockName(v4Identity))
+      .toBe('initial-baseball:daily-at-bat-owner:v1:points-v4:2026-09-18:daily-2026-09-18-editorial-v1');
+    expect(getDailyAtBatOwnershipLockName(v4Identity))
+      .not.toBe(getDailyAtBatOwnershipLockName(IDENTITY));
+  });
+
   it('queues simultaneous tabs under one exclusive puzzle/ruleset lock', async () => {
     const locks = new FakeLocks();
     const journal = memoryJournal();
