@@ -1,6 +1,6 @@
 'use client';
 
-import { POINTS_V3_DAILY_RULESET_VERSION, type DailyCompletedAtBat } from '@initial-baseball/shared';
+import type { DailyCompletedAtBat } from '@initial-baseball/shared';
 import { canCreateCompletedResultFromLoadedSave } from './dailyCompletedResultActivation';
 import {
   createDailyAtBatAttemptJournalStore,
@@ -186,7 +186,7 @@ function reconcileExistingJournal(
       : retire(journal, identity, current.generation, 'durable_mismatch');
   }
 
-  if (loaded.savedGame.gameState.rulesetVersion !== POINTS_V3_DAILY_RULESET_VERSION
+  if (loaded.savedGame.gameState.rulesetVersion !== identity.rulesetVersion
     || !loaded.completedAtBatFactsAreNative) {
     return retire(journal, identity, current.generation, 'durable_mismatch');
   }
