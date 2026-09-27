@@ -150,7 +150,7 @@ Valid pre-ruleset tokens normalize to `legacy-inning-v1`. Valid `classic-inning-
 
 ### `POST /api/daily/results`
 
-This anonymous endpoint accepts exactly one completed-game submission for an exact supported result ruleset: `points-v3`, `points-v4`, or `classic-inning-v1`. It is not called per hint, guess, or at-bat. The ordinary browser still creates new completed-result delivery records only for the currently active points-v3 Daily Nine path (plus retained Classic where enabled); accepting points-v4 here is server compatibility, not public activation.
+This anonymous endpoint accepts exactly one completed-game submission for an exact supported result ruleset: `points-v3`, `points-v4`, or `classic-inning-v1`. It is not called per hint, guess, or at-bat. H3 permits exact v3/v4 browser completed-result delivery records (plus retained Classic where enabled) under separate ruleset keys; the ordinary public Daily still creates v3 today because the public default has not switched.
 
 Request contract:
 
