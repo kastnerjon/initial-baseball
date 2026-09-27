@@ -139,16 +139,13 @@ For v3, existing integer behavior and 64-entry 0..63 histogram remain unchanged.
 
 H1 was rebuilt from post-redefinition `main` rather than merging the stale pre-redefinition branch. Its bounded server-write scope is documented in `tasks/plans/points-v4-result-write-api.md`.
 
-H1 proves the finalized contract at the write boundary with a 0.5-point v4 walk and a 4.5-point nine-walk completed game, while leaving browser producers, comparison HTTP/browser acceptance and the public default on v3. The remaining activation guardrails below are H3-H5 work; H2 save isolation is now complete.
+H1 proves the finalized contract at the write boundary with a 0.5-point v4 walk and a 4.5-point nine-walk completed game. H2 subsequently isolated current-Daily v4 gameplay saves, and H3 widened browser result contribution/delivery while leaving comparison HTTP/browser acceptance and the public default on v3. The remaining activation guardrails are H4-H5 work.
 
 ## H activation guardrails discovered in the high-level audit
 
 This PR deliberately stops below browser activation. The next H work must preserve these currently intentional seams:
 
-- `dailyAtBatAttemptJournal.ts` still owns a points-v3-only attempt identity/submission contract;
-- `dailyAtBatGameplayLifecycle.ts` still retires non-v3 durable Daily attempt state;
-- `useDailyGameplayPersistence.ts` still coordinates owner/outbox contribution only for points-v3;
-- `dailyCompletedResultClient.ts` still accepts only points-v3 or Classic;
+- **H3 follow-up complete:** `dailyAtBatAttemptJournal.ts`, lifecycle reconciliation and `useDailyGameplayPersistence.ts` now carry exact v3/v4 contribution identity through the unchanged journal/lock/generation protocol; `dailyCompletedResultClient.ts` accepts v3/v4/Classic under ruleset-keyed immutable retry records;
 - shared comparison HTTP/request/browser layers remain points-v3-only;
 - `CURRENT_DAILY_RULESET_VERSION` remains points-v3;
 - **H2 follow-up complete:** current-Daily v4 now uses a separate ruleset-keyed gameplay-save namespace and accepts only v4 saves. Points-v3 retains the explicit historical legacy/v1/v2/v3 restore family but rejects v4, so an old v3 value is neither silently restored as v4 nor overwritten by a v4 save/reset. Archive exact-version isolation remains unchanged. Scope: `tasks/plans/points-v4-current-daily-save-isolation.md`.
