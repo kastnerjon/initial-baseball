@@ -1,4 +1,9 @@
-import { POINTS_V3_DAILY_RULESET_VERSION, type DailyCompletedAtBat } from '@initial-baseball/shared';
+import {
+  POINTS_V3_DAILY_RULESET_VERSION,
+  POINTS_V4_DAILY_RULESET_VERSION,
+  type DailyCompletedAtBat,
+  type DailyRulesetVersion,
+} from '@initial-baseball/shared';
 import { describe, expect, it } from 'vitest';
 import type { DailyAtBatAttemptIdentity } from './dailyAtBatAttemptJournal';
 import { createDailyAtBatGameplayLifecycle } from './dailyAtBatGameplayLifecycle';
@@ -8,6 +13,10 @@ import { createInitialAtBatUiState, createInitialDemoGameState, DEMO_DAILY_PUZZL
 const IDENTITY: DailyAtBatAttemptIdentity = {
   id: DEMO_DAILY_PUZZLE.id, puzzleDate: DEMO_DAILY_PUZZLE.puzzleDate,
   puzzleNumber: DEMO_DAILY_PUZZLE.puzzleNumber, rulesetVersion: POINTS_V3_DAILY_RULESET_VERSION,
+};
+const V4_IDENTITY: DailyAtBatAttemptIdentity = {
+  ...IDENTITY,
+  rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
 };
 
 describe('Daily at-bat gameplay lifecycle', () => {
@@ -65,6 +74,54 @@ describe('Daily at-bat gameplay lifecycle', () => {
       loaded: loadedGame([atBat]), hadPersistedGameplayValue: true,
       claimedGeneration: 2, totalAtBats: 6,
     })).toMatchObject({ status: 'active', attemptId: 'attempt-one', generation: 2 });
+  });
+
+  it('reconciles a points-v4 takeover only against the exact v4 durable save', () => {
+    const storage = memoryStorage();
+    const first = makeLifecycle(storage, V4_IDENTITY);
+    const atBat = completedAtBat(1);
+    first.journal.create(V4_IDENTITY);
+    first.journal.appendObservation({
+      identity: V4_IDENTITY,
+      generation: 1,
+      atBat,
+    });
+
+    const takeover = makeLifecycle(storage, V4_IDENTITY);
+    takeover.journal.advanceGeneration(V4_IDENTITY);
+    expect(takeover.prepareOwner({
+      loaded: loadedGame([atBat], POINTS_V4_DAILY_RULESET_VERSION),
+      hadPersistedGameplayValue: true,
+      claimedGeneration: 2,
+      totalAtBats: 6,
+    })).toMatchObject({
+      status: 'active',
+      attemptId: 'attempt-one',
+      generation: 2,
+    });
+  });
+
+  it('retires a points-v4 attempt when durable gameplay claims a different ruleset', () => {
+    const storage = memoryStorage();
+    const first = makeLifecycle(storage, V4_IDENTITY);
+    first.journal.create(V4_IDENTITY);
+    const takeover = makeLifecycle(storage, V4_IDENTITY);
+    takeover.journal.advanceGeneration(V4_IDENTITY);
+
+    expect(takeover.prepareOwner({
+      loaded: loadedGame([], POINTS_V3_DAILY_RULESET_VERSION),
+      hadPersistedGameplayValue: true,
+      claimedGeneration: 2,
+      totalAtBats: 6,
+    })).toEqual({
+      status: 'inactive',
+      reason: 'durable_mismatch',
+      allowCompletedResultCreate: false,
+    });
+    expect(takeover.journal.read(V4_IDENTITY)).toMatchObject({
+      kind: 'valid',
+      journal: { contributionState: 'retired' },
+    });
   });
 
   it('retires rather than backfilling when gameplay is ahead of the journal', () => {
@@ -151,14 +208,22 @@ describe('Daily at-bat gameplay lifecycle', () => {
   });
 });
 
-function makeLifecycle(storage: ReturnType<typeof memoryStorage>) {
+function makeLifecycle(
+  storage: ReturnType<typeof memoryStorage>,
+  identity: DailyAtBatAttemptIdentity = IDENTITY,
+) {
   return createDailyAtBatGameplayLifecycle({
-    identity: IDENTITY, storage, createAttemptId: () => 'attempt-one',
+    identity, storage, createAttemptId: () => 'attempt-one',
   });
 }
-function loadedGame(completedAtBats: DailyCompletedAtBat[] = []): LoadedSavedDailyGame {
+function loadedGame(
+  completedAtBats: DailyCompletedAtBat[] = [],
+  rulesetVersion: DailyRulesetVersion = POINTS_V3_DAILY_RULESET_VERSION,
+): LoadedSavedDailyGame {
   const gameState = {
-    ...createInitialDemoGameState(DEMO_DAILY_PUZZLE), completedAtBats,
+    ...createInitialDemoGameState(DEMO_DAILY_PUZZLE),
+    rulesetVersion,
+    completedAtBats,
     completedPitchLines: completedAtBats.map(atBat => ({
       initials: atBat.initials, outcome: atBat.outcome,
     })),

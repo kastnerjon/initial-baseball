@@ -117,9 +117,9 @@ Before merge, verify the hosted database still has:
 These are intentionally **not** fixed in H1, but must stay tracked in canonical docs/todo until completed:
 
 1. **Current-Daily save isolation — complete in H2:** points-v4 now uses its own ruleset-keyed gameplay-save namespace and only accepts v4 saves. Points-v3 retains the explicit historical legacy/v1/v2/v3 restore family but rejects v4. Existing v3 values are not copied, deleted, reinterpreted or overwritten by v4. Scope: `tasks/plans/points-v4-current-daily-save-isolation.md`.
-2. **Attempt journal/outbox:** `dailyAtBatAttemptJournal.ts` and related contribution identity are still points-v3-only. Widen exact-version identity without merging populations.
-3. **Gameplay ownership/lifecycle:** owner/takeover contribution logic remains deliberately v3-gated. Preserve one-owner semantics and generation fencing when widening.
-4. **Completed-result browser delivery:** `dailyCompletedResultClient.ts` still accepts points-v3/Classic only. Widen only when browser v4 gameplay is ready.
+2. **Attempt journal/outbox — complete in H3:** the existing version-1 record now accepts exact points-v3/points-v4 identities and freezes the journal's exact ruleset into each immutable schema-1 observation; v3/v4 keys remain separate. Scope: `tasks/plans/points-v4-browser-result-delivery.md`.
+3. **Gameplay ownership/lifecycle — complete in H3:** contribution coordination accepts fresh/restored exact v3/v4 sessions only, Web Lock names remain ruleset-keyed, takeover reconciliation requires the durable save's exact attempt ruleset, and generation/retirement/no-backfill behavior is unchanged.
+4. **Completed-result browser delivery — complete in H3:** the browser client accepts v3/v4/Classic under existing ruleset-keyed records, reuses a fresh attempt ID for new v4 completion just as for v3, and leaves any existing pending/terminal record authoritative.
 5. **Comparison public boundary:** shared comparison HTTP/read-service/browser layers remain v3-only even though the server/provider domain supports v4. Widen exact-version end to end before showing v4 AVG/BEAT.
 6. **Presentation:** scorecard formatting already supports one decimal, but all scorecard/share/comparison pathways must be exercised with 0.5 values and exact-version identities before activation.
 7. **How to play:** copy must be ruleset-aware at the same cutover; do not show v4 scoring while v3 is active or vice versa.

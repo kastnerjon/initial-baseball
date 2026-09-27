@@ -2,10 +2,10 @@
 
 import { useEffect, useRef, useState } from 'react';
 import {
-  POINTS_V3_DAILY_RULESET_VERSION,
   type DailyPublicPuzzle,
   type DailyRulesetVersion,
 } from '@initial-baseball/shared';
+import { getDailyAtBatContributionRulesetVersion } from './dailyAtBatContributionActivation';
 import { canCreateCompletedResultFromLoadedSave } from './dailyCompletedResultActivation';
 import {
   createBrowserDailyAtBatGameplayLifecycle,
@@ -79,11 +79,12 @@ export function useDailyGameplayPersistence({
     persistenceSession.beginSession(ownedSessionKey);
     const storage = getDailyModeStorage(rulesetVersion, undefined, puzzle.id);
     const initialLoaded = loadCompatible(puzzle, rulesetVersion, initialProgressionToken, storage);
-    const coordinate = rulesetVersion === POINTS_V3_DAILY_RULESET_VERSION
-      && (initialLoaded === null
-        || initialLoaded.savedGame.gameState.rulesetVersion === POINTS_V3_DAILY_RULESET_VERSION);
+    const contributionRulesetVersion = getDailyAtBatContributionRulesetVersion(
+      rulesetVersion,
+      initialLoaded,
+    );
 
-    if (!coordinate) {
+    if (contributionRulesetVersion === null) {
       restoreCompatibility(initialLoaded);
       persistenceSession.markReady(ownedSessionKey);
       persistenceSession.setAccess('compatibility');
@@ -97,7 +98,7 @@ export function useDailyGameplayPersistence({
       id: puzzle.id,
       puzzleDate: puzzle.puzzleDate,
       puzzleNumber: puzzle.puzzleNumber,
-      rulesetVersion: POINTS_V3_DAILY_RULESET_VERSION,
+      rulesetVersion: contributionRulesetVersion,
     } as const;
     const lifecycle = createBrowserDailyAtBatGameplayLifecycle(identity, storage);
     const resultClient = createBrowserDailyAtBatResultClient(storage);

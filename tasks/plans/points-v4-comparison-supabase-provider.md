@@ -3,7 +3,7 @@
 Status: row G3B implementation scope; server/provider compatibility only, not public browser activation  
 Date: 2026-09-25
 
-> September 26 follow-up: the provider seam and access model remain intact, but inactive v4 was redefined before activation to 0.5-point nonnegative scoring. Migration `20260926220726_redefine_points_v4_fractional_scoring` changes the point-valued RPC returns to exact numeric values; the original signed-integer proof below remains historical evidence for the earlier draft only. H1 widens result writes only and deliberately leaves this plan's comparison HTTP/browser activation boundary unchanged. See `tasks/plans/points-v4-half-walk-zero-strikeout.md` and `tasks/plans/points-v4-result-write-api.md`.
+> September 27 follow-up: the provider seam and access model remain intact, inactive v4 uses 0.5-point nonnegative scoring, and H1-H3 now cover result writes, gameplay-save isolation and browser result delivery. Migration `20260926220726_redefine_points_v4_fractional_scoring` remains authoritative for exact numeric point-valued RPC returns. This plan's comparison HTTP/browser activation boundary is still intentionally closed until H4. See `tasks/plans/points-v4-half-walk-zero-strikeout.md`, `tasks/plans/points-v4-result-write-api.md`, and `tasks/plans/points-v4-browser-result-delivery.md`.
 
 ## Scope contract
 

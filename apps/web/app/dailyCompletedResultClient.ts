@@ -4,6 +4,7 @@ import {
   CLASSIC_DAILY_RULESET_VERSION,
   DAILY_COMPLETED_RESULT_SCHEMA_VERSION,
   POINTS_V3_DAILY_RULESET_VERSION,
+  POINTS_V4_DAILY_RULESET_VERSION,
   type DailyCompletedAtBat,
   type DailyCompletedResultRulesetVersion,
   type DailyCompletedResultSubmission,
@@ -232,7 +233,9 @@ function cloneAtBats(atBats: DailyCompletedAtBat[]): DailyCompletedAtBat[] {
 }
 
 function isSupportedRuleset(value: unknown): value is DailyCompletedResultRulesetVersion {
-  return value === POINTS_V3_DAILY_RULESET_VERSION || value === CLASSIC_DAILY_RULESET_VERSION;
+  return value === POINTS_V3_DAILY_RULESET_VERSION
+    || value === POINTS_V4_DAILY_RULESET_VERSION
+    || value === CLASSIC_DAILY_RULESET_VERSION;
 }
 function isSubmissionId(value: unknown): value is string {
   return typeof value === 'string' && /^[A-Za-z0-9_-]{1,128}$/.test(value);
