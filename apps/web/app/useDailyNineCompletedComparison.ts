@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { getDailyNineStrictLowerFinishRate } from '@initial-baseball/daily/comparison';
 import {
-  POINTS_V3_DAILY_RULESET_VERSION,
+  isDailyNineComparisonApiRulesetVersion,
   type DailyPointsSummary,
   type DailyPublicPuzzle,
   type DailyRulesetVersion,
@@ -44,7 +44,7 @@ export function createDailyNineCompletedComparisonInput({
   points,
   terminalPoints,
 }: DailyNineCompletedComparisonSourceInput): DailyNineCompletedComparisonInput {
-  if (rulesetVersion !== POINTS_V3_DAILY_RULESET_VERSION) return null;
+  if (!isDailyNineComparisonApiRulesetVersion(rulesetVersion)) return null;
 
   const ownPoints = terminalPoints?.completed === true
     ? terminalPoints.points
@@ -59,7 +59,7 @@ export function createDailyNineCompletedComparisonInput({
       puzzleId: puzzle.id,
       puzzleDate: puzzle.puzzleDate,
       puzzleNumber: puzzle.puzzleNumber,
-      rulesetVersion: POINTS_V3_DAILY_RULESET_VERSION,
+      rulesetVersion,
     },
     ownPoints,
   };
