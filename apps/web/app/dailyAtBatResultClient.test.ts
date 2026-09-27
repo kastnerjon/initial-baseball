@@ -43,6 +43,27 @@ describe('resolved-at-bat browser journal and outbox', () => {
     expect(store.appendObservation({ identity: IDENTITY, generation: 2, atBat: atBat(2) })).toBe('retired');
   });
 
+  it('stores points-v3 and points-v4 journals separately for the same puzzle', () => {
+    const storage = memoryStorage();
+    const store = makeStore(storage);
+
+    expect(store.create(IDENTITY)).toBe('created');
+    expect(store.create(V4_IDENTITY)).toBe('created');
+
+    expect(storage.keys().sort()).toEqual([
+      'initial-baseball:daily-at-bat-attempt:v1:points-v3:2026-09-18:daily-2026-09-18-editorial-v1',
+      'initial-baseball:daily-at-bat-attempt:v1:points-v4:2026-09-18:daily-2026-09-18-editorial-v1',
+    ]);
+    expect(store.read(IDENTITY)).toMatchObject({
+      kind: 'valid',
+      journal: { identity: { rulesetVersion: POINTS_V3_DAILY_RULESET_VERSION } },
+    });
+    expect(store.read(V4_IDENTITY)).toMatchObject({
+      kind: 'valid',
+      journal: { identity: { rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION } },
+    });
+  });
+
   it('retires explicitly without deleting a pending frozen observation', () => {
     const store = makeStore(memoryStorage());
     store.create(IDENTITY); store.appendObservation({ identity: IDENTITY, generation: 1, atBat: atBat(1) });
@@ -327,6 +348,7 @@ function memoryStorage() {
     getItem: (key: string) => map.get(key) ?? null,
     setItem: (key: string, value: string) => { map.set(key, value); },
     record: () => JSON.parse([...map.values()][0] ?? '{}'),
+    keys: () => [...map.keys()],
     replace: (raw: string) => { const key = [...map.keys()][0]; if (key) map.set(key, raw); },
   };
 }
