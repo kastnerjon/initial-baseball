@@ -1,6 +1,7 @@
 import {
   CLASSIC_DAILY_RULESET_VERSION,
   POINTS_V3_DAILY_RULESET_VERSION,
+  POINTS_V4_DAILY_RULESET_VERSION,
   POINTS_V2_DAILY_RULESET_VERSION,
   isDailyPointsRulesetVersion,
   type DailyRulesetVersion,
@@ -27,6 +28,8 @@ export function formatDailyShareText(result: DailyShareResult): string {
 
 export function getDailyModeName(rulesetVersion: DailyRulesetVersion): string {
   if (rulesetVersion === CLASSIC_DAILY_RULESET_VERSION) return 'Classic Inning';
-  if (rulesetVersion === POINTS_V2_DAILY_RULESET_VERSION || rulesetVersion === POINTS_V3_DAILY_RULESET_VERSION) return 'Daily Nine';
+  if (rulesetVersion === POINTS_V2_DAILY_RULESET_VERSION
+    || rulesetVersion === POINTS_V3_DAILY_RULESET_VERSION
+    || rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION) return 'Daily Nine';
   return 'Daily Inning';
 }
