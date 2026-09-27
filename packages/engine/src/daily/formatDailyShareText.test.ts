@@ -6,6 +6,7 @@ import {
   POINTS_V1_DAILY_RULESET_VERSION,
   POINTS_V2_DAILY_RULESET_VERSION,
   POINTS_V3_DAILY_RULESET_VERSION,
+  POINTS_V4_DAILY_RULESET_VERSION,
   type DailyCompletedAtBat,
   type DailyGameState,
   type DailyOutcome,
@@ -137,6 +138,29 @@ it('formats points-v3 deduction scoring with the Daily Nine label', () => {
     '',
     'KGJ: HR',
     'DW: 2B',
+    'CCS: K',
+    '',
+    'https://dailyinning.com',
+  ].join('\n'));
+  expectSpoilerSafe(shareText);
+});
+
+it('formats finalized points-v4 fractional scoring with the Daily Nine label', () => {
+  let gameState = createPointsGameState(POINTS_V4_DAILY_RULESET_VERSION);
+  gameState = applyOutcome(gameState, 'HR', 'KGJ', 1);
+  gameState = applyOutcome(gameState, 'BB', 'DW', 2);
+  gameState = applyOutcome(gameState, 'K', 'CCS', 3);
+
+  const shareText = formatCompletedShare(gameState);
+
+  expect(shareText).toBe([
+    'Daily Nine #42',
+    'by Initial Baseball',
+    '',
+    '4.5/12 PTS · 1 K',
+    '',
+    'KGJ: HR',
+    'DW: BB',
     'CCS: K',
     '',
     'https://dailyinning.com',
