@@ -1,6 +1,7 @@
 import {
   CLASSIC_DAILY_RULESET_VERSION,
   LEGACY_DAILY_RULESET_VERSION,
+  POINTS_V1_DAILY_RULESET_VERSION,
   POINTS_V2_DAILY_RULESET_VERSION,
   POINTS_V3_DAILY_RULESET_VERSION,
   POINTS_V4_DAILY_RULESET_VERSION,
@@ -42,6 +43,7 @@ describe('Daily at-bat contribution activation', () => {
 
   it.each([
     LEGACY_DAILY_RULESET_VERSION,
+    POINTS_V1_DAILY_RULESET_VERSION,
     POINTS_V2_DAILY_RULESET_VERSION,
     CLASSIC_DAILY_RULESET_VERSION,
   ] as const)('keeps %s outside resolved-at-bat contribution', (rulesetVersion) => {
