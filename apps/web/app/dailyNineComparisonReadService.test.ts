@@ -1,4 +1,8 @@
-import { POINTS_V3_DAILY_RULESET_VERSION, type DailyPublicPuzzle } from '@initial-baseball/shared';
+import {
+  POINTS_V3_DAILY_RULESET_VERSION,
+  POINTS_V4_DAILY_RULESET_VERSION,
+  type DailyPublicPuzzle,
+} from '@initial-baseball/shared';
 import type { DailyNineComparisonService } from '@initial-baseball/daily';
 import { describe, expect, it, vi } from 'vitest';
 import {
@@ -67,6 +71,66 @@ describe('Daily Nine comparison read service', () => {
     expect(comparison.getCompletedGames).not.toHaveBeenCalled();
   });
 
+  it('routes exact points-v4 identity through at-bat and completed reads', async () => {
+    const comparison = comparisonService();
+    comparison.getAtBat = vi.fn().mockResolvedValue({
+      puzzleId: PUZZLE.id,
+      puzzleDate: PUZZLE.puzzleDate,
+      puzzleNumber: PUZZLE.puzzleNumber,
+      rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+      pitchNumber: 2,
+      resolvedAtBatCount: 3,
+      averagePoints: 1.5,
+    });
+    comparison.getCompletedGames = vi.fn().mockResolvedValue({
+      puzzleId: PUZZLE.id,
+      puzzleDate: PUZZLE.puzzleDate,
+      puzzleNumber: PUZZLE.puzzleNumber,
+      rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+      completedGameCount: 2,
+      averageTotalPoints: 18.5,
+      scoreHistogram: Array.from({ length: 73 }, (_, index) =>
+        index === 1 || index === 72 ? 1 : 0),
+    });
+    const service = createService({ comparison });
+
+    await expect(service.readAtBat({
+      puzzleDate: '2026-09-19',
+      rulesetVersion: 'points-v4',
+      pitchNumber: '2',
+    })).resolves.toMatchObject({
+      comparison: {
+        rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+        pitchNumber: 2,
+        averagePoints: 1.5,
+      },
+    });
+    await expect(service.readCompleted({
+      puzzleDate: '2026-09-19',
+      rulesetVersion: 'points-v4',
+    })).resolves.toMatchObject({
+      comparison: {
+        rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+        completedGameCount: 2,
+        averageTotalPoints: 18.5,
+      },
+    });
+
+    expect(comparison.getAtBat).toHaveBeenCalledWith({
+      puzzleId: PUZZLE.id,
+      puzzleDate: PUZZLE.puzzleDate,
+      puzzleNumber: PUZZLE.puzzleNumber,
+      rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+      pitchNumber: 2,
+    });
+    expect(comparison.getCompletedGames).toHaveBeenCalledWith({
+      puzzleId: PUZZLE.id,
+      puzzleDate: PUZZLE.puzzleDate,
+      puzzleNumber: PUZZLE.puzzleNumber,
+      rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+    });
+  });
+
   it('keeps completed reads independent and user-independent', async () => {
     const comparison = comparisonService();
     comparison.getCompletedGames = vi.fn().mockResolvedValue({
@@ -101,7 +165,7 @@ describe('Daily Nine comparison read service', () => {
     [{ puzzleDate: '2026-02-30', rulesetVersion: 'points-v3', pitchNumber: '1' }, 'invalid_request'],
     [{ puzzleDate: '2026-09-19', rulesetVersion: null, pitchNumber: '1' }, 'invalid_request'],
     [{ puzzleDate: '2026-09-19', rulesetVersion: 'classic-inning-v1', pitchNumber: '1' }, 'unsupported_ruleset'],
-    [{ puzzleDate: '2026-09-19', rulesetVersion: 'points-v4', pitchNumber: '1' }, 'unsupported_ruleset'],
+    [{ puzzleDate: '2026-09-19', rulesetVersion: 'points-v2', pitchNumber: '1' }, 'unsupported_ruleset'],
     [{ puzzleDate: '2026-09-19', rulesetVersion: 'points-v3', pitchNumber: null }, 'invalid_request'],
     [{ puzzleDate: '2026-09-19', rulesetVersion: 'points-v3', pitchNumber: '0' }, 'invalid_request'],
     [{ puzzleDate: '2026-09-19', rulesetVersion: 'points-v3', pitchNumber: '10' }, 'invalid_request'],
