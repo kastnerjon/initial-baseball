@@ -75,6 +75,33 @@ describe('completed-result browser client', () => {
     });
   });
 
+  it('keeps points-v3 and points-v4 completed-result records isolated', async () => {
+    const storage = memoryStorage();
+    const request = vi.fn().mockResolvedValue({ ok: true, status: 201 });
+    const client = makeClient(storage, request, () => 'generated-id');
+
+    await expect(client.submitIfNeeded(pointsInput(), {
+      allowCreate: true,
+      creationSubmissionId: 'v3-attempt',
+    })).resolves.toBe('submitted');
+    await expect(client.submitIfNeeded({
+      ...pointsInput(),
+      rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+    }, {
+      allowCreate: true,
+      creationSubmissionId: 'v4-attempt',
+    })).resolves.toBe('submitted');
+
+    expect(storage.keys().sort()).toEqual([
+      'initial-baseball:daily-result-submission:v1:points-v3:2026-09-17:daily-2026-09-17-editorial-v1',
+      'initial-baseball:daily-result-submission:v1:points-v4:2026-09-17:daily-2026-09-17-editorial-v1',
+    ]);
+    expect(request.mock.calls.map(call => call[0].submissionId)).toEqual([
+      'v3-attempt',
+      'v4-attempt',
+    ]);
+  });
+
   it('uses a preferred fresh attempt ID only when creating a new record', async () => {
     const storage = memoryStorage();
     const request = vi.fn().mockResolvedValue({ ok: true, status: 201 });
@@ -225,6 +252,7 @@ function memoryStorage() {
     getItem: (key: string) => map.get(key) ?? null,
     setItem: (key: string, value: string) => { map.set(key, value); },
     record: () => JSON.parse([...map.values()][0] ?? '{}'),
+    keys: () => [...map.keys()],
     replace: (value: unknown) => {
       const key = [...map.keys()][0];
       if (key !== undefined) map.set(key, JSON.stringify(value));
