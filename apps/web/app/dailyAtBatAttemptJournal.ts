@@ -3,6 +3,8 @@
 import {
   DAILY_AT_BAT_RESULT_SCHEMA_VERSION,
   POINTS_V3_DAILY_RULESET_VERSION,
+  POINTS_V4_DAILY_RULESET_VERSION,
+  type DailyAtBatResultRulesetVersion,
   type DailyAtBatResultSubmission,
   type DailyCompletedAtBat,
   type DailyPublicPuzzle,
@@ -13,7 +15,7 @@ const RECORD_VERSION = 1 as const;
 const FIRST_GENERATION = 1;
 
 export type DailyAtBatAttemptIdentity = Pick<DailyPublicPuzzle, 'id' | 'puzzleDate' | 'puzzleNumber'>
-  & { rulesetVersion: typeof POINTS_V3_DAILY_RULESET_VERSION };
+  & { rulesetVersion: DailyAtBatResultRulesetVersion };
 
 export type DailyAtBatDeliveryStatus = 'pending' | 'submitted' | 'conflict' | 'rejected';
 export type DailyAtBatContributionState = 'active' | 'retired';
@@ -195,7 +197,7 @@ function buildSubmission(
     puzzleId: journal.identity.id,
     puzzleDate: journal.identity.puzzleDate,
     puzzleNumber: journal.identity.puzzleNumber,
-    rulesetVersion: POINTS_V3_DAILY_RULESET_VERSION,
+    rulesetVersion: journal.identity.rulesetVersion,
     atBat: { ...atBat },
   };
 }
@@ -235,7 +237,7 @@ function isIdentity(value: unknown): value is DailyAtBatAttemptIdentity {
     && typeof value.id === 'string' && value.id.length > 0
     && typeof value.puzzleDate === 'string' && value.puzzleDate.length > 0
     && Number.isInteger(value.puzzleNumber)
-    && value.rulesetVersion === POINTS_V3_DAILY_RULESET_VERSION;
+    && isDailyAtBatAttemptRulesetVersion(value.rulesetVersion);
 }
 function isSubmission(value: unknown): value is DailyAtBatResultSubmission {
   return isObject(value)
@@ -244,7 +246,7 @@ function isSubmission(value: unknown): value is DailyAtBatResultSubmission {
     && typeof value.puzzleId === 'string'
     && typeof value.puzzleDate === 'string'
     && Number.isInteger(value.puzzleNumber)
-    && value.rulesetVersion === POINTS_V3_DAILY_RULESET_VERSION
+    && isDailyAtBatAttemptRulesetVersion(value.rulesetVersion)
     && isAtBat(value.atBat);
 }
 function isAtBat(value: unknown): value is DailyCompletedAtBat {
@@ -258,6 +260,12 @@ function isAtBat(value: unknown): value is DailyCompletedAtBat {
 }
 function isDeliveryStatus(value: unknown): value is DailyAtBatDeliveryStatus {
   return value === 'pending' || value === 'submitted' || value === 'conflict' || value === 'rejected';
+}
+export function isDailyAtBatAttemptRulesetVersion(
+  value: unknown,
+): value is DailyAtBatResultRulesetVersion {
+  return value === POINTS_V3_DAILY_RULESET_VERSION
+    || value === POINTS_V4_DAILY_RULESET_VERSION;
 }
 function isSubmissionId(value: unknown): value is string {
   return typeof value === 'string' && /^[A-Za-z0-9_-]{1,128}$/.test(value);
