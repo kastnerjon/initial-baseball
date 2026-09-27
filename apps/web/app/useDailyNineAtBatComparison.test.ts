@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   CLASSIC_DAILY_RULESET_VERSION,
   POINTS_V3_DAILY_RULESET_VERSION,
+  POINTS_V4_DAILY_RULESET_VERSION,
 } from '@initial-baseball/shared';
 import {
   createDailyNineAtBatComparisonInput,
@@ -76,7 +77,24 @@ describe('Daily Nine at-bat comparison input', () => {
     });
   });
 
-  it('does not activate Daily Nine comparison for non-points-v3 play', () => {
+  it('binds points-v4 and preserves a fractional terminal score', () => {
+    expect(createDailyNineAtBatComparisonInput({
+      puzzle,
+      rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+      pitch: { pitchNumber: 3 },
+      result: terminalResult,
+      currentPoints: 10,
+      terminalPoints: 10.5,
+    })).toEqual({
+      key: {
+        ...comparisonKey,
+        rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+      },
+      ownPoints: 0.5,
+    });
+  });
+
+  it('does not activate Daily Nine comparison for unsupported play', () => {
     expect(createDailyNineAtBatComparisonInput({
       puzzle,
       rulesetVersion: CLASSIC_DAILY_RULESET_VERSION,
