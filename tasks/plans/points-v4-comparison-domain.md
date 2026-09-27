@@ -3,7 +3,7 @@
 Status: row G2 implementation scope; pure comparison math only, not provider/browser activation  
 Date: 2026-09-25
 
-> September 26 follow-up: the exact-version comparison architecture is retained, but inactive v4 was redefined before activation to a nonnegative 0.5-point domain. The integer/signed assumptions below are superseded by `tasks/plans/points-v4-half-walk-zero-strikeout.md` where updated.
+> September 27 follow-up: the exact-version comparison architecture is retained, inactive v4 was redefined before activation to a nonnegative 0.5-point domain, and H1-H3 now cover server writes, gameplay-save isolation and browser result delivery. The integer/signed assumptions below are superseded by `tasks/plans/points-v4-half-walk-zero-strikeout.md`; comparison HTTP/browser acceptance is still H4.
 
 ## Scope contract
 
