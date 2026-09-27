@@ -2,6 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   DAILY_NINE_COMPARISON_API_SCHEMA_VERSION,
   POINTS_V3_DAILY_RULESET_VERSION,
+  POINTS_V4_DAILY_RULESET_VERSION,
   type DailyNineComparisonApiKey,
 } from '@initial-baseball/shared';
 import {
@@ -38,6 +39,58 @@ describe('Daily Nine browser comparison client', () => {
     expect(request).toHaveBeenCalledTimes(1);
     expect(request).toHaveBeenCalledWith(
       '/api/daily/comparison/at-bat?date=2026-09-19&ruleset=points-v3&pitch=3',
+      { method: 'GET', cache: 'no-store', signal },
+    );
+  });
+
+  it('reads and validates exact points-v4 fractional comparison payloads', async () => {
+    const signal = new AbortController().signal;
+    const key: DailyNineAtBatComparisonRequestKey = {
+      ...AT_BAT_KEY,
+      rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+    };
+    const payload = {
+      ...atBatPayload(),
+      comparison: {
+        ...atBatPayload().comparison,
+        rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+        resolvedAtBatCount: 3,
+        averagePoints: 1.5,
+      },
+    };
+    const request = vi.fn().mockResolvedValue(response(200, payload));
+    const client = createDailyNineComparisonClient({ request });
+
+    await expect(client.readAtBat(key, signal)).resolves.toEqual(payload);
+    expect(request).toHaveBeenCalledWith(
+      '/api/daily/comparison/at-bat?date=2026-09-19&ruleset=points-v4&pitch=3',
+      { method: 'GET', cache: 'no-store', signal },
+    );
+  });
+
+  it('reads a points-v4 completed 73-slot histogram without integer-score assumptions', async () => {
+    const signal = new AbortController().signal;
+    const key: DailyNineCompletedComparisonRequestKey = {
+      ...COMPLETED_KEY,
+      rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+    };
+    const payload = {
+      ...completedPayload(),
+      comparison: {
+        ...completedPayload().comparison,
+        rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+        completedGameCount: 2,
+        averageTotalPoints: 18.5,
+        scoreHistogram: Array.from({ length: 73 }, (_, index) =>
+          index === 1 || index === 72 ? 1 : 0),
+      },
+    };
+    const request = vi.fn().mockResolvedValue(response(200, payload));
+    const client = createDailyNineComparisonClient({ request });
+
+    await expect(client.readCompleted(key, signal)).resolves.toEqual(payload);
+    expect(request).toHaveBeenCalledWith(
+      '/api/daily/comparison/completed?date=2026-09-19&ruleset=points-v4',
       { method: 'GET', cache: 'no-store', signal },
     );
   });
