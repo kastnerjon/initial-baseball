@@ -2,6 +2,7 @@ import {
   CLASSIC_DAILY_RULESET_VERSION,
   LEGACY_DAILY_RULESET_VERSION,
   POINTS_V3_DAILY_RULESET_VERSION,
+  POINTS_V4_DAILY_RULESET_VERSION,
   type DailyCompletedAtBat,
 } from '@initial-baseball/shared';
 import { describe, expect, it, vi } from 'vitest';
@@ -41,6 +42,36 @@ describe('completed-result browser client', () => {
     expect(storage.record()).toMatchObject({
       status: 'submitted',
       submission: { submissionId: 'submission-one', completedAtBats: AT_BATS },
+    });
+  });
+
+  it('persists and submits an exact-version points-v4 completed result', async () => {
+    const storage = memoryStorage();
+    const request = vi.fn().mockResolvedValue({ ok: true, status: 201 });
+    const client = makeClient(storage, request, () => 'v4-submission');
+
+    await expect(client.submitIfNeeded({
+      ...pointsInput(),
+      rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+    }, {
+      allowCreate: true,
+      creationSubmissionId: 'v4-attempt',
+    })).resolves.toBe('submitted');
+
+    expect(request).toHaveBeenCalledTimes(1);
+    expect(request.mock.calls[0]?.[0]).toMatchObject({
+      schemaVersion: 1,
+      submissionId: 'v4-attempt',
+      puzzleId: PUZZLE.id,
+      rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+      completedAtBats: AT_BATS,
+    });
+    expect(storage.record()).toMatchObject({
+      status: 'submitted',
+      submission: {
+        submissionId: 'v4-attempt',
+        rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+      },
     });
   });
 
