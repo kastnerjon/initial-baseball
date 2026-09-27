@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import {
-  POINTS_V3_DAILY_RULESET_VERSION,
+  isDailyNineComparisonApiRulesetVersion,
   type DailyGuessResult,
   type DailyPublicPuzzle,
   type DailyPublicPuzzlePitch,
@@ -56,7 +56,7 @@ export function createDailyNineAtBatComparisonInput({
   currentPoints,
   terminalPoints,
 }: DailyNineAtBatComparisonActivationInput): DailyNineAtBatComparisonInput {
-  if (rulesetVersion !== POINTS_V3_DAILY_RULESET_VERSION || pitch === null) return null;
+  if (!isDailyNineComparisonApiRulesetVersion(rulesetVersion) || pitch === null) return null;
 
   const ownPoints = result !== null
     && result.kind !== 'incorrect'
@@ -70,7 +70,7 @@ export function createDailyNineAtBatComparisonInput({
       puzzleId: puzzle.id,
       puzzleDate: puzzle.puzzleDate,
       puzzleNumber: puzzle.puzzleNumber,
-      rulesetVersion: POINTS_V3_DAILY_RULESET_VERSION,
+      rulesetVersion,
       pitchNumber: pitch.pitchNumber,
     },
     ownPoints,
