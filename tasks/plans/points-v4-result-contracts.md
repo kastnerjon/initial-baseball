@@ -3,7 +3,7 @@
 Status: row G1 implementation scope; portable result acceptance only, not storage or browser activation  
 Date: 2026-09-25
 
-> September 26 follow-up: this contract shape remains valid, but the inactive v4 scoring semantics were finalized before activation as 4/3/2/1/0.5/0. The earlier negative/integer values in the initial checkpoint are superseded by `tasks/plans/points-v4-half-walk-zero-strikeout.md`. H1 subsequently widens only the server result-write preflights to these exact-version contracts; browser result production/default activation remain separate (`tasks/plans/points-v4-result-write-api.md`).
+> September 27 follow-up: this contract shape remains valid, inactive v4 scoring is finalized as 4/3/2/1/0.5/0, H1 widened server result-write preflights, H2 isolated current-Daily v4 saves, and H3 widened browser result production/delivery to exact v3/v4 identity without changing schema 1. The public default and comparison HTTP/browser activation remain H4-H5. See `tasks/plans/points-v4-half-walk-zero-strikeout.md` and `tasks/plans/points-v4-browser-result-delivery.md`.
 
 ## Scope contract
 
