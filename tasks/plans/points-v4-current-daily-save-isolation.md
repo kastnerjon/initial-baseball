@@ -112,4 +112,4 @@ After merge:
 
 ## Documentation impact
 
-Update the API/browser-persistence spec, data model, architecture/product handoffs, START-HERE, September 24 roadmap, todo, archive-save plan, and H1 handoff so they describe the cutover-safe v3/v4 storage boundary precisely. Mark H2 complete and leave H3-H5 explicitly open.
+Update the API/browser-persistence spec, data model, architecture/product handoffs, START-HERE, September 24 roadmap, todo, archive-save plan, and H1 handoff so they describe the cutover-safe v3/v4 storage boundary precisely. H2 was the prerequisite; H3 subsequently widened browser contribution/result delivery on top of these isolated keys. H4-H5 remain open.
