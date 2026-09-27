@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  POINTS_V3_DAILY_RULESET_VERSION,
+  isDailyNineComparisonApiRulesetVersion,
   type DailyPublicPuzzle,
   type DailyRulesetVersion,
 } from '@initial-baseball/shared';
@@ -97,7 +97,7 @@ export function useDailyNineScorecardComparisons({
       return;
     }
 
-    if (!enabled || rulesetVersion !== POINTS_V3_DAILY_RULESET_VERSION) return;
+    if (!enabled || !isDailyNineComparisonApiRulesetVersion(rulesetVersion)) return;
 
     const completionAdvanced = lastPitchSignatureRef.current !== pitchSignature;
     lastPitchSignatureRef.current = pitchSignature;
@@ -137,7 +137,7 @@ export function useDailyNineScorecardComparisons({
         puzzleId: puzzle.id,
         puzzleDate: puzzle.puzzleDate,
         puzzleNumber: puzzle.puzzleNumber,
-        rulesetVersion: POINTS_V3_DAILY_RULESET_VERSION,
+        rulesetVersion,
         pitchNumber,
       };
 
@@ -208,7 +208,7 @@ export function useDailyNineScorecardComparisons({
   ]);
 
   const comparisons = enabled
-    && rulesetVersion === POINTS_V3_DAILY_RULESET_VERSION
+    && isDailyNineComparisonApiRulesetVersion(rulesetVersion)
     && cache.identityKey === identityKey
     ? cache.byPitch
     : EMPTY_COMPARISONS;
