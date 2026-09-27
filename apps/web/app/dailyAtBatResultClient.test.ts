@@ -1,5 +1,6 @@
 import {
   POINTS_V3_DAILY_RULESET_VERSION,
+  POINTS_V4_DAILY_RULESET_VERSION,
   type DailyAtBatResultSubmission,
   type DailyCompletedAtBat,
 } from '@initial-baseball/shared';
@@ -13,6 +14,10 @@ import { createDailyAtBatResultClient } from './dailyAtBatResultClient';
 const IDENTITY: DailyAtBatAttemptIdentity = {
   id: 'daily-2026-09-18-editorial-v1', puzzleDate: '2026-09-18', puzzleNumber: 145,
   rulesetVersion: POINTS_V3_DAILY_RULESET_VERSION,
+};
+const V4_IDENTITY: DailyAtBatAttemptIdentity = {
+  ...IDENTITY,
+  rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
 };
 
 describe('resolved-at-bat browser journal and outbox', () => {
@@ -84,6 +89,41 @@ describe('resolved-at-bat browser journal and outbox', () => {
     expect(storage.record()).toMatchObject({
       contributionState: state,
       observations: { 1: { delivery: expected, submission: { attemptId: 'attempt-one' } } },
+    });
+  });
+
+  it('persists and retries a points-v4 journal with the exact ruleset identity', async () => {
+    const storage = memoryStorage();
+    const first = makeClient(storage, vi.fn().mockRejectedValue(new Error('offline')));
+    const walk = { ...atBat(1), outcome: 'BB' as const, hintsRevealed: 4 as const };
+
+    expect(first.establishAttempt(V4_IDENTITY)).toBe('created');
+    expect(first.freezeObservation({
+      identity: V4_IDENTITY,
+      generation: 1,
+      atBat: walk,
+    })).toBe('created');
+
+    expect(storage.record()).toMatchObject({
+      identity: { rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION },
+      observations: {
+        1: {
+          submission: {
+            rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+            atBat: { outcome: 'BB', hintsRevealed: 4 },
+          },
+          delivery: 'pending',
+        },
+      },
+    });
+
+    const request = vi.fn().mockResolvedValue({ ok: true, status: 200 });
+    const retry = makeClient(storage, request, () => 'wrong-new-id');
+    await expect(ownerDelivery(retry, V4_IDENTITY).retryPending()).resolves.toEqual(['submitted']);
+    expect(request.mock.calls[0]?.[0]).toMatchObject({
+      attemptId: 'attempt-one',
+      rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+      atBat: { outcome: 'BB', hintsRevealed: 4 },
     });
   });
 
@@ -268,8 +308,11 @@ function makeClient(storage: ReturnType<typeof memoryStorage>, submitRequest: Re
     ? createDailyAtBatResultClient(options)
     : createDailyAtBatResultClient({ ...options, requestTimeoutMs });
 }
-function ownerDelivery(client: ReturnType<typeof makeClient>) {
-  const delivery = client.createOwnerDeliverySession(IDENTITY);
+function ownerDelivery(
+  client: ReturnType<typeof makeClient>,
+  identity: DailyAtBatAttemptIdentity = IDENTITY,
+) {
+  const delivery = client.createOwnerDeliverySession(identity);
   if (delivery === null) throw new Error('Expected owner delivery session');
   return delivery;
 }
