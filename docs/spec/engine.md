@@ -59,7 +59,7 @@ The shared ruleset identity and pure engine now define the next Daily Nine scori
 
 Wrong guesses one and two do not deduct points. A third wrong guess is terminal K and therefore scores 0. Give Up is normalized to the same K terminal fact and also scores 0. All nine scheduled at-bats are played. The engine exposes the live hint-based allowance plus the exact score range/step; nine standard at-bats span 0 through 36 in 0.5-point steps.
 
-`CURRENT_DAILY_RULESET_VERSION` remains `points-v3`. Portable schema-1 validation accepts points-v4, exact numeric Supabase result storage persists its half-point values, the server-only comparison provider can aggregate the same exact-version values, the server result-write preflights accept v4, H2 isolates current-Daily v4 gameplay saves, and H3 carries exact v3/v4 browser attempt/result identity through the existing journal/ownership/delivery lifecycle. Public comparison HTTP/browser consumption, fractional presentation verification, How-to copy and public gameplay remain points-v3 until H4-H5.
+`CURRENT_DAILY_RULESET_VERSION` remains `points-v3`. Portable schema-1 validation accepts points-v4, exact numeric Supabase result storage persists its half-point values, the server-only comparison provider aggregates the same exact-version values, H1-H3 cover result writes/save isolation/browser delivery, and H4 widens comparison schema-1 HTTP/read/browser identity plus scorecard/share presentation to exact v3/v4. The v4 73-slot completed histogram is interpreted using the engine-owned 0.5-point step, and browser AVG/BEAT reads stay asynchronous and exact-version keyed. How-to copy, final cutover QA and public gameplay remain points-v3 until H5.
 
 ### `points-v2` — compatibility policy
 
