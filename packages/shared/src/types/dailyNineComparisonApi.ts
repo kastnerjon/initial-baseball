@@ -1,4 +1,7 @@
-import type { POINTS_V3_DAILY_RULESET_VERSION } from './daily.js';
+import {
+  POINTS_V3_DAILY_RULESET_VERSION,
+  POINTS_V4_DAILY_RULESET_VERSION,
+} from './daily.js';
 
 export const DAILY_NINE_COMPARISON_API_SCHEMA_VERSION = 1 as const;
 
@@ -9,12 +12,23 @@ export type DailyNineComparisonApiFreshness = {
   cacheStatus: 'live' | 'cached';
 };
 
+export type DailyNineComparisonApiRulesetVersion =
+  | typeof POINTS_V3_DAILY_RULESET_VERSION
+  | typeof POINTS_V4_DAILY_RULESET_VERSION;
+
 export type DailyNineComparisonApiKey = {
   puzzleId: string;
   puzzleDate: string;
   puzzleNumber: number;
-  rulesetVersion: typeof POINTS_V3_DAILY_RULESET_VERSION;
+  rulesetVersion: DailyNineComparisonApiRulesetVersion;
 };
+
+export function isDailyNineComparisonApiRulesetVersion(
+  value: unknown,
+): value is DailyNineComparisonApiRulesetVersion {
+  return value === POINTS_V3_DAILY_RULESET_VERSION
+    || value === POINTS_V4_DAILY_RULESET_VERSION;
+}
 
 export type DailyNineAtBatComparisonApiResponse = {
   schemaVersion: typeof DAILY_NINE_COMPARISON_API_SCHEMA_VERSION;
@@ -33,7 +47,7 @@ export type DailyNineCompletedComparisonApiResponse = {
   comparison: DailyNineComparisonApiKey & {
     completedGameCount: number;
     averageTotalPoints: number | null;
-    /** Index is the final Daily Nine points-v3 score. */
+    /** Offset histogram interpreted by the exact ruleset's minimum and score step. */
     scoreHistogram: number[];
   };
   freshness: DailyNineComparisonApiFreshness;

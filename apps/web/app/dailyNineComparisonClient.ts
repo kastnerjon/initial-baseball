@@ -2,7 +2,7 @@
 
 import {
   DAILY_NINE_COMPARISON_API_SCHEMA_VERSION,
-  POINTS_V3_DAILY_RULESET_VERSION,
+  isDailyNineComparisonApiRulesetVersion,
   type DailyNineAtBatComparisonApiResponse,
   type DailyNineComparisonApiErrorCode,
   type DailyNineComparisonApiFreshness,
@@ -175,7 +175,7 @@ function decodeBaseKey(value: Record<string, unknown>): DailyNineComparisonApiKe
     puzzleId: nonEmptyString(value.puzzleId, 'puzzleId'),
     puzzleDate: nonEmptyString(value.puzzleDate, 'puzzleDate'),
     puzzleNumber: positiveSafeInteger(value.puzzleNumber, 'puzzleNumber'),
-    rulesetVersion: requirePointsV3(value.rulesetVersion),
+    rulesetVersion: requireComparisonRuleset(value.rulesetVersion),
   };
 }
 
@@ -254,11 +254,11 @@ function nullableNonNegativeFiniteNumber(value: unknown, field: string): number 
   return value;
 }
 
-function requirePointsV3(value: unknown): typeof POINTS_V3_DAILY_RULESET_VERSION {
-  if (value !== POINTS_V3_DAILY_RULESET_VERSION) {
-    invalidResponse('Daily Nine browser comparison requires points-v3.');
+function requireComparisonRuleset(value: unknown): DailyNineComparisonApiKey['rulesetVersion'] {
+  if (!isDailyNineComparisonApiRulesetVersion(value)) {
+    invalidResponse('Daily Nine browser comparison ruleset is unsupported.');
   }
-  return POINTS_V3_DAILY_RULESET_VERSION;
+  return value;
 }
 
 function identityMismatch(): never {

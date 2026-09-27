@@ -150,7 +150,7 @@ Valid pre-ruleset tokens normalize to `legacy-inning-v1`. Valid `classic-inning-
 
 ### `POST /api/daily/results`
 
-This anonymous endpoint accepts exactly one completed-game submission for an exact supported result ruleset: `points-v3`, `points-v4`, or `classic-inning-v1`. It is not called per hint, guess, or at-bat. The ordinary browser still creates new completed-result delivery records only for the currently active points-v3 Daily Nine path (plus retained Classic where enabled); accepting points-v4 here is server compatibility, not public activation.
+This anonymous endpoint accepts exactly one completed-game submission for an exact supported result ruleset: `points-v3`, `points-v4`, or `classic-inning-v1`. It is not called per hint, guess, or at-bat. H3 permits exact v3/v4 browser completed-result delivery records (plus retained Classic where enabled) under separate ruleset keys; the ordinary public Daily still creates v3 today because the public default has not switched.
 
 Request contract:
 
@@ -181,13 +181,13 @@ Responses expose only status/error codes:
 
 Every response is `private, no-store`. The route does not return normalized at-bat facts, score summaries, answer IDs/names, hints, credentials, or provider details.
 
-The endpoint is consistency-authoritative, not proof of honest anonymous play. It deliberately does not introduce an account, durable gameplay session, per-action event log, or stronger anti-cheat model. The browser client adapter owns a separate immutable delivery record containing the exact schema-1 payload, one stable `submissionId`, and local delivery status. Gameplay activation is gated by browser-local provenance: only a genuine current-session native completion may create a new record, while an already-persisted pending record may retry after hydration without recreating facts from gameplay state.
+The endpoint is consistency-authoritative, not proof of honest anonymous play. It deliberately does not introduce an account, durable gameplay session, per-action event log, or stronger anti-cheat model. The browser client adapter owns a separate immutable delivery record containing the exact schema-1 payload, one stable `submissionId`, and local delivery status. H3 permits exact v3/v4 browser completion delivery under ruleset-keyed records; gameplay activation is still gated by browser-local provenance, so only a genuine current-session native completion may create a new record while an already-persisted pending record may retry without recreating facts.
 
 ## Resolved-at-bat result submission
 
 ### `POST /api/daily/at-bats`
 
-This anonymous server boundary accepts one terminal Daily Nine AB observation for exactly `points-v3` or `points-v4`. It is separate from `/api/daily/resolve`; gameplay resolution never waits for this persistence path. The ordinary browser journal/outbox still produces points-v3 observations only. Accepting points-v4 here is server compatibility ahead of browser/default activation.
+This anonymous server boundary accepts one terminal Daily Nine AB observation for exactly `points-v3` or `points-v4`. It is separate from `/api/daily/resolve`; gameplay resolution never waits for this persistence path. H3 permits the browser journal/outbox to produce exact v3/v4 observations under separate ruleset identity. The ordinary public game still produces v3 today because `CURRENT_DAILY_RULESET_VERSION` remains v3.
 
 Request contract:
 
@@ -222,6 +222,17 @@ Responses expose only status/error codes:
 - `500 {"error":"at_bat_result_unavailable"}`: unexpected server fault.
 
 Every response is `private, no-store` and contains no normalized facts, points, answer IDs/names, hints, credentials or provider details. This consistency boundary is not proof of a unique person or honest play. Browser attempt identity, atomic cross-tab ownership, immutable outbox/retry and reset/legacy behavior remain authoritative for whether the app sends observations. H3 widens those browser producer paths to exact-version points-v3/points-v4 while preserving the same schema-1 payload and ruleset-keyed journal/lock identity; this is still compatibility infrastructure because the public default remains points-v3.
+
+## Daily Nine comparison reads
+
+### `GET /api/daily/comparison/at-bat`
+### `GET /api/daily/comparison/completed`
+
+These read-only adapters accept exact Daily Nine comparison rulesets `points-v3` or `points-v4`. They take routing fields only (`date`, `ruleset`, and `pitch` for the at-bat route), load authoritative puzzle identity server-side, and read the exact puzzle + exact ruleset population. Classic, legacy, points-v1 and points-v2 are unsupported at this comparison boundary.
+
+Schema 1 carries exact ruleset identity. At-bat responses return resolved count plus nullable average points. Completed responses return completed count, nullable average total points, and an offset histogram interpreted by the exact ruleset: v3 has 64 slots for 0..63 in one-point steps; v4 has 73 slots for 0..36 in 0.5-point steps. The browser requires response identity to match the request exactly. Fractional v4 values are valid numbers, not rounded integers.
+
+Comparison reads remain `private, no-store`, asynchronous, fail-quiet and off gameplay's critical path. Active-slot prefetch may begin before terminal resolution, but comparison data remains hidden until the user's engine-derived own points exist. Provider/read failures do not block gameplay or result persistence.
 
 ## Browser persistence
 

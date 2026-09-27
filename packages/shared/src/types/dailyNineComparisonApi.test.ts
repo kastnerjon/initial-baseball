@@ -1,7 +1,11 @@
 import { describe, expect, expectTypeOf, it } from 'vitest';
-import { POINTS_V3_DAILY_RULESET_VERSION } from './daily.js';
+import {
+  POINTS_V3_DAILY_RULESET_VERSION,
+  POINTS_V4_DAILY_RULESET_VERSION,
+} from './daily.js';
 import {
   DAILY_NINE_COMPARISON_API_SCHEMA_VERSION,
+  isDailyNineComparisonApiRulesetVersion,
   type DailyNineAtBatComparisonApiResponse,
   type DailyNineCompletedComparisonApiResponse,
   type DailyNineComparisonApiErrorResponse,
@@ -46,6 +50,30 @@ describe('Daily Nine comparison API contract', () => {
     expect(cached.comparison).toEqual(live.comparison);
     expect(cached.freshness.sourceReadAt).toBe(live.freshness.sourceReadAt);
     expect(cached.freshness.cacheStatus).toBe('cached');
+  });
+
+  it('carries exact points-v4 identity with half-point comparison values', () => {
+    const response: DailyNineAtBatComparisonApiResponse = {
+      schemaVersion: DAILY_NINE_COMPARISON_API_SCHEMA_VERSION,
+      kind: 'at-bat',
+      comparison: {
+        ...KEY,
+        rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+        pitchNumber: 4,
+        resolvedAtBatCount: 3,
+        averagePoints: 1.5,
+      },
+      freshness: {
+        sourceReadAt: '2026-09-19T21:00:00.000Z',
+        cacheStatus: 'live',
+      },
+    };
+
+    expect(response.comparison.rulesetVersion).toBe(POINTS_V4_DAILY_RULESET_VERSION);
+    expect(response.comparison.averagePoints).toBe(1.5);
+    expect(isDailyNineComparisonApiRulesetVersion(POINTS_V3_DAILY_RULESET_VERSION)).toBe(true);
+    expect(isDailyNineComparisonApiRulesetVersion(POINTS_V4_DAILY_RULESET_VERSION)).toBe(true);
+    expect(isDailyNineComparisonApiRulesetVersion('points-v2')).toBe(false);
   });
 
   it('keeps completed-game distribution separate from at-bat comparison', () => {

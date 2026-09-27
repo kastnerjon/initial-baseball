@@ -42,7 +42,7 @@ Existing production populations are not rewritten. The migration changes only re
 
 ## Public activation boundary
 
-The schema-1 comparison HTTP contract still names `points-v3`, `dailyNineComparisonReadService` still rejects `points-v4`, and browser comparison consumers therefore remain v3-only. A regression test explicitly preserves that rejection. H can widen those layers only after browser persistence/result delivery/scorecard handling is ready for fractional v4 values.
+This boundary was intentionally closed in G3B and is now complete in H4. Schema-1 comparison transport accepts exact `points-v3 | points-v4`, the read service routes the requested exact version, and browser clients/hooks consume v4 while preserving ruleset identity. G3B's provider/storage behavior is unchanged; H4 removes the old deliberate v4 HTTP rejection only after H2-H3 made browser persistence/result delivery safe.
 
 ## Verification
 
@@ -50,7 +50,7 @@ Focused tests cover:
 - generic v3/v4 Daily comparison service routing;
 - fractional v4 Supabase AB sums and completed buckets;
 - v3 compatibility and malformed provider rows;
-- explicit continued HTTP read-service rejection of v4.
+- historical G3B proof that HTTP still rejected v4 at that checkpoint; H4 supersedes that activation gate with exact-version v3/v4 transport tests.
 
 Repository CI, documentation-impact, exact-head Vercel Preview, hosted function-definition/ACL readback, Supabase advisors, and fresh-eye patch review are required before merge.
 

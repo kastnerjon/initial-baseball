@@ -127,6 +127,31 @@ describe('Daily Nine comparison GET adapters', () => {
     expect(server.readCompleted).not.toHaveBeenCalled();
   });
 
+  it('passes points-v4 through the HTTP adapter without rewriting ruleset identity', async () => {
+    const payload = {
+      ...atBatResponse(),
+      comparison: {
+        ...atBatResponse().comparison,
+        rulesetVersion: 'points-v4' as const,
+        averagePoints: 1.5,
+      },
+    };
+    server.readAtBat.mockResolvedValue(payload);
+
+    const response = await getAtBat(new Request(
+      'http://localhost/api/daily/comparison/at-bat'
+      + '?date=2026-09-19&ruleset=points-v4&pitch=4',
+    ));
+
+    expect(response.status).toBe(200);
+    expect(server.readAtBat).toHaveBeenCalledWith({
+      puzzleDate: '2026-09-19',
+      rulesetVersion: 'points-v4',
+      pitchNumber: '4',
+    }, expect.any(Object));
+    await expect(response.json()).resolves.toEqual(payload);
+  });
+
   it('keeps completed reads independent and ignores user score/puzzle identity query data', async () => {
     server.readCompleted.mockImplementation(async (_request, timings) => {
       timings.puzzle = 8;

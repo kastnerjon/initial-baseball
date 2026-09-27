@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   CLASSIC_DAILY_RULESET_VERSION,
   POINTS_V3_DAILY_RULESET_VERSION,
+  POINTS_V4_DAILY_RULESET_VERSION,
   type DailyPointsSummary,
 } from '@initial-baseball/shared';
 import { createDailyNineCompletedComparisonInput } from './useDailyNineCompletedComparison';
@@ -28,6 +29,24 @@ describe('Daily Nine completed comparison input', () => {
         rulesetVersion: POINTS_V3_DAILY_RULESET_VERSION,
       },
       ownPoints: 55,
+    });
+  });
+
+  it('binds a fractional completed points-v4 result to exact comparison identity', () => {
+    expect(createDailyNineCompletedComparisonInput({
+      puzzle,
+      rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+      points: points(18, false, 36),
+      terminalPoints: points(18.5, true, 36),
+    })).toEqual({
+      key: {
+        kind: 'completed',
+        puzzleId: puzzle.id,
+        puzzleDate: puzzle.puzzleDate,
+        puzzleNumber: puzzle.puzzleNumber,
+        rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+      },
+      ownPoints: 18.5,
     });
   });
 
@@ -65,10 +84,10 @@ describe('Daily Nine completed comparison input', () => {
   });
 });
 
-function points(value: number, completed: boolean): DailyPointsSummary {
+function points(value: number, completed: boolean, maximumPoints = 63): DailyPointsSummary {
   return {
     points: value,
-    maximumPoints: 63,
+    maximumPoints,
     atBatsCompleted: completed ? 9 : 8,
     totalAtBats: 9,
     completed,

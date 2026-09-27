@@ -104,8 +104,8 @@ Fresh points-v4 contributing runs may reuse the attempt ID as the completed-resu
 
 ## Remaining activation watchlist after H3
 
-- H4: widen comparison HTTP/read-service/browser consumers to exact v4; verify fractional AVG/BEAT and scorecard/share rendering while preserving asynchronous nonblocking comparison I/O.
-- H5: make How-to copy ruleset-aware; run refresh/restore, old-v3-save-at-cutover, concurrent-tab/takeover, retry/failure, share, archive replay and cutover QA; switch `CURRENT_DAILY_RULESET_VERSION` last.
+- **H4 complete:** comparison schema-1 HTTP/read-service/browser consumers and hooks now carry exact v3/v4 identity; fractional AVG/BEAT and scorecard/share rendering are verified while comparison I/O remains asynchronous/nonblocking. Scope: `tasks/plans/points-v4-comparison-presentation.md`.
+- H5 remains: make How-to copy ruleset-aware; run refresh/restore, old-v3-save-at-cutover, concurrent-tab/takeover, retry/failure, share, archive replay and cutover QA; switch `CURRENT_DAILY_RULESET_VERSION` last.
 - Once public v4 result rows exist, any scoring-policy change requires a new ruleset version. Never reinterpret v4 history.
 - Do not add rollups/caches/indexes merely because v4 uses half-points; performance changes remain evidence-driven.
 

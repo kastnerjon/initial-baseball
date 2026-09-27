@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { POINTS_V3_DAILY_RULESET_VERSION } from '@initial-baseball/shared';
+import {
+  POINTS_V3_DAILY_RULESET_VERSION,
+  POINTS_V4_DAILY_RULESET_VERSION,
+} from '@initial-baseball/shared';
 import {
   createDailyScorecardPoints,
   restoreDailyScorecardAnswers,
@@ -64,6 +67,30 @@ describe('scorecard points', () => {
     ], POINTS_V3_DAILY_RULESET_VERSION)).toEqual({
       1: 0,
       2: 4,
+    });
+  });
+
+  it('preserves points-v4 half-point scorecard values', () => {
+    expect(createDailyScorecardPoints([
+      {
+        pitchNumber: 1,
+        initials: 'BB',
+        outcome: 'BB',
+        hintsRevealed: 4,
+        wrongGuesses: 2,
+        resolution: 'correct',
+      },
+      {
+        pitchNumber: 2,
+        initials: 'KGJ',
+        outcome: 'K',
+        hintsRevealed: 0,
+        wrongGuesses: 3,
+        resolution: 'strikeout',
+      },
+    ], POINTS_V4_DAILY_RULESET_VERSION)).toEqual({
+      1: 0.5,
+      2: 0,
     });
   });
 

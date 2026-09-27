@@ -18,7 +18,7 @@ Date: 2026-09-25
 
 At G2, widening `DailyNineComparisonRepository` directly would have made the deployed Supabase implementation type-claim support for v4 while its storage/RPC/decoder boundary still could not yet truthfully serve the then-defined v4 point domain. G2 therefore separated pure comparison normalization from the deployed read port. G3A later widened result storage only. G3B now widens the comparison RPCs, version-aware provider decoder, and Daily repository/service read port together, so the type boundary matches the hosted provider capability.
 
-The pure identity/math layer and deployed provider/service layer now both support exact-version v3/v4 populations. The shared comparison HTTP schema and browser/server request acceptance remain points-v3-only until H, so this backend-compatible checkpoint does not activate v4 publicly.
+The pure identity/math layer and deployed provider/service layer support exact-version v3/v4 populations. H4 subsequently widens the shared comparison HTTP schema, server request acceptance and browser consumers to the same exact v3/v4 identity while leaving `CURRENT_DAILY_RULESET_VERSION` on v3; this historical G2 checkpoint itself did not activate v4 publicly.
 
 ## Histogram contract
 

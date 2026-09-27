@@ -4,9 +4,10 @@ import {
 } from '@initial-baseball/daily';
 import {
   DAILY_NINE_COMPARISON_API_SCHEMA_VERSION,
-  POINTS_V3_DAILY_RULESET_VERSION,
+  isDailyNineComparisonApiRulesetVersion,
   type DailyNineAtBatComparisonApiResponse,
   type DailyNineComparisonApiErrorCode,
+  type DailyNineComparisonApiRulesetVersion,
   type DailyNineCompletedComparisonApiResponse,
   type DailyPublicPuzzle,
 } from '@initial-baseball/shared';
@@ -65,7 +66,10 @@ export function createDailyNineComparisonReadService({
     async readAtBat(
       request: DailyNineAtBatComparisonReadRequest,
     ): Promise<DailyNineAtBatComparisonApiResponse> {
-      const puzzleDate = requireBaseRequest(request, getCurrentDailyDate());
+      const { puzzleDate, rulesetVersion } = requireBaseRequest(
+        request,
+        getCurrentDailyDate(),
+      );
       const pitchNumber = requirePitchNumber(request.pitchNumber);
       const puzzle = await loadComparisonPuzzle(puzzleDate);
       const sourceReadAt = requireIsoTimestamp(now());
@@ -73,7 +77,7 @@ export function createDailyNineComparisonReadService({
         puzzleId: puzzle.id,
         puzzleDate: puzzle.puzzleDate,
         puzzleNumber: puzzle.puzzleNumber,
-        rulesetVersion: POINTS_V3_DAILY_RULESET_VERSION,
+        rulesetVersion,
         pitchNumber,
       });
 
@@ -91,14 +95,17 @@ export function createDailyNineComparisonReadService({
     async readCompleted(
       request: DailyNineCompletedComparisonReadRequest,
     ): Promise<DailyNineCompletedComparisonApiResponse> {
-      const puzzleDate = requireBaseRequest(request, getCurrentDailyDate());
+      const { puzzleDate, rulesetVersion } = requireBaseRequest(
+        request,
+        getCurrentDailyDate(),
+      );
       const puzzle = await loadComparisonPuzzle(puzzleDate);
       const sourceReadAt = requireIsoTimestamp(now());
       const aggregate = await comparison.getCompletedGames({
         puzzleId: puzzle.id,
         puzzleDate: puzzle.puzzleDate,
         puzzleNumber: puzzle.puzzleNumber,
-        rulesetVersion: POINTS_V3_DAILY_RULESET_VERSION,
+        rulesetVersion,
       });
 
       return {
@@ -117,14 +124,17 @@ export function createDailyNineComparisonReadService({
 function requireBaseRequest(
   request: DailyNineComparisonBaseRequest,
   currentDailyDate: string,
-): string {
+): {
+  puzzleDate: string;
+  rulesetVersion: DailyNineComparisonApiRulesetVersion;
+} {
   if (request.rulesetVersion === null || request.rulesetVersion.trim() === '') {
     invalidRequest('ruleset is required.');
   }
-  if (request.rulesetVersion !== POINTS_V3_DAILY_RULESET_VERSION) {
+  if (!isDailyNineComparisonApiRulesetVersion(request.rulesetVersion)) {
     throw new DailyNineComparisonRequestError(
       'unsupported_ruleset',
-      'Only points-v3 Daily Nine comparison is supported.',
+      'Daily Nine comparison ruleset is unsupported.',
     );
   }
 
@@ -136,7 +146,7 @@ function requireBaseRequest(
       'Future Daily comparison is unavailable.',
     );
   }
-  return puzzleDate;
+  return { puzzleDate, rulesetVersion: request.rulesetVersion };
 }
 
 function requirePitchNumber(value: string | null): number {
