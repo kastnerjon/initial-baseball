@@ -21,7 +21,7 @@ Once the permanent sequence begins, each Daily puzzle is a frozen historical obj
 
 Daily Nine and Classic Inning are currently two distinct beta games that happen to share the same ordered daily nine-player lineup.
 
-- **Daily Nine** currently uses `points-v3`: all nine at-bats, up to 7 points per at-bat, maximum 63.
+- **Daily Nine** currently uses `points-v4`: all nine at-bats, 4/3/2/1/0.5 by reveal depth, maximum 36, with no deduction for wrong guesses one and two.
 - **Classic Inning** currently uses `classic-inning-v1`: baseball runner/run scoring, ending after three outs or nine at-bats.
 - Playing one does not count as playing the other.
 - Browser saves, completed results, comparison populations, personal history, and share output remain mode/ruleset-specific.
@@ -31,7 +31,7 @@ The owner expects to use beta feedback to choose one of these games as the prima
 
 Classic is now disabled from normal web presentation by default through the server-only `CLASSIC_INNING_ENABLED` setting. When disabled, the mode navigation is absent and `/classic` redirects to Daily Nine before Classic bootstrap composition. This availability seam does not delete or reinterpret Classic rules, browser saves, completed results, comparison infrastructure, or historical data; setting the value to the exact string `true` restores the existing route/navigation. The architecture must still permit later independent removal or separate lineups without corrupting Daily Nine data.
 
-`points-v3` is the current Daily Nine beta policy, not yet a promise that the permanent launch scoring policy can never change. Any scoring change before/after launch still uses explicit ruleset versioning; completed results are never reinterpreted silently.
+`points-v4` is the current Daily Nine beta policy, not yet a promise that the permanent launch scoring policy can never change. Historical `points-v3` remains exact-version compatibility only. Any scoring change before/after launch still uses explicit ruleset versioning; completed results are never reinterpreted silently.
 
 The live public Daily Nine now uses `points-v4`: HR 4, triple 3, double 2, single 1, walk 0.5, and strikeout/Give Up 0; wrong guesses one and two do not deduct points, while the third wrong guess remains a strikeout. Nine at-bats span 0 through 36 in 0.5-point steps. Result contracts/storage, isolated current-Daily v4 saves, browser journal/outbox/ownership, completed-result delivery, comparison HTTP/browser reads, scorecard/share/AVG/BEAT presentation, and exact-ruleset How-to copy all support this contract. The September 27 Pacific switch was explicitly authorized during the active puzzle, so pre-deployment v3 sessions/results may coexist with post-deployment v4 sessions/results for that date; exact ruleset identity keeps them separate. The earlier 4/3/2/1/0/-1 draft was redefined before any public v4 results existed. The owner also wants How to play on every game-page entry, terminal Jr/Sr omitted from generated initials, and supported stats shown in Baseball-Reference relative order with pitcher saves in hint 4. The implementation and clue-immutability consequences are scoped in `tasks/plans/2026-09-24-archive-and-gameplay-roadmap.md`.
 
