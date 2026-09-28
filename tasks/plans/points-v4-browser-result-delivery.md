@@ -1,3 +1,5 @@
+> September 27 H5b follow-up: H5b subsequently activated `points-v4` as the public default. This H3 plan remains the browser-delivery compatibility checkpoint; its v3/v4 isolation and fencing guarantees are now the live cutover safety boundary.
+
 # Points-v4 H3 browser result delivery
 
 Status: implementation scope; browser contribution/delivery compatibility only  
