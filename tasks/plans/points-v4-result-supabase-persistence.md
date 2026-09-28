@@ -1,3 +1,5 @@
+> September 27 H5b follow-up: H5b subsequently activated public v4 browser production. No additional database migration was required; this exact-version storage seam now receives live v4 rows while preserving v3 history.
+
 # Points-v4 Supabase result persistence
 
 Status: row G3A implementation scope; result storage only, not comparison/browser activation  
