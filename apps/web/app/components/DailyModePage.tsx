@@ -40,7 +40,10 @@ export async function DailyModePage({ rulesetVersion }: DailyModePageProps): Pro
             <span className="daily-edition" aria-label={`${mode.modeName} number ${bootstrap.puzzle.puzzleNumber}`}>
               {`Daily #${bootstrap.puzzle.puzzleNumber}`}
             </span>
-            <DailyHowToDialog content={howTo} />
+            <DailyHowToDialog
+              key={`${bootstrap.puzzle.id}:${bootstrap.rulesetVersion}`}
+              content={howTo}
+            />
           </div>
         </header>
 
