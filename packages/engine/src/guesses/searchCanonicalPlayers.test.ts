@@ -47,6 +47,75 @@ it('does not alter the payload shape for a unique visible name', () => {
   expect(results[0]?.requiresYearDisambiguation).toBeUndefined();
 });
 
+it('ranks visible multi-token name matches ahead of hidden alias matches', () => {
+  const results = searchCanonicalPlayers('pedro ma', [
+    buildPlayer(
+      'pedro-alvarez',
+      'Pedro Alvarez',
+      'hitter',
+      '3B',
+      2010,
+      2018,
+      'BAL, PIT',
+      ['Pedro Manuel Alvarez'],
+    ),
+    buildPlayer(
+      'pedro-avila',
+      'Pedro Avila',
+      'pitcher',
+      'P',
+      2019,
+      2024,
+      'CLE, SDN',
+      ['Pedro Manuel Avila'],
+    ),
+    buildPlayer(
+      'pedro-martinez-1992',
+      'Pedro Martinez',
+      'pitcher',
+      'P',
+      1992,
+      2009,
+      'BOS, LAN, MON, NYN, PHI',
+      ['Pedro Jaime Martinez'],
+    ),
+    buildPlayer(
+      'pedro-martinez-1993',
+      'Pedro Martinez',
+      'pitcher',
+      'P',
+      1993,
+      1997,
+      'CIN, HOU, NYN, SDN',
+      ['Pedro Aquino Martinez'],
+    ),
+  ]);
+
+  expect(results.map((result) => result.playerId)).toEqual([
+    'pedro-martinez-1992',
+    'pedro-martinez-1993',
+    'pedro-alvarez',
+    'pedro-avila',
+  ]);
+  expect(results.slice(0, 2).every((result) => result.requiresYearDisambiguation)).toBe(true);
+});
+
+it('preserves ordered multi-token prefix matching', () => {
+  const results = searchCanonicalPlayers('luis gar', [
+    buildPlayer('luis-garcia', 'Luis Alberto Garcia', 'hitter', '2B', 2018, 2024, 'WAS'),
+  ]);
+
+  expect(results[0]?.playerId).toBe('luis-garcia');
+});
+
+it('keeps alias-only matches searchable', () => {
+  const results = searchCanonicalPlayers('papi', [
+    buildPlayer('david-ortiz', 'David Ortiz', 'hitter', 'DH', 1997, 2016, 'BOS, MIN', ['Big Papi']),
+  ]);
+
+  expect(results[0]?.playerId).toBe('david-ortiz');
+});
+
 it('uses the complete candidate universe when the other duplicate falls outside the result limit', () => {
   const candidates = [
     ...Array.from({ length: 9 }, (_, index) => buildPlayer(
@@ -78,11 +147,12 @@ function buildPlayer(
   firstYear: number,
   lastYear: number,
   teamsDisplay: string,
+  aliases: string[] = [],
 ): PlayerSearchCandidate {
   return {
     id,
     displayName,
-    aliases: [],
+    aliases,
     playerType,
     primaryPosition,
     firstYear,
