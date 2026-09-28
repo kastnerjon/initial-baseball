@@ -8,7 +8,7 @@ export const POINTS_V1_DAILY_RULESET_VERSION = 'points-v1' as const;
 export const POINTS_V2_DAILY_RULESET_VERSION = 'points-v2' as const;
 export const POINTS_V3_DAILY_RULESET_VERSION = 'points-v3' as const;
 export const POINTS_V4_DAILY_RULESET_VERSION = 'points-v4' as const;
-export const CURRENT_DAILY_RULESET_VERSION = POINTS_V3_DAILY_RULESET_VERSION;
+export const CURRENT_DAILY_RULESET_VERSION = POINTS_V4_DAILY_RULESET_VERSION;
 
 export type DailyPointsRulesetVersion =
   | typeof POINTS_V1_DAILY_RULESET_VERSION
@@ -227,7 +227,7 @@ export const DEFAULT_DAILY_SCORE_SUMMARY: DailyScoreSummary = {
 
 export const DEFAULT_DAILY_POINTS_SUMMARY: DailyPointsSummary = {
   points: 0,
-  maximumPoints: 63,
+  maximumPoints: 36,
   atBatsCompleted: 0,
   totalAtBats: 9,
   completed: false,
