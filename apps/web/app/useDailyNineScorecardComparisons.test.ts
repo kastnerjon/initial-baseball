@@ -49,6 +49,18 @@ describe('Daily Nine comparison preload request plan', () => {
       completionAdvanced: true,
     })).toEqual([1, 2]);
   });
+
+  it('prioritizes a completed-slot refresh ahead of still-missing future preloads', () => {
+    expect(createDailyNineScorecardComparisonRequestPlan({
+      requestedPitchNumbers,
+      completedPitchNumbers: [1],
+      comparisons: {
+        1: success(1, 4),
+        2: success(12, 2.5),
+      },
+      completionAdvanced: true,
+    })).toEqual([1, 3, 4]);
+  });
 });
 
 function success(resolvedAtBatCount: number, averagePoints: number) {
