@@ -55,6 +55,8 @@ export function useDailyNineScorecardComparisons({
   const requestedPitchSignature = normalizedRequestedPitchNumbers.join(',');
   const completedPitchSignature = normalizedCompletedPitchNumbers.join(',');
   const lastCompletedPitchSignatureRef = useRef('');
+  const completedPitchNumbersRef = useRef(new Set<number>());
+  completedPitchNumbersRef.current = new Set(normalizedCompletedPitchNumbers);
   const retryTimersRef = useRef(new Map<number, ReturnType<typeof setTimeout>>());
   const retryBudgetRef = useRef(new Map<number, number>());
   const [cache, setCache] = useState<ScorecardComparisonCache>(() => ({
@@ -147,7 +149,11 @@ export function useDailyNineScorecardComparisons({
             averagePoints: comparison.averagePoints,
           };
           updatePitch(pitchNumber, next);
-          if (completedSet.has(pitchNumber) && shouldRefreshWithNewCompletion(next)) {
+          if (shouldScheduleCompletedPitchRetry(
+            pitchNumber,
+            completedPitchNumbersRef.current,
+            next,
+          )) {
             scheduleOneRetry(pitchNumber);
           } else {
             clearPitchRetry(pitchNumber, retryTimersRef.current, retryBudgetRef.current);
@@ -249,6 +255,14 @@ export function createDailyNineScorecardComparisonRequestPlan({
 
 function normalizePitchNumbers(pitchNumbers: number[]): number[] {
   return [...new Set(pitchNumbers)].sort((a, b) => a - b);
+}
+
+export function shouldScheduleCompletedPitchRetry(
+  pitchNumber: number,
+  completedPitchNumbers: ReadonlySet<number>,
+  state: DailyNineScorecardComparisonState,
+): boolean {
+  return completedPitchNumbers.has(pitchNumber) && shouldRefreshWithNewCompletion(state);
 }
 
 function shouldRefreshWithNewCompletion(state: DailyNineScorecardComparisonState): boolean {
