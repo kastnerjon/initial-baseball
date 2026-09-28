@@ -153,6 +153,20 @@ export function DailyInningGame({
   }
 
   if (shareResult !== null) {
+    const completedInningScoreboard = isDailyPointsRulesetVersion(gameState.rulesetVersion)
+      ? createDailyNineInningScoreboardPresentation({
+          pitches: puzzle.pitches,
+          currentPitchNumber: null,
+          rulesetVersion: gameState.rulesetVersion,
+          atBatPoints: scorecardPoints,
+          atBatComparisons: scorecardComparisons.comparisons,
+          activeAtBatComparison: { status: 'idle' },
+          activeAtBatResolved: false,
+          totalPoints: gameState.points.points,
+          gameCompleted: true,
+          completedComparison: completedComparison.state,
+        })
+      : undefined;
     return (
       <GameCompleteView
         scorecardAnswers={scorecardAnswers}
@@ -161,6 +175,7 @@ export function DailyInningGame({
         comparison={completedComparison.state}
         atBatPoints={scorecardPoints}
         atBatComparisons={scorecardComparisons.comparisons}
+        {...(completedInningScoreboard !== undefined ? { inningScoreboard: completedInningScoreboard } : {})}
         onResetToday={handleResetToday}
       />
     );

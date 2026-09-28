@@ -82,6 +82,23 @@ describe('Daily Nine inning scoreboard presentation', () => {
     expect(presentation.totalAverage.accessibleLabel).toContain('20 completed results');
   });
 
+  it('has no current-at-bat marker once the game is complete', () => {
+    const presentation = createDailyNineInningScoreboardPresentation({
+      pitches,
+      currentPitchNumber: null,
+      rulesetVersion: 'points-v4',
+      atBatPoints: Object.fromEntries(pitches.map(pitch => [pitch.pitchNumber, 1])),
+      atBatComparisons: {},
+      activeAtBatComparison: { status: 'idle' },
+      activeAtBatResolved: false,
+      totalPoints: 9,
+      gameCompleted: true,
+      completedComparison: { status: 'loading', ownPoints: 9 },
+    });
+
+    expect(presentation.columns.every(column => !column.current)).toBe(true);
+  });
+
   it('renders a semantic table with a visible and accessible current-at-bat marker', () => {
     const presentation = createDailyNineInningScoreboardPresentation({
       pitches,

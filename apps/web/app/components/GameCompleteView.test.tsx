@@ -104,6 +104,31 @@ describe('GameCompleteView comparison', () => {
     expect(html).not.toContain('JR: Jackie Robinson');
   });
 
+  it('renders the completed inning scoreboard between the summary and detailed scorecard', () => {
+    const html = renderToStaticMarkup(
+      <GameCompleteView
+        shareResult={shareResult}
+        shareText={shareText}
+        comparison={{ status: 'loading', ownPoints: 41 }}
+        inningScoreboard={{
+          columns: [{
+            atBatNumber: 1,
+            initials: 'JR',
+            current: false,
+            user: { display: '4', accessibleLabel: 'Your score for at-bat 1: 4' },
+            average: { display: '3.5', accessibleLabel: 'At-bat 1 average: 3.5' },
+          }],
+          totalUser: { display: '41', accessibleLabel: 'Your total score: 41' },
+          totalAverage: { display: '—', accessibleLabel: 'Completed-game average is loading' },
+        }}
+      />,
+    );
+
+    expect(html).toContain('Daily Nine scoreboard');
+    expect(html.indexOf('Daily Nine scoreboard')).toBeLessThan(html.indexOf('At-bat Results'));
+    expect(html).not.toContain('aria-current="step"');
+  });
+
   it('degrades comparison failure without removing personal points', () => {
     const html = render({ status: 'unavailable', ownPoints: 41 });
 
