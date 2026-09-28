@@ -1,5 +1,5 @@
 import type { JSX } from 'react';
-import type { DailyNineAtBatComparisonState } from '../useDailyNineAtBatComparison';
+import type { DailyNineAtBatComparisonState } from '../dailyNineAtBatComparisonState';
 
 type DailyNineAtBatComparisonProps = {
   state: DailyNineAtBatComparisonState;
@@ -31,7 +31,7 @@ export function DailyNineAtBatComparison({
 function createPresentation(
   state: Exclude<DailyNineAtBatComparisonState, { status: 'idle' }>,
 ): { average: string; note: string } {
-  if (state.status === 'loading') return { average: '—', note: 'Loading comparison…' };
+  if (state.status === 'loading') return { average: '…', note: 'Loading comparison…' };
   if (state.status === 'unavailable') return { average: '—', note: 'Comparison unavailable' };
 
   const { resolvedAtBatCount: count, averagePoints } = state;
