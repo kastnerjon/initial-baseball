@@ -1,6 +1,6 @@
 # Near-term product sequence — search, Daily polish, archive beta
 
-Status: approved implementation sequence; Daily polish through the narrow-mobile season-table sticky-column fix is complete through September 28, 2026.
+Status: approved implementation sequence; Daily polish through scoreboard AVG preload is complete through September 28, 2026.
 
 ## Goal
 
@@ -63,7 +63,7 @@ New archive attempts use the then-current public ruleset (currently points-v4); 
 3. **Terminal result callout — complete.** Center the resolved Daily Nine callout as canonical baseball outcome plus authoritative awarded points, with no scoring or persistence change.
 4. **Personal scorecard Outcome column — complete.** Show recorded canonical outcomes alongside SCORE and AVG in the private in-app scorecard without inferring outcomes from points; keep copied share output spoiler-safe and outcome-free.
 5. **Season-table mobile sticky-column polish — complete.** At narrow widths keep only Season horizontally sticky while Team scrolls with stats; preserve the sticky header row, table overflow, and existing desktop two-column sticky presentation.
-6. **Scoreboard AVG preload — next.** Request all nine exact-slot comparison averages when Daily Nine initializes and retain/display them in the scoreboard throughout play. Comparison I/O must remain nonblocking; unavailable/withheld values stay `—`; completed TOTAL AVG continues to use the authoritative completed-game average and must never be derived by summing per-AB averages.
+6. **Scoreboard AVG preload — complete.** After saved-game hydration, request all nine exact-slot comparison averages through the existing bounded per-pitch cache and retain/display successful values in the scoreboard throughout play, including before an at-bat is reached. Loading uses `…`; unavailable/withheld values stay `—`; terminal YOU/AVG reuses the same cached slot instead of issuing a duplicate active-slot read. Comparison I/O remains nonblocking, exact puzzle + ruleset + pitch identity is preserved, and completed TOTAL AVG continues to use the separate authoritative completed-game average rather than per-AB arithmetic.
 7. **Archive-beta identity/reset contract.** Decide and encode the narrow pre-launch series/reset boundary after inspecting the existing `permanent-v1` contracts. No archive UI or puzzle issuance in this PR.
 8. **Archive-beta issuance.** Freeze real authoritative lineups/clues into the test archive through the existing immutable schema-v2 issuance path. Verify exact read-back/materialization; no public routes yet.
 9. **Recurring issuance.** Attach idempotent issuance to the narrowest authoritative publication lifecycle seam if appropriate; do not invent a cron or fabricate missing lineups without evidence.

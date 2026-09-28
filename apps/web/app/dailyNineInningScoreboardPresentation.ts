@@ -12,7 +12,6 @@ import {
   formatDailyScorecardPoints,
   type DailyScorecardPoints,
 } from './dailyScorecard';
-import type { DailyNineAtBatComparisonState } from './useDailyNineAtBatComparison';
 import type { DailyNineCompletedComparisonState } from './useDailyNineCompletedComparison';
 import type {
   DailyNineScorecardComparisonState,
@@ -25,8 +24,6 @@ type DailyNineInningScoreboardPresentationInput = {
   rulesetVersion: DailyRulesetVersion;
   atBatPoints: DailyScorecardPoints;
   atBatComparisons: DailyNineScorecardComparisons;
-  activeAtBatComparison: DailyNineAtBatComparisonState;
-  activeAtBatResolved: boolean;
   totalPoints: number;
   gameCompleted: boolean;
   completedComparison: DailyNineCompletedComparisonState;
@@ -38,8 +35,6 @@ export function createDailyNineInningScoreboardPresentation({
   rulesetVersion,
   atBatPoints,
   atBatComparisons,
-  activeAtBatComparison,
-  activeAtBatResolved,
   totalPoints,
   gameCompleted,
   completedComparison,
@@ -50,9 +45,7 @@ export function createDailyNineInningScoreboardPresentation({
     columns: pitches.map((pitch) => {
       const ownPoints = atBatPoints[pitch.pitchNumber];
       const resolved = ownPoints !== undefined;
-      const comparison = currentPitchNumber !== null && pitch.pitchNumber === currentPitchNumber && activeAtBatResolved
-        ? toScorecardComparisonState(activeAtBatComparison)
-        : atBatComparisons[pitch.pitchNumber];
+      const comparison = atBatComparisons[pitch.pitchNumber];
 
       return {
         atBatNumber: pitch.pitchNumber,
@@ -66,7 +59,6 @@ export function createDailyNineInningScoreboardPresentation({
           : createDashValue(`Your score for at-bat ${pitch.pitchNumber} is not resolved yet`),
         average: createAtBatAverageValue(
           pitch.pitchNumber,
-          resolved,
           comparisonsSupported,
           comparison,
         ),
@@ -83,18 +75,14 @@ export function createDailyNineInningScoreboardPresentation({
 
 function createAtBatAverageValue(
   pitchNumber: number,
-  resolved: boolean,
   comparisonsSupported: boolean,
   state: DailyNineScorecardComparisonState | undefined,
 ): InningScoreboardValue {
-  if (!resolved) {
-    return createDashValue(`Average for at-bat ${pitchNumber} is available after the at-bat is resolved`);
-  }
   if (!comparisonsSupported) {
     return createDashValue(`Average for at-bat ${pitchNumber} is unavailable for this scoring version`);
   }
   if (state === undefined || state.status === 'loading') {
-    return createDashValue(`Average for at-bat ${pitchNumber} is loading`);
+    return createLoadingValue(`Average for at-bat ${pitchNumber} is loading`);
   }
   if (state.status === 'unavailable' || state.averagePoints === null) {
     return createDashValue(`Average for at-bat ${pitchNumber} is unavailable`);
@@ -126,7 +114,7 @@ function createTotalAverageValue(
     return createDashValue('Completed-game average is available after all at-bats are resolved');
   }
   if (state.status === 'idle' || state.status === 'loading') {
-    return createDashValue('Completed-game average is loading');
+    return createLoadingValue('Completed-game average is loading');
   }
 
   const presentation = createDailyNineCompletedComparisonPresentation(state);
@@ -140,24 +128,15 @@ function createTotalAverageValue(
   );
 }
 
-function toScorecardComparisonState(
-  state: DailyNineAtBatComparisonState,
-): DailyNineScorecardComparisonState | undefined {
-  if (state.status === 'idle') return undefined;
-  if (state.status === 'loading') return { status: 'loading' };
-  if (state.status === 'unavailable') return { status: 'unavailable' };
-  return {
-    status: 'success',
-    resolvedAtBatCount: state.resolvedAtBatCount,
-    averagePoints: state.averagePoints,
-  };
-}
-
 function createScoreValue(display: string, label: string): InningScoreboardValue {
   return {
     display,
     accessibleLabel: `${label}: ${display}`,
   };
+}
+
+function createLoadingValue(accessibleLabel: string): InningScoreboardValue {
+  return { display: '…', accessibleLabel };
 }
 
 function createDashValue(accessibleLabel: string): InningScoreboardValue {

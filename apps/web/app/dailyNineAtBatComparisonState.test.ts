@@ -7,7 +7,7 @@ import {
 import {
   createDailyNineAtBatComparisonInput,
   createDailyNineAtBatComparisonState,
-} from './useDailyNineAtBatComparison';
+} from './dailyNineAtBatComparisonState';
 
 const puzzle = {
   id: 'daily-2026-09-19-editorial-a9429f70',
@@ -118,7 +118,9 @@ describe('Daily Nine at-bat comparison presentation state', () => {
       .toEqual({ status: 'idle' });
   });
 
-  it('projects the existing read state once the at-bat is terminal', () => {
+  it('projects the existing cached read once the at-bat is terminal', () => {
+    expect(createDailyNineAtBatComparisonState(undefined, 6))
+      .toEqual({ status: 'loading', ownPoints: 6 });
     expect(createDailyNineAtBatComparisonState({ status: 'loading' }, 6))
       .toEqual({ status: 'loading', ownPoints: 6 });
     expect(createDailyNineAtBatComparisonState({

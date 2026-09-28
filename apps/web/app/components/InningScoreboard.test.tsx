@@ -29,8 +29,6 @@ describe('Daily Nine inning scoreboard presentation', () => {
         1: { status: 'success', resolvedAtBatCount: 12, averagePoints: 2.25 },
         2: { status: 'loading' },
       },
-      activeAtBatComparison: { status: 'idle' },
-      activeAtBatResolved: false,
       totalPoints: 4.5,
       gameCompleted: false,
       completedComparison: { status: 'idle' },
@@ -39,16 +37,17 @@ describe('Daily Nine inning scoreboard presentation', () => {
     expect(presentation.columns[0]?.user.display).toBe('4');
     expect(presentation.columns[0]?.average.display).toBe('2.3');
     expect(presentation.columns[1]?.user.display).toBe('0.5');
-    expect(presentation.columns[1]?.average.display).toBe('—');
+    expect(presentation.columns[1]?.average.display).toBe('…');
     expect(presentation.columns[2]?.current).toBe(true);
     expect(presentation.columns[2]?.user.display).toBe('—');
-    expect(presentation.columns[2]?.average.accessibleLabel).toContain('after the at-bat is resolved');
+    expect(presentation.columns[2]?.average.display).toBe('…');
+    expect(presentation.columns[2]?.average.accessibleLabel).toContain('is loading');
     expect(presentation.totalUser.display).toBe('4.5');
     expect(presentation.totalAverage.display).toBe('—');
     expect(presentation.totalAverage.accessibleLabel).toContain('after all at-bats are resolved');
   });
 
-  it('uses the active comparison for a resolved current at-bat and completed games for TOTAL AVG', () => {
+  it('uses the cached current-slot comparison for a resolved at-bat and completed games for TOTAL AVG', () => {
     const presentation = createDailyNineInningScoreboardPresentation({
       pitches,
       currentPitchNumber: 9,
@@ -56,14 +55,8 @@ describe('Daily Nine inning scoreboard presentation', () => {
       atBatPoints: { 1: 4, 2: 0.5, 9: 2 },
       atBatComparisons: {
         1: { status: 'success', resolvedAtBatCount: 12, averagePoints: 2.25 },
+        9: { status: 'success', resolvedAtBatCount: 4, averagePoints: 1.75 },
       },
-      activeAtBatComparison: {
-        status: 'success',
-        ownPoints: 2,
-        resolvedAtBatCount: 4,
-        averagePoints: 1.75,
-      },
-      activeAtBatResolved: true,
       totalPoints: 18.5,
       gameCompleted: true,
       completedComparison: {
@@ -89,8 +82,6 @@ describe('Daily Nine inning scoreboard presentation', () => {
       rulesetVersion: 'points-v4',
       atBatPoints: Object.fromEntries(pitches.map(pitch => [pitch.pitchNumber, 1])),
       atBatComparisons: {},
-      activeAtBatComparison: { status: 'idle' },
-      activeAtBatResolved: false,
       totalPoints: 9,
       gameCompleted: true,
       completedComparison: { status: 'loading', ownPoints: 9 },
@@ -106,8 +97,6 @@ describe('Daily Nine inning scoreboard presentation', () => {
       rulesetVersion: 'points-v4',
       atBatPoints: { 1: 4, 2: 0.5 },
       atBatComparisons: {},
-      activeAtBatComparison: { status: 'idle' },
-      activeAtBatResolved: false,
       totalPoints: 4.5,
       gameCompleted: false,
       completedComparison: { status: 'idle' },
