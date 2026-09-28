@@ -421,6 +421,6 @@
 
 @media (max-width: 640px) {
   .player-reveal-stat-strip .stat-team {
-    position: static;
+    left: auto;
   }
 }
