@@ -234,9 +234,13 @@ Replacement plan: `tasks/plans/resolved-at-bat-comparison.md`. PR #174 is closed
 
 ## Feature-development resumption checkpoint
 
-Hosted architecture/storage/comparison/editorial verification is sufficient to resume product work. Do not expand QA scope merely because an interactive/manual check remains open; the explicit manual pre-launch items above stay deferred unless a concrete defect or launch blocker appears. Next implementation track: permanent archive and local history, one bounded PR at a time.
+Hosted architecture/storage/comparison/editorial verification is sufficient to resume product work. Do not expand QA scope merely because an interactive/manual check remains open; the explicit manual pre-launch items above stay deferred unless a concrete defect or launch blocker appears. Immediate approved sequence: shared-engine search relevance, then the Daily Nine 1–9 YOU/AVG/TOTAL scoreboard, then resettable archive-beta identity/issuance/routes/gameplay/results/history. Real lineups may be used as pre-launch archive test data for several weeks without choosing the eventual permanent Daily #1. Scope: `tasks/plans/2026-09-27-near-term-product-sequence.md`.
 
 ## 5. Permanent archive and local history
+
+- [ ] Fix shared player-search ranking so multi-token visible-name prefix matches such as `pedro ma` rank Pedro Martinez ahead of weaker hidden-name/alias matches; preserve aliases, normalization, canonical identity and deterministic limits.
+- [ ] Replace the Daily Nine green status banner with the responsive 1–9 initials / YOU / AVG / TOTAL scoreboard; highlight the active AB and remove the redundant at-bat count, possible-points, points-so-far and strikeout banner metrics. No replacement maximum-points indicator. Before coding, settle TOTAL-column AVG semantics because per-AB and completed-game comparison populations differ; do not silently sum per-AB averages.
+- [ ] Establish an explicit resettable archive-beta series/data boundary before issuing test puzzles; pre-launch testing must not choose the eventual permanent epoch/Daily #1, and issued test puzzles remain immutable until the beta archive is retired/reset.
 
 September 24 coordinated archive/gameplay decisions and bounded PR order are in `tasks/plans/2026-09-24-archive-and-gameplay-roadmap.md`. Finalized half-point `points-v4` persistence/comparison/browser support and the public cutover are complete; historical `points-v3` remains exact-version compatibility only. Archive browser save/session isolation is complete; the planned stat, initials, scoring, how-to, and archive route work follows the documented dependencies. No launch epoch, fake permanent row, or beta import is authorized by this roadmap.
 
