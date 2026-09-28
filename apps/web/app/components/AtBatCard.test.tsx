@@ -1,7 +1,7 @@
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
-import type { DailyNineAtBatComparisonState } from '../useDailyNineAtBatComparison';
+import type { DailyNineAtBatComparisonState } from '../dailyNineAtBatComparisonState';
 import { AtBatCard } from './AtBatCard';
 
 (globalThis as Record<string, unknown>).React = React;
