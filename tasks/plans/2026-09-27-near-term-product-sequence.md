@@ -1,10 +1,10 @@
 # Near-term product sequence — search, Daily polish, archive beta
 
-Status: approved implementation sequence; search relevance, inning scoreboard, and terminal-result callout complete through September 28, 2026.
+Status: approved implementation sequence; search relevance, inning scoreboard, terminal-result callout, and personal scorecard Outcome complete through September 28, 2026.
 
 ## Goal
 
-Continue from the production-verified points-v4 cutover with small, reversible PRs. Search relevance and the Daily Nine inning scoreboard are complete. Finish the bounded terminal-result callout, personal scorecard Outcome column, and narrow-mobile season-table sticky-column polish, then begin exercising the already-built archive foundation with real lineups as **pre-launch archive test data**. The eventual permanent Daily #1 and launch epoch remain deliberately undecided.
+Continue from the production-verified points-v4 cutover with small, reversible PRs. Search relevance and the Daily Nine inning scoreboard are complete. Finish the narrow-mobile season-table sticky-column polish, then begin exercising the already-built archive foundation with real lineups as **pre-launch archive test data**. The eventual permanent Daily #1 and launch epoch remain deliberately undecided.
 
 ## Operating contract
 
@@ -61,8 +61,8 @@ New archive attempts use the then-current public ruleset (currently points-v4); 
 1. **Search ranking — complete.** Regression coverage now locks the reported multi-token case and the shared-engine ranker prefers visible display-name matches over hidden full-name/alias matches. No dropdown redesign or API-contract change.
 2. **Daily Nine inning scoreboard — complete.** Replaced the points-mode status banner with the reusable 1–9 initials / YOU / AVG / TOTAL table. TOTAL AVG uses completed-game comparison data only after completion; no backend aggregation, scoring, or persistence changes.
 3. **Terminal result callout — complete.** Center the resolved Daily Nine callout as canonical baseball outcome plus authoritative awarded points, with no scoring or persistence change.
-4. **Personal scorecard Outcome column — next.** Add recorded canonical outcomes alongside SCORE and AVG without inferring outcomes from points.
-5. **Season-table mobile sticky-column polish.** Keep only Season sticky on narrow horizontally scrolling reveal tables; Team scrolls with stats.
+4. **Personal scorecard Outcome column — complete.** Show recorded canonical outcomes alongside SCORE and AVG in the private in-app scorecard without inferring outcomes from points; keep copied share output spoiler-safe and outcome-free.
+5. **Season-table mobile sticky-column polish — next.** Keep only Season sticky on narrow horizontally scrolling reveal tables; Team scrolls with stats.
 6. **Archive-beta identity/reset contract.** Decide and encode the narrow pre-launch series/reset boundary after inspecting the existing `permanent-v1` contracts. No archive UI or puzzle issuance in this PR.
 7. **Archive-beta issuance.** Freeze real authoritative lineups/clues into the test archive through the existing immutable schema-v2 issuance path. Verify exact read-back/materialization; no public routes yet.
 8. **Recurring issuance.** Attach idempotent issuance to the narrowest authoritative publication lifecycle seam if appropriate; do not invent a cron or fabricate missing lineups without evidence.

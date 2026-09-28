@@ -13,6 +13,7 @@ import type {
 export type DailyNineScorecardRow = {
   pitchNumber: number;
   initials: string;
+  outcome: DailySharePitchLine['outcome'];
   score: string;
   average: string;
 };
@@ -40,6 +41,7 @@ export function createDailyNineScorecardRows(
     return {
       pitchNumber,
       initials: line.initials,
+      outcome: line.outcome,
       score: awardedPoints === undefined ? '—' : formatDailyScorecardPoints(awardedPoints),
       average: average ?? '—',
     };

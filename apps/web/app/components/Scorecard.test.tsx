@@ -9,7 +9,7 @@ import { PitchResultList } from './PitchResultList';
 (globalThis as Record<string, unknown>).React = React;
 
 describe('private scorecard and public share card', () => {
-  it('renders Daily Nine as an initials / Player / Score / Avg comparison grid', () => {
+  it('renders Daily Nine as an initials / Player / Outcome / Score / Avg comparison grid', () => {
     const html = renderToStaticMarkup(<PitchResultList
       pitchLines={[{ initials: 'BB', outcome: 'K' }, { initials: 'KGJ', outcome: 'HR' }]}
       answers={{ 1: 'Barry Bonds', 2: 'Ken Griffey Jr.' }}
@@ -23,14 +23,14 @@ describe('private scorecard and public share card', () => {
 
     expect(html).toContain('daily-nine-scorecard-table');
     expect(html).toContain('>Player<');
+    expect(html).toContain('>Outcome<');
     expect(html).toContain('>Score<');
     expect(html).toContain('>Avg<');
     expect(html).toMatch(/BB:<.*Your score 0.*>0<.*Average score 7\.0.*>7\.0</);
-    expect(html).toMatch(/KGJ:<.*Your score 7.*>7<.*Average score —.*>—</);
+    expect(html).toMatch(/KGJ:<.*Outcome HR.*>HR<.*Your score 7.*>7<.*Average score —.*>—</);
     expect(html).toContain('Barry Bonds');
     expect(html).toContain('Ken Griffey Jr.');
-    expect(html).not.toContain('>K</strong>');
-    expect(html).not.toContain('>HR</strong>');
+
   });
 
   it('keeps Classic answer and baseball-outcome rows unchanged', () => {
@@ -70,6 +70,7 @@ describe('private scorecard and public share card', () => {
     const shareCard = html.slice(html.indexOf('aria-label="Spoiler-free share card"'));
     expect(shareCard).toContain('SCORE');
     expect(shareCard).toContain('AVG');
+    expect(shareCard).not.toContain('OUTCOME');
     expect(shareCard).toContain('KGJ:');
     expect(shareCard).toContain('4.8');
     expect(shareCard).not.toContain('KGJ: K');
