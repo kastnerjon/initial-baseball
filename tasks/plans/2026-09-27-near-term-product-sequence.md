@@ -1,6 +1,6 @@
 # Near-term product sequence — search, Daily polish, archive beta
 
-Status: approved implementation sequence; Daily polish through the narrow-mobile season-table sticky-column fix is complete through September 28, 2026.
+Status: approved implementation sequence; Daily polish through scoreboard AVG preload is complete through September 28, 2026.
 
 ## Goal
 
