@@ -27,6 +27,24 @@
   .daily-edition {
     font-size: 11px;
   }
+  .daily-how-to-trigger {
+    min-height: 36px;
+    font-size: 12px;
+  }
+  .daily-how-to-dialog {
+    width: calc(100vw - 20px);
+    max-height: calc(100svh - 20px);
+  }
+  .daily-how-to-dialog-panel {
+    gap: 14px;
+    padding: 18px;
+  }
+  .daily-how-to-dialog h2 {
+    font-size: 23px;
+  }
+  .daily-how-to-done {
+    width: 100%;
+  }
   .game-shell {
     gap: 12px;
   }
