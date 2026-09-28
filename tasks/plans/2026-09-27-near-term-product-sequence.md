@@ -1,6 +1,6 @@
 # Near-term product sequence — search, scoreboard, archive beta
 
-Status: approved implementation sequence, September 27, 2026.
+Status: approved implementation sequence; search relevance complete, September 27, 2026.
 
 ## Goal
 
@@ -26,6 +26,8 @@ Continue from the production-verified points-v4 cutover with small, reversible P
 The production API reproduces the reported problem: a query such as `pedro ma` can rank Pedro Alvarez/Avila/etc. ahead of Pedro Martinez. The shared engine search ranker is the owning layer; the dropdown merely renders returned order.
 
 Preserve normalization, aliases, canonical player IDs, duplicate-name/year disambiguation, deterministic limits, and useful single-token search. Improve ranking rather than adding UI-side sorting, fuzzy-search dependencies, or a new search service. Multi-token visible-name prefix matches should outrank weaker hidden-name/alias matches.
+
+Implementation checkpoint: complete in the shared engine. Ranking now prefers visible display-name matches over hidden full-name/alias matches while retaining the existing normalization, ordered token-prefix matching, alias search, canonical duplicate/year behavior, deterministic ordering, and result limit.
 
 ### Daily Nine inning scoreboard
 
@@ -56,8 +58,8 @@ New archive attempts use the then-current public ruleset (currently points-v4); 
 
 ## Planned PR sequence
 
-1. **Search ranking.** Add regression coverage for the reported multi-token case and improve the shared engine ranker. No dropdown redesign or API-contract change.
-2. **Daily Nine inning scoreboard.** Replace the green status banner with the 1–9 YOU/AVG/TOTAL scoreboard as a pure responsive presentation component. Before coding, explicitly settle the TOTAL-column AVG meaning from existing comparison populations; do not sum unlike denominators or add backend aggregation by default. No scoring/persistence changes.
+1. **Search ranking — complete.** Regression coverage now locks the reported multi-token case and the shared-engine ranker prefers visible display-name matches over hidden full-name/alias matches. No dropdown redesign or API-contract change.
+2. **Daily Nine inning scoreboard — next.** Replace the green status banner with the 1–9 YOU/AVG/TOTAL scoreboard as a pure responsive presentation component. Before coding, explicitly settle the TOTAL-column AVG meaning from existing comparison populations; do not sum unlike denominators or add backend aggregation by default. No scoring/persistence changes.
 3. **Archive-beta identity/reset contract.** Decide and encode the narrow pre-launch series/reset boundary after inspecting the existing `permanent-v1` contracts. No archive UI or puzzle issuance in this PR.
 4. **Archive-beta issuance.** Freeze real authoritative lineups/clues into the test archive through the existing immutable schema-v2 issuance path. Verify exact read-back/materialization; no public routes yet.
 5. **Recurring issuance.** Attach idempotent issuance to the narrowest authoritative publication lifecycle seam if appropriate; do not invent a cron or fabricate missing lineups without evidence.

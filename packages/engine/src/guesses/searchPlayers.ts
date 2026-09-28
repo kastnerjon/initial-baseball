@@ -30,10 +30,13 @@ export type PlayerSearchCandidate = {
   playerType?: string;
 };
 
-type RankedPlayerSearchResult = PlayerSearchResult & {
+type PlayerSearchMatch = {
+  matchSourcePriority: 0 | 1 | 2;
   matchPriority: 0 | 1;
   bestIndex: number;
 };
+
+type RankedPlayerSearchResult = PlayerSearchResult & PlayerSearchMatch;
 
 const SEARCH_RESULT_LIMIT = 10;
 const ELIGIBILITY_PRIORITIES: Record<Player['dailyEligibilityTier'], number> = {
@@ -91,17 +94,17 @@ function rankPlayerSearchResult(
   collapseSameVisibleName: boolean,
 ): RankedPlayerSearchResult | null {
   const fullName = player.fullName ?? player.displayName;
-  const searchableFields = [fullName, player.displayName, ...player.aliases].map(normalizeGuess);
-  const matchIndexes = searchableFields
-    .map((field) => getSearchMatchIndex(query, field))
-    .filter((index): index is number => index !== null);
+  const bestMatch = getBestSearchMatch(query, [
+    { field: player.displayName, matchSourcePriority: 0 },
+    { field: fullName, matchSourcePriority: 1 },
+    ...player.aliases.map((alias) => ({ field: alias, matchSourcePriority: 2 as const })),
+  ]);
 
-  if (matchIndexes.length === 0) {
+  if (bestMatch === null) {
     return null;
   }
 
   const normalizedDisplayName = normalizeGuess(player.displayName);
-  const bestIndex = Math.min(...matchIndexes);
   const requiresYearDisambiguation = !collapseSameVisibleName
     && (playerCountsByVisibleName.get(normalizedDisplayName) ?? 0) > 1;
   const metadata: NonNullable<PlayerSearchResult['metadata']> = {
@@ -125,9 +128,38 @@ function rankPlayerSearchResult(
     fullName,
     ...(requiresYearDisambiguation ? { requiresYearDisambiguation: true } : {}),
     metadata,
-    matchPriority: bestIndex === 0 ? 0 : 1,
-    bestIndex,
+    ...bestMatch,
   };
+}
+
+function getBestSearchMatch(
+  query: string,
+  searchableFields: readonly {
+    field: string;
+    matchSourcePriority: PlayerSearchMatch['matchSourcePriority'];
+  }[],
+): PlayerSearchMatch | null {
+  let bestMatch: PlayerSearchMatch | null = null;
+
+  for (const { field, matchSourcePriority } of searchableFields) {
+    const bestIndex = getSearchMatchIndex(query, normalizeGuess(field));
+
+    if (bestIndex === null) {
+      continue;
+    }
+
+    const match: PlayerSearchMatch = {
+      matchSourcePriority,
+      matchPriority: bestIndex === 0 ? 0 : 1,
+      bestIndex,
+    };
+
+    if (bestMatch === null || compareSearchMatches(match, bestMatch) < 0) {
+      bestMatch = match;
+    }
+  }
+
+  return bestMatch;
 }
 
 function getSearchMatchIndex(query: string, field: string): number | null {
@@ -216,10 +248,17 @@ function compareAcceptedPlayerIdCandidates(left: PlayerSearchCandidate, right: P
   );
 }
 
+function compareSearchMatches(left: PlayerSearchMatch, right: PlayerSearchMatch): number {
+  return (
+    left.matchSourcePriority - right.matchSourcePriority
+    || left.matchPriority - right.matchPriority
+    || left.bestIndex - right.bestIndex
+  );
+}
+
 function compareRankedResults(left: RankedPlayerSearchResult, right: RankedPlayerSearchResult): number {
   return (
-    left.matchPriority - right.matchPriority
-    || left.bestIndex - right.bestIndex
+    compareSearchMatches(left, right)
     || left.displayName.localeCompare(right.displayName)
     || left.playerId.localeCompare(right.playerId)
   );
@@ -239,7 +278,12 @@ function dedupeRankedResults(
 
   return fullNameDedupedResults
     .sort(compareRankedResults)
-    .map(({ matchPriority: _matchPriority, bestIndex: _bestIndex, ...result }) => result);
+    .map(({
+      matchSourcePriority: _matchSourcePriority,
+      matchPriority: _matchPriority,
+      bestIndex: _bestIndex,
+      ...result
+    }) => result);
 }
 
 function dedupeBy(

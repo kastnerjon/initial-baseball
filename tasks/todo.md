@@ -238,7 +238,7 @@ Hosted architecture/storage/comparison/editorial verification is sufficient to r
 
 ## 5. Permanent archive and local history
 
-- [ ] Fix shared player-search ranking so multi-token visible-name prefix matches such as `pedro ma` rank Pedro Martinez ahead of weaker hidden-name/alias matches; preserve aliases, normalization, canonical identity and deterministic limits.
+- [x] Fix shared player-search ranking so multi-token visible-name prefix matches such as `pedro ma` rank Pedro Martinez ahead of weaker hidden-name/alias matches; preserve aliases, normalization, canonical identity and deterministic limits.
 - [ ] Replace the Daily Nine green status banner with the responsive 1–9 initials / YOU / AVG / TOTAL scoreboard; highlight the active AB and remove the redundant at-bat count, possible-points, points-so-far and strikeout banner metrics. No replacement maximum-points indicator. Before coding, settle TOTAL-column AVG semantics because per-AB and completed-game comparison populations differ; do not silently sum per-AB averages.
 - [ ] Establish an explicit resettable archive-beta series/data boundary before issuing test puzzles; pre-launch testing must not choose the eventual permanent epoch/Daily #1, and issued test puzzles remain immutable until the beta archive is retired/reset.
 
