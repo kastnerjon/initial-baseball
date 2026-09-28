@@ -181,15 +181,15 @@ describe('AtBatCard terminal output', () => {
     const html = renderAtBatCard({
       submittedResult: createGiveUpResult(0, 3),
       strikeCount: 3,
+      terminalAwardedPoints: 0,
     });
 
     expect(html).toContain(`At Bat ${firstPitch.pitchNumber}`);
     expect(html).toContain('Next At Bat');
     expect(html.indexOf('Next At Bat')).toBeLessThan(html.indexOf('Player Reveal'));
     expect(html).not.toContain('Next Pitch');
-    expect(html).toContain('>Score<');
-    expect(html).toContain('0 PTS');
-    expect(html).not.toContain('>K<');
+    expect(html).toContain('>K 0 PTS<');
+    expect(html).not.toContain('>Score<');
     expect(html).not.toContain('Strikeout');
     expect(html).toContain('Player Reveal');
     expect(html).toContain(firstReveal.displayName);
@@ -211,17 +211,17 @@ describe('AtBatCard terminal output', () => {
     const html = renderAtBatCard({
       submittedResult: strikeoutResult,
       strikeCount: 3,
+      terminalAwardedPoints: 0,
     });
 
-    expect(html).toContain('>Score<');
-    expect(html).toContain('0 PTS');
-    expect(html).not.toContain('>K<');
+    expect(html).toContain('>K 0 PTS<');
+    expect(html).not.toContain('>Score<');
     expect(html).not.toContain('Strikeout');
     expect(html).toContain('Player Reveal');
     expect(html).toContain(firstReveal.displayName);
   });
 
-  it('shows awarded points rather than a baseball outcome', () => {
+  it('shows the canonical baseball outcome with authoritative awarded points', () => {
     const correctResult = getGuessOutcome({
       isCorrect: true,
       revealCount: 1,
@@ -237,11 +237,11 @@ describe('AtBatCard terminal output', () => {
       submittedResult: correctResult,
       strikeCount: 0,
       revealCount: 1,
+      terminalAwardedPoints: 3,
     });
 
-    expect(html).toContain('>Score<');
-    expect(html).toContain('3 PTS');
-    expect(html).not.toContain('>3B<');
+    expect(html).toContain('>3B 3 PTS<');
+    expect(html).not.toContain('>Score<');
     expect(html).not.toContain('>Outcome<');
     expect(html).toContain('Player Reveal');
     expect(html).toContain(firstReveal.displayName);
@@ -376,11 +376,13 @@ function renderAtBatCard({
   strikeCount,
   revealCount = 0,
   rulesetVersion = CURRENT_DAILY_RULESET_VERSION,
+  terminalAwardedPoints = null,
 }: {
   submittedResult: DailyGuessResult | null;
   strikeCount: number;
   revealCount?: 0 | 1 | 2 | 3 | 4;
   rulesetVersion?: DailyRulesetVersion;
+  terminalAwardedPoints?: number | null;
 }): string {
   return renderToStaticMarkup(
     React.createElement(AtBatCard, {
@@ -397,6 +399,7 @@ function renderAtBatCard({
       giveUpPending: false,
       requestError: null,
       comparison: { status: 'idle' },
+      terminalAwardedPoints,
       onQueryChange: () => undefined,
       onSelectPlayer: () => undefined,
       onRevealHint: () => undefined,

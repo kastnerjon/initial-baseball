@@ -1,19 +1,17 @@
 import type { JSX } from 'react';
-import { getDailyAtBatPoints } from '@initial-baseball/engine';
 import {
   isDailyPointsRulesetVersion,
   type DailyGuessResult,
-  type DailyRevealCount,
   type DailyRulesetVersion,
 } from '@initial-baseball/shared';
+import { createDailyTerminalResultCallout } from './dailyTerminalResultPresentation';
 
 type ResultDisplayProps = {
   result: DailyGuessResult;
   rulesetVersion: DailyRulesetVersion;
   correctAnswer?: string;
   revealAnswer?: boolean;
-  revealedCount?: DailyRevealCount;
-  wrongGuesses?: number;
+  awardedPoints?: number;
 };
 
 export function ResultDisplay({
@@ -21,26 +19,22 @@ export function ResultDisplay({
   rulesetVersion,
   correctAnswer,
   revealAnswer = false,
-  revealedCount = 0,
-  wrongGuesses = 0,
+  awardedPoints,
 }: ResultDisplayProps): JSX.Element {
   if (result.kind === 'correct' || result.kind === 'strikeout') {
     if (isDailyPointsRulesetVersion(rulesetVersion)) {
-      const points = getDailyAtBatPoints({
-        rulesetVersion,
-        outcome: result.outcome,
-        hintsRevealed: revealedCount,
-        wrongGuesses,
-      });
+      if (awardedPoints === undefined) {
+        throw new Error('A resolved Daily Nine result requires authoritative awarded points.');
+      }
+      const callout = createDailyTerminalResultCallout(result.outcome, awardedPoints);
       return (
         <div
           className={result.kind === 'strikeout'
-            ? 'result-card result-card-strikeout'
-            : 'result-card result-card-correct'}
+            ? 'result-card result-card-points result-card-strikeout'
+            : 'result-card result-card-points result-card-correct'}
           aria-live="polite"
         >
-          <span className="result-label">Score</span>
-          <strong className="result-value">{`${points} PTS`}</strong>
+          <strong className="result-value">{callout}</strong>
           {correctAnswer !== undefined && (result.kind === 'correct' || revealAnswer) ? (
             <p className="result-note">{`Answer: ${correctAnswer}`}</p>
           ) : null}
