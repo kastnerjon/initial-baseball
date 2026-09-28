@@ -420,12 +420,12 @@
 }
 
 @media (max-width: 640px) {
-  .player-reveal-stat-strip .stat-team {
-    left: auto;
-    z-index: 0;
+  .player-reveal-stat-strip tbody .stat-team {
+    position: static;
   }
 
   .player-reveal-stat-strip thead .stat-team {
+    left: auto;
     z-index: 2;
   }
 }
