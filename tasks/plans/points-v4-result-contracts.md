@@ -1,3 +1,5 @@
+> September 27 H5b follow-up: H5b subsequently made `points-v4` the public default. Schema 1 remains unchanged; exact ruleset identity continues to distinguish historical v3 from live v4 submissions.
+
 # Points-v4 portable result contracts
 
 Status: row G1 implementation scope; portable result acceptance only, not storage or browser activation  

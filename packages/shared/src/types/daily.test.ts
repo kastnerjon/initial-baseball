@@ -4,6 +4,7 @@ import {
   DEFAULT_DAILY_HINT_CONFIG,
   DEFAULT_DAILY_HINT_TYPES,
   DEFAULT_DAILY_SCORING,
+  DEFAULT_DAILY_POINTS_SUMMARY,
   DEFAULT_DAILY_SCORE_SUMMARY,
   DEFAULT_DAILY_STATS_HINT_CONFIG,
   CURRENT_DAILY_RULESET_VERSION,
@@ -56,8 +57,16 @@ it('starts score and bases in an empty inning state', () => {
   });
 });
 
-it('recognizes points-v4 without changing the current Daily Nine default', () => {
+it('uses finalized points-v4 as the current Daily Nine default while retaining v3 support', () => {
   expect(isDailyRulesetVersion(POINTS_V4_DAILY_RULESET_VERSION)).toBe(true);
   expect(isDailyPointsRulesetVersion(POINTS_V4_DAILY_RULESET_VERSION)).toBe(true);
-  expect(CURRENT_DAILY_RULESET_VERSION).toBe(POINTS_V3_DAILY_RULESET_VERSION);
+  expect(isDailyRulesetVersion(POINTS_V3_DAILY_RULESET_VERSION)).toBe(true);
+  expect(CURRENT_DAILY_RULESET_VERSION).toBe(POINTS_V4_DAILY_RULESET_VERSION);
+  expect(DEFAULT_DAILY_POINTS_SUMMARY).toMatchObject({
+    points: 0,
+    maximumPoints: 36,
+    atBatsCompleted: 0,
+    totalAtBats: 9,
+    completed: false,
+  });
 });

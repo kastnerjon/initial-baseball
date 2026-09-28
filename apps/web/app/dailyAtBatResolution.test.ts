@@ -1,9 +1,15 @@
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { createDailyShareResult, formatDailyShareText, getGuessOutcome } from '@initial-baseball/engine';
+import {
+  createDailyPointsSummary,
+  createDailyShareResult,
+  formatDailyShareText,
+  getGuessOutcome,
+} from '@initial-baseball/engine';
 import {
   CURRENT_DAILY_RULESET_VERSION,
   LEGACY_DAILY_RULESET_VERSION,
+  POINTS_V3_DAILY_RULESET_VERSION,
   type DailyGameState,
   type DailyGuessResult,
   type DailyRulesetVersion,
@@ -41,7 +47,7 @@ describe('createGiveUpResult', () => {
 describe('resolveDailyTerminalAtBat', () => {
   it('records Give Up as a zero-point raw at-bat fact without ending points-v3', () => {
     const advance = resolveDailyTerminalAtBat({
-      gameState: createInitialDemoGameState(DEMO_DAILY_PUZZLE),
+      gameState: createPointsV3DemoGameState(),
       pitch: firstPitch,
       result: createGiveUpResult(0, 3),
       resolution: 'give_up',
@@ -64,7 +70,7 @@ describe('resolveDailyTerminalAtBat', () => {
     expect(advance.pitchLines).toEqual([{ initials: firstPitch.player.initials, outcome: 'K' }]);
   });
 
-  it('awards seven points for an initials-only correct guess', () => {
+  it('awards four points for an initials-only correct guess under the live points-v4 default', () => {
     const correctResult = getGuessOutcome({
       isCorrect: true,
       revealCount: 0,
@@ -88,7 +94,7 @@ describe('resolveDailyTerminalAtBat', () => {
     expect(advance.score.runs).toBe(1);
     expect(advance.score.hits).toBe(1);
     expect(advance.score.outs).toBe(0);
-    expect(advance.points.points).toBe(7);
+    expect(advance.points.points).toBe(4);
     expect(advance.completedAtBats[0]).toMatchObject({
       outcome: 'HR',
       hintsRevealed: 0,
@@ -129,7 +135,7 @@ describe('resolveDailyTerminalAtBat', () => {
     }));
 
     expect(shareText).toContain(`Daily Nine #${DEMO_DAILY_PUZZLE.puzzleNumber}`);
-    expect(shareText).toContain('0/42 PTS');
+    expect(shareText).toContain('0/24 PTS');
     expect(shareText).toContain(`${firstPitch.player.initials}: K`);
     expect(shareText).not.toContain(firstPitch.player.fullName);
     expect(shareText).not.toContain('initialbaseball.com');
@@ -234,7 +240,7 @@ describe('AtBatCard terminal output', () => {
     });
 
     expect(html).toContain('>Score<');
-    expect(html).toContain('6 PTS');
+    expect(html).toContain('3 PTS');
     expect(html).not.toContain('>3B<');
     expect(html).not.toContain('>Outcome<');
     expect(html).toContain('Player Reveal');
@@ -352,6 +358,18 @@ describe('compact Daily status', () => {
     }
   });
 });
+
+function createPointsV3DemoGameState(): DailyGameState {
+  const gameState = createInitialDemoGameState(DEMO_DAILY_PUZZLE);
+  return {
+    ...gameState,
+    rulesetVersion: POINTS_V3_DAILY_RULESET_VERSION,
+    points: createDailyPointsSummary(
+      POINTS_V3_DAILY_RULESET_VERSION,
+      DEMO_DAILY_PUZZLE.pitches.length,
+    ),
+  };
+}
 
 function renderAtBatCard({
   submittedResult,
