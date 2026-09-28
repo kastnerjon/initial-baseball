@@ -13,7 +13,7 @@ import type {
 } from '@initial-baseball/shared';
 import type { CanonicalRevealViewModel } from '../canonicalRevealViewModel';
 import type { DailyHintResponse } from '../dailyRuntimeContracts';
-import type { DailyNineAtBatComparisonState } from '../useDailyNineAtBatComparison';
+import type { DailyNineAtBatComparisonState } from '../dailyNineAtBatComparisonState';
 import { DailyNineAtBatComparison } from './DailyNineAtBatComparison';
 import { PlayerRevealCard } from './PlayerRevealCard';
 import { ResultDisplay } from './ResultDisplay';
