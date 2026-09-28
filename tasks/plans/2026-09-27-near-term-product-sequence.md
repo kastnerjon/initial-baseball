@@ -1,6 +1,6 @@
 # Near-term product sequence — search, scoreboard, archive beta
 
-Status: approved implementation sequence; search relevance complete, September 27, 2026.
+Status: approved implementation sequence; search relevance and inning scoreboard complete, September 27, 2026.
 
 ## Goal
 
@@ -37,11 +37,11 @@ Replace the current green status banner above the active at-bat with a compact 1
 - A `YOU` row shows resolved personal points; unresolved/current/future slots use a stable empty/dash state.
 - An `AVG` row shows the existing exact-slot comparison average when displayable; unavailable/withheld values remain `—`.
 - The active at-bat column is visually highlighted.
-- A rightmost `TOTAL`/points column shows cumulative personal points. The AVG value in that total column is an explicit pre-implementation product/statistics decision: current per-AB averages can include partial games while whole-game AVG uses completed games, so do **not** silently sum per-AB averages or label that sum as the completed-game average. Prefer an existing authoritative comparison contract; add no new backend aggregation merely to imitate the mockup.
+- A rightmost `TOTAL`/points column shows cumulative personal points. TOTAL AVG remains `—` during play and, once all nine at-bats are resolved, uses the existing authoritative completed-game average. Per-AB averages are never summed; no new backend aggregation was added.
 - Remove the banner's `At bat X of 9`, `Points possible this AB`, `Points so far`, and `Strikeouts` metrics rather than duplicating them.
 - Do **not** add a replacement maximum-points indicator.
 - This is presentation only: consume existing engine/game/comparison state; do not move scoring, persistence, or comparison rules into React.
-- Reuse the component for current and archived Daily Nine rather than forking archive presentation.
+- The renderer is a pure presentation component intended for reuse by current and archived Daily Nine rather than forking archive presentation. The resolved-at-bat comparison and collapsible scorecard remain intentionally because they carry richer result context and player-answer detail; removing either is a separate UX decision.
 - Treat narrow/mobile layout, accessible table semantics/labels, loading/withheld AVG states, half-point values, restore, and active-column transitions as acceptance cases.
 
 ### Archive beta before permanent launch
@@ -59,8 +59,8 @@ New archive attempts use the then-current public ruleset (currently points-v4); 
 ## Planned PR sequence
 
 1. **Search ranking — complete.** Regression coverage now locks the reported multi-token case and the shared-engine ranker prefers visible display-name matches over hidden full-name/alias matches. No dropdown redesign or API-contract change.
-2. **Daily Nine inning scoreboard — next.** Replace the green status banner with the 1–9 YOU/AVG/TOTAL scoreboard as a pure responsive presentation component. Before coding, explicitly settle the TOTAL-column AVG meaning from existing comparison populations; do not sum unlike denominators or add backend aggregation by default. No scoring/persistence changes.
-3. **Archive-beta identity/reset contract.** Decide and encode the narrow pre-launch series/reset boundary after inspecting the existing `permanent-v1` contracts. No archive UI or puzzle issuance in this PR.
+2. **Daily Nine inning scoreboard — complete.** Replaced the points-mode status banner with the reusable 1–9 initials / YOU / AVG / TOTAL table. TOTAL AVG uses completed-game comparison data only after completion; no backend aggregation, scoring, or persistence changes.
+3. **Archive-beta identity/reset contract — next.** Decide and encode the narrow pre-launch series/reset boundary after inspecting the existing `permanent-v1` contracts. No archive UI or puzzle issuance in this PR.
 4. **Archive-beta issuance.** Freeze real authoritative lineups/clues into the test archive through the existing immutable schema-v2 issuance path. Verify exact read-back/materialization; no public routes yet.
 5. **Recurring issuance.** Attach idempotent issuance to the narrowest authoritative publication lifecycle seam if appropriate; do not invent a cron or fabricate missing lineups without evidence.
 6. **Archive routes/navigation.** Expose only actually issued test puzzles; missing/unissued puzzles fail closed. Reuse the existing server archive runtime.
