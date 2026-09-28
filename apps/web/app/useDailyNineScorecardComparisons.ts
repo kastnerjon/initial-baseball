@@ -54,7 +54,8 @@ export function useDailyNineScorecardComparisons({
   const normalizedCompletedPitchNumbers = normalizePitchNumbers(completedPitchNumbers);
   const requestedPitchSignature = normalizedRequestedPitchNumbers.join(',');
   const completedPitchSignature = normalizedCompletedPitchNumbers.join(',');
-  const lastCompletedPitchSignatureRef = useRef('');
+  const lastCompletedPitchNumbersRef = useRef<number[]>([]);
+  const pendingCompletionRefreshesRef = useRef(new Set<number>());
   const completedPitchNumbersRef = useRef(new Set<number>());
   completedPitchNumbersRef.current = new Set(normalizedCompletedPitchNumbers);
   const retryTimersRef = useRef(new Map<number, ReturnType<typeof setTimeout>>());
@@ -67,7 +68,8 @@ export function useDailyNineScorecardComparisons({
   const invalidate = useCallback(() => {
     controller.invalidateAll();
     clearRetryRuntime(retryTimersRef.current, retryBudgetRef.current);
-    lastCompletedPitchSignatureRef.current = '';
+    lastCompletedPitchNumbersRef.current = [];
+    pendingCompletionRefreshesRef.current.clear();
     setCache({ identityKey, byPitch: {} });
   }, [controller, identityKey]);
 
@@ -80,7 +82,8 @@ export function useDailyNineScorecardComparisons({
     if (cache.identityKey !== identityKey) {
       controller.invalidateAll();
       clearRetryRuntime(retryTimersRef.current, retryBudgetRef.current);
-      lastCompletedPitchSignatureRef.current = '';
+      lastCompletedPitchNumbersRef.current = [];
+    pendingCompletionRefreshesRef.current.clear();
       setCache({ identityKey, byPitch: {} });
       return;
     }
@@ -105,26 +108,37 @@ export function useDailyNineScorecardComparisons({
 
     if (!enabled || !isDailyNineComparisonApiRulesetVersion(rulesetVersion)) return;
 
-    const completionAdvanced = lastCompletedPitchSignatureRef.current !== completedPitchSignature;
-    lastCompletedPitchSignatureRef.current = completedPitchSignature;
-    if (completionAdvanced) {
-      for (const pitchNumber of normalizedCompletedPitchNumbers) {
-        const state = cache.byPitch[pitchNumber];
-        if (state !== undefined && shouldRefreshWithNewCompletion(state)) {
-          const timer = retryTimersRef.current.get(pitchNumber);
-          if (timer !== undefined) clearTimeout(timer);
-          retryTimersRef.current.delete(pitchNumber);
-          retryBudgetRef.current.set(pitchNumber, 0);
-        }
+    const newlyCompletedPitchNumbers = getNewlyCompletedPitchNumbers(
+      lastCompletedPitchNumbersRef.current,
+      normalizedCompletedPitchNumbers,
+    );
+    lastCompletedPitchNumbersRef.current = normalizedCompletedPitchNumbers;
+    for (const pitchNumber of newlyCompletedPitchNumbers) {
+      const state = cache.byPitch[pitchNumber];
+      if (state !== undefined && shouldRefreshWithNewCompletion(state)) {
+        pendingCompletionRefreshesRef.current.add(pitchNumber);
+        const timer = retryTimersRef.current.get(pitchNumber);
+        if (timer !== undefined) clearTimeout(timer);
+        retryTimersRef.current.delete(pitchNumber);
+        retryBudgetRef.current.set(pitchNumber, 0);
+      }
+    }
+
+    for (const pitchNumber of [...pendingCompletionRefreshesRef.current]) {
+      const state = cache.byPitch[pitchNumber];
+      if (state !== undefined && !shouldRefreshWithNewCompletion(state)) {
+        pendingCompletionRefreshesRef.current.delete(pitchNumber);
       }
     }
 
     const pitchNumbersToRequest = createDailyNineScorecardComparisonRequestPlan({
       requestedPitchNumbers: normalizedRequestedPitchNumbers,
-      completedPitchNumbers: normalizedCompletedPitchNumbers,
+      pendingRefreshPitchNumbers: [...pendingCompletionRefreshesRef.current],
       comparisons: cache.byPitch,
-      completionAdvanced,
     });
+
+    for (const pitchNumber of pitchNumbersToRequest) {
+      pendingCompletionRefreshesRef.current.delete(pitchNumber);
 
     for (const pitchNumber of pitchNumbersToRequest) {
       if (!retryBudgetRef.current.has(pitchNumber)) retryBudgetRef.current.set(pitchNumber, 0);
@@ -224,17 +238,15 @@ export function useDailyNineScorecardComparisons({
 
 export function createDailyNineScorecardComparisonRequestPlan({
   requestedPitchNumbers,
-  completedPitchNumbers,
+  pendingRefreshPitchNumbers,
   comparisons,
-  completionAdvanced,
 }: {
   requestedPitchNumbers: number[];
-  completedPitchNumbers: number[];
+  pendingRefreshPitchNumbers: number[];
   comparisons: DailyNineScorecardComparisons;
-  completionAdvanced: boolean;
 }): number[] {
   const requested = normalizePitchNumbers(requestedPitchNumbers);
-  const completed = normalizePitchNumbers(completedPitchNumbers);
+  const pendingRefreshes = normalizePitchNumbers(pendingRefreshPitchNumbers);
   const loadingCount = Object.values(comparisons)
     .filter(state => state.status === 'loading').length;
   const availableSlots = Math.max(0, MAX_CONCURRENT_SCORECARD_READS - loadingCount);
@@ -242,14 +254,21 @@ export function createDailyNineScorecardComparisonRequestPlan({
 
   const missingPitchNumbers = requested
     .filter(pitchNumber => comparisons[pitchNumber] === undefined);
-  const refreshPitchNumbers = completionAdvanced
-    ? completed.filter((pitchNumber) => {
-        const state = comparisons[pitchNumber];
-        return state !== undefined && shouldRefreshWithNewCompletion(state);
-      })
-    : [];
+  const refreshPitchNumbers = pendingRefreshes.filter((pitchNumber) => {
+    const state = comparisons[pitchNumber];
+    return state !== undefined && shouldRefreshWithNewCompletion(state);
+  });
 
   return [...refreshPitchNumbers, ...missingPitchNumbers].slice(0, availableSlots);
+}
+
+export function getNewlyCompletedPitchNumbers(
+  previousCompletedPitchNumbers: number[],
+  completedPitchNumbers: number[],
+): number[] {
+  const previous = new Set(normalizePitchNumbers(previousCompletedPitchNumbers));
+  return normalizePitchNumbers(completedPitchNumbers)
+    .filter(pitchNumber => !previous.has(pitchNumber));
 }
 
 function normalizePitchNumbers(pitchNumbers: number[]): number[] {
