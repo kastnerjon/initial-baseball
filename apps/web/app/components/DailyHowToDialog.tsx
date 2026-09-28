@@ -7,6 +7,16 @@ type DailyHowToDialogProps = {
   content: DailyHowToContent;
 };
 
+type ModalDialogControl = {
+  open: boolean;
+  showModal(): void;
+  close(): void;
+};
+
+type FocusControl = {
+  focus(): void;
+};
+
 export function DailyHowToDialog({ content }: DailyHowToDialogProps): JSX.Element {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -31,7 +41,7 @@ export function DailyHowToDialog({ content }: DailyHowToDialogProps): JSX.Elemen
         ref={dialogRef}
         className="daily-how-to-dialog"
         aria-labelledby={titleId}
-        onClose={() => triggerRef.current?.focus()}
+        onClose={focusTrigger}
         onClick={handleBackdropClick}
       >
         <div className="daily-how-to-dialog-panel">
@@ -62,14 +72,19 @@ export function DailyHowToDialog({ content }: DailyHowToDialogProps): JSX.Elemen
   );
 
   function openDialog(): void {
-    const dialog = dialogRef.current;
+    const dialog = dialogRef.current as unknown as ModalDialogControl | null;
     if (dialog === null || dialog.open) return;
     dialog.showModal();
   }
 
   function closeDialog(): void {
-    const dialog = dialogRef.current;
+    const dialog = dialogRef.current as unknown as ModalDialogControl | null;
     if (dialog?.open) dialog.close();
+  }
+
+  function focusTrigger(): void {
+    const trigger = triggerRef.current as unknown as FocusControl | null;
+    trigger?.focus();
   }
 
   function handleBackdropClick(event: MouseEvent<HTMLDialogElement>): void {
