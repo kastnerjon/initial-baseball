@@ -67,31 +67,87 @@
   white-space: nowrap;
   font-variant-numeric: tabular-nums;
 }
-.daily-instructions summary {
-  display: flex;
+.daily-how-to-trigger {
   min-height: 44px;
-  align-items: center;
+  padding: 0;
+  border: 0;
+  background: transparent;
   color: var(--clubhouse);
   cursor: pointer;
-  list-style: none;
   text-decoration: underline;
   text-underline-offset: 4px;
 }
-.daily-instructions summary::-webkit-details-marker {
-  display: none;
-}
-.daily-instructions p {
-  position: absolute;
-  top: calc(100% - 12px);
-  right: 0;
-  width: min(360px, 100%);
-  margin: 0;
-  padding: 18px;
+.daily-how-to-dialog {
+  width: min(520px, calc(100vw - 32px));
+  max-height: min(680px, calc(100svh - 32px));
+  padding: 0;
   border: 1px solid var(--line);
-  border-radius: 6px;
+  border-radius: 8px;
   background: var(--paper-light);
-  box-shadow: 0 6px 18px #153b2d14;
-  font-size: 14px;
+  color: var(--ink);
+  box-shadow: 0 18px 54px #153b2d33;
+}
+.daily-how-to-dialog::backdrop {
+  background: #153b2d73;
+}
+.daily-how-to-dialog-panel {
+  display: grid;
+  gap: 16px;
+  padding: 22px;
+}
+.daily-how-to-dialog-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+}
+.daily-how-to-dialog h2 {
+  margin: 0;
+  color: var(--clubhouse-deep);
+  font: 700 25px/1.15 var(--display-font);
+  letter-spacing: -0.025em;
+}
+.daily-how-to-dialog-close {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  flex: 0 0 40px;
+  place-items: center;
+  margin: -8px -8px 0 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+  font-size: 28px;
+  line-height: 1;
+}
+.daily-how-to-dialog-close:hover {
+  background: var(--line-soft);
+  color: var(--clubhouse-deep);
+}
+.daily-how-to-intro,
+.daily-how-to-footer {
+  margin: 0;
+}
+.daily-how-to-intro {
+  color: var(--ink);
+}
+.daily-how-to-steps {
+  display: grid;
+  gap: 10px;
+  margin: 0;
+  padding-left: 22px;
+}
+.daily-how-to-steps li {
+  padding-left: 3px;
+}
+.daily-how-to-footer {
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+.daily-how-to-done {
+  justify-self: start;
 }
 .daily-mode-nav {
   display: flex;
