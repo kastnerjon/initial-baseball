@@ -320,3 +320,110 @@
     justify-content: center;
   }
 }
+
+
+.inning-scoreboard-shell {
+  min-width: 0;
+  overflow: hidden;
+  border-radius: 6px;
+  background: var(--clubhouse-deep);
+  color: var(--paper-light);
+}
+.inning-scoreboard-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: thin;
+}
+.inning-scoreboard-scroll:focus-visible {
+  outline: 2px solid var(--clubhouse);
+  outline-offset: 2px;
+}
+.inning-scoreboard {
+  width: 100%;
+  min-width: 510px;
+  border-collapse: separate;
+  border-spacing: 0;
+  table-layout: fixed;
+  color: inherit;
+  font-variant-numeric: tabular-nums;
+}
+.inning-scoreboard th,
+.inning-scoreboard td {
+  min-width: 42px;
+  padding: 5px 4px;
+  border-right: 1px solid rgba(255, 255, 255, 0.14);
+  text-align: center;
+  white-space: nowrap;
+}
+.inning-scoreboard thead th {
+  border-bottom: 1px solid rgba(255, 255, 255, 0.22);
+  font-weight: 600;
+}
+.inning-scoreboard tbody tr + tr > * {
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+.inning-scoreboard-corner,
+.inning-scoreboard-row-label {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  width: 48px;
+  min-width: 48px;
+  background: var(--clubhouse-deep);
+}
+.inning-scoreboard-corner,
+.inning-scoreboard-row-label,
+.inning-scoreboard-total {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.inning-scoreboard-total {
+  position: sticky;
+  right: 0;
+  z-index: 3;
+  width: 58px;
+  min-width: 58px;
+  border-right: 0;
+  border-left: 2px solid rgba(255, 255, 255, 0.3);
+  background: var(--clubhouse-deep);
+  font-weight: 700;
+}
+.inning-scoreboard-inning {
+  vertical-align: bottom;
+}
+.inning-scoreboard-current {
+  background: var(--clubhouse);
+  box-shadow:
+    inset 2px 0 0 rgba(255, 255, 255, 0.7),
+    inset -2px 0 0 rgba(255, 255, 255, 0.7);
+}
+.inning-scoreboard-current-marker {
+  display: block;
+  min-height: 10px;
+  font-size: 8px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  line-height: 1;
+}
+.inning-scoreboard-number,
+.inning-scoreboard-initials {
+  display: block;
+}
+.inning-scoreboard-number {
+  font-size: 12px;
+  line-height: 1.15;
+}
+.inning-scoreboard-initials {
+  margin-top: 2px;
+  overflow: hidden;
+  font-size: 10px;
+  line-height: 1.15;
+  text-overflow: ellipsis;
+}
+.inning-scoreboard tbody td {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+}

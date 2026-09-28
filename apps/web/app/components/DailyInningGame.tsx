@@ -2,7 +2,7 @@
 
 import type { JSX } from 'react';
 import { useEffect, useMemo, useState } from 'react';
-import { createDailyShareResult, formatDailyShareText, getDailyAtBatPointsRemaining, type PlayerSearchResult } from '@initial-baseball/engine';
+import { createDailyShareResult, formatDailyShareText, type PlayerSearchResult } from '@initial-baseball/engine';
 import {
   CLASSIC_DAILY_RULESET_VERSION,
   isDailyPointsRulesetVersion,
@@ -24,6 +24,7 @@ import type {
   DailyHintBundle,
 } from '../dailyRuntimeContracts';
 import { createDailyScorecardPoints, type DailyScorecardAnswers } from '../dailyScorecard';
+import { createDailyNineInningScoreboardPresentation } from '../dailyNineInningScoreboardPresentation';
 import { useCompletedDailyResultSubmission } from '../useCompletedDailyResultSubmission';
 import { useDailyGameplayResolutionRequests } from '../useDailyGameplayResolutionRequests';
 import { createDailyNineAtBatComparisonInput, useDailyNineAtBatComparison } from '../useDailyNineAtBatComparison';
@@ -32,6 +33,7 @@ import { useDailyNineScorecardComparisons } from '../useDailyNineScorecardCompar
 import { AtBatCard } from './AtBatCard';
 import { DailyScorebug } from './DailyScorebug';
 import { GameCompleteView } from './GameCompleteView';
+import { InningScoreboard } from './InningScoreboard';
 import { PitchResultList } from './PitchResultList';
 
 type DailyInningGameProps = {
@@ -81,9 +83,10 @@ export function DailyInningGame({
     rulesetVersion: gameState.rulesetVersion,
     completedPitchNumbers,
   });
+  const displayedCompletedAtBats = pendingAdvance?.completedAtBats ?? gameState.completedAtBats;
   const scorecardPoints = useMemo(
-    () => createDailyScorecardPoints(gameState.completedAtBats, gameState.rulesetVersion),
-    [gameState.completedAtBats, gameState.rulesetVersion],
+    () => createDailyScorecardPoints(displayedCompletedAtBats, gameState.rulesetVersion),
+    [displayedCompletedAtBats, gameState.rulesetVersion],
   );
   const completedResultSubmission = useCompletedDailyResultSubmission(hasLoadedSavedState, gameState);
   const gameplayPersistence = useDailyGameplayPersistence({
@@ -182,25 +185,37 @@ export function DailyInningGame({
     return <div className="game-shell" />;
   }
   const activePitch = currentPitch;
-  const atBatPointsRemaining = getDailyAtBatPointsRemaining({
-    rulesetVersion: gameState.rulesetVersion,
-    hintsRevealed: atBatState.revealCount,
-    wrongGuesses: atBatState.strikeCount,
-    atBatComplete: atBatState.submittedResult !== null && atBatState.submittedResult.kind !== 'incorrect',
-  });
+  const displayedPoints = pendingAdvance?.points ?? gameState.points;
+  const inningScoreboard = isDailyPointsRulesetVersion(gameState.rulesetVersion)
+    ? createDailyNineInningScoreboardPresentation({
+        pitches: puzzle.pitches,
+        currentPitchNumber: activePitch.pitchNumber,
+        rulesetVersion: gameState.rulesetVersion,
+        atBatPoints: scorecardPoints,
+        atBatComparisons: scorecardComparisons.comparisons,
+        activeAtBatComparison: atBatComparison.state,
+        activeAtBatResolved: pendingAdvance !== null,
+        totalPoints: displayedPoints.points,
+        gameCompleted: displayedPoints.completed,
+        completedComparison: completedComparison.state,
+      })
+    : null;
   const terminalPending = pendingAdvance?.points.completed === true || pendingAdvance?.score.completed === true;
 
   return (
     <div className="game-shell">
-      <DailyScorebug
-        currentAtBat={activePitch.pitchNumber}
-        totalAtBats={puzzle.pitches.length}
-        rulesetVersion={gameState.rulesetVersion}
-        summary={pendingAdvance?.score ?? gameState.score}
-        points={pendingAdvance?.points ?? gameState.points}
-        atBatPointsRemaining={atBatPointsRemaining}
-        bases={pendingAdvance?.inning.bases ?? gameState.inning.bases}
-      />
+      {inningScoreboard === null ? (
+        <DailyScorebug
+          currentAtBat={activePitch.pitchNumber}
+          totalAtBats={puzzle.pitches.length}
+          rulesetVersion={gameState.rulesetVersion}
+          summary={pendingAdvance?.score ?? gameState.score}
+          points={displayedPoints}
+          bases={pendingAdvance?.inning.bases ?? gameState.inning.bases}
+        />
+      ) : (
+        <InningScoreboard {...inningScoreboard} />
+      )}
       <AtBatCard
         atBat={activePitch}
         rulesetVersion={gameState.rulesetVersion}
