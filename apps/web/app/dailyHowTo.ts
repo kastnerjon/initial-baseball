@@ -2,7 +2,6 @@ import {
   CLASSIC_DAILY_RULESET_VERSION,
   POINTS_V3_DAILY_RULESET_VERSION,
   POINTS_V4_DAILY_RULESET_VERSION,
-  type DailyRulesetVersion,
 } from '@initial-baseball/shared';
 
 export type DailyHowToRulesetVersion =
@@ -66,12 +65,4 @@ export function getDailyHowToContent(
 
 function assertNeverRuleset(value: never): never {
   throw new Error(`Unsupported How to play ruleset: ${String(value)}`);
-}
-
-export function isDailyHowToRulesetVersion(
-  rulesetVersion: DailyRulesetVersion,
-): rulesetVersion is DailyHowToRulesetVersion {
-  return rulesetVersion === CLASSIC_DAILY_RULESET_VERSION
-    || rulesetVersion === POINTS_V3_DAILY_RULESET_VERSION
-    || rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION;
 }
