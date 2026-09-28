@@ -282,10 +282,13 @@
   width: 16%;
 }
 .daily-nine-scorecard-player-column {
-  width: 46%;
+  width: 36%;
+}
+.daily-nine-scorecard-outcome-column {
+  width: 16%;
 }
 .daily-nine-scorecard-number-column {
-  width: 19%;
+  width: 16%;
 }
 .daily-nine-scorecard-table th,
 .daily-nine-scorecard-table td {

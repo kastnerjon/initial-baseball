@@ -77,6 +77,7 @@ function DailyNineScorecardTable({
       <colgroup>
         <col className="daily-nine-scorecard-initials-column" />
         <col className="daily-nine-scorecard-player-column" />
+        <col className="daily-nine-scorecard-outcome-column" />
         <col className="daily-nine-scorecard-number-column" />
         <col className="daily-nine-scorecard-number-column" />
       </colgroup>
@@ -84,6 +85,7 @@ function DailyNineScorecardTable({
         <tr>
           <th scope="col" aria-label="At-bat" />
           <th scope="col">Player</th>
+          <th scope="col">Outcome</th>
           <th scope="col">Score</th>
           <th scope="col">Avg</th>
         </tr>
@@ -95,6 +97,7 @@ function DailyNineScorecardTable({
             <td className="daily-nine-scorecard-player">
               {answers[row.pitchNumber] ?? 'Answer unavailable'}
             </td>
+            <td className="daily-nine-scorecard-outcome" aria-label={`Outcome ${row.outcome}`}>{row.outcome}</td>
             <td aria-label={`Your score ${row.score}`}>{row.score}</td>
             <td aria-label={`Average score ${row.average}`}>{row.average}</td>
           </tr>

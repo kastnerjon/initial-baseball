@@ -18,7 +18,7 @@ describe('Daily Nine scorecard comparison presentation', () => {
     })).toBeNull();
   });
 
-  it('creates one shared initials / score / average row model', () => {
+  it('creates one shared initials / outcome / score / average row model', () => {
     expect(createDailyNineScorecardRows(
       [{ initials: 'BB', outcome: 'K' }, { initials: 'KGJ', outcome: 'HR' }],
       { 1: 0, 2: 7 },
@@ -27,8 +27,8 @@ describe('Daily Nine scorecard comparison presentation', () => {
         2: { status: 'success', resolvedAtBatCount: 1, averagePoints: 6 },
       },
     )).toEqual([
-      { pitchNumber: 1, initials: 'BB', score: '0', average: '7.0' },
-      { pitchNumber: 2, initials: 'KGJ', score: '7', average: '—' },
+      { pitchNumber: 1, initials: 'BB', outcome: 'K', score: '0', average: '7.0' },
+      { pitchNumber: 2, initials: 'KGJ', outcome: 'HR', score: '7', average: '—' },
     ]);
   });
 
@@ -41,15 +41,15 @@ describe('Daily Nine scorecard comparison presentation', () => {
         2: { status: 'success', resolvedAtBatCount: 5, averagePoints: 2.2 },
       },
     )).toEqual([
-      { pitchNumber: 1, initials: 'DW', score: '0.5', average: '1.4' },
-      { pitchNumber: 2, initials: 'CCS', score: '2', average: '2.2' },
+      { pitchNumber: 1, initials: 'DW', outcome: 'BB', score: '0.5', average: '1.4' },
+      { pitchNumber: 2, initials: 'CCS', outcome: '2B', score: '2', average: '2.2' },
     ]);
   });
 
   it('formats a fixed-width share table from the same rows', () => {
     expect(formatDailyNineScorecardShareTable([
-      { pitchNumber: 1, initials: 'BB', score: '0', average: '7.0' },
-      { pitchNumber: 2, initials: 'KGJ', score: '7', average: '—' },
+      { pitchNumber: 1, initials: 'BB', outcome: 'K', score: '0', average: '7.0' },
+      { pitchNumber: 2, initials: 'KGJ', outcome: 'HR', score: '7', average: '—' },
     ])).toEqual([
       '       SCORE   AVG',
       'BB:        0   7.0',
