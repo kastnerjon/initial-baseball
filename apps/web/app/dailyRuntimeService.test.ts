@@ -6,6 +6,7 @@ import {
   DEFAULT_DAILY_STATS_HINT_CONFIG,
   LEGACY_DAILY_RULESET_VERSION,
   POINTS_V1_DAILY_RULESET_VERSION,
+  POINTS_V4_DAILY_RULESET_VERSION,
   type DailyPuzzle,
 } from '@initial-baseball/shared';
 import { describe, expect, it } from 'vitest';
@@ -52,6 +53,7 @@ describe('Daily canonical runtime service', () => {
     const serialized = JSON.stringify(bootstrap);
 
     expect(bootstrap.rulesetVersion).toBe(CURRENT_DAILY_RULESET_VERSION);
+    expect(bootstrap.rulesetVersion).toBe(POINTS_V4_DAILY_RULESET_VERSION);
     expect(bootstrap.puzzle.pitches).toHaveLength(9);
     expect(bootstrap.puzzle.pitches[0]).toEqual({ pitchNumber: 1, initials: 'HA' });
     expect(tokens.verify(bootstrap.progressionToken)).toEqual(initialClaims());
