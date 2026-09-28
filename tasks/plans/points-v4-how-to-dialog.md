@@ -117,13 +117,7 @@ The server bootstrap remains authoritative for the ruleset and the dialog receiv
 
 ## H5b handoff
 
-After H5a is merged and production-verified, H5b is the separate cutover PR:
-- re-verify live main and Pacific date boundary;
-- run the documented v4 readiness suite, including current-save isolation, result retry/failure, comparison identity/failure, concurrent-tab/takeover invariants and archive exact-version tests;
-- switch `CURRENT_DAILY_RULESET_VERSION` from v3 to v4 last;
-- update default/max-score assumptions and canonical docs;
-- verify Preview/live copy becomes 4/3/2/1/0.5/0 and 36 max;
-- verify v3 persisted populations remain untouched and v3/v4 comparisons stay separate.
+H5b subsequently activates points-v4 as the public default. The owner explicitly waived the planned Pacific-boundary timing and authorized a September 27 Pacific mid-puzzle cutover. The deployed isolation model is therefore critical: old v3 saves/results remain untouched, while new v4 sessions use separate gameplay-save, journal/lock, result and comparison identities. Scope: `tasks/plans/points-v4-public-cutover.md`.
 
 ## Documentation impact
 
