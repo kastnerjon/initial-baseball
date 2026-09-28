@@ -144,13 +144,13 @@ The checkpoint preserves the server-selected ruleset as well as pitch, strike, a
 
 Claims contain only contract/ruleset version, puzzle ID/date, current pitch, reveal count, strike count, recorded outs, and completion. Tokens contain no hints or answers.
 
-Valid pre-ruleset tokens normalize to `legacy-inning-v1`. Valid `classic-inning-v1`, `points-v1`, `points-v2`, and `points-v3` claims round-trip without reinterpretation. Ruleset identity is signed and cannot be changed by a client without invalidating the token signature. Tokens are stateless and replayable; anonymous scoring is not tamper-proof. The runtime issues Classic bootstrap claims for `/classic` and points-v3 claims for `/`; the browser does not choose or rewrite the signed ruleset after bootstrap.
+Valid pre-ruleset tokens normalize to `legacy-inning-v1`. Valid `classic-inning-v1`, `points-v1`, `points-v2`, `points-v3`, and `points-v4` claims round-trip without reinterpretation. Ruleset identity is signed and cannot be changed by a client without invalidating the token signature. Tokens are stateless and replayable; anonymous scoring is not tamper-proof. The runtime now issues points-v4 bootstrap claims for `/` and Classic claims for `/classic`; historical signed claims keep their original exact ruleset.
 
 ## Completed-game result submission
 
 ### `POST /api/daily/results`
 
-This anonymous endpoint accepts exactly one completed-game submission for an exact supported result ruleset: `points-v3`, `points-v4`, or `classic-inning-v1`. It is not called per hint, guess, or at-bat. H3 permits exact v3/v4 browser completed-result delivery records (plus retained Classic where enabled) under separate ruleset keys; the ordinary public Daily still creates v3 today because the public default has not switched.
+This anonymous endpoint accepts exactly one completed-game submission for an exact supported result ruleset: `points-v3`, `points-v4`, or `classic-inning-v1`. It is not called per hint, guess, or at-bat. H3 permits exact v3/v4 browser completed-result delivery records (plus retained Classic where enabled) under separate ruleset keys; after H5b the ordinary public Daily creates v4 records while existing v3 records remain immutable and separately keyed.
 
 Request contract:
 
