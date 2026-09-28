@@ -13,7 +13,7 @@ describe('Daily Nine comparison preload request plan', () => {
       requestedPitchNumbers,
       pendingRefreshPitchNumbers: [],
       comparisons: {},
-          })).toEqual([1, 2, 3]);
+    })).toEqual([1, 2, 3]);
 
     expect(createDailyNineScorecardComparisonRequestPlan({
       requestedPitchNumbers,
@@ -23,7 +23,7 @@ describe('Daily Nine comparison preload request plan', () => {
         2: success(12, 2.4),
         3: success(12, 2.3),
       },
-          })).toEqual([4, 5, 6]);
+    })).toEqual([4, 5, 6]);
   });
 
   it('does not let queued reads exceed the concurrency cap', () => {
@@ -35,7 +35,7 @@ describe('Daily Nine comparison preload request plan', () => {
         2: { status: 'loading' },
         3: { status: 'loading' },
       },
-          })).toEqual([]);
+    })).toEqual([]);
   });
 
   it('refreshes only eligible completed slots when gameplay advances', () => {
