@@ -244,7 +244,7 @@ export function createDailyNineScorecardComparisonRequestPlan({
       })
     : [];
 
-  return [...missingPitchNumbers, ...refreshPitchNumbers].slice(0, availableSlots);
+  return [...refreshPitchNumbers, ...missingPitchNumbers].slice(0, availableSlots);
 }
 
 function normalizePitchNumbers(pitchNumbers: number[]): number[] {
