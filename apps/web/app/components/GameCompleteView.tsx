@@ -8,6 +8,7 @@ import type { DailyNineScorecardComparisons } from '../useDailyNineScorecardComp
 import { createDailyNineScorecardShareText } from '../dailyNineScorecardComparisonPresentation';
 import { DailyNineCompletedComparison } from './DailyNineCompletedComparison';
 import { ScoreLine } from './ScoreLine';
+import { InningScoreboard, type InningScoreboardProps } from './InningScoreboard';
 
 type GameCompleteViewProps = {
   shareResult: DailyShareResult;
@@ -16,6 +17,7 @@ type GameCompleteViewProps = {
   atBatPoints?: DailyScorecardPoints;
   comparison?: DailyNineCompletedComparisonState;
   atBatComparisons?: DailyNineScorecardComparisons;
+  inningScoreboard?: InningScoreboardProps;
   onResetToday?: () => void;
 };
 
@@ -26,6 +28,7 @@ export function GameCompleteView({
   atBatPoints = {},
   comparison = { status: 'idle' },
   atBatComparisons = {},
+  inningScoreboard,
   onResetToday,
 }: GameCompleteViewProps): JSX.Element {
   const isPointsGame = isDailyPointsRulesetVersion(shareResult.rulesetVersion);
@@ -53,6 +56,7 @@ export function GameCompleteView({
           <ScoreLine summary={shareResult.summary} />
         )}
       </section>
+      {inningScoreboard !== undefined ? <InningScoreboard {...inningScoreboard} /> : null}
       <PitchResultList
         answers={scorecardAnswers}
         {...(isPointsGame ? { points: atBatPoints } : {})}

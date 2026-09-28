@@ -21,7 +21,7 @@ import type {
 
 type DailyNineInningScoreboardPresentationInput = {
   pitches: Pick<DailyPublicPuzzlePitch, 'pitchNumber' | 'initials'>[];
-  currentPitchNumber: number;
+  currentPitchNumber: number | null;
   rulesetVersion: DailyRulesetVersion;
   atBatPoints: DailyScorecardPoints;
   atBatComparisons: DailyNineScorecardComparisons;
@@ -50,14 +50,14 @@ export function createDailyNineInningScoreboardPresentation({
     columns: pitches.map((pitch) => {
       const ownPoints = atBatPoints[pitch.pitchNumber];
       const resolved = ownPoints !== undefined;
-      const comparison = pitch.pitchNumber === currentPitchNumber && activeAtBatResolved
+      const comparison = currentPitchNumber !== null && pitch.pitchNumber === currentPitchNumber && activeAtBatResolved
         ? toScorecardComparisonState(activeAtBatComparison)
         : atBatComparisons[pitch.pitchNumber];
 
       return {
         atBatNumber: pitch.pitchNumber,
         initials: pitch.initials,
-        current: pitch.pitchNumber === currentPitchNumber,
+        current: currentPitchNumber !== null && pitch.pitchNumber === currentPitchNumber,
         user: resolved
           ? createScoreValue(
               formatDailyScorecardPoints(ownPoints),
