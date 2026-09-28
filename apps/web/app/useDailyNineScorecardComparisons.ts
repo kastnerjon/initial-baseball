@@ -139,8 +139,6 @@ export function useDailyNineScorecardComparisons({
 
     for (const pitchNumber of pitchNumbersToRequest) {
       pendingCompletionRefreshesRef.current.delete(pitchNumber);
-
-    for (const pitchNumber of pitchNumbersToRequest) {
       if (!retryBudgetRef.current.has(pitchNumber)) retryBudgetRef.current.set(pitchNumber, 0);
 
       const key: DailyNineAtBatComparisonRequestKey = {
