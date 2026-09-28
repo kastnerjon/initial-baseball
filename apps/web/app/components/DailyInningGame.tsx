@@ -27,7 +27,10 @@ import { createDailyScorecardPoints, type DailyScorecardAnswers } from '../daily
 import { createDailyNineInningScoreboardPresentation } from '../dailyNineInningScoreboardPresentation';
 import { useCompletedDailyResultSubmission } from '../useCompletedDailyResultSubmission';
 import { useDailyGameplayResolutionRequests } from '../useDailyGameplayResolutionRequests';
-import { createDailyNineAtBatComparisonInput, useDailyNineAtBatComparison } from '../useDailyNineAtBatComparison';
+import {
+  createDailyNineAtBatComparisonInput,
+  createDailyNineAtBatComparisonState,
+} from '../dailyNineAtBatComparisonState';
 import { createDailyNineCompletedComparisonInput, useDailyNineCompletedComparison } from '../useDailyNineCompletedComparison';
 import { useDailyNineScorecardComparisons } from '../useDailyNineScorecardComparisons';
 import { AtBatCard } from './AtBatCard';
@@ -62,15 +65,13 @@ export function DailyInningGame({
   const resolutionRequests = useDailyGameplayResolutionRequests(setRequestError);
   const [savedGameRestoreController] = useState(createDailySavedGameRestoreController);
   const currentPitch = puzzle.pitches[currentPitchIndex] ?? null;
-  const atBatComparison = useDailyNineAtBatComparison(hasLoadedSavedState
-    ? createDailyNineAtBatComparisonInput({
-        puzzle, rulesetVersion: gameState.rulesetVersion, pitch: currentPitch, result: atBatState.submittedResult,
-        currentPoints: gameState.points.points, terminalPoints: pendingAdvance?.points.points ?? null,
-      })
-    : null);
   const completedComparison = useDailyNineCompletedComparison(createDailyNineCompletedComparisonInput({
     puzzle, rulesetVersion: gameState.rulesetVersion, points: gameState.points, terminalPoints: pendingAdvance?.points ?? null,
   }));
+  const requestedPitchNumbers = useMemo(
+    () => puzzle.pitches.map(pitch => pitch.pitchNumber),
+    [puzzle.pitches],
+  );
   const completedPitchNumbers = useMemo(
     () => puzzle.pitches
       .slice(0, gameState.completedPitchLines.length)
@@ -81,8 +82,21 @@ export function DailyInningGame({
     enabled: hasLoadedSavedState,
     puzzle,
     rulesetVersion: gameState.rulesetVersion,
+    requestedPitchNumbers,
     completedPitchNumbers,
   });
+  const atBatComparisonInput = hasLoadedSavedState
+    ? createDailyNineAtBatComparisonInput({
+        puzzle, rulesetVersion: gameState.rulesetVersion, pitch: currentPitch, result: atBatState.submittedResult,
+        currentPoints: gameState.points.points, terminalPoints: pendingAdvance?.points.points ?? null,
+      })
+    : null;
+  const atBatComparisonState = createDailyNineAtBatComparisonState(
+    atBatComparisonInput === null
+      ? undefined
+      : scorecardComparisons.comparisons[atBatComparisonInput.key.pitchNumber],
+    atBatComparisonInput?.ownPoints ?? null,
+  );
   const displayedCompletedAtBats = pendingAdvance?.completedAtBats ?? gameState.completedAtBats;
   const scorecardPoints = useMemo(
     () => createDailyScorecardPoints(displayedCompletedAtBats, gameState.rulesetVersion),
@@ -160,8 +174,6 @@ export function DailyInningGame({
           rulesetVersion: gameState.rulesetVersion,
           atBatPoints: scorecardPoints,
           atBatComparisons: scorecardComparisons.comparisons,
-          activeAtBatComparison: { status: 'idle' },
-          activeAtBatResolved: false,
           totalPoints: gameState.points.points,
           gameCompleted: true,
           completedComparison: completedComparison.state,
@@ -208,8 +220,6 @@ export function DailyInningGame({
         rulesetVersion: gameState.rulesetVersion,
         atBatPoints: scorecardPoints,
         atBatComparisons: scorecardComparisons.comparisons,
-        activeAtBatComparison: atBatComparison.state,
-        activeAtBatResolved: pendingAdvance !== null,
         totalPoints: displayedPoints.points,
         gameCompleted: displayedPoints.completed,
         completedComparison: completedComparison.state,
@@ -241,7 +251,7 @@ export function DailyInningGame({
         requestPending={requestPending}
         giveUpPending={resolutionRequests.pendingAction === 'give_up'}
         requestError={requestError}
-        comparison={atBatComparison.state}
+        comparison={atBatComparisonState}
         terminalAwardedPoints={terminalAwardedPoints}
         nextActionLabel={terminalPending ? 'View Results' : 'Next At Bat'}
         onQueryChange={(query) => {
@@ -364,7 +374,6 @@ export function DailyInningGame({
       return;
     }
 
-    atBatComparison.invalidate();
     setGameState(currentGameState => ({
       ...currentGameState,
       status: pendingAdvance.points.completed || pendingAdvance.score.completed || pendingAdvance.nextPitchIndex >= puzzle.pitches.length
@@ -385,7 +394,6 @@ export function DailyInningGame({
 
   function handleResetToday(): void {
     if (!gameplayPersistence.resetPersistedState()) return;
-    atBatComparison.invalidate();
     completedComparison.invalidate();
     scorecardComparisons.invalidate();
     resolutionRequests.invalidate();
@@ -407,7 +415,6 @@ export function DailyInningGame({
   }
 
   function restoreLoadedGame(loaded: LoadedSavedDailyGame | null): void {
-    atBatComparison.invalidate();
     completedComparison.invalidate();
     scorecardComparisons.invalidate();
     resolutionRequests.invalidate();
