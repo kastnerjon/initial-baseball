@@ -40,3 +40,19 @@ describe('PlayerRevealCard stat columns', () => {
     expect(html.match(/role="region" aria-label="(?:Career|Season-by-season) pitching/g)).toHaveLength(2);
   });
 });
+
+
+describe('PlayerRevealCard season table mobile presentation contract', () => {
+  it('marks Team separately so narrow CSS can let it scroll while Season remains the row header', () => {
+    const html = renderToStaticMarkup(<PlayerRevealCard reveal={reveal} />);
+    const seasonTables = [...html.matchAll(/<div class="player-reveal-stat-strip"[^>]*aria-label="Season-by-season[^>]*>(.*?)<\/table>/g)]
+      .map((match) => match[1] ?? '');
+
+    expect(seasonTables).toHaveLength(2);
+    for (const table of seasonTables) {
+      expect(table).toContain('<th scope="col" class="stat-team">Team</th>');
+      expect(table).toContain('<th scope="row">2025</th>');
+      expect(table).toContain('<td class="stat-team">NYA</td>');
+    }
+  });
+});

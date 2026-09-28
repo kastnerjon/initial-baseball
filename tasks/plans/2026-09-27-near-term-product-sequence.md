@@ -1,10 +1,10 @@
 # Near-term product sequence — search, Daily polish, archive beta
 
-Status: approved implementation sequence; search relevance, inning scoreboard, terminal-result callout, and personal scorecard Outcome complete through September 28, 2026.
+Status: approved implementation sequence; Daily polish through the narrow-mobile season-table sticky-column fix is complete through September 28, 2026.
 
 ## Goal
 
-Continue from the production-verified points-v4 cutover with small, reversible PRs. Search relevance and the Daily Nine inning scoreboard are complete. Finish the narrow-mobile season-table sticky-column polish, then begin exercising the already-built archive foundation with real lineups as **pre-launch archive test data**. The eventual permanent Daily #1 and launch epoch remain deliberately undecided.
+Continue from the production-verified points-v4 cutover with small, reversible PRs. The bounded visual Daily polish sequence is complete. Next, preload the nine scoreboard comparison averages from game initialization, then begin exercising the already-built archive foundation with real lineups as **pre-launch archive test data**. The eventual permanent Daily #1 and launch epoch remain deliberately undecided.
 
 ## Operating contract
 
@@ -62,16 +62,17 @@ New archive attempts use the then-current public ruleset (currently points-v4); 
 2. **Daily Nine inning scoreboard — complete.** Replaced the points-mode status banner with the reusable 1–9 initials / YOU / AVG / TOTAL table. TOTAL AVG uses completed-game comparison data only after completion; no backend aggregation, scoring, or persistence changes.
 3. **Terminal result callout — complete.** Center the resolved Daily Nine callout as canonical baseball outcome plus authoritative awarded points, with no scoring or persistence change.
 4. **Personal scorecard Outcome column — complete.** Show recorded canonical outcomes alongside SCORE and AVG in the private in-app scorecard without inferring outcomes from points; keep copied share output spoiler-safe and outcome-free.
-5. **Season-table mobile sticky-column polish — next.** Keep only Season sticky on narrow horizontally scrolling reveal tables; Team scrolls with stats.
-6. **Archive-beta identity/reset contract.** Decide and encode the narrow pre-launch series/reset boundary after inspecting the existing `permanent-v1` contracts. No archive UI or puzzle issuance in this PR.
-7. **Archive-beta issuance.** Freeze real authoritative lineups/clues into the test archive through the existing immutable schema-v2 issuance path. Verify exact read-back/materialization; no public routes yet.
-8. **Recurring issuance.** Attach idempotent issuance to the narrowest authoritative publication lifecycle seam if appropriate; do not invent a cron or fabricate missing lineups without evidence.
-9. **Archive routes/navigation.** Expose only actually issued test puzzles; missing/unissued puzzles fail closed. Reuse the existing server archive runtime.
-10. **Archive gameplay.** Reuse Daily Nine gameplay under exact archive puzzle/ruleset identity; prove current Daily, separate archive puzzles, versions, tabs, restore, and reset cannot overwrite one another.
-11. **Archive results/comparisons.** Route archived result delivery and YOU/AVG/completed comparison by exact archive puzzle + exact ruleset; never merge same-date beta Daily populations.
-12. **Local archive history.** Browser/device-only completion and score history keyed by immutable puzzle + game/ruleset. Choose first-result/replay policy explicitly before implementation.
-13. **Archive sharing/polish/QA.** Spoiler-safe permanent/test archive identity in share output as appropriate, navigation polish, failure states, physical mobile/browser QA.
-14. **Later permanent-launch cutover.** After the beta archive has been exercised, explicitly choose the surviving public game/rules, permanent launch date and true Daily #1; retire/reset pre-launch archive test data through the settled reset boundary and preserve the new permanent series thereafter.
+5. **Season-table mobile sticky-column polish — complete.** At narrow widths keep only Season horizontally sticky while Team scrolls with stats; preserve the sticky header row, table overflow, and existing desktop two-column sticky presentation.
+6. **Scoreboard AVG preload — next.** Request all nine exact-slot comparison averages when Daily Nine initializes and retain/display them in the scoreboard throughout play. Comparison I/O must remain nonblocking; unavailable/withheld values stay `—`; completed TOTAL AVG continues to use the authoritative completed-game average and must never be derived by summing per-AB averages.
+7. **Archive-beta identity/reset contract.** Decide and encode the narrow pre-launch series/reset boundary after inspecting the existing `permanent-v1` contracts. No archive UI or puzzle issuance in this PR.
+8. **Archive-beta issuance.** Freeze real authoritative lineups/clues into the test archive through the existing immutable schema-v2 issuance path. Verify exact read-back/materialization; no public routes yet.
+9. **Recurring issuance.** Attach idempotent issuance to the narrowest authoritative publication lifecycle seam if appropriate; do not invent a cron or fabricate missing lineups without evidence.
+10. **Archive routes/navigation.** Expose only actually issued test puzzles; missing/unissued puzzles fail closed. Reuse the existing server archive runtime.
+11. **Archive gameplay.** Reuse Daily Nine gameplay under exact archive puzzle/ruleset identity; prove current Daily, separate archive puzzles, versions, tabs, restore, and reset cannot overwrite one another.
+12. **Archive results/comparisons.** Route archived result delivery and YOU/AVG/completed comparison by exact archive puzzle + exact ruleset; never merge same-date beta Daily populations.
+13. **Local archive history.** Browser/device-only completion and score history keyed by immutable puzzle + game/ruleset. Choose first-result/replay policy explicitly before implementation.
+14. **Archive sharing/polish/QA.** Spoiler-safe permanent/test archive identity in share output as appropriate, navigation polish, failure states, physical mobile/browser QA.
+15. **Later permanent-launch cutover.** After the beta archive has been exercised, explicitly choose the surviving public game/rules, permanent launch date and true Daily #1; retire/reset pre-launch archive test data through the settled reset boundary and preserve the new permanent series thereafter.
 
 ## Stop conditions
 
