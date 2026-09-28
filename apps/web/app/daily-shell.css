@@ -86,6 +86,8 @@
   background: var(--paper-light);
   color: var(--ink);
   box-shadow: 0 18px 54px #153b2d33;
+  overflow: auto;
+  overscroll-behavior: contain;
 }
 .daily-how-to-dialog::backdrop {
   background: #153b2d73;
