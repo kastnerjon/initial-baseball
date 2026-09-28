@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useRef, type JSX, type MouseEvent } from 'react';
+import React, { useEffect, useId, useRef, type JSX, type MouseEvent } from 'react';
 import type { DailyHowToContent } from '../dailyHowTo';
 
 type DailyHowToDialogProps = {
