@@ -1,3 +1,5 @@
+> September 27 H5b follow-up: this H4 plan remains historical evidence for the pre-cutover checkpoint. H5b subsequently switched `CURRENT_DAILY_RULESET_VERSION` to `points-v4`; the exact-version comparison guarantees in this plan remain unchanged.
+
 # Points-v4 H4 comparison and presentation compatibility
 
 Status: implementation scope; public comparison/presentation compatibility only  
