@@ -27,20 +27,20 @@ Detailed content direction: `docs/product/lineup-content-system.md`.
 2. Each at-bat starts with initials.
 3. All four hints for the active batter are already authorized and local before the at-bat appears.
 4. Pressing Hint reveals the next local value immediately and adopts its signed reveal-depth checkpoint; it does not call the network.
-5. Under the current `points-v3` Daily Nine policy, each at-bat starts at 7 points; every revealed hint and wrong guess costs 1 point.
+5. Under the current `points-v4` Daily Nine policy, a correct guess scores 4 points on initials, then 3, 2, 1, or 0.5 after hints 1–4; wrong guesses one and two do not deduct.
 6. Three wrong guesses—or Give Up—produces K and 0 points.
 7. The resolved at-bat shows both the baseball outcome and the points awarded before the player reveal.
 8. Resolution reveals the canonical current player and supplies the next batter’s authorized hint bundle.
-9. `points-v3` continues through all nine scheduled at-bats.
-10. Completion produces a score out of 63 and spoiler-safe initials/outcome sharing.
+9. `points-v4` continues through all nine scheduled at-bats.
+10. Completion produces a score out of 36, in 0.5-point steps, and spoiler-safe initials/outcome sharing.
 
-Player-facing Daily Nine explanation: “Each at-bat is worth up to 7 points. Every hint or wrong guess costs 1 point. Three wrong guesses—or Give Up—score 0 points. Play all 9 at-bats for up to 63 points.”
+Player-facing Daily Nine explanation: “Correct on initials is worth 4 points. Hints 1–4 are worth 3, 2, 1, then 0.5. Wrong guesses one and two do not reduce your score. A third wrong guess—or Give Up—scores 0. Play all 9 at-bats for up to 36 points.”
 
 Compatible `points-v1` sessions retain `5/4/3/2/1/0` and a 45-point maximum. Compatible pre-ruleset sessions remain `legacy-inning-v1` and retain their prior three-out behavior.
 
 ## Alternate beta game: Classic Inning
 
-Daily Nine remains the default points-v3 game at `/`. Classic Inning uses `classic-inning-v1`: the same ordered daily nine, runner advancement and run scoring, ending at three outs or nine at-bats. Its implementation is retained, but normal web availability defaults OFF. While `CLASSIC_INNING_ENABLED` is absent or not exactly `true`, no Daily/Classic mode navigation is rendered and `/classic` redirects to `/` before Classic bootstrap composition. Setting it to `true` restores the existing route and navigation without changing Classic code or stored data. Classic browser saves/reset remain isolated from the existing default Daily storage key, and its results/shares remain game/ruleset-specific.
+Daily Nine remains the default points-v4 game at `/`. Classic Inning uses `classic-inning-v1`: the same ordered daily nine, runner advancement and run scoring, ending at three outs or nine at-bats. Its implementation is retained, but normal web availability defaults OFF. While `CLASSIC_INNING_ENABLED` is absent or not exactly `true`, no Daily/Classic mode navigation is rendered and `/classic` redirects to `/` before Classic bootstrap composition. Setting it to `true` restores the existing route and navigation without changing Classic code or stored data. Classic browser saves/reset remain isolated from the existing default Daily storage key, and its results/shares remain game/ruleset-specific.
 
 Daily Nine and Classic remain independently modeled games, not two score views of one completion. Their result/comparison populations never mix. Hiding Classic does not delete or reinterpret prior Classic saves, results, comparison infrastructure, or rules. The owner may later re-enable Classic, remove it separately, or separate the lineups; current infrastructure preserves those seams without building a generic mode framework.
 
@@ -64,7 +64,7 @@ A technical user can inspect all current hints before clicking them. This is acc
 
 ## Scoring and result facts
 
-The current `points-v3` Daily Nine beta policy awards max(0, 7 - hints revealed - wrong guesses) for correct resolutions and 0 for a third wrong guess or Give Up. The earlier `points-v2` policy (`4/3/2/1/0.5/0`) and `points-v1` policy remain supported for already-started signed or saved sessions. Stable raw at-bat facts preserve slot, initials, outcome, hints revealed, wrong guesses, and correct/strikeout/Give Up resolution. Ruleset version flows through token, browser state, result, and share contracts. Future scoring changes require a new version rather than rewriting completed results.
+Historical `points-v3` awards max(0, 7 - hints revealed - wrong guesses) for correct resolutions and 0 for a third wrong guess or Give Up. `points-v2` and `points-v1` remain compatibility-only for already-started signed or saved sessions. Stable raw at-bat facts preserve slot, initials, outcome, hints revealed, wrong guesses, and correct/strikeout/Give Up resolution. Ruleset version flows through token, browser state, result, and share contracts. Future scoring changes require a new version rather than rewriting completed results.
 
 The public Daily Nine now uses `points-v4`: HR 4, 3B 3, 2B 2, 1B 1, BB 0.5, K/Give Up 0; wrong guesses one and two do not deduct, while the third wrong guess is K. Nine at-bats span 0 through 36 in 0.5-point steps. Exact-version save/result/comparison infrastructure and the ruleset-aware How-to modal preserve historical v3 sessions while new public sessions use v4. The September 27 Pacific activation was explicitly allowed mid-puzzle, so that date may contain both v3 and v4 populations without merging them.
 

@@ -41,7 +41,7 @@ September 22 hosted verification closes two remaining public-selection checks wi
 
 ## Feature-development resumption checkpoint
 
-The September 22 QA pass has a hard stop. Remaining ordinary-browser, physical-mobile, saved-hydration, and authenticated-editor interaction checks are retained as manual pre-launch QA; they are not reasons to keep adding verification work in the absence of a concrete defect. Current `points-v3` scoring remains unchanged. Feature development resumes with **Permanent archive and local history**, preserving the existing one-bounded-concern-per-PR and fresh-eye review discipline.
+The September 22 QA pass has a hard stop. Remaining ordinary-browser, physical-mobile, saved-hydration, and authenticated-editor interaction checks are retained as manual pre-launch QA; they are not reasons to keep adding verification work in the absence of a concrete defect. At that September 22 checkpoint, `points-v3` scoring remained unchanged; the later H5b cutover made v4 current. Feature development resumes with **Permanent archive and local history**, preserving the existing one-bounded-concern-per-PR and fresh-eye review discipline.
 
 September 24 owner decisions now add a coordinated archive/gameplay roadmap: isolate archive saves and session ownership first; reorder supported hitter reveal stats to match Baseball-Reference's relative order; align hint 4 and add supported pitcher saves; remove terminal Jr/Sr from generated initials; introduce a *new* Daily Nine scoring version; and open mode-appropriate How to play on every page entry. Before public activation, that inactive scoring contract was finalized as HR 4, 3B 3, 2B 2, 1B 1, BB 0.5, K/Give Up 0, with no separate wrong-guess deduction. At the start of this roadmap, permanent snapshots froze canonical IDs but not clues/hints; PRs #257–#261 now establish the v2 issuance contract before archive materialization consumes it. Full architecture, dependencies, PR scopes, rollout checks, and the initial no-code decision record: `tasks/plans/2026-09-24-archive-and-gameplay-roadmap.md`. Archive browser save/session isolation is complete in PR #253. Each newly started archive play uses the then-current public scoring version; earlier attempts keep their original version, and comparisons bind exact permanent puzzle plus played ruleset. See `tasks/plans/archive-browser-save-isolation.md`.
 
@@ -184,18 +184,19 @@ The 4D foundation includes portable schema-1 points-v3 AB transport, pure engine
 
 ## Implemented gameplay
 
-New Daily Nine sessions use `points-v3`:
+New Daily Nine sessions use `points-v4`:
 
-- each at-bat starts at 7 points; each revealed hint or wrong guess costs 1;
+- correct on initials awards 4 points; hints 1–4 award 3, 2, 1, then 0.5;
+- wrong guesses one and two do not deduct points;
 - a third wrong guess or Give Up records K and awards 0;
-- all nine scheduled at-bats are played, for a 63-point maximum;
+- all nine scheduled at-bats are played, for a 36-point maximum;
 - the resolved at-bat shows both its baseball outcome and awarded points;
 - raw facts preserve slot, initials, outcome, hints revealed, wrong guesses, and correct/K/Give Up resolution;
 - ruleset version flows through token, local state, result, and share output;
 - compatible `points-v1` sessions retain `5/4/3/2/1/0` and a 45-point maximum;
 - compatible old sessions remain `legacy-inning-v1` with prior three-out behavior and no misleading point copy.
 
-`points-v3` is the current Daily Nine beta policy, not yet a frozen permanent-launch promise. Any later scoring change still requires an explicit new ruleset version.
+`points-v4` is the current Daily Nine beta policy, not yet a frozen permanent-launch promise. Historical `points-v3` remains exact-version compatibility only. Any later scoring change requires a new ruleset version rather than mutating persisted v4 history.
 
 ### Immediate active-batter hints
 
@@ -236,7 +237,7 @@ The points-v3 scorebug presents four equal-width metrics in game order: At bat, 
 
 Merged PR #140 adds initials → canonical answer → outcome for resolved players, including K/Give Up, plus an isolated spoiler-safe share card with Copy in its upper-right. Browser-only answer retention is additive to schema 3; old saves without names show Answer unavailable. This work is included in the deployed main branch. Scope: `tasks/plans/scorecard-answers.md`.
 
-Daily Nine is currently the default points-v3 beta game and Classic Inning is a separate classic-inning-v1 beta game using the same daily lineup, runner advancement and runs, ending at three outs or nine at-bats. Both may be played on the same date; saves/results/shares distinguish them and unplayed answers stay hidden. PR #141 merged portable policy/label/completion support, PR #155 merged the signed server transport/progression seam, and PR #156 merged `/classic`, navigation, isolated Classic saves, game-aware refresh/reset/results/sharing, and hidden unplayed answers while preserving existing Daily/legacy compatibility.
+Daily Nine is currently the default points-v4 beta game and Classic Inning is a separate classic-inning-v1 beta game using the same daily lineup, runner advancement and runs, ending at three outs or nine at-bats. Both may be played on the same date; saves/results/shares distinguish them and unplayed answers stay hidden. PR #141 merged portable policy/label/completion support, PR #155 merged the signed server transport/progression seam, and PR #156 merged `/classic`, navigation, isolated Classic saves, game-aware refresh/reset/results/sharing, and hidden unplayed answers while preserving existing Daily/legacy compatibility.
 
 The owner is keeping both games during beta to collect friend/user feedback, but realistically expects to choose one for broad launch. New shared infrastructure should therefore be game-aware without doubling expensive game-specific systems. Classic can later be disabled/removed without corrupting Daily Nine; the current shared lineup can also be separated later without redefining completed-result identity. Detailed source: `docs/product/beta-launch-results-archive.md`.
 
