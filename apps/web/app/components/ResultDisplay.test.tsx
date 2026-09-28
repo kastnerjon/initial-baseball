@@ -6,23 +6,22 @@ import { ResultDisplay } from './ResultDisplay';
 (globalThis as Record<string, unknown>).React = React;
 
 describe('ResultDisplay terminal semantics', () => {
-  it('shows Daily Nine terminal results as points rather than baseball outcomes', () => {
+  it('shows Daily Nine terminal results as baseball-native point callouts', () => {
     const correct = renderToStaticMarkup(
       <ResultDisplay
-        rulesetVersion="points-v3"
+        rulesetVersion="points-v4"
         result={{
           kind: 'correct',
-          revealedCount: 1,
-          outcome: '3B',
-          source: 1,
+          revealedCount: 0,
+          outcome: 'HR',
+          source: 'initials',
         }}
-        revealedCount={1}
-        wrongGuesses={2}
+        awardedPoints={4}
       />,
     );
     const strikeout = renderToStaticMarkup(
       <ResultDisplay
-        rulesetVersion="points-v3"
+        rulesetVersion="points-v4"
         result={{
           kind: 'strikeout',
           revealedCount: 0,
@@ -30,20 +29,18 @@ describe('ResultDisplay terminal semantics', () => {
           outcome: 'K',
           source: 'strikeout',
         }}
-        wrongGuesses={3}
+        awardedPoints={0}
       />,
     );
 
-    expect(correct).toContain('>Score<');
-    expect(correct).toContain('4 PTS');
-    expect(correct).not.toContain('>3B<');
-    expect(correct).not.toContain('>Outcome<');
+    expect(correct).toContain('result-card-points');
+    expect(correct).toContain('>HR! 4 PTS<');
+    expect(correct).not.toContain('>Score<');
 
-    expect(strikeout).toContain('>Score<');
-    expect(strikeout).toContain('0 PTS');
-    expect(strikeout).not.toContain('>K<');
+    expect(strikeout).toContain('result-card-points');
+    expect(strikeout).toContain('>K 0 PTS<');
+    expect(strikeout).not.toContain('>Score<');
     expect(strikeout).not.toContain('Strikeout');
-    expect(strikeout).not.toContain('>Outcome<');
   });
 
   it('keeps Classic terminal results baseball-native', () => {

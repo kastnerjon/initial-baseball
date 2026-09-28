@@ -36,6 +36,7 @@ type AtBatCardProps = {
   giveUpPending: boolean;
   requestError: string | null;
   comparison: DailyNineAtBatComparisonState;
+  terminalAwardedPoints: number | null;
   nextActionLabel?: string;
   onQueryChange: (query: string) => void;
   onSelectPlayer: (result: PlayerSearchResult) => void;
@@ -53,6 +54,7 @@ export function AtBatCard({
   giveUpPending,
   requestError,
   comparison,
+  terminalAwardedPoints,
   nextActionLabel = 'Next At Bat',
   onQueryChange,
   onSelectPlayer,
@@ -103,8 +105,7 @@ export function AtBatCard({
           <ResultDisplay
             result={resolvedTerminalResult}
             rulesetVersion={rulesetVersion}
-            revealedCount={state.revealCount}
-            wrongGuesses={state.strikeCount}
+            {...(terminalAwardedPoints === null ? {} : { awardedPoints: terminalAwardedPoints })}
           />
           <DailyNineAtBatComparison state={comparison} />
         </div>

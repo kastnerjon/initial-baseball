@@ -216,6 +216,9 @@ export function DailyInningGame({
       })
     : null;
   const terminalPending = pendingAdvance?.points.completed === true || pendingAdvance?.score.completed === true;
+  const terminalAwardedPoints = pendingAdvance === null
+    ? null
+    : pendingAdvance.points.points - gameState.points.points;
 
   return (
     <div className="game-shell">
@@ -239,6 +242,7 @@ export function DailyInningGame({
         giveUpPending={resolutionRequests.pendingAction === 'give_up'}
         requestError={requestError}
         comparison={atBatComparison.state}
+        terminalAwardedPoints={terminalAwardedPoints}
         nextActionLabel={terminalPending ? 'View Results' : 'Next At Bat'}
         onQueryChange={(query) => {
           setAtBatState(currentState => ({

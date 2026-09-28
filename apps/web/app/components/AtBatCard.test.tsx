@@ -191,6 +191,7 @@ function renderCard(input: {
       giveUpPending={input.giveUpPending}
       requestError={null}
       comparison={input.comparison ?? { status: 'idle' }}
+      terminalAwardedPoints={input.submittedResult === undefined ? null : 0}
       {...(input.nextActionLabel === undefined ? {} : { nextActionLabel: input.nextActionLabel })}
       onQueryChange={() => undefined}
       onSelectPlayer={() => undefined}

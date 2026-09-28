@@ -9,6 +9,11 @@
   color: var(--ink-soft);
   font-size: 11px;
 }
+.result-card-points {
+  display: grid;
+  justify-items: center;
+  text-align: center;
+}
 .result-value {
   color: var(--clubhouse);
   font-size: 24px;
