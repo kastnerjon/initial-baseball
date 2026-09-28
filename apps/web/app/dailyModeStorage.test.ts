@@ -1,5 +1,6 @@
 import {
   CLASSIC_DAILY_RULESET_VERSION,
+  CURRENT_DAILY_RULESET_VERSION,
   LEGACY_DAILY_RULESET_VERSION,
   POINTS_V1_DAILY_RULESET_VERSION,
   POINTS_V2_DAILY_RULESET_VERSION,
@@ -51,6 +52,24 @@ describe('dailyModeStorage', () => {
     daily.setItem('initial-baseball:daily:2026-09-18', 'daily-save');
     expect(storage.getItem('initial-baseball:daily:2026-09-18')).toBe('daily-save');
     expect(storage.getItem('initial-baseball:daily:classic:2026-09-18')).toBeNull();
+  });
+
+  it('applies the public cutover without consuming or overwriting an existing points-v3 save', () => {
+    expect(CURRENT_DAILY_RULESET_VERSION).toBe(POINTS_V4_DAILY_RULESET_VERSION);
+
+    const storage = new FakeStorage();
+    const historicalKey = 'initial-baseball:daily:2026-09-27';
+    const currentKey = 'initial-baseball:daily:ruleset:points-v4:2026-09-27';
+    storage.setItem(historicalKey, 'in-progress-points-v3');
+
+    const current = getDailyModeStorage(CURRENT_DAILY_RULESET_VERSION, storage);
+    if (current === null) throw new Error('Expected current Daily storage.');
+
+    expect(current.getItem(historicalKey)).toBeNull();
+    current.setItem(historicalKey, 'fresh-points-v4');
+
+    expect(storage.getItem(historicalKey)).toBe('in-progress-points-v3');
+    expect(storage.getItem(currentKey)).toBe('fresh-points-v4');
   });
 
   it('keeps a points-v4 current-Daily save physically isolated from the historical points-v3 key', () => {
