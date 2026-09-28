@@ -86,7 +86,6 @@ export function useDailyNineScorecardComparisons({
     }
 
     const requestedSet = new Set(normalizedRequestedPitchNumbers);
-    const completedSet = new Set(normalizedCompletedPitchNumbers);
     const stalePitchNumbers = Object.keys(cache.byPitch)
       .map(Number)
       .filter(pitchNumber => !requestedSet.has(pitchNumber));
