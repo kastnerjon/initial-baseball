@@ -1,3 +1,5 @@
+> September 27 H5b follow-up: finalized `points-v4` is now the live public Daily Nine default. The user explicitly authorized a mid-puzzle September 27 Pacific cutover; existing v3 saves/results remain exact-version isolated and are not reinterpreted.
+
 # Redefine points-v4 before activation
 
 Status: implementation scope; redefine inactive points-v4 across all already-merged infrastructure before H browser/default activation  
