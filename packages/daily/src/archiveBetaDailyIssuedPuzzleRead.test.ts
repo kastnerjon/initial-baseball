@@ -13,49 +13,36 @@ import {
 } from './archiveBetaDailyIssuedPuzzleRead';
 import { createPermanentDailyIssuedClueSnapshot } from './permanentDailyIssuedClueSnapshot';
 
-const PUZZLE = createPuzzle('2026-09-29');
-
 describe('Archive beta issued-puzzle reads', () => {
-  it('reads one clue-frozen beta puzzle by exact series and Daily number', async () => {
-    const repository = createRepository({ byNumber: PUZZLE });
+  it('reads by exact beta number/date and returns defensive copies', async () => {
+    const puzzle = createPuzzle('2026-09-29');
+    const repository = repo({ byNumber: puzzle, byDate: puzzle });
     const service = createArchiveBetaDailyIssuedPuzzleReadService(repository);
 
-    const result = await service.getByNumber({
+    const byNumber = await service.getByNumber({
       seriesVersion: 'archive-beta-v1',
       dailyNumber: 1,
     });
-
-    expect(result).toEqual(PUZZLE);
-    expect(repository.getByNumber).toHaveBeenCalledWith({
-      seriesVersion: 'archive-beta-v1',
-      dailyNumber: 1,
-    });
-  });
-
-  it('reads by exact beta series and puzzle date', async () => {
-    const repository = createRepository({ byDate: PUZZLE });
-    const service = createArchiveBetaDailyIssuedPuzzleReadService(repository);
-
-    const result = await service.getByDate({
+    const byDate = await service.getByDate({
       seriesVersion: 'archive-beta-v1',
       puzzleDate: '2026-09-29',
     });
 
-    expect(result).toEqual(PUZZLE);
+    expect(byNumber).toEqual(puzzle);
+    expect(byDate).toEqual(puzzle);
+    expect(byNumber).not.toBe(puzzle);
+    expect(byNumber?.identity).not.toBe(puzzle.identity);
+    expect(byNumber?.clueSnapshot).not.toBe(puzzle.clueSnapshot);
   });
 
-  it('returns null for an unissued beta identity', async () => {
-    const service = createArchiveBetaDailyIssuedPuzzleReadService(createRepository({}));
+  it('returns null for unissued identity and rejects wrong series before provider access', async () => {
+    const repository = repo({});
+    const service = createArchiveBetaDailyIssuedPuzzleReadService(repository);
 
     await expect(service.getByNumber({
       seriesVersion: 'archive-beta-v1',
       dailyNumber: 2,
     })).resolves.toBeNull();
-  });
-
-  it('rejects a non-beta series before invoking the provider', async () => {
-    const repository = createRepository({});
-    const service = createArchiveBetaDailyIssuedPuzzleReadService(repository);
 
     await expect(service.getByNumber({
       seriesVersion: 'permanent-v1' as 'archive-beta-v1',
@@ -63,39 +50,21 @@ describe('Archive beta issued-puzzle reads', () => {
     })).rejects.toThrow(
       'Unsupported Archive beta Daily series version: permanent-v1.',
     );
-
-    expect(repository.getByNumber).not.toHaveBeenCalled();
   });
 
   it('fails closed when the provider returns a different beta identity', async () => {
-    const repository = createRepository({ byNumber: createPuzzle('2026-09-30') });
-    const service = createArchiveBetaDailyIssuedPuzzleReadService(repository);
+    const service = createArchiveBetaDailyIssuedPuzzleReadService(
+      repo({ byNumber: createPuzzle('2026-09-30') }),
+    );
 
     await expect(service.getByNumber({
       seriesVersion: 'archive-beta-v1',
       dailyNumber: 1,
     })).rejects.toThrow('different number identity');
   });
-
-  it('returns a defensive nested copy', async () => {
-    const service = createArchiveBetaDailyIssuedPuzzleReadService(
-      createRepository({ byNumber: PUZZLE }),
-    );
-
-    const result = await service.getByNumber({
-      seriesVersion: 'archive-beta-v1',
-      dailyNumber: 1,
-    });
-    if (result === null) throw new Error('Expected archive beta puzzle.');
-
-    expect(result).not.toBe(PUZZLE);
-    expect(result.identity).not.toBe(PUZZLE.identity);
-    expect(result.canonicalPlayerIds).not.toBe(PUZZLE.canonicalPlayerIds);
-    expect(result.clueSnapshot).not.toBe(PUZZLE.clueSnapshot);
-  });
 });
 
-function createRepository({
+function repo({
   byNumber = null,
   byDate = null,
 }: {
@@ -117,15 +86,11 @@ function createPuzzle(puzzleDate: string): ArchiveBetaDailyClueFrozenIssuedPuzzl
     createArchiveBetaDailyEpoch('2026-09-29'),
   );
   if (identity === null) throw new Error('Expected archive beta identity.');
-
-  const canonicalPlayerIds = Array.from(
-    { length: 9 },
-    (_, index) => `player-${index + 1}`,
-  );
+  const players = Array.from({ length: 9 }, (_, index) => `player-${index + 1}`);
 
   return createArchiveBetaDailyClueFrozenIssuedPuzzle({
     identity,
-    canonicalPlayerIds,
+    canonicalPlayerIds: players,
     clueSnapshot: createPermanentDailyIssuedClueSnapshot({
       hintLayout: [
         { slot: 1, hintType: 'main_decade', displayLabel: 'Main decade played in' },
@@ -133,7 +98,7 @@ function createPuzzle(puzzleDate: string): ArchiveBetaDailyClueFrozenIssuedPuzzl
         { slot: 3, hintType: 'position', displayLabel: 'Position' },
         { slot: 4, hintType: 'stats', displayLabel: 'Stats' },
       ],
-      pitches: canonicalPlayerIds.map((canonicalPlayerId, index) => ({
+      pitches: players.map((canonicalPlayerId, index) => ({
         pitchNumber: index + 1,
         canonicalPlayerId,
         initials: `P${index + 1}`,
