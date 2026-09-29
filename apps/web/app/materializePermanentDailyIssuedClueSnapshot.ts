@@ -20,6 +20,7 @@ export type PermanentDailyCluePlayerResolver = IssuedDailyCluePlayerResolver;
 export type DailyPitchFactory = (
   pitchNumber: number,
   player: Player,
+  puzzleDate?: string,
 ) => DailyPuzzle['pitches'][number];
 
 /**
@@ -34,6 +35,7 @@ export function materializePermanentDailyIssuedClueSnapshot(
   return materializeIssuedDailyClueSnapshot(
     orderedCanonicalPlayerIds,
     'Permanent Daily',
+    undefined,
     resolvePlayer,
     createPitch,
   );
@@ -41,12 +43,14 @@ export function materializePermanentDailyIssuedClueSnapshot(
 
 export function materializeArchiveBetaDailyIssuedClueSnapshot(
   orderedCanonicalPlayerIds: readonly string[],
+  puzzleDate: string,
   resolvePlayer: IssuedDailyCluePlayerResolver = getCanonicalDailyPlayer,
   createPitch: DailyPitchFactory = createDailyPuzzlePitch,
 ): PermanentDailyIssuedClueSnapshot {
   return materializeIssuedDailyClueSnapshot(
     orderedCanonicalPlayerIds,
     'Archive beta Daily',
+    puzzleDate,
     resolvePlayer,
     createPitch,
   );
@@ -55,6 +59,7 @@ export function materializeArchiveBetaDailyIssuedClueSnapshot(
 function materializeIssuedDailyClueSnapshot(
   orderedCanonicalPlayerIds: readonly string[],
   seriesLabel: 'Permanent Daily' | 'Archive beta Daily',
+  puzzleDate: string | undefined,
   resolvePlayer: IssuedDailyCluePlayerResolver,
   createPitch: DailyPitchFactory,
 ): PermanentDailyIssuedClueSnapshot {
@@ -75,7 +80,7 @@ function materializeIssuedDailyClueSnapshot(
 
     // Match the public editorial-puzzle composition: canonical identity is
     // authoritative even when the resolved display record carries a legacy ID.
-    const pitch = createPitch(pitchNumber, player);
+    const pitch = createPitch(pitchNumber, player, puzzleDate);
     const initials = pitch.player.initials;
     if (typeof initials !== 'string' || initials.trim().length === 0) {
       throw new Error(
