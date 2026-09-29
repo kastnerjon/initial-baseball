@@ -21,8 +21,8 @@ import {
 } from './serverArchiveBetaDailyIssuance';
 import { createDailyPuzzlePitch } from './dailyPuzzleAdapters';
 
-const PUZZLE_DATE = '2026-09-29';
-const ISSUED_AT = '2026-09-29T07:00:00.000Z';
+const PUZZLE_DATE = '2026-09-27';
+const ISSUED_AT = '2026-09-27T07:00:00.000Z';
 const ENVIRONMENT = {
   SUPABASE_URL: 'https://initial-baseball.supabase.co',
   SUPABASE_SERVICE_ROLE_KEY: 'server-service-role-key',
@@ -67,6 +67,7 @@ describe('server archive beta Daily issuance composition', () => {
     expect(result.puzzle.clueSnapshot.pitches[0]).toMatchObject({
       pitchNumber: 1,
       canonicalPlayerId: 'player-1',
+      initials: 'KGJ',
       hintValues: [
         '2000s',
         'NYY, BOS',
@@ -94,7 +95,7 @@ describe('server archive beta Daily issuance composition', () => {
     await service.issue({ identity, issuedAt: ISSUED_AT });
     const retry = await service.issue({
       identity,
-      issuedAt: '2026-09-29T08:00:00.000Z',
+      issuedAt: '2026-09-27T08:00:00.000Z',
     });
 
     expect(retry).toMatchObject({
@@ -247,10 +248,11 @@ function playerIds() {
 
 function buildPlayer(canonicalPlayerId: string): Player {
   const index = Number(canonicalPlayerId.replace('player-', ''));
+  const displayName = index === 1 ? 'Ken Griffey Jr.' : `Player ${index}`;
   return {
     id: `legacy-${canonicalPlayerId}`,
-    fullName: `Player ${index}`,
-    displayName: `Player ${index}`,
+    fullName: displayName,
+    displayName,
     primaryRole: 'hitter',
     primaryPosition: 'CF',
     mainDecade: '2000s',
