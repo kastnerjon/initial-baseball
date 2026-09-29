@@ -1,15 +1,20 @@
 import 'server-only';
 import type {
+  ArchiveBetaDailyClueFrozenIssuedPuzzle,
+  ArchiveBetaDailyIssuedPuzzleReadRepository,
+  ArchiveBetaDailyIssuedPuzzleRepository,
   PermanentDailyIssuedPuzzleReadRepository,
   PermanentDailyIssuedPuzzleRecord,
   PermanentDailyIssuedPuzzleRepository,
-  PermanentDailyIssuedPuzzleRepositoryInsertResult,
 } from '@initial-baseball/daily';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
   SupabasePermanentDailyIssuedPuzzleRepositoryError,
+  decodeArchiveBetaDailyIssuedPuzzleRow,
   decodePermanentDailyIssuedPuzzleRow,
+  encodeArchiveBetaDailyIssuedPuzzleRow,
   encodePermanentDailyIssuedPuzzleRow,
+  type PermanentDailyIssuedPuzzleRow,
 } from './supabasePermanentDailyIssuedPuzzleRowCodec';
 
 const TABLE = 'permanent_daily_issued_puzzles';
@@ -24,6 +29,32 @@ const COLUMNS = [
   'issued_at',
 ].join(',');
 
+type PersistedIssuedPuzzle =
+  | PermanentDailyIssuedPuzzleRecord
+  | ArchiveBetaDailyClueFrozenIssuedPuzzle;
+
+type InsertResult<Puzzle extends PersistedIssuedPuzzle> =
+  | { status: 'inserted'; puzzle: Puzzle }
+  | { status: 'existing'; puzzle: Puzzle };
+
+type RowCodec<Puzzle extends PersistedIssuedPuzzle> = {
+  encode(puzzle: Puzzle): PermanentDailyIssuedPuzzleRow;
+  decode(row: unknown): Puzzle;
+  operationLabel: string;
+};
+
+const permanentCodec: RowCodec<PermanentDailyIssuedPuzzleRecord> = {
+  encode: encodePermanentDailyIssuedPuzzleRow,
+  decode: decodePermanentDailyIssuedPuzzleRow,
+  operationLabel: 'permanent Daily issued puzzle',
+};
+
+const archiveBetaCodec: RowCodec<ArchiveBetaDailyClueFrozenIssuedPuzzle> = {
+  encode: encodeArchiveBetaDailyIssuedPuzzleRow,
+  decode: decodeArchiveBetaDailyIssuedPuzzleRow,
+  operationLabel: 'archive beta Daily issued puzzle',
+};
+
 export {
   SupabasePermanentDailyIssuedPuzzleRepositoryError,
   type SupabasePermanentDailyIssuedPuzzleRepositoryErrorKind,
@@ -32,69 +63,97 @@ export {
 export function createSupabasePermanentDailyIssuedPuzzleRepository(
   client: SupabaseClient,
 ): PermanentDailyIssuedPuzzleRepository {
-  return {
-    async insertIfAbsent(puzzle) {
-      const inserted = await tryInsert(client, puzzle);
-      if (inserted !== null) return inserted;
-      return readExisting(client, puzzle);
-    },
-  };
+  return createWriteRepository(client, permanentCodec);
 }
 
 export function createSupabasePermanentDailyIssuedPuzzleReadRepository(
   client: SupabaseClient,
 ): PermanentDailyIssuedPuzzleReadRepository {
-  return {
-    getByNumber(query) {
-      return readOne(client, {
-        series_version: query.seriesVersion,
-        daily_number: query.dailyNumber,
-      }, 'read permanent Daily issued puzzle by number');
-    },
+  return createReadRepository(client, permanentCodec);
+}
 
-    getByDate(query) {
-      return readOne(client, {
-        series_version: query.seriesVersion,
-        puzzle_date: query.puzzleDate,
-      }, 'read permanent Daily issued puzzle by date');
+export function createSupabaseArchiveBetaDailyIssuedPuzzleRepository(
+  client: SupabaseClient,
+): ArchiveBetaDailyIssuedPuzzleRepository {
+  return createWriteRepository(client, archiveBetaCodec);
+}
+
+export function createSupabaseArchiveBetaDailyIssuedPuzzleReadRepository(
+  client: SupabaseClient,
+): ArchiveBetaDailyIssuedPuzzleReadRepository {
+  return createReadRepository(client, archiveBetaCodec);
+}
+
+function createWriteRepository<Puzzle extends PersistedIssuedPuzzle>(
+  client: SupabaseClient,
+  codec: RowCodec<Puzzle>,
+) {
+  return {
+    async insertIfAbsent(puzzle: Puzzle): Promise<InsertResult<Puzzle>> {
+      const inserted = await tryInsert(client, puzzle, codec);
+      if (inserted !== null) return inserted;
+      return readExisting(client, puzzle, codec);
     },
   };
 }
 
-async function tryInsert(
+function createReadRepository<Puzzle extends PersistedIssuedPuzzle>(
   client: SupabaseClient,
-  puzzle: PermanentDailyIssuedPuzzleRecord,
-): Promise<PermanentDailyIssuedPuzzleRepositoryInsertResult | null> {
+  codec: RowCodec<Puzzle>,
+) {
+  return {
+    getByNumber(query: { seriesVersion: string; dailyNumber: number }) {
+      return readOne(client, {
+        series_version: query.seriesVersion,
+        daily_number: query.dailyNumber,
+      }, `read ${codec.operationLabel} by number`, codec);
+    },
+
+    getByDate(query: { seriesVersion: string; puzzleDate: string }) {
+      return readOne(client, {
+        series_version: query.seriesVersion,
+        puzzle_date: query.puzzleDate,
+      }, `read ${codec.operationLabel} by date`, codec);
+    },
+  };
+}
+
+async function tryInsert<Puzzle extends PersistedIssuedPuzzle>(
+  client: SupabaseClient,
+  puzzle: Puzzle,
+  codec: RowCodec<Puzzle>,
+): Promise<InsertResult<Puzzle> | null> {
   const { data, error } = await client
     .from(TABLE)
-    .insert(encodePermanentDailyIssuedPuzzleRow(puzzle))
+    .insert(codec.encode(puzzle))
     .select(COLUMNS)
     .single();
 
   if (error === null) {
     return {
       status: 'inserted',
-      puzzle: decodePermanentDailyIssuedPuzzleRow(data),
+      puzzle: codec.decode(data),
     };
   }
 
   if (error.code === '23505') return null;
-  throwQueryError('insert permanent Daily issued puzzle', error);
+  throwQueryError(`insert ${codec.operationLabel}`, error);
 }
 
-async function readExisting(
+async function readExisting<Puzzle extends PersistedIssuedPuzzle>(
   client: SupabaseClient,
-  puzzle: PermanentDailyIssuedPuzzleRecord,
-): Promise<PermanentDailyIssuedPuzzleRepositoryInsertResult> {
+  puzzle: Puzzle,
+  codec: RowCodec<Puzzle>,
+): Promise<InsertResult<Puzzle>> {
   const existing = await readOne(client, {
     series_version: puzzle.identity.seriesVersion,
     daily_number: puzzle.identity.dailyNumber,
-  }, 'read existing permanent Daily issued puzzle');
+  }, `read existing ${codec.operationLabel}`, codec);
 
   if (existing === null) {
     throw new SupabasePermanentDailyIssuedPuzzleRepositoryError(
       'query',
-      `Permanent Daily ${puzzle.puzzleId} conflicted but its existing row could not be read by identity.`,
+      `Issued Daily ${puzzle.puzzleId} conflicted but its existing row could not be read by identity.`,
     );
   }
 
@@ -104,11 +163,12 @@ async function readExisting(
   };
 }
 
-async function readOne(
+async function readOne<Puzzle extends PersistedIssuedPuzzle>(
   client: SupabaseClient,
   match: Record<string, string | number>,
   operation: string,
-): Promise<PermanentDailyIssuedPuzzleRecord | null> {
+  codec: RowCodec<Puzzle>,
+): Promise<Puzzle | null> {
   const { data, error } = await client
     .from(TABLE)
     .select(COLUMNS)
@@ -116,7 +176,7 @@ async function readOne(
     .maybeSingle();
 
   if (error !== null) throwQueryError(operation, error);
-  return data === null ? null : decodePermanentDailyIssuedPuzzleRow(data);
+  return data === null ? null : codec.decode(data);
 }
 
 function throwQueryError(
