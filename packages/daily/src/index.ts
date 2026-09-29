@@ -106,6 +106,7 @@ export {
 export {
   ARCHIVE_BETA_DAILY_SERIES_VERSION,
   createArchiveBetaDailyEpoch,
+  createArchiveBetaDailyPuzzleId,
   resolveArchiveBetaDailyIdentityForDate,
   resolveArchiveBetaDailyIdentityForNumber,
   type ArchiveBetaDailyEpoch,
