@@ -71,6 +71,14 @@ Because Classic can end after three outs, later-batter aggregates distinguish pl
 
 The portable Daily layer now defines a versioned `permanent-v1` identity contract. The actual launch date is deliberately not configured yet: callers must supply an explicit launch epoch, whose Pacific Daily date becomes permanent Daily #1. Date-to-number and number-to-date mappings use calendar-day arithmetic, so daylight-saving/time-of-day differences cannot change numbering. Dates before the chosen epoch are not members of the permanent series.
 
+### Pre-launch archive-beta identity boundary
+
+Pre-launch archive testing uses a separate portable series, `archive-beta-v1`. Callers must supply an explicit beta start date; that date maps to beta Daily #1 and later dates advance by calendar day using the same DST-independent calendar arithmetic as the permanent identity. The beta puzzle namespace is `archive-beta-v1-daily-N`, so test identities cannot collide with or be mistaken for `permanent-v1-daily-N`.
+
+Defining this identity does **not** activate archive testing: no beta epoch is configured in production, no test puzzle is issued by this contract, and the current hosted immutable issued-puzzle table remains restricted to `permanent-v1` until a separate persistence/issuance change deliberately widens it.
+
+The reset boundary is the series/data set, never an issued puzzle. Once a later PR issues an `archive-beta-v1` puzzle, its lineup and clues stay immutable. Broad launch retires the beta series/test data and separately begins `permanent-v1` from the owner's explicitly chosen launch epoch at Daily #1. Beta identities are not renamed, migrated, or reinterpreted as permanent history. If testing ever needs another disposable beta generation before launch, that requires a new explicit series identity rather than reusing an already-contributing beta namespace.
+
 This identity is separate from the immutable puzzle snapshot. A numbered date is not considered archived merely because it can be mapped to Daily #N; later archive persistence must bind that identity to frozen issued puzzle content before historical replay is exposed. Current beta `DAILY_PUZZLE_EPOCH` numbering remains unchanged and is not imported.
 
 The portable Daily layer now also defines that immutable issued-puzzle contract. One `permanent-v1` identity maps to stable puzzle ID `permanent-v1-daily-N`, an exact ordered nine-player canonical lineup, and the first successful issue timestamp. Storage is first-write-wins: an exact retry is idempotent and retains the original timestamp, while any attempt to rewrite the frozen lineup is an immutable conflict. The snapshot deliberately does not freeze today's beta game/ruleset choice; supported archive game/ruleset contracts remain separate until the launch decision.
