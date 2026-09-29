@@ -123,6 +123,27 @@ export {
 } from './permanentDailyIdentity';
 
 export {
+  ARCHIVE_BETA_DAILY_CLUE_FROZEN_ISSUED_PUZZLE_SCHEMA_VERSION,
+  cloneArchiveBetaDailyClueFrozenIssuedPuzzle,
+  createArchiveBetaDailyClueFrozenIssuedPuzzle,
+  createArchiveBetaDailyClueFrozenIssuedPuzzleService,
+  type ArchiveBetaDailyClueFrozenIssuedPuzzle,
+  type ArchiveBetaDailyClueFrozenIssuedPuzzleInput,
+  type ArchiveBetaDailyClueFrozenIssuedPuzzleService,
+  type ArchiveBetaDailyClueFrozenIssuedPuzzleStoreResult,
+  type ArchiveBetaDailyIssuedPuzzleRepository,
+  type ArchiveBetaDailyIssuedPuzzleRepositoryInsertResult,
+} from './archiveBetaDailyIssuedPuzzle';
+
+export {
+  createArchiveBetaDailyIssuedPuzzleReadService,
+  type ArchiveBetaDailyIssuedPuzzleDateQuery,
+  type ArchiveBetaDailyIssuedPuzzleNumberQuery,
+  type ArchiveBetaDailyIssuedPuzzleReadRepository,
+  type ArchiveBetaDailyIssuedPuzzleReadService,
+} from './archiveBetaDailyIssuedPuzzleRead';
+
+export {
   PERMANENT_DAILY_ISSUED_CLUE_SNAPSHOT_SCHEMA_VERSION,
   clonePermanentDailyIssuedClueSnapshot,
   createPermanentDailyIssuedClueSnapshot,

@@ -1,4 +1,8 @@
 import {
+  areClueFrozenIssuedDailyPuzzlesExactlyEqual,
+  hasSameImmutableClueFrozenIssuedDailyContent,
+} from './issuedDailyPuzzleCore';
+import {
   PERMANENT_DAILY_CLUE_FROZEN_ISSUED_PUZZLE_SCHEMA_VERSION,
   clonePermanentDailyIssuedPuzzleRecord,
   createPermanentDailyClueFrozenIssuedPuzzle,
@@ -44,7 +48,7 @@ export function createPermanentDailyClueFrozenIssuedPuzzleService(
       if (stored.status === 'inserted') {
         if (
           stored.puzzle.schemaVersion !== PERMANENT_DAILY_CLUE_FROZEN_ISSUED_PUZZLE_SCHEMA_VERSION
-          || !areClueFrozenIssuedPuzzlesExactlyEqual(stored.puzzle, requested)
+          || !areClueFrozenIssuedDailyPuzzlesExactlyEqual(stored.puzzle, requested)
         ) {
           throw new Error(
             'Permanent Daily issued-puzzle repository returned a different inserted clue-frozen puzzle.',
@@ -59,7 +63,7 @@ export function createPermanentDailyClueFrozenIssuedPuzzleService(
 
       if (
         stored.puzzle.schemaVersion === PERMANENT_DAILY_CLUE_FROZEN_ISSUED_PUZZLE_SCHEMA_VERSION
-        && hasSameImmutableClueFrozenContent(stored.puzzle, requested)
+        && hasSameImmutableClueFrozenIssuedDailyContent(stored.puzzle, requested)
       ) {
         return {
           ok: true,
@@ -76,61 +80,6 @@ export function createPermanentDailyClueFrozenIssuedPuzzleService(
       };
     },
   };
-}
-
-function hasSameImmutableClueFrozenContent(
-  left: PermanentDailyClueFrozenIssuedPuzzle,
-  right: PermanentDailyClueFrozenIssuedPuzzle,
-): boolean {
-  return left.puzzleId === right.puzzleId
-    && left.identity.seriesVersion === right.identity.seriesVersion
-    && left.identity.puzzleDate === right.identity.puzzleDate
-    && left.identity.dailyNumber === right.identity.dailyNumber
-    && arraysEqual(left.canonicalPlayerIds, right.canonicalPlayerIds)
-    && clueSnapshotsEqual(left, right);
-}
-
-function areClueFrozenIssuedPuzzlesExactlyEqual(
-  left: PermanentDailyClueFrozenIssuedPuzzle,
-  right: PermanentDailyClueFrozenIssuedPuzzle,
-): boolean {
-  return hasSameImmutableClueFrozenContent(left, right)
-    && left.issuedAt === right.issuedAt;
-}
-
-function clueSnapshotsEqual(
-  left: PermanentDailyClueFrozenIssuedPuzzle,
-  right: PermanentDailyClueFrozenIssuedPuzzle,
-): boolean {
-  const leftSnapshot = left.clueSnapshot;
-  const rightSnapshot = right.clueSnapshot;
-
-  return leftSnapshot.schemaVersion === rightSnapshot.schemaVersion
-    && leftSnapshot.hintLayout.length === rightSnapshot.hintLayout.length
-    && leftSnapshot.hintLayout.every((slot, index) => {
-      const other = rightSnapshot.hintLayout[index];
-      return other !== undefined
-        && slot.slot === other.slot
-        && slot.hintType === other.hintType
-        && slot.displayLabel === other.displayLabel;
-    })
-    && leftSnapshot.pitches.length === rightSnapshot.pitches.length
-    && leftSnapshot.pitches.every((pitch, index) => {
-      const other = rightSnapshot.pitches[index];
-      return other !== undefined
-        && pitch.pitchNumber === other.pitchNumber
-        && pitch.canonicalPlayerId === other.canonicalPlayerId
-        && pitch.initials === other.initials
-        && arraysEqual(pitch.hintValues, other.hintValues);
-    });
-}
-
-function arraysEqual(
-  left: readonly string[],
-  right: readonly string[],
-): boolean {
-  return left.length === right.length
-    && left.every((value, index) => value === right[index]);
 }
 
 function cloneClueFrozenIssuedPuzzle(
