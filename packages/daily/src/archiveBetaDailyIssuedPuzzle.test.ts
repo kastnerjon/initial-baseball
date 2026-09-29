@@ -79,10 +79,12 @@ describe('Archive beta clue-frozen issued puzzle', () => {
       issuedAt: '2026-09-29T07:00:00.000Z',
     });
 
-    const changedClues = createClueSnapshot();
-    changedClues.pitches[0] = {
-      ...changedClues.pitches[0]!,
-      initials: 'ZZ',
+    const originalClues = createClueSnapshot();
+    const changedClues: PermanentDailyIssuedClueSnapshot = {
+      ...originalClues,
+      pitches: originalClues.pitches.map((pitch, index) => (
+        index === 0 ? { ...pitch, initials: 'ZZ' } : pitch
+      )),
     };
 
     const clueConflict = await service.issue({
