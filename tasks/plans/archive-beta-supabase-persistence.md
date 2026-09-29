@@ -1,6 +1,6 @@
 # Archive-beta Supabase persistence
 
-Status: implementation plan
+Status: implemented on branch; hosted verification pending
 
 ## Scope contract
 
@@ -24,3 +24,8 @@ Keep the existing table name `public.permanent_daily_issued_puzzles` to avoid a 
 - RLS and grants stay append-only and unchanged.
 
 The migration is safe to apply before application activation because the table is empty at the starting checkpoint and existing permanent code remains valid under the widened constraints.
+
+
+## Starting hosted checkpoint
+
+Before this PR's migration, the production issued-puzzle table had zero rows. Existing constraints allowed only `permanent-v1`; RLS was enabled; service-role application privileges were SELECT/INSERT only. The migration is deliberately capability-only: hosted verification must leave the table at zero rows.
