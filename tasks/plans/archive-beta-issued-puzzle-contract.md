@@ -1,6 +1,6 @@
 # Archive-beta immutable issued-puzzle contract
 
-Status: implementation plan
+Status: implemented on branch; verification pending
 
 ## Scope contract
 
@@ -18,3 +18,8 @@ The immutable issued-puzzle mechanics are series-neutral, while series membershi
 Archive beta starts directly with the clue-frozen schema-v2 contract. There is no reason to create schema-v1 beta compatibility because no beta row exists yet. Permanent schema-v1 reads remain supported for historical compatibility.
 
 The provider boundary is not widened here. The next bounded PR will teach the Supabase codec/repository/schema to persist and read `archive-beta-v1` records before any real test puzzle is issued.
+
+
+## Implementation note
+
+The shared core is intentionally closed to exactly `permanent-v1` and `archive-beta-v1`. Permanent constructors/read services remain runtime-fenced to `permanent-v1`; the beta facade is runtime-fenced to `archive-beta-v1` and exposes only schema v2. No web or hosted provider can write beta rows from this PR alone.
