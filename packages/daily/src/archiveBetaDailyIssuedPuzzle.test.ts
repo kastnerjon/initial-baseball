@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import {
   createArchiveBetaDailyEpoch,
   resolveArchiveBetaDailyIdentityForDate,
@@ -12,6 +12,10 @@ import {
   type ArchiveBetaDailyIssuedPuzzleRepository,
   type ArchiveBetaDailyIssuedPuzzleRepositoryInsertResult,
 } from './archiveBetaDailyIssuedPuzzle';
+import {
+  createArchiveBetaDailyIssuedPuzzleReadService,
+  type ArchiveBetaDailyIssuedPuzzleReadRepository,
+} from './archiveBetaDailyIssuedPuzzleRead';
 import { createPermanentDailyIssuedClueSnapshot } from './permanentDailyIssuedClueSnapshot';
 
 const PLAYERS = Array.from({ length: 9 }, (_, index) => `player-${index + 1}`);
@@ -86,6 +90,50 @@ describe('Archive beta clue-frozen issued puzzle', () => {
   });
 });
 
+describe('Archive beta issued-puzzle reads', () => {
+  it('reads exact beta identities defensively and returns null for missing rows', async () => {
+    const puzzle = createPuzzle();
+    const repository = readRepository({ byNumber: puzzle, byDate: puzzle });
+    const service = createArchiveBetaDailyIssuedPuzzleReadService(repository);
+
+    const byNumber = await service.getByNumber({
+      seriesVersion: 'archive-beta-v1',
+      dailyNumber: 1,
+    });
+    const byDate = await service.getByDate({
+      seriesVersion: 'archive-beta-v1',
+      puzzleDate: '2026-09-29',
+    });
+
+    expect(byNumber).toEqual(puzzle);
+    expect(byDate).toEqual(puzzle);
+    expect(byNumber).not.toBe(puzzle);
+    expect(byNumber?.clueSnapshot).not.toBe(puzzle.clueSnapshot);
+
+    await expect(createArchiveBetaDailyIssuedPuzzleReadService(
+      readRepository({}),
+    ).getByNumber({
+      seriesVersion: 'archive-beta-v1',
+      dailyNumber: 2,
+    })).resolves.toBeNull();
+  });
+
+  it('rejects wrong-series queries and mismatched provider identities', async () => {
+    const repository = readRepository({ byNumber: createPuzzleForDate('2026-09-30') });
+    const service = createArchiveBetaDailyIssuedPuzzleReadService(repository);
+
+    await expect(service.getByNumber({
+      seriesVersion: 'permanent-v1' as 'archive-beta-v1',
+      dailyNumber: 1,
+    })).rejects.toThrow('Unsupported Archive beta Daily series version');
+
+    await expect(service.getByNumber({
+      seriesVersion: 'archive-beta-v1',
+      dailyNumber: 1,
+    })).rejects.toThrow('different number identity');
+  });
+});
+
 function identity(): ArchiveBetaDailyIdentity {
   const value = resolveArchiveBetaDailyIdentityForDate(
     '2026-09-29',
@@ -93,6 +141,28 @@ function identity(): ArchiveBetaDailyIdentity {
   );
   if (value === null) throw new Error('Expected archive beta identity.');
   return value;
+}
+
+function createPuzzleForDate(puzzleDate: string): ArchiveBetaDailyClueFrozenIssuedPuzzle {
+  const value = resolveArchiveBetaDailyIdentityForDate(
+    puzzleDate,
+    createArchiveBetaDailyEpoch('2026-09-29'),
+  );
+  if (value === null) throw new Error('Expected archive beta identity.');
+  return createPuzzle(value);
+}
+
+function readRepository({
+  byNumber = null,
+  byDate = null,
+}: {
+  byNumber?: ArchiveBetaDailyClueFrozenIssuedPuzzle | null;
+  byDate?: ArchiveBetaDailyClueFrozenIssuedPuzzle | null;
+}): ArchiveBetaDailyIssuedPuzzleReadRepository {
+  return {
+    getByNumber: vi.fn().mockResolvedValue(byNumber),
+    getByDate: vi.fn().mockResolvedValue(byDate),
+  };
 }
 
 function createPuzzle(value = identity()): ArchiveBetaDailyClueFrozenIssuedPuzzle {
