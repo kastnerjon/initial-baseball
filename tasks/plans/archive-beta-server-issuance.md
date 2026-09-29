@@ -1,6 +1,6 @@
 # Archive-beta server issuance composition
 
-Status: implementation plan
+Status: implemented on branch; verification pending
 
 ## Scope contract
 
@@ -23,3 +23,8 @@ Keep the portable beta issuance service authoritative for lifecycle/order/immuta
 The existing clue snapshot implementation is already series-neutral in data shape. Add a beta-named facade that delegates to one internal materializer so diagnostics remain series-specific without duplicating hint logic.
 
 Construction alone performs no read or write. The caller must explicitly invoke `issue({ identity, issuedAt })`; this PR adds no invoker, clock-based identity resolution, route, or scheduler, so production storage remains untouched.
+
+
+## Implementation note
+
+`createServerArchiveBetaDailyIssuanceService` mirrors the established permanent server composition without sharing activation policy. Construction creates one server Supabase client, the editorial repository, and the archive-beta issued-puzzle repository. Only an explicit `issue({ identity, issuedAt })` call performs the authoritative read/materialization/write path. No production caller is added in this PR, so merely deploying this code cannot create a beta row.
