@@ -109,8 +109,12 @@ function requireSupportedSchema<
     || !supportedSchemaVersions.includes(schemaVersion)
   ) {
     throw new Error(
-      `Unsupported ${seriesLabel.toLowerCase()} issued-puzzle schema version: ${String(schemaVersion)}.`,
+      `Unsupported ${lowercaseFirst(seriesLabel)} issued-puzzle schema version: ${String(schemaVersion)}.`,
     );
   }
   return puzzle;
+}
+
+function lowercaseFirst(value: string): string {
+  return value.length === 0 ? value : value[0]!.toLowerCase() + value.slice(1);
 }
