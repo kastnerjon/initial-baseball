@@ -1,5 +1,8 @@
-const MILLISECONDS_PER_DAY = 86_400_000;
-const ISO_CALENDAR_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/;
+import {
+  formatUtcCalendarDay,
+  requirePositiveSafeDailyNumber,
+  requireUtcCalendarDay,
+} from './dailySeriesCalendar';
 
 export const PERMANENT_DAILY_SERIES_VERSION = 'permanent-v1' as const;
 
@@ -51,12 +54,13 @@ export function resolvePermanentDailyIdentityForNumber(
   requirePermanentSeries(epoch);
   const launchDay = requireUtcCalendarDay(epoch.launchDate, 'Permanent Daily launch date');
 
-  if (!Number.isSafeInteger(dailyNumber) || dailyNumber < 1) {
-    throw new Error('Permanent Daily number must be a positive safe integer.');
-  }
+  requirePositiveSafeDailyNumber(dailyNumber, 'Permanent Daily number');
 
   const puzzleDay = launchDay + dailyNumber - 1;
-  const puzzleDate = formatUtcCalendarDay(puzzleDay);
+  const puzzleDate = formatUtcCalendarDay(
+    puzzleDay,
+    'Permanent Daily number resolves outside the supported calendar range.',
+  );
 
   return {
     seriesVersion: PERMANENT_DAILY_SERIES_VERSION,
@@ -65,42 +69,10 @@ export function resolvePermanentDailyIdentityForNumber(
   };
 }
 
-function formatUtcCalendarDay(day: number): string {
-  const date = new Date(day * MILLISECONDS_PER_DAY);
-  if (!Number.isFinite(date.getTime())) {
-    throw new Error('Permanent Daily number resolves outside the supported calendar range.');
-  }
-
-  const value = date.toISOString().slice(0, 10);
-  if (!ISO_CALENDAR_DATE_PATTERN.test(value)) {
-    throw new Error('Permanent Daily number resolves outside the supported calendar range.');
-  }
-
-  return value;
-}
-
 function requirePermanentSeries(epoch: PermanentDailyLaunchEpoch): void {
   if (epoch.seriesVersion !== PERMANENT_DAILY_SERIES_VERSION) {
     throw new Error(
       `Unsupported Permanent Daily series version: ${String(epoch.seriesVersion)}.`,
     );
   }
-}
-
-function requireUtcCalendarDay(value: string, label: string): number {
-  if (!ISO_CALENDAR_DATE_PATTERN.test(value)) {
-    throw new Error(`${label} must use YYYY-MM-DD.`);
-  }
-
-  const timestamp = Date.parse(`${value}T00:00:00.000Z`);
-  if (!Number.isFinite(timestamp)) {
-    throw new Error(`${label} is not a valid calendar date.`);
-  }
-
-  const normalized = new Date(timestamp).toISOString().slice(0, 10);
-  if (normalized !== value) {
-    throw new Error(`${label} is not a valid calendar date.`);
-  }
-
-  return Math.floor(timestamp / MILLISECONDS_PER_DAY);
 }
