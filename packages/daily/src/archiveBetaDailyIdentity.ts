@@ -77,10 +77,10 @@ export function resolveArchiveBetaDailyIdentityForNumber(
   };
 }
 
-function requireArchiveBetaSeries(epoch: ArchiveBetaDailyEpoch): void {
-  if (epoch.seriesVersion !== ARCHIVE_BETA_DAILY_SERIES_VERSION) {
+function requireArchiveBetaSeries(value: { seriesVersion: unknown }): void {
+  if (value.seriesVersion !== ARCHIVE_BETA_DAILY_SERIES_VERSION) {
     throw new Error(
-      `Unsupported archive beta Daily series version: ${String(epoch.seriesVersion)}.`,
+      `Unsupported archive beta Daily series version: ${String(value.seriesVersion)}.`,
     );
   }
 }
