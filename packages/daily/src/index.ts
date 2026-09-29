@@ -136,6 +136,13 @@ export {
 } from './archiveBetaDailyIssuedPuzzle';
 
 export {
+  createArchiveBetaDailyClueFrozenIssuanceService,
+  type ArchiveBetaDailyClueFrozenIssuanceInput,
+  type ArchiveBetaDailyClueFrozenIssuanceService,
+  type ArchiveBetaDailyIssuanceEditorialPuzzle,
+} from './archiveBetaDailyIssuance';
+
+export {
   createArchiveBetaDailyIssuedPuzzleReadService,
   type ArchiveBetaDailyIssuedPuzzleDateQuery,
   type ArchiveBetaDailyIssuedPuzzleNumberQuery,
