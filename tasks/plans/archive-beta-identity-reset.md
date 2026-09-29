@@ -1,6 +1,6 @@
 # Archive-beta identity and reset boundary
 
-Status: implementation plan
+Status: implemented on branch; verification pending
 
 ## Scope contract
 
@@ -24,3 +24,8 @@ The beta epoch remains explicit input rather than a configured constant in this 
 The calendar arithmetic is the same product-neutral mapping already used by permanent identity. Extract only the small internal calendar helper needed by both portable identities rather than duplicate date/number logic. No web, database, React, Supabase, scoring, or generated-baseball-data dependency is introduced.
 
 The existing immutable issuance/read contracts remain `permanent-v1`-only in this PR. The next archive-beta issuance concern must explicitly widen the append-only persistence/codec/service path for `archive-beta-v1` before any hosted test row is written.
+
+
+## Verified starting state
+
+At the start of this PR, live `main` was `5df13f7fa8bbcb9aad578733550a089d305c200e` with no open PRs. A read-only hosted Supabase check confirmed `public.permanent_daily_issued_puzzles` contained zero rows and still constrained `series_version` / `puzzle_id` to `permanent-v1`. This PR deliberately leaves that hosted persistence unchanged.
