@@ -117,11 +117,19 @@ export function cloneIssuedDailyPuzzleRecord<I extends IssuedDailyIdentity>(
     };
   }
 
-  return {
-    ...common,
-    schemaVersion: CLUE_FROZEN_ISSUED_DAILY_PUZZLE_SCHEMA_VERSION,
-    clueSnapshot: clonePermanentDailyIssuedClueSnapshot(puzzle.clueSnapshot),
-  };
+  if (puzzle.schemaVersion === CLUE_FROZEN_ISSUED_DAILY_PUZZLE_SCHEMA_VERSION) {
+    return {
+      ...common,
+      schemaVersion: CLUE_FROZEN_ISSUED_DAILY_PUZZLE_SCHEMA_VERSION,
+      clueSnapshot: clonePermanentDailyIssuedClueSnapshot(puzzle.clueSnapshot),
+    };
+  }
+
+  throw new Error(
+    `Unsupported issued Daily puzzle schema version: ${String(
+      (puzzle as { schemaVersion: unknown }).schemaVersion,
+    )}.`,
+  );
 }
 
 export function createIssuedDailyPuzzleId(identity: IssuedDailyIdentity): string {
