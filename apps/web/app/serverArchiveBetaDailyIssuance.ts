@@ -97,6 +97,7 @@ export function createServerArchiveBetaDailyIssuanceService({
         .map(selection => selection.canonicalPlayerId);
       const clueSnapshot = materializeArchiveBetaDailyIssuedClueSnapshot(
         orderedCanonicalPlayerIds,
+        input.identity.puzzleDate,
         dependencies.resolveCanonicalPlayer,
         dependencies.createDailyPitch,
       );
