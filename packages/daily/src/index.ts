@@ -104,6 +104,15 @@ export {
 } from './dailyNineComparison';
 
 export {
+  ARCHIVE_BETA_DAILY_SERIES_VERSION,
+  createArchiveBetaDailyEpoch,
+  resolveArchiveBetaDailyIdentityForDate,
+  resolveArchiveBetaDailyIdentityForNumber,
+  type ArchiveBetaDailyEpoch,
+  type ArchiveBetaDailyIdentity,
+} from './archiveBetaDailyIdentity';
+
+export {
   PERMANENT_DAILY_SERIES_VERSION,
   createPermanentDailyLaunchEpoch,
   resolvePermanentDailyIdentityForDate,
