@@ -1,6 +1,6 @@
 # Archive-beta Supabase persistence
 
-Status: implemented on branch; hosted verification pending
+Status: implemented and hosted-verified on branch; merge pending
 
 ## Scope contract
 
@@ -29,3 +29,18 @@ The migration is safe to apply before application activation because the table i
 ## Starting hosted checkpoint
 
 Before this PR's migration, the production issued-puzzle table had zero rows. Existing constraints allowed only `permanent-v1`; RLS was enabled; service-role application privileges were SELECT/INSERT only. The migration is deliberately capability-only: hosted verification must leave the table at zero rows.
+
+
+## Hosted verification
+
+Production Supabase migration `allow_archive_beta_issued_puzzles` applied successfully. Post-migration verification confirmed:
+
+- `series_version` permits only `permanent-v1` and `archive-beta-v1`;
+- the series/schema constraint permits permanent schema 1/2 and beta schema 2 only;
+- `puzzle_id` is constrained to exact `series_version || '-daily-' || daily_number`;
+- the existing clue-snapshot, nine-player, uniqueness and positive-number constraints remain present;
+- RLS remains enabled;
+- among application roles, only `service_role` has table privileges, exactly SELECT and INSERT;
+- row count remains zero for both permanent and archive-beta series.
+
+The security advisor reports the table's intentional RLS-with-no-policies posture as informational because application access is service-role-only. Other advisor warnings concern unrelated pre-existing project objects and are outside this PR.
