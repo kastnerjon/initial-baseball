@@ -29,6 +29,33 @@ export function materializePermanentDailyIssuedClueSnapshot(
   resolvePlayer: PermanentDailyCluePlayerResolver = getCanonicalDailyPlayer,
   createPitch: DailyPitchFactory = createDailyPuzzlePitch,
 ): PermanentDailyIssuedClueSnapshot {
+  return materializeIssuedDailyClueSnapshot(
+    orderedCanonicalPlayerIds,
+    'Permanent Daily',
+    resolvePlayer,
+    createPitch,
+  );
+}
+
+export function materializeArchiveBetaDailyIssuedClueSnapshot(
+  orderedCanonicalPlayerIds: readonly string[],
+  resolvePlayer: PermanentDailyCluePlayerResolver = getCanonicalDailyPlayer,
+  createPitch: DailyPitchFactory = createDailyPuzzlePitch,
+): PermanentDailyIssuedClueSnapshot {
+  return materializeIssuedDailyClueSnapshot(
+    orderedCanonicalPlayerIds,
+    'Archive beta Daily',
+    resolvePlayer,
+    createPitch,
+  );
+}
+
+function materializeIssuedDailyClueSnapshot(
+  orderedCanonicalPlayerIds: readonly string[],
+  seriesLabel: 'Permanent Daily' | 'Archive beta Daily',
+  resolvePlayer: PermanentDailyCluePlayerResolver,
+  createPitch: DailyPitchFactory,
+): PermanentDailyIssuedClueSnapshot {
   const hintLayout = DEFAULT_DAILY_HINT_CONFIG.map(({ slot, hintType, displayLabel }) => ({
     slot,
     hintType,
@@ -40,7 +67,7 @@ export function materializePermanentDailyIssuedClueSnapshot(
     const player = resolvePlayer(canonicalPlayerId);
     if (player === null) {
       throw new Error(
-        `Permanent Daily clue issuance cannot resolve gameplay-ready canonical player ${canonicalPlayerId}.`,
+        `${seriesLabel} clue issuance cannot resolve gameplay-ready canonical player ${canonicalPlayerId}.`,
       );
     }
 
@@ -50,7 +77,7 @@ export function materializePermanentDailyIssuedClueSnapshot(
     const initials = pitch.player.initials;
     if (typeof initials !== 'string' || initials.trim().length === 0) {
       throw new Error(
-        `Permanent Daily clue issuance has no public initials for pitch ${pitchNumber} (${canonicalPlayerId}).`,
+        `${seriesLabel} clue issuance has no public initials for pitch ${pitchNumber} (${canonicalPlayerId}).`,
       );
     }
 
@@ -58,7 +85,7 @@ export function materializePermanentDailyIssuedClueSnapshot(
       const value = pitch.hints[hintType];
       if (typeof value !== 'string' || value.trim().length === 0) {
         throw new Error(
-          `Permanent Daily clue issuance has no public ${hintType} hint for pitch ${pitchNumber} (${canonicalPlayerId}).`,
+          `${seriesLabel} clue issuance has no public ${hintType} hint for pitch ${pitchNumber} (${canonicalPlayerId}).`,
         );
       }
       return value;
