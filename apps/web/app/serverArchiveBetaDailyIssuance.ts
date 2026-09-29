@@ -12,7 +12,7 @@ import { createDailyPuzzlePitch } from './dailyPuzzleAdapters';
 import {
   materializeArchiveBetaDailyIssuedClueSnapshot,
   type DailyPitchFactory,
-  type PermanentDailyCluePlayerResolver,
+  type IssuedDailyCluePlayerResolver,
 } from './materializePermanentDailyIssuedClueSnapshot';
 import { createServerSupabaseClient } from './serverSupabaseClient';
 import { createSupabaseDailyPuzzleRepository } from './supabaseDailyPuzzleRepository';
@@ -49,7 +49,7 @@ interface ServerArchiveBetaDailyIssuanceDependencies {
   createIssuedPuzzleRepository: (
     client: SupabaseClient,
   ) => ArchiveBetaDailyIssuedPuzzleRepository;
-  resolveCanonicalPlayer: PermanentDailyCluePlayerResolver;
+  resolveCanonicalPlayer: IssuedDailyCluePlayerResolver;
   createDailyPitch: DailyPitchFactory;
 }
 
