@@ -1,5 +1,8 @@
 import type { PermanentDailyIssuedClueSnapshot } from './permanentDailyIssuedClueSnapshot';
-import type { PermanentDailyIdentity } from './permanentDailyIdentity';
+import {
+  PERMANENT_DAILY_SERIES_VERSION,
+  type PermanentDailyIdentity,
+} from './permanentDailyIdentity';
 import {
   CLUE_FROZEN_ISSUED_DAILY_PUZZLE_SCHEMA_VERSION,
   ISSUED_DAILY_PUZZLE_SCHEMA_VERSION,
@@ -109,12 +112,14 @@ export function createPermanentDailyIssuedPuzzleService(
 export function createPermanentDailyIssuedPuzzle(
   input: PermanentDailyIssuedPuzzleInput,
 ): PermanentDailyIssuedPuzzle {
+  requirePermanentSeries(input.identity);
   return createIssuedDailyPuzzle(input);
 }
 
 export function createPermanentDailyClueFrozenIssuedPuzzle(
   input: PermanentDailyClueFrozenIssuedPuzzleInput,
 ): PermanentDailyClueFrozenIssuedPuzzle {
+  requirePermanentSeries(input.identity);
   return createClueFrozenIssuedDailyPuzzle(input);
 }
 
@@ -127,7 +132,16 @@ export function clonePermanentDailyIssuedPuzzleRecord(
 export function createPermanentDailyPuzzleId(
   identity: PermanentDailyIdentity,
 ): string {
+  requirePermanentSeries(identity);
   return createIssuedDailyPuzzleId(identity);
+}
+
+function requirePermanentSeries(identity: { seriesVersion: unknown }): void {
+  if (identity.seriesVersion !== PERMANENT_DAILY_SERIES_VERSION) {
+    throw new Error(
+      `Unsupported Permanent Daily series version: ${String(identity.seriesVersion)}.`,
+    );
+  }
 }
 
 function clonePermanentIssuedPuzzle(
