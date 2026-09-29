@@ -217,7 +217,7 @@ function validateCanonicalPlayerIds(
       throw new Error(`${label} canonical player ID is required.`);
     }
     if (seen.has(canonicalPlayerId)) {
-      throw new Error(`Duplicate ${label.toLowerCase()} canonical player: ${canonicalPlayerId}.`);
+      throw new Error(`Duplicate ${getSeriesSentenceLabel(identity)} canonical player: ${canonicalPlayerId}.`);
     }
     seen.add(canonicalPlayerId);
   }
@@ -226,7 +226,7 @@ function validateCanonicalPlayerIds(
 function normalizeIssuedAt(identity: IssuedDailyIdentity, issuedAt: string): string {
   const timestamp = Date.parse(issuedAt);
   if (!Number.isFinite(timestamp)) {
-    throw new Error(`Invalid ${getSeriesLabel(identity).toLowerCase()} issued timestamp: ${issuedAt}.`);
+    throw new Error(`Invalid ${getSeriesSentenceLabel(identity)} issued timestamp: ${issuedAt}.`);
   }
   return new Date(timestamp).toISOString();
 }
@@ -235,6 +235,14 @@ function getSeriesLabel(identity: IssuedDailyIdentity): 'Permanent Daily' | 'Arc
   return identity.seriesVersion === PERMANENT_DAILY_SERIES_VERSION
     ? 'Permanent Daily'
     : 'Archive beta Daily';
+}
+
+function getSeriesSentenceLabel(
+  identity: IssuedDailyIdentity,
+): 'permanent Daily' | 'archive beta Daily' {
+  return identity.seriesVersion === PERMANENT_DAILY_SERIES_VERSION
+    ? 'permanent Daily'
+    : 'archive beta Daily';
 }
 
 function identitiesEqual(
