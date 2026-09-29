@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   ARCHIVE_BETA_DAILY_SERIES_VERSION,
   createArchiveBetaDailyEpoch,
+  createArchiveBetaDailyPuzzleId,
   resolveArchiveBetaDailyIdentityForDate,
   resolveArchiveBetaDailyIdentityForNumber,
   type ArchiveBetaDailyEpoch,
@@ -24,6 +25,14 @@ describe('Archive beta Daily identity', () => {
       dailyNumber: 2,
     });
     expect(ARCHIVE_BETA_DAILY_SERIES_VERSION).not.toBe(PERMANENT_DAILY_SERIES_VERSION);
+  });
+
+  it('uses a beta-only puzzle ID namespace that cannot be mistaken for permanent-v1', () => {
+    const epoch = createArchiveBetaDailyEpoch('2026-09-29');
+    const identity = resolveArchiveBetaDailyIdentityForNumber(1, epoch);
+
+    expect(createArchiveBetaDailyPuzzleId(identity)).toBe('archive-beta-v1-daily-1');
+    expect(createArchiveBetaDailyPuzzleId(identity)).not.toBe('permanent-v1-daily-1');
   });
 
   it('uses calendar-day arithmetic across leap days and DST boundaries', () => {
