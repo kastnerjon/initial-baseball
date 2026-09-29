@@ -77,6 +77,36 @@ describe('Archive beta clue-frozen issued puzzle', () => {
     })).resolves.toMatchObject({ ok: false, error: 'immutable_conflict' });
   });
 
+  it.each(['inserted', 'existing'] as const)(
+    'rejects unsupported repository schema before accepting a %s result',
+    async (status) => {
+      const unsupported = {
+        ...createPuzzle(),
+        schemaVersion: 3,
+      } as unknown as ArchiveBetaDailyClueFrozenIssuedPuzzle;
+      const repository: ArchiveBetaDailyIssuedPuzzleRepository = {
+        insertIfAbsent: vi.fn().mockResolvedValue({
+          status,
+          puzzle: unsupported,
+        }),
+      };
+      const service = createArchiveBetaDailyClueFrozenIssuedPuzzleService(repository);
+
+      await expect(service.issue({
+        identity: identity(),
+        canonicalPlayerIds: PLAYERS,
+        clueSnapshot: clues(),
+        issuedAt: '2026-09-29T08:00:00.000Z',
+      })).rejects.toThrow(
+        'Unsupported archive beta Daily issued-puzzle schema version: 3.',
+      );
+
+      expect(() => cloneArchiveBetaDailyClueFrozenIssuedPuzzle(unsupported)).toThrow(
+        'Unsupported issued Daily puzzle schema version: 3.',
+      );
+    },
+  );
+
   it('rejects permanent-v1 identity passed through an unsafe cast', () => {
     const wrong = {
       seriesVersion: 'permanent-v1',
