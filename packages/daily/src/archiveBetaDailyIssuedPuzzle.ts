@@ -1,4 +1,7 @@
-import type { ArchiveBetaDailyIdentity } from './archiveBetaDailyIdentity';
+import {
+  ARCHIVE_BETA_DAILY_SERIES_VERSION,
+  type ArchiveBetaDailyIdentity,
+} from './archiveBetaDailyIdentity';
 import type { PermanentDailyIssuedClueSnapshot } from './permanentDailyIssuedClueSnapshot';
 import {
   CLUE_FROZEN_ISSUED_DAILY_PUZZLE_SCHEMA_VERSION,
@@ -51,6 +54,7 @@ export type ArchiveBetaDailyClueFrozenIssuedPuzzleService = {
 export function createArchiveBetaDailyClueFrozenIssuedPuzzle(
   input: ArchiveBetaDailyClueFrozenIssuedPuzzleInput,
 ): ArchiveBetaDailyClueFrozenIssuedPuzzle {
+  requireArchiveBetaSeries(input.identity);
   return createClueFrozenIssuedDailyPuzzle(input);
 }
 
@@ -97,6 +101,14 @@ export function createArchiveBetaDailyClueFrozenIssuedPuzzleService(
       };
     },
   };
+}
+
+function requireArchiveBetaSeries(identity: { seriesVersion: unknown }): void {
+  if (identity.seriesVersion !== ARCHIVE_BETA_DAILY_SERIES_VERSION) {
+    throw new Error(
+      `Unsupported archive beta Daily series version: ${String(identity.seriesVersion)}.`,
+    );
+  }
 }
 
 export function cloneArchiveBetaDailyClueFrozenIssuedPuzzle(
