@@ -11,9 +11,11 @@ import {
 import { getCanonicalDailyPlayer } from './canonicalDailyPlayerLookup';
 import { createDailyPuzzlePitch } from './dailyPuzzleAdapters';
 
-export type PermanentDailyCluePlayerResolver = (
+export type IssuedDailyCluePlayerResolver = (
   canonicalPlayerId: string,
 ) => Player | null;
+
+export type PermanentDailyCluePlayerResolver = IssuedDailyCluePlayerResolver;
 
 export type DailyPitchFactory = (
   pitchNumber: number,
@@ -26,7 +28,7 @@ export type DailyPitchFactory = (
  */
 export function materializePermanentDailyIssuedClueSnapshot(
   orderedCanonicalPlayerIds: readonly string[],
-  resolvePlayer: PermanentDailyCluePlayerResolver = getCanonicalDailyPlayer,
+  resolvePlayer: IssuedDailyCluePlayerResolver = getCanonicalDailyPlayer,
   createPitch: DailyPitchFactory = createDailyPuzzlePitch,
 ): PermanentDailyIssuedClueSnapshot {
   return materializeIssuedDailyClueSnapshot(
@@ -39,7 +41,7 @@ export function materializePermanentDailyIssuedClueSnapshot(
 
 export function materializeArchiveBetaDailyIssuedClueSnapshot(
   orderedCanonicalPlayerIds: readonly string[],
-  resolvePlayer: PermanentDailyCluePlayerResolver = getCanonicalDailyPlayer,
+  resolvePlayer: IssuedDailyCluePlayerResolver = getCanonicalDailyPlayer,
   createPitch: DailyPitchFactory = createDailyPuzzlePitch,
 ): PermanentDailyIssuedClueSnapshot {
   return materializeIssuedDailyClueSnapshot(
@@ -53,7 +55,7 @@ export function materializeArchiveBetaDailyIssuedClueSnapshot(
 function materializeIssuedDailyClueSnapshot(
   orderedCanonicalPlayerIds: readonly string[],
   seriesLabel: 'Permanent Daily' | 'Archive beta Daily',
-  resolvePlayer: PermanentDailyCluePlayerResolver,
+  resolvePlayer: IssuedDailyCluePlayerResolver,
   createPitch: DailyPitchFactory,
 ): PermanentDailyIssuedClueSnapshot {
   const hintLayout = DEFAULT_DAILY_HINT_CONFIG.map(({ slot, hintType, displayLabel }) => ({
