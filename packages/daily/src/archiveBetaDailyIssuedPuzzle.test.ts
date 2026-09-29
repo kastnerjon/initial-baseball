@@ -119,7 +119,7 @@ describe('Archive beta issued-puzzle reads', () => {
   });
 
   it('rejects wrong-series queries and mismatched provider identities', async () => {
-    const repository = readRepository({ byNumber: createPuzzleForDate('2026-09-30') });
+    const repository = readRepository({ byNumber: createPuzzle(identity('2026-09-30')) });
     const service = createArchiveBetaDailyIssuedPuzzleReadService(repository);
 
     await expect(service.getByNumber({
@@ -134,22 +134,13 @@ describe('Archive beta issued-puzzle reads', () => {
   });
 });
 
-function identity(): ArchiveBetaDailyIdentity {
-  const value = resolveArchiveBetaDailyIdentityForDate(
-    '2026-09-29',
-    createArchiveBetaDailyEpoch('2026-09-29'),
-  );
-  if (value === null) throw new Error('Expected archive beta identity.');
-  return value;
-}
-
-function createPuzzleForDate(puzzleDate: string): ArchiveBetaDailyClueFrozenIssuedPuzzle {
+function identity(puzzleDate = '2026-09-29'): ArchiveBetaDailyIdentity {
   const value = resolveArchiveBetaDailyIdentityForDate(
     puzzleDate,
     createArchiveBetaDailyEpoch('2026-09-29'),
   );
   if (value === null) throw new Error('Expected archive beta identity.');
-  return createPuzzle(value);
+  return value;
 }
 
 function readRepository({
