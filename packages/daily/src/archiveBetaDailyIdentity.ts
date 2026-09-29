@@ -27,6 +27,15 @@ export function createArchiveBetaDailyEpoch(
   };
 }
 
+export function createArchiveBetaDailyPuzzleId(
+  identity: ArchiveBetaDailyIdentity,
+): string {
+  requireArchiveBetaSeries(identity);
+  requireUtcCalendarDay(identity.puzzleDate, 'Archive beta Daily puzzle date');
+  requirePositiveSafeDailyNumber(identity.dailyNumber, 'Archive beta Daily number');
+  return `${identity.seriesVersion}-daily-${identity.dailyNumber}`;
+}
+
 export function resolveArchiveBetaDailyIdentityForDate(
   puzzleDate: string,
   epoch: ArchiveBetaDailyEpoch,
