@@ -71,6 +71,7 @@ export function createArchiveBetaDailyClueFrozenIssuedPuzzleService(
     async issue(input) {
       const requested = createArchiveBetaDailyClueFrozenIssuedPuzzle(input);
       const stored = await repository.insertIfAbsent(requested);
+      requireArchiveBetaClueFrozenSchema(stored.puzzle);
 
       if (stored.status === 'inserted') {
         if (!areClueFrozenIssuedDailyPuzzlesExactlyEqual(stored.puzzle, requested)) {
@@ -101,6 +102,21 @@ export function createArchiveBetaDailyClueFrozenIssuedPuzzleService(
       };
     },
   };
+}
+
+function requireArchiveBetaClueFrozenSchema(
+  puzzle: { schemaVersion: unknown },
+): void {
+  if (
+    puzzle.schemaVersion
+    !== ARCHIVE_BETA_DAILY_CLUE_FROZEN_ISSUED_PUZZLE_SCHEMA_VERSION
+  ) {
+    throw new Error(
+      `Unsupported archive beta Daily issued-puzzle schema version: ${String(
+        puzzle.schemaVersion,
+      )}.`,
+    );
+  }
 }
 
 function requireArchiveBetaSeries(identity: { seriesVersion: unknown }): void {
