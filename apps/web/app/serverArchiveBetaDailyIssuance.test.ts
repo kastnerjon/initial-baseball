@@ -131,6 +131,34 @@ describe('server archive beta Daily issuance composition', () => {
     }
   });
 
+  it('fails before persistence when a configured public hint is malformed', async () => {
+    const issuedRepository = new InMemoryArchiveBetaRepository();
+    const base = dependencies(
+      editorialRepositoryFor(scheduledEditorial()),
+      issuedRepository,
+    );
+    const service = createServerArchiveBetaDailyIssuanceService({
+      environment: ENVIRONMENT,
+      dependencies: {
+        ...base,
+        createDailyPitch: (pitchNumber, player) => {
+          const pitch = createDailyPuzzlePitch(pitchNumber, player);
+          return pitchNumber === 1
+            ? { ...pitch, hints: { ...pitch.hints, teams: '' } }
+            : pitch;
+        },
+      },
+    });
+
+    await expect(service.issue({
+      identity: betaIdentity(PUZZLE_DATE),
+      issuedAt: ISSUED_AT,
+    })).rejects.toThrow(
+      'Archive beta Daily clue issuance has no public teams hint for pitch 1 (player-1)',
+    );
+    expect(issuedRepository.insertCalls).toBe(0);
+  });
+
   it('fails before persistence when a canonical player cannot be materialized', async () => {
     const issuedRepository = new InMemoryArchiveBetaRepository();
     const base = dependencies(
