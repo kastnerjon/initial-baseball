@@ -121,6 +121,14 @@ function encodeIssuedDailyPuzzleRow(
 
 function decodeIssuedDailyPuzzleRow(
   row: unknown,
+  expectedSeriesVersion: typeof PERMANENT_DAILY_SERIES_VERSION,
+): PermanentDailyIssuedPuzzleRecord;
+function decodeIssuedDailyPuzzleRow(
+  row: unknown,
+  expectedSeriesVersion: typeof ARCHIVE_BETA_DAILY_SERIES_VERSION,
+): ArchiveBetaDailyClueFrozenIssuedPuzzle;
+function decodeIssuedDailyPuzzleRow(
+  row: unknown,
   expectedSeriesVersion:
     | typeof PERMANENT_DAILY_SERIES_VERSION
     | typeof ARCHIVE_BETA_DAILY_SERIES_VERSION,
