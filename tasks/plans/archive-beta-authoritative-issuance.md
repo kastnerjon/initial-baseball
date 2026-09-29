@@ -1,6 +1,6 @@
 # Archive-beta authoritative issuance composition
 
-Status: implementation plan
+Status: implemented on branch; verification pending
 
 ## Scope contract
 
@@ -18,3 +18,8 @@ The editorial eligibility/order rules are series-neutral. Extract that validatio
 The web clue materializer already produces the same portable clue snapshot used by both series. Add a series-neutral export name while preserving the existing permanent-named export for compatibility. Archive-beta server composition then mirrors the permanent server boundary but injects `createSupabaseArchiveBetaDailyIssuedPuzzleRepository`.
 
 The caller must supply an already-resolved `ArchiveBetaDailyIdentity`. This PR therefore cannot infer or activate a beta epoch by itself and cannot create a row unless explicitly invoked by later operational work.
+
+
+## Implementation note
+
+The portable beta issuance facade and server-only composition are capability-only. Construction creates providers, but no repository write occurs until a caller explicitly invokes `issue({ identity, issuedAt })` with an already-resolved beta identity. This PR intentionally provides no public/admin invocation surface and does not configure the beta epoch.
