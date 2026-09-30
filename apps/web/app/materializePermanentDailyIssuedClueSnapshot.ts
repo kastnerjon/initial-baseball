@@ -11,13 +11,16 @@ import {
 import { getCanonicalDailyPlayer } from './canonicalDailyPlayerLookup';
 import { createDailyPuzzlePitch } from './dailyPuzzleAdapters';
 
-export type PermanentDailyCluePlayerResolver = (
+export type IssuedDailyCluePlayerResolver = (
   canonicalPlayerId: string,
 ) => Player | null;
+
+export type PermanentDailyCluePlayerResolver = IssuedDailyCluePlayerResolver;
 
 export type DailyPitchFactory = (
   pitchNumber: number,
   player: Player,
+  puzzleDate?: string,
 ) => DailyPuzzle['pitches'][number];
 
 /**
@@ -26,8 +29,39 @@ export type DailyPitchFactory = (
  */
 export function materializePermanentDailyIssuedClueSnapshot(
   orderedCanonicalPlayerIds: readonly string[],
-  resolvePlayer: PermanentDailyCluePlayerResolver = getCanonicalDailyPlayer,
+  resolvePlayer: IssuedDailyCluePlayerResolver = getCanonicalDailyPlayer,
   createPitch: DailyPitchFactory = createDailyPuzzlePitch,
+): PermanentDailyIssuedClueSnapshot {
+  return materializeIssuedDailyClueSnapshot(
+    orderedCanonicalPlayerIds,
+    'Permanent Daily',
+    undefined,
+    resolvePlayer,
+    createPitch,
+  );
+}
+
+export function materializeArchiveBetaDailyIssuedClueSnapshot(
+  orderedCanonicalPlayerIds: readonly string[],
+  puzzleDate: string,
+  resolvePlayer: IssuedDailyCluePlayerResolver = getCanonicalDailyPlayer,
+  createPitch: DailyPitchFactory = createDailyPuzzlePitch,
+): PermanentDailyIssuedClueSnapshot {
+  return materializeIssuedDailyClueSnapshot(
+    orderedCanonicalPlayerIds,
+    'Archive beta Daily',
+    puzzleDate,
+    resolvePlayer,
+    createPitch,
+  );
+}
+
+function materializeIssuedDailyClueSnapshot(
+  orderedCanonicalPlayerIds: readonly string[],
+  seriesLabel: 'Permanent Daily' | 'Archive beta Daily',
+  puzzleDate: string | undefined,
+  resolvePlayer: IssuedDailyCluePlayerResolver,
+  createPitch: DailyPitchFactory,
 ): PermanentDailyIssuedClueSnapshot {
   const hintLayout = DEFAULT_DAILY_HINT_CONFIG.map(({ slot, hintType, displayLabel }) => ({
     slot,
@@ -40,17 +74,17 @@ export function materializePermanentDailyIssuedClueSnapshot(
     const player = resolvePlayer(canonicalPlayerId);
     if (player === null) {
       throw new Error(
-        `Permanent Daily clue issuance cannot resolve gameplay-ready canonical player ${canonicalPlayerId}.`,
+        `${seriesLabel} clue issuance cannot resolve gameplay-ready canonical player ${canonicalPlayerId}.`,
       );
     }
 
     // Match the public editorial-puzzle composition: canonical identity is
     // authoritative even when the resolved display record carries a legacy ID.
-    const pitch = createPitch(pitchNumber, player);
+    const pitch = createPitch(pitchNumber, player, puzzleDate);
     const initials = pitch.player.initials;
     if (typeof initials !== 'string' || initials.trim().length === 0) {
       throw new Error(
-        `Permanent Daily clue issuance has no public initials for pitch ${pitchNumber} (${canonicalPlayerId}).`,
+        `${seriesLabel} clue issuance has no public initials for pitch ${pitchNumber} (${canonicalPlayerId}).`,
       );
     }
 
@@ -58,7 +92,7 @@ export function materializePermanentDailyIssuedClueSnapshot(
       const value = pitch.hints[hintType];
       if (typeof value !== 'string' || value.trim().length === 0) {
         throw new Error(
-          `Permanent Daily clue issuance has no public ${hintType} hint for pitch ${pitchNumber} (${canonicalPlayerId}).`,
+          `${seriesLabel} clue issuance has no public ${hintType} hint for pitch ${pitchNumber} (${canonicalPlayerId}).`,
         );
       }
       return value;
