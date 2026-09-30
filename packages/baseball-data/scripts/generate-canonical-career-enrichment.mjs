@@ -2,6 +2,12 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  deriveCareerOnBasePercentage,
+  deriveSluggingPercentage,
+  hasCompleteObpSource,
+  hasCompleteSluggingSource,
+} from './canonical-batting-rate-core.mjs';
 
 const packageDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const careerCardPath = resolve(packageDir, 'reports/canonical-career-cards/career-cards.json');
@@ -78,14 +84,12 @@ function buildEnrichment(card) {
     }))
     .sort((a, b) => (a.year ?? Number.MAX_SAFE_INTEGER) - (b.year ?? Number.MAX_SAFE_INTEGER))[0] ?? null;
 
-  const hasCompleteObpSource = batting && hasCompleteFields(sourceRows, [
-    'hits', 'walks', 'hitByPitch', 'atBats', 'sacrificeFlies',
-  ]);
-  const hasCompleteSluggingSource = batting && hasCompleteFields(sourceRows, [
-    'hits', 'doubles', 'triples', 'homeRuns', 'atBats',
-  ]);
-  const onBasePercentage = hasCompleteObpSource ? deriveOnBasePercentage(batting) : null;
-  const sluggingPercentage = hasCompleteSluggingSource ? deriveSluggingPercentage(batting) : null;
+  const hasObpSource = batting && hasCompleteObpSource(sourceRows);
+  const hasSluggingSource = batting && hasCompleteSluggingSource(sourceRows);
+  const onBasePercentage = hasObpSource
+    ? deriveCareerOnBasePercentage(batting, sourceRows)
+    : null;
+  const sluggingPercentage = hasSluggingSource ? deriveSluggingPercentage(batting) : null;
   const ops = onBasePercentage != null && sluggingPercentage != null
     ? onBasePercentage + sluggingPercentage
     : null;
@@ -118,24 +122,13 @@ function buildEnrichment(card) {
       battingSourceRowCount: sourceRows.length,
       battingSourceCompleteness: !batting
         ? 'not_applicable'
-        : hasCompleteObpSource && hasCompleteSluggingSource
+        : hasObpSource && hasSluggingSource
           ? 'complete'
           : 'incomplete',
       hallOfFame: 'lahman_hall_of_fame',
       unavailableFieldsRemainNull: true,
     },
   };
-}
-
-function deriveOnBasePercentage(row) {
-  const denominator = row.atBats + row.walks + row.hitByPitch + row.sacrificeFlies;
-  return denominator > 0 ? (row.hits + row.walks + row.hitByPitch) / denominator : null;
-}
-
-function deriveSluggingPercentage(row) {
-  if (row.atBats <= 0) return null;
-  const totalBases = row.hits + row.doubles + (2 * row.triples) + (3 * row.homeRuns);
-  return totalBases / row.atBats;
 }
 
 function validate(rows, out) {
@@ -163,13 +156,24 @@ function regression(rows, out) {
     ['riverma01', true, true],
     ['griffke02', true, true],
     ['wrighda03', true, false],
-    ['mayswi01', false, true],
+    ['mayswi01', true, true],
+    ['bankser01', true, true],
   ];
   for (const [lahmanId, expectOps, expectHall] of tests) {
     const row = byLahman.get(lahmanId);
     if (!row) { out.push(`Regression enrichment missing: ${lahmanId}`); continue; }
     if ((row.advanced.ops != null) !== expectOps) out.push(`Regression OPS availability mismatch: ${lahmanId}`);
     if (row.achievements.hallOfFame.inducted !== expectHall) out.push(`Regression Hall of Fame mismatch: ${lahmanId}`);
+  }
+
+  const banks = byLahman.get('bankser01');
+  const expectedBanksObp = (2583 + 763 + 70) / (9421 + 763 + 70 + 96);
+  const expectedBanksSlg = (2583 + 407 + (2 * 90) + (3 * 512)) / 9421;
+  if (!banks) out.push('Regression enrichment missing: bankser01');
+  else {
+    if (Math.abs(banks.advanced.onBasePercentage - expectedBanksObp) > 1e-12) out.push('Regression OBP mismatch: bankser01');
+    if (Math.abs(banks.advanced.sluggingPercentage - expectedBanksSlg) > 1e-12) out.push('Regression SLG mismatch: bankser01');
+    if (Math.abs(banks.advanced.ops - (expectedBanksObp + expectedBanksSlg)) > 1e-12) out.push('Regression OPS mismatch: bankser01');
   }
 }
 

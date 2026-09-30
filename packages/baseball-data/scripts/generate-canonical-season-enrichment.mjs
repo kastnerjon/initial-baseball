@@ -2,6 +2,11 @@ import { createHash } from 'node:crypto';
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import {
+  deriveOnBasePercentage,
+  hasCompleteObpSource,
+  hasCompleteSluggingSource,
+} from './canonical-batting-rate-core.mjs';
 
 const packageDir = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const seasonCardPath = resolve(packageDir, 'reports/canonical-season-cards/season-cards.json');
@@ -59,14 +64,10 @@ if (strict && issues.length) process.exitCode = 1;
 function buildEnrichment(card) {
   const batting = card.batting ?? null;
   const sourceRows = battingSourceRowsByKey.get(seasonKey(card)) ?? [];
-  const hasCompleteObpSource = batting && hasCompleteFields(sourceRows, [
-    'hits', 'walks', 'hitByPitch', 'atBats', 'sacrificeFlies',
-  ]);
-  const hasCompleteSluggingSource = batting && hasCompleteFields(sourceRows, [
-    'hits', 'doubles', 'triples', 'homeRuns', 'atBats',
-  ]);
-  const onBasePercentage = hasCompleteObpSource ? deriveOnBasePercentage(batting) : null;
-  const sluggingPercentage = hasCompleteSluggingSource ? batting.sluggingPercentage : null;
+  const hasObpSource = batting && hasCompleteObpSource(sourceRows);
+  const hasSluggingSource = batting && hasCompleteSluggingSource(sourceRows);
+  const onBasePercentage = hasObpSource ? deriveOnBasePercentage({ ...batting, season: card.season }) : null;
+  const sluggingPercentage = hasSluggingSource ? batting.sluggingPercentage : null;
   const ops = onBasePercentage != null && sluggingPercentage != null
     ? onBasePercentage + sluggingPercentage
     : null;
@@ -96,17 +97,12 @@ function buildEnrichment(card) {
       battingSourceRowCount: sourceRows.length,
       battingSourceCompleteness: !batting
         ? 'not_applicable'
-        : hasCompleteObpSource && hasCompleteSluggingSource
+        : hasObpSource && hasSluggingSource
           ? 'complete'
           : 'incomplete',
       unavailableFieldsRemainNull: true,
     },
   };
-}
-
-function deriveOnBasePercentage(row) {
-  const denominator = row.atBats + row.walks + row.hitByPitch + row.sacrificeFlies;
-  return denominator > 0 ? (row.hits + row.walks + row.hitByPitch) / denominator : null;
 }
 
 function validate(rows, out) {
@@ -132,10 +128,11 @@ function validate(rows, out) {
 function regression(rows, out) {
   const byKey = new Map(rows.map(row => [`${row.lahmanPlayerId}:${row.season}`, row]));
   const tests = [
+    ['bankser01', 1953, true],
     ['ortizda01', 2006, true],
     ['griffke02', 1997, true],
     ['ohtansh01', 2021, true],
-    ['camparo01', 1944, false],
+    ['camparo01', 1944, true],
   ];
   for (const [lahmanId, season, expectOps] of tests) {
     const row = byKey.get(`${lahmanId}:${season}`);

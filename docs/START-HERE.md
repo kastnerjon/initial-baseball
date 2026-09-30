@@ -1,7 +1,7 @@
 # Initial Baseball — Start Here
 
 Status: Active project handoff  
-Last updated: 2026-09-28
+Last updated: 2026-09-30
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
@@ -18,6 +18,8 @@ Use this file to resume work. It records verified current state, settled future 
 Do not restart settled discussions because the conversation changed. Correct drift before new implementation.
 
 ## Product promise
+
+On 2026-09-30, PR #289 (`Compose server archive beta issuance`) remains open at `928e6458cb1e7f29c7f2b6a729384ad103c586ee`: exact-head CI #1007 passed, review is clean, the Supabase issued-puzzle table is empty, and Vercel still blocks the exact-head Preview on its build-rate quota. Keep it separate from the active canonical historical OBP/OPS data-quality fix, scoped in `tasks/plans/canonical-historical-on-base-rate-aggregation.md`.
 
 Initial Baseball currently presents **Daily Nine** as the only normal/default browser game. **Classic Inning** remains fully implemented and data-compatible but is hidden by default at the web boundary; the owner can restore the existing Classic route and mode navigation with the server-side availability setting. The games remain distinct over the same current daily nine-player puzzle, and Classic rules, saves, results, comparison infrastructure, and historical data are retained.
 
