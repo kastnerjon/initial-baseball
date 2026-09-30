@@ -18,6 +18,7 @@ const representativePlayers = [
   ['wrighda03', 'David Wright', 'hitter', 2004, 2018],
   ['mayswi01', 'Willie Mays', 'hitter', 1948, 1973],
   ['camparo01', 'Roy Campanella', 'hitter', 1937, 1957],
+  ['bankser01', 'Ernie Banks', 'hitter', 1953, 1971],
 ];
 
 for (const [lahmanId, displayName, playerType, firstSeason, lastSeason] of representativePlayers) {
@@ -69,14 +70,21 @@ if (ortiz) {
 const mays = byLahman.get('mayswi01');
 if (mays) {
   const reveal = accessor.getReveal(mays.playerId);
-  check(reveal.career.advanced?.ops === null, 'Willie Mays career OPS must remain null.');
+  check(reveal.career.advanced?.ops?.toFixed(3) === '0.940', 'Willie Mays career OPS regression failed.');
   check(reveal.seasons.find(season => season.season === 1954)?.advanced?.ops != null, 'Willie Mays 1954 OPS is missing.');
 }
 const campanella = byLahman.get('camparo01');
 if (campanella) {
   const reveal = accessor.getReveal(campanella.playerId);
-  check(reveal.career.advanced?.ops === null, 'Roy Campanella career OPS must remain null.');
-  check(reveal.seasons.find(season => season.season === 1944)?.advanced?.ops === null, 'Roy Campanella 1944 OPS must remain null.');
+  check(reveal.career.advanced?.ops?.toFixed(3) === '0.859', 'Roy Campanella career OPS regression failed.');
+  check(reveal.seasons.find(season => season.season === 1944)?.advanced?.ops?.toFixed(3) === '0.963', 'Roy Campanella 1944 OPS regression failed.');
+}
+const banks = byLahman.get('bankser01');
+if (banks) {
+  const reveal = accessor.getReveal(banks.playerId);
+  check(reveal.career.advanced?.onBasePercentage?.toFixed(3) === '0.330', 'Ernie Banks career OBP regression failed.');
+  check(reveal.career.advanced?.ops?.toFixed(3) === '0.830', 'Ernie Banks career OPS regression failed.');
+  check(reveal.seasons.find(season => season.season === 1953)?.advanced?.onBasePercentage?.toFixed(3) === '0.385', 'Ernie Banks 1953 OBP regression failed.');
 }
 
 const redirectPayload = JSON.parse(readFileSync(resolve(
