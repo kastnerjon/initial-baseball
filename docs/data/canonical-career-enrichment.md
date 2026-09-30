@@ -18,15 +18,17 @@ Season enrichment currently adds:
 
 Career enrichment currently adds:
 
-- career on-base percentage derived from canonical Lahman career totals only when every required batting source row is complete;
-- career slugging percentage derived from canonical Lahman career totals only when every required batting source row is complete;
+- career on-base percentage derived from unrounded canonical Lahman career totals after checking the underlying source rows for required components;
+- career slugging percentage derived from unrounded canonical Lahman career totals after checking the underlying source rows for required components;
 - career OPS as on-base percentage plus slugging percentage;
 - Hall of Fame induction metadata from the committed Lahman `HallOfFame.csv` table;
 - explicit provenance and source hashes.
 
-The OPS calculation uses at-bats, hits, walks, hit-by-pitches, sacrifice flies, doubles, triples, and home runs. A derived rate is published only when every contributing Lahman batting source row contains every required component. Mixed known and unknown rows do not produce a partial denominator or numerator. In those cases OBP, SLG, and OPS remain `null` rather than being estimated.
+OBP uses `(H + BB + HBP) / (AB + BB + HBP + SF)`, following [Baseball-Reference's formula](https://www.baseball-reference.com/glossary/on-base-percentage/). The sacrifice-fly rule was absent in 1931–1938 and 1940–1953; a blank Lahman `SF` field in those seasons is therefore inapplicable to the formula and contributes zero. The rule was active in 1939, in 1908–1930, and again from 1954 onward, so a blank `SF` in those periods remains unavailable. The historical rule changes are documented by [SABR](https://sabr.org/journal/article/the-sacrifice-fly/). Unknown required fields such as `HBP` are never treated as zero.
 
-This rule matters for historical data. For example, Willie Mays has early batting rows without sacrifice-fly values, so career OBP and OPS remain `null` until a complete approved source is available. Modern complete careers such as David Ortiz, Mariano Rivera, Ken Griffey Jr., and David Wright still receive calculated OPS values.
+Career OBP and SLG are computed from career counting-stat totals, not averaged season rates or rounded display values. The pipeline checks source-row availability for each rate's own required components, so an unavailable derived season rate does not invalidate a career rate when the career inputs are supported. Unknown required inputs still keep that rate unavailable. OPS is the sum of the unrounded derived OBP and SLG values.
+
+This rule matters for historical data. Ernie Banks's 1953 row has an unknown `SF` field, but the rule was not in effect that season; his 1953 OBP and career OBP/OPS can be calculated from the supported counts. Willie Mays's early blank `SF` fields from years when the rule was absent are handled the same way. This rule does not fill missing sacrifice flies from a season when the rule was active or unknown hit-by-pitches.
 
 ## Deliberately unsupported values
 
@@ -62,8 +64,9 @@ Strict generation checks:
 - exactly one season-enrichment row per season card;
 - exactly one career-enrichment row per career card;
 - stable canonical and Lahman identity joins;
-- source-row completeness before publishing OBP, SLG, or OPS;
+- rate-specific source completeness before publishing OBP, SLG, or OPS, including the pre-1954 sacrifice-fly convention;
 - OPS reconciliation to OBP plus SLG at both levels;
 - unsupported values remain `null`;
-- season regression coverage for David Ortiz, Ken Griffey Jr., Shohei Ohtani, and an intentionally incomplete 1944 source case;
-- career regression coverage for David Ortiz, Mariano Rivera, Ken Griffey Jr., David Wright, and the intentionally incomplete Willie Mays career case.
+- season regression coverage for David Ortiz, Ken Griffey Jr., Shohei Ohtani, and Roy Campanella's 1944 row from a season when the SF rule was absent;
+- career regression coverage for Ernie Banks, David Ortiz, Mariano Rivera, Ken Griffey Jr., David Wright, and Willie Mays;
+- focused tests that preserve null when HBP or SF from a season with an active rule is genuinely unknown and distinguish aggregate rates from averages of season rates.
