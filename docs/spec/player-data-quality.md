@@ -96,16 +96,16 @@ Null and zero are different:
 
 - a known zero remains `0`;
 - an unavailable component remains `null`;
-- no missing component is silently treated as zero.
+- no missing component is silently treated as zero unless the statistic is historically inapplicable for that season.
 
-OBP, SLG, and OPS are published only when every contributing Lahman batting source row includes every required component.
+OBP, SLG, and OPS are published only when every contributing Lahman batting source row supports that rate's required components. Career rates are derived from unrounded aggregate counting-stat totals, not averaged season rates. A derived season rate being unavailable does not by itself invalidate the career rate.
 
-For OBP, the required components are AB, H, BB, HBP, and SF. For SLG, the required components are AB, H, 2B, 3B, and HR. OPS requires both complete OBP and complete SLG.
+For OBP, the required components are AB, H, BB, HBP, and SF when the sacrifice-fly rule applies. The rule did not apply before 1908, in 1931–1938, or in 1940–1953, so a structurally blank SF in those seasons is inapplicable, not unknown. When the rule applies—including 1908–1930, 1939, and 1954 onward—a blank SF remains unavailable. HBP is never inferred as zero. For SLG, the required components are AB, H, 2B, 3B, and HR. OPS requires both complete OBP and complete SLG.
 
-Mixed known and unknown rows must not produce a partial rate. For example:
+Mixed known and genuinely unknown rows must not produce a partial rate. Historical inapplicability is not a missing event count. For example:
 
-- the 1944 Roy Campanella source rows contain incomplete sacrifice-fly coverage, so that season's OBP and OPS remain `null`;
-- Willie Mays has incomplete sacrifice-fly coverage in early career rows, so his career OBP and OPS remain `null` even though later seasons contain SF values.
+- Roy Campanella's 1944 row and Willie Mays's early career rows have blank SF in seasons when the rule was absent, so supported OBP/OPS can be calculated;
+- a blank SF in a season when the rule applied, or a genuinely unknown HBP, still keeps the affected rate unavailable.
 
 Unsupported values such as WAR, OPS+, ERA+, FIP, player awards, All-Star selections, voting finishes, and league-leading indicators remain explicitly `null` until an approved source or derivation exists.
 

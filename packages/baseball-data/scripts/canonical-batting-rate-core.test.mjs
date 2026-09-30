@@ -57,6 +57,20 @@ describe('canonical batting rate derivation', () => {
     expect(deriveCareerOnBasePercentage(careerTotals, seasonRows)).toBe(108 / 333);
   });
 
+  it('treats pre-1908 SF as structurally inapplicable, not unknown', () => {
+    const row = {
+      season: 1899,
+      atBats: 10,
+      hits: 3,
+      walks: 2,
+      hitByPitch: 0,
+      sacrificeFlies: null,
+    };
+
+    expect(hasCompleteObpSource([row])).toBe(true);
+    expect(deriveOnBasePercentage(row)).toBe(5 / 12);
+  });
+
   it('keeps OBP unavailable when a required source component is unknown', () => {
     expect(deriveOnBasePercentage({
       season: 1953,

@@ -3,7 +3,9 @@ const REQUIRED_SLG_FIELDS = ['hits', 'doubles', 'triples', 'homeRuns', 'atBats']
 
 function seasonHadNoSacrificeFlyRule(season) {
   return Number.isInteger(season)
-    && ((season >= 1931 && season <= 1938) || (season >= 1940 && season <= 1953));
+    && (season < 1908
+      || (season >= 1931 && season <= 1938)
+      || (season >= 1940 && season <= 1953));
 }
 
 export function hasCompleteObpSource(rows) {
@@ -23,8 +25,8 @@ export function hasCompleteSluggingSource(rows) {
 }
 
 export function deriveOnBasePercentage(stats) {
-  // The rule was absent in 1931–1938 and 1940–1953, so missing SF in those
-  // seasons is not a missing event count and does not enter historical OBP.
+  // SF was not part of the scoring rule before 1908, in 1931–1938, or in
+  // 1940–1953, so a structural blank in those seasons does not enter OBP.
   const sacrificeFlies = Number.isFinite(stats.sacrificeFlies)
     ? stats.sacrificeFlies
     : stats.sacrificeFlies == null && seasonHadNoSacrificeFlyRule(stats.season)
