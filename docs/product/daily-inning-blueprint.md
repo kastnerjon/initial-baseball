@@ -1,7 +1,7 @@
 # Daily Inning end-to-end blueprint
 
 Status: Living product source of truth  
-Last updated: 2026-09-23
+Last updated: 2026-10-04 (product roadmap; runtime verification dates unchanged)
 
 ## Product decision
 
@@ -9,7 +9,7 @@ Initial Baseball currently exposes **Daily Nine** as the normal/default browser 
 
 Current Daily numbering is beta and is not the permanent historical sequence. At a later explicit launch decision, permanent numbering restarts at **Daily #1** and prior beta history is not imported into the public archive. Detailed settled direction: `docs/product/beta-launch-results-archive.md`.
 
-Future themed, decade, team, custom, native, or head-to-head experiences may reuse the same systems but are not committed launch scope.
+The October 4 approved direction adds baseball-card presentation, a finished public archive, lightweight shared accounts/leaderboards, asynchronous Head-to-Head, and an eventual app experience. Canonical stages, confirmed multiplayer rules, boundaries, and open decisions: `two-game-roadmap.md`. Daily Inning is the directional name; current Daily Nine naming/scoring and retained Classic behavior remain unchanged. Head-to-Head is a distinct future multiplayer game, not the hidden Classic beta route. These commitments do not make all stages prerequisites for the initial daily launch.
 
 ## Core promise
 
@@ -148,7 +148,7 @@ The initial no-account product remembers played Dailies and the user's recorded 
 
 ## Deferred
 
-Accounts/cross-device history, public leaderboards, user-created or exposed theme libraries, native clients, head-to-head/social features, and payments. Classic-specific advanced analytics should also wait until beta feedback justifies retaining Classic.
+Shared accounts/cross-device history, daily leaderboards, Head-to-Head/social play, and an app are approved later stages in `two-game-roadmap.md`, following Daily polish and the public archive. Authentication, ranked eligibility, multiplayer completion, and app platform remain open design decisions. User-created or exposed theme libraries and payments remain deferred. Classic-specific advanced analytics still require beta feedback; retaining Classic does not require exposing it or using its completion policy for Head-to-Head.
 
 ## State and persistence
 
@@ -179,3 +179,4 @@ The winning beta game is explicitly chosen; permanent numbering/launch epoch is 
 ## Change rule
 
 Implementation and canonical docs change together. Approved future behavior must be labeled rather than presented as live.
+

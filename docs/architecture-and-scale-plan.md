@@ -1,7 +1,7 @@
 # Architecture and launch-scale plan
 
 Status: Living architecture source of truth  
-Last updated: 2026-09-23
+Last updated: 2026-10-04 (future product boundaries; current implementation contracts unchanged)
 
 ## Product goal
 
@@ -12,6 +12,14 @@ Current Daily numbering is beta. A later explicit launch decision restarts the p
 Product behavior: `docs/product/daily-inning-blueprint.md`.  
 Lineup content: `docs/product/lineup-content-system.md`.  
 Current handoff: `docs/START-HERE.md`.
+
+## Approved two-game architecture direction
+
+The October 4 roadmap commits to Daily Inning (currently Daily Nine) and asynchronous Head-to-Head with shared accounts, canonical player data, card presentation, and an app destination. Detailed sequence and open decisions: `docs/product/two-game-roadmap.md`. The current Daily/Classic runtime and permanent-launch decisions below remain unchanged.
+
+Reuse pure baseball outcomes/runner advancement and versioned contracts, but give multiplayer independent match/turn orchestration and persistence. Three outs switches sides; do not carry Classic's nine-at-bat cap into multiplayer. Account identity, invitations, validated pool selection, role/turn authorization, revision/idempotency checks, once-only rivalry results, and notification delivery require separately reviewed service/adaptor boundaries. Existing anonymous Daily progression/results are not multiplayer identity or ranked-account authority. Freeze match rules/pool versions; keep unresolved answers restricted to the pitcher/server and authorized batter clues. Persist accepted actions before notifications; retries must not replay a turn.
+
+Rules/facts remain portable; web/native clients render authorized state and use platform adapters. Do not add a package, framework, queue, or provider solely because this roadmap exists. Accounts/leaderboards follow Daily polish/archive; app investment follows the multiplayer prototype. Existing launch-scale/no-per-guess-write guidance describes anonymous Daily, not a settled multiplayer persistence protocol.
 
 ## Operating principles
 
@@ -253,3 +261,4 @@ Architecture is sufficient when scoring, completion, completed results, comparis
 
 
 H4 widens the schema-1 comparison transport, server read routing, browser decoder and all comparison hooks to exact points-v3/points-v4 identity without changing provider storage, request-controller fencing, concurrency caps, retry policy or the asynchronous/noncritical placement of comparison I/O. Existing presentation already used decimal-safe averages and point formatting; H4 adds explicit half-point coverage and classifies points-v4 share output as Daily Nine. `CURRENT_DAILY_RULESET_VERSION` is points-v4 after H5b. The September 27 Pacific cutover was explicitly authorized mid-puzzle, relying on exact-version isolation to keep older v3 sessions/results separate.
+

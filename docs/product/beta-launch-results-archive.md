@@ -27,7 +27,7 @@ Daily Nine and Classic Inning are currently two distinct beta games that happen 
 - Browser saves, completed results, comparison populations, personal history, and share output remain mode/ruleset-specific.
 - The shared lineup is a current product choice, not a permanent identity constraint.
 
-The owner expects to use beta feedback to choose one of these games as the primary/sole public product before broad launch. Therefore new infrastructure should be game-aware but should avoid expensive duplicated mode-specific systems before that decision.
+The owner expects beta feedback to determine the primary daily experience before broad launch. The October 4 direction also commits to a distinct asynchronous Head-to-Head game and eventual app with shared accounts; that is not the retained Classic beta route. See `two-game-roadmap.md`. Keep infrastructure game-aware without expensive duplication. This roadmap does not expose Classic, rename Daily Nine, change scoring, or choose a permanent launch epoch.
 
 Classic is now disabled from normal web presentation by default through the server-only `CLASSIC_INNING_ENABLED` setting. When disabled, the mode navigation is absent and `/classic` redirects to Daily Nine before Classic bootstrap composition. This availability seam does not delete or reinterpret Classic rules, browser saves, completed results, comparison infrastructure, or historical data; setting the value to the exact string `true` restores the existing route/navigation. The architecture must still permit later independent removal or separate lineups without corrupting Daily Nine data.
 
@@ -127,3 +127,4 @@ Archive gameplay must not overwrite the current Daily save. Personal completion/
 - Permanent launch date / Daily #1 epoch.
 - Classic overall comparison/percentile metric, if any.
 - Replay policy for already-completed archived games beyond preserving the user's recorded first completion/result.
+

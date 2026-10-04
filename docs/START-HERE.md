@@ -1,7 +1,7 @@
 # Initial Baseball — Start Here
 
 Status: Active project handoff  
-Last updated: 2026-09-30
+Last updated: 2026-10-04 (product direction; operational evidence retains its original dates)
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
@@ -18,6 +18,8 @@ Use this file to resume work. It records verified current state, settled future 
 Do not restart settled discussions because the conversation changed. Correct drift before new implementation.
 
 ## Product promise
+
+October 4 approved direction: one product with Daily Inning (currently Daily Nine) and asynchronous Head-to-Head, sharing accounts/player data and a baseball-card visual identity. Prioritize Daily mobile/card polish, public archive, accounts/leaderboards, a multiplayer prototype, then the app experience. The pitcher selects an allowed player for the batter to guess; resolve a normal baseball at-bat, reveal the card either way, and switch sides after three outs. Multiple matches, turn notifications, and friend rivalry records are planned. This changes future direction only; it does not rename Daily Nine, change current rules/scoring, expose Classic, or activate an archive epoch. Full decisions/acceptance/open questions: `docs/product/two-game-roadmap.md`. Existing dated operational statements below are historical evidence, not a new October 4 hosted verification.
 
 On 2026-09-30, PR #289 (`Compose server archive beta issuance`) remains open at `928e6458cb1e7f29c7f2b6a729384ad103c586ee`: exact-head CI #1007 passed, review is clean, the Supabase issued-puzzle table is empty, and Vercel still blocks the exact-head Preview on its build-rate quota. Keep it separate from the active canonical historical OBP/OPS data-quality fix, scoped in `tasks/plans/canonical-historical-on-base-rate-aggregation.md`.
 
@@ -241,7 +243,7 @@ Merged PR #140 adds initials → canonical answer → outcome for resolved playe
 
 Daily Nine is currently the default points-v4 beta game and Classic Inning is a separate classic-inning-v1 beta game using the same daily lineup, runner advancement and runs, ending at three outs or nine at-bats. Both may be played on the same date; saves/results/shares distinguish them and unplayed answers stay hidden. PR #141 merged portable policy/label/completion support, PR #155 merged the signed server transport/progression seam, and PR #156 merged `/classic`, navigation, isolated Classic saves, game-aware refresh/reset/results/sharing, and hidden unplayed answers while preserving existing Daily/legacy compatibility.
 
-The owner is keeping both games during beta to collect friend/user feedback, but realistically expects to choose one for broad launch. New shared infrastructure should therefore be game-aware without doubling expensive game-specific systems. Classic can later be disabled/removed without corrupting Daily Nine; the current shared lineup can also be separated later without redefining completed-result identity. Detailed source: `docs/product/beta-launch-results-archive.md`.
+The earlier choice between the Daily Nine and Classic beta experiences concerns which daily experience launches; it does not exclude the newly approved separate Head-to-Head game. Classic remains hidden by default and may later be disabled/removed without corrupting Daily Nine. Shared infrastructure stays game-aware without duplicating expensive systems; the current shared daily lineup can be separated without redefining completed-result identity. Daily/Classic details: `docs/product/beta-launch-results-archive.md`; staged two-game direction: `docs/product/two-game-roadmap.md`.
 
 ## Settled future systems
 
@@ -315,6 +317,8 @@ The routine conversational future-lineup workflow itself is no longer a blocker 
 
 ## Open decisions
 
+October 4 roadmap decisions still open: public Daily naming; exact card design; sign-in/provider and guest-history migration; ranked first-attempt/replay/tie/privacy policy; Head-to-Head hint/outcome mapping and turn granularity; innings/completion/ties/forfeits; player-pool presets/reuse/versioning; notifications and app platform. Pitcher selection, baseball outcomes, card reveal, and switching sides after three outs are settled direction. See `docs/product/two-game-roadmap.md` before treating any open item as an implemented rule.
+
 - Which beta game becomes the permanent broad-launch product.
 - Whether Daily Nine and Classic ever receive separate lineups before that decision.
 - Final launch ruleset/scoring contract and launch date / permanent Daily #1 epoch.
@@ -329,3 +333,4 @@ The routine conversational future-lineup workflow itself is no longer a blocker 
 ## Continuity control
 
 Repository docs are the system of record. Every PR has Documentation impact; CI checks material diffs; hosted work is incomplete until START-HERE/todo are reconciled. The documentation-impact check is not yet mandatory branch protection; issue #123 remains open after the owner declined an uncertain ruleset configuration.
+

@@ -6,9 +6,10 @@ Read this before touching code. This repository is maintained primarily through 
 
 Initial Baseball currently presents **Daily Nine** as the only normal/default browser game. **Classic Inning** remains fully implemented as a distinct beta game over the same daily nine-player puzzle, but the web availability setting hides it by default and redirects `/classic` to `/`. Re-enabling that web setting restores the existing Classic route and mode navigation without changing Classic rules, saves, results, comparison infrastructure, or data. The shared lineup is a current choice, not a permanent identity constraint; either game must remain independently removable without corrupting the other game's data.
 
-A future native client or head-to-head mode is possible, but neither is a committed roadmap item. Preserve inexpensive portability seams; do not add infrastructure or abstractions solely for hypothetical products.
+The October 4, 2026 approved direction is one product with Daily Inning (currently Daily Nine) and asynchronous Head-to-Head, shared accounts, a baseball-card presentation, and an eventual app experience. These are staged roadmap commitments, not implemented features or permission to expand an active PR. Preserve portability seams; add infrastructure only for a concrete upcoming checkpoint. Canonical direction: `docs/product/two-game-roadmap.md`.
 
 Canonical product intent: `docs/product/daily-inning-blueprint.md`.
+Canonical staged product roadmap: `docs/product/two-game-roadmap.md`.
 Canonical architecture: `docs/architecture-and-scale-plan.md`.
 Documentation rules: `docs/engineering/documentation-governance.md`.
 Player identity and data quality: `docs/spec/player-data-quality.md`.

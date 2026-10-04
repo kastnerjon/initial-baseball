@@ -14,6 +14,7 @@ A new conversation or Codex task must be able to resume accurately from the repo
 - `AGENTS.md`: short operating map, ownership constraints, PR protocol, and required checks.
 - `docs/START-HERE.md`: verified current state, approved deferred decisions, open decisions, blockers, and exact next work.
 - `docs/product/daily-inning-blueprint.md`: product behavior and launch requirements.
+- `docs/product/two-game-roadmap.md`: approved Daily/card/archive/accounts/Head-to-Head/app direction, staged acceptance gates, and unresolved future decisions; current runtime contracts remain in the blueprint/specs.
 - `docs/product/lineup-content-system.md`: recognizability, gameplay profiles, recipes, and content workflow.
 - `docs/architecture-and-scale-plan.md`: package ownership, dependency direction, scale, and implementation sequence.
 - `docs/spec/data-model.md`: persisted entities, fields, and retention.
@@ -150,3 +151,4 @@ Before merge, ask:
 > Could a new conversation read `AGENTS.md`, `docs/START-HERE.md`, and `tasks/todo.md` and continue correctly without this chat?
 
 If not, the PR is not complete.
+
