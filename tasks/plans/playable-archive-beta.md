@@ -1,6 +1,6 @@
 # Playable archive beta
 
-Status: Implemented; bounded review findings fixed; final-head CI/Preview and production gates pending
+Status: Merged and production verified; ordinary-browser/mobile interaction remains deferred prelaunch QA
 Last updated: 2026-10-05
 
 ## Scope contract
@@ -41,3 +41,11 @@ The owner reaffirmed quality gates while asking for less fragmentation. Group re
 First review attempt failed Unknown error without findings; one same-head retry completed the bounded pass. Both P2 findings are fixed in scope: validate loaded series/date/number/ID against the configured epoch, and reconcile the canonical architecture's obsolete unbuilt/empty archive statements. The guard's 77 focused tests and refreshed web production build are required on the fix; exact final-head CI/Preview and post-merge production checks remain mandatory. No further full review pass is requested.
 
 The refreshed local suite passed all 678 web tests. Preview at 962d8a3 failed its build typecheck with `Cannot find namespace JSX` at the archive page return annotation; local ambient types had masked the missing React type import. Both archive pages now explicitly import `JSX` from React, matching existing app conventions. This is a build typing fix, not an authentication failure or new architectural scope. Final commit/build/CI/Preview gates must pass before merge.
+
+## Production completion checkpoint
+
+Final head 44466b45e9c9f9d5fd0899ba8e00e442c4ecabba passed CI #1022 (37329695414) and READY Preview dpl_4SEW96oMT7BXD7wLqRCuHZZgYsqV with repeated issued/missing/future/redaction checks. Both review threads resolved after independently checked in-scope fixes. #296 merged as 299c03130e6820261e130e785c30ac8cc0b1a052; push CI #1023 (37330878074) passed. Exact production dpl_5DK2MWkKP6GmCH54wREN2zw1HBpV is READY (Next.js 15.5.15, 135094 ms build), with canonical initial-baseball-web.vercel.app alias.
+
+Canonical `/`, `/archive`, `/archive/1` returned HTTP 200; homepage links the archive. Unissued `/archive/2` and future `/archive/999999` returned 404. Issued bootstrap preserves all nine frozen initials, current points-v4, exact archive ID/share path, no canonical answer IDs or nine canonical display names, and exactly the first batter's four frozen hint values. Exact-deployment error/fatal 30m scan after more than 60 seconds READY found no logs. Read-only Supabase preserves one October 4 beta row, issued_at 2026-10-05 01:39:24.76+00 and fingerprint bfb08ff7892362e0762d858aa3920d53; zero permanent rows. No live editorial approval/publication performed.
+
+Drains/continuous monitoring remain unverified: connected list-drains returned 404 Not Found; no absence or login failure is inferred. Real browser/mobile interactions remain the explicit checklist in todo, alongside existing admin QA #294. Hosted archive populations/comparison/history and permanent launch remain separate future work. This checkpoint records completed automated/hosted gates, not broad-launch readiness.

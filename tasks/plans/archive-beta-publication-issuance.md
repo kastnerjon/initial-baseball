@@ -1,6 +1,6 @@
 # Archive beta issuance on editorial publication
 
-Status: Implemented; review and deployment gates tracked in the associated PR
+Status: Merged and production verified; authenticated mobile interaction remains deferred prelaunch QA
 Last updated: 2026-10-05
 
 ## Scope contract
@@ -29,3 +29,7 @@ Future publication may freeze future content; public availability must still rej
 ## Bounded review disposition
 
 The fresh review identified two completion-integrity defects, fixed within this same concern: a beta archive transition now verifies before leaving the only supported published retry state, and immutable-content conflicts preserve a sanitized non-retryable 409 classification. No portable lifecycle/storage change is needed; no archived content is reinterpreted. Added regression checks cover successful archive ordering, failure preserving publication, invalid transitions and conflict mapping.
+
+## Production completion
+
+#295 final head ba5597b30c3171f167df0dcc437cc58a3f16ad46 passed CI #1018 and READY Preview after both review fixes. Merge b20f0b414512d83260900d2cbd42faa7ef51f0e4 passed push CI #1019; exact production dpl_GndGRQ15MAiq2Do34uKQhdy279Yy was READY/canonically aliased, HTTP 200 and error/fatal scan clean. Read-only database checks preserved the October 4 beta row, original timestamp/content fingerprint and zero permanent rows. No live editorial approval/publication was performed from this implementation thread; authenticated admin/mobile QA remains #294.
