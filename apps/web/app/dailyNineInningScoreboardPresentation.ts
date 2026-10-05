@@ -27,6 +27,7 @@ type DailyNineInningScoreboardPresentationInput = {
   totalPoints: number;
   gameCompleted: boolean;
   completedComparison: DailyNineCompletedComparisonState;
+  comparisonsEnabled?: boolean;
 };
 
 export function createDailyNineInningScoreboardPresentation({
@@ -38,6 +39,7 @@ export function createDailyNineInningScoreboardPresentation({
   totalPoints,
   gameCompleted,
   completedComparison,
+  comparisonsEnabled = true,
 }: DailyNineInningScoreboardPresentationInput): InningScoreboardProps {
   const comparisonsSupported = isDailyNineComparisonApiRulesetVersion(rulesetVersion);
 
@@ -59,6 +61,7 @@ export function createDailyNineInningScoreboardPresentation({
           : createDashValue(`Your score for at-bat ${pitch.pitchNumber} is not resolved yet`),
         average: createAtBatAverageValue(
           pitch.pitchNumber,
+          comparisonsEnabled,
           comparisonsSupported,
           comparison,
         ),
@@ -66,6 +69,7 @@ export function createDailyNineInningScoreboardPresentation({
     }),
     totalUser: createScoreValue(formatDailyScorecardPoints(totalPoints), 'Your total score'),
     totalAverage: createTotalAverageValue(
+      comparisonsEnabled,
       comparisonsSupported,
       gameCompleted,
       completedComparison,
@@ -75,9 +79,13 @@ export function createDailyNineInningScoreboardPresentation({
 
 function createAtBatAverageValue(
   pitchNumber: number,
+  comparisonsEnabled: boolean,
   comparisonsSupported: boolean,
   state: DailyNineScorecardComparisonState | undefined,
 ): InningScoreboardValue {
+  if (!comparisonsEnabled) {
+    return createDashValue(`Average for at-bat ${pitchNumber} is unavailable for this game`);
+  }
   if (!comparisonsSupported) {
     return createDashValue(`Average for at-bat ${pitchNumber} is unavailable for this scoring version`);
   }
@@ -103,10 +111,14 @@ function createAtBatAverageValue(
 }
 
 function createTotalAverageValue(
+  comparisonsEnabled: boolean,
   comparisonsSupported: boolean,
   gameCompleted: boolean,
   state: DailyNineCompletedComparisonState,
 ): InningScoreboardValue {
+  if (!comparisonsEnabled) {
+    return createDashValue('Completed-game average is unavailable for this game');
+  }
   if (!comparisonsSupported) {
     return createDashValue('Completed-game average is unavailable for this scoring version');
   }
