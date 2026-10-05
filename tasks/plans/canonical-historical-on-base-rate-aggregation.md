@@ -1,7 +1,7 @@
 # Canonical Historical OBP and Career Rate Aggregation
 
-Status: In progress  
-Last updated: 2026-09-30
+Status: complete; merged and production-verified
+Last updated: 2026-10-05
 
 ## Scope contract
 
@@ -31,4 +31,4 @@ Last updated: 2026-09-30
 
 ## Verification checkpoint
 
-Strict season/career enrichment and runtime generation pass with zero critical issues. The generated runtime payload publishes Banks career OBP `.3300`, SLG `.4995`, OPS `.8296`, plus 1953 OBP `.3846` and OPS `.9560`. Focused pure-logic tests pass. Complete after the fresh review and exact-head CI/Preview checks. PR #289 remains its own concern and is not a dependency of this change.
+Strict season/career enrichment and runtime generation pass with zero critical issues. The generated runtime payload publishes Banks career OBP `.3300`, SLG `.4995`, OPS `.8296`, plus 1953 OBP `.3846` and OPS `.9560`. Focused pure-logic tests pass. PR #290 completed fresh review and exact-head CI/Preview checks and merged at `5d8495889863de2973bd9609cdbcb6b30d59001e`. Production deployment `dpl_Dik6hLmPBSS7Xerz7RrkTS6qyhAM` is READY on that merge; production reveal checks show Banks career OBP `.330` / OPS `.830` and 1953 OBP `.385` / OPS `.956`. PR #289 remained a separate concern and has since merged independently.

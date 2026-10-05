@@ -1,7 +1,7 @@
 # Initial Baseball — Start Here
 
 Status: Active project handoff  
-Last updated: 2026-09-30
+Last updated: 2026-10-05
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
@@ -19,7 +19,7 @@ Do not restart settled discussions because the conversation changed. Correct dri
 
 ## Product promise
 
-On 2026-09-30, PR #289 (`Compose server archive beta issuance`) remains open at `928e6458cb1e7f29c7f2b6a729384ad103c586ee`: exact-head CI #1007 passed, review is clean, the Supabase issued-puzzle table is empty, and Vercel still blocks the exact-head Preview on its build-rate quota. Keep it separate from the active canonical historical OBP/OPS data-quality fix, scoped in `tasks/plans/canonical-historical-on-base-rate-aggregation.md`.
+PR #290 (historical hitter OBP/career OPS) is merged at `5d8495889863de2973bd9609cdbcb6b30d59001e` and production-verified. PR #289 (server archive-beta issuance composition) is merged at `64235b774e229c93284caaf800d88512325c9a19` after exact-head CI #1007, clean review, and READY Preview `dpl_MSD5HJTQKSHsBmkTiqJcxGVxPRfc`. Push CI #1012 passed; exact-merge production `dpl_HBVajLLYRFbWwQEpFi5Rqm6KaNJe` is READY, the canonical site returns HTTP 200, and runtime checks found no error/fatal logs. The hosted issued-puzzle table remains empty. Next is explicit beta activation/first issue; no beta or permanent epoch has been chosen. Scopes: `tasks/plans/canonical-historical-on-base-rate-aggregation.md` and `tasks/plans/archive-beta-server-issuance.md`.
 
 Initial Baseball currently presents **Daily Nine** as the only normal/default browser game. **Classic Inning** remains fully implemented and data-compatible but is hidden by default at the web boundary; the owner can restore the existing Classic route and mode navigation with the server-side availability setting. The games remain distinct over the same current daily nine-player puzzle, and Classic rules, saves, results, comparison infrastructure, and historical data are retained.
 
