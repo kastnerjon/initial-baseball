@@ -42,16 +42,20 @@ function player(id: string): Player {
 }
 
 describe('playable archive beta boundaries', () => {
-  it('never retries or creates current-Daily completed results from archive gameplay', () => {
+  it('delivers beta archive completions while keeping permanent archive writes disabled', () => {
     submission.mockClear();
     for (const id of ['archive-beta-v1-daily-1', 'permanent-v1-daily-1']) {
       const state = { puzzle: { id }, rulesetVersion: CURRENT_DAILY_RULESET_VERSION, status: 'completed', completedAtBats: [] } as unknown as DailyGameState;
       useCompletedDailyResultSubmission(true, state).submitCreationIfEligible({ allowCreate: true });
     }
-    expect(submission).not.toHaveBeenCalled();
+    expect(submission).toHaveBeenCalledTimes(2);
+    expect(submission).toHaveBeenCalledWith(
+      expect.objectContaining({ puzzle: expect.objectContaining({ id: 'archive-beta-v1-daily-1' }) }),
+      expect.objectContaining({ allowCreate: true }),
+    );
     const current = { puzzle: { id: 'daily-current' }, rulesetVersion: CURRENT_DAILY_RULESET_VERSION, status: 'completed', completedAtBats: [] } as unknown as DailyGameState;
     useCompletedDailyResultSubmission(true, current).submitCreationIfEligible({ allowCreate: true });
-    expect(submission).toHaveBeenCalledTimes(2);
+    expect(submission).toHaveBeenCalledTimes(4);
   });
   it('serves frozen clues while withholding answers and future batter hint values', async () => {
     const { runtime } = setup();

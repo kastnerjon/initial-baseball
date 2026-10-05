@@ -7,6 +7,7 @@ import {
   type DailyCompletedResultRulesetVersion,
   type DailyPublicPuzzle,
 } from '@initial-baseball/shared';
+import { isArchiveBetaDailyPuzzleId } from './dailyGameplayPersistenceAuthority';
 import { validateDailyCompletedResult } from '@initial-baseball/engine';
 import {
   createDailyCompletedResultService,
@@ -20,6 +21,7 @@ export type DailyCompletedResultSubmissionOutcome =
 type LoadAuthoritativePuzzle = (
   puzzleDate: string,
   rulesetVersion: DailyCompletedResultRulesetVersion,
+  puzzleId: string,
 ) => Promise<DailyPublicPuzzle>;
 
 type CreateDailyCompletedResultSubmissionServiceInput = {
@@ -43,6 +45,7 @@ export function createDailyCompletedResultSubmissionService({
       const puzzle = await loadAuthoritativePuzzle(
         routing.puzzleDate,
         routing.rulesetVersion,
+        routing.puzzleId,
       );
       const validation = validateDailyCompletedResult({
         submission,
@@ -67,6 +70,7 @@ function readRoutingFields(
       ok: true;
       puzzleDate: string;
       rulesetVersion: DailyCompletedResultRulesetVersion;
+      puzzleId: string;
     }
   | { ok: false; error: DailyCompletedResultError } {
   if (!isRecord(submission)) return reject('invalid_submission');
@@ -77,10 +81,16 @@ function readRoutingFields(
   const puzzleDate = readCalendarDate(submission.puzzleDate);
   if (puzzleDate === null) return reject('invalid_submission');
   if (puzzleDate > currentDailyDate) return reject('invalid_puzzle');
+  const puzzleId = readPuzzleId(submission.puzzleId);
+  if (puzzleId === null) return reject('invalid_submission');
 
   if (submission.rulesetVersion !== POINTS_V3_DAILY_RULESET_VERSION
     && submission.rulesetVersion !== POINTS_V4_DAILY_RULESET_VERSION
     && submission.rulesetVersion !== CLASSIC_DAILY_RULESET_VERSION) {
+    return reject('unsupported_ruleset');
+  }
+  if (isArchiveBetaDailyPuzzleId(puzzleId)
+    && submission.rulesetVersion !== POINTS_V4_DAILY_RULESET_VERSION) {
     return reject('unsupported_ruleset');
   }
 
@@ -88,7 +98,14 @@ function readRoutingFields(
     ok: true,
     puzzleDate,
     rulesetVersion: submission.rulesetVersion,
+    puzzleId,
   };
+}
+
+function readPuzzleId(value: unknown): string | null {
+  return typeof value === 'string' && value.trim().length > 0 && value.length <= 200
+    ? value
+    : null;
 }
 
 function readCalendarDate(value: unknown): string | null {
