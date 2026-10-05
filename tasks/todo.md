@@ -288,9 +288,9 @@ September 24 coordinated archive/gameplay decisions and bounded PR order are in 
 - [x] H5a: replace the header disclosure with an exact-ruleset v3/v4/Classic How-to dialog that opens for each game identity/page entry, is accessible/reopenable, restores focus, persists no dismissal flag, and remains independent of gameplay hydration. Scope: `tasks/plans/points-v4-how-to-dialog.md`.
 - [x] H5b: switch the public Daily default to finalized points-v4 after re-verifying exact-version save/result/ownership/comparison/archive safeguards. The owner explicitly authorized the September 27 Pacific mid-puzzle cutover; existing v3 state/results remain untouched and separate. Scope: `tasks/plans/points-v4-public-cutover.md`.
 - [x] Show mode-appropriate How to play on every game-page entry/reload, accessible and reopenable without a dismissal flag or interruption of hydration; align copy with active scoring version.
-- [ ] Add archive routes/navigation for the game(s) currently exposed by web availability only after archive persistence/session identity is isolated; keep retained Classic archive support compatible with one-setting restoration rather than deleting Classic contracts.
-- [ ] Remember per-browser/device completion and recorded score/result for each stable Daily + game/ruleset.
-- [ ] Keep archived results shareable and eligible for same-Daily/same-ruleset global comparison.
+- [x] Add disposable beta archive routes/navigation for exposed Daily Nine (#296), after exact puzzle/ruleset persistence and ownership isolation. Retained Classic contracts remain intact; permanent launch/exposure is separate future work.
+- [ ] Add browsable browser/device history across stable Daily + game/ruleset. Isolated per-puzzle beta progress and restored completed score/result are implemented in #296; cross-puzzle history remains separate work.
+- [ ] Add archive-specific hosted results/global comparison for the same puzzle and ruleset. Exact spoiler-safe beta sharing is implemented in #296; current-Daily populations must not be reused.
 - [ ] Defer cross-device history until accounts.
 - [ ] Before launch, explicitly choose the surviving game, final launch rules, and launch date; reset permanent numbering to Daily #1.
 
