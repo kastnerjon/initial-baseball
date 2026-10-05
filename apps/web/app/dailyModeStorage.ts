@@ -12,6 +12,10 @@ const VERSIONED_DAILY_STORAGE_PREFIX = 'initial-baseball:daily:ruleset:';
 const CLASSIC_DAILY_STORAGE_PREFIX = 'initial-baseball:daily:classic:';
 const ARCHIVE_DAILY_STORAGE_PREFIX = 'initial-baseball:archive:permanent-v1:';
 
+export function isArchiveDailyPuzzleId(id?: string): boolean {
+  return id?.startsWith('permanent-v1-daily-') === true || id?.startsWith('archive-beta-v1-daily-') === true;
+}
+
 type DailyModeStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
 
 export function getDailyModeStorageKey(
@@ -19,8 +23,9 @@ export function getDailyModeStorageKey(
   rulesetVersion: DailyRulesetVersion,
   puzzleId?: string,
 ): string {
-  if (puzzleId?.startsWith('permanent-v1-daily-')) {
-    return `${ARCHIVE_DAILY_STORAGE_PREFIX}${encodeURIComponent(puzzleId)}:${rulesetVersion}:${puzzleDate}`;
+  if (isArchiveDailyPuzzleId(puzzleId)) {
+    const prefix = puzzleId!.startsWith('archive-beta-v1-daily-') ? 'initial-baseball:archive:archive-beta-v1:' : ARCHIVE_DAILY_STORAGE_PREFIX;
+    return `${prefix}${encodeURIComponent(puzzleId!)}:${rulesetVersion}:${puzzleDate}`;
   }
   if (rulesetVersion === CLASSIC_DAILY_RULESET_VERSION) {
     return `${CLASSIC_DAILY_STORAGE_PREFIX}${puzzleDate}`;
@@ -39,7 +44,7 @@ export function getDailyModeStorage(
   if (storage === null) {
     return storage;
   }
-  const archive = puzzleId?.startsWith('permanent-v1-daily-') === true;
+  const archive = isArchiveDailyPuzzleId(puzzleId);
   if (!archive && usesHistoricalCurrentDailyKey(rulesetVersion)) return storage;
 
   return {
@@ -63,7 +68,7 @@ export function isDailyModeSaveCompatible(
   savedRulesetVersion: DailyRulesetVersion,
   puzzleId?: string,
 ): boolean {
-  if (puzzleId?.startsWith('permanent-v1-daily-')) {
+  if (isArchiveDailyPuzzleId(puzzleId)) {
     return requestedRulesetVersion === savedRulesetVersion;
   }
   if (requestedRulesetVersion === CLASSIC_DAILY_RULESET_VERSION) {

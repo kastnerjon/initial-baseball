@@ -15,6 +15,20 @@ import {
 } from './dailyModeStorage';
 
 describe('dailyModeStorage', () => {
+  it('isolates disposable beta, permanent, current and other beta saves, including reset', () => {
+    const storage = new FakeStorage();
+    const date = '2026-10-04';
+    const key = `initial-baseball:daily:${date}`;
+    const ids = [undefined, 'archive-beta-v1-daily-1', 'archive-beta-v1-daily-2', 'permanent-v1-daily-1'];
+    const adapters = ids.map(id => getDailyModeStorage(CURRENT_DAILY_RULESET_VERSION, storage, id)!);
+    adapters.forEach((adapter, index) => adapter.setItem(key, `save-${index}`));
+    expect(new Set(ids.map(id => getDailyModeStorageKey(date, CURRENT_DAILY_RULESET_VERSION, id))).size).toBe(4);
+    expect(adapters.map(adapter => adapter.getItem(key))).toEqual(['save-0', 'save-1', 'save-2', 'save-3']);
+    adapters[1]!.removeItem(key);
+    expect(adapters.map(adapter => adapter.getItem(key))).toEqual(['save-0', null, 'save-2', 'save-3']);
+    expect(isDailyModeSaveCompatible(CURRENT_DAILY_RULESET_VERSION, POINTS_V3_DAILY_RULESET_VERSION, ids[1])).toBe(false);
+    expect(isDailyModeSaveCompatible(CURRENT_DAILY_RULESET_VERSION, CURRENT_DAILY_RULESET_VERSION, ids[1])).toBe(true);
+  });
   it('preserves the historical pre-v4 key while versioning points-v4 and isolating Classic', () => {
     for (const rulesetVersion of [
       LEGACY_DAILY_RULESET_VERSION,

@@ -38,12 +38,14 @@ import { DailyScorebug } from './DailyScorebug';
 import { GameCompleteView } from './GameCompleteView';
 import { InningScoreboard } from './InningScoreboard';
 import { PitchResultList } from './PitchResultList';
+import { isArchiveDailyPuzzleId } from '../dailyModeStorage';
 
 type DailyInningGameProps = {
   puzzle: DailyPublicPuzzle;
   rulesetVersion: DailyBootstrapRulesetVersion;
   initialProgressionToken: string;
   initialHintBundle: DailyHintBundle;
+  archivePath?: string;
 };
 
 export function DailyInningGame({
@@ -51,7 +53,9 @@ export function DailyInningGame({
   rulesetVersion,
   initialProgressionToken,
   initialHintBundle,
+  archivePath,
 }: DailyInningGameProps): JSX.Element {
+  const archive = isArchiveDailyPuzzleId(puzzle.id);
   const [gameState, setGameState] = useState<DailyGameState>(() => createInitialDailyGameState(puzzle, rulesetVersion));
   const [scorecardAnswers, setScorecardAnswers] = useState<DailyScorecardAnswers>({});
   const [currentPitchIndex, setCurrentPitchIndex] = useState(0);
@@ -65,7 +69,7 @@ export function DailyInningGame({
   const resolutionRequests = useDailyGameplayResolutionRequests(setRequestError);
   const [savedGameRestoreController] = useState(createDailySavedGameRestoreController);
   const currentPitch = puzzle.pitches[currentPitchIndex] ?? null;
-  const completedComparison = useDailyNineCompletedComparison(createDailyNineCompletedComparisonInput({
+  const completedComparison = useDailyNineCompletedComparison(archive ? null : createDailyNineCompletedComparisonInput({
     puzzle, rulesetVersion: gameState.rulesetVersion, points: gameState.points, terminalPoints: pendingAdvance?.points ?? null,
   }));
   const requestedPitchNumbers = useMemo(
@@ -79,13 +83,13 @@ export function DailyInningGame({
     [gameState.completedPitchLines.length, puzzle.pitches],
   );
   const scorecardComparisons = useDailyNineScorecardComparisons({
-    enabled: hasLoadedSavedState,
+    enabled: hasLoadedSavedState && !archive,
     puzzle,
     rulesetVersion: gameState.rulesetVersion,
     requestedPitchNumbers,
     completedPitchNumbers,
   });
-  const atBatComparisonInput = hasLoadedSavedState
+  const atBatComparisonInput = hasLoadedSavedState && !archive
     ? createDailyNineAtBatComparisonInput({
         puzzle, rulesetVersion: gameState.rulesetVersion, pitch: currentPitch, result: atBatState.submittedResult,
         currentPoints: gameState.points.points, terminalPoints: pendingAdvance?.points.points ?? null,
@@ -140,12 +144,12 @@ export function DailyInningGame({
             score: { ...gameState.score, completed: true },
             points: { ...gameState.points, completed: true },
           },
-          url: createDailyShareUrl(
+          url: archivePath ? `${createDailyShareUrl().replace(/\/$/, '')}${archivePath}` : createDailyShareUrl(
             gameState.rulesetVersion === CLASSIC_DAILY_RULESET_VERSION ? '/classic' : '/',
           ),
         })
       : null),
-    [gameState, isGameComplete],
+    [gameState, isGameComplete, archivePath],
   );
 
   if (gameplayPersistence.access === 'checking'
@@ -183,7 +187,7 @@ export function DailyInningGame({
       <GameCompleteView
         scorecardAnswers={scorecardAnswers}
         shareResult={shareResult}
-        shareText={formatDailyShareText(shareResult)}
+        shareText={`${archive ? 'Archive beta\n' : ''}${formatDailyShareText(shareResult)}`}
         comparison={completedComparison.state}
         atBatPoints={scorecardPoints}
         atBatComparisons={scorecardComparisons.comparisons}

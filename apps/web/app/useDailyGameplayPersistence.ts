@@ -25,7 +25,7 @@ import {
   type LoadedSavedDailyGame,
   type SaveDailyGameInput,
 } from './dailyLocalStorage';
-import { getDailyModeStorage, isDailyModeSaveCompatible } from './dailyModeStorage';
+import { getDailyModeStorage, isDailyModeSaveCompatible, isArchiveDailyPuzzleId } from './dailyModeStorage';
 import {
   createDailyGameplayPersistenceSession,
 } from './dailyGameplayPersistenceSession';
@@ -109,7 +109,7 @@ export function useDailyGameplayPersistence({
       journal: lifecycle.journal,
       reloadDurableState: ({ generation, contribution: ownerContribution }) => {
         const loaded = loadCompatible(puzzle, rulesetVersion, initialProgressionToken, storage);
-        const next = ownerContribution === 'enabled'
+        const next = ownerContribution === 'enabled' && !isArchiveDailyPuzzleId(puzzle.id)
           ? lifecycle.prepareOwner({
               loaded,
               hadPersistedGameplayValue: hasPersistedDailyGameValue(puzzle.puzzleDate, storage),
@@ -129,7 +129,7 @@ export function useDailyGameplayPersistence({
     const unsubscribe = coordinator.subscribe((state) => {
       if (cancelled) return;
       if (state.status === 'owner') {
-        const ownerDelivery = state.contribution === 'enabled'
+        const ownerDelivery = state.contribution === 'enabled' && !isArchiveDailyPuzzleId(puzzle.id)
           ? resultClient.createOwnerDeliverySession(identity)
           : null;
         persistenceSession.replaceDeliverySession(ownerDelivery);

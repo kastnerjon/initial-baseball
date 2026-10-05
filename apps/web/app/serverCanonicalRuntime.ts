@@ -5,6 +5,7 @@ import { createDailyProgressionTokenCodec } from './dailyProgressionToken';
 import { getDailyProgressionSecret } from './dailyProgressionSecret';
 import { createCachedPublicDailyPuzzleSource } from './publicDailyPuzzleCache';
 import { createDailyRuntimeService } from './dailyRuntimeService';
+import { createServerArchiveBetaRuntime, selectDailyProgressionRuntime } from './serverArchiveBetaRuntime';
 import {
   getCanonicalRevealReader,
   getCanonicalRuntime,
@@ -17,12 +18,25 @@ let materializedPublicDailyPuzzleSourcePromise: Promise<MaterializedPublicDailyP
 
 const createPuzzle = createCachedPublicDailyPuzzleSource(materializePublicDailyPuzzle);
 
-export const dailyRuntime = createDailyRuntimeService({
+const progressionTokens = createDailyProgressionTokenCodec(getDailyProgressionSecret());
+const currentDailyRuntime = createDailyRuntimeService({
   resolveLegacyPlayerId: playerId => getCanonicalRuntime().requireCanonicalPlayerId(playerId),
   getCanonicalReveal: playerId => getCanonicalRevealReader().getReveal(playerId),
   createPuzzle,
-  progressionTokens: createDailyProgressionTokenCodec(getDailyProgressionSecret()),
+  progressionTokens,
 });
+
+let archiveRuntime: ReturnType<typeof createServerArchiveBetaRuntime> | null = null;
+const selectRuntime = (token: string) => selectDailyProgressionRuntime(
+  token, progressionTokens, currentDailyRuntime,
+  () => archiveRuntime ??= createServerArchiveBetaRuntime({ progressionTokens }),
+);
+export const dailyRuntime = {
+  ...currentDailyRuntime,
+  getHintBundle: (token: string) => selectRuntime(token).getHintBundle(token),
+  revealHint: (token: string) => selectRuntime(token).revealHint(token),
+  resolveAtBat: (input: Parameters<typeof currentDailyRuntime.resolveAtBat>[0]) => selectRuntime(input.progressionToken).resolveAtBat(input),
+};
 
 async function materializePublicDailyPuzzle(date: string): Promise<DailyPuzzle> {
   const source = await getMaterializedPublicDailyPuzzleSource();
