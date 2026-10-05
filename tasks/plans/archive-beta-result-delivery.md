@@ -1,6 +1,6 @@
 # Archive-beta result delivery
 
-Status: implementation checkpoint for the first archive results/comparisons work.
+Status: merged; production deployment verified on 2026-10-05. Fresh native hosted-delivery QA remains unverified.
 
 ## Scope contract
 
@@ -24,3 +24,15 @@ Status: implementation checkpoint for the first archive results/comparisons work
 ## Follow-up boundary
 
 Comparison reads and UI activation are a separate next PR. Their requests must include explicit puzzle identity and bind it server-side to the authoritative Daily or issued archive puzzle, so same-date populations cannot mix. Browser/device archive history follows separately and still needs an explicit first-result/replay policy.
+
+## Verified release checkpoint — 2026-10-05
+
+Final head `c0ff2ebfd4d2f7057d230a3ef7a5a36f1226ea0a` passed CI #1034 attempt 3 (37368540871), the bounded fresh-eyes review, and READY Preview `dpl_DnxZGkqyCs6HH9DdhdgT3UyQqZ5M`. Earlier review findings were fixed: archive beta accepts only its playable points-v4 ruleset, while current Daily retains historical v3 compatibility; handoff/task wording records implemented delivery. Both threads are resolved.
+
+#300 merged as `c5c2b6fcde1084fa491838cbd492f17a298d6999`; push CI #1035 (37380378865) passed on that merge. At that verification checkpoint, production `dpl_AWxxmLLZTBbReoidx37B7dv2fh4h` was READY and canonically aliased. `/`, `/archive`, `/archive/1` returned 200; `/archive/2` and `/archive/999999` returned 404. The exact-deployment error/fatal 30m scan at 22:10 UTC, after more than 60 seconds READY, found no logs.
+
+Read-only Supabase preserved one archive-beta issued row and zero permanent rows, issued_at `2026-10-05T01:39:24.760Z`, and content fingerprint `bfb08ff7892362e0762d858aa3920d53`. Existing result counts remained 531 at-bats and 56 completed games, with zero archive-beta rows. No migration or hosted result write was performed by this verification pass. Local verification passed 35 focused tests, 688 web tests across 100 files, typecheck, file-size and whitespace checks; hosted CI additionally passed the full repository tests, strict data pipeline and production build.
+
+The original CI attempt was cancelled before test steps ran. Attempt 2 hit a 5-second timeout in the unchanged full-player required-field test; the identical code passed on attempt 3. Investigation is recorded separately in #301; no quality gate was changed.
+
+Verification limits: earlier cloud Chrome gameplay evidence remains valid for the playable archive, but this release's GET/read-only checks do not prove a fresh native hosted result submission. Keep that delivery check and physical/mobile/admin QA open before broad launch; #294 remains open for authenticated admin/mobile QA. Continuous monitoring/drains remain unverified. Archive comparisons and local history are separate upcoming work.
