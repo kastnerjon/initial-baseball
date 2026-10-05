@@ -60,6 +60,7 @@ export async function DailyModePage({ rulesetVersion }: DailyModePageProps): Pro
         />
 
         <footer className="daily-footer">
+          <a href="/archive">Play the archive</a>
           <span>One lineup every day.</span>
           <span>New puzzle · Midnight Pacific</span>
         </footer>

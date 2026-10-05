@@ -3,13 +3,14 @@
 import { useCallback, useEffect } from 'react';
 import type { DailyGameState } from '@initial-baseball/shared';
 import { submitCompletedDailyResultIfNeeded } from './dailyCompletedResultClient';
+import { isArchiveDailyPuzzleId } from './dailyModeStorage';
 
 export function useCompletedDailyResultSubmission(
   hasLoadedSavedState: boolean,
   gameState: DailyGameState,
 ) {
   useEffect(() => {
-    if (!hasLoadedSavedState) return;
+    if (!hasLoadedSavedState || isArchiveDailyPuzzleId(gameState.puzzle.id)) return;
 
     void submitCompletedDailyResultIfNeeded({
       puzzle: gameState.puzzle,
@@ -29,7 +30,7 @@ export function useCompletedDailyResultSubmission(
     allowCreate: boolean;
     creationSubmissionId?: string | null;
   }): void => {
-    if (!hasLoadedSavedState || !allowCreate || gameState.status !== 'completed') return;
+    if (!hasLoadedSavedState || !allowCreate || gameState.status !== 'completed' || isArchiveDailyPuzzleId(gameState.puzzle.id)) return;
 
     void submitCompletedDailyResultIfNeeded({
       puzzle: gameState.puzzle,

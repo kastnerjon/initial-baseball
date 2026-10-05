@@ -1,6 +1,7 @@
 import 'server-only';
 import type {
   PermanentDailyIssuedPuzzleRecord,
+  ArchiveBetaDailyClueFrozenIssuedPuzzle,
 } from '@initial-baseball/daily';
 import {
   DEFAULT_DAILY_HINT_CONFIG,
@@ -23,7 +24,7 @@ export type PermanentDailyPlayerResolver = (
  * remain sourced through the same gameplay player records used by public Daily.
  */
 export function materializePermanentDailyIssuedPuzzle(
-  issuedPuzzle: PermanentDailyIssuedPuzzleRecord,
+  issuedPuzzle: PermanentDailyIssuedPuzzleRecord | ArchiveBetaDailyClueFrozenIssuedPuzzle,
   resolvePlayer: PermanentDailyPlayerResolver = getCanonicalDailyPlayer,
 ): DailyPuzzle {
   if (issuedPuzzle.schemaVersion === 2) {
@@ -58,7 +59,7 @@ export function materializePermanentDailyIssuedPuzzle(
 }
 
 function materializeClueFrozenIssuedPuzzle(
-  issuedPuzzle: Extract<PermanentDailyIssuedPuzzleRecord, { schemaVersion: 2 }>,
+  issuedPuzzle: Extract<PermanentDailyIssuedPuzzleRecord, { schemaVersion: 2 }> | ArchiveBetaDailyClueFrozenIssuedPuzzle,
   resolvePlayer: PermanentDailyPlayerResolver,
 ): DailyPuzzle {
   const { clueSnapshot } = issuedPuzzle;
@@ -122,7 +123,7 @@ function materializeClueFrozenIssuedPuzzle(
 }
 
 function requirePlayer(
-  issuedPuzzle: PermanentDailyIssuedPuzzleRecord,
+  issuedPuzzle: PermanentDailyIssuedPuzzleRecord | ArchiveBetaDailyClueFrozenIssuedPuzzle,
   canonicalPlayerId: string,
   resolvePlayer: PermanentDailyPlayerResolver,
 ): Player {

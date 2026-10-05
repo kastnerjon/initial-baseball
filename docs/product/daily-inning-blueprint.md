@@ -133,6 +133,8 @@ Daily Nine v1 preloads all nine exact-slot at-bat comparison averages after save
 
 ## Archive and personal history direction
 
+The disposable beta archive exposes only actually issued schema-2 puzzles through `/archive` and `/archive/N`, capped at the current Pacific date. It uses frozen batting order, initials and hints with current Daily Nine scoring. Each beta puzzle/ruleset has isolated browser progress, ownership and reset; completion is device-local and shares its exact archive URL with an explicit Archive beta label. Current-Daily result submission and all comparison reads are disabled for archive gameplay until a separately approved archive result population exists. The catalog lists the 60 most recent issued puzzles; older issued numbered URLs remain addressable. This is not permanent launch or a cross-device history feature. Scope: `tasks/plans/playable-archive-beta.md`.
+
 The permanent archive begins only after the explicit launch reset to Daily #1. Each prior permanent Daily remains playable/shareable. While both games remain supported, an archived Daily can offer each independently and track completion separately.
 
 The initial no-account product remembers played Dailies and the user's recorded result on that browser/device. Archive saves/history are keyed by stable Daily identity plus game/ruleset and must not overwrite the current Daily save. Cross-device history remains deferred until accounts.
