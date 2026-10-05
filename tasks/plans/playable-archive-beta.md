@@ -1,6 +1,6 @@
 # Playable archive beta
 
-Status: Implemented locally; review/CI/Preview and production gates pending
+Status: Implemented; bounded review findings fixed; final-head CI/Preview and production gates pending
 Last updated: 2026-10-05
 
 ## Scope contract
@@ -28,8 +28,14 @@ The owner reaffirmed quality gates while asking for less fragmentation. Group re
 
 ## Local verification
 
-- 76 focused tests passed across archive runtime, frozen materialization, storage, gameplay lifecycle and ownership. New assertions cover all nine Give Ups under points-v4, redacted bootstrap/current-batter hints, exact signed identity, future/missing rejection, metadata-only catalog and no current-Daily completed-result retry/create from archives.
+- 77 focused tests passed across archive runtime, frozen materialization, storage, gameplay lifecycle and ownership. New assertions cover all nine Give Ups under points-v4, redacted bootstrap/current-batter hints, exact signed identity, future/missing rejection, metadata-only catalog and no current-Daily completed-result retry/create from archives. Review regression also rejects same-date rows with an epoch-inconsistent number or puzzle ID before materialization/signing.
 - All 677 web tests (100 files), web typecheck/lint, file-size and whitespace checks passed.
 - Full strict data generation reported zero critical issues; production Next build and hidden-answer QA passed (2 initial payloads, 31 client chunks). The dynamic archive bootstrap is separately tested for redaction; the existing build scanner's two payloads are not archive interaction evidence.
 - React boundary review: pages fetch server-side, serialize redacted bootstrap only, preserve existing hook order and game controls, use identity-keyed storage and accessible navigation. No dependency/schema/portable-package changes; 12 source/test files, below the scoped line threshold.
 - Browser automation is unavailable in this environment: both normal and debug `agent-browser open about:blank` failed with `Daemon process exited during startup with no error output`. This is a local tool startup failure before any authentication or app request, not a Vercel plugin/CLI/protected-preview result. Ordinary-browser/mobile gameplay, refresh, two-tab ownership and clipboard interaction remain unverified prelaunch QA; do not claim them from unit tests or plugin HTML fetches.
+
+## Bounded review and initial hosted checkpoint
+
+#296 initial head 35f75dbfba3d2706ad6b3f1d718f86fc63c30f86 passed exact CI #1020 and READY Preview dpl_7hAgMjosvUrFraJ3xyuJ5dvNubq8. Connected-plugin catalog/#1 HTTP 200; malformed/zero/future/unissued numbers HTTP 404. Against the persisted row and canonical index, bootstrap contains all nine frozen initials, no answer IDs/names, and exactly the first batter's four frozen hint values. Error/fatal scan empty; original beta row/timestamp/fingerprint and zero permanent rows preserved. Initial BUILDING-time protected fetch returned 302 deployment_authentication_required, but the same plugin fetched after READY without new login.
+
+First review attempt failed Unknown error without findings; one same-head retry completed the bounded pass. Both P2 findings are fixed in scope: validate loaded series/date/number/ID against the configured epoch, and reconcile the canonical architecture's obsolete unbuilt/empty archive statements. The guard's 77 focused tests and refreshed web production build are required on the fix; exact final-head CI/Preview and post-merge production checks remain mandatory. No further full review pass is requested.

@@ -97,6 +97,16 @@ describe('playable archive beta boundaries', () => {
     vi.mocked(reader.getByDate).mockRejectedValue(new Error('secret answer provider payload'));
     await expect(runtime.getBootstrap(date)).rejects.toThrow(/^The archive is temporarily unavailable\.$/);
   });
+  it('rejects same-date rows whose number or ID disagrees with the route epoch', async () => {
+    const { reader, runtime } = setup();
+    for (const wrong of [
+      { ...record, identity: { ...record.identity, dailyNumber: 2 }, puzzleId: 'archive-beta-v1-daily-2' },
+      { ...record, puzzleId: 'archive-beta-v1-daily-2' },
+    ]) {
+      vi.mocked(reader.getByDate).mockResolvedValue(wrong);
+      await expect(runtime.getBootstrap(date)).rejects.toThrow(/^The archive puzzle could not be loaded safely\.$/);
+    }
+  });
   it('verifies signatures before series dispatch or creating an archive reader', async () => {
     const { runtime } = setup();
     const archive = vi.fn(() => runtime);

@@ -1,6 +1,7 @@
 import 'server-only';
 import {
   createArchiveBetaDailyIssuedPuzzleReadService,
+  resolveArchiveBetaDailyIdentityForDate,
   resolveArchiveBetaDailyIdentityForNumber,
   type ArchiveBetaDailyClueFrozenIssuedPuzzle,
   type ArchiveBetaDailyIssuedPuzzleReadService,
@@ -57,6 +58,12 @@ export function createServerArchiveBetaRuntime({
         record = await (reader ?? createArchiveBetaReader()).getByDate({ seriesVersion: 'archive-beta-v1', puzzleDate: date });
       } catch { throw new Error('The archive is temporarily unavailable.'); }
       if (record === null) throw new DailyRuntimeRequestError('This archive puzzle has not been issued.');
+      const expected = resolveArchiveBetaDailyIdentityForDate(date, ARCHIVE_BETA_EPOCH);
+      if (expected === null || record.identity.seriesVersion !== expected.seriesVersion
+        || record.identity.puzzleDate !== expected.puzzleDate || record.identity.dailyNumber !== expected.dailyNumber
+        || record.puzzleId !== `archive-beta-v1-daily-${expected.dailyNumber}`) {
+        throw new Error('The archive puzzle could not be loaded safely.');
+      }
       try { return materialize(record); }
       catch { throw new Error('The archive puzzle could not be loaded safely.'); }
     },
