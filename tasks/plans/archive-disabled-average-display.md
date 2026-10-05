@@ -1,6 +1,6 @@
 # Disabled archive average presentation
 
-Status: Implemented; validation/review/deployment gates pending
+Status: Merged and production/browser verified
 
 ## Scope contract
 
@@ -15,10 +15,14 @@ Status: Implemented; validation/review/deployment gates pending
 
 The presenter already distinguishes unsupported rulesets from pending reads. Add explicit comparison availability to that presentation boundary, supplied by existing archive classification. Preserve the default for existing current-Daily consumers. Disabled comparison values must not appear pending or expose stale cache data. No package/domain dependency changes.
 
-The implementation passes existing archive availability at both active and completed scoreboard call sites. Eleven focused checks and all 681 web tests passed. Workspace typecheck, lint, file-size and whitespace checks passed. Strict data pipeline and production build passed, including hidden-answer QA of two payloads and 31 client chunks (879730 bytes). Exact-head CI/Preview, bounded review and production gates remain required. Build-generated unrelated saves/Next configuration changes were excluded from the commit.
+The implementation passes existing archive availability at both active and completed scoreboard call sites. Eleven focused checks and all 681 web tests passed. Workspace typecheck, lint, file-size and whitespace checks passed. Strict data pipeline and production build passed, including hidden-answer QA of two payloads and 31 client chunks (879730 bytes). All exact-head/review/production gates are complete below. Build-generated unrelated saves/Next configuration changes were excluded from the commit.
 
 ## Verified browser checkpoint
 
 Cloud Chrome successfully opened the public archive on October 5, 2026. Hint, correct Guess, Give Up, Next, all-nine completion, active/completed refresh, exact spoiler-safe clipboard URL, second-tab follower lock and archive reset preserving current-Daily hint progress passed. No current-Daily result was submitted. Other archive puzzle reset isolation remains unverified because only one puzzle is issued. Physical mobile and authenticated admin QA remain open. The scoreboard showed loading AVGs during play and completed TOTAL AVG despite disabled archive comparison reads, motivating this bounded fix.
 
 #297 merged as fdd3d86835e7916f431c8a398460c8cb902890d6; final-head CI #1025 and READY Preview passed. Push CI #1026 passed; production dpl_4w2Mxyv79uSg75Xak7RpdhBLUC94 READY/canonical, expected routes 200/404, post-READY error/fatal scan clean, one unchanged beta row and zero permanent rows. Issue #294 checkpoint reconciled and remains open for authenticated admin/mobile QA.
+
+## Final review and production verification
+
+#298 final head 93bd81108f5b4f27c36c80097ecb16697d0cf62b passed CI #1027 and READY Preview dpl_HDxkJuPLPUXXGFmBYoJgZzwYmuqV; protected Preview fetch returned 200. One automated fresh-eyes pass returned a clean thumbs-up and no inline findings. Merged as f1ab24d9affe0807625df900562822df64f20844. Push CI #1028 (37356782731) passed. Production dpl_68CDgeeuFHJJSmX5icrVNypLPadx READY/canonical; cloud Chrome verifies nine unavailable AVG cells during play, nine plus TOTAL after completion, and completed refresh without loading indicators. Canonical /, /archive and /archive/1 returned 200; unissued /archive/2 and future /archive/999999 returned 404. Error/fatal 30-minute scan more than 60 seconds after READY found no logs. One beta row, zero permanent rows, and frozen first timestamp/fingerprint unchanged; archive play added no rows to current-Daily completed/AB populations. No physical-mobile/admin claim or permanent launch change.
