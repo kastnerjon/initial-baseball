@@ -86,7 +86,7 @@ export function DailyAdministrationView({
         </section>
       ) : (
         <section aria-label="Upcoming Daily editorial puzzles" style={{ display: 'grid', gap: 24, marginTop: 28 }}>
-          {puzzles.map(puzzle => <PuzzleCard key={puzzle.puzzleDate} puzzle={puzzle} selection={selection} />)}
+          {puzzles.map(puzzle => <PuzzleCard key={puzzle.puzzleDate} puzzle={puzzle} selection={selection} archiveBetaEligible={puzzle.puzzleDate >= archiveBetaStartDate} />)}
         </section>
       )}
     </main>
@@ -191,9 +191,11 @@ function PlayerPreview({
 function PuzzleCard({
   puzzle,
   selection,
+  archiveBetaEligible,
 }: {
   puzzle: DailyEditorialHorizonPuzzle;
   selection: DailyAdminEditorSelection | null;
+  archiveBetaEligible: boolean;
 }): JSX.Element {
   return (
     <article style={cardStyle}>
@@ -207,7 +209,7 @@ function PuzzleCard({
             <strong>{puzzle.status.toUpperCase()}</strong>
             <div style={{ fontSize: 14, opacity: 0.7 }}>Revision {puzzle.revision} · {puzzle.validation.valid ? 'Valid' : 'Needs review'}</div>
           </div>
-          <DailyLifecycleActionForm puzzleDate={puzzle.puzzleDate} status={puzzle.status} />
+          <DailyLifecycleActionForm puzzleDate={puzzle.puzzleDate} status={puzzle.status} archiveBetaEligible={archiveBetaEligible} />
         </div>
       </header>
 
