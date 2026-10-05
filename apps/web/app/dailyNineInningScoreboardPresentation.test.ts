@@ -8,6 +8,49 @@ const pitches = [
 ];
 
 describe('Daily Nine inning scoreboard comparison presentation', () => {
+  it.each([false, true])('shows unavailable AVGs when comparisons are disabled (completed=%s)', (gameCompleted) => {
+    const scoreboard = createDailyNineInningScoreboardPresentation({
+      pitches,
+      currentPitchNumber: gameCompleted ? null : 1,
+      rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+      comparisonsEnabled: false,
+      atBatPoints: { 1: 0.5 },
+      atBatComparisons: {},
+      totalPoints: 0.5,
+      gameCompleted,
+      completedComparison: { status: 'idle' },
+    });
+
+    expect(scoreboard.columns.every(column => column.average.display === '—')).toBe(true);
+    expect(scoreboard.columns[0]?.average.accessibleLabel).toContain('unavailable for this game');
+    expect(scoreboard.totalAverage.display).toBe('—');
+    expect(scoreboard.totalAverage.accessibleLabel).toContain('unavailable for this game');
+    expect(scoreboard.totalUser.display).toBe('0.5');
+  });
+
+  it('does not display loading or cached comparisons when availability is disabled', () => {
+    const scoreboard = createDailyNineInningScoreboardPresentation({
+      pitches,
+      currentPitchNumber: null,
+      rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+      comparisonsEnabled: false,
+      atBatPoints: {},
+      atBatComparisons: {
+        1: { status: 'loading' },
+        2: { status: 'success', resolvedAtBatCount: 20, averagePoints: 3 },
+      },
+      totalPoints: 0,
+      gameCompleted: true,
+      completedComparison: {
+        status: 'success', ownPoints: 0, completedGameCount: 20,
+        averageTotalPoints: 12, strictLowerFinishRate: 0,
+      },
+    });
+
+    expect(scoreboard.columns.every(column => column.average.display === '—')).toBe(true);
+    expect(scoreboard.totalAverage.display).toBe('—');
+  });
+
   it('shows a preloaded exact-slot AVG before the user resolves that at-bat', () => {
     const scoreboard = createDailyNineInningScoreboardPresentation({
       pitches,
