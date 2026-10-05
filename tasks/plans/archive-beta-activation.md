@@ -26,8 +26,16 @@ A successful mutation can have committed before a read-back/network failure. Ret
 
 ## Access evidence
 
-The connected Vercel plugin can inspect exact deployments and fetch protected Previews. Listing project environment variables failed with HTTP 403, `forbidden`: `You don't have permission to list the project environment variable.` No local Daily admin credentials are present. This is an environment-variable permission/app-admin access limitation, not a failure of Vercel plugin authentication. Live issuance remains pending until the authenticated admin action can be invoked; no alternative write path is used.
+The connected Vercel plugin can inspect exact deployments and fetch protected Previews. Listing project environment variables failed with HTTP 403, `forbidden`: `You don't have permission to list the project environment variable.` No local Daily admin credentials are present. This is an environment-variable permission/app-admin access limitation, not a failure of Vercel plugin authentication. The owner invoked the existing authenticated admin action successfully; no alternative write path was used. Plugin authentication, CLI credentials, and app-admin credentials remain separate access boundaries.
 
 ## Verification evidence
 
-The 29 focused activation/route/existing-composition/provider tests pass, web typecheck passes, and the strict data pipeline reports zero critical issues. The production Next build and hidden-answer build QA pass with a local build-only progression secret. A read-only operational check loaded the actual October 4 scheduled editorial record from Supabase, materialized all nine canonical players and issued clues, and round-tripped the existing beta persistence codec. That check used an in-memory write port and created no hosted row. Live issuance/read-back and authenticated admin/mobile interaction remain pending app-admin access.
+The 29 focused activation/route/existing-composition/provider tests pass, web typecheck passes, and the strict data pipeline reports zero critical issues. The production Next build and hidden-answer build QA pass with a local build-only progression secret. A read-only operational check loaded the actual October 4 scheduled editorial record from Supabase, materialized all nine canonical players and issued clues, and round-tripped the existing beta persistence codec. That check used an in-memory write port and created no hosted row. Live first issuance and exact retry are verified. Authenticated mobile layout/interaction remains pending prelaunch QA in #294.
+
+## Verified production checkpoint
+
+PR #293 merged at `2a92d75f27246be5fc47c9bf446b422cd1d80351`, after exact-head CI #1015, clean Codex review and READY Preview `dpl_CpM8G2Q3ukEKKDf3fMaeEewXPH7z`. Push CI #1016 passed; exact production `dpl_HWe5hYRZzNNZWGQLnezb9JxMDkEF` was READY and canonically aliased, HTTP 200, without error/fatal runtime logs. Unauthenticated mutation returned 401; cross-origin mutation returned 403.
+
+The first authenticated POST returned 303 at `2026-10-05T01:39:24.760Z` and created `archive-beta-v1-daily-1` for October 4. Read-only SQL verified schema 2, nine ordered canonical IDs matching the editorial slots, nine aligned clue pitches and four nonempty hints per pitch. An exact retry returned 303 at `2026-10-05T01:43:00Z`: exactly one issued beta row, zero permanent rows, original timestamp and content fingerprint `bfb08ff7892362e0762d858aa3920d53` unchanged. The fingerprint is diagnostic equality evidence, not a security primitive.
+
+Automatic issuance on publication is the separate next scope in `tasks/plans/archive-beta-publication-issuance.md`; explicit manual issuance retains its Pacific date admission policy.

@@ -1,46 +1,23 @@
 import 'server-only';
-import { isDeepStrictEqual } from 'node:util';
-import {
-  createArchiveBetaDailyIssuedPuzzleReadService,
-  resolveArchiveBetaDailyIdentityForDate,
-  type ArchiveBetaDailyIssuedPuzzleReadService,
-} from '@initial-baseball/daily';
+import { resolveArchiveBetaDailyIdentityForDate } from '@initial-baseball/daily';
 import { ARCHIVE_BETA_EPOCH } from './archiveBetaActivation';
 import { getPacificDailyDateString } from './getPacificDailyDateString';
 import {
-  createServerArchiveBetaDailyIssuanceService,
-  type ServerArchiveBetaDailyIssuanceService,
-} from './serverArchiveBetaDailyIssuance';
-import { createServerSupabaseClient } from './serverSupabaseClient';
-import { createSupabaseArchiveBetaDailyIssuedPuzzleReadRepository } from './supabasePermanentDailyIssuedPuzzleRepository';
+  ArchiveBetaActivationError,
+  issueArchiveBetaDailyAndVerify,
+  type ArchiveBetaVerificationDependencies,
+} from './serverArchiveBetaDailyVerification';
 
-export class ArchiveBetaActivationError extends Error {
-  constructor(readonly kind: 'invalid-date' | 'immutable-conflict' | 'read-back-failed') {
-    super(`Archive beta issuance failed: ${kind}.`);
-    this.name = 'ArchiveBetaActivationError';
-  }
-}
+export { ArchiveBetaActivationError } from './serverArchiveBetaDailyVerification';
 
-type Dependencies = {
-  now(): Date;
-  createIssuance(): ServerArchiveBetaDailyIssuanceService;
-  createReader(): ArchiveBetaDailyIssuedPuzzleReadService;
-};
+type Dependencies = ArchiveBetaVerificationDependencies & { now(): Date };
 
-const DEFAULT_DEPENDENCIES: Dependencies = {
-  now: () => new Date(),
-  createIssuance: createServerArchiveBetaDailyIssuanceService,
-  createReader: () => createArchiveBetaDailyIssuedPuzzleReadService(
-    createSupabaseArchiveBetaDailyIssuedPuzzleReadRepository(createServerSupabaseClient()),
-  ),
-};
-
-/** Explicit operation only: no route render, scheduler, or publication trigger. */
+/** Explicit manual operation retains its current Pacific date ceiling. */
 export async function issueActivatedArchiveBetaDaily(
   puzzleDate: string,
-  dependencies: Dependencies = DEFAULT_DEPENDENCIES,
+  dependencies?: Dependencies,
 ) {
-  const now = dependencies.now();
+  const now = dependencies?.now() ?? new Date();
   let identity;
   try {
     identity = resolveArchiveBetaDailyIdentityForDate(puzzleDate, ARCHIVE_BETA_EPOCH);
@@ -50,26 +27,5 @@ export async function issueActivatedArchiveBetaDaily(
   if (identity === null || puzzleDate > getPacificDailyDateString(now)) {
     throw new ArchiveBetaActivationError('invalid-date');
   }
-
-  const result = await dependencies.createIssuance().issue({
-    identity,
-    issuedAt: now.toISOString(),
-  });
-  if (!result.ok) throw new ArchiveBetaActivationError('immutable-conflict');
-
-  const reader = dependencies.createReader();
-  const [byDate, byNumber] = await Promise.all([
-    reader.getByDate({ seriesVersion: identity.seriesVersion, puzzleDate }),
-    reader.getByNumber({ seriesVersion: identity.seriesVersion, dailyNumber: identity.dailyNumber }),
-  ]);
-  if (!isDeepStrictEqual(byDate, result.puzzle) || !isDeepStrictEqual(byNumber, result.puzzle)) {
-    throw new ArchiveBetaActivationError('read-back-failed');
-  }
-
-  return {
-    status: result.status,
-    puzzleDate: identity.puzzleDate,
-    dailyNumber: identity.dailyNumber,
-    issuedAt: result.puzzle.issuedAt,
-  };
+  return issueArchiveBetaDailyAndVerify(identity, now.toISOString(), dependencies);
 }

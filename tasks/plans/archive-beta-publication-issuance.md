@@ -1,0 +1,27 @@
+# Archive beta issuance on editorial publication
+
+Status: Implemented; review and deployment gates tracked in the associated PR
+Last updated: 2026-10-05
+
+## Scope contract
+
+- **Goal:** authenticated publication of a beta-eligible editorial lineup completes only after its immutable archive copy is read back by date and number; a retry can finish that copy without republishing.
+- **Owning layer:** `apps/web` server-only lifecycle orchestration.
+- **In scope:** shared issuance/read-back composition, publication orchestration, existing lifecycle POST integration, a published-lineup verification button, focused tests, and checkpoint documentation.
+- **Out of scope:** schedule-triggered freezing, cron, public archive gameplay, permanent epoch, scoring, schemas/grants, dependencies, and live editorial approval.
+- **Acceptance checks:** publish precedes issuance; rejected publication never issues; scheduling/archiving/pre-epoch publication remain unchanged; future published dates may be frozen; exact retries preserve revision, audit metadata, timestamp and content; provider/conflict/read-back failures produce sanitized non-success; origin/auth precede all I/O; focused tests, web typecheck, strict data/build/answer-leakage and repository checks, fresh bounded review, exact-head CI/Preview, then main/push CI/exact production/canonical HTTP/log/database checks.
+- **Stop conditions:** distributed transaction semantics, changing portable lifecycle rules or archive identity, new infrastructure, >12 handwritten source/test files or ~600 net handwritten lines require separate scope. Authenticated mobile interaction remains tracked in #294 as deferred prelaunch QA.
+
+## Architecture decision
+
+Publication is the existing immutable seam. Scheduling does not freeze archive content because scheduled selections remain editable. The web operation first commits the portable publication, then invokes the existing immutable issuance service and verifies both read identities. These are separate writes, not a distributed transaction. If issuance fails, publication stays committed and an authenticated Verify archive copy retry reuses the published record without adding another revision or audit event. The operation exposes only safe confirmation/error metadata.
+
+Future publication may freeze future content; public availability must still reject future dates when archive gameplay is implemented. This step adds no public reader or request-triggered writes. Existing explicit manual issuance retains its current Pacific date ceiling.
+
+## Documentation checkpoint
+
+#293 merged at `2a92d75f27246be5fc47c9bf446b422cd1d80351`; exact production was READY and push CI #1016 passed. The authenticated October 4 first issue returned 303 at `2026-10-05T01:39:24.760Z`. Its repeat returned 303 at `2026-10-05T01:43:00Z`; one beta row, zero permanent rows, original timestamp and content remained unchanged. Mobile layout/interaction is still pending in #294.
+
+## Local verification
+
+46 focused tests passed, covering publication order, failed transitions, committed-publication retry, revision/audit preservation, unchanged non-publication/pre-epoch paths, manual date ceilings, immutable conflicts, exact read-back, and authorization/origin/sanitized route responses. Web typecheck/lint, file-size/diff checks, full strict data pipeline (zero critical issues), production Next build and hidden-answer QA passed. The hosted first-issue timestamp/content fingerprint remain unchanged. Browser/mobile interaction is not claimed and remains deferred in #294.

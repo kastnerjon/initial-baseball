@@ -10,19 +10,30 @@ type LifecycleAction = {
 export function DailyLifecycleActionForm({
   puzzleDate,
   status,
+  archiveBetaEligible = false,
 }: {
   puzzleDate: string;
   status: DailyPuzzleStatus;
+  archiveBetaEligible?: boolean;
 }): JSX.Element | null {
   const action = getLifecycleAction(status);
   if (action === null) return null;
 
   return (
-    <form action="/admin/daily/lifecycle" method="post">
-      <input type="hidden" name="puzzleDate" value={puzzleDate} />
-      <input type="hidden" name="action" value={action.action} />
-      <button type="submit" style={buttonStyle}>{action.label}</button>
-    </form>
+    <div style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}>
+      <form action="/admin/daily/lifecycle" method="post">
+        <input type="hidden" name="puzzleDate" value={puzzleDate} />
+        <input type="hidden" name="action" value={action.action} />
+        <button type="submit" style={buttonStyle}>{action.label}</button>
+      </form>
+      {status === 'published' && archiveBetaEligible ? (
+        <form action="/admin/daily/lifecycle" method="post">
+          <input type="hidden" name="puzzleDate" value={puzzleDate} />
+          <input type="hidden" name="action" value="publish" />
+          <button type="submit" style={buttonStyle}>Verify archive copy</button>
+        </form>
+      ) : null}
+    </div>
   );
 }
 

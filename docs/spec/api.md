@@ -277,3 +277,12 @@ Supabase remains persistence only. The concrete connected-assistant transport is
 ## Deferred APIs
 
 Completed-result aggregate/percentile reads, accounts, authoritative streaks/leaderboards, and head-to-head/social APIs require separate decisions. Browser result submission/retry is a client workflow over the completed-game POST endpoint, not a separate public API.
+
+
+## Authenticated archive-beta publication completion
+
+`POST /admin/daily/lifecycle` retains existing Basic administrator authentication and same-origin mutation admission. For `action=publish` and dates in the explicitly configured disposable beta epoch, it commits the portable editorial publication first, then invokes immutable archive-beta issuance and verifies exact persisted content by date and number. Future published dates may be frozen; this operation exposes no public archive content or future availability.
+
+A successful operation returns a metadata-only 303 redirect with `private, no-store`. A failed archive copy/read-back after publication returns sanitized 503 with a Verify archive copy retry instruction. Retrying the publish operation for an already published beta-eligible record skips the editorial transition and preserves its revision/audit fields, while immutable issuance preserves the first timestamp/content or rejects a conflict. Scheduling, archiving and pre-epoch publication retain the existing lifecycle path. This is a two-write completion operation, not a distributed transaction; publication is not rolled back after archive failure.
+
+Explicit `POST /admin/daily/archive-beta/issue` remains separately authenticated and restricted to the beta start through the current Pacific date. Both operations share the same server-only issuance/read-back composition; neither serializes answer IDs, clues or provider error payloads. Public route renders never issue puzzles.

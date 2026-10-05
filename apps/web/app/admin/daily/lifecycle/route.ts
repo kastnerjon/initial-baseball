@@ -6,7 +6,7 @@ import {
 import { createDailyAdminContext } from '../../../dailyAdminComposition';
 import { isDailyAdminLifecycleAction } from '../../../dailyAdminLifecycleActions';
 import { isSameOriginDailyAdminMutation } from '../../../dailyAdminRequestSecurity';
-import { createDailyAdminWorkflow } from '../../../dailyAdminWorkflow';
+import { ArchiveBetaPublicationError, transitionDailyLifecycleWithArchiveBeta } from '../../../serverArchiveBetaDailyPublication';
 
 export async function POST(request: Request): Promise<NextResponse> {
   if (!isSameOriginDailyAdminMutation(request)) {
@@ -25,7 +25,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       return response('A valid puzzle date and lifecycle action are required.', 400);
     }
 
-    await createDailyAdminWorkflow(repository).transitionLifecycle({
+    await transitionDailyLifecycleWithArchiveBeta(repository, {
       puzzleDate,
       action,
       actorId,
@@ -35,7 +35,9 @@ export async function POST(request: Request): Promise<NextResponse> {
     const destination = new URL('/admin/daily', request.url);
     destination.searchParams.set('lifecycle', action);
     destination.searchParams.set('puzzleDate', puzzleDate);
-    return NextResponse.redirect(destination, 303);
+    const redirect = NextResponse.redirect(destination, 303);
+    redirect.headers.set('cache-control', 'private, no-store');
+    return redirect;
   } catch (error) {
     if (error instanceof DailyAdminAuthorizationError && error.kind === 'unauthorized') {
       return new NextResponse('Daily administration credentials are required.', {
@@ -48,6 +50,9 @@ export async function POST(request: Request): Promise<NextResponse> {
     }
     if (error instanceof DailyAdminAuthorizationError && error.kind === 'misconfigured') {
       return response('Daily administration is not configured.', 503);
+    }
+    if (error instanceof ArchiveBetaPublicationError) {
+      return response('Lineup published; archive copy not verified. Use Verify archive copy to retry.', 503);
     }
     return response('Daily lifecycle transition was rejected. Reload the horizon and confirm the puzzle is in the required status.', 409);
   }
