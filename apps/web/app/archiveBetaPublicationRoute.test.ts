@@ -39,6 +39,15 @@ describe('archive publication admin boundary', () => {
     expect(response.status).toBe(503); expect(await response.text()).toContain('Verify archive copy');
     expect(response.headers.get('cache-control')).toBe('private, no-store');
   });
+  it('reports immutable conflict as non-retryable without revealing content', async () => {
+    transition.mockRejectedValueOnce(new ArchiveBetaPublicationError('immutable-conflict'));
+    const response = await POST(request());
+    expect(response.status).toBe(409);
+    const text = await response.text();
+    expect(text).toContain('Editorial review is required');
+    expect(text).not.toContain('Verify archive copy');
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+  });
   it('never serializes unexpected provider or answer content', async () => {
     transition.mockRejectedValueOnce(new Error('secret canonical player and hints'));
     const response = await POST(request());

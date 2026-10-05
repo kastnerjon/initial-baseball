@@ -1,20 +1,21 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createDailyPuzzleDraft, getDailyPuzzleNumber, type DailyPuzzleRepository } from '@initial-baseball/daily';
+import { createDailyPuzzleDraft, getDailyPuzzleNumber, type DailyPuzzleEditorialRecord, type DailyPuzzleRepository } from '@initial-baseball/daily';
 vi.mock('server-only', () => ({}));
+import { ArchiveBetaActivationError } from './serverArchiveBetaDailyVerification';
 import { transitionDailyLifecycleWithArchiveBeta } from './serverArchiveBetaDailyPublication';
 
 const input = { puzzleDate: '2026-10-08', action: 'publish' as const, actorId: 'editor', occurredAt: '2026-10-05T01:00:00.000Z' };
 function setup(status: 'draft' | 'scheduled' | 'published' = 'scheduled') {
-  let record = { ...createDailyPuzzleDraft({ id: 'test', puzzleDate: input.puzzleDate, puzzleNumber: getDailyPuzzleNumber(input.puzzleDate),
+  let record: DailyPuzzleEditorialRecord = { ...createDailyPuzzleDraft({ id: 'test', puzzleDate: input.puzzleDate, puzzleNumber: getDailyPuzzleNumber(input.puzzleDate),
     selections: Array.from({ length: 9 }, (_, index) => ({ slot: index + 1, canonicalPlayerId: `player-${index}`, source: 'generated' as const })),
     actorId: 'generator', occurredAt: input.occurredAt }), status, revision: 2 };
   const events: string[] = [];
   const repository: DailyPuzzleRepository = {
     getByDate: vi.fn(async () => record), listByDateRange: vi.fn(async () => [record]), save: vi.fn(async value => value),
   };
-  const transition = vi.fn(async () => {
-    events.push('publish');
-    record = { ...record, status: 'published', revision: record.revision + 1, publishedAt: input.occurredAt, publishedBy: input.actorId };
+  const transition = vi.fn(async (value: Parameters<typeof transitionDailyLifecycleWithArchiveBeta>[1] = input) => {
+    events.push(value.action);
+    record = { ...record, status: value.action === 'archive' ? 'archived' : 'published', revision: record.revision + 1, publishedAt: input.occurredAt, publishedBy: input.actorId };
     return record;
   });
   const issueAndVerify = vi.fn(async () => {
@@ -68,11 +69,38 @@ describe('archive-beta publication completion', () => {
     expect(s.transition).not.toHaveBeenCalled();
     expect(s.events).toEqual(['verify']);
   });
-  it.each(['schedule', 'archive'] as const)('leaves %s on the existing workflow without constructing issuers', async action => {
+  it('leaves scheduling on the existing workflow without constructing issuers', async () => {
+    const action = 'schedule' as const;
     const s = setup();
     await transitionDailyLifecycleWithArchiveBeta(s.repository, { ...input, action }, s.dependencies);
     expect(s.transition).toHaveBeenCalledOnce();
     expect(s.issueAndVerify).not.toHaveBeenCalled();
+  });
+  it('verifies before archiving a published lineup', async () => {
+    const s = setup('published');
+    await transitionDailyLifecycleWithArchiveBeta(s.repository, { ...input, action: 'archive' }, s.dependencies);
+    expect(s.events).toEqual(['verify', 'archive']);
+    expect(s.getRecord().status).toBe('archived');
+    expect(s.transition).toHaveBeenCalledWith({ ...input, action: 'archive' });
+  });
+  it('preserves the published retry path when archive verification fails', async () => {
+    const s = setup('published');
+    s.issueAndVerify.mockRejectedValueOnce(new Error('read-back failed'));
+    await expect(transitionDailyLifecycleWithArchiveBeta(s.repository, { ...input, action: 'archive' }, s.dependencies)).rejects.toMatchObject({ kind: 'verification-failed' });
+    expect(s.transition).not.toHaveBeenCalled();
+    expect(s.getRecord().status).toBe('published');
+  });
+  it('leaves invalid archive transitions authoritative without issuing', async () => {
+    const s = setup('scheduled');
+    s.transition.mockRejectedValueOnce(new Error('Only published puzzles may be archived'));
+    await expect(transitionDailyLifecycleWithArchiveBeta(s.repository, { ...input, action: 'archive' }, s.dependencies)).rejects.toThrow('Only published');
+    expect(s.issueAndVerify).not.toHaveBeenCalled();
+  });
+  it('preserves sanitized non-retryable immutable conflict classification', async () => {
+    const s = setup('published');
+    s.issueAndVerify.mockRejectedValueOnce(new ArchiveBetaActivationError('immutable-conflict'));
+    await expect(transitionDailyLifecycleWithArchiveBeta(s.repository, input, s.dependencies)).rejects.toMatchObject({ kind: 'immutable-conflict' });
+    expect(s.transition).not.toHaveBeenCalled();
   });
   it('keeps pre-epoch publication unchanged', async () => {
     const s = setup();

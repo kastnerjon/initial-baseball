@@ -74,7 +74,7 @@ The public Daily Nine now uses `points-v4`: HR 4, 3B 3, 2B 2, 1B 1, BB 0.5, K/Gi
 
 Editorial records move through `draft`, `scheduled`, `published`, and `archived`. The final puzzle is the exact ordered nine canonical IDs. Ordinary editing cannot change published/archived answers.
 
-For the disposable archive-beta test series beginning October 4, 2026, authenticated publication also issues and verifies the immutable archive copy. Publication commits first; a failed archive write/read-back remains retryable through Verify archive copy without republishing. Scheduling does not freeze content. This adds no public archive availability or permanent launch epoch.
+For the disposable archive-beta test series beginning October 4, 2026, authenticated publication also issues and verifies the immutable archive copy. Publication commits first; a failed archive write/read-back remains retryable through Verify archive copy without republishing. Scheduling does not freeze content. Archiving verifies the beta copy before retiring the published retry path; failure keeps the lineup published. Immutable-content conflicts require editorial review and return sanitized 409. This adds no public archive availability or permanent launch epoch.
 
 Current beta puzzle numbers are disposable. At an explicitly chosen broad-launch epoch, permanent numbering restarts at Daily #1. From that point, every issued Daily is frozen and remains replayable/shareable in the archive; later generator/profile changes cannot silently change historical lineups. The archive begins at permanent Daily #1 rather than importing current beta history.
 

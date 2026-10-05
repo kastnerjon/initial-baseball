@@ -52,6 +52,9 @@ export async function POST(request: Request): Promise<NextResponse> {
       return response('Daily administration is not configured.', 503);
     }
     if (error instanceof ArchiveBetaPublicationError) {
+      if (error.kind === 'immutable-conflict') {
+        return response('Frozen archive content conflicts with this lineup. Editorial review is required; retry cannot rewrite the archive.', 409);
+      }
       return response('Lineup published; archive copy not verified. Use Verify archive copy to retry.', 503);
     }
     return response('Daily lifecycle transition was rejected. Reload the horizon and confirm the puzzle is in the required status.', 409);
