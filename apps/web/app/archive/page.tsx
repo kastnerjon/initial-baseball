@@ -1,3 +1,4 @@
+import type { JSX } from 'react';
 import { listAvailableArchiveBetaPuzzles } from '../serverArchiveBetaRuntime';
 
 export const dynamic = 'force-dynamic';

@@ -1,3 +1,4 @@
+import type { JSX } from 'react';
 import { notFound } from 'next/navigation';
 import { CURRENT_DAILY_RULESET_VERSION } from '@initial-baseball/shared';
 import { createServerArchiveBetaRuntime, getAvailableArchiveBetaIdentity } from '../../serverArchiveBetaRuntime';
