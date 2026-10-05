@@ -1,6 +1,6 @@
 # Playable archive beta
 
-Status: Merged and production verified; ordinary-browser/mobile interaction remains deferred prelaunch QA
+Status: Merged and production verified; cloud Chrome interaction verified; physical/mobile/admin QA remains open
 Last updated: 2026-10-05
 
 ## Scope contract
@@ -48,4 +48,4 @@ Final head 44466b45e9c9f9d5fd0899ba8e00e442c4ecabba passed CI #1022 (37329695414
 
 Canonical `/`, `/archive`, `/archive/1` returned HTTP 200; homepage links the archive. Unissued `/archive/2` and future `/archive/999999` returned 404. Issued bootstrap preserves all nine frozen initials, current points-v4, exact archive ID/share path, no canonical answer IDs or nine canonical display names, and exactly the first batter's four frozen hint values. Exact-deployment error/fatal 30m scan after more than 60 seconds READY found no logs. Read-only Supabase preserves one October 4 beta row, issued_at 2026-10-05 01:39:24.76+00 and fingerprint bfb08ff7892362e0762d858aa3920d53; zero permanent rows. No live editorial approval/publication performed.
 
-Drains/continuous monitoring remain unverified: connected list-drains returned 404 Not Found; no absence or login failure is inferred. Real browser/mobile interactions remain the explicit checklist in todo, alongside existing admin QA #294. Hosted archive populations/comparison/history and permanent launch remain separate future work. This checkpoint records completed automated/hosted gates, not broad-launch readiness.
+Drains/continuous monitoring remain unverified: connected list-drains returned 404 Not Found; no absence or login failure is inferred. At the #296 checkpoint, real-browser/mobile interactions remained open. October 5 cloud Chrome subsequently verified the gameplay/refresh/clipboard/ownership/reset checklist; physical/mobile/admin and cross-archive reset QA remain open. See `tasks/plans/archive-disabled-average-display.md`. Hosted archive populations/comparison/history and permanent launch remain separate future work. This checkpoint records completed automated/hosted gates, not broad-launch readiness.
