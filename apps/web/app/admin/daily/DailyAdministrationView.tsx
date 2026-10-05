@@ -1,3 +1,4 @@
+import { ArchiveBetaIssuanceForm } from './ArchiveBetaIssuanceForm';
 import type { DailyEditorialHorizonPuzzle, DailyEditorialHorizonSlot } from '@initial-baseball/daily';
 import type { JSX } from 'react';
 import type {
@@ -23,6 +24,9 @@ type DailyAdministrationViewProps = {
   preview: DailyAdminPlayerPreview | null;
   replacementComplete: boolean;
   lifecycleActionComplete: DailyAdminLifecycleAction | null;
+  betaIssuedDate?: string | null;
+  archiveBetaStartDate: string;
+  currentDate: string;
 };
 
 export function DailyAdministrationView({
@@ -33,6 +37,9 @@ export function DailyAdministrationView({
   preview,
   replacementComplete,
   lifecycleActionComplete,
+  betaIssuedDate = null,
+  archiveBetaStartDate,
+  currentDate,
 }: DailyAdministrationViewProps): JSX.Element {
   const selectedPuzzle = selection === null
     ? undefined
@@ -51,6 +58,8 @@ export function DailyAdministrationView({
           <button type="submit" style={buttonStyle}>Generate missing drafts</button>
         </form>
       </header>
+
+      <ArchiveBetaIssuanceForm startDate={archiveBetaStartDate} currentDate={currentDate} verifiedDate={betaIssuedDate} />
 
       {replacementComplete ? (
         <p role="status" style={successStyle}>Replacement saved. Duplicate, rank-band, 90-day repeat, and reveal-readiness validation ran again.</p>

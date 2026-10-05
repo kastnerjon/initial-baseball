@@ -1,3 +1,5 @@
+import { ARCHIVE_BETA_EPOCH } from '../../archiveBetaActivation';
+import { getPacificDailyDateString } from '../../getPacificDailyDateString';
 import type { JSX } from 'react';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
@@ -38,6 +40,9 @@ export default async function DailyAdministrationPage({
 
     return (
       <DailyAdministrationView
+        betaIssuedDate={/^\d{4}-\d{2}-\d{2}$/.test(readString(params.betaIssued)) ? readString(params.betaIssued) : null}
+        archiveBetaStartDate={ARCHIVE_BETA_EPOCH.startDate}
+        currentDate={getPacificDailyDateString()}
         puzzles={puzzles}
         selection={selection}
         query={query}
