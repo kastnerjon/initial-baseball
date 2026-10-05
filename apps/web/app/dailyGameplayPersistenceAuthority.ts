@@ -1,4 +1,5 @@
 import type { DailyPublicPuzzle, DailyRulesetVersion } from '@initial-baseball/shared';
+import { isArchiveDailyPuzzleId } from './dailyModeStorage';
 
 export type DailyGameplayAccess =
   | 'checking'
@@ -21,6 +22,14 @@ export function getDailyGameplayPersistenceSessionKey(
 
 export function canPersistDailyGameplay(access: DailyGameplayAccess): boolean {
   return access === 'owner' || access === 'compatibility';
+}
+
+export function isArchiveBetaDailyPuzzleId(puzzleId?: string): boolean {
+  return puzzleId?.startsWith('archive-beta-v1-daily-') === true;
+}
+
+export function isDailyResultCollectionEnabled(puzzleId?: string): boolean {
+  return !isArchiveDailyPuzzleId(puzzleId) || isArchiveBetaDailyPuzzleId(puzzleId);
 }
 
 export function canPersistCurrentDailyGameplay({

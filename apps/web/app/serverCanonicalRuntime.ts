@@ -5,7 +5,10 @@ import { createDailyProgressionTokenCodec } from './dailyProgressionToken';
 import { getDailyProgressionSecret } from './dailyProgressionSecret';
 import { createCachedPublicDailyPuzzleSource } from './publicDailyPuzzleCache';
 import { createDailyRuntimeService } from './dailyRuntimeService';
-import { createServerArchiveBetaRuntime, selectDailyProgressionRuntime } from './serverArchiveBetaRuntime';
+import {
+  createServerArchiveBetaRuntime,
+  selectDailyProgressionRuntime,
+} from './serverArchiveBetaRuntime';
 import {
   getCanonicalRevealReader,
   getCanonicalRuntime,
@@ -27,9 +30,10 @@ const currentDailyRuntime = createDailyRuntimeService({
 });
 
 let archiveRuntime: ReturnType<typeof createServerArchiveBetaRuntime> | null = null;
+const getArchiveRuntime = () => archiveRuntime ??= createServerArchiveBetaRuntime({ progressionTokens });
 const selectRuntime = (token: string) => selectDailyProgressionRuntime(
   token, progressionTokens, currentDailyRuntime,
-  () => archiveRuntime ??= createServerArchiveBetaRuntime({ progressionTokens }),
+  getArchiveRuntime,
 );
 export const dailyRuntime = {
   ...currentDailyRuntime,
@@ -37,6 +41,13 @@ export const dailyRuntime = {
   revealHint: (token: string) => selectRuntime(token).revealHint(token),
   resolveAtBat: (input: Parameters<typeof currentDailyRuntime.resolveAtBat>[0]) => selectRuntime(input.progressionToken).resolveAtBat(input),
 };
+
+export function getAuthoritativeDailyResultPuzzle(puzzleId: string, puzzleDate: string) {
+  const runtime = puzzleId.startsWith('archive-beta-v1-daily-')
+    ? getArchiveRuntime()
+    : currentDailyRuntime;
+  return runtime.getPublicPuzzle(puzzleDate);
+}
 
 async function materializePublicDailyPuzzle(date: string): Promise<DailyPuzzle> {
   const source = await getMaterializedPublicDailyPuzzleSource();

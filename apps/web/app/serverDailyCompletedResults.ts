@@ -2,7 +2,7 @@ import 'server-only';
 import type { DailyCompletedResultRepository } from '@initial-baseball/daily';
 import { getPacificDailyDateString } from './getPacificDailyDateString';
 import { createDailyCompletedResultSubmissionService } from './dailyCompletedResultSubmissionService';
-import { dailyRuntime } from './serverCanonicalRuntime';
+import { getAuthoritativeDailyResultPuzzle } from './serverCanonicalRuntime';
 import { createServerSupabaseClient } from './serverSupabaseClient';
 import { createSupabaseDailyCompletedResultRepository } from './supabaseDailyCompletedResultRepository';
 
@@ -17,7 +17,8 @@ const lazyRepository: DailyCompletedResultRepository = {
 
 const service = createDailyCompletedResultSubmissionService({
   repository: lazyRepository,
-  loadAuthoritativePuzzle: (puzzleDate) => dailyRuntime.getPublicPuzzle(puzzleDate),
+  loadAuthoritativePuzzle: (puzzleDate, _rulesetVersion, puzzleId) =>
+    getAuthoritativeDailyResultPuzzle(puzzleId, puzzleDate),
   getCurrentDailyDate: getPacificDailyDateString,
 });
 

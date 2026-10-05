@@ -3,6 +3,7 @@ import {
   createDailyAtBatResultService,
   type DailyAtBatResultRepository,
 } from '@initial-baseball/daily';
+import { isArchiveBetaDailyPuzzleId } from './dailyGameplayPersistenceAuthority';
 import {
   DAILY_AT_BAT_RESULT_SCHEMA_VERSION,
   POINTS_V3_DAILY_RULESET_VERSION,
@@ -19,6 +20,7 @@ export type DailyAtBatResultSubmissionOutcome =
 type LoadAuthoritativePuzzle = (
   puzzleDate: string,
   rulesetVersion: DailyAtBatResultRulesetVersion,
+  puzzleId: string,
 ) => Promise<DailyPublicPuzzle>;
 
 type CreateDailyAtBatResultSubmissionServiceInput = {
@@ -42,6 +44,7 @@ export function createDailyAtBatResultSubmissionService({
       const puzzle = await loadAuthoritativePuzzle(
         routing.puzzleDate,
         routing.rulesetVersion,
+        routing.puzzleId,
       );
       const validation = validateDailyAtBatResult({
         submission,
@@ -66,6 +69,7 @@ function readRoutingFields(
       ok: true;
       puzzleDate: string;
       rulesetVersion: DailyAtBatResultRulesetVersion;
+      puzzleId: string;
     }
   | { ok: false; error: DailyAtBatResultError } {
   if (!isRecord(submission)) return reject('invalid_submission');
@@ -76,7 +80,13 @@ function readRoutingFields(
   const puzzleDate = readCalendarDate(submission.puzzleDate);
   if (puzzleDate === null) return reject('invalid_submission');
   if (puzzleDate > currentDailyDate) return reject('invalid_puzzle');
+  const puzzleId = readPuzzleId(submission.puzzleId);
+  if (puzzleId === null) return reject('invalid_submission');
   if (submission.rulesetVersion !== POINTS_V3_DAILY_RULESET_VERSION
+    && submission.rulesetVersion !== POINTS_V4_DAILY_RULESET_VERSION) {
+    return reject('unsupported_ruleset');
+  }
+  if (isArchiveBetaDailyPuzzleId(puzzleId)
     && submission.rulesetVersion !== POINTS_V4_DAILY_RULESET_VERSION) {
     return reject('unsupported_ruleset');
   }
@@ -85,7 +95,14 @@ function readRoutingFields(
     ok: true,
     puzzleDate,
     rulesetVersion: submission.rulesetVersion,
+    puzzleId,
   };
+}
+
+function readPuzzleId(value: unknown): string | null {
+  return typeof value === 'string' && value.trim().length > 0 && value.length <= 200
+    ? value
+    : null;
 }
 
 function readCalendarDate(value: unknown): string | null {

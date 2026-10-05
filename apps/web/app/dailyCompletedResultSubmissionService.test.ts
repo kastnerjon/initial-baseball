@@ -23,6 +23,12 @@ const PUZZLE: DailyPublicPuzzle = {
     initials: `P${index + 1}`,
   })),
 };
+const ARCHIVE_PUZZLE: DailyPublicPuzzle = {
+  ...PUZZLE,
+  id: 'archive-beta-v1-daily-1',
+  puzzleDate: '2026-10-04',
+  puzzleNumber: 1,
+};
 
 describe('completed-result submission service', () => {
   it('validates Daily Nine and stores only the normalized engine result', async () => {
@@ -43,6 +49,7 @@ describe('completed-result submission service', () => {
     expect(loadAuthoritativePuzzle).toHaveBeenCalledWith(
       PUZZLE.puzzleDate,
       POINTS_V3_DAILY_RULESET_VERSION,
+      PUZZLE.id,
     );
     const stored = vi.mocked(repository.insertIfAbsent).mock.calls[0]?.[0];
     expect(stored).toMatchObject({
@@ -78,6 +85,7 @@ describe('completed-result submission service', () => {
     expect(loadAuthoritativePuzzle).toHaveBeenCalledWith(
       PUZZLE.puzzleDate,
       POINTS_V4_DAILY_RULESET_VERSION,
+      PUZZLE.id,
     );
     expect(vi.mocked(repository.insertIfAbsent).mock.calls[0]?.[0]).toMatchObject({
       submissionId: 'points-v4-result-1',
@@ -90,6 +98,30 @@ describe('completed-result submission service', () => {
         completed: true,
         strikeouts: 0,
       },
+    });
+  });
+
+  it('validates and stores archive completion against the exact archive puzzle identity', async () => {
+    const repository = passthroughRepository('inserted');
+    const loadAuthoritativePuzzle = vi.fn().mockResolvedValue(ARCHIVE_PUZZLE);
+    const service = createService(repository, loadAuthoritativePuzzle, '2026-10-05');
+    const submission = {
+      ...buildPointsV4WalkSubmission(),
+      puzzleId: ARCHIVE_PUZZLE.id,
+      puzzleDate: ARCHIVE_PUZZLE.puzzleDate,
+      puzzleNumber: ARCHIVE_PUZZLE.puzzleNumber,
+    };
+
+    await expect(service.submit(submission)).resolves.toEqual({ ok: true, status: 'created' });
+    expect(loadAuthoritativePuzzle).toHaveBeenCalledWith(
+      ARCHIVE_PUZZLE.puzzleDate,
+      POINTS_V4_DAILY_RULESET_VERSION,
+      ARCHIVE_PUZZLE.id,
+    );
+    expect(vi.mocked(repository.insertIfAbsent).mock.calls[0]?.[0]).toMatchObject({
+      puzzleId: ARCHIVE_PUZZLE.id,
+      puzzleDate: ARCHIVE_PUZZLE.puzzleDate,
+      puzzleNumber: ARCHIVE_PUZZLE.puzzleNumber,
     });
   });
 
@@ -133,6 +165,9 @@ describe('completed-result submission service', () => {
 
   it.each([
     [{ ...buildPointsSubmission(), schemaVersion: 2 }, 'unsupported_schema'],
+    [{ ...buildPointsSubmission(), puzzleId: '' }, 'invalid_submission'],
+    [{ ...buildPointsSubmission(), puzzleId: 'archive-beta-v1-daily-1' }, 'unsupported_ruleset'],
+    [{ ...buildClassicSubmission(), puzzleId: 'archive-beta-v1-daily-1' }, 'unsupported_ruleset'],
     [{ ...buildPointsSubmission(), rulesetVersion: 'points-v2' }, 'unsupported_ruleset'],
     [{ ...buildPointsSubmission(), puzzleDate: '2026-02-31' }, 'invalid_submission'],
     [{ ...buildPointsSubmission(), puzzleDate: '2026-09-18' }, 'invalid_puzzle'],
@@ -174,11 +209,12 @@ describe('completed-result submission service', () => {
 function createService(
   repository: DailyCompletedResultRepository,
   loadAuthoritativePuzzle: ReturnType<typeof vi.fn>,
+  currentDailyDate = '2026-09-17',
 ) {
   return createDailyCompletedResultSubmissionService({
     repository,
     loadAuthoritativePuzzle,
-    getCurrentDailyDate: () => '2026-09-17',
+    getCurrentDailyDate: () => currentDailyDate,
   });
 }
 

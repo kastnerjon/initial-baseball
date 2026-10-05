@@ -19,6 +19,12 @@ const PUZZLE: DailyPublicPuzzle = {
     initials: `P${index + 1}`,
   })),
 };
+const ARCHIVE_PUZZLE: DailyPublicPuzzle = {
+  ...PUZZLE,
+  id: 'archive-beta-v1-daily-1',
+  puzzleDate: '2026-10-04',
+  puzzleNumber: 1,
+};
 
 describe('resolved-at-bat submission service', () => {
   it('stores only the authoritative engine-normalized observation and derived points', async () => {
@@ -40,6 +46,7 @@ describe('resolved-at-bat submission service', () => {
     expect(loadAuthoritativePuzzle).toHaveBeenCalledWith(
       PUZZLE.puzzleDate,
       'points-v3',
+      PUZZLE.id,
     );
     const stored = vi.mocked(repository.insertIfAbsent).mock.calls[0]?.[0];
     expect(stored).toEqual({ ...buildSubmission(), awardedPoints: 5 });
@@ -64,10 +71,35 @@ describe('resolved-at-bat submission service', () => {
     expect(loadAuthoritativePuzzle).toHaveBeenCalledWith(
       PUZZLE.puzzleDate,
       POINTS_V4_DAILY_RULESET_VERSION,
+      PUZZLE.id,
     );
     expect(vi.mocked(repository.insertIfAbsent).mock.calls[0]?.[0]).toEqual({
       ...buildV4WalkSubmission(),
       awardedPoints: 0.5,
+    });
+  });
+
+  it('validates and stores an archive result against the exact supplied archive identity', async () => {
+    const repository = passthroughRepository('inserted');
+    const loadAuthoritativePuzzle = vi.fn().mockResolvedValue(ARCHIVE_PUZZLE);
+    const service = createService(repository, loadAuthoritativePuzzle, '2026-10-05');
+    const submission = {
+      ...buildV4WalkSubmission(),
+      puzzleId: ARCHIVE_PUZZLE.id,
+      puzzleDate: ARCHIVE_PUZZLE.puzzleDate,
+      puzzleNumber: ARCHIVE_PUZZLE.puzzleNumber,
+    };
+
+    await expect(service.submit(submission)).resolves.toEqual({ ok: true, status: 'created' });
+    expect(loadAuthoritativePuzzle).toHaveBeenCalledWith(
+      ARCHIVE_PUZZLE.puzzleDate,
+      POINTS_V4_DAILY_RULESET_VERSION,
+      ARCHIVE_PUZZLE.id,
+    );
+    expect(vi.mocked(repository.insertIfAbsent).mock.calls[0]?.[0]).toMatchObject({
+      puzzleId: ARCHIVE_PUZZLE.id,
+      puzzleDate: ARCHIVE_PUZZLE.puzzleDate,
+      puzzleNumber: ARCHIVE_PUZZLE.puzzleNumber,
     });
   });
 
@@ -85,8 +117,10 @@ describe('resolved-at-bat submission service', () => {
   it.each([
     [null, 'invalid_submission'],
     [{ ...buildSubmission(), schemaVersion: 2 }, 'unsupported_schema'],
+    [{ ...buildSubmission(), puzzleId: '' }, 'invalid_submission'],
     [{ ...buildSubmission(), rulesetVersion: 'classic-inning-v1' }, 'unsupported_ruleset'],
     [{ ...buildSubmission(), rulesetVersion: 'points-v2' }, 'unsupported_ruleset'],
+    [{ ...buildSubmission(), puzzleId: ARCHIVE_PUZZLE.id }, 'unsupported_ruleset'],
     [{ ...buildSubmission(), puzzleDate: '2026-02-31' }, 'invalid_submission'],
     [{ ...buildSubmission(), puzzleDate: '2026-09-19' }, 'invalid_puzzle'],
   ])('rejects invalid routing before puzzle loading', async (submission, error) => {
@@ -129,11 +163,12 @@ describe('resolved-at-bat submission service', () => {
 function createService(
   repository: DailyAtBatResultRepository,
   loadAuthoritativePuzzle: ReturnType<typeof vi.fn>,
+  currentDailyDate = PUZZLE.puzzleDate,
 ) {
   return createDailyAtBatResultSubmissionService({
     repository,
     loadAuthoritativePuzzle,
-    getCurrentDailyDate: () => PUZZLE.puzzleDate,
+    getCurrentDailyDate: () => currentDailyDate,
   });
 }
 
