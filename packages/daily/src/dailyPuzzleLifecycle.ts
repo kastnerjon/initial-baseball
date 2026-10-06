@@ -66,6 +66,12 @@ export type DailyPuzzleEditorialService = {
     actorId: string;
     occurredAt: string;
   }): Promise<DailyPuzzleEditorialRecord>;
+  correctScheduledLineup(input: {
+    puzzleDate: string;
+    canonicalPlayerIds: readonly string[];
+    actorId: string;
+    occurredAt: string;
+  }): Promise<DailyPuzzleEditorialRecord>;
   schedule(input: {
     puzzleDate: string;
     actorId: string;
@@ -106,6 +112,12 @@ export function createDailyPuzzleEditorialService(
     async replaceLineup(input) {
       const current = await requirePuzzle(repository, input.puzzleDate);
       const updated = replaceDailyPuzzleLineup(current, input);
+      return repository.save(updated, { expectedRevision: current.revision });
+    },
+
+    async correctScheduledLineup(input) {
+      const current = await requirePuzzle(repository, input.puzzleDate);
+      const updated = correctScheduledDailyPuzzleLineup(current, input);
       return repository.save(updated, { expectedRevision: current.revision });
     },
 
@@ -212,6 +224,32 @@ export function replaceDailyPuzzleLineup(
     selections: normalizeSelections(selections),
     scheduledAt: null,
     scheduledBy: null,
+  }, input.actorId, input.occurredAt);
+}
+
+export function correctScheduledDailyPuzzleLineup(
+  record: DailyPuzzleEditorialRecord,
+  input: {
+    canonicalPlayerIds: readonly string[];
+    actorId: string;
+    occurredAt: string;
+  },
+): DailyPuzzleEditorialRecord {
+  if (record.status !== 'scheduled') {
+    throw new Error(`Only scheduled Daily puzzles may be corrected; received ${record.status}.`);
+  }
+  validateActorAndTimestamp(input.actorId, input.occurredAt);
+
+  const selections: DailyEditorialSelection[] = input.canonicalPlayerIds.map((canonicalPlayerId, index) => ({
+    slot: index + 1,
+    canonicalPlayerId,
+    source: 'manual',
+  }));
+  validateSelections(selections);
+
+  return touchRecord({
+    ...record,
+    selections: normalizeSelections(selections),
   }, input.actorId, input.occurredAt);
 }
 
