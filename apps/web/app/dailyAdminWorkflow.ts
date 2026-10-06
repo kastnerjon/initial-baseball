@@ -54,7 +54,11 @@ export type DailyAdminPlayerPreview = DailyAdminPlayerSearchResult & {
   reveal: CanonicalPlayerReveal;
 };
 
-export type DailyAdminWorkflowErrorKind = 'invalid-lineup' | 'not-future-puzzle' | 'unknown-player';
+export type DailyAdminWorkflowErrorKind =
+  | 'invalid-lineup'
+  | 'not-future-puzzle'
+  | 'not-current-scheduled-puzzle'
+  | 'unknown-player';
 
 export class DailyAdminWorkflowError extends Error {
   constructor(
@@ -88,6 +92,7 @@ export interface DailyAdminWorkflow {
     canonicalPlayerIds: readonly string[];
     actorId: string;
     occurredAt: string;
+    allowCurrentScheduledCorrection?: boolean;
   }): Promise<DailyEditorialHorizonPuzzle>;
   transitionLifecycle(input: {
     puzzleDate: string;
@@ -189,7 +194,13 @@ export function createDailyAdminWorkflow(
     },
 
     async replaceLineup(input) {
-      assertFuturePuzzle(input.puzzleDate, resolvedDependencies);
+      const currentDailyDate = resolvedDependencies.getCurrentDailyDate();
+      const isCurrentScheduledCorrection = input.puzzleDate === currentDailyDate
+        && input.allowCurrentScheduledCorrection === true;
+      if (!isCurrentScheduledCorrection) {
+        assertFuturePuzzle(input.puzzleDate, resolvedDependencies);
+      }
+
       if (input.canonicalPlayerIds.length !== DAILY_AT_BAT_COUNT) {
         throw new DailyAdminWorkflowError(
           'invalid-lineup',
@@ -208,7 +219,19 @@ export function createDailyAdminWorkflow(
         }
       }
 
-      await editorialService.replaceLineup(input);
+      if (isCurrentScheduledCorrection) {
+        const current = await repository.getByDate(input.puzzleDate);
+        if (current?.status !== 'scheduled') {
+          throw new DailyAdminWorkflowError(
+            'not-current-scheduled-puzzle',
+            `Daily puzzle ${input.puzzleDate} must already be scheduled for a same-day correction.`,
+          );
+        }
+        await editorialService.correctScheduledLineup(input);
+      } else {
+        await editorialService.replaceLineup(input);
+      }
+
       const [puzzle] = await horizonService.getHorizon({
         startDate: input.puzzleDate,
         days: 1,
