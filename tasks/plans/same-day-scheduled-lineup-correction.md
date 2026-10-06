@@ -1,6 +1,6 @@
 # Same-day scheduled lineup correction
 
-Status: implementation in progress
+Status: implementation complete; review and hosted release gates pending
 
 ## Scope contract
 
