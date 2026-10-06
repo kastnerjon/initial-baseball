@@ -198,6 +198,8 @@ This architecture supports either beta game surviving launch without doubling pe
 
 ## Permanent launch and archive architecture
 
+The existing comparison GET adapters accept optional explicit `puzzleId`. Web read composition routes explicit IDs through the existing authoritative result-puzzle resolver, then checks exact returned ID/date before the Daily comparison service receives a server-derived population key. Omitted IDs retain current-Daily date-only routing; archive-beta reads accept only playable points-v4. No schema, repository, aggregate semantics, cache or publication write changes. Browser archive transport/presentation activation remains separate. Scope: `tasks/plans/archive-beta-comparison-reads.md`.
+
 Current beta Daily numbering is not permanent history. When the owner explicitly chooses the broad-launch game/rules and launch date, that date becomes permanent Daily #1. No current beta puzzle must be migrated into the public archive.
 
 From permanent Daily #1 onward, issued puzzles are frozen historical objects. Later generator/profile changes cannot silently alter them. The archive exposes prior permanent Dailies through stable identity, and archive browser state/history is isolated from the current Daily.

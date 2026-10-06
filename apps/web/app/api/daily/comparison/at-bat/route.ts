@@ -31,6 +31,7 @@ export async function GET(request: Request) {
       () => import('../../../../serverDailyNineComparison'),
     );
     const result = await server.readDailyNineAtBatComparison({
+      puzzleId: search.get('puzzleId'),
       puzzleDate: search.get('date'),
       rulesetVersion: search.get('ruleset'),
       pitchNumber: search.get('pitch'),
