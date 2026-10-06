@@ -4,7 +4,7 @@ Status: operational in production; smoke-tested September 16 and exercised for r
 
 ## Goal
 
-Allow the owner to provide a future Daily date and nine players in conversation and have an authorized assistant apply that exact lineup without manually editing nine slots in `/admin/daily`.
+Allow the owner to provide a future Daily date and nine players in conversation and have an authorized assistant apply that exact lineup without manually editing nine slots in `/admin/daily`. The same private path also supports a bounded same-day correction while the live editorial record is still `scheduled`, so an identity mistake can be corrected without a direct database edit or a draft/fallback window.
 
 This is an operational adapter only. It does not replace the existing admin UI, lineup generator, lifecycle, validation, repository, or publication model.
 
