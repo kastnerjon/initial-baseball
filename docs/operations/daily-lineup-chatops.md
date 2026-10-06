@@ -35,12 +35,13 @@ Authorization is a dedicated `Bearer` token from server-only `DAILY_CHATOPS_TOKE
 The route:
 
 1. validates the request shape and calendar date;
-2. ensures the requested future date has a draft record;
+2. ensures the requested date has an editorial record;
 3. validates all requested IDs against the canonical, reveal-ready manual editorial candidate universe;
-4. atomically replaces all nine selections through the portable Daily lifecycle;
-5. reruns the existing horizon/lineup validation and returns rank-band, repeat, automatic-pool, and other warnings for conversational review;
-6. optionally schedules only when `schedule: true` was explicit;
-7. returns the persisted date, puzzle number, status, revision, validation result, and resolved ordered selections.
+4. for a future date, atomically replaces all nine selections through the ordinary editable lifecycle and returns a previously scheduled puzzle to draft;
+5. for the current date, requires the existing record to remain `scheduled` and atomically replaces the full lineup without opening a draft/fallback window;
+6. reruns the existing horizon/lineup validation and returns rank-band, repeat, automatic-pool, and other warnings for conversational review;
+7. optionally schedules only when `schedule: true` was explicit; a current already-scheduled correction treats this as an idempotent transition;
+8. returns the persisted date, puzzle number, status, revision, validation result, and resolved ordered selections.
 
 Published and archived puzzles remain immutable. Replacing a scheduled future lineup returns it to draft before an explicit schedule transition. A same-day full-lineup correction is allowed only while the current record is already `scheduled`; it is one optimistic-revision save that preserves scheduled lifecycle metadata. The route may then receive the explicit `schedule: true` action as usual, and the workflow treats that already-scheduled current puzzle as an idempotent schedule transition. Because public puzzle identity is derived from the ordered canonical lineup, the corrected lineup receives a new puzzle ID automatically while earlier results remain attached to the old ID. Repository optimistic-revision semantics remain intact.
 
