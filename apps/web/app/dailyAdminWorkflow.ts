@@ -92,7 +92,6 @@ export interface DailyAdminWorkflow {
     canonicalPlayerIds: readonly string[];
     actorId: string;
     occurredAt: string;
-    allowCurrentScheduledCorrection?: boolean;
   }): Promise<DailyEditorialHorizonPuzzle>;
   transitionLifecycle(input: {
     puzzleDate: string;
@@ -195,8 +194,7 @@ export function createDailyAdminWorkflow(
 
     async replaceLineup(input) {
       const currentDailyDate = resolvedDependencies.getCurrentDailyDate();
-      const isCurrentScheduledCorrection = input.puzzleDate === currentDailyDate
-        && input.allowCurrentScheduledCorrection === true;
+      const isCurrentScheduledCorrection = input.puzzleDate === currentDailyDate;
       if (!isCurrentScheduledCorrection) {
         assertFuturePuzzle(input.puzzleDate, resolvedDependencies);
       }
