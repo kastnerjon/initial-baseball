@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   archiveDailyPuzzle,
+  correctScheduledDailyPuzzleLineup,
   createDailyPuzzleDraft,
   createDailyPuzzleEditorialService,
   publishDailyPuzzle,
@@ -116,6 +117,37 @@ describe('Daily puzzle lifecycle', () => {
       canonicalPlayerId: 'replacement-player',
       source: 'manual',
     });
+  });
+
+  it('corrects a scheduled lineup atomically without opening a draft window', () => {
+    const scheduled = scheduleDailyPuzzle(buildDraft(), {
+      actorId: 'editor-2',
+      occurredAt: '2026-07-21T13:00:00.000Z',
+    });
+    const correctedIds = scheduled.selections.map(selection => (
+      selection.slot === 5 ? 'replacement-player' : selection.canonicalPlayerId
+    ));
+
+    const corrected = correctScheduledDailyPuzzleLineup(scheduled, {
+      canonicalPlayerIds: correctedIds,
+      actorId: 'editor-3',
+      occurredAt: '2026-07-29T14:00:00.000Z',
+    });
+
+    expect(corrected.status).toBe('scheduled');
+    expect(corrected.scheduledAt).toBe(scheduled.scheduledAt);
+    expect(corrected.scheduledBy).toBe(scheduled.scheduledBy);
+    expect(corrected.revision).toBe(2);
+    expect(corrected.selections[4]).toEqual({
+      slot: 5,
+      canonicalPlayerId: 'replacement-player',
+      source: 'manual',
+    });
+    expect(() => correctScheduledDailyPuzzleLineup(buildDraft(), {
+      canonicalPlayerIds: correctedIds,
+      actorId: 'editor-3',
+      occurredAt: '2026-07-29T14:00:00.000Z',
+    })).toThrow('Only scheduled Daily puzzles may be corrected');
   });
 
   it('enforces draft to scheduled to published to archived transitions', () => {
