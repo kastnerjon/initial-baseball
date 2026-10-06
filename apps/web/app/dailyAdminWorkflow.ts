@@ -247,7 +247,12 @@ export function createDailyAdminWorkflow(
         occurredAt: input.occurredAt,
       };
 
-      if (input.action === 'schedule') await editorialService.schedule(transitionInput);
+      if (input.action === 'schedule') {
+        const current = await repository.getByDate(input.puzzleDate);
+        const isCurrentScheduledPuzzle = input.puzzleDate === resolvedDependencies.getCurrentDailyDate()
+          && current?.status === 'scheduled';
+        if (!isCurrentScheduledPuzzle) await editorialService.schedule(transitionInput);
+      }
       if (input.action === 'publish') await editorialService.publish(transitionInput);
       if (input.action === 'archive') await editorialService.archive(transitionInput);
 
