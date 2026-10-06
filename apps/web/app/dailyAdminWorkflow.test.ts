@@ -248,19 +248,11 @@ describe('Daily admin workflow', () => {
     ));
     const workflow = createDailyAdminWorkflow(repository, dependencies(candidates));
 
-    await expect(workflow.replaceLineup({
-      puzzleDate: '2026-07-21',
-      canonicalPlayerIds: correctedIds,
-      actorId: 'daily-editor',
-      occurredAt: OCCURRED_AT,
-    })).rejects.toMatchObject({ kind: 'not-future-puzzle' });
-
     const corrected = await workflow.replaceLineup({
       puzzleDate: '2026-07-21',
       canonicalPlayerIds: correctedIds,
       actorId: 'daily-editor',
       occurredAt: OCCURRED_AT,
-      allowCurrentScheduledCorrection: true,
     });
 
     expect(corrected.status).toBe('scheduled');
@@ -268,13 +260,21 @@ describe('Daily admin workflow', () => {
     expect(corrected.selections[4]?.player?.canonicalPlayerId).toBe(replacement.canonicalPlayerId);
     expect((await repository.getByDate('2026-07-21'))?.scheduledAt).toBe(scheduled.scheduledAt);
 
+    const rescheduled = await workflow.transitionLifecycle({
+      puzzleDate: '2026-07-21',
+      action: 'schedule',
+      actorId: 'daily-editor',
+      occurredAt: '2026-07-21T18:01:00.000Z',
+    });
+    expect(rescheduled.status).toBe('scheduled');
+    expect(rescheduled.revision).toBe(2);
+
     repository.seed(buildDraft('2026-07-21', candidates));
     await expect(workflow.replaceLineup({
       puzzleDate: '2026-07-21',
       canonicalPlayerIds: correctedIds,
       actorId: 'daily-editor',
       occurredAt: OCCURRED_AT,
-      allowCurrentScheduledCorrection: true,
     })).rejects.toMatchObject({ kind: 'not-current-scheduled-puzzle' });
   });
 
