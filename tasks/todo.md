@@ -1,7 +1,7 @@
 # Initial Baseball Current Work
 
 Status: Active ordered implementation plan  
-Last updated: 2026-10-05
+Last updated: 2026-10-06
 
 Completed history belongs in PRs, canonical docs, or `tasks/lessons.md`. Durable resumption context belongs in `docs/START-HERE.md`.
 
@@ -256,7 +256,8 @@ Hosted architecture/storage/comparison/editorial verification is sufficient to r
 - [x] Cloud Chrome archive QA: Hint/Guess/Give Up/Next through completion, active/completed refresh, exact spoiler-safe clipboard link, second-tab follower lock and archive reset preserving current-Daily progress. Disabled archive scoreboard AVG/TOTAL AVG now use unavailable dashes in production (#298); active/completed/refresh checks passed. Evidence: `tasks/plans/archive-disabled-average-display.md`.
 - [ ] Prelaunch archive physical/mobile QA and reset isolation across two issued archive puzzles remain open; only one archive puzzle exists. Cloud browser checks do not establish physical-device interaction or authenticated admin QA (#294).
 - [x] Archive-beta at-bat/completed result delivery is merged and its production deployment verified (#300): exact puzzle + current points-v4 identity, CI #1034 attempt 3, push CI #1035, READY/canonical production and read-only route/log/database checks. Evidence: `tasks/plans/archive-beta-result-delivery.md`.
-- [ ] Implement exact-puzzle/exact-ruleset archive comparison reads and UI activation as the next separate feature; local archive history follows its explicit replay-policy decision.
+- [x] Implement authoritative archive comparison GET routing: optional explicit puzzleId, exact issued-puzzle ID/date verification and points-v4-only beta reads; date-only current Daily remains compatible. Scope: `tasks/plans/archive-beta-comparison-reads.md`.
+- [ ] Activate archive browser comparison transport/UI in the next separate PR; local archive history follows its explicit replay-policy decision.
 - [ ] Verify a fresh native archive game's hosted at-bat/completed delivery before broad launch; this release check used GETs/read-only queries and created no hosted archive results.
 - [x] Repair canonical hitter OBP/OPS enrichment so pre-1954 sacrifice-fly blanks follow the historical formula and career rates derive from supported aggregate counts. Scope: `tasks/plans/canonical-historical-on-base-rate-aggregation.md`.
 
@@ -294,7 +295,7 @@ September 24 coordinated archive/gameplay decisions and bounded PR order are in 
 - [x] Show mode-appropriate How to play on every game-page entry/reload, accessible and reopenable without a dismissal flag or interruption of hydration; align copy with active scoring version.
 - [x] Add disposable beta archive routes/navigation for exposed Daily Nine (#296), after exact puzzle/ruleset persistence and ownership isolation. Retained Classic contracts remain intact; permanent launch/exposure is separate future work.
 - [ ] Add browsable browser/device history across stable Daily + game/ruleset. Isolated per-puzzle beta progress and restored completed score/result are implemented in #296; cross-puzzle history remains separate work.
-- [ ] Add archive-specific hosted results/global comparison for the same puzzle and ruleset. Exact spoiler-safe beta sharing is implemented in #296; current-Daily populations must not be reused.
+- [ ] Activate archive-specific browser comparisons over implemented result delivery and exact-puzzle read APIs. Exact spoiler-safe beta sharing is implemented in #296; current-Daily populations must not be reused.
 - [ ] Defer cross-device history until accounts.
 - [ ] Before launch, explicitly choose the surviving game, final launch rules, and launch date; reset permanent numbering to Daily #1.
 

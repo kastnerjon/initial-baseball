@@ -4,6 +4,7 @@ import {
 } from '@initial-baseball/daily';
 import {
   DAILY_NINE_COMPARISON_API_SCHEMA_VERSION,
+  POINTS_V4_DAILY_RULESET_VERSION,
   isDailyNineComparisonApiRulesetVersion,
   type DailyNineAtBatComparisonApiResponse,
   type DailyNineComparisonApiErrorCode,
@@ -11,6 +12,7 @@ import {
   type DailyNineCompletedComparisonApiResponse,
   type DailyPublicPuzzle,
 } from '@initial-baseball/shared';
+import { isArchiveBetaDailyPuzzleId } from './dailyGameplayPersistenceAuthority';
 
 export type DailyNineComparisonRequestErrorCode = Exclude<
   DailyNineComparisonApiErrorCode,
@@ -28,6 +30,7 @@ export class DailyNineComparisonRequestError extends Error {
 }
 
 type DailyNineComparisonBaseRequest = {
+  puzzleId?: string | null;
   puzzleDate: string | null;
   rulesetVersion: string | null;
 };
@@ -40,7 +43,7 @@ export type DailyNineCompletedComparisonReadRequest = DailyNineComparisonBaseReq
 
 type CreateDailyNineComparisonReadServiceInput = {
   comparison: DailyNineComparisonService;
-  loadAuthoritativePuzzle: (puzzleDate: string) => Promise<DailyPublicPuzzle>;
+  loadAuthoritativePuzzle: (puzzleDate: string, puzzleId?: string) => Promise<DailyPublicPuzzle>;
   getCurrentDailyDate: () => string;
   now?: () => Date;
 };
@@ -51,12 +54,12 @@ export function createDailyNineComparisonReadService({
   getCurrentDailyDate,
   now = () => new Date(),
 }: CreateDailyNineComparisonReadServiceInput) {
-  async function loadComparisonPuzzle(puzzleDate: string): Promise<DailyPublicPuzzle> {
-    const puzzle = await loadAuthoritativePuzzle(puzzleDate);
-    if (puzzle.puzzleDate !== puzzleDate) {
+  async function loadComparisonPuzzle(puzzleDate: string, puzzleId?: string): Promise<DailyPublicPuzzle> {
+    const puzzle = await loadAuthoritativePuzzle(puzzleDate, puzzleId);
+    if (puzzle.puzzleDate !== puzzleDate || (puzzleId !== undefined && puzzle.id !== puzzleId)) {
       throw new DailyNineComparisonRequestError(
         'invalid_puzzle',
-        'Authoritative Daily puzzle does not match requested date.',
+        'Authoritative Daily puzzle does not match requested identity.',
       );
     }
     return puzzle;
@@ -66,12 +69,12 @@ export function createDailyNineComparisonReadService({
     async readAtBat(
       request: DailyNineAtBatComparisonReadRequest,
     ): Promise<DailyNineAtBatComparisonApiResponse> {
-      const { puzzleDate, rulesetVersion } = requireBaseRequest(
+      const { puzzleId, puzzleDate, rulesetVersion } = requireBaseRequest(
         request,
         getCurrentDailyDate(),
       );
       const pitchNumber = requirePitchNumber(request.pitchNumber);
-      const puzzle = await loadComparisonPuzzle(puzzleDate);
+      const puzzle = await loadComparisonPuzzle(puzzleDate, puzzleId);
       const sourceReadAt = requireIsoTimestamp(now());
       const aggregate = await comparison.getAtBat({
         puzzleId: puzzle.id,
@@ -95,11 +98,11 @@ export function createDailyNineComparisonReadService({
     async readCompleted(
       request: DailyNineCompletedComparisonReadRequest,
     ): Promise<DailyNineCompletedComparisonApiResponse> {
-      const { puzzleDate, rulesetVersion } = requireBaseRequest(
+      const { puzzleId, puzzleDate, rulesetVersion } = requireBaseRequest(
         request,
         getCurrentDailyDate(),
       );
-      const puzzle = await loadComparisonPuzzle(puzzleDate);
+      const puzzle = await loadComparisonPuzzle(puzzleDate, puzzleId);
       const sourceReadAt = requireIsoTimestamp(now());
       const aggregate = await comparison.getCompletedGames({
         puzzleId: puzzle.id,
@@ -125,6 +128,7 @@ function requireBaseRequest(
   request: DailyNineComparisonBaseRequest,
   currentDailyDate: string,
 ): {
+  puzzleId: string | undefined;
   puzzleDate: string;
   rulesetVersion: DailyNineComparisonApiRulesetVersion;
 } {
@@ -138,6 +142,18 @@ function requireBaseRequest(
     );
   }
 
+  const puzzleId = request.puzzleId ?? undefined;
+  if (puzzleId !== undefined && (puzzleId.trim().length === 0 || puzzleId.length > 200)) {
+    invalidRequest('puzzleId must be a non-empty identity of at most 200 characters.');
+  }
+  if (isArchiveBetaDailyPuzzleId(puzzleId)
+    && request.rulesetVersion !== POINTS_V4_DAILY_RULESET_VERSION) {
+    throw new DailyNineComparisonRequestError(
+      'unsupported_ruleset',
+      'Archive beta comparison ruleset is unsupported.',
+    );
+  }
+
   const puzzleDate = readCalendarDate(request.puzzleDate);
   if (puzzleDate === null) invalidRequest('date must be a calendar date.');
   if (puzzleDate > currentDailyDate) {
@@ -146,7 +162,7 @@ function requireBaseRequest(
       'Future Daily comparison is unavailable.',
     );
   }
-  return { puzzleDate, rulesetVersion: request.rulesetVersion };
+  return { puzzleId, puzzleDate, rulesetVersion: request.rulesetVersion };
 }
 
 function requirePitchNumber(value: string | null): number {

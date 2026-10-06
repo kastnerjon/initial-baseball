@@ -120,6 +120,7 @@ describe('Daily Nine comparison GET adapters', () => {
       /^daily-comparison-at-bat;dur=\d+, daily-comparison-compose;dur=\d+, daily-comparison-puzzle;dur=12, daily-comparison-provider;dur=34, daily-comparison-provider-setup;dur=1, daily-comparison-provider-rpc;dur=31, daily-comparison-provider-decode;dur=2$/,
     );
     expect(server.readAtBat).toHaveBeenCalledWith({
+      puzzleId: 'untrusted',
       puzzleDate: '2026-09-19',
       rulesetVersion: 'points-v3',
       pitchNumber: '4',
@@ -145,6 +146,7 @@ describe('Daily Nine comparison GET adapters', () => {
 
     expect(response.status).toBe(200);
     expect(server.readAtBat).toHaveBeenCalledWith({
+      puzzleId: null,
       puzzleDate: '2026-09-19',
       rulesetVersion: 'points-v4',
       pitchNumber: '4',
@@ -152,7 +154,7 @@ describe('Daily Nine comparison GET adapters', () => {
     await expect(response.json()).resolves.toEqual(payload);
   });
 
-  it('keeps completed reads independent and ignores user score/puzzle identity query data', async () => {
+  it('keeps completed reads independent and passes puzzle identity for authoritative validation', async () => {
     server.readCompleted.mockImplementation(async (_request, timings) => {
       timings.puzzle = 8;
       timings.provider = 21;
@@ -170,6 +172,7 @@ describe('Daily Nine comparison GET adapters', () => {
       /^daily-comparison-completed;dur=\d+, daily-comparison-compose;dur=\d+, daily-comparison-puzzle;dur=8, daily-comparison-provider;dur=21$/,
     );
     expect(server.readCompleted).toHaveBeenCalledWith({
+      puzzleId: 'untrusted',
       puzzleDate: '2026-09-19',
       rulesetVersion: 'points-v3',
     }, expect.any(Object));

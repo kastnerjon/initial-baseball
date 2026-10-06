@@ -15,7 +15,7 @@ import {
   type DailyNineComparisonStageTimings,
 } from './dailyNineComparisonTiming';
 import { getPacificDailyDateString } from './getPacificDailyDateString';
-import { dailyRuntime } from './serverCanonicalRuntime';
+import { dailyRuntime, getAuthoritativeDailyResultPuzzle } from './serverCanonicalRuntime';
 import { createServerSupabaseClient } from './serverSupabaseClient';
 import { createSupabaseDailyNineComparisonRepository } from './supabaseDailyNineComparisonRepository';
 
@@ -51,10 +51,12 @@ function createReadService(timings: DailyNineComparisonStageTimings) {
 
   return createDailyNineComparisonReadService({
     comparison: createDailyNineComparisonService(timedRepository),
-    loadAuthoritativePuzzle: puzzleDate => measureDailyNineComparisonStage(
+    loadAuthoritativePuzzle: (puzzleDate, puzzleId) => measureDailyNineComparisonStage(
       timings,
       'puzzle',
-      () => dailyRuntime.getPublicPuzzle(puzzleDate),
+      () => puzzleId === undefined
+        ? dailyRuntime.getPublicPuzzle(puzzleDate)
+        : getAuthoritativeDailyResultPuzzle(puzzleId, puzzleDate),
     ),
     getCurrentDailyDate: getPacificDailyDateString,
   });

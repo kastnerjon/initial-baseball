@@ -60,7 +60,7 @@ describe('Daily Nine comparison read service', () => {
       },
     });
 
-    expect(loadAuthoritativePuzzle).toHaveBeenCalledWith('2026-09-19');
+    expect(loadAuthoritativePuzzle).toHaveBeenCalledWith('2026-09-19', undefined);
     expect(comparison.getAtBat).toHaveBeenCalledWith({
       puzzleId: PUZZLE.id,
       puzzleDate: PUZZLE.puzzleDate,

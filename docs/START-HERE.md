@@ -1,7 +1,7 @@
 # Initial Baseball — Start Here
 
 Status: Active project handoff  
-Last updated: 2026-10-05
+Last updated: 2026-10-06
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
@@ -18,6 +18,8 @@ Use this file to resume work. It records verified current state, settled future 
 Do not restart settled discussions because the conversation changed. Correct drift before new implementation.
 
 ## Product promise
+
+Archive comparison server routing now accepts optional explicit `puzzleId` on both existing GET routes, resolves the authoritative current Daily or issued beta puzzle, verifies exact ID/date, and reads only that puzzle + supported ruleset population. Beta archive accepts points-v4; date-only Daily compatibility and historical Daily v3 reads remain intact. The schema-1 response, timing, emergency disable switch and private/no-store policy are unchanged. Browser transport/UI activation remains the next bounded PR; archive UI still displays unavailable averages. Scope: `tasks/plans/archive-beta-comparison-reads.md`.
 
 Current archive result-delivery release: #300 merged as `c5c2b6fcde1084fa491838cbd492f17a298d6999`. Final-head CI #1034 attempt 3 and push CI #1035 passed; the bounded review cleared `c0ff2eb`, and its Preview was READY. At that verification checkpoint, production `dpl_AWxxmLLZTBbReoidx37B7dv2fh4h` was READY on the merge and served the canonical domain. `/`, `/archive`, `/archive/1` return 200; unissued/future archive numbers return 404. The exact-deployment error/fatal 30m scan after more than 60 seconds READY was empty. Read-only Supabase checks preserve the single beta row, original timestamp/fingerprint and zero permanent rows; result tables have 531 at-bats and 56 completed games, with zero archive-beta results. A fresh native hosted archive submission was not exercised in this pass. Comparisons/UI, local history and physical/mobile/admin QA remain open; #294 stays open. The transient existing data-test timeout is separately tracked in #301. Details: `tasks/plans/archive-beta-result-delivery.md`.
 

@@ -10,6 +10,7 @@ const dependencies = vi.hoisted(() => {
   };
   return {
     getPublicPuzzle: vi.fn(),
+    getResultPuzzle: vi.fn(),
     repository,
     createRepository: vi.fn(() => repository),
     createServerSupabaseClient: vi.fn(() => ({})),
@@ -17,6 +18,7 @@ const dependencies = vi.hoisted(() => {
 });
 
 vi.mock('./serverCanonicalRuntime', () => ({
+  getAuthoritativeDailyResultPuzzle: dependencies.getResultPuzzle,
   dailyRuntime: {
     getPublicPuzzle: dependencies.getPublicPuzzle,
   },
@@ -55,10 +57,33 @@ const PUZZLE: DailyPublicPuzzle = {
 describe('server Daily Nine comparison timing composition', () => {
   beforeEach(() => {
     dependencies.getPublicPuzzle.mockReset();
+    dependencies.getResultPuzzle.mockReset();
     dependencies.repository.readAtBat.mockReset();
     dependencies.repository.readCompletedGames.mockReset();
     dependencies.createRepository.mockClear();
     dependencies.createServerSupabaseClient.mockClear();
+  });
+
+  it('routes an explicit archive identity through the issued-puzzle authority', async () => {
+    const puzzle = { ...PUZZLE, id: 'archive-beta-v1-daily-1', puzzleNumber: 1 };
+    dependencies.getResultPuzzle.mockResolvedValue(puzzle);
+    dependencies.repository.readAtBat.mockResolvedValue({
+      resolvedAtBatCount: 0, awardedPointsSum: 0,
+    });
+    dependencies.repository.readCompletedGames.mockResolvedValue({
+      scoreBuckets: [],
+    });
+    const request = { puzzleId: puzzle.id, puzzleDate: puzzle.puzzleDate, rulesetVersion: 'points-v4' };
+
+    const atBat = await readDailyNineAtBatComparison({ ...request, pitchNumber: '1' });
+    const completed = await readDailyNineCompletedComparison(request);
+
+    expect(atBat.comparison).toMatchObject({ puzzleId: puzzle.id, puzzleNumber: 1, averagePoints: null });
+    expect(completed.comparison).toMatchObject({ puzzleId: puzzle.id, puzzleNumber: 1, averageTotalPoints: null });
+    expect(dependencies.getResultPuzzle).toHaveBeenCalledWith(puzzle.id, puzzle.puzzleDate);
+    expect(dependencies.getPublicPuzzle).not.toHaveBeenCalled();
+    expect(dependencies.repository.readAtBat).toHaveBeenCalledWith(expect.objectContaining({ puzzleId: puzzle.id }));
+    expect(dependencies.repository.readCompletedGames).toHaveBeenCalledWith(expect.objectContaining({ puzzleId: puzzle.id }));
   });
 
   it('records puzzle and provider stages around an at-bat read', async () => {
