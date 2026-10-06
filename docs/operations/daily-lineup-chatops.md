@@ -42,7 +42,7 @@ The route:
 6. optionally schedules only when `schedule: true` was explicit;
 7. returns the persisted date, puzzle number, status, revision, validation result, and resolved ordered selections.
 
-Published and archived puzzles remain immutable. Replacing a scheduled future lineup returns it to draft before an explicit schedule transition. Repository optimistic-revision semantics remain intact.
+Published and archived puzzles remain immutable. Replacing a scheduled future lineup returns it to draft before an explicit schedule transition. A same-day full-lineup correction is allowed only while the current record is already `scheduled`; it is one optimistic-revision save that preserves scheduled lifecycle metadata. The route may then receive the explicit `schedule: true` action as usual, and the workflow treats that already-scheduled current puzzle as an idempotent schedule transition. Because public puzzle identity is derived from the ordered canonical lineup, the corrected lineup receives a new puzzle ID automatically while earlier results remain attached to the old ID. Repository optimistic-revision semantics remain intact.
 
 ## Conversational operating procedure
 
@@ -51,13 +51,14 @@ When the owner supplies a lineup:
 1. preserve the supplied batting order;
 2. resolve each name to one canonical player ID using the existing canonical search/identity system;
 3. never guess through a missing or ambiguous identity; surface ambiguity and request the one needed clarification;
-4. present meaningful validation warnings rather than silently weakening repeat protection, automatic eligibility, reveal readiness, or identity rules;
-5. treat `outside-automatic-daily-pool` as an advisory manual-curation warning, not a reason to substitute a different player without the owner's instruction;
-6. ask whether to schedule when that intent is not already explicit;
-7. call `private.dispatch_daily_lineup_chatops(puzzle_date, canonical_ids, schedule)` through the connected Supabase project;
-8. capture the returned `pg_net` request ID, then inspect `net._http_response` for the corresponding status/body after the asynchronous request completes;
-9. on a normal 2xx response, require the returned persisted readback to exactly match the requested date, order, status, and nine canonical players;
-10. if `pg_net` reports a transport timeout, do **not** blindly retry: first read the authoritative editorial record for that date. If the exact nine/order/status and `chatops:assistant` audit metadata are already persisted, treat the mutation as completed and record the timeout as a transport anomaly. Retry only when authoritative readback proves the requested mutation did not complete.
+4. for a same-day correction, read back the authoritative current row first, require `scheduled` status, preserve all unchanged slots exactly, and send `schedule: true`;
+5. present meaningful validation warnings rather than silently weakening repeat protection, automatic eligibility, reveal readiness, or identity rules;
+6. treat `outside-automatic-daily-pool` as an advisory manual-curation warning, not a reason to substitute a different player without the owner's instruction;
+7. ask whether to schedule when that intent is not already explicit; same-day correction always preserves the already-scheduled state and therefore uses `schedule: true`;
+8. call `private.dispatch_daily_lineup_chatops(puzzle_date, canonical_ids, schedule)` through the connected Supabase project;
+9. capture the returned `pg_net` request ID, then inspect `net._http_response` for the corresponding status/body after the asynchronous request completes;
+10. on a normal 2xx response, require the returned persisted readback to exactly match the requested date, order, status, and nine canonical players;
+11. if `pg_net` reports a transport timeout, do **not** blindly retry: first read the authoritative editorial record for that date. If the exact nine/order/status and `chatops:assistant` audit metadata are already persisted, treat the mutation as completed and record the timeout as a transport anomaly. Retry only when authoritative readback proves the requested mutation did not complete.
 
 Do not publish from this conversational operation. Publication remains a separate lifecycle action.
 
@@ -84,9 +85,10 @@ Verified before routine production use:
 - full-lineup replacement is one optimistic-revision save and preserves exact order;
 - unknown, non-canonical, or non-reveal-ready players are rejected before mutation;
 - reveal-ready manual players outside the automatic Daily pool may be selected and are surfaced with `outside-automatic-daily-pool` rather than being silently promoted into automatic generation;
-- current/past dates are rejected;
+- past dates remain rejected; the current date is accepted only for a full-lineup correction while its authoritative record is already `scheduled`;
 - published/archived puzzles remain immutable;
-- scheduled replacement returns to draft and only explicit scheduling restores `scheduled`;
+- future scheduled replacement returns to draft and only explicit scheduling restores `scheduled`;
+- same-day scheduled correction preserves the scheduled lifecycle atomically, changes the derived puzzle identity when the lineup changes, and leaves prior result rows isolated under the old puzzle ID;
 - cache invalidation still runs through the existing repository wrapper;
 - validation warnings are returned for conversational review;
 - normal 2xx response readback exactly matches the requested nine;
