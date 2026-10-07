@@ -1,6 +1,6 @@
 # Corrected Daily save isolation
 
-Status: implementation in progress
+Status: implementation complete; review and release gates pending
 
 ## Scope contract
 
