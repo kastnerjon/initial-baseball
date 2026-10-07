@@ -6,8 +6,6 @@ Last updated: 2026-10-07
 
 ## Immediate next work
 
-- [ ] Finish automatic archive scheduler review/exact-head gates, apply the private pg_cron transport, recover October 5/6 through the app and verify immutability/current-day exclusion; reconcile the activation checkpoint before resuming archive comparison browser work. App #313 is merged; scheduler/backfill are not yet verified. Scope: `tasks/plans/daily-archive-scheduler.md`.
-
 - [ ] Verify the #311 initials-only autocomplete guard on physical phone/tablet: `a r` / `o a` yield no suggestions, while real name fragments remain selectable. Production API and refreshed cloud-browser checks passed; physical-device interaction QA remains open.
 
 - [ ] Verify authenticated admin attempt-grid/CSV access on the owner's device; retain physical/mobile QA separately from automated read/auth/render tests.
@@ -264,10 +262,9 @@ Hosted architecture/storage/comparison/editorial verification is sufficient to r
 - [ ] Retain authenticated admin mobile layout/interaction as deferred prelaunch QA (#294). First issue and retry do not establish physical-mobile QA.
 - [x] Deliver playable archive beta as one coherent feature (#296): issued catalog/numbered gameplay, frozen clues, current scoring, isolated device progress/reset and exact sharing. Final-head CI #1022, push CI #1023 and exact production/canonical/redaction/log/database checks passed. Archive result submission and comparison reads were deferred to separate scopes. Evidence: `tasks/plans/playable-archive-beta.md`.
 - [x] Cloud Chrome archive QA: Hint/Guess/Give Up/Next through completion, active/completed refresh, exact spoiler-safe clipboard link, second-tab follower lock and archive reset preserving current-Daily progress. Disabled archive scoreboard AVG/TOTAL AVG now use unavailable dashes in production (#298); active/completed/refresh checks passed. Evidence: `tasks/plans/archive-disabled-average-display.md`.
-- [ ] Prelaunch archive physical/mobile QA and reset isolation across two issued archive puzzles remain open; only one archive puzzle exists. Cloud browser checks do not establish physical-device interaction or authenticated admin QA (#294).
+- [ ] Prelaunch archive physical/mobile QA and reset isolation across two issued archive puzzles remain open; October 7 catch-up now provides three issued puzzles. Cloud browser checks do not establish physical-device interaction or authenticated admin QA (#294).
 - [x] Archive-beta at-bat/completed result delivery is merged and its production deployment verified (#300): exact puzzle + current points-v4 identity, CI #1034 attempt 3, push CI #1035, READY/canonical production and read-only route/log/database checks. Evidence: `tasks/plans/archive-beta-result-delivery.md`.
 - [x] Implement and production-verify authoritative archive comparison GET routing (#303): exact-head CI #1039, clean review/READY Preview, push CI #1040 and exact production route/population/log/Supabase checks passed. Optional explicit puzzleId binds issued-puzzle ID/date and beta points-v4; date-only current Daily remains compatible. Evidence: `tasks/plans/archive-beta-comparison-reads.md`.
-- [ ] Owner-prioritized automatic completed-day archive rollover: app service/recovery endpoint and strict past-date visibility first; separate private Supabase scheduler/hosted recovery activation next. Preserve exact frozen clues, completed Daily source authority and permanent-series separation. Scope: `tasks/plans/automatic-archive-rollover.md`.
 - [ ] Activate archive browser comparison transport/UI in the next separate PR; local archive history follows its explicit replay-policy decision.
 - [ ] Verify a fresh native archive game's hosted at-bat/completed delivery before broad launch; this release check used GETs/read-only queries and created no hosted archive results.
 - [x] Repair canonical hitter OBP/OPS enrichment so pre-1954 sacrifice-fly blanks follow the historical formula and career rates derive from supported aggregate counts. Scope: `tasks/plans/canonical-historical-on-base-rate-aggregation.md`.
