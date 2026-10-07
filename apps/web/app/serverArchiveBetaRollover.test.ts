@@ -30,8 +30,8 @@ function setup(dates = ['2026-10-04', '2026-10-05', '2026-10-06']) {
     issued.set(identity.puzzleDate, { identity, puzzleId: `archive-beta-v1-daily-${identity.dailyNumber}`, issuedAt } as ArchiveBetaDailyClueFrozenIssuedPuzzle);
     return { status: 'created' as const, puzzleDate: identity.puzzleDate, dailyNumber: identity.dailyNumber, issuedAt };
   });
-  const reader = { getByDate: vi.fn(async ({ puzzleDate }: { puzzleDate: string }) => issued.get(puzzleDate) ?? null), getByNumber: vi.fn(async () => null) };
-  return { records, issued, repository, reader, issueAndVerify, dependencies: { repository, reader, issueAndVerify } };
+  const listIssuedIdentities = vi.fn(async () => [...issued.values()].map(value => value.identity));
+  return { records, issued, repository, listIssuedIdentities, issueAndVerify, dependencies: { repository, listIssuedIdentities, issueAndVerify } };
 }
 
 describe('automatic completed-day archive rollover', () => {
@@ -56,13 +56,13 @@ describe('automatic completed-day archive rollover', () => {
     expect(s.repository.save).toHaveBeenCalledTimes(3);
   });
   it.each([
-    ['2026-10-05T06:59:59Z', 0], ['2026-10-05T07:00:00Z', 1],
-    ['2026-11-02T07:59:59Z', 28], ['2026-11-02T08:00:00Z', 29],
+    ['2026-10-05T06:59:59Z', null], ['2026-10-05T07:00:00Z', '2026-10-04'],
+    ['2026-11-02T07:59:59Z', '2026-10-31'], ['2026-11-02T08:00:00Z', '2026-11-01'],
   ])('uses the Pacific completed-date boundary at %s', async (instant, expected) => {
     const s = setup();
-    // Count reads to establish the date set independently of source availability.
     await runArchiveBetaRollover(new Date(instant), s.dependencies);
-    expect(s.reader.getByDate).toHaveBeenCalledTimes(expected);
+    if (expected === null) expect(s.repository.listByDateRange).not.toHaveBeenCalled();
+    else expect(s.repository.listByDateRange).toHaveBeenCalledWith('2026-10-04', expected);
   });
   it('never issues or publishes today or future dates even if the provider returns them', async () => {
     const s = setup(['2026-10-04', '2026-10-05', '2026-10-06']);
@@ -125,10 +125,8 @@ describe('automatic completed-day archive rollover', () => {
   });
   it('fails closed on a provider row with the wrong numbered identity', async () => {
     const s = setup();
-    s.issued.set('2026-10-04', { identity: { dailyNumber: 2 }, puzzleId: 'archive-beta-v1-daily-2' } as ArchiveBetaDailyClueFrozenIssuedPuzzle);
-    expect(await runArchiveBetaRollover(new Date('2026-10-05T08:00:00Z'), s.dependencies)).toMatchObject({
-      created: 0, failures: [{ puzzleDate: '2026-10-04', kind: 'unavailable' }],
-    });
+    s.issued.set('2026-10-04', { identity: { seriesVersion: 'archive-beta-v1', puzzleDate: '2026-10-04', dailyNumber: 2 }, puzzleId: 'archive-beta-v1-daily-2' } as ArchiveBetaDailyClueFrozenIssuedPuzzle);
+    await expect(runArchiveBetaRollover(new Date('2026-10-05T08:00:00Z'), s.dependencies)).rejects.toThrow('Invalid');
     expect(s.repository.save).not.toHaveBeenCalled();
     expect(s.issueAndVerify).not.toHaveBeenCalled();
   });

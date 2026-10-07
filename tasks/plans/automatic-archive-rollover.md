@@ -25,3 +25,9 @@ Main 0ceff25877104cd1336093261f2a5454b7d88962 (#312), no open PRs. Latest produc
 ## Local verification
 
 27 focused rollover/authorization/runtime tests passed; full workspace test run passed, including all 749 web tests across 106 files. Workspace typecheck/lint, file-size and whitespace checks passed. Strict baseball-data generation completed with zero critical issues; the production web build and hidden-answer QA passed (2 payloads, 34 client chunks). Generated pitcher-save and Next configuration side effects are excluded from the PR. Exact-head CI/READY Preview, one bounded hosted review and production checks remain required. No hosted issuance has been performed.
+
+## Bounded review fix
+
+The one hosted review on 6e5960c found that one full issued-puzzle read per historical day could exhaust the rollover window. Replaced it with ordered metadata-only pages of 500 identities; existing copies require no snapshot reads or clue materialization. Added a 501-row/two-request regression plus identity/error checks. This remains the same app concern and adds no schema/read contract or infrastructure. Final-head CI/Preview must rerun on the fixed tree; no second full review is requested.
+
+Final fix verification: 29 focused tests and all 751 web tests across 107 files passed. Web typecheck, file-size/whitespace and the refreshed production build/hidden-answer check passed. The 501-row regression uses two metadata reads and excludes canonical IDs/clue snapshots.

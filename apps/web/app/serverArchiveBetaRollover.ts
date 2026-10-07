@@ -1,10 +1,9 @@
 import 'server-only';
 import {
-  createArchiveBetaDailyIssuedPuzzleReadService,
   publishDailyPuzzle,
   resolveArchiveBetaDailyIdentityForDate,
   resolveArchiveBetaDailyIdentityForNumber,
-  type ArchiveBetaDailyIssuedPuzzleReadService,
+  type ArchiveBetaDailyIdentity,
   type DailyPuzzleRepository,
 } from '@initial-baseball/daily';
 import { ARCHIVE_BETA_EPOCH } from './archiveBetaActivation';
@@ -12,11 +11,11 @@ import { getPacificDailyDateString } from './getPacificDailyDateString';
 import { ArchiveBetaActivationError, issueArchiveBetaDailyAndVerify } from './serverArchiveBetaDailyVerification';
 import { createServerSupabaseClient } from './serverSupabaseClient';
 import { createSupabaseDailyPuzzleRepository } from './supabaseDailyPuzzleRepository';
-import { createSupabaseArchiveBetaDailyIssuedPuzzleReadRepository } from './supabasePermanentDailyIssuedPuzzleRepository';
+import { listIssuedArchiveBetaIdentities } from './serverArchiveBetaIssuedIdentities';
 
 export type ArchiveBetaRolloverDependencies = {
   repository: DailyPuzzleRepository;
-  reader: ArchiveBetaDailyIssuedPuzzleReadService;
+  listIssuedIdentities(cutoffDate: string): Promise<readonly ArchiveBetaDailyIdentity[]>;
   issueAndVerify: typeof issueArchiveBetaDailyAndVerify;
 };
 
@@ -24,7 +23,7 @@ function createDependencies(): ArchiveBetaRolloverDependencies {
   const client = createServerSupabaseClient();
   return {
     repository: createSupabaseDailyPuzzleRepository(client),
-    reader: createArchiveBetaDailyIssuedPuzzleReadService(createSupabaseArchiveBetaDailyIssuedPuzzleReadRepository(client)),
+    listIssuedIdentities: cutoff => listIssuedArchiveBetaIdentities(client, cutoff),
     issueAndVerify: issueArchiveBetaDailyAndVerify,
   };
 }
@@ -41,7 +40,15 @@ export async function runArchiveBetaRollover(
     failures: [] as Array<{ puzzleDate: string; kind: 'missing-source' | 'immutable-conflict' | 'unavailable' }>,
   };
   if (current === null || current.dailyNumber === 1) return result;
-  const { repository, reader, issueAndVerify } = dependencies ?? createDependencies();
+  const { repository, listIssuedIdentities, issueAndVerify } = dependencies ?? createDependencies();
+  const issuedIdentities = await listIssuedIdentities(today);
+  const issuedDates = new Set<string>();
+  for (const identity of issuedIdentities) {
+    const expected = resolveArchiveBetaDailyIdentityForDate(identity.puzzleDate, ARCHIVE_BETA_EPOCH);
+    if (expected === null || identity.seriesVersion !== expected.seriesVersion
+      || identity.dailyNumber !== expected.dailyNumber || identity.puzzleDate >= today) throw new Error('Invalid issued archive identity.');
+    issuedDates.add(identity.puzzleDate);
+  }
   const last = resolveArchiveBetaDailyIdentityForNumber(current.dailyNumber - 1, ARCHIVE_BETA_EPOCH);
   const records = await repository.listByDateRange(ARCHIVE_BETA_EPOCH.startDate, last.puzzleDate);
   const byDate = new Map(records.map(record => [record.puzzleDate, record]));
@@ -49,9 +56,7 @@ export async function runArchiveBetaRollover(
   for (let number = 1; number < current.dailyNumber; number++) {
     const identity = resolveArchiveBetaDailyIdentityForNumber(number, ARCHIVE_BETA_EPOCH);
     try {
-      const existing = await reader.getByDate({ seriesVersion: identity.seriesVersion, puzzleDate: identity.puzzleDate });
-      if (existing !== null) {
-        if (existing.identity.dailyNumber !== number || existing.puzzleId !== `archive-beta-v1-daily-${number}`) throw new Error('Invalid issued identity.');
+      if (issuedDates.has(identity.puzzleDate)) {
         result.preserved++;
         continue;
       }
