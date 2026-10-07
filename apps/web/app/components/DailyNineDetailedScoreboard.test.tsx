@@ -74,7 +74,7 @@ describe('DailyNineDetailedScoreboard', () => {
         averageTotalPoints: 6, strictLowerFinishRate: null,
       }}
     />);
-    const total = html.slice(html.indexOf('>TOTAL</th>'));
+    const total = html.slice(html.indexOf('>TOTAL</span>'));
     expect(total).toContain('>4</td>');
     expect(total).toContain('>6.0</td>');
     expect(total).toContain('>—</td>');

@@ -38,7 +38,7 @@ describe('private scorecard and public share card', () => {
     expect(html).toContain('K - 0');
     expect(html).toContain('HR - 7');
     expect(html).toContain('7.0');
-    expect(html).toContain('>TOTAL</th>');
+    expect(html).toContain('>TOTAL</span>');
     expect(html).toContain('>100%</td>');
     expect(html).not.toContain('Barry Bonds');
     expect(html).not.toContain('Ken Griffey Jr.');
