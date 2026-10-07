@@ -1,6 +1,6 @@
 # Automatic archive-beta rollover
 
-Status: App implementation locally verified; review/CI/deployment pending; scheduler follows separately
+Status: App #313 merged after review/CI/READY Preview; production checks and separate scheduler activation next
 Last updated: 2026-10-07
 
 ## Scope contract
@@ -31,3 +31,9 @@ Main 0ceff25877104cd1336093261f2a5454b7d88962 (#312), no open PRs. Latest produc
 The one hosted review on 6e5960c found that one full issued-puzzle read per historical day could exhaust the rollover window. Replaced it with ordered metadata-only pages of 500 identities; existing copies require no snapshot reads or clue materialization. Added a 501-row/two-request regression plus identity/error checks. This remains the same app concern and adds no schema/read contract or infrastructure. Final-head CI/Preview must rerun on the fixed tree; no second full review is requested.
 
 Final fix verification: 29 focused tests and all 751 web tests across 107 files passed. Web typecheck, file-size/whitespace and the refreshed production build/hidden-answer check passed. The 501-row regression uses two metadata reads and excludes canonical IDs/clue snapshots.
+
+## App release
+
+#313 merged as cffe400cc797e8bba4c883d9db7876d1f73aebcf. Final head 50eb4c8cd187cc47f6bc1fb7a458e03207ca4511 passed CI #1061 attempt 2 and exact READY Preview dpl_aPyeVptCeyg2PjD2y5sS91bC5uTE; its one review thread is resolved. Attempt 1 encountered existing #301 baseball-data timeout; identical code passed on retry. No checks were weakened. Scheduler is separately scoped in `tasks/plans/daily-archive-scheduler.md`.
+
+Exact production dpl_G5HmQX4ZTivnm65jrNrYfxaAcYd9 is READY/canonical on the app merge. Expected public 200/404 routes and scoped error/fatal scan passed. Push CI #1062 is finishing; hosted archive rows remain unchanged before scheduler activation.

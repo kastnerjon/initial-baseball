@@ -7,3 +7,5 @@ Use migrations for durable schema/extension changes and keep the repository migr
 For Daily editorial mutations, the authoritative path is the server-side Daily workflow and `packages/daily` lifecycle over the Supabase repository adapter. Do not write `daily_editorial_puzzles` directly from browser code, assistant tooling, SQL transport helpers, or Edge Functions.
 
 The conversational lineup transport is intentionally narrow: `private.dispatch_daily_lineup_chatops(...)` uses `pg_net` plus a token stored in Supabase Vault only to forward one JSON request to the authenticated application route. It contains no lineup or lifecycle rules and is not exposed through the Data API.
+
+Automatic completed-day archiving uses the same private transport discipline. The named pg_cron job calls `private.dispatch_daily_archive_rollover()` through pg_net/Vault; only the application decides Pacific eligibility, publication and immutable issuance. Runbook: `docs/operations/daily-archive-rollover.md`.

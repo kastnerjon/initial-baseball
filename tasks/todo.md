@@ -2,9 +2,11 @@
 
 
 Status: Active ordered implementation plan  
-Last updated: 2026-10-06
+Last updated: 2026-10-07
 
 ## Immediate next work
+
+- [ ] Finish automatic archive scheduler review/exact-head gates, apply the private pg_cron transport, recover October 5/6 through the app and verify immutability/current-day exclusion; reconcile the activation checkpoint before resuming archive comparison browser work. App #313 is merged; scheduler/backfill are not yet verified. Scope: `tasks/plans/daily-archive-scheduler.md`.
 
 - [ ] Verify the #311 initials-only autocomplete guard on physical phone/tablet: `a r` / `o a` yield no suggestions, while real name fragments remain selectable. Production API and refreshed cloud-browser checks passed; physical-device interaction QA remains open.
 
