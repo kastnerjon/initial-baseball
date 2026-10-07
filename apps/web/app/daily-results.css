@@ -42,12 +42,14 @@
 }
 .at-bat-comparison {
   display: grid;
+  text-align: center;
   gap: 4px;
   padding-top: 8px;
   border-top: 1px solid var(--line-soft);
 }
 .at-bat-comparison-values {
   display: flex;
+  justify-content: center;
   align-items: baseline;
   gap: 16px;
 }
@@ -69,6 +71,7 @@
 }
 .at-bat-comparison-performance {
   display: flex;
+  justify-content: center;
   flex-wrap: wrap;
   gap: 5px 10px;
   font-size: 12px;

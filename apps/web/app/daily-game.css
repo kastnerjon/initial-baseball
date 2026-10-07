@@ -85,6 +85,10 @@
 .hint-list {
   display: grid;
   gap: 8px;
+  justify-self: center;
+  width: fit-content;
+  max-width: 100%;
+  min-width: 0;
 }
 .revealed-hint {
   display: grid;
@@ -107,6 +111,7 @@
 }
 .hint-empty {
   color: var(--ink-soft);
+  text-align: center;
 }
 .search-shell {
   position: relative;
@@ -220,7 +225,7 @@ input[type="text"]:focus {
   background: #edf1e9;
 }
 .button-hint {
-  justify-self: start;
+  justify-self: center;
   padding: 9px 12px;
   font-size: 13px;
 }
