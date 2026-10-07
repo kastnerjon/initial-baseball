@@ -16,6 +16,8 @@ export type DailyNineComparisonIdentity<
   puzzleDate: string;
   puzzleNumber: number;
   rulesetVersion: Ruleset;
+  /** Optional first anonymous result excluded from this read, never an account identity. */
+  excludedResultId?: string;
 };
 
 /** Exact-version provider-read key for supported Daily Nine scoring versions. */
@@ -37,6 +39,8 @@ export type DailyNineAtBatComparisonQuery = DailyNineAtBatComparisonIdentity;
 export type DailyNineAtBatComparisonSource = {
   resolvedAtBatCount: number;
   awardedPointsSum: number;
+  /** Additive rollout: old providers may still supply only count/sum. */
+  scoreBuckets?: DailyNineScoreBucket[];
 };
 
 export type DailyNineScoreBucket = {
@@ -63,6 +67,7 @@ export type DailyNineAtBatComparison<
 > = DailyNineAtBatComparisonIdentity<Ruleset> & {
   resolvedAtBatCount: number;
   averagePoints: number | null;
+  scoreHistogram?: number[];
 };
 
 export type DailyNineCompletedComparison<
@@ -146,8 +151,17 @@ export function deriveDailyNineAtBatComparison<
     }
   }
 
+  const distribution = source.scoreBuckets === undefined ? null : deriveScoreDistribution(
+    query.rulesetVersion, 1, { scoreBuckets: source.scoreBuckets },
+  );
+  if (distribution !== null && (distribution.completedGameCount !== source.resolvedAtBatCount
+    || distribution.totalPoints !== source.awardedPointsSum)) {
+    throw new Error('Daily Nine AB histogram does not match count and points sum.');
+  }
+
   return {
     ...query,
+    ...(distribution === null ? {} : { scoreHistogram: distribution.scoreHistogram }),
     resolvedAtBatCount: source.resolvedAtBatCount,
     averagePoints: source.resolvedAtBatCount === 0
       ? null
@@ -165,7 +179,18 @@ export function deriveDailyNineCompletedComparison<
   key: DailyNineComparisonIdentity<Ruleset>,
   source: DailyNineCompletedComparisonSource,
 ): DailyNineCompletedComparison<Ruleset> {
-  const range = requireComparisonRange(key.rulesetVersion, DAILY_AT_BAT_COUNT);
+  const { totalPoints: _totalPoints, ...distribution } = deriveScoreDistribution(
+    key.rulesetVersion, DAILY_AT_BAT_COUNT, source,
+  );
+  return { ...key, ...distribution };
+}
+
+function deriveScoreDistribution(
+  rulesetVersion: DailyNineComparisonRulesetVersion,
+  totalAtBats: number,
+  source: DailyNineCompletedComparisonSource,
+) {
+  const range = requireComparisonRange(rulesetVersion, totalAtBats);
   const histogramLength = getHistogramLength(range);
   const scoreHistogram = Array.from({ length: histogramLength }, () => 0);
   let completedGameCount = 0;
@@ -197,7 +222,7 @@ export function deriveDailyNineCompletedComparison<
   }
 
   return {
-    ...key,
+    totalPoints,
     completedGameCount,
     averageTotalPoints: completedGameCount === 0 ? null : totalPoints / completedGameCount,
     scoreHistogram,
@@ -215,7 +240,28 @@ export function getDailyNineStrictLowerFinishRate(
   >,
   userPoints: number,
 ): number | null {
-  const range = requireComparisonRange(comparison.rulesetVersion, DAILY_AT_BAT_COUNT);
+  return strictLowerRate(comparison, userPoints, DAILY_AT_BAT_COUNT);
+}
+
+/** Same strict-lower semantics for one AB, using its independent resolved-slot population. */
+export function getDailyNineStrictLowerAtBatRate(
+  comparison: DailyNineAtBatComparison,
+  userPoints: number,
+): number | null {
+  if (comparison.scoreHistogram === undefined) return null;
+  return strictLowerRate({
+    ...comparison, scoreHistogram: comparison.scoreHistogram,
+    completedGameCount: comparison.resolvedAtBatCount,
+  }, userPoints, 1);
+}
+
+function strictLowerRate(
+  comparison: Pick<DailyNineCompletedComparison,
+    'completedGameCount' | 'scoreHistogram' | 'rulesetVersion'>,
+  userPoints: number,
+  totalAtBats: number,
+): number | null {
+  const range = requireComparisonRange(comparison.rulesetVersion, totalAtBats);
   getHistogramIndex(userPoints, range);
   requireNonNegativeSafeInteger(comparison.completedGameCount, 'completed-game count');
 

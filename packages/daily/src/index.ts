@@ -89,6 +89,7 @@ export {
   deriveDailyNineAtBatComparison,
   deriveDailyNineCompletedComparison,
   getDailyNineStrictLowerFinishRate,
+  getDailyNineStrictLowerAtBatRate,
   type DailyNineAtBatComparison,
   type DailyNineAtBatComparisonIdentity,
   type DailyNineAtBatComparisonQuery,
