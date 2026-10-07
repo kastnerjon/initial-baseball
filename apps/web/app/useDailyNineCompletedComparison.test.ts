@@ -50,6 +50,19 @@ describe('Daily Nine completed comparison input', () => {
     });
   });
 
+  it('binds the durable first result identity into a completed comparison read', () => {
+    expect(createDailyNineCompletedComparisonInput({
+      puzzle,
+      rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+      points: points(18.5, true, 36),
+      terminalPoints: null,
+      excludedResultId: 'attempt-one',
+    })).toMatchObject({
+      key: { excludedResultId: 'attempt-one' },
+      ownPoints: 18.5,
+    });
+  });
+
   it('keeps the same semantic input after the final score is committed', () => {
     const pending = createDailyNineCompletedComparisonInput({
       puzzle,

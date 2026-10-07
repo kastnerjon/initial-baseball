@@ -36,6 +36,7 @@ type DailyNineCompletedComparisonSourceInput = {
   rulesetVersion: DailyRulesetVersion;
   points: Pick<DailyPointsSummary, 'points' | 'completed'>;
   terminalPoints: Pick<DailyPointsSummary, 'points' | 'completed'> | null;
+  excludedResultId?: string | null;
 };
 
 export function createDailyNineCompletedComparisonInput({
@@ -43,6 +44,7 @@ export function createDailyNineCompletedComparisonInput({
   rulesetVersion,
   points,
   terminalPoints,
+  excludedResultId,
 }: DailyNineCompletedComparisonSourceInput): DailyNineCompletedComparisonInput {
   if (!isDailyNineComparisonApiRulesetVersion(rulesetVersion)) return null;
 
@@ -60,6 +62,7 @@ export function createDailyNineCompletedComparisonInput({
       puzzleDate: puzzle.puzzleDate,
       puzzleNumber: puzzle.puzzleNumber,
       rulesetVersion,
+      ...(excludedResultId == null ? {} : { excludedResultId }),
     },
     ownPoints,
   };
@@ -75,6 +78,7 @@ export function useDailyNineCompletedComparison(input: DailyNineCompletedCompari
   const puzzleNumber = input?.key.puzzleNumber ?? null;
   const rulesetVersion = input?.key.rulesetVersion ?? null;
   const ownPoints = input?.ownPoints ?? null;
+  const excludedResultId = input?.key.excludedResultId ?? null;
 
   const invalidate = useCallback(() => {
     controller.invalidate('completed');
@@ -97,6 +101,7 @@ export function useDailyNineCompletedComparison(input: DailyNineCompletedCompari
       puzzleDate,
       puzzleNumber,
       rulesetVersion,
+      ...(excludedResultId === null ? {} : { excludedResultId }),
     };
 
     void controller.request(key, {
@@ -121,6 +126,7 @@ export function useDailyNineCompletedComparison(input: DailyNineCompletedCompari
   }, [
     client,
     controller,
+    excludedResultId,
     ownPoints,
     puzzleDate,
     puzzleId,

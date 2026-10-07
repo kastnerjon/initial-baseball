@@ -83,18 +83,26 @@ function requestInit(signal: AbortSignal) {
 }
 
 function atBatPath(key: DailyNineAtBatComparisonRequestKey): string {
-  return `/api/daily/comparison/at-bat?${new URLSearchParams({
+  const search = new URLSearchParams({
     date: key.puzzleDate,
     ruleset: key.rulesetVersion,
     pitch: String(key.pitchNumber),
-  })}`;
+  });
+  appendExcludedResultId(search, key.excludedResultId);
+  return `/api/daily/comparison/at-bat?${search}`;
 }
 
 function completedPath(key: DailyNineCompletedComparisonRequestKey): string {
-  return `/api/daily/comparison/completed?${new URLSearchParams({
+  const search = new URLSearchParams({
     date: key.puzzleDate,
     ruleset: key.rulesetVersion,
-  })}`;
+  });
+  appendExcludedResultId(search, key.excludedResultId);
+  return `/api/daily/comparison/completed?${search}`;
+}
+
+function appendExcludedResultId(search: URLSearchParams, excludedResultId?: string): void {
+  if (excludedResultId !== undefined) search.set('excludeResultId', excludedResultId);
 }
 
 async function readPayload(response: ComparisonHttpResponse): Promise<unknown> {
@@ -171,11 +179,13 @@ function decodeEnvelope(value: unknown, kind: 'at-bat' | 'completed') {
 }
 
 function decodeBaseKey(value: Record<string, unknown>): DailyNineComparisonApiKey {
+  const excludedResultId = optionalResultId(value.excludedResultId);
   return {
     puzzleId: nonEmptyString(value.puzzleId, 'puzzleId'),
     puzzleDate: nonEmptyString(value.puzzleDate, 'puzzleDate'),
     puzzleNumber: positiveSafeInteger(value.puzzleNumber, 'puzzleNumber'),
     rulesetVersion: requireComparisonRuleset(value.rulesetVersion),
+    ...(excludedResultId === undefined ? {} : { excludedResultId }),
   };
 }
 
@@ -198,7 +208,8 @@ function sameBaseIdentity(
   return expected.puzzleId === actual.puzzleId
     && expected.puzzleDate === actual.puzzleDate
     && expected.puzzleNumber === actual.puzzleNumber
-    && expected.rulesetVersion === actual.rulesetVersion;
+    && expected.rulesetVersion === actual.rulesetVersion
+    && expected.excludedResultId === actual.excludedResultId;
 }
 
 function throwHttpError(status: number, payload: unknown): never {
@@ -229,6 +240,14 @@ function object(value: unknown, field: string): Record<string, unknown> {
 function nonEmptyString(value: unknown, field: string): string {
   if (typeof value !== 'string' || value.length === 0) {
     invalidResponse(`Daily Nine comparison ${field} must be a non-empty string.`);
+  }
+  return value;
+}
+
+function optionalResultId(value: unknown): string | undefined {
+  if (value === undefined) return undefined;
+  if (typeof value !== 'string' || !/^[A-Za-z0-9_-]{1,128}$/.test(value)) {
+    invalidResponse('Daily Nine comparison excludedResultId is invalid.');
   }
   return value;
 }

@@ -124,6 +124,7 @@ describe('Daily Nine comparison GET adapters', () => {
       puzzleDate: '2026-09-19',
       rulesetVersion: 'points-v3',
       pitchNumber: '4',
+      excludedResultId: null,
     }, expect.any(Object));
     expect(server.readCompleted).not.toHaveBeenCalled();
   });
@@ -150,6 +151,7 @@ describe('Daily Nine comparison GET adapters', () => {
       puzzleDate: '2026-09-19',
       rulesetVersion: 'points-v4',
       pitchNumber: '4',
+      excludedResultId: null,
     }, expect.any(Object));
     await expect(response.json()).resolves.toEqual(payload);
   });
@@ -175,8 +177,30 @@ describe('Daily Nine comparison GET adapters', () => {
       puzzleId: 'untrusted',
       puzzleDate: '2026-09-19',
       rulesetVersion: 'points-v3',
+      excludedResultId: null,
     }, expect.any(Object));
     expect(server.readAtBat).not.toHaveBeenCalled();
+  });
+
+  it('passes the exclusion token as an opaque routing field on both adapters', async () => {
+    server.readAtBat.mockResolvedValue(atBatResponse());
+    server.readCompleted.mockResolvedValue(completedResponse());
+
+    await getAtBat(new Request(
+      'http://localhost/api/daily/comparison/at-bat'
+      + '?date=2026-09-19&ruleset=points-v3&pitch=4&excludeResultId=attempt-one',
+    ));
+    await getCompleted(new Request(
+      'http://localhost/api/daily/comparison/completed'
+      + '?date=2026-09-19&ruleset=points-v3&excludeResultId=attempt-one',
+    ));
+
+    expect(server.readAtBat).toHaveBeenCalledWith(expect.objectContaining({
+      excludedResultId: 'attempt-one',
+    }), expect.any(Object));
+    expect(server.readCompleted).toHaveBeenCalledWith(expect.objectContaining({
+      excludedResultId: 'attempt-one',
+    }), expect.any(Object));
   });
 
   it('maps request failures through the sanitized shared HTTP mapper', async () => {

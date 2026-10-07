@@ -6,7 +6,7 @@ Last updated: 2026-10-07
 
 ## Immediate next work
 
-- [ ] Complete the staged AB BEAT / one-other-result rollout: filtered provider reads, then durable browser first-result exclusion, then presentation activation. #316 completed the portable distribution contract; keep result writes/scoring unchanged and archive activation separate.
+- [ ] Complete the staged AB BEAT / one-other-result rollout: #316 portable distribution contract and #317 filtered provider reads are production-verified; PR #318 carries the durable first-result exclusion through current-Daily browser/HTTP reads, then presentation activation remains. Keep result writes/scoring unchanged and archive activation separate.
 
 - [ ] Verify the #311 initials-only autocomplete guard on physical phone/tablet: `a r` / `o a` yield no suggestions, while real name fragments remain selectable. Production API and refreshed cloud-browser checks passed; physical-device interaction QA remains open.
 

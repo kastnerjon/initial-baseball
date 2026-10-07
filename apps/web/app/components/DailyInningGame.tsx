@@ -69,38 +69,6 @@ export function DailyInningGame({
   const resolutionRequests = useDailyGameplayResolutionRequests(setRequestError);
   const [savedGameRestoreController] = useState(createDailySavedGameRestoreController);
   const currentPitch = puzzle.pitches[currentPitchIndex] ?? null;
-  const completedComparison = useDailyNineCompletedComparison(archive ? null : createDailyNineCompletedComparisonInput({
-    puzzle, rulesetVersion: gameState.rulesetVersion, points: gameState.points, terminalPoints: pendingAdvance?.points ?? null,
-  }));
-  const requestedPitchNumbers = useMemo(
-    () => puzzle.pitches.map(pitch => pitch.pitchNumber),
-    [puzzle.pitches],
-  );
-  const completedPitchNumbers = useMemo(
-    () => puzzle.pitches
-      .slice(0, gameState.completedPitchLines.length)
-      .map(pitch => pitch.pitchNumber),
-    [gameState.completedPitchLines.length, puzzle.pitches],
-  );
-  const scorecardComparisons = useDailyNineScorecardComparisons({
-    enabled: hasLoadedSavedState && !archive,
-    puzzle,
-    rulesetVersion: gameState.rulesetVersion,
-    requestedPitchNumbers,
-    completedPitchNumbers,
-  });
-  const atBatComparisonInput = hasLoadedSavedState && !archive
-    ? createDailyNineAtBatComparisonInput({
-        puzzle, rulesetVersion: gameState.rulesetVersion, pitch: currentPitch, result: atBatState.submittedResult,
-        currentPoints: gameState.points.points, terminalPoints: pendingAdvance?.points.points ?? null,
-      })
-    : null;
-  const atBatComparisonState = createDailyNineAtBatComparisonState(
-    atBatComparisonInput === null
-      ? undefined
-      : scorecardComparisons.comparisons[atBatComparisonInput.key.pitchNumber],
-    atBatComparisonInput?.ownPoints ?? null,
-  );
   const displayedCompletedAtBats = pendingAdvance?.completedAtBats ?? gameState.completedAtBats;
   const scorecardPoints = useMemo(
     () => createDailyScorecardPoints(displayedCompletedAtBats, gameState.rulesetVersion),
@@ -124,6 +92,44 @@ export function DailyInningGame({
     onPersistenceSessionInvalidated: resolutionRequests.invalidate,
     submitCompletedResultCreationIfEligible: completedResultSubmission.submitCreationIfEligible,
   });
+  const comparisonExcludedResultId = gameplayPersistence.comparisonExcludedResultId;
+  const completedComparison = useDailyNineCompletedComparison(archive ? null : createDailyNineCompletedComparisonInput({
+    puzzle,
+    rulesetVersion: gameState.rulesetVersion,
+    points: gameState.points,
+    terminalPoints: pendingAdvance?.points ?? null,
+    excludedResultId: comparisonExcludedResultId,
+  }));
+  const requestedPitchNumbers = useMemo(
+    () => puzzle.pitches.map(pitch => pitch.pitchNumber),
+    [puzzle.pitches],
+  );
+  const completedPitchNumbers = useMemo(
+    () => puzzle.pitches
+      .slice(0, gameState.completedPitchLines.length)
+      .map(pitch => pitch.pitchNumber),
+    [gameState.completedPitchLines.length, puzzle.pitches],
+  );
+  const scorecardComparisons = useDailyNineScorecardComparisons({
+    enabled: hasLoadedSavedState && !archive,
+    puzzle,
+    rulesetVersion: gameState.rulesetVersion,
+    requestedPitchNumbers,
+    completedPitchNumbers,
+    excludedResultId: comparisonExcludedResultId,
+  });
+  const atBatComparisonInput = hasLoadedSavedState && !archive
+    ? createDailyNineAtBatComparisonInput({
+        puzzle, rulesetVersion: gameState.rulesetVersion, pitch: currentPitch, result: atBatState.submittedResult,
+        currentPoints: gameState.points.points, terminalPoints: pendingAdvance?.points.points ?? null,
+      })
+    : null;
+  const atBatComparisonState = createDailyNineAtBatComparisonState(
+    atBatComparisonInput === null
+      ? undefined
+      : scorecardComparisons.comparisons[atBatComparisonInput.key.pitchNumber],
+    atBatComparisonInput?.ownPoints ?? null,
+  );
 
   useEffect(() => () => {
     savedGameRestoreController.invalidate();

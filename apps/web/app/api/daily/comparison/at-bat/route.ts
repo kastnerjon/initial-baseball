@@ -35,6 +35,7 @@ export async function GET(request: Request) {
       puzzleDate: search.get('date'),
       rulesetVersion: search.get('ruleset'),
       pitchNumber: search.get('pitch'),
+      excludedResultId: search.get('excludeResultId'),
     }, stageTimings);
     return withDailyNineComparisonTiming(
       dailyNineComparisonPrivateJson(result),

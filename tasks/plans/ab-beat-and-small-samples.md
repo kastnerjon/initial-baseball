@@ -16,7 +16,7 @@ Status: complete in #316 and production verified.
 
 ## PR 2 — service-only filtered provider reads
 
-Status: implementation and hosted migration complete; exact-head CI and READY Preview pass, hosted Supabase verification is clean, and bounded fresh-eye review found no in-scope issues.
+Status: complete in #317 and production verified.
 
 - Goal: let the existing provider return score buckets after optionally excluding one durable anonymous result ID, without exposing the filter publicly yet.
 - Owning layer: the server-only Supabase comparison adapter plus additive database read functions.
@@ -28,6 +28,18 @@ Status: implementation and hosted migration complete; exact-head CI and READY Pr
 
 Hosted migration `20261007165115_add_filtered_daily_nine_comparison_reads` is applied. Readback confirms both v2 functions are SECURITY INVOKER, executable only by service_role among application roles, and a live exact-slot check showed one matching attempt excluded from a one-result population.
 
-## Remaining stages
+## PR 3 — durable browser exclusion transport
 
-PR 3 carries the durable first result ID through the private comparison HTTP/browser path while preserving the journal's stable attempt ID across Reset. PR 4 activates one-other-result AVG/BEAT presentation and approved green/red semantics. Production thresholds remain unchanged until PR 4.
+Status: implemented by PR #318; exact release evidence is recorded in the PR and post-merge checkpoint.
+
+- Goal: carry the first durable anonymous result ID from the existing browser persistence authority through both comparison GET paths so current-Daily reads exclude the user's own first submitted result, including after local Reset.
+- Owning layer: `apps/web` persistence/HTTP/browser comparison adapters. Daily continues to own comparison math; the #317 Supabase provider remains unchanged.
+- In scope: read-only durable attempt-ID access from the existing journal lifecycle; current-Daily AB/completed request keys; optional `excludeResultId` query transport; strict anonymous-ID validation; response identity echo/verification; request/cache fencing by exclusion identity; focused Reset/transport tests.
+- Out of scope: scoring, result creation/delivery, contribution rules, database functions/schema, archive comparison activation, sample thresholds, AVG/BEAT copy, colors and layout.
+- Security semantics: the token is an opaque anonymous read filter, not authentication or account authority. Responses remain `private, no-store`.
+- Reset invariant: Reset may retire future contribution, but it does not erase the journal's durable first `attemptId`; comparison reads continue excluding that same ID.
+- Stop conditions: any presentation-policy or archive activation work moves to the next separate PR.
+
+## Remaining stage
+
+PR 4 activates one-other-result AVG/BEAT presentation and approved green/red semantics. Production thresholds remain unchanged until PR 4.
