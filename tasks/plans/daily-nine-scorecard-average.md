@@ -1,5 +1,7 @@
 # Daily Nine scorecard/share average
 
+> Historical implementation plan: the sample thresholds below describe the original release. PR #319 supersedes them for current Daily. Per-AB and final AVG/strict-lower BEAT display with **one other submitted result** after durable first-result exclusion; zero other results remain unavailable. Green means YOU > AVG; equal/below AVG is red with explicit status text. Archive browser activation remains separate. Current contract: [AB BEAT and small samples](ab-beat-and-small-samples.md).
+
 Status: final shared-grid presentation follow-up after PR #232
 Date: 2026-09-22
 

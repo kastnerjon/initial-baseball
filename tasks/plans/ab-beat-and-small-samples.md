@@ -42,7 +42,7 @@ Status: implemented by PR #318; exact release evidence is recorded in the PR and
 
 ## PR 4 — one-other-result presentation
 
-Status: implemented by the final current-Daily presentation activation; exact merge/deployment evidence belongs in the PR release checkpoint.
+Status: complete in PR #319, merged as `c2543f9085714e5e27cc2676ea77b2ebf9792382`. Exact-head CI #1082 and Preview `dpl_AwGsMBdRdnKKdUkYXEi2F7MEfzbj` passed; main push CI #1083 passed. Production `dpl_EP7P74RHD4PxKw9EZLG7LHgcVK3g` is READY on that exact merge SHA and canonical aliases.
 
 - One other valid submitted result is enough for per-AB and completed-game AVG/BEAT.
 - BEAT is the Daily-owned strict-lower distribution rate; ties stay in the denominator and are not beaten.
@@ -51,3 +51,11 @@ Status: implemented by the final current-Daily presentation activation; exact me
 - Zero-other-result populations remain withheld and may take the existing one bounded completed-slot retry; one-other-result populations no longer retry merely to cross an obsolete sample threshold.
 - Gameplay/result-write/scoring semantics are unchanged and comparison remains asynchronous/nonblocking.
 - Archive browser comparison activation remains separate and next.
+
+## Read-only release recheck — October 7, 2026
+
+- GitHub main still matches the #319 merge SHA; no open PRs at the check. The exact-head bounded review is recorded on #319.
+- Canonical `/` returns HTTP 200. Both current-Daily comparison GET routes return schema-1 HTTP 200 with `private, no-store`; AB histogram and separate completed histogram are present.
+- Exact production error/fatal scan covering release through 18:55 UTC returned no matching logs. Physical-device interaction remains separate pre-launch QA.
+- Hosted Supabase is ACTIVE_HEALTHY. Both v2 bucket functions remain SECURITY INVOKER with fixed empty search_path; anon/authenticated cannot execute them and service_role can. No schema or result write was performed in this recheck.
+- Earlier comparison UI plans are marked historical where they retain original thresholds; the active scoreboard plan, todo and canonical architecture now reference the one-other-result contract.
