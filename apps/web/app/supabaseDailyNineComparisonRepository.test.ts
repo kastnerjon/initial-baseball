@@ -22,9 +22,12 @@ const V4_KEY = {
 } as const;
 
 describe('Supabase Daily Nine comparison repository', () => {
-  it('reads one exact at-bat population as count plus stored point sum', async () => {
+  it('reads one exact at-bat population as buckets plus derived count and stored point sum', async () => {
     const rpc = vi.fn().mockResolvedValue({
-      data: [{ resolved_at_bat_count: '4', awarded_points_sum: '17' }],
+      data: [
+        { points: '2', result_count: '1' },
+        { points: '5', result_count: '3' },
+      ],
       error: null,
     });
     const repository = createSupabaseDailyNineComparisonRepository(asClient(rpc));
@@ -32,70 +35,106 @@ describe('Supabase Daily Nine comparison repository', () => {
     await expect(repository.readAtBat({ ...KEY, pitchNumber: 7 })).resolves.toEqual({
       resolvedAtBatCount: 4,
       awardedPointsSum: 17,
+      scoreBuckets: [
+        { points: 2, count: 1 },
+        { points: 5, count: 3 },
+      ],
     });
-    expect(rpc).toHaveBeenCalledTimes(1);
-    expect(rpc).toHaveBeenCalledWith('daily_nine_at_bat_comparison', {
+    expect(rpc).toHaveBeenCalledWith('daily_nine_at_bat_score_buckets_v2', {
       p_puzzle_id: KEY.puzzleId,
       p_puzzle_date: KEY.puzzleDate,
       p_puzzle_number: KEY.puzzleNumber,
       p_ruleset_version: KEY.rulesetVersion,
       p_pitch_number: 7,
+      p_excluded_result_id: null,
     });
   });
 
-  it('decodes a fractional points-v4 at-bat aggregate', async () => {
-    const rpc = vi.fn().mockResolvedValue({
-      data: [{ resolved_at_bat_count: '3', awarded_points_sum: '4.5' }],
-      error: null,
-    });
+  it('forwards the optional anonymous result exclusion to both v2 reads', async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: [], error: null });
     const repository = createSupabaseDailyNineComparisonRepository(asClient(rpc));
 
-    await expect(repository.readAtBat({ ...V4_KEY, pitchNumber: 2 })).resolves.toEqual({
-      resolvedAtBatCount: 3,
-      awardedPointsSum: 4.5,
+    await repository.readAtBat({
+      ...V4_KEY,
+      pitchNumber: 2,
+      excludedResultId: 'attempt_abc',
     });
-    expect(rpc).toHaveBeenCalledWith('daily_nine_at_bat_comparison', {
+    await repository.readCompletedGames({
+      ...V4_KEY,
+      excludedResultId: 'attempt_abc',
+    });
+
+    expect(rpc).toHaveBeenNthCalledWith(1, 'daily_nine_at_bat_score_buckets_v2', {
       p_puzzle_id: V4_KEY.puzzleId,
       p_puzzle_date: V4_KEY.puzzleDate,
       p_puzzle_number: V4_KEY.puzzleNumber,
       p_ruleset_version: V4_KEY.rulesetVersion,
       p_pitch_number: 2,
+      p_excluded_result_id: 'attempt_abc',
+    });
+    expect(rpc).toHaveBeenNthCalledWith(2, 'daily_nine_completed_score_buckets_v2', {
+      p_puzzle_id: V4_KEY.puzzleId,
+      p_puzzle_date: V4_KEY.puzzleDate,
+      p_puzzle_number: V4_KEY.puzzleNumber,
+      p_ruleset_version: V4_KEY.rulesetVersion,
+      p_excluded_result_id: 'attempt_abc',
     });
   });
 
-  it('preserves an empty at-bat aggregate as zero count and zero sum', async () => {
-    const rpc = vi.fn().mockResolvedValue({
-      data: [{ resolved_at_bat_count: 0, awarded_points_sum: 0 }],
-      error: null,
-    });
+  it('decodes fractional points-v4 at-bat buckets without rescoring', async () => {
+    const repository = createSupabaseDailyNineComparisonRepository(asClient(
+      vi.fn().mockResolvedValue({
+        data: [
+          { points: '0.5', result_count: '1' },
+          { points: '2.0', result_count: 2 },
+        ],
+        error: null,
+      }),
+    ));
 
-    await expect(
-      createSupabaseDailyNineComparisonRepository(asClient(rpc))
-        .readAtBat({ ...KEY, pitchNumber: 1 }),
-    ).resolves.toEqual({
-      resolvedAtBatCount: 0,
-      awardedPointsSum: 0,
+    await expect(repository.readAtBat({ ...V4_KEY, pitchNumber: 2 })).resolves.toEqual({
+      resolvedAtBatCount: 3,
+      awardedPointsSum: 4.5,
+      scoreBuckets: [
+        { points: 0.5, count: 1 },
+        { points: 2, count: 2 },
+      ],
     });
   });
 
-  it('fails closed when an at-bat RPC does not return exactly one valid row', async () => {
-    const missing = createSupabaseDailyNineComparisonRepository(asClient(
+  it('preserves an empty at-bat population as zero count, zero sum and empty buckets', async () => {
+    const repository = createSupabaseDailyNineComparisonRepository(asClient(
       vi.fn().mockResolvedValue({ data: [], error: null }),
     ));
-    await expect(missing.readAtBat({ ...KEY, pitchNumber: 1 }))
-      .rejects.toMatchObject({ kind: 'invalid-row' });
 
+    await expect(repository.readAtBat({ ...KEY, pitchNumber: 1 })).resolves.toEqual({
+      resolvedAtBatCount: 0,
+      awardedPointsSum: 0,
+      scoreBuckets: [],
+    });
+  });
+
+  it('fails closed on malformed at-bat bucket rows', async () => {
     const malformed = createSupabaseDailyNineComparisonRepository(asClient(
       vi.fn().mockResolvedValue({
-        data: [{ resolved_at_bat_count: 2, awarded_points_sum: 'not-an-int' }],
+        data: [{ points: 'not-a-score', result_count: 2 }],
         error: null,
       }),
     ));
     await expect(malformed.readAtBat({ ...KEY, pitchNumber: 1 }))
       .rejects.toMatchObject({ kind: 'invalid-row' });
+
+    const zeroCount = createSupabaseDailyNineComparisonRepository(asClient(
+      vi.fn().mockResolvedValue({
+        data: [{ points: 2, result_count: 0 }],
+        error: null,
+      }),
+    ));
+    await expect(zeroCount.readAtBat({ ...KEY, pitchNumber: 1 }))
+      .rejects.toMatchObject({ kind: 'invalid-row' });
   });
 
-  it('reads completed score buckets without fetching raw completed rows', async () => {
+  it('reads completed score buckets through the filtered v2 contract', async () => {
     const rpc = vi.fn().mockResolvedValue({
       data: [
         { points: 0, result_count: '2' },
@@ -113,25 +152,26 @@ describe('Supabase Daily Nine comparison repository', () => {
         { points: 63, count: 1 },
       ],
     });
-    expect(rpc).toHaveBeenCalledTimes(1);
-    expect(rpc).toHaveBeenCalledWith('daily_nine_completed_score_buckets', {
+    expect(rpc).toHaveBeenCalledWith('daily_nine_completed_score_buckets_v2', {
       p_puzzle_id: KEY.puzzleId,
       p_puzzle_date: KEY.puzzleDate,
       p_puzzle_number: KEY.puzzleNumber,
       p_ruleset_version: KEY.rulesetVersion,
+      p_excluded_result_id: null,
     });
   });
 
   it('decodes fractional points-v4 completed score buckets', async () => {
-    const rpc = vi.fn().mockResolvedValue({
-      data: [
-        { points: '0', result_count: '2' },
-        { points: '0.5', result_count: 3 },
-        { points: 36, result_count: '1' },
-      ],
-      error: null,
-    });
-    const repository = createSupabaseDailyNineComparisonRepository(asClient(rpc));
+    const repository = createSupabaseDailyNineComparisonRepository(asClient(
+      vi.fn().mockResolvedValue({
+        data: [
+          { points: '0', result_count: '2' },
+          { points: '0.5', result_count: 3 },
+          { points: 36, result_count: '1' },
+        ],
+        error: null,
+      }),
+    ));
 
     await expect(repository.readCompletedGames(V4_KEY)).resolves.toEqual({
       scoreBuckets: [
@@ -140,24 +180,19 @@ describe('Supabase Daily Nine comparison repository', () => {
         { points: 36, count: 1 },
       ],
     });
-    expect(rpc).toHaveBeenCalledWith('daily_nine_completed_score_buckets', {
-      p_puzzle_id: V4_KEY.puzzleId,
-      p_puzzle_date: V4_KEY.puzzleDate,
-      p_puzzle_number: V4_KEY.puzzleNumber,
-      p_ruleset_version: V4_KEY.rulesetVersion,
-    });
   });
 
   it('accepts scaled textual numeric values from exact-numeric RPCs', async () => {
     const atBat = createSupabaseDailyNineComparisonRepository(asClient(
       vi.fn().mockResolvedValue({
-        data: [{ resolved_at_bat_count: 2, awarded_points_sum: '2.0' }],
+        data: [{ points: '2.0', result_count: 2 }],
         error: null,
       }),
     ));
     await expect(atBat.readAtBat({ ...V4_KEY, pitchNumber: 1 })).resolves.toEqual({
       resolvedAtBatCount: 2,
-      awardedPointsSum: 2,
+      awardedPointsSum: 4,
+      scoreBuckets: [{ points: 2, count: 2 }],
     });
 
     const completed = createSupabaseDailyNineComparisonRepository(asClient(
@@ -174,7 +209,7 @@ describe('Supabase Daily Nine comparison repository', () => {
   it('fails closed on quarter-point provider values', async () => {
     const atBat = createSupabaseDailyNineComparisonRepository(asClient(
       vi.fn().mockResolvedValue({
-        data: [{ resolved_at_bat_count: 2, awarded_points_sum: '0.25' }],
+        data: [{ points: '0.25', result_count: 2 }],
         error: null,
       }),
     ));
@@ -188,6 +223,18 @@ describe('Supabase Daily Nine comparison repository', () => {
       }),
     ));
     await expect(completed.readCompletedGames(V4_KEY))
+      .rejects.toMatchObject({ kind: 'invalid-row' });
+  });
+
+  it('fails closed when derived bucket totals exceed safe numeric bounds', async () => {
+    const repository = createSupabaseDailyNineComparisonRepository(asClient(
+      vi.fn().mockResolvedValue({
+        data: [{ points: '4', result_count: '9007199254740991' }],
+        error: null,
+      }),
+    ));
+
+    await expect(repository.readAtBat({ ...KEY, pitchNumber: 1 }))
       .rejects.toMatchObject({ kind: 'invalid-row' });
   });
 
@@ -230,7 +277,7 @@ describe('Supabase Daily Nine comparison repository', () => {
 
   it('records RPC wait and local decode as separate provider sub-stages', async () => {
     const rpc = vi.fn().mockResolvedValue({
-      data: [{ resolved_at_bat_count: 2, awarded_points_sum: 9 }],
+      data: [{ points: 4, result_count: 2 }],
       error: null,
     });
     const timings = {};
@@ -241,9 +288,9 @@ describe('Supabase Daily Nine comparison repository', () => {
 
     await expect(repository.readAtBat({ ...KEY, pitchNumber: 2 })).resolves.toEqual({
       resolvedAtBatCount: 2,
-      awardedPointsSum: 9,
+      awardedPointsSum: 8,
+      scoreBuckets: [{ points: 4, count: 2 }],
     });
-
     expect(timings).toEqual({
       'provider-rpc': 45,
       'provider-decode': 3,
@@ -299,4 +346,3 @@ function clock(values: number[]): () => number {
     return value;
   };
 }
-
