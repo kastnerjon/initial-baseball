@@ -17,7 +17,7 @@ export function DailyAttemptScoresView({ report }: { report: AdminAttemptReport 
       </form>
       <p style={{ overflowWrap: 'anywhere' }}><strong>Showing:</strong> {filter.date} · {filter.ruleset} · <code>{filter.puzzleId || 'No stored lineup; enter an exact lineup ID'}</code></p>
       <p>Leave lineup ID blank when choosing another date. Enter an exact ID to inspect an old edition or archive separately.</p>
-      <p>— = no recorded score. † = derived from completed-game facts, without an individual AB receipt. Zero is a recorded score. “Seeded beta” marks the October 6 copied comparisons.</p>
+      <p>— = no recorded score. † = derived from completed-game facts, without an individual AB receipt. Zero is a recorded score. “Seed ID pattern” matches the October 6 copy convention. IDs are client-supplied; this does not prove a row’s origin.</p>
       <p>Each page reads up to 50 AB attempts and 50 completed records, joining matching IDs and showing completion-only attempts separately. Times are server receipt times in Eastern time; they may follow delayed delivery.</p>
       <nav aria-label="Attempt report actions" style={{ display: 'flex', gap: 20, flexWrap: 'wrap', marginBottom: 18 }}>
         <a href={adminAttemptReportHref({ ...filter, abAfter: '', completedAfter: '' })}>Refresh / first page</a>
@@ -31,7 +31,7 @@ export function DailyAttemptScoresView({ report }: { report: AdminAttemptReport 
             <thead><tr>{['Attempt', 'Status', ...Array.from({ length: 9 }, (_, i) => `AB ${i + 1}`), 'Received AB points', 'Completed points', 'First / last receipt'].map(label => <th key={label} scope="col" style={cell}>{label}</th>)}</tr></thead>
             <tbody>{rows.map(row => (
               <tr key={row.id}>
-                <th scope="row" style={{ ...cell, maxWidth: 220, overflowWrap: 'anywhere', fontWeight: 400 }}><code>{row.id}</code>{row.seeded ? <><br /><strong>Seeded beta</strong></> : null}</th>
+                <th scope="row" style={{ ...cell, maxWidth: 220, overflowWrap: 'anywhere', fontWeight: 400 }}><code>{row.id}</code>{row.seedIdConvention ? <><br /><strong>Seed ID pattern</strong></> : null}</th>
                 <td style={cell}>{row.completedPoints === null ? `Partial · ${row.recordedAtBats}/9 ABs received` : row.recordedAtBats === 9 ? 'Completed · 9/9 ABs received' : `Completed · ${row.recordedAtBats}/9 ABs received`}{row.warning ? <p role="status">{row.warning}</p> : null}</td>
                 {row.scores.map((score, i) => <td key={i} style={cell} title={score?.source === 'AB' ? `AB received ${eastern(score.receivedAt!)}` : score ? 'Completed facts only; not an AB population observation' : 'No recorded score'}>{score ? `${score.points}${score.source === 'completion' ? '†' : ''}` : '—'}</td>)}
                 <td style={cell}>{row.recordedAtBats === 0 ? '—' : row.recordedPoints}</td>

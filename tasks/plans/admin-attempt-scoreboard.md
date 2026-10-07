@@ -1,6 +1,6 @@
 # Admin attempt scoreboard
 
-Status: implemented locally; bounded review and release verification pending
+Status: implemented; see PR #310 for current review and release evidence. Authenticated/mobile visual QA remains open.
 
 ## Scope contract
 
@@ -12,7 +12,7 @@ Status: implemented locally; bounded review and release verification pending
 
 **Out of scope:** Accounts/user identity, result deletion/moderation, selective correction replay (#308), result writes, schema/index migrations, public comparison aggregation, Classic scoring, archive activation or a new reporting infrastructure.
 
-**Acceptance checks:** Authentication precedes DB reads; unauthorized exports are challenged and never disclose rows; exact identities never merge; missing is not zero; completion-only facts do not masquerade as AB receipts; seeded IDs are explicitly labeled; pagination preserves complete attempt rows; CSV matches the displayed bounded page; existing engine owns point derivation. Focused/full CI, file-size/build/answer QA, one bounded review, exact-head READY Preview, post-merge CI/production/routes/logs and read-only data checks.
+**Acceptance checks:** Authentication precedes DB reads; unauthorized exports are challenged and never disclose rows; exact identities never merge; missing is not zero; completion-only facts do not masquerade as AB receipts; the exact October 6 seed ID pattern is labeled only as an untrusted convention; pagination preserves complete attempt rows; CSV matches the displayed bounded page; existing engine owns point derivation. Focused/full CI, file-size/build/answer QA, one bounded review, exact-head READY Preview, post-merge CI/production/routes/logs and read-only data checks.
 
 **Stop conditions:** Need for a new privilege, schema/index, account contract, result write or expansion beyond one reporting concern / 12 source-test files / approximately 600 handwritten lines requires decomposition first.
 
@@ -25,3 +25,5 @@ Read queries are bounded and run only on the admin path. Each page reads at most
 ## Operational reconciliation
 
 The owner-requested 36-point completion removal is recorded with restorable facts and exact verification in #309. Rare selective-slot replay remains nice-to-have #308. These are separate from the read-only dashboard.
+
+One bounded review found that client-controlled IDs cannot prove seeded provenance. The label/CSV now describe only the ID convention in the exact known population; focused coverage checks other dates/editions/rulesets. Cloud admin access is blocked and automatic approval review rejected live private-page probes through the deployment connector, so authenticated/mobile report QA remains explicitly open.

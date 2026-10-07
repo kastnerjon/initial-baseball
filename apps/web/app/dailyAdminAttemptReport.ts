@@ -7,7 +7,7 @@ export type AdminAtBatReceipt = { result: DailyAtBatResult; receivedAt: string }
 export type AdminCompletionReceipt = { result: DailyCompletedResult; receivedAt: string };
 export type AdminAttemptScore = { points: number; source: 'AB' | 'completion'; receivedAt: string | null };
 export type AdminAttemptRow = {
-  id: string; seeded: boolean; scores: (AdminAttemptScore | null)[];
+  id: string; seedIdConvention: boolean; scores: (AdminAttemptScore | null)[];
   recordedAtBats: number; recordedPoints: number; completedPoints: number | null;
   firstReceived: string; lastReceived: string; warning: string | null;
 };
@@ -41,7 +41,8 @@ export function buildAdminAttemptReport(
       || !Number.isFinite(Date.parse(receivedAt))) throw new Error('Invalid admin result identity or receipt.');
     let row = rows.get(id);
     if (!row) {
-      row = { id, seeded: id.startsWith('legacy_20261006_'), scores: Array(9).fill(null),
+      row = { id, seedIdConvention: filter.date === '2026-10-06' && filter.puzzleId === 'daily-2026-10-06-editorial-6aee324e'
+        && filter.ruleset === 'points-v4' && id.startsWith('legacy_20261006_'), scores: Array(9).fill(null),
         recordedAtBats: 0, recordedPoints: 0, completedPoints: null,
         firstReceived: receivedAt, lastReceived: receivedAt, warning: null };
       rows.set(id, row);
@@ -86,13 +87,13 @@ export function adminAttemptReportHref(filter: AdminAttemptFilter, csv = false):
 }
 
 export function adminAttemptReportCsv(report: AdminAttemptReport): string {
-  const header = ['attempt_id', 'puzzle_date', 'puzzle_id', 'ruleset', 'seeded_beta',
+  const header = ['attempt_id', 'puzzle_date', 'puzzle_id', 'ruleset', 'seed_id_convention',
     ...Array.from({ length: 9 }, (_, i) => `AB${i + 1}`),
     ...Array.from({ length: 9 }, (_, i) => `AB${i + 1}_source`),
     ...Array.from({ length: 9 }, (_, i) => `AB${i + 1}_received_utc`),
     'received_ABs', 'received_AB_points', 'completed_points', 'first_received_utc', 'last_received_utc', 'warning'];
   const data = report.rows.map(row => [row.id, report.filter.date, report.filter.puzzleId,
-    report.filter.ruleset, row.seeded, ...row.scores.map(score => score?.points ?? ''),
+    report.filter.ruleset, row.seedIdConvention, ...row.scores.map(score => score?.points ?? ''),
     ...row.scores.map(score => score?.source ?? ''), ...row.scores.map(score => score?.receivedAt ?? ''),
     row.recordedAtBats, row.recordedPoints, row.completedPoints ?? '', row.firstReceived, row.lastReceived, row.warning ?? '']);
   return [header, ...data].map(row => row.map(value => {

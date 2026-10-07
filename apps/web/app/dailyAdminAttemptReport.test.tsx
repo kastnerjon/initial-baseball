@@ -5,7 +5,7 @@ import { describe, expect, it } from 'vitest';
 import { adminAttemptReportCsv, buildAdminAttemptReport, readAdminAttemptFilter } from './dailyAdminAttemptReport';
 import { DailyAttemptScoresView } from './admin/daily/attempts/DailyAttemptScoresView';
 
-const filter = readAdminAttemptFilter(new URLSearchParams('puzzleId=edition-b'), '2026-10-06');
+const filter = readAdminAttemptFilter(new URLSearchParams('puzzleId=daily-2026-10-06-editorial-6aee324e'), '2026-10-06');
 const receivedAt = '2026-10-07T01:02:10Z';
 function ab(id: string, pitchNumber = 1, points = 0): DailyAtBatResult {
   return { schemaVersion: 1, attemptId: id, puzzleId: filter.puzzleId, puzzleDate: filter.date,
@@ -21,7 +21,7 @@ function completion(id: string): DailyCompletedResult {
 describe('Admin attempt report', () => {
   it('preserves zero, missing, partial points, exact IDs and receipt times', () => {
     const report = buildAdminAttemptReport(filter, [{ result: ab('native'), receivedAt }], []);
-    expect(report.rows[0]).toMatchObject({ id: 'native', recordedAtBats: 1, recordedPoints: 0, completedPoints: null, seeded: false });
+    expect(report.rows[0]).toMatchObject({ id: 'native', recordedAtBats: 1, recordedPoints: 0, completedPoints: null, seedIdConvention: false });
     expect(report.rows[0]!.scores[0]).toEqual({ points: 0, source: 'AB', receivedAt });
     expect(report.rows[0]!.scores[1]).toBeNull();
   });
@@ -56,6 +56,15 @@ describe('Admin attempt report', () => {
     const report = buildAdminAttemptReport(historical, [], [{ result, receivedAt }]);
     expect(report.rows[0]!.scores[0]!.points).toBe(3);
   });
+  it('limits the untrusted seed ID convention to the known population', () => {
+    const original = completion('legacy_20261006_fake');
+    expect(buildAdminAttemptReport(filter, [], [{ result: original, receivedAt }]).rows[0]!.seedIdConvention).toBe(true);
+    for (const other of [{ ...filter, date: '2026-10-07' }, { ...filter, puzzleId: 'other-edition' }, { ...filter, ruleset: 'points-v3' as const }]) {
+      const result = completion('legacy_20261006_fake');
+      result.puzzleDate = other.date; result.puzzleId = other.puzzleId; result.rulesetVersion = other.ruleset;
+      expect(buildAdminAttemptReport(other, [], [{ result, receivedAt }]).rows[0]!.seedIdConvention).toBe(false);
+    }
+  });
   it('validates calendar dates, supported rules and both cursors', () => {
     for (const query of ['date=2026-02-30', 'ruleset=classic-inning-v1', 'abAfter=bad!', 'completedAfter=bad!', `puzzleId=${'a'.repeat(201)}`]) {
       expect(() => readAdminAttemptFilter(new URLSearchParams(query), filter.date)).toThrow();
@@ -69,7 +78,8 @@ describe('Admin attempt report', () => {
     expect(csv).toContain('"\'=HYPERLINK(""bad"")"');
     expect(csv).toContain('"0.5","0.5"');
     expect(csv).toContain('"completion"');
-    expect(csv).toContain('"true"');
+    expect(csv).toContain('"seed_id_convention"');
+    expect(csv).toContain('"false"');
     expect(csv).toContain('"0","0","4.5"');
   });
   it('renders a private scrollable table with AB headers and distinct source labels', () => {
@@ -77,7 +87,7 @@ describe('Admin attempt report', () => {
     const html = renderToStaticMarkup(<DailyAttemptScoresView report={report} />);
     expect(html).toContain('AB 9');
     expect(html).toContain('overflow-x:auto');
-    expect(html).toContain('Seeded beta');
+    expect(html).toContain('Seed ID pattern');
     expect(html).toContain('0.5†');
     expect(html).toContain('>0</td>');
     expect(html).toContain('>—</td>');
