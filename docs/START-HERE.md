@@ -17,6 +17,10 @@ Use this file to resume work. It records verified current state, settled future 
 
 Do not restart settled discussions because the conversation changed. Correct drift before new implementation.
 
+## Bottom Daily Nine Scoreboard — first design checkpoint
+
+Owner-approved step 1 replaces only the bottom points-mode At-bat Results scorecard with a Scoreboard containing AB, Player (initials with optional local Reveal answers), combined OUTCOME-SCORE, per-AB AVG and strict-lower BEAT %, and a TOTAL row showing personal accumulated points, authoritative whole-game AVG, and final-score-only BEAT %. Missing comparisons show dashes. Canonical revealed names stay private to the resolved-session view; the copied share format is unchanged. The current top nine-column scoreboard stays exactly as it is until the owner judges this deployed bottom table; replacing it with 1–9 progress circles is a separate future step. Classic remains unchanged. Scope: `tasks/plans/bottom-daily-nine-scoreboard.md`.
+
 ## Daily Nine How to Play instructions
 
 October 7 owner-approved rewrite: points-v4 How to Play now opens with the initials/four-hints premise, emphasizes fewer hints = more points, and displays a No hints / After hints 1–4 baseball outcome + points table (HR 4, 3B 3, 2B 2, 1B 1, BB 0.5). A separate strike section explains two free strikes, third strike or Give Up = 0; the goal is a perfect 36-point nine-at-bat game. The native dialog behavior is unchanged; points-v3 and Classic copy remain ruleset-specific. Scope: `tasks/plans/clear-daily-nine-how-to.md`.

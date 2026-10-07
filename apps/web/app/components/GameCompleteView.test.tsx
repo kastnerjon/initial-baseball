@@ -71,19 +71,20 @@ describe('GameCompleteView comparison', () => {
     expect(html).toContain('completed-comparison-performance-at-or-below');
   });
 
-  it('shows the revealed player name in the in-app Daily Nine scorecard without adding it to share text', () => {
+  it('hides resolved player names by default in the detailed Scoreboard and keeps sharing spoiler-safe', () => {
     const html = render(
       { status: 'loading', ownPoints: 41 },
       { 1: 'Jackie Robinson' },
     );
 
     expect(html).toContain('Player');
-    expect(html).toContain('Jackie Robinson');
+    expect(html).toContain('Reveal answers');
+    expect(html).not.toContain('Jackie Robinson');
     expect(html).toContain('JR');
     expect(html).not.toContain('JR: Jackie Robinson');
   });
 
-  it('renders the completed inning scoreboard between the summary and detailed scorecard', () => {
+  it('keeps the existing top inning scoreboard before the new bottom scoreboard', () => {
     const html = renderToStaticMarkup(
       <GameCompleteView
         shareResult={shareResult}
@@ -104,7 +105,7 @@ describe('GameCompleteView comparison', () => {
     );
 
     expect(html).toContain('Daily Nine scoreboard');
-    expect(html.indexOf('Daily Nine scoreboard')).toBeLessThan(html.indexOf('At-bat Results'));
+    expect(html.indexOf('Daily Nine scoreboard')).toBeLessThan(html.indexOf('Daily Nine detailed scoreboard'));
     expect(html).not.toContain('aria-current="step"');
   });
 
@@ -115,7 +116,7 @@ describe('GameCompleteView comparison', () => {
     expect(html).toContain('41 PTS');
     expect(html).not.toContain('41/63 PTS');
     expect(html).not.toContain('2 K');
-    expect(html).toContain('At-bat Results');
+    expect(html).toContain('Daily Nine detailed scoreboard');
   });
 });
 

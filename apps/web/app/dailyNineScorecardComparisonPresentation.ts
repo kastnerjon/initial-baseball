@@ -5,6 +5,7 @@ import {
 } from './dailyScorecard';
 import { createDailyNineCompletedComparisonPresentation } from './dailyNineCompletedComparisonPresentation';
 import type { DailyNineCompletedComparisonState } from './useDailyNineCompletedComparison';
+import { createDailyNineAtBatComparisonState } from './dailyNineAtBatComparisonState';
 import type {
   DailyNineScorecardComparisonState,
   DailyNineScorecardComparisons,
@@ -26,6 +27,18 @@ export function createDailyNineScorecardAtBatAverage(
     || state.averagePoints === null) return null;
 
   return state.averagePoints.toFixed(1);
+}
+
+/** The same strict-lower, ties-not-beaten comparison as the terminal at-bat UI. */
+export function createDailyNineScorecardAtBatBeat(
+  ownPoints: number | undefined,
+  comparison: DailyNineScorecardComparisonState | undefined,
+): string | null {
+  if (ownPoints === undefined) return null;
+  const state = createDailyNineAtBatComparisonState(comparison, ownPoints);
+  return state.status === 'success' && state.strictLowerAtBatRate !== null
+    ? `${Math.round(state.strictLowerAtBatRate * 100)}%`
+    : null;
 }
 
 export function createDailyNineScorecardRows(

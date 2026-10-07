@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   createDailyNineScorecardAtBatAverage,
+  createDailyNineScorecardAtBatBeat,
   createDailyNineScorecardRows,
   createDailyNineScorecardShareText,
   formatDailyNineScorecardShareTable,
@@ -21,6 +22,27 @@ describe('Daily Nine scorecard comparison presentation', () => {
       resolvedAtBatCount: 1,
       averagePoints: 7,
     })).toBe('7.0');
+  });
+
+  it('formats strict-lower per-AB BEAT using the existing scoring-version histogram', () => {
+    const comparison = {
+      status: 'success' as const,
+      rulesetVersion: 'points-v4' as const,
+      resolvedAtBatCount: 4,
+      averagePoints: 0.625,
+      scoreHistogram: [2, 1, 0, 0, 1, 0, 0, 0, 0],
+    };
+    expect(createDailyNineScorecardAtBatBeat(2, comparison)).toBe('75%');
+    expect(createDailyNineScorecardAtBatBeat(0, comparison)).toBe('0%');
+    expect(createDailyNineScorecardAtBatBeat(undefined, comparison)).toBeNull();
+    expect(createDailyNineScorecardAtBatBeat(2, { status: 'loading' })).toBeNull();
+    expect(createDailyNineScorecardAtBatBeat(2, {
+      status: 'success', resolvedAtBatCount: 0, averagePoints: null,
+    })).toBeNull();
+    expect(createDailyNineScorecardAtBatBeat(2, {
+      status: 'success', resolvedAtBatCount: 1, averagePoints: 2,
+      rulesetVersion: 'points-v4', scoreHistogram: [0, 0, 0, 0, 1, 0, 0, 0, 0],
+    })).toBe('0%'); // tie not beaten
   });
 
   it('creates one shared initials / outcome / score / average row model', () => {
