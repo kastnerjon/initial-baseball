@@ -1,7 +1,7 @@
 # Initial Baseball — Start Here
 
 Status: Active project handoff  
-Last updated: 2026-10-06
+Last updated: 2026-10-07
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
@@ -43,9 +43,11 @@ Admin report #310 merged as `af17d92f1e1faca34488ba97ed6454ff360bf51e`; final-he
 
 Rare correction carry-forward/replay is deferred as nice-to-have #308: preserve only proven unchanged facts, replay replacement slots, maintain source provenance and idempotency, and derive a corrected completed total only after all facts exist. Cross-device restoration requires the separately planned account ownership model. No automatic carry-forward is implemented.
 
-## Automatic archive rollover — approved October 7
+## Automatic archive rollover — scheduler activation next
 
-The owner requires each completed Daily to enter the archive automatically. Current implementation work adds a machine/administrator-authenticated recovery POST and a server-only completed-date scan from the October 4 beta epoch. It publishes stored scheduled lineups before immutable issuance/read-back, preserves existing copies without clue regeneration, and keeps original Daily records published for delayed result delivery. Today/future archive visibility is excluded. Missing/draft sources and failed dates are explicit sanitized failures; other dates continue. Scheduler activation is a separate bounded Supabase transport/cron PR after the app endpoint is production verified. The existing Vault/DAILY_CHATOPS_TOKEN transport avoids new Vercel secrets; Vercel env metadata/create returned explicit 403. Neither automatic operation nor hosted backfill is verified yet. Scope: `tasks/plans/automatic-archive-rollover.md`. Archive browser comparison activation follows this owner-prioritized work.
+App #313 merged as `cffe400cc797e8bba4c883d9db7876d1f73aebcf`. Its single bounded review finding was fixed with paged metadata reads; final-head CI #1061 attempt 2 and READY Preview passed without weakening checks. The first attempt hit the separately tracked #301 data-test timeout. Exact production `dpl_G5HmQX4ZTivnm65jrNrYfxaAcYd9` is READY/canonical on that merge. `/`, `/archive`, `/archive/1` returned 200 and today `/archive/4` returned 404; scoped error/fatal scan was empty. Main push CI #1062 is still finishing in this scheduler preparation checkpoint.
+
+The server recovery POST publishes stored completed scheduled lineups, issues/verifies immutable beta copies, preserves existing snapshots, keeps original Daily source published, and excludes today/future. The separate scheduler migration adds only private pg_net/Vault transport plus named pg_cron schedule `0 7,8 * * *` UTC, covering Pacific midnight across DST. It reuses the deployed credential; no Vercel env permission is needed. Scheduler/backfill remain unverified until migration application, authenticated dispatch and exact readback. Plans: `tasks/plans/automatic-archive-rollover.md`, `tasks/plans/daily-archive-scheduler.md`. Runbook: `docs/operations/daily-archive-rollover.md`. Archive comparison browser activation follows this owner-prioritized work.
 
 ## Product promise
 
