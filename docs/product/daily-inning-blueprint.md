@@ -99,6 +99,10 @@ Statistical accomplishment is not recognizability. The current weighted-stat ran
 - local refresh recovery with token-authorized hint hydration;
 - authorized seven-day editorial administration.
 
+## Private admin score grid
+
+The authorized owner can open Attempt scores from the existing lineup dashboard to inspect anonymous attempts as rows and AB 1–9 scores as columns. Date, exact lineup edition and scoring version are selectable; each edition is inspected separately. Partial games, missing scores, completion-only facts and known October 6 beta seeds are distinguished. Received-AB points, completed points and receipt times are separate. Optional CSV exports the displayed bounded page. This read-only feature does not modify gameplay, averages or result delivery; named rows/cross-device ownership still require accounts, and deletion/moderation is not part of this screen.
+
 ## Visual system
 
 The public Daily surface uses a **compact baseball scorebook**: warm off-white paper, forest green, muted red, and restrained serif typography for the masthead, initials and player name. This refines the heritage baseline after screenshot review; readability and the main guessing interaction take priority over decoration.

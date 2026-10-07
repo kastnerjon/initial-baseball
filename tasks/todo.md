@@ -6,6 +6,7 @@ Last updated: 2026-10-06
 
 ## Immediate next work
 
+- [ ] Verify authenticated admin attempt-grid/CSV access on the owner's device; retain physical/mobile QA separately from automated read/auth/render tests.
 - [ ] Resume the approved archive comparison browser activation; local archive history follows. Same-day recovery is not a new general migration/reconstruction feature.
 
 Completed history belongs in PRs, canonical docs, or `tasks/lessons.md`. Durable resumption context belongs in `docs/START-HERE.md`.

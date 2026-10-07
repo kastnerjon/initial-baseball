@@ -210,6 +210,10 @@ The initial personal-history layer is browser/device-local and keyed by stable D
 
 `daily_editorial_puzzles` remains authoritative for editorial dates: one row/date, atomic exact-nine JSONB selection, lifecycle status, optimistic revision, audit metadata, RLS, and server-only service role. `daily_completed_results` is the separate current completed-result provider table behind the portable result repository; it stores immutable normalized submissions plus provider receipt time and is not a gameplay-rule authority. Future profiles/recipes require separate portable contracts and migrations. Inactive legacy attempt/result tables are not repurposed for the current result system.
 
+## Private admin attempt reporting
+
+`apps/web` owns the read-only attempt scoreboard and CSV under the existing Basic admin boundary. Authorization precedes client construction and queries. The server-only adapter reads one exact date/puzzle/ruleset from the existing result tables with bounded independent database-ordered AB/completion cursors and exact-ID joins. Existing codecs decode persisted facts; the engine derives missing per-slot displays from completed facts. Completion-derived cells are explicitly marked and never inserted as AB observations. No new repository abstraction, schema/index, privilege, public comparison query, result write, scoring rule or gameplay request is introduced. React renders the report only; server credentials never enter client code. The grid identifies attempts, not people, and live pages/exports are not transactional snapshots. Scope: `tasks/plans/admin-attempt-scoreboard.md`.
+
 ## Scale target
 
 At 10,000+ plays/day:

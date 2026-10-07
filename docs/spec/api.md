@@ -274,6 +274,12 @@ The response returns the persisted puzzle date/number/status/revision, the order
 
 Supabase remains persistence only. The concrete connected-assistant transport is the non-exposed `private.dispatch_daily_lineup_chatops(text, text[], boolean)` function installed by `supabase/migrations/20260916130000_enable_daily_chatops_transport.sql`. It is `SECURITY INVOKER`, retrieves the bearer token from Supabase Vault at dispatch time, and uses `pg_net` only to POST the JSON request to this route. Execution is revoked from `public`, `anon`, and `authenticated`. The function contains no lineup/lifecycle rules and never writes `daily_editorial_puzzles` directly. Because this repository is public, future lineup payloads must not be transported through GitHub issues, commits, pull requests, or public Actions inputs. Operational details and credential setup are in `docs/operations/daily-lineup-chatops.md`.
 
+## Private admin attempt report
+
+`GET /admin/daily/attempts` renders the private anonymous-attempt table; `GET /admin/daily/attempts/export` downloads the same filtered page as CSV. Both require existing Daily admin Basic credentials before any DB read. CSV returns a 401 Basic challenge for unauthorized callers, 400 for invalid filters, 503 for unavailable reports, and `private, no-store` / `nosniff` on every response. The page is force-dynamic and redirects unauthorized callers to `/admin/auth`; report failures expose no raw provider error.
+
+Filters: `date` defaults to the current Pacific day; optional `puzzleId` selects one exact edition (blank defaults to the stored editorial lineup); `ruleset` is points-v3 or points-v4, default v4. `abAfter` and `completedAfter` are independent opaque attempt/submission ID cursors produced by the report links. Reads scan up to 50 AB attempts and 50 completions per page, join only matching IDs and include completion-only rows separately. The CSV exports this bounded page only, with quoted/formula-neutralized cells, per-slot source and UTC receipt time; the grid displays Eastern receipt times. No named identity, mutation, hidden answer or aggregate recalculation is part of this endpoint.
+
 ## Deferred APIs
 
 Completed-result aggregate/percentile reads, accounts, authoritative streaks/leaderboards, and head-to-head/social APIs require separate decisions. Browser result submission/retry is a client workflow over the completed-game POST endpoint, not a separate public API.

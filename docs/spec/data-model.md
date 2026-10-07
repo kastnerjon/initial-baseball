@@ -92,7 +92,13 @@ Persistence/security contract:
 - the server-only row codec fails closed on malformed persisted contract rows;
 - the Supabase adapter implements the existing atomic `DailyCompletedResultRepository.insertIfAbsent` port and does not validate gameplay or derive summaries.
 
-The table/adapter is consumed only through the server completed-game POST boundary. The browser submission/retry client is separate from gameplay persistence and creates a completed-result record only from an eligible genuine completion, reusing the active fresh exact-version points-v3 or points-v4 attempt ID when resolved-AB contribution is active.
+Writes to this table/adapter use the server completed-game POST boundary. The private admin attempt report also reads persisted results through its server-only adapter. The browser submission/retry client is separate from gameplay persistence and creates a completed-result record only from an eligible genuine completion, reusing the active fresh exact-version points-v3 or points-v4 attempt ID when resolved-AB contribution is active.
+
+## Private admin attempt projection
+
+The admin score grid adds no persisted entity. It reads `daily_at_bat_results` and `daily_completed_results` for one exact date/puzzle/ruleset. Matching attempt/submission IDs join; unrelated IDs are never assumed to identify one person. AB cells carry stored points and receipt times. Missing cells may be derived through the engine from a matching completed record but are marked completion-only, with no invented AB receipt time and no new result write. Received AB point sum and stored completed points are separate fields; disagreements are visible rather than silently repaired. Missing is null, not zero. The corrected October 6 v4 population may show a seed ID pattern label for `legacy_20261006_...` IDs. This is an untrusted client-ID convention, not proof of seeded provenance or a bot detector. Separate database-ordered cursors and bounded joins allow all recorded attempts to be browsed without relying on JavaScript/Postgres collation equivalence. CSV is a private live page export, not durable storage or a snapshot transaction.
+
+The October 6 owner-requested all-HR completion deletion is documented in #309 with restorable facts. It removed only that completed record because no corresponding AB rows existed. The application retains SELECT/INSERT result permissions; no user-facing deletion, exclusion marker or changed immutability contract is introduced.
 
 ## Anonymous gameplay state
 
