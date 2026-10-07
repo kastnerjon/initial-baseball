@@ -63,7 +63,8 @@ function searchPlayerCandidates(
 ): PlayerSearchResult[] {
   const normalizedQuery = normalizeGuess(query);
 
-  if (!normalizedQuery) {
+  // Initials alone must not enumerate players matching the game's opening clue.
+  if (!normalizedQuery || /^[a-z](?: [a-z])+$/.test(normalizedQuery)) {
     return [];
   }
 

@@ -6,6 +6,8 @@ Last updated: 2026-10-06
 
 ## Immediate next work
 
+- [ ] Verify the initials-only autocomplete guard on physical phone/tablet: `a r` / `o a` yield no suggestions, while real name fragments remain selectable.
+
 - [ ] Verify authenticated admin attempt-grid/CSV access on the owner's device; retain physical/mobile QA separately from automated read/auth/render tests.
 - [ ] Resume the approved archive comparison browser activation; local archive history follows. Same-day recovery is not a new general migration/reconstruction feature.
 

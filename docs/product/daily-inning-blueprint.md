@@ -119,6 +119,7 @@ Presentation rules:
 - the initials, hints and guess input remain close together; Submit Guess is the primary action, Hint is secondary, and Give Up is quiet; controls keep at least 44px tap targets and text inputs remain 16px;
 - completed-at-bat history follows the playing surface; scorecard rows use compact left-aligned columns for initials, canonical answer, and outcome; optional history never pushes the current interaction down;
 - terminal outcome/awarded points and Next At Bat precede the reveal and expandable season tables, preserving continuation when tables are long;
+- autocomplete requires a name fragment beyond separated initials: `a r` and `o a` return no suggestions; surnames, normal partial names, aliases and names such as `A. J. Reed` remain searchable;
 - search suggestions overlay the flow and selecting a player suppresses the empty-results dropdown; unique names remain names only and genuine duplicates retain years, without position/team clues;
 - no placeholder distributions or unsourced award/leader emphasis; future percentile/comparison UI follows the same restrained hierarchy;
 - presentation never changes scoring, server answer authority, canonical facts, persistence, publication, or progression.

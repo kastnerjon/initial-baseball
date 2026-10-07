@@ -246,3 +246,7 @@ it('limits and stabilizes results for deterministic ordering', () => {
   expect(results[1]?.displayName).toBe('David Ortiz');
   expect(results[2]?.displayName).toBe('David Wright');
 });
+
+it.each(['d o', 'D / W', 'c c s', 'l r a'])('rejects initials-only legacy search %s', (query) => {
+  expect(searchPlayers(query, players)).toEqual([]);
+});

@@ -34,6 +34,8 @@ It contains no answer ID, answer name, reveal record, or future-batter hint. Exi
 
 Returns sanitized canonical candidates. Search aliases help retrieval but do not define reveal names. Genuine duplicate visible names receive career years only; teams and positions are not shown in public guess results.
 
+Normalized queries consisting solely of two or more separated single letters return HTTP 200 with `{ "results": [] }` through the shared engine search policy. Direct HTTP calls receive the same initials-shortcut restriction as the browser. Ordinary name fragments and aliases retain the existing response contract.
+
 Search-candidate construction is owned by the search route/runtime path. It is not initialized merely because `/api/daily/resolve` is invoked.
 
 ## Active hint-bundle restoration

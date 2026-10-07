@@ -1,7 +1,7 @@
 # Game Engine Spec
 
 Status: Current implemented rules and versioned policy boundary  
-Last updated: 2026-09-17
+Last updated: 2026-10-06
 
 ## Principle
 
@@ -148,6 +148,8 @@ Hint text is generated from canonical player data/settings. The engine may build
 The product invariant is that current-at-bat Hint presses are immediate. The engine does not depend on whether hints arrive individually or as an authorized bundle.
 
 ## Guessing
+
+Player autocomplete rejects a normalized query made entirely of two or more separated single letters (for example `a r`, `o a`, or `a j r`) before substring or ordered-token prefix matching. Case, repeated spaces, accents and separator variants use the existing normalizer. This prevents the opening initials from becoming a candidate lookup. Single fragments, meaningful multi-word fragments, aliases and initial-based names with a name fragment (such as `A. J. Re`) remain searchable. Canonical and legacy search share this pure rule; it does not consult the puzzle answer.
 
 Players select canonical search results. Correctness is exact canonical `playerId` equality after approved redirects. No fuzzy string comparison occurs at evaluation time.
 
