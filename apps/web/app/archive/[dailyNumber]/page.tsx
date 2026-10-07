@@ -24,7 +24,7 @@ export default async function ArchivePuzzlePage({ params }: { params: Promise<{ 
           <DailyHowToDialog key={`${bootstrap.puzzle.id}:${bootstrap.rulesetVersion}`} content={getDailyHowToContent(bootstrap.rulesetVersion)} />
         </header>
         <nav aria-label="Archive navigation"><a href="/archive">All archive puzzles</a> · <a href="/">Today’s Daily</a></nav>
-        <p>Progress is saved separately on this device. Archive averages are not enabled yet.</p>
+        <p>Progress is saved separately on this device. Comparisons use other submitted results for this puzzle and ruleset.</p>
         <DailyInningGame key={bootstrap.puzzle.id} puzzle={bootstrap.puzzle} rulesetVersion={bootstrap.rulesetVersion}
           initialProgressionToken={bootstrap.progressionToken} initialHintBundle={bootstrap.hintBundle} archivePath={`/archive/${identity.dailyNumber}`} />
       </section>

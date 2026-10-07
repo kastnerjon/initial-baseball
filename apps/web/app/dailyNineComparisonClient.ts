@@ -9,6 +9,7 @@ import {
   type DailyNineComparisonApiKey,
   type DailyNineCompletedComparisonApiResponse,
 } from '@initial-baseball/shared';
+import { isArchiveDailyPuzzleId } from './dailyModeStorage';
 
 export type DailyNineAtBatComparisonRequestKey = DailyNineComparisonApiKey & {
   kind: 'at-bat';
@@ -88,6 +89,7 @@ function atBatPath(key: DailyNineAtBatComparisonRequestKey): string {
     ruleset: key.rulesetVersion,
     pitch: String(key.pitchNumber),
   });
+  if (isArchiveDailyPuzzleId(key.puzzleId)) search.set('puzzleId', key.puzzleId);
   appendExcludedResultId(search, key.excludedResultId);
   return `/api/daily/comparison/at-bat?${search}`;
 }
@@ -97,6 +99,7 @@ function completedPath(key: DailyNineCompletedComparisonRequestKey): string {
     date: key.puzzleDate,
     ruleset: key.rulesetVersion,
   });
+  if (isArchiveDailyPuzzleId(key.puzzleId)) search.set('puzzleId', key.puzzleId);
   appendExcludedResultId(search, key.excludedResultId);
   return `/api/daily/comparison/completed?${search}`;
 }
