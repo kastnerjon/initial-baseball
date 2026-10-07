@@ -6,6 +6,8 @@ Last updated: 2026-10-07
 
 ## Immediate next work
 
+- [x] Implement issue #320 canonical display/search normalization: compact dotted given-name initials, preserve source aliases and identity, and leave gameplay clues unchanged. Scope: `tasks/plans/initial-based-display-names.md`; exact release evidence is recorded on the implementing PR.
+
 - [x] Complete the staged current-Daily AB BEAT / one-other-result rollout: #316 distribution contract, #317 filtered provider reads, #318 durable browser exclusion transport, then final presentation activation. One other submitted result now suffices for AVG/strict-lower BEAT; above AVG is explicit green, equal/below AVG explicit red. Result writes/scoring remain unchanged; archive activation stays separate.
 
 - [ ] Verify the #311 initials-only autocomplete guard on physical phone/tablet: `a r` / `o a` yield no suggestions, while real name fragments remain selectable. Production API and refreshed cloud-browser checks passed; physical-device interaction QA remains open.

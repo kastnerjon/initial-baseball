@@ -1,7 +1,29 @@
 import { expect, it } from 'vitest';
 import type { Player } from '@initial-baseball/shared';
 import { normalizeGuess } from './normalizeGuess.js';
-import { searchPlayers } from './searchPlayers.js';
+import { searchCanonicalPlayers, searchPlayers } from './searchPlayers.js';
+
+it.each(['jd davis', 'J.D. Davis', 'J. D. Davis', 'j d davis', 'Jonathan Gregory Davis'])(
+  'finds the compact canonical name from %s without changing its answer ID', query => {
+    const result = searchCanonicalPlayers(query, [{
+      id: 'ibp_4473834d18a00a119b8d',
+      displayName: 'JD Davis',
+      aliases: ['J. D. Davis', 'Jonathan Gregory Davis'],
+    }]);
+    expect(result).toHaveLength(1);
+    expect(result[0]).toMatchObject({
+      playerId: 'ibp_4473834d18a00a119b8d',
+      acceptedPlayerIds: ['ibp_4473834d18a00a119b8d'],
+      displayName: 'JD Davis',
+    });
+  },
+);
+
+it('keeps initials-only clue queries blocked with compact given names', () => {
+  expect(searchCanonicalPlayers('j d', [{
+    id: 'davis', displayName: 'JD Davis', aliases: ['J. D. Davis'],
+  }])).toEqual([]);
+});
 
 const players: Player[] = [
   {

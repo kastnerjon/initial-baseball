@@ -234,9 +234,11 @@ export function isEligibleLahmanPlayer(player, inductedHallOfFamePlayerIds = new
 function buildUniversePlayer({ lahmanPlayer, identity, isHallOfFamer }) {
   const canonicalId = identity?.canonicalId ?? createCanonicalPlayerId(`lahman:${lahmanPlayer.playerId}`);
   const baseDisplayName = identity?.displayName || lahmanPlayer.displayName || lahmanPlayer.legalName || canonicalId;
-  const displayName = chooseSuffixQualifiedDisplayName(baseDisplayName, identity?.aliases ?? []);
+  const sourceDisplayName = chooseSuffixQualifiedDisplayName(baseDisplayName, identity?.aliases ?? []);
+  const displayName = normalizeInitialGivenName(sourceDisplayName);
   const legalName = lahmanPlayer.legalName || displayName;
   const aliases = uniqueNames([
+    sourceDisplayName,
     legalName,
     ...(identity?.aliases ?? []),
   ], displayName);
@@ -260,6 +262,13 @@ function buildUniversePlayer({ lahmanPlayer, identity, isHallOfFamer }) {
     legacyPlayerIds: [...(identity?.legacyPlayerIds ?? [])].sort(),
     sourceMappings,
   };
+}
+
+function normalizeInitialGivenName(displayName) {
+  // Only a leading run of dotted initials is a given-name abbreviation.
+  // Ordinary names, interior initials, surnames and suffixes retain their spelling.
+  return displayName.replace(/^((?:[A-Z]\.\s*){2,})(?=\p{L})/u, initials =>
+    `${initials.replace(/[.\s]/g, '')} `);
 }
 
 function chooseSuffixQualifiedDisplayName(baseDisplayName, aliases) {

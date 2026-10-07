@@ -47,6 +47,51 @@ function build(overrides = {}) {
 }
 
 describe('Lahman-first canonical universe', () => {
+  it.each([
+    ['J. D. Davis', 'JD Davis'],
+    ['J.D. Davis', 'JD Davis'],
+    ['C. C. Sabathia', 'CC Sabathia'],
+    ['C.C. Sabathia', 'CC Sabathia'],
+    ['A. J. Pierzynski', 'AJ Pierzynski'],
+    ['J. P. Arencibia', 'JP Arencibia'],
+    ['J. R. Richard Jr.', 'JR Richard Jr.'],
+    ['J. D. Rodríguez', 'JD Rodríguez'],
+  ])('normalizes %s without changing identity or losing the source alias', (source, displayName) => {
+    const identity = identityPlayer({ displayName: source });
+    const result = build({ canonicalIdentityPlayers: [identity] });
+    expect(result.universePlayers[0]).toMatchObject({
+      canonicalId: identity.canonicalId,
+      lahmanPlayerId: identity.lahmanPlayerId,
+      displayName,
+      aliases: expect.arrayContaining([source, 'Example M. Player']),
+      sourceMappings: expect.arrayContaining(identity.sourceMappings),
+    });
+    expect(result.redirects['chadwick:one']).toBe(identity.canonicalId);
+    expect(result.report.validation.criticalIssues).toEqual([]);
+  });
+
+  it.each(['CC Sabathia', 'R. Galvin', 'John D. Smith', 'J D Davis',
+    'Julio Rodríguez', "O'Neil Cruz", 'Ha-Seong Kim', 'Ken Griffey Jr.'])(
+    'preserves ordinary names and already compact names: %s', displayName => {
+      const result = build({ canonicalIdentityPlayers: [identityPlayer({ displayName })] });
+      expect(result.universePlayers[0].displayName).toBe(displayName);
+    },
+  );
+
+  it('normalizes Lahman-only names and retains suffix selection before compaction', () => {
+    const onlyLahman = build({
+      lahmanPlayers: [lahmanPlayer({ displayName: 'J. D. Davis' })],
+      canonicalIdentityPlayers: [],
+    });
+    expect(onlyLahman.universePlayers[0].displayName).toBe('JD Davis');
+    expect(onlyLahman.universePlayers[0].aliases).toContain('J. D. Davis');
+    const suffixed = build({ canonicalIdentityPlayers: [identityPlayer({
+      displayName: 'J. R. Richard', aliases: ['J. R. Richard Jr.'],
+    })] });
+    expect(suffixed.universePlayers[0].displayName).toBe('JR Richard Jr.');
+    expect(suffixed.universePlayers[0].aliases).toContain('J. R. Richard Jr.');
+  });
+
   it('publishes one Lahman player with the stable app-owned ID and approved aliases', () => {
     const result = build();
 
