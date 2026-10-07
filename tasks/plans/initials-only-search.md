@@ -1,6 +1,6 @@
 # Prevent initials-only player suggestions
 
-Status: implemented locally; one review and exact-head release checks pending. Release evidence will be recorded in the PR.
+Status: merged and production verified in #311. One bounded review completed without findings; final-head CI #1056/READY Preview and merge push CI #1057 passed. Exact deployment, public API, refreshed-browser and post-READY log evidence are recorded in #311 and `docs/START-HERE.md`. Physical phone/tablet interaction QA remains open.
 
 ## Scope contract
 
