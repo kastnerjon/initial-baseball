@@ -4,6 +4,7 @@ import {
   POINTS_V1_DAILY_RULESET_VERSION,
   POINTS_V2_DAILY_RULESET_VERSION,
   POINTS_V3_DAILY_RULESET_VERSION,
+  POINTS_V4_DAILY_RULESET_VERSION,
   type DailyRulesetVersion,
 } from '@initial-baseball/shared';
 
@@ -33,7 +34,10 @@ export function getDailyModeStorageKey(
   if (usesHistoricalCurrentDailyKey(rulesetVersion)) {
     return `${DEFAULT_DAILY_STORAGE_PREFIX}${puzzleDate}`;
   }
-  return `${VERSIONED_DAILY_STORAGE_PREFIX}${rulesetVersion}:${puzzleDate}`;
+  if (rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION && puzzleId !== undefined) {
+    return `${VERSIONED_DAILY_STORAGE_PREFIX}${rulesetVersion}:${puzzleDate}:puzzle:${encodeURIComponent(puzzleId)}`;
+  }
+  return getVersionedDailyStorageKey(puzzleDate, rulesetVersion);
 }
 
 export function getDailyModeStorage(
@@ -46,19 +50,45 @@ export function getDailyModeStorage(
   }
   const archive = isArchiveDailyPuzzleId(puzzleId);
   if (!archive && usesHistoricalCurrentDailyKey(rulesetVersion)) return storage;
+  const puzzleScopedCurrent = !archive
+    && rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION
+    && puzzleId !== undefined;
 
   return {
-    getItem: key => storage.getItem(translateKey(key)),
+    getItem(key) {
+      const translatedKey = translateKey(key);
+      const value = storage.getItem(translatedKey);
+      if (value !== null || !puzzleScopedCurrent || !isDailyGameplayKey(key)) return value;
+
+      const legacyValue = storage.getItem(legacyVersionedKey(key));
+      return savedValueMatchesPuzzleId(legacyValue, puzzleId) ? legacyValue : null;
+    },
     setItem: (key, value) => storage.setItem(translateKey(key), value),
-    removeItem: key => storage.removeItem(translateKey(key)),
+    removeItem(key) {
+      storage.removeItem(translateKey(key));
+      if (!puzzleScopedCurrent || !isDailyGameplayKey(key)) return;
+
+      const fallbackKey = legacyVersionedKey(key);
+      const fallbackValue = storage.getItem(fallbackKey);
+      if (savedValueMatchesPuzzleId(fallbackValue, puzzleId)) {
+        storage.removeItem(fallbackKey);
+      }
+    },
   };
 
   function translateKey(key: string): string {
-    if (!key.startsWith(DEFAULT_DAILY_STORAGE_PREFIX)) return key;
+    if (!isDailyGameplayKey(key)) return key;
     return getDailyModeStorageKey(
       key.slice(DEFAULT_DAILY_STORAGE_PREFIX.length),
       rulesetVersion,
       puzzleId,
+    );
+  }
+
+  function legacyVersionedKey(key: string): string {
+    return getVersionedDailyStorageKey(
+      key.slice(DEFAULT_DAILY_STORAGE_PREFIX.length),
+      rulesetVersion,
     );
   }
 }
@@ -92,5 +122,29 @@ function getBrowserStorage(): DailyModeStorage | null {
     return (globalThis as { localStorage?: DailyModeStorage }).localStorage ?? null;
   } catch {
     return null;
+  }
+}
+
+function getVersionedDailyStorageKey(
+  puzzleDate: string,
+  rulesetVersion: DailyRulesetVersion,
+): string {
+  return `${VERSIONED_DAILY_STORAGE_PREFIX}${rulesetVersion}:${puzzleDate}`;
+}
+
+function isDailyGameplayKey(key: string): boolean {
+  return key.startsWith(DEFAULT_DAILY_STORAGE_PREFIX);
+}
+
+function savedValueMatchesPuzzleId(value: string | null, puzzleId: string): boolean {
+  if (value === null) return false;
+  try {
+    const parsed = JSON.parse(value) as unknown;
+    return typeof parsed === 'object'
+      && parsed !== null
+      && !Array.isArray(parsed)
+      && (parsed as { puzzleId?: unknown }).puzzleId === puzzleId;
+  } catch {
+    return false;
   }
 }
