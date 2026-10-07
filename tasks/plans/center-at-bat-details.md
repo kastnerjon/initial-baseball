@@ -1,6 +1,6 @@
 # Center at-bat hint and comparison details
 
-Status: CSS implementation complete; exact review/release evidence is recorded in the implementing PR.
+Status: Superseded on 2026-10-07 by the owner's post-deployment decision to restore the prior left-aligned presentation. Historical implementation/release evidence remains in PR #324; reversal scope: `tasks/plans/restore-left-at-bat-details.md`.
 
 ## Scope contract
 
