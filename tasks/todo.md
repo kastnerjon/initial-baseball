@@ -6,6 +6,8 @@ Last updated: 2026-10-07
 
 ## Immediate next work
 
+- [ ] Complete the staged AB BEAT / one-other-result rollout: filtered provider reads, then durable browser first-result exclusion, then presentation activation. #316 completed the portable distribution contract; keep result writes/scoring unchanged and archive activation separate.
+
 - [ ] Verify the #311 initials-only autocomplete guard on physical phone/tablet: `a r` / `o a` yield no suggestions, while real name fragments remain selectable. Production API and refreshed cloud-browser checks passed; physical-device interaction QA remains open.
 
 - [ ] Verify authenticated admin attempt-grid/CSV access on the owner's device; retain physical/mobile QA separately from automated read/auth/render tests.
