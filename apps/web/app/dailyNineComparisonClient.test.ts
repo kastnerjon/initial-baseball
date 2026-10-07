@@ -69,6 +69,49 @@ describe('Daily Nine browser comparison client', () => {
     );
   });
 
+  it('routes both archive reads by exact issued identity and original result exclusion', async () => {
+    const archive = {
+      puzzleId: 'archive-beta-v1-daily-1', puzzleDate: '2026-10-04',
+      puzzleNumber: 1, rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+      excludedResultId: 'original-archive-attempt',
+    } as const;
+    const atBatKey = { ...AT_BAT_KEY, ...archive };
+    const completedKey = { ...COMPLETED_KEY, ...archive };
+    const signal = new AbortController().signal;
+    const request = vi.fn()
+      .mockResolvedValueOnce(response(200, atBatPayload(archive)))
+      .mockResolvedValueOnce(response(200, completedPayload(archive)));
+    const client = createDailyNineComparisonClient({ request });
+
+    await expect(client.readAtBat(atBatKey, signal)).resolves.toEqual(atBatPayload(archive));
+    await expect(client.readCompleted(completedKey, signal)).resolves.toEqual(completedPayload(archive));
+    expect(request).toHaveBeenNthCalledWith(1,
+      '/api/daily/comparison/at-bat?date=2026-10-04&ruleset=points-v4&pitch=3&puzzleId=archive-beta-v1-daily-1&excludeResultId=original-archive-attempt',
+      { method: 'GET', cache: 'no-store', signal });
+    expect(request).toHaveBeenNthCalledWith(2,
+      '/api/daily/comparison/completed?date=2026-10-04&ruleset=points-v4&puzzleId=archive-beta-v1-daily-1&excludeResultId=original-archive-attempt',
+      { method: 'GET', cache: 'no-store', signal });
+  });
+
+  it.each(['daily-2026-10-04-editorial-other', 'archive-beta-v1-daily-2'])(
+    'rejects same-date %s populations on both archive read paths', async puzzleId => {
+      const archive = {
+        puzzleId: 'archive-beta-v1-daily-1', puzzleDate: '2026-10-04',
+        puzzleNumber: 1, rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+      } as const;
+      const wrong = { ...archive, puzzleId };
+      const request = vi.fn()
+        .mockResolvedValueOnce(response(200, atBatPayload(wrong)))
+        .mockResolvedValueOnce(response(200, completedPayload(wrong)));
+      const client = createDailyNineComparisonClient({ request });
+      const signal = new AbortController().signal;
+      await expect(client.readAtBat({ ...AT_BAT_KEY, ...archive }, signal))
+        .rejects.toMatchObject({ kind: 'identity_mismatch' });
+      await expect(client.readCompleted({ ...COMPLETED_KEY, ...archive }, signal))
+        .rejects.toMatchObject({ kind: 'identity_mismatch' });
+    },
+  );
+
   it('rejects a filtered response that does not echo the requested exclusion identity', async () => {
     const request = vi.fn().mockResolvedValue(response(200, atBatPayload()));
     const client = createDailyNineComparisonClient({ request });

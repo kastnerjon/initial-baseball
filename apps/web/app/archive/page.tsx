@@ -11,7 +11,7 @@ export default async function ArchivePage(): Promise<JSX.Element> {
         <p className="eyebrow">Initial Baseball · Archive beta</p>
         <h1>Play an earlier lineup</h1>
         <p>Frozen puzzles, current Daily Nine scoring. Your progress and scores are saved on this device, separately from today’s game.</p>
-        <p>This test archive is disposable and is not the permanent Daily sequence. Averages are not enabled yet.</p>
+        <p>This test archive is disposable and is not the permanent Daily sequence. Comparisons use other submitted results for each exact puzzle and ruleset.</p>
         <a href="/">Back to today’s Daily</a>
         {puzzles.length === 0 ? <p>No archive puzzles have been issued yet.</p> : (
           <ul aria-label="Issued archive puzzles">

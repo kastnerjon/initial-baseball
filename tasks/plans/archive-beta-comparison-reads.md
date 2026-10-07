@@ -1,6 +1,6 @@
 # Archive-beta comparison reads
 
-Status: merged; production verified on 2026-10-06. Browser activation follows separately.
+Status: merged; production verified on 2026-10-06. Separate browser activation is implemented in `tasks/plans/archive-beta-comparison-browser.md`; exact release evidence belongs to that PR.
 
 ## Scope contract
 

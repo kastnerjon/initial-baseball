@@ -183,6 +183,24 @@ describe('Daily at-bat gameplay lifecycle', () => {
     expect(lifecycle.readDurableAttemptId()).toBe('attempt-one');
   });
 
+  it('retains the archive first-result exclusion after reset, isolated from other puzzles', () => {
+    const storage = memoryStorage();
+    const archive = { ...V4_IDENTITY, id: 'archive-beta-v1-daily-1', puzzleNumber: 1 };
+    const lifecycle = makeLifecycle(storage, archive);
+    const fresh = lifecycle.prepareOwner({
+      loaded: null, hadPersistedGameplayValue: false, claimedGeneration: null, totalAtBats: 9,
+    });
+    lifecycle.journal.appendObservation({
+      identity: archive, generation: 1, atBat: completedAtBat(1),
+    });
+    expect(lifecycle.resetContribution(fresh)).toMatchObject({ status: 'inactive', reason: 'retired' });
+    expect(lifecycle.readDurableAttemptId()).toBe('attempt-one');
+    expect(makeLifecycle(storage, archive).readDurableAttemptId()).toBe('attempt-one');
+    expect(makeLifecycle(storage, V4_IDENTITY).readDurableAttemptId()).toBeNull();
+    expect(makeLifecycle(storage, { ...archive, id: 'archive-beta-v1-daily-2', puzzleNumber: 2 })
+      .readDurableAttemptId()).toBeNull();
+  });
+
   it('fails contribution closed after terminal delivery failure', () => {
     const lifecycle = makeLifecycle(memoryStorage());
     const fresh = lifecycle.prepareOwner({

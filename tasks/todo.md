@@ -13,7 +13,7 @@ Last updated: 2026-10-07
 - [ ] Verify the #311 initials-only autocomplete guard on physical phone/tablet: `a r` / `o a` yield no suggestions, while real name fragments remain selectable. Production API and refreshed cloud-browser checks passed; physical-device interaction QA remains open.
 
 - [ ] Verify authenticated admin attempt-grid/CSV access on the owner's device; retain physical/mobile QA separately from automated read/auth/render tests.
-- [ ] Resume the approved archive comparison browser activation; local archive history follows. Same-day recovery is not a new general migration/reconstruction feature.
+- [x] Activate archive comparison browser reads/presentation over exact issued puzzle/ruleset routing, reusing durable first-result exclusion and one-other-result AVG/BEAT. Scope and implementing PR evidence: `tasks/plans/archive-beta-comparison-browser.md`. Local archive history follows separately.
 
 Completed history belongs in PRs, canonical docs, or `tasks/lessons.md`. Durable resumption context belongs in `docs/START-HERE.md`.
 
@@ -307,7 +307,7 @@ September 24 coordinated archive/gameplay decisions and bounded PR order are in 
 - [x] Show mode-appropriate How to play on every game-page entry/reload, accessible and reopenable without a dismissal flag or interruption of hydration; align copy with active scoring version.
 - [x] Add disposable beta archive routes/navigation for exposed Daily Nine (#296), after exact puzzle/ruleset persistence and ownership isolation. Retained Classic contracts remain intact; permanent launch/exposure is separate future work.
 - [ ] Add browsable browser/device history across stable Daily + game/ruleset. Isolated per-puzzle beta progress and restored completed score/result are implemented in #296; cross-puzzle history remains separate work.
-- [ ] Activate archive-specific browser comparisons over implemented result delivery and exact-puzzle read APIs. Exact spoiler-safe beta sharing is implemented in #296; current-Daily populations must not be reused.
+- [x] Activate archive-specific browser comparisons over implemented result delivery and exact-puzzle read APIs. Shared per-AB/final AVG/BEAT keeps current-Daily and each archive population isolated. Scope: `tasks/plans/archive-beta-comparison-browser.md`; exact release evidence belongs to its PR.
 - [ ] Defer cross-device history until accounts.
 - [ ] Before launch, explicitly choose the surviving game, final launch rules, and launch date; reset permanent numbering to Daily #1.
 
