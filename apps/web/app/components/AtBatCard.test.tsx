@@ -70,6 +70,7 @@ describe('AtBatCard pending resolution feedback', () => {
         ownPoints: 7,
         resolvedAtBatCount: 12,
         averagePoints: 4.5,
+        strictLowerAtBatRate: null,
       },
     });
 
@@ -99,24 +100,30 @@ describe('AtBatCard pending resolution feedback', () => {
     expect(html).toContain('Next At Bat');
   });
 
-  it('hides tiny-sample averages and labels early averages explicitly', () => {
-    const waiting = renderTerminalComparison({
+  it('shows one-other-result AVG/BEAT and does not add a separate early-sample threshold', () => {
+    const oneOther = renderTerminalComparison({
       status: 'success',
       ownPoints: 5,
       resolvedAtBatCount: 1,
       averagePoints: 4,
+      strictLowerAtBatRate: 1,
     });
-    const early = renderTerminalComparison({
+    const severalOthers = renderTerminalComparison({
       status: 'success',
       ownPoints: 5,
       resolvedAtBatCount: 7,
       averagePoints: 3.428,
+      strictLowerAtBatRate: 0.5,
     });
 
-    expect(waiting).toContain('Waiting for more results · 1 result');
-    expect(waiting).not.toContain('4.0');
-    expect(early).toContain('3.4');
-    expect(early).toContain('Early average · 7 results');
+    expect(oneOther).toContain('4.0');
+    expect(oneOther).toContain('BEAT 100%');
+    expect(oneOther).toContain('Above AVG');
+    expect(oneOther).toContain('1 other result');
+    expect(severalOthers).toContain('3.4');
+    expect(severalOthers).toContain('BEAT 50%');
+    expect(severalOthers).toContain('7 other results');
+    expect(severalOthers).not.toContain('Early average');
   });
 
   it('renders normal and quiet unavailable comparison states', () => {
@@ -125,6 +132,7 @@ describe('AtBatCard pending resolution feedback', () => {
       ownPoints: 6,
       resolvedAtBatCount: 10,
       averagePoints: 4.25,
+      strictLowerAtBatRate: 0.6,
     });
     const unavailable = renderTerminalComparison({
       status: 'unavailable',
@@ -132,7 +140,8 @@ describe('AtBatCard pending resolution feedback', () => {
     });
 
     expect(normal).toContain('4.3');
-    expect(normal).toContain('10 results');
+    expect(normal).toContain('10 other results');
+    expect(normal).toContain('BEAT 60%');
     expect(normal).not.toContain('Early average');
     expect(unavailable).toContain('Comparison unavailable');
     expect(unavailable).toContain('Next At Bat');

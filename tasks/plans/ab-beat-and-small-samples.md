@@ -40,6 +40,14 @@ Status: implemented by PR #318; exact release evidence is recorded in the PR and
 - Reset invariant: Reset may retire future contribution, but it does not erase the journal's durable first `attemptId`; comparison reads continue excluding that same ID.
 - Stop conditions: any presentation-policy or archive activation work moves to the next separate PR.
 
-## Remaining stage
+## PR 4 — one-other-result presentation
 
-PR 4 activates one-other-result AVG/BEAT presentation and approved green/red semantics. Production thresholds remain unchanged until PR 4.
+Status: implemented by the final current-Daily presentation activation; exact merge/deployment evidence belongs in the PR release checkpoint.
+
+- One other valid submitted result is enough for per-AB and completed-game AVG/BEAT.
+- BEAT is the Daily-owned strict-lower distribution rate; ties stay in the denominator and are not beaten.
+- Green means personal points are strictly above arithmetic AVG. Red means personal points are equal to or below AVG.
+- Explicit "Above AVG" / "At or below AVG" text accompanies color so color is not the only status signal.
+- Zero-other-result populations remain withheld and may take the existing one bounded completed-slot retry; one-other-result populations no longer retry merely to cross an obsolete sample threshold.
+- Gameplay/result-write/scoring semantics are unchanged and comparison remains asynchronous/nonblocking.
+- Archive browser comparison activation remains separate and next.

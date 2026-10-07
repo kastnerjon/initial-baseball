@@ -7,15 +7,20 @@ import {
 } from './dailyNineScorecardComparisonPresentation';
 
 describe('Daily Nine scorecard comparison presentation', () => {
-  it('withholds unavailable and 0–1 observation averages', () => {
+  it('withholds unavailable and empty averages but shows one other result', () => {
     expect(createDailyNineScorecardAtBatAverage(undefined)).toBeNull();
     expect(createDailyNineScorecardAtBatAverage({ status: 'loading' })).toBeNull();
     expect(createDailyNineScorecardAtBatAverage({ status: 'unavailable' })).toBeNull();
     expect(createDailyNineScorecardAtBatAverage({
       status: 'success',
+      resolvedAtBatCount: 0,
+      averagePoints: null,
+    })).toBeNull();
+    expect(createDailyNineScorecardAtBatAverage({
+      status: 'success',
       resolvedAtBatCount: 1,
       averagePoints: 7,
-    })).toBeNull();
+    })).toBe('7.0');
   });
 
   it('creates one shared initials / outcome / score / average row model', () => {
@@ -28,7 +33,7 @@ describe('Daily Nine scorecard comparison presentation', () => {
       },
     )).toEqual([
       { pitchNumber: 1, initials: 'BB', outcome: 'K', score: '0', average: '7.0' },
-      { pitchNumber: 2, initials: 'KGJ', outcome: 'HR', score: '7', average: '—' },
+      { pitchNumber: 2, initials: 'KGJ', outcome: 'HR', score: '7', average: '6.0' },
     ]);
   });
 
@@ -134,7 +139,7 @@ describe('Daily Nine scorecard comparison presentation', () => {
       '',
       '       SCORE   AVG',
       'BB:        0   7.0',
-      'KGJ:       7     —',
+      'KGJ:       7   6.0',
       '',
       'https://example.test/',
     ].join('\n'));

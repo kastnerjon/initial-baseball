@@ -132,8 +132,29 @@ describe('Daily Nine at-bat comparison presentation state', () => {
       ownPoints: 6,
       resolvedAtBatCount: 12,
       averagePoints: 4.5,
+      strictLowerAtBatRate: null,
     });
     expect(createDailyNineAtBatComparisonState({ status: 'unavailable' }, 6))
       .toEqual({ status: 'unavailable', ownPoints: 6 });
+  });
+
+  it('uses strict-lower semantics with one other v4 result', () => {
+    const readState = {
+      status: 'success' as const,
+      resolvedAtBatCount: 1,
+      averagePoints: 2,
+      rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+      scoreHistogram: [0, 0, 0, 0, 1, 0, 0, 0, 0],
+    };
+
+    expect(createDailyNineAtBatComparisonState(readState, 4)).toMatchObject({
+      strictLowerAtBatRate: 1,
+    });
+    expect(createDailyNineAtBatComparisonState(readState, 2)).toMatchObject({
+      strictLowerAtBatRate: 0,
+    });
+    expect(createDailyNineAtBatComparisonState(readState, 0.5)).toMatchObject({
+      strictLowerAtBatRate: 0,
+    });
   });
 });

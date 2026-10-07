@@ -28,8 +28,13 @@ export function DailyNineCompletedComparison({
           </>
         )}
       </div>
-      {presentation?.beat === null || presentation?.beat === undefined ? null : (
-        <strong className="completed-comparison-beat">{`BEAT ${presentation.beat}`}</strong>
+      {presentation?.averageStatus === null || presentation?.averageStatus === undefined ? null : (
+        <div className={`completed-comparison-performance completed-comparison-performance-${presentation.averageStatus}`}>
+          {presentation.beat === null ? null : (
+            <strong className="completed-comparison-beat">{`BEAT ${presentation.beat}`}</strong>
+          )}
+          <span className="completed-comparison-average-status">{presentation.statusLabel}</span>
+        </div>
       )}
       {presentation === null ? null : (
         <p className="completed-comparison-note">{presentation.note}</p>

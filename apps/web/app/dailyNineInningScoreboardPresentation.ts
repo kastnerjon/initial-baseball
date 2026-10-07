@@ -95,18 +95,17 @@ function createAtBatAverageValue(
   if (state.status === 'unavailable' || state.averagePoints === null) {
     return createDashValue(`Average for at-bat ${pitchNumber} is unavailable`);
   }
-  if (state.resolvedAtBatCount <= 1) {
-    const resultLabel = state.resolvedAtBatCount === 1 ? '1 result' : 'no results';
+  if (state.resolvedAtBatCount === 0) {
     return createDashValue(
-      `Average for at-bat ${pitchNumber} is waiting for more results; ${resultLabel}`,
+      `Average for at-bat ${pitchNumber} is waiting for another result`,
     );
   }
 
   const display = state.averagePoints.toFixed(1);
-  const sampleLabel = state.resolvedAtBatCount < 10 ? 'early average from' : 'average from';
+  const resultLabel = `${state.resolvedAtBatCount} other result${state.resolvedAtBatCount === 1 ? '' : 's'}`;
   return createScoreValue(
     display,
-    `At-bat ${pitchNumber} ${sampleLabel} ${state.resolvedAtBatCount} results`,
+    `At-bat ${pitchNumber} average from ${resultLabel}`,
   );
 }
 

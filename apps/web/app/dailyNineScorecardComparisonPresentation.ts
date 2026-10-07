@@ -22,7 +22,7 @@ export function createDailyNineScorecardAtBatAverage(
   state: DailyNineScorecardComparisonState | undefined,
 ): string | null {
   if (state?.status !== 'success'
-    || state.resolvedAtBatCount <= 1
+    || state.resolvedAtBatCount === 0
     || state.averagePoints === null) return null;
 
   return state.averagePoints.toFixed(1);

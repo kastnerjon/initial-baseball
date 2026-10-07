@@ -72,7 +72,7 @@ describe('Daily Nine inning scoreboard presentation', () => {
     expect(presentation.columns[8]?.average.display).toBe('1.8');
     expect(presentation.totalUser.display).toBe('18.5');
     expect(presentation.totalAverage.display).toBe('17.3');
-    expect(presentation.totalAverage.accessibleLabel).toContain('20 completed results');
+    expect(presentation.totalAverage.accessibleLabel).toContain('20 other completed results');
   });
 
   it('has no current-at-bat marker once the game is complete', () => {

@@ -43,7 +43,7 @@ describe('Daily Nine comparison preload request plan', () => {
       requestedPitchNumbers: [1, 2, 3],
       pendingRefreshPitchNumbers: [1, 2],
       comparisons: {
-        1: success(1, 4),
+        1: success(0, null),
         2: { status: 'unavailable' },
         3: success(1, 3),
       },
@@ -55,7 +55,7 @@ describe('Daily Nine comparison preload request plan', () => {
       requestedPitchNumbers,
       pendingRefreshPitchNumbers: [1],
       comparisons: {
-        1: success(1, 4),
+        1: success(0, null),
         2: success(12, 2.5),
       },
     })).toEqual([1, 3, 4]);
@@ -71,7 +71,7 @@ describe('Daily Nine completion refresh queue', () => {
       pendingRefreshPitchNumbers: [2],
       comparisons: {
         1: { status: 'loading' },
-        2: success(1, 4),
+        2: success(0, null),
         3: { status: 'loading' },
         4: { status: 'loading' },
       },
@@ -82,7 +82,7 @@ describe('Daily Nine completion refresh queue', () => {
       pendingRefreshPitchNumbers: [2],
       comparisons: {
         1: success(12, 2.5),
-        2: success(1, 4),
+        2: success(0, null),
         3: { status: 'loading' },
         4: { status: 'loading' },
       },
@@ -91,16 +91,16 @@ describe('Daily Nine completion refresh queue', () => {
 });
 
 describe('Daily Nine completed-pitch retry decision', () => {
-  it('uses the current completion set when an earlier preload settles low-sample', () => {
-    const lowSample = success(1, 4);
+  it('retries a completed slot only while there are zero other results', () => {
+    const noOtherResults = success(0, null);
 
-    expect(shouldScheduleCompletedPitchRetry(1, new Set(), lowSample)).toBe(false);
-    expect(shouldScheduleCompletedPitchRetry(1, new Set([1]), lowSample)).toBe(true);
-    expect(shouldScheduleCompletedPitchRetry(1, new Set([1]), success(2, 4))).toBe(false);
+    expect(shouldScheduleCompletedPitchRetry(1, new Set(), noOtherResults)).toBe(false);
+    expect(shouldScheduleCompletedPitchRetry(1, new Set([1]), noOtherResults)).toBe(true);
+    expect(shouldScheduleCompletedPitchRetry(1, new Set([1]), success(1, 4))).toBe(false);
   });
 });
 
-function success(resolvedAtBatCount: number, averagePoints: number) {
+function success(resolvedAtBatCount: number, averagePoints: number | null) {
   return {
     status: 'success' as const,
     resolvedAtBatCount,
