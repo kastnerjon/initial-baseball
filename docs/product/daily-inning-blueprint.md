@@ -156,7 +156,7 @@ Accounts/cross-device history, public leaderboards, user-created or exposed them
 
 ## State and persistence
 
-Anonymous visible state remains client-driven. Local storage restores puzzle/ruleset, at-bat state, raw facts, score, and opaque token. Daily Nine retains the existing date-keyed storage namespace for compatibility; Classic uses a distinct game namespace for the same puzzle date, so switching or resetting one game does not overwrite the other. The hint bundle is not required as durable state; a verified saved token may hydrate the exact current bundle before interaction.
+Anonymous visible state remains client-driven. Local storage restores puzzle/ruleset, at-bat state, raw facts, score, and opaque token. Current points-v4 Daily Nine saves use date, ruleset, and exact public puzzle identity. Matching older date/ruleset saves remain readable; known different-puzzle saves are ignored, while unclassifiable values remain present/unusable to preserve contribution safeguards. Historical pre-v4 saves retain their existing namespace; Classic uses a distinct game namespace for the same puzzle date, so switching or resetting one game does not overwrite the other. The hint bundle is not required as durable state; a verified saved token may hydrate the exact current bundle before interaction.
 
 Aggregate results use a compact idempotent completed-game write plus the approved immutable terminal-AB observations; no per-hint/per-guess writes. Future archive history is local/browser-device history unless/until accounts are introduced.
 
