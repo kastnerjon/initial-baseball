@@ -41,6 +41,13 @@ describe('dailyModeStorage', () => {
     }
     expect(getDailyModeStorageKey('2026-09-18', POINTS_V4_DAILY_RULESET_VERSION))
       .toBe('initial-baseball:daily:ruleset:points-v4:2026-09-18');
+    expect(getDailyModeStorageKey(
+      '2026-09-18',
+      POINTS_V4_DAILY_RULESET_VERSION,
+      'daily-2026-09-18-editorial-abcd1234',
+    )).toBe(
+      'initial-baseball:daily:ruleset:points-v4:2026-09-18:puzzle:daily-2026-09-18-editorial-abcd1234',
+    );
     expect(getDailyModeStorageKey('2026-09-18', CLASSIC_DAILY_RULESET_VERSION))
       .toBe('initial-baseball:daily:classic:2026-09-18');
   });
@@ -84,6 +91,63 @@ describe('dailyModeStorage', () => {
 
     expect(storage.getItem(historicalKey)).toBe('in-progress-points-v3');
     expect(storage.getItem(currentKey)).toBe('fresh-points-v4');
+  });
+
+  it('falls back to a matching pre-scoped points-v4 save, then writes and resets the puzzle-scoped key', () => {
+    const storage = new FakeStorage();
+    const date = '2026-10-06';
+    const dailyKey = `initial-baseball:daily:${date}`;
+    const puzzleId = 'daily-2026-10-06-editorial-6aee324e';
+    const legacyKey = `initial-baseball:daily:ruleset:points-v4:${date}`;
+    const scopedKey = `${legacyKey}:puzzle:${puzzleId}`;
+    const legacyValue = JSON.stringify({ puzzleId, marker: 'legacy-current-save' });
+    storage.setItem(legacyKey, legacyValue);
+
+    const current = getDailyModeStorage(POINTS_V4_DAILY_RULESET_VERSION, storage, puzzleId);
+    if (current === null) throw new Error('Expected puzzle-scoped current storage.');
+
+    expect(current.getItem(dailyKey)).toBe(legacyValue);
+
+    const nextValue = JSON.stringify({ puzzleId, marker: 'scoped-save' });
+    current.setItem(dailyKey, nextValue);
+    expect(storage.getItem(scopedKey)).toBe(nextValue);
+    expect(current.getItem(dailyKey)).toBe(nextValue);
+
+    current.removeItem(dailyKey);
+    expect(storage.getItem(scopedKey)).toBeNull();
+    expect(storage.getItem(legacyKey)).toBeNull();
+  });
+
+  it('ignores a pre-scoped points-v4 save from an earlier same-day puzzle identity', () => {
+    const storage = new FakeStorage();
+    const date = '2026-10-06';
+    const dailyKey = `initial-baseball:daily:${date}`;
+    const legacyKey = `initial-baseball:daily:ruleset:points-v4:${date}`;
+    const oldPuzzleId = 'daily-2026-10-06-editorial-eb79edef';
+    const correctedPuzzleId = 'daily-2026-10-06-editorial-6aee324e';
+    const oldValue = JSON.stringify({ puzzleId: oldPuzzleId, marker: 'old-puzzle-save' });
+    storage.setItem(legacyKey, oldValue);
+
+    const corrected = getDailyModeStorage(
+      POINTS_V4_DAILY_RULESET_VERSION,
+      storage,
+      correctedPuzzleId,
+    );
+    if (corrected === null) throw new Error('Expected corrected puzzle storage.');
+
+    expect(corrected.getItem(dailyKey)).toBeNull();
+
+    const correctedValue = JSON.stringify({
+      puzzleId: correctedPuzzleId,
+      marker: 'corrected-puzzle-save',
+    });
+    corrected.setItem(dailyKey, correctedValue);
+
+    expect(storage.getItem(legacyKey)).toBe(oldValue);
+    expect(storage.getItem(
+      `${legacyKey}:puzzle:${correctedPuzzleId}`,
+    )).toBe(correctedValue);
+    expect(corrected.getItem(dailyKey)).toBe(correctedValue);
   });
 
   it('keeps a points-v4 current-Daily save physically isolated from the historical points-v3 key', () => {
