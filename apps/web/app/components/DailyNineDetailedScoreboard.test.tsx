@@ -82,7 +82,7 @@ describe('DailyNineDetailedScoreboard', () => {
     const html = renderToStaticMarkup(<DailyNineDetailedScoreboard {...props} compact />);
     expect(html).toContain('<details class="pitch-results-card pitch-results-card-compact">');
     expect(html).toContain('>Scoreboard</span>');
-    expect(html).toContain('aria-label="Detailed scores by at-bat" tabIndex="0"');
+    expect(html).toContain('aria-label="Detailed scores by at-bat" tabindex="0"');
   });
 
   it('displays a dash for absent archived peer histograms rather than guessing BEAT', () => {
