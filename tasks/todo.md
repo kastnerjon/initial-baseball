@@ -6,7 +6,7 @@ Last updated: 2026-10-07
 
 ## Immediate next work
 
-- [ ] Verify centered at-bat hint content/button and terminal comparison wrapping on common mobile sizes and physical devices. Scope: `tasks/plans/center-at-bat-details.md`; automated and hosted evidence belongs to its PR.
+- [ ] Verify restored left-aligned at-bat hint content/button and terminal comparison wrapping on common mobile sizes and physical devices. Scope: `tasks/plans/restore-left-at-bat-details.md`; automated and hosted evidence belongs to its PR.
 
 - [x] Implement issue #320 canonical display/search normalization: compact dotted given-name initials, preserve source aliases and identity, and leave gameplay clues unchanged. Scope: `tasks/plans/initial-based-display-names.md`; exact release evidence is recorded on the implementing PR.
 
