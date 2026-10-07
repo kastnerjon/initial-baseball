@@ -30,7 +30,7 @@ export function DailyNineDetailedScoreboard(props: ScoreboardProps): JSX.Element
             type="checkbox"
             role="switch"
             checked={revealAnswers}
-            onChange={event => setRevealAnswers(event.target.checked)}
+            onChange={() => setRevealAnswers(current => !current)}
           />
         </label>
       </div>
