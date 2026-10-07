@@ -28,7 +28,7 @@ The post-merge activation checkpoint below records the applied migration, active
 
 - Goal: make canonical resumption docs match the now-applied private scheduler and verified catch-up.
 - Owning layer: repository documentation only.
-- In scope: START-HERE/todo, product timing statement, runbook and the two archive scope plans; exact release/activation/readback evidence.
+- In scope: START-HERE/todo, product timing statement, runbook and the two archive scope plans; exact release/activation/readback evidence; metadata-only migration filename alignment after hosted tooling assigned its ledger timestamp. SQL stays identical.
 - Out of scope: runtime/SQL changes and outstanding archive comparison/history/mobile work.
 - Acceptance: remove stale pending claims; one bounded review; documentation tests/gate, exact-head CI/READY Preview, post-merge CI/production routes/logs and read-only database/schedule recheck.
 - Stop: any new runtime defect becomes its own concern; do not edit code under the documentation scope.
@@ -42,3 +42,7 @@ Migration enable_daily_archive_scheduler applied successfully (hosted ledger ver
 Request 88: HTTP 200, cutoff 2026-10-07, created 2/preserved 1/remaining 0/failures []. Request 89: HTTP 200, created 0/preserved 3/remaining 0/failures []. Readback proves exact editorial/clue order and nine IDs/clues, schema 2 and correct beta identities. October 5 source revision 10 and corrected October 6 revision 11 are published by system:archive-rollover with unchanged selection fingerprints. Issued rows #2/#3 use first timestamp 2026-10-07T14:56:04.720Z and fingerprints 2d3226a9bac2df29aeed027c41e7d96d / b8cbe0d094ae83b871aacdcca835a721; retry preserved both snapshots, timestamps and source publication audit. October 4 retains 2026-10-05T01:39:24.760Z / bfb08ff7892362e0762d858aa3920d53. Today source remains scheduled revision 5, zero current/future beta rows and zero permanent rows.
 
 Catalog lists #1/#2/#3; #2/#3 200, today #4 404. Original corrected October 6 Daily completed/per-slot comparisons stayed unchanged and private/no-store, while archive #3 reads its separate empty population. No game results were submitted. Actual next-midnight firing remains a future observation; configured cron and authenticated transport/issuance are verified. Final documentation checkpoint reconciles the handoff; no runtime change is included.
+
+## Checkpoint review disposition
+
+The one hosted review on 6542172 found the stale one-puzzle QA prerequisite and hosted/local migration ID mismatch. The QA note was already corrected in dccfac2. Renamed the checked-in migration from its generated local 20261007144705 timestamp to the actual hosted 20261007145533 ledger version and updated the runbook reference; file contents are byte-identical and no hosted SQL or runtime changed. This is operational identity reconciliation, not new migration/lifecycle behavior. Final-head CI/Preview rerun; no second full review requested.
