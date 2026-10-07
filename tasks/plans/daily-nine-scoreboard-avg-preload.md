@@ -14,8 +14,8 @@ This is a browser-consumer change only. It must not change scoring, result persi
 - Show a successfully loaded per-AB AVG before that AB is played or resolved.
 - Keep successfully loaded values visible while play advances.
 - Use a loading presentation while a supported comparison is still in flight; reserve `—` for genuinely unavailable or sample-withheld values.
-- Preserve the existing 0–1-result withholding policy.
-- Continue refreshing low-sample/unavailable completed slots when gameplay advances so a newly written result can become visible without changing comparison semantics.
+- Current policy after PR #319: display AVG with one other submitted result after durable first-result exclusion; withhold only zero-other populations. See [AB BEAT and small samples](ab-beat-and-small-samples.md).
+- Continue the bounded refresh of zero-other/unavailable completed slots when gameplay advances so a newly written result can become visible without changing comparison semantics.
 - Reuse the same cached slot for the terminal YOU / AVG result card instead of issuing a second active-slot comparison request.
 - TOTAL AVG remains separate: it is `—` before completion and is sourced only from the authoritative completed-game comparison after completion. Never derive TOTAL AVG from the nine per-AB averages.
 
@@ -40,8 +40,8 @@ The server read service, comparison domain, Supabase repository/RPCs, scoring en
 4. Remove the redundant active-at-bat network request ownership from game composition; retain pure state projection helpers where useful.
 5. Update inning-scoreboard presentation so per-AB comparison display no longer depends on the user's AB being resolved.
    - loading/missing cache entry for a supported slot renders a loading glyph;
-   - successful 2+ sample aggregate renders the formatted AVG;
-   - unavailable/null/0–1 sample remains `—`.
+   - successful 1+ other-result aggregate renders the formatted AVG;
+   - unavailable/null/zero-other sample remains `—`.
 6. Leave completed-game comparison and TOTAL AVG wiring untouched except for any presentation test needed to prove it remains authoritative.
 7. Add focused tests for:
    - all nine slots being eligible for preload independent of completion;
