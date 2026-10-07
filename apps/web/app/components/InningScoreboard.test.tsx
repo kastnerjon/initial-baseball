@@ -30,7 +30,6 @@ describe('Daily Nine inning scoreboard presentation', () => {
         2: { status: 'loading' },
       },
       totalPoints: 4.5,
-      gameCompleted: false,
       completedComparison: { status: 'idle' },
     });
 
@@ -43,8 +42,8 @@ describe('Daily Nine inning scoreboard presentation', () => {
     expect(presentation.columns[2]?.average.display).toBe('…');
     expect(presentation.columns[2]?.average.accessibleLabel).toContain('is loading');
     expect(presentation.totalUser.display).toBe('4.5');
-    expect(presentation.totalAverage.display).toBe('—');
-    expect(presentation.totalAverage.accessibleLabel).toContain('after all at-bats are resolved');
+    expect(presentation.totalAverage.display).toBe('…');
+    expect(presentation.totalAverage.accessibleLabel).toContain('is loading');
   });
 
   it('uses the cached current-slot comparison for a resolved at-bat and completed games for TOTAL AVG', () => {
@@ -58,7 +57,6 @@ describe('Daily Nine inning scoreboard presentation', () => {
         9: { status: 'success', resolvedAtBatCount: 4, averagePoints: 1.75 },
       },
       totalPoints: 18.5,
-      gameCompleted: true,
       completedComparison: {
         status: 'success',
         ownPoints: 18.5,
@@ -83,7 +81,6 @@ describe('Daily Nine inning scoreboard presentation', () => {
       atBatPoints: Object.fromEntries(pitches.map(pitch => [pitch.pitchNumber, 1])),
       atBatComparisons: {},
       totalPoints: 9,
-      gameCompleted: true,
       completedComparison: { status: 'loading', ownPoints: 9 },
     });
 
@@ -98,7 +95,6 @@ describe('Daily Nine inning scoreboard presentation', () => {
       atBatPoints: { 1: 4, 2: 0.5 },
       atBatComparisons: {},
       totalPoints: 4.5,
-      gameCompleted: false,
       completedComparison: { status: 'idle' },
     });
 

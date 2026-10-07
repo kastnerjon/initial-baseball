@@ -19,7 +19,7 @@ export type DailyNineCompletedComparisonState =
   | { status: 'loading'; ownPoints: number }
   | {
       status: 'success';
-      ownPoints: number;
+      ownPoints: number | null;
       completedGameCount: number;
       averageTotalPoints: number | null;
       strictLowerFinishRate: number | null;
@@ -28,7 +28,7 @@ export type DailyNineCompletedComparisonState =
 
 export type DailyNineCompletedComparisonInput = {
   key: DailyNineCompletedComparisonRequestKey;
-  ownPoints: number;
+  ownPoints: number | null;
 } | null;
 
 type DailyNineCompletedComparisonSourceInput = {
@@ -53,8 +53,6 @@ export function createDailyNineCompletedComparisonInput({
     : points.completed
       ? points.points
       : null;
-  if (ownPoints === null) return null;
-
   return {
     key: {
       kind: 'completed',
@@ -89,7 +87,7 @@ export function useDailyNineCompletedComparison(input: DailyNineCompletedCompari
       || puzzleDate === null
       || puzzleNumber === null
       || rulesetVersion === null
-      || ownPoints === null) {
+) {
       controller.invalidate('completed');
       setState({ status: 'idle' });
       return;
@@ -113,7 +111,9 @@ export function useDailyNineCompletedComparison(input: DailyNineCompletedCompari
           ownPoints,
           completedGameCount: comparison.completedGameCount,
           averageTotalPoints: comparison.averageTotalPoints,
-          strictLowerFinishRate: getDailyNineStrictLowerFinishRate(comparison, ownPoints),
+          strictLowerFinishRate: ownPoints === null
+            ? null
+            : getDailyNineStrictLowerFinishRate(comparison, ownPoints),
         });
       },
       onError: () => setState({ status: 'unavailable', ownPoints }),

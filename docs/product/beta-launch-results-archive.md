@@ -47,7 +47,7 @@ Comparison populations never mix rulesets/games. Daily Nine for one Daily compar
 
 ### Daily Nine comparison
 
-Daily Nine v1 shows YOU / AVG asynchronously after every terminal at-bat, without delaying the answer reveal or Next At Bat. Its AB population includes everyone whose observation for that exact puzzle/ruleset/slot has arrived, including partial games. Whole-game averages and score distributions use completed games only; these denominators intentionally differ.
+Daily Nine v1 shows YOU / AVG asynchronously after every terminal at-bat, without delaying the answer reveal or Next At Bat. Its AB population includes everyone whose observation for that exact puzzle/ruleset/slot has arrived, including partial games. Whole-game averages and score distributions use completed games only; these denominators intentionally differ. Whole-game AVG loads during play (including AB 1) from the exact completed-result population, while personal TOTAL is still cumulative earned points. BEAT and above/below judgment require the finished personal score; AB averages are never summed.
 
 The final scorecard shows personal points and nine AB averages plus the whole-game average and "You beat X% of finishers." Beaten means strictly lower score divided by all completed games; ties do not count. The October 7 owner decision replaces the initial sample thresholds: after each AB and at completion, show AVG and BEAT with one other result, excluding the browser’s durable first contribution. BEAT counts strictly lower scores; ties remain in the denominator. Green means personal points exceed AVG; red includes equality. Display the number of other results so small samples are explicit. The staged implementation is tracked in `tasks/plans/ab-beat-and-small-samples.md`.
 

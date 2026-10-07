@@ -17,7 +17,6 @@ describe('Daily Nine inning scoreboard comparison presentation', () => {
       atBatPoints: { 1: 0.5 },
       atBatComparisons: {},
       totalPoints: 0.5,
-      gameCompleted,
       completedComparison: { status: 'idle' },
     });
 
@@ -40,7 +39,6 @@ describe('Daily Nine inning scoreboard comparison presentation', () => {
         2: { status: 'success', resolvedAtBatCount: 20, averagePoints: 3 },
       },
       totalPoints: 0,
-      gameCompleted: true,
       completedComparison: {
         status: 'success', ownPoints: 0, completedGameCount: 20,
         averageTotalPoints: 12, strictLowerFinishRate: 0,
@@ -66,7 +64,6 @@ describe('Daily Nine inning scoreboard comparison presentation', () => {
         2: { status: 'loading' },
       },
       totalPoints: 0,
-      gameCompleted: false,
       completedComparison: { status: 'idle' },
     });
 
@@ -91,7 +88,6 @@ describe('Daily Nine inning scoreboard comparison presentation', () => {
         2: { status: 'unavailable' },
       },
       totalPoints: 0,
-      gameCompleted: false,
       completedComparison: { status: 'idle' },
     });
 
@@ -109,12 +105,46 @@ describe('Daily Nine inning scoreboard comparison presentation', () => {
         1: { status: 'success', resolvedAtBatCount: 1, averagePoints: 4 },
       },
       totalPoints: 0,
-      gameCompleted: false,
       completedComparison: { status: 'idle' },
     });
 
     expect(scoreboard.columns[0]?.average.display).toBe('4.0');
     expect(scoreboard.columns[0]?.average.accessibleLabel).toContain('1 other result');
+  });
+
+  it('shows the authoritative TOTAL AVG from one other completed game at AB 1', () => {
+    const scoreboard = createDailyNineInningScoreboardPresentation({
+      pitches,
+      currentPitchNumber: 1,
+      rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+      atBatPoints: {},
+      atBatComparisons: {},
+      totalPoints: 0,
+      completedComparison: {
+        status: 'success', ownPoints: null, completedGameCount: 1,
+        averageTotalPoints: 17.5, strictLowerFinishRate: null,
+      },
+    });
+    expect(scoreboard.totalUser.display).toBe('0');
+    expect(scoreboard.totalAverage.display).toBe('17.5');
+    expect(scoreboard.totalAverage.accessibleLabel).toContain('1 other completed result');
+  });
+
+  it('keeps pregame loading and zero-other comparisons distinct', () => {
+    const input = {
+      pitches, currentPitchNumber: 1,
+      rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+      atBatPoints: {}, atBatComparisons: {}, totalPoints: 0,
+    } as const;
+    expect(createDailyNineInningScoreboardPresentation({
+      ...input, completedComparison: { status: 'loading', ownPoints: null },
+    }).totalAverage.display).toBe('…');
+    expect(createDailyNineInningScoreboardPresentation({
+      ...input, completedComparison: {
+        status: 'success', ownPoints: null, completedGameCount: 0,
+        averageTotalPoints: null, strictLowerFinishRate: null,
+      },
+    }).totalAverage.display).toBe('—');
   });
 
   it('uses only the authoritative completed-game comparison for TOTAL AVG', () => {
@@ -136,7 +166,6 @@ describe('Daily Nine inning scoreboard comparison presentation', () => {
         },
       },
       totalPoints: 4.5,
-      gameCompleted: true,
       completedComparison: {
         status: 'success',
         ownPoints: 4.5,
@@ -158,7 +187,6 @@ describe('Daily Nine inning scoreboard comparison presentation', () => {
       atBatPoints: { 1: 4, 2: 0.5 },
       atBatComparisons: {},
       totalPoints: 4.5,
-      gameCompleted: true,
       completedComparison: { status: 'loading', ownPoints: 4.5 },
     });
 

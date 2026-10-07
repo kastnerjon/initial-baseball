@@ -17,6 +17,10 @@ Use this file to resume work. It records verified current state, settled future 
 
 Do not restart settled discussions because the conversation changed. Correct drift before new implementation.
 
+## TOTAL AVG during play
+
+October 7 owner decision: the Daily Nine scoreboard loads authoritative completed-game TOTAL AVG after saved-state hydration, including before AB 1 resolves, when an exact-puzzle/ruleset other completed result exists. The personal TOTAL remains earned points so far, not a completed-game score. Whole-game BEAT and above/below judgment still wait for final personal points. Keep first-result exclusion, archive isolation, and nonblocking behavior. Scope: `tasks/plans/pregame-total-average.md`.
+
 ## At-bat detail alignment
 
 October 7 owner follow-up after reviewing the centered production UI: restore the hint content/reveal button and terminal comparison metric/status/note rows to their pre-#324 left-aligned presentation. This is a CSS-only reversal; comparison behavior, scoring, player reveal and gameplay remain unchanged. Scope: `tasks/plans/restore-left-at-bat-details.md`. PR #324 and `tasks/plans/center-at-bat-details.md` remain historical evidence of the rejected centered iteration. Local archive history remains separate.

@@ -80,14 +80,27 @@ describe('Daily Nine completed comparison input', () => {
     expect(committed).toEqual(pending);
   });
 
-  it('does not read before completion or for Classic', () => {
+  it('reads completed averages during play using exact identity and first-result exclusion', () => {
     expect(createDailyNineCompletedComparisonInput({
       puzzle,
-      rulesetVersion: POINTS_V3_DAILY_RULESET_VERSION,
-      points: points(49, false),
-      terminalPoints: points(52, false),
-    })).toBeNull();
+      rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+      points: points(8, false, 36),
+      terminalPoints: null,
+      excludedResultId: 'initial-attempt',
+    })).toEqual({
+      key: {
+        kind: 'completed',
+        puzzleId: puzzle.id,
+        puzzleDate: puzzle.puzzleDate,
+        puzzleNumber: puzzle.puzzleNumber,
+        rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+        excludedResultId: 'initial-attempt',
+      },
+      ownPoints: null,
+    });
+  });
 
+  it('does not read for Classic', () => {
     expect(createDailyNineCompletedComparisonInput({
       puzzle,
       rulesetVersion: CLASSIC_DAILY_RULESET_VERSION,

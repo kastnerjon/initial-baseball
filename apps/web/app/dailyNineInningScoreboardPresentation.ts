@@ -25,7 +25,6 @@ type DailyNineInningScoreboardPresentationInput = {
   atBatPoints: DailyScorecardPoints;
   atBatComparisons: DailyNineScorecardComparisons;
   totalPoints: number;
-  gameCompleted: boolean;
   completedComparison: DailyNineCompletedComparisonState;
   comparisonsEnabled?: boolean;
 };
@@ -37,7 +36,6 @@ export function createDailyNineInningScoreboardPresentation({
   atBatPoints,
   atBatComparisons,
   totalPoints,
-  gameCompleted,
   completedComparison,
   comparisonsEnabled = true,
 }: DailyNineInningScoreboardPresentationInput): InningScoreboardProps {
@@ -71,7 +69,6 @@ export function createDailyNineInningScoreboardPresentation({
     totalAverage: createTotalAverageValue(
       comparisonsEnabled,
       comparisonsSupported,
-      gameCompleted,
       completedComparison,
     ),
   };
@@ -112,7 +109,6 @@ function createAtBatAverageValue(
 function createTotalAverageValue(
   comparisonsEnabled: boolean,
   comparisonsSupported: boolean,
-  gameCompleted: boolean,
   state: DailyNineCompletedComparisonState,
 ): InningScoreboardValue {
   if (!comparisonsEnabled) {
@@ -120,9 +116,6 @@ function createTotalAverageValue(
   }
   if (!comparisonsSupported) {
     return createDashValue('Completed-game average is unavailable for this scoring version');
-  }
-  if (!gameCompleted) {
-    return createDashValue('Completed-game average is available after all at-bats are resolved');
   }
   if (state.status === 'idle' || state.status === 'loading') {
     return createLoadingValue('Completed-game average is loading');

@@ -41,6 +41,17 @@ describe('Daily Nine completed comparison presentation', () => {
     });
   });
 
+  it('shows pre-completion average without BEAT or personal above/below', () => {
+    const presentation = createDailyNineCompletedComparisonPresentation({
+      status: 'success', ownPoints: null,
+      completedGameCount: 1, averageTotalPoints: 17.5, strictLowerFinishRate: null,
+    });
+    expect(presentation.average).toBe('17.5');
+    expect(presentation.beat).toBeNull();
+    expect(presentation.averageStatus).toBeNull();
+    expect(presentation.statusLabel).toBeNull();
+  });
+
   it('shows AVG and strict-lower BEAT with one other completed result', () => {
     expect(createDailyNineCompletedComparisonPresentation({
       status: 'success',
