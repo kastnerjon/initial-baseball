@@ -1,6 +1,6 @@
 # Pregame completed-game average
 
-Status: Implementation proposed for bounded PR release.
+Status: Implementation committed; CI, review and release checks pending.
 
 ## Scope contract
 

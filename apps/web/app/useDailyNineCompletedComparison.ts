@@ -16,7 +16,7 @@ import { createDailyNineComparisonRequestController } from './dailyNineCompariso
 
 export type DailyNineCompletedComparisonState =
   | { status: 'idle' }
-  | { status: 'loading'; ownPoints: number }
+  | { status: 'loading'; ownPoints: number | null }
   | {
       status: 'success';
       ownPoints: number | null;
@@ -24,7 +24,7 @@ export type DailyNineCompletedComparisonState =
       averageTotalPoints: number | null;
       strictLowerFinishRate: number | null;
     }
-  | { status: 'unavailable'; ownPoints: number };
+  | { status: 'unavailable'; ownPoints: number | null };
 
 export type DailyNineCompletedComparisonInput = {
   key: DailyNineCompletedComparisonRequestKey;
@@ -53,6 +53,7 @@ export function createDailyNineCompletedComparisonInput({
     : points.completed
       ? points.points
       : null;
+
   return {
     key: {
       kind: 'completed',
@@ -86,8 +87,7 @@ export function useDailyNineCompletedComparison(input: DailyNineCompletedCompari
     if (puzzleId === null
       || puzzleDate === null
       || puzzleNumber === null
-      || rulesetVersion === null
-) {
+      || rulesetVersion === null) {
       controller.invalidate('completed');
       setState({ status: 'idle' });
       return;
