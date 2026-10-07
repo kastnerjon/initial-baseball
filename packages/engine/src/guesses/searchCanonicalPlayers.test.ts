@@ -116,6 +116,28 @@ it('keeps alias-only matches searchable', () => {
   expect(results[0]?.playerId).toBe('david-ortiz');
 });
 
+it.each(['a r', 'o a', ' A   R ', 'o-a', 'O / A', 'a j r', 'á r'])('rejects initials-only query %s across every matching path', (query) => {
+  const candidates = [
+    buildPlayer('alex', 'Alex Rodriguez', 'hitter', '3B', 1994, 2016, 'NYA'),
+    buildPlayer('ozzie', 'Ozzie Albies', 'hitter', '2B', 2017, 2026, 'ATL'),
+    buildPlayer('jo', 'Jo Adell', 'hitter', 'OF', 2020, 2026, 'LAA'),
+    buildPlayer('reed', 'A. J. Reed', 'hitter', '1B', 2016, 2019, 'HOU'),
+    buildPlayer('alias', 'Unrelated Player', 'hitter', 'OF', 2000, 2010, 'TST', ['A R', 'O A']),
+  ];
+  expect(searchCanonicalPlayers(query, candidates)).toEqual([]);
+});
+
+it('preserves name fragments and initial-based names with a meaningful fragment', () => {
+  const candidates = [
+    buildPlayer('alex', 'Alex Rodriguez', 'hitter', '3B', 1994, 2016, 'NYA'),
+    buildPlayer('ozzie', 'Ozzie Albies', 'hitter', '2B', 2017, 2026, 'ATL'),
+    buildPlayer('reed', 'A. J. Reed', 'hitter', '1B', 2016, 2019, 'HOU', ['AJ Reed']),
+  ];
+  for (const [query, id] of [['a ro', 'alex'], ['o al', 'ozzie'], ['rodriguez', 'alex'], ['a. j. re', 'reed'], ['AJ Reed', 'reed']] as const) {
+    expect(searchCanonicalPlayers(query, candidates)[0]?.playerId).toBe(id);
+  }
+});
+
 it('uses the complete candidate universe when the other duplicate falls outside the result limit', () => {
   const candidates = [
     ...Array.from({ length: 9 }, (_, index) => buildPlayer(
