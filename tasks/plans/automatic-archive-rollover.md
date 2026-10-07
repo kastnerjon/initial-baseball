@@ -1,6 +1,6 @@
 # Automatic archive-beta rollover
 
-Status: App #313 merged after review/CI/READY Preview; production checks and separate scheduler activation next
+Status: App #313 and scheduler #314 deployed; automatic operation and immutable recovery verified
 Last updated: 2026-10-07
 
 ## Scope contract
@@ -14,21 +14,21 @@ Last updated: 2026-10-07
 
 ## Architecture decision
 
-The owner authorized automatic daily rollover on October 7. The intended private Supabase scheduler invokes the existing machine-authenticated app transport at 07:00 and 08:00 UTC, covering Pacific midnight across DST and providing a second pass. Scheduler infrastructure is a separate bounded PR after the app endpoint passes deployment gates. This PR adds no scheduler or Vercel secret. Every invocation scans completed dates from the disposable October 4 epoch, so a missed day is recovered on a later run. Current/future scheduled records stay editable. Past scheduled content is published through the existing optimistic-revision lifecycle, then copied via existing append-only issuance/read-back. It remains published rather than editorial-archived so delayed original-Daily result writes and signed sessions retain their authoritative source. Archive public visibility changes to strictly before today's Pacific date.
+The owner authorized automatic daily rollover on October 7. The deployed private Supabase scheduler invokes the existing machine-authenticated app transport at 07:00 and 08:00 UTC, covering Pacific midnight across DST and providing a second pass. Scheduler infrastructure was delivered in separate bounded PR #314 after the app endpoint passed deployment gates. The app PR added no scheduler or Vercel secret. Every invocation scans completed dates from the disposable October 4 epoch, so a missed day is recovered on a later run. Current/future scheduled records stay editable. Past scheduled content is published through the existing optimistic-revision lifecycle, then copied via existing append-only issuance/read-back. It remains published rather than editorial-archived so delayed original-Daily result writes and signed sessions retain their authoritative source. Archive public visibility changes to strictly before today's Pacific date.
 
 Existing issued rows are read and retained without re-materializing clues, including October 4. Missing/draft historical source is an explicit failure, never a regenerated historical claim. Per-date failures are sanitized and other dates continue. Neither public catalog nor gameplay performs writes. No permanent rows or result populations are altered.
 
-## Verified baseline / activation gate
+## Baseline before implementation
 
-Main 0ceff25877104cd1336093261f2a5454b7d88962 (#312), no open PRs. Latest production is READY. Read-only Supabase: one October 4 beta row; October 5/6 remain scheduled, October 6 revision 10 reflects the corrected edition. Vercel env metadata GET and CRON_SECRET POST both returned explicit 403 forbidden; no CLI executable is available. Vercel secret configuration is no longer needed: the endpoint reuses existing DAILY_CHATOPS_TOKEN authorization and the corresponding Vault-backed private transport. Basic administrator recovery remains supported with the same-origin check. Scheduler activation cannot be claimed until the separate migration and hosted dispatch are verified.
+Main 0ceff25877104cd1336093261f2a5454b7d88962 (#312), no open PRs. Latest production is READY. Read-only Supabase: one October 4 beta row; October 5/6 remain scheduled, October 6 revision 10 reflects the corrected edition. Vercel env metadata GET and CRON_SECRET POST both returned explicit 403 forbidden; no CLI executable is available. Vercel secret configuration is no longer needed: the endpoint reuses existing DAILY_CHATOPS_TOKEN authorization and the corresponding Vault-backed private transport. Basic administrator recovery remains supported with the same-origin check. The separate migration and hosted dispatch were required before activation could be claimed; their completed evidence is below.
 
-## Local verification
+## Initial-head local verification
 
-27 focused rollover/authorization/runtime tests passed; full workspace test run passed, including all 749 web tests across 106 files. Workspace typecheck/lint, file-size and whitespace checks passed. Strict baseball-data generation completed with zero critical issues; the production web build and hidden-answer QA passed (2 payloads, 34 client chunks). Generated pitcher-save and Next configuration side effects are excluded from the PR. Exact-head CI/READY Preview, one bounded hosted review and production checks remain required. No hosted issuance has been performed.
+27 focused rollover/authorization/runtime tests passed; full workspace test run passed, including all 749 web tests across 106 files. Workspace typecheck/lint, file-size and whitespace checks passed. Strict baseball-data generation completed with zero critical issues; the production web build and hidden-answer QA passed (2 payloads, 34 client chunks). Generated pitcher-save and Next configuration side effects are excluded from the PR. At this initial local checkpoint, exact-head CI/READY Preview, one bounded hosted review and production checks were still required; no hosted issuance had been performed.
 
 ## Bounded review fix
 
-The one hosted review on 6e5960c found that one full issued-puzzle read per historical day could exhaust the rollover window. Replaced it with ordered metadata-only pages of 500 identities; existing copies require no snapshot reads or clue materialization. Added a 501-row/two-request regression plus identity/error checks. This remains the same app concern and adds no schema/read contract or infrastructure. Final-head CI/Preview must rerun on the fixed tree; no second full review is requested.
+The one hosted review on 6e5960c found that one full issued-puzzle read per historical day could exhaust the rollover window. Replaced it with ordered metadata-only pages of 500 identities; existing copies require no snapshot reads or clue materialization. Added a 501-row/two-request regression plus identity/error checks. This remains the same app concern and adds no schema/read contract or infrastructure. Final-head CI/Preview reran on the fixed tree; no second full review is requested.
 
 Final fix verification: 29 focused tests and all 751 web tests across 107 files passed. Web typecheck, file-size/whitespace and the refreshed production build/hidden-answer check passed. The 501-row regression uses two metadata reads and excludes canonical IDs/clue snapshots.
 
@@ -36,4 +36,8 @@ Final fix verification: 29 focused tests and all 751 web tests across 107 files 
 
 #313 merged as cffe400cc797e8bba4c883d9db7876d1f73aebcf. Final head 50eb4c8cd187cc47f6bc1fb7a458e03207ca4511 passed CI #1061 attempt 2 and exact READY Preview dpl_aPyeVptCeyg2PjD2y5sS91bC5uTE; its one review thread is resolved. Attempt 1 encountered existing #301 baseball-data timeout; identical code passed on retry. No checks were weakened. Scheduler is separately scoped in `tasks/plans/daily-archive-scheduler.md`.
 
-Exact production dpl_G5HmQX4ZTivnm65jrNrYfxaAcYd9 is READY/canonical on the app merge. Expected public 200/404 routes and scoped error/fatal scan passed. Push CI #1062 is finishing; hosted archive rows remain unchanged before scheduler activation.
+Exact production dpl_G5HmQX4ZTivnm65jrNrYfxaAcYd9 is READY/canonical on the app merge. Expected public 200/404 routes and scoped error/fatal scan passed. Push CI #1062 passed; hosted archive rows remain unchanged before scheduler activation.
+
+## Completed operation
+
+App push CI #1062 passed. Separate scheduler #314 merged/applied and passed review, exact-head CI/READY Preview, push CI #1064 and production checks. Active private cron covers Pacific midnight. Requests 88/89 created Oct 5/6 then preserved all three copies; exact ordered players/frozen clues, original Oct 4 timestamp/fingerprint, source publication audit, today/future/permanent exclusions and original Daily result identity were verified. No hosted game results were submitted. Full release/activation evidence: `tasks/plans/daily-archive-scheduler.md`; monitoring/recovery: `docs/operations/daily-archive-rollover.md`. The future actual midnight run is not claimed as observed.

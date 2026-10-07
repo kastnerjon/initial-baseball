@@ -6,7 +6,6 @@ Last updated: 2026-10-07
 
 ## Immediate next work
 
-- [ ] Finish automatic archive scheduler review/exact-head gates, apply the private pg_cron transport, recover October 5/6 through the app and verify immutability/current-day exclusion; reconcile the activation checkpoint before resuming archive comparison browser work. App #313 is merged; scheduler/backfill are not yet verified. Scope: `tasks/plans/daily-archive-scheduler.md`.
 
 - [ ] Verify the #311 initials-only autocomplete guard on physical phone/tablet: `a r` / `o a` yield no suggestions, while real name fragments remain selectable. Production API and refreshed cloud-browser checks passed; physical-device interaction QA remains open.
 
@@ -267,7 +266,6 @@ Hosted architecture/storage/comparison/editorial verification is sufficient to r
 - [ ] Prelaunch archive physical/mobile QA and reset isolation across two issued archive puzzles remain open; only one archive puzzle exists. Cloud browser checks do not establish physical-device interaction or authenticated admin QA (#294).
 - [x] Archive-beta at-bat/completed result delivery is merged and its production deployment verified (#300): exact puzzle + current points-v4 identity, CI #1034 attempt 3, push CI #1035, READY/canonical production and read-only route/log/database checks. Evidence: `tasks/plans/archive-beta-result-delivery.md`.
 - [x] Implement and production-verify authoritative archive comparison GET routing (#303): exact-head CI #1039, clean review/READY Preview, push CI #1040 and exact production route/population/log/Supabase checks passed. Optional explicit puzzleId binds issued-puzzle ID/date and beta points-v4; date-only current Daily remains compatible. Evidence: `tasks/plans/archive-beta-comparison-reads.md`.
-- [ ] Owner-prioritized automatic completed-day archive rollover: app service/recovery endpoint and strict past-date visibility first; separate private Supabase scheduler/hosted recovery activation next. Preserve exact frozen clues, completed Daily source authority and permanent-series separation. Scope: `tasks/plans/automatic-archive-rollover.md`.
 - [ ] Activate archive browser comparison transport/UI in the next separate PR; local archive history follows its explicit replay-policy decision.
 - [ ] Verify a fresh native archive game's hosted at-bat/completed delivery before broad launch; this release check used GETs/read-only queries and created no hosted archive results.
 - [x] Repair canonical hitter OBP/OPS enrichment so pre-1954 sacrifice-fly blanks follow the historical formula and career rates derive from supported aggregate counts. Scope: `tasks/plans/canonical-historical-on-base-rate-aggregation.md`.

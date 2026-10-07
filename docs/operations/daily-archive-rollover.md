@@ -1,6 +1,6 @@
 # Automatic daily archive rollover
 
-Status: scheduler migration prepared; activation unverified
+Status: operational; transport, catch-up and immutable retry verified October 7
 Last updated: 2026-10-07
 
 ## Operation
@@ -25,3 +25,9 @@ The pg_net response store is transient; record important response/readback evide
 ## Pause
 
 To pause only this operation, unschedule the named `daily-archive-rollover` job through an authorized operational change. Keep the private transport and issued copies; do not drop pg_cron/pg_net or disturb other jobs. After repair, reinstall the named schedule and dispatch recovery to catch up completed dates. Permanent launch, browser archive AVG/BEAT and local history are separate work.
+
+## October 7 activation evidence
+
+App #313 and scheduler #314 are merged; scheduler merge d8490a9647dc35d3919ddff12ee4f5d8c83381ea passed push CI #1064 and exact READY/canonical production dpl_9d89F4rUJTW2MYmY1xvU3mdnGW6v. The hosted migration is applied; active job 1 has the exact named schedule/command, postgres ownership and GMT timezone. Private transport security/search_path and denied browser-role schema/function access passed; advisor findings match the pre-migration baseline.
+
+Request 88 returned HTTP 200 with created 2/preserved 1/no failures or remaining; request 89 returned 200 with created 0/preserved 3. October 5/#2 and corrected October 6/#3 have exact editorial/clue order, nine IDs/clues and published revisions 10/11. All issue timestamps/snapshots and publication audit remained stable on retry. October 4's original first timestamp/fingerprint is unchanged. Today is untouched; permanent and today/future beta rows remain zero. Catalog #1–#3 and playable #2/#3 returned 200; today's #4 returned 404. Original October 6 Daily comparison reads remained unchanged and separate from archive #3. No hosted game result was written for QA. Actual next-midnight cron execution is a future observation; scheduling and the authenticated dispatched operation are verified.
