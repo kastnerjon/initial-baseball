@@ -33,6 +33,7 @@ type DailyNineComparisonBaseRequest = {
   puzzleId?: string | null;
   puzzleDate: string | null;
   rulesetVersion: string | null;
+  excludedResultId?: string | null;
 };
 
 export type DailyNineAtBatComparisonReadRequest = DailyNineComparisonBaseRequest & {
@@ -69,7 +70,7 @@ export function createDailyNineComparisonReadService({
     async readAtBat(
       request: DailyNineAtBatComparisonReadRequest,
     ): Promise<DailyNineAtBatComparisonApiResponse> {
-      const { puzzleId, puzzleDate, rulesetVersion } = requireBaseRequest(
+      const { puzzleId, puzzleDate, rulesetVersion, excludedResultId } = requireBaseRequest(
         request,
         getCurrentDailyDate(),
       );
@@ -82,6 +83,7 @@ export function createDailyNineComparisonReadService({
         puzzleNumber: puzzle.puzzleNumber,
         rulesetVersion,
         pitchNumber,
+        ...(excludedResultId === undefined ? {} : { excludedResultId }),
       });
 
       return {
@@ -98,7 +100,7 @@ export function createDailyNineComparisonReadService({
     async readCompleted(
       request: DailyNineCompletedComparisonReadRequest,
     ): Promise<DailyNineCompletedComparisonApiResponse> {
-      const { puzzleId, puzzleDate, rulesetVersion } = requireBaseRequest(
+      const { puzzleId, puzzleDate, rulesetVersion, excludedResultId } = requireBaseRequest(
         request,
         getCurrentDailyDate(),
       );
@@ -109,6 +111,7 @@ export function createDailyNineComparisonReadService({
         puzzleDate: puzzle.puzzleDate,
         puzzleNumber: puzzle.puzzleNumber,
         rulesetVersion,
+        ...(excludedResultId === undefined ? {} : { excludedResultId }),
       });
 
       return {
@@ -131,6 +134,7 @@ function requireBaseRequest(
   puzzleId: string | undefined;
   puzzleDate: string;
   rulesetVersion: DailyNineComparisonApiRulesetVersion;
+  excludedResultId: string | undefined;
 } {
   if (request.rulesetVersion === null || request.rulesetVersion.trim() === '') {
     invalidRequest('ruleset is required.');
@@ -154,6 +158,7 @@ function requireBaseRequest(
     );
   }
 
+  const excludedResultId = requireExcludedResultId(request.excludedResultId);
   const puzzleDate = readCalendarDate(request.puzzleDate);
   if (puzzleDate === null) invalidRequest('date must be a calendar date.');
   if (puzzleDate > currentDailyDate) {
@@ -162,7 +167,20 @@ function requireBaseRequest(
       'Future Daily comparison is unavailable.',
     );
   }
-  return { puzzleId, puzzleDate, rulesetVersion: request.rulesetVersion };
+  return {
+    puzzleId,
+    puzzleDate,
+    rulesetVersion: request.rulesetVersion,
+    excludedResultId,
+  };
+}
+
+function requireExcludedResultId(value: string | null | undefined): string | undefined {
+  if (value === null || value === undefined) return undefined;
+  if (!/^[A-Za-z0-9_-]{1,128}$/.test(value)) {
+    invalidRequest('excludeResultId must be a valid anonymous result identity.');
+  }
+  return value;
 }
 
 function requirePitchNumber(value: string | null): number {

@@ -116,7 +116,8 @@ function sameKey(
     || a.puzzleId !== b.puzzleId
     || a.puzzleDate !== b.puzzleDate
     || a.puzzleNumber !== b.puzzleNumber
-    || a.rulesetVersion !== b.rulesetVersion) return false;
+    || a.rulesetVersion !== b.rulesetVersion
+    || a.excludedResultId !== b.excludedResultId) return false;
 
   return a.kind === 'completed'
     || (b.kind === 'at-bat' && a.pitchNumber === b.pitchNumber);

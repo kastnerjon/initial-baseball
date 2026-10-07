@@ -104,5 +104,6 @@ function sameKey(
     && a.puzzleDate === b.puzzleDate
     && a.puzzleNumber === b.puzzleNumber
     && a.rulesetVersion === b.rulesetVersion
+    && a.excludedResultId === b.excludedResultId
     && a.pitchNumber === b.pitchNumber;
 }

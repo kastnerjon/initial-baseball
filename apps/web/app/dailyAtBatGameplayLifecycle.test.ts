@@ -169,6 +169,7 @@ describe('Daily at-bat gameplay lifecycle', () => {
     expect(lifecycle.resetContribution(fresh)).toMatchObject({
       status: 'active', generation: 1, allowCompletedResultCreate: true,
     });
+    expect(lifecycle.readDurableAttemptId()).toBe('attempt-one');
 
     lifecycle.journal.appendObservation({
       identity: IDENTITY, generation: 1, atBat: completedAtBat(1),
@@ -179,6 +180,7 @@ describe('Daily at-bat gameplay lifecycle', () => {
     expect(lifecycle.journal.read(IDENTITY)).toMatchObject({
       kind: 'valid', journal: { contributionState: 'retired' },
     });
+    expect(lifecycle.readDurableAttemptId()).toBe('attempt-one');
   });
 
   it('fails contribution closed after terminal delivery failure', () => {

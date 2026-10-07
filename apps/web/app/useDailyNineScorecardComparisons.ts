@@ -34,6 +34,7 @@ type UseDailyNineScorecardComparisonsInput = {
   rulesetVersion: DailyRulesetVersion;
   requestedPitchNumbers: number[];
   completedPitchNumbers: number[];
+  excludedResultId: string | null;
 };
 
 const EMPTY_COMPARISONS: DailyNineScorecardComparisons = {};
@@ -46,10 +47,11 @@ export function useDailyNineScorecardComparisons({
   rulesetVersion,
   requestedPitchNumbers,
   completedPitchNumbers,
+  excludedResultId,
 }: UseDailyNineScorecardComparisonsInput) {
   const [client] = useState(createBrowserDailyNineComparisonClient);
   const [controller] = useState(createDailyNineScorecardComparisonRequestController);
-  const identityKey = createIdentityKey(puzzle, rulesetVersion);
+  const identityKey = createIdentityKey(puzzle, rulesetVersion, excludedResultId);
   const normalizedRequestedPitchNumbers = normalizePitchNumbers(requestedPitchNumbers);
   const normalizedCompletedPitchNumbers = normalizePitchNumbers(completedPitchNumbers);
   const requestedPitchSignature = normalizedRequestedPitchNumbers.join(',');
@@ -148,6 +150,7 @@ export function useDailyNineScorecardComparisons({
         puzzleNumber: puzzle.puzzleNumber,
         rulesetVersion,
         pitchNumber,
+        ...(excludedResultId === null ? {} : { excludedResultId }),
       };
 
       void controller.request(key, {
@@ -215,6 +218,7 @@ export function useDailyNineScorecardComparisons({
     client,
     controller,
     enabled,
+    excludedResultId,
     identityKey,
     completedPitchSignature,
     puzzle.id,
@@ -309,11 +313,13 @@ function clearRetryRuntime(
 function createIdentityKey(
   puzzle: Pick<DailyPublicPuzzle, 'id' | 'puzzleDate' | 'puzzleNumber'>,
   rulesetVersion: DailyRulesetVersion,
+  excludedResultId: string | null,
 ): string {
   return [
     puzzle.id,
     puzzle.puzzleDate,
     String(puzzle.puzzleNumber),
     rulesetVersion,
+    excludedResultId ?? '',
   ].join('|');
 }

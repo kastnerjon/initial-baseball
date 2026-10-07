@@ -71,6 +71,72 @@ describe('Daily Nine comparison read service', () => {
     expect(comparison.getCompletedGames).not.toHaveBeenCalled();
   });
 
+  it('validates and forwards one anonymous exclusion identity to both provider reads', async () => {
+    const comparison = comparisonService();
+    comparison.getAtBat = vi.fn().mockResolvedValue({
+      puzzleId: PUZZLE.id,
+      puzzleDate: PUZZLE.puzzleDate,
+      puzzleNumber: PUZZLE.puzzleNumber,
+      rulesetVersion: POINTS_V3_DAILY_RULESET_VERSION,
+      excludedResultId: 'attempt-one',
+      pitchNumber: 4,
+      resolvedAtBatCount: 2,
+      averagePoints: 3,
+    });
+    comparison.getCompletedGames = vi.fn().mockResolvedValue({
+      puzzleId: PUZZLE.id,
+      puzzleDate: PUZZLE.puzzleDate,
+      puzzleNumber: PUZZLE.puzzleNumber,
+      rulesetVersion: POINTS_V3_DAILY_RULESET_VERSION,
+      excludedResultId: 'attempt-one',
+      completedGameCount: 1,
+      averageTotalPoints: 30,
+      scoreHistogram: Array.from({ length: 64 }, (_, points) => points === 30 ? 1 : 0),
+    });
+    const service = createService({ comparison });
+
+    await expect(service.readAtBat({
+      puzzleDate: '2026-09-19',
+      rulesetVersion: 'points-v3',
+      pitchNumber: '4',
+      excludedResultId: 'attempt-one',
+    })).resolves.toMatchObject({
+      comparison: { excludedResultId: 'attempt-one' },
+    });
+    await expect(service.readCompleted({
+      puzzleDate: '2026-09-19',
+      rulesetVersion: 'points-v3',
+      excludedResultId: 'attempt-one',
+    })).resolves.toMatchObject({
+      comparison: { excludedResultId: 'attempt-one' },
+    });
+
+    expect(comparison.getAtBat).toHaveBeenCalledWith(expect.objectContaining({
+      excludedResultId: 'attempt-one',
+    }));
+    expect(comparison.getCompletedGames).toHaveBeenCalledWith(expect.objectContaining({
+      excludedResultId: 'attempt-one',
+    }));
+  });
+
+  it.each(['', 'space value', 'attempt.one', 'x'.repeat(129)])(
+    'rejects malformed exclusion identity %j before authoritative/provider reads',
+    async (excludedResultId) => {
+      const comparison = comparisonService();
+      const loadAuthoritativePuzzle = vi.fn().mockResolvedValue(PUZZLE);
+      const service = createService({ comparison, loadAuthoritativePuzzle });
+
+      await expect(service.readAtBat({
+        puzzleDate: '2026-09-19',
+        rulesetVersion: 'points-v3',
+        pitchNumber: '1',
+        excludedResultId,
+      })).rejects.toMatchObject({ code: 'invalid_request' });
+      expect(loadAuthoritativePuzzle).not.toHaveBeenCalled();
+      expect(comparison.getAtBat).not.toHaveBeenCalled();
+    },
+  );
+
   it('routes exact points-v4 identity through at-bat and completed reads', async () => {
     const comparison = comparisonService();
     comparison.getAtBat = vi.fn().mockResolvedValue({

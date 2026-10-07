@@ -43,6 +43,42 @@ describe('Daily Nine browser comparison client', () => {
     );
   });
 
+  it('carries and verifies an anonymous exclusion identity on both read paths', async () => {
+    const signal = new AbortController().signal;
+    const excludedResultId = 'attempt-one_123';
+    const atBatKey = { ...AT_BAT_KEY, excludedResultId };
+    const atBat = atBatPayload({ excludedResultId });
+    const completedKey = { ...COMPLETED_KEY, excludedResultId };
+    const completed = completedPayload({ excludedResultId });
+    const request = vi.fn()
+      .mockResolvedValueOnce(response(200, atBat))
+      .mockResolvedValueOnce(response(200, completed));
+    const client = createDailyNineComparisonClient({ request });
+
+    await expect(client.readAtBat(atBatKey, signal)).resolves.toEqual(atBat);
+    await expect(client.readCompleted(completedKey, signal)).resolves.toEqual(completed);
+    expect(request).toHaveBeenNthCalledWith(
+      1,
+      '/api/daily/comparison/at-bat?date=2026-09-19&ruleset=points-v3&pitch=3&excludeResultId=attempt-one_123',
+      { method: 'GET', cache: 'no-store', signal },
+    );
+    expect(request).toHaveBeenNthCalledWith(
+      2,
+      '/api/daily/comparison/completed?date=2026-09-19&ruleset=points-v3&excludeResultId=attempt-one_123',
+      { method: 'GET', cache: 'no-store', signal },
+    );
+  });
+
+  it('rejects a filtered response that does not echo the requested exclusion identity', async () => {
+    const request = vi.fn().mockResolvedValue(response(200, atBatPayload()));
+    const client = createDailyNineComparisonClient({ request });
+
+    await expect(client.readAtBat(
+      { ...AT_BAT_KEY, excludedResultId: 'attempt-one' },
+      new AbortController().signal,
+    )).rejects.toMatchObject({ kind: 'identity_mismatch' });
+  });
+
   it('reads and validates exact points-v4 fractional comparison payloads', async () => {
     const signal = new AbortController().signal;
     const key: DailyNineAtBatComparisonRequestKey = {
@@ -214,7 +250,13 @@ function atBatPayload(
   };
 }
 
-function completedPayload() {
+function completedPayload(
+  comparisonOverrides: Partial<ReturnType<typeof baseComparison> & {
+    completedGameCount: number;
+    averageTotalPoints: number | null;
+    scoreHistogram: number[];
+  }> = {},
+) {
   return {
     schemaVersion: DAILY_NINE_COMPARISON_API_SCHEMA_VERSION,
     kind: 'completed' as const,
@@ -224,6 +266,7 @@ function completedPayload() {
       averageTotalPoints: 28.5,
       scoreHistogram: Array.from({ length: 64 }, (_, points) =>
         points === 21 || points === 36 ? 1 : 0),
+      ...comparisonOverrides,
     },
     freshness: {
       sourceReadAt: '2026-09-20T01:00:00.000Z',

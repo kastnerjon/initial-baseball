@@ -49,6 +49,11 @@ export function createDailyAtBatGameplayLifecycle({
   return {
     journal,
 
+    readDurableAttemptId(): string | null {
+      const current = journal.read(identity);
+      return current.kind === 'valid' ? current.journal.attemptId : null;
+    },
+
     prepareOwnerWithoutContribution(input: {
       loaded: LoadedSavedDailyGame | null;
       totalAtBats: number;

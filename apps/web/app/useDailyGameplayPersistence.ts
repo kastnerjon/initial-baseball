@@ -61,6 +61,10 @@ export function useDailyGameplayPersistence({
   const [access, setAccess] = useState<DailyGameplayAccess>('checking');
   const [readySessionKey, setReadySessionKey] = useState<string | null>(null);
   const [contribution, setContribution] = useState<DailyAtBatContributionSession | null>(null);
+  const [comparisonExclusion, setComparisonExclusion] = useState<{
+    sessionKey: string;
+    resultId: string | null;
+  } | null>(null);
   const restoreRef = useRef(onRestore);
   const persistenceSessionInvalidatedRef = useRef(onPersistenceSessionInvalidated);
   const completedResultRef = useRef(submitCompletedResultCreationIfEligible);
@@ -86,6 +90,7 @@ export function useDailyGameplayPersistence({
     );
 
     if (contributionRulesetVersion === null) {
+      setComparisonExclusion({ sessionKey: ownedSessionKey, resultId: null });
       restoreCompatibility(initialLoaded);
       persistenceSession.markReady(ownedSessionKey);
       persistenceSession.setAccess('compatibility');
@@ -124,6 +129,10 @@ export function useDailyGameplayPersistence({
             });
         if (cancelled || !persistenceSession.isActiveSession(ownedSessionKey)) return;
         persistenceSession.setContribution(next);
+        setComparisonExclusion({
+          sessionKey: ownedSessionKey,
+          resultId: lifecycle.readDurableAttemptId(),
+        });
         restoreRef.current(loaded);
         persistenceSession.markReady(ownedSessionKey);
       },
@@ -163,6 +172,10 @@ export function useDailyGameplayPersistence({
       } else {
         persistenceSession.replaceDeliverySession(null);
         persistenceSession.clearContribution();
+        setComparisonExclusion({
+          sessionKey: ownedSessionKey,
+          resultId: lifecycle.readDurableAttemptId(),
+        });
         restoreCompatibility(loadCompatible(
           puzzle,
           rulesetVersion,
@@ -280,9 +293,14 @@ export function useDailyGameplayPersistence({
   }
 
   const currentSession = persistenceSession.isActiveSession(sessionKey);
+  const comparisonExcludedResultId = currentSession
+    && comparisonExclusion?.sessionKey === sessionKey
+    ? comparisonExclusion.resultId
+    : null;
   return {
     access: currentSession ? access : 'checking',
     contribution: currentSession ? contribution : null,
+    comparisonExcludedResultId,
     resetPersistedState,
   };
 }
