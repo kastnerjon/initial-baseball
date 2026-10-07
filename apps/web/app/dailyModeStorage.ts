@@ -50,27 +50,31 @@ export function getDailyModeStorage(
   }
   const archive = isArchiveDailyPuzzleId(puzzleId);
   if (!archive && usesHistoricalCurrentDailyKey(rulesetVersion)) return storage;
-  const puzzleScopedCurrent = !archive
+  const puzzleScopedCurrentId = !archive
     && rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION
-    && puzzleId !== undefined;
+    && puzzleId !== undefined
+    ? puzzleId
+    : null;
 
   return {
     getItem(key) {
       const translatedKey = translateKey(key);
       const value = storage.getItem(translatedKey);
-      if (value !== null || !puzzleScopedCurrent || !isDailyGameplayKey(key)) return value;
+      if (value !== null || puzzleScopedCurrentId === null || !isDailyGameplayKey(key)) {
+        return value;
+      }
 
       const legacyValue = storage.getItem(legacyVersionedKey(key));
-      return savedValueMatchesPuzzleId(legacyValue, puzzleId) ? legacyValue : null;
+      return savedValueMatchesPuzzleId(legacyValue, puzzleScopedCurrentId) ? legacyValue : null;
     },
     setItem: (key, value) => storage.setItem(translateKey(key), value),
     removeItem(key) {
       storage.removeItem(translateKey(key));
-      if (!puzzleScopedCurrent || !isDailyGameplayKey(key)) return;
+      if (puzzleScopedCurrentId === null || !isDailyGameplayKey(key)) return;
 
       const fallbackKey = legacyVersionedKey(key);
       const fallbackValue = storage.getItem(fallbackKey);
-      if (savedValueMatchesPuzzleId(fallbackValue, puzzleId)) {
+      if (savedValueMatchesPuzzleId(fallbackValue, puzzleScopedCurrentId)) {
         storage.removeItem(fallbackKey);
       }
     },
