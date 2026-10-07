@@ -70,7 +70,7 @@ describe('Daily Nine inning scoreboard comparison presentation', () => {
     expect(scoreboard.columns[0]?.user.display).toBe('—');
     expect(scoreboard.columns[0]?.average.display).toBe('2.3');
     expect(scoreboard.columns[1]?.average.display).toBe('…');
-    expect(scoreboard.totalAverage.display).toBe('—');
+    expect(scoreboard.totalAverage.display).toBe('…');
   });
 
   it('keeps dash presentation for genuinely unavailable or empty AVGs', () => {
