@@ -8,6 +8,7 @@ import {
   deriveDailyNineAtBatComparison,
   deriveDailyNineCompletedComparison,
   getDailyNineStrictLowerFinishRate,
+  getDailyNineStrictLowerAtBatRate,
   type DailyNineComparisonRepository,
 } from './dailyNineComparison';
 
@@ -291,5 +292,42 @@ describe('Daily Nine comparison service', () => {
       completedGameCount: 0,
       scoreHistogram: [],
     }, 20)).toThrow('invalid length');
+  });
+});
+
+
+describe('AB strict-lower distribution', () => {
+  it('counts ties in the denominator with exact half points', () => {
+    const comparison = deriveDailyNineAtBatComparison({ ...V4_KEY, pitchNumber: 1 }, {
+      resolvedAtBatCount: 3, awardedPointsSum: 5,
+      scoreBuckets: [{ points: 0.5, count: 2 }, { points: 4, count: 1 }],
+    });
+    expect(comparison.scoreHistogram).toHaveLength(9);
+    expect(getDailyNineStrictLowerAtBatRate(comparison, 0.5)).toBe(0);
+    expect(getDailyNineStrictLowerAtBatRate(comparison, 1)).toBe(2 / 3);
+    expect(getDailyNineStrictLowerAtBatRate(comparison, 4)).toBe(2 / 3);
+    expect(() => getDailyNineStrictLowerAtBatRate(comparison, 4.5)).toThrow();
+  });
+  it('supports one other result, an empty population, and legacy count/sum', () => {
+    for (const count of [0, 1]) {
+      const comparison = deriveDailyNineAtBatComparison({ ...V4_KEY, pitchNumber: 9 }, {
+        resolvedAtBatCount: count, awardedPointsSum: 0,
+        scoreBuckets: count === 0 ? [] : [{ points: 0, count }],
+      });
+      expect(getDailyNineStrictLowerAtBatRate(comparison, 4)).toBe(count === 0 ? null : 1);
+    }
+    expect(getDailyNineStrictLowerAtBatRate(deriveDailyNineAtBatComparison(
+      { ...V4_KEY, pitchNumber: 1 }, { resolvedAtBatCount: 1, awardedPointsSum: 0 },
+    ), 4)).toBeNull();
+  });
+  it('rejects buckets outside one-slot ranges and count/sum disagreements', () => {
+    for (const scoreBuckets of [
+      [{ points: 4.5, count: 1 }], [{ points: 0.25, count: 1 }],
+      [{ points: 0, count: 2 }], [{ points: 1, count: 1 }],
+    ]) {
+      expect(() => deriveDailyNineAtBatComparison({ ...V4_KEY, pitchNumber: 1 }, {
+        resolvedAtBatCount: 1, awardedPointsSum: 0, scoreBuckets,
+      })).toThrow();
+    }
   });
 });

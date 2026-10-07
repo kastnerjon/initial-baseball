@@ -21,6 +21,7 @@ export type DailyNineComparisonApiKey = {
   puzzleDate: string;
   puzzleNumber: number;
   rulesetVersion: DailyNineComparisonApiRulesetVersion;
+  excludedResultId?: string;
 };
 
 export function isDailyNineComparisonApiRulesetVersion(
@@ -37,6 +38,8 @@ export type DailyNineAtBatComparisonApiResponse = {
     pitchNumber: number;
     resolvedAtBatCount: number;
     averagePoints: number | null;
+    /** One-slot offset histogram; absent only during older-provider rollout. */
+    scoreHistogram?: number[];
   };
   freshness: DailyNineComparisonApiFreshness;
 };

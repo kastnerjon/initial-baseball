@@ -379,3 +379,7 @@ The routine conversational future-lineup workflow itself is no longer a blocker 
 ## Continuity control
 
 Repository docs are the system of record. Every PR has Documentation impact; CI checks material diffs; hosted work is incomplete until START-HERE/todo are reconciled. The documentation-impact check is not yet mandatory branch protection; issue #123 remains open after the owner declined an uncertain ruleset configuration.
+
+### Active: AB BEAT and small samples
+
+The owner approved per-AB and final BEAT with one other result and colors based on beating AVG (strictly higher green, equal/lower red). Portable distribution contract is the first stage; filtered provider reads, browser first-result exclusion and UI follow separately. Scope/status: `tasks/plans/ab-beat-and-small-samples.md`. Production thresholds remain unchanged until final activation.
