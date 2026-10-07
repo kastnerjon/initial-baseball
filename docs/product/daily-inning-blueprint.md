@@ -193,4 +193,4 @@ Implementation and canonical docs change together. Approved future behavior must
 
 ## At-bat detail alignment
 
-The hint content and reveal button are centered below the initials, both before and after clues appear. The Hints/count header retains its existing alignment; revealed label/value blocks keep multiline text left-aligned. Terminal YOU/AVG, BEAT/status and sample note are centered beneath the outcome. Player reveal and guess/action layout retain their existing alignment. This is CSS presentation only; scoring, comparison semantics and gameplay remain unchanged. Scope: `tasks/plans/center-at-bat-details.md`.
+Hint content, the Reveal Next Hint button, and terminal YOU/AVG plus BEAT/status/sample-note rows use the established left-aligned presentation. The Hints/count header, player reveal and guess/action layout retain their existing alignment. This is CSS presentation only; scoring, comparison semantics and gameplay remain unchanged. The October 7 centered iteration in PR #324 was rejected after production review and reversed. Scope: `tasks/plans/restore-left-at-bat-details.md`.
