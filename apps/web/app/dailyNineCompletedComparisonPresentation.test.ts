@@ -9,6 +9,8 @@ describe('Daily Nine completed comparison presentation', () => {
     })).toEqual({
       average: '—',
       beat: null,
+      averageStatus: null,
+      statusLabel: null,
       note: 'Loading comparison…',
     });
     expect(createDailyNineCompletedComparisonPresentation({
@@ -17,25 +19,61 @@ describe('Daily Nine completed comparison presentation', () => {
     })).toEqual({
       average: '—',
       beat: null,
+      averageStatus: null,
+      statusLabel: null,
       note: 'Comparison unavailable',
     });
   });
 
-  it('withholds a 0–1 sample completed-game average', () => {
+  it('withholds only an empty other-result population', () => {
+    expect(createDailyNineCompletedComparisonPresentation({
+      status: 'success',
+      ownPoints: 41,
+      completedGameCount: 0,
+      averageTotalPoints: null,
+      strictLowerFinishRate: null,
+    })).toEqual({
+      average: '—',
+      beat: null,
+      averageStatus: null,
+      statusLabel: null,
+      note: 'Waiting for another completed result',
+    });
+  });
+
+  it('shows AVG and strict-lower BEAT with one other completed result', () => {
     expect(createDailyNineCompletedComparisonPresentation({
       status: 'success',
       ownPoints: 41,
       completedGameCount: 1,
       averageTotalPoints: 35,
-      strictLowerFinishRate: 0,
+      strictLowerFinishRate: 1,
     })).toEqual({
-      average: '—',
-      beat: null,
-      note: 'Waiting for more completed results · 1 result',
+      average: '35.0',
+      beat: '100%',
+      averageStatus: 'above',
+      statusLabel: 'Above AVG',
+      note: "1 other completed result · ties aren't counted as beaten",
     });
   });
 
-  it('keeps early and BEAT thresholds on the completed-game panel only', () => {
+  it('treats an AVG tie as not above average and not beaten', () => {
+    expect(createDailyNineCompletedComparisonPresentation({
+      status: 'success',
+      ownPoints: 35,
+      completedGameCount: 1,
+      averageTotalPoints: 35,
+      strictLowerFinishRate: 0,
+    })).toEqual({
+      average: '35.0',
+      beat: '0%',
+      averageStatus: 'at-or-below',
+      statusLabel: 'At or below AVG',
+      note: "1 other completed result · ties aren't counted as beaten",
+    });
+  });
+
+  it('does not impose a separate early-sample BEAT threshold', () => {
     expect(createDailyNineCompletedComparisonPresentation({
       status: 'success',
       ownPoints: 41,
@@ -44,20 +82,10 @@ describe('Daily Nine completed comparison presentation', () => {
       strictLowerFinishRate: 0.5,
     })).toEqual({
       average: '34.3',
-      beat: null,
-      note: 'Early average · 7 completed results',
-    });
-
-    expect(createDailyNineCompletedComparisonPresentation({
-      status: 'success',
-      ownPoints: 41,
-      completedGameCount: 20,
-      averageTotalPoints: 33.5,
-      strictLowerFinishRate: 0.63,
-    })).toEqual({
-      average: '33.5',
-      beat: '63%',
-      note: "20 completed results · ties aren't counted as beaten",
+      beat: '50%',
+      averageStatus: 'above',
+      statusLabel: 'Above AVG',
+      note: "7 other completed results · ties aren't counted as beaten",
     });
   });
 });

@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import {
   isDailyNineComparisonApiRulesetVersion,
+  type DailyNineComparisonApiRulesetVersion,
   type DailyPublicPuzzle,
   type DailyRulesetVersion,
 } from '@initial-baseball/shared';
@@ -18,6 +19,8 @@ export type DailyNineScorecardComparisonState =
       status: 'success';
       resolvedAtBatCount: number;
       averagePoints: number | null;
+      rulesetVersion?: DailyNineComparisonApiRulesetVersion;
+      scoreHistogram?: number[];
     }
   | { status: 'unavailable' };
 
@@ -161,6 +164,10 @@ export function useDailyNineScorecardComparisons({
             status: 'success',
             resolvedAtBatCount: comparison.resolvedAtBatCount,
             averagePoints: comparison.averagePoints,
+            rulesetVersion: comparison.rulesetVersion,
+            ...(comparison.scoreHistogram === undefined
+              ? {}
+              : { scoreHistogram: comparison.scoreHistogram }),
           };
           updatePitch(pitchNumber, next);
           if (shouldScheduleCompletedPitchRetry(
@@ -287,7 +294,7 @@ export function shouldScheduleCompletedPitchRetry(
 
 function shouldRefreshWithNewCompletion(state: DailyNineScorecardComparisonState): boolean {
   return state.status === 'unavailable'
-    || (state.status === 'success' && state.resolvedAtBatCount <= 1);
+    || (state.status === 'success' && state.resolvedAtBatCount === 0);
 }
 
 function clearPitchRetry(

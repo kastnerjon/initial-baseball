@@ -123,6 +123,7 @@ async function readOptionalPayload(response: ComparisonHttpResponse): Promise<un
 
 function decodeAtBatResponse(value: unknown): DailyNineAtBatComparisonApiResponse {
   const { comparison, freshness } = decodeEnvelope(value, 'at-bat');
+  const scoreHistogram = decodeOptionalScoreHistogram(comparison.scoreHistogram);
   return {
     schemaVersion: DAILY_NINE_COMPARISON_API_SCHEMA_VERSION,
     kind: 'at-bat',
@@ -134,6 +135,7 @@ function decodeAtBatResponse(value: unknown): DailyNineAtBatComparisonApiRespons
         'resolvedAtBatCount',
       ),
       averagePoints: nullableNonNegativeFiniteNumber(comparison.averagePoints, 'averagePoints'),
+      ...(scoreHistogram === undefined ? {} : { scoreHistogram }),
     },
     freshness,
   };
@@ -250,6 +252,15 @@ function optionalResultId(value: unknown): string | undefined {
     invalidResponse('Daily Nine comparison excludedResultId is invalid.');
   }
   return value;
+}
+
+function decodeOptionalScoreHistogram(value: unknown): number[] | undefined {
+  if (value === undefined) return undefined;
+  if (!Array.isArray(value)) {
+    invalidResponse('Daily Nine comparison scoreHistogram must be an array.');
+  }
+  return value.map((count, index) =>
+    nonNegativeSafeInteger(count, `scoreHistogram[${index}]`));
 }
 
 function positiveSafeInteger(value: unknown, field: string): number {

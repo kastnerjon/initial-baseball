@@ -76,7 +76,7 @@ describe('Daily Nine inning scoreboard comparison presentation', () => {
     expect(scoreboard.totalAverage.display).toBe('—');
   });
 
-  it('keeps dash presentation for genuinely unavailable or sample-withheld AVGs', () => {
+  it('keeps dash presentation for genuinely unavailable or empty AVGs', () => {
     const scoreboard = createDailyNineInningScoreboardPresentation({
       pitches,
       currentPitchNumber: 1,
@@ -85,8 +85,8 @@ describe('Daily Nine inning scoreboard comparison presentation', () => {
       atBatComparisons: {
         1: {
           status: 'success',
-          resolvedAtBatCount: 1,
-          averagePoints: 4,
+          resolvedAtBatCount: 0,
+          averagePoints: null,
         },
         2: { status: 'unavailable' },
       },
@@ -97,6 +97,24 @@ describe('Daily Nine inning scoreboard comparison presentation', () => {
 
     expect(scoreboard.columns[0]?.average.display).toBe('—');
     expect(scoreboard.columns[1]?.average.display).toBe('—');
+  });
+
+  it('shows an exact-slot AVG with one other result', () => {
+    const scoreboard = createDailyNineInningScoreboardPresentation({
+      pitches,
+      currentPitchNumber: 1,
+      rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+      atBatPoints: {},
+      atBatComparisons: {
+        1: { status: 'success', resolvedAtBatCount: 1, averagePoints: 4 },
+      },
+      totalPoints: 0,
+      gameCompleted: false,
+      completedComparison: { status: 'idle' },
+    });
+
+    expect(scoreboard.columns[0]?.average.display).toBe('4.0');
+    expect(scoreboard.columns[0]?.average.accessibleLabel).toContain('1 other result');
   });
 
   it('uses only the authoritative completed-game comparison for TOTAL AVG', () => {

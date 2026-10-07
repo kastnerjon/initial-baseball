@@ -92,6 +92,7 @@ describe('Daily Nine browser comparison client', () => {
         rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
         resolvedAtBatCount: 3,
         averagePoints: 1.5,
+        scoreHistogram: [0, 1, 0, 1, 0, 1, 0, 0, 0],
       },
     };
     const request = vi.fn().mockResolvedValue(response(200, payload));
@@ -241,6 +242,7 @@ function atBatPayload(
       pitchNumber: 3,
       resolvedAtBatCount: 8,
       averagePoints: 3.5,
+      scoreHistogram: [1, 1, 1, 1, 1, 1, 1, 1],
       ...comparisonOverrides,
     },
     freshness: {

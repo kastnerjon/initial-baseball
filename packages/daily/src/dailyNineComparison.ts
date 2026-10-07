@@ -245,7 +245,10 @@ export function getDailyNineStrictLowerFinishRate(
 
 /** Same strict-lower semantics for one AB, using its independent resolved-slot population. */
 export function getDailyNineStrictLowerAtBatRate(
-  comparison: DailyNineAtBatComparison,
+  comparison: Pick<
+    DailyNineAtBatComparison,
+    'resolvedAtBatCount' | 'scoreHistogram' | 'rulesetVersion'
+  >,
   userPoints: number,
 ): number | null {
   if (comparison.scoreHistogram === undefined) return null;

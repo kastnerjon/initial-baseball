@@ -27,7 +27,7 @@ describe('private scorecard and public share card', () => {
     expect(html).toContain('>Score<');
     expect(html).toContain('>Avg<');
     expect(html).toMatch(/BB:<.*Your score 0.*>0<.*Average score 7\.0.*>7\.0</);
-    expect(html).toMatch(/KGJ:<.*Outcome HR.*>HR<.*Your score 7.*>7<.*Average score —.*>—</);
+    expect(html).toMatch(/KGJ:<.*Outcome HR.*>HR<.*Your score 7.*>7<.*Average score 6\.0.*>6\.0</);
     expect(html).toContain('Barry Bonds');
     expect(html).toContain('Ken Griffey Jr.');
 

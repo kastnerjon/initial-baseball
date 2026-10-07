@@ -67,6 +67,26 @@
   font-size: 16px;
   font-variant-numeric: tabular-nums;
 }
+.at-bat-comparison-performance {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px 10px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.at-bat-comparison-performance-above {
+  color: #24613f;
+}
+.at-bat-comparison-performance-at-or-below {
+  color: var(--score-red);
+}
+.at-bat-comparison-beat {
+  color: var(--clubhouse);
+}
+.at-bat-comparison-average-status {
+  color: inherit;
+}
 .at-bat-comparison-note {
   margin: 0;
   color: var(--ink-soft);
@@ -387,10 +407,25 @@
 .completed-comparison-separator {
   color: rgb(255 255 255 / 52%);
 }
-.completed-comparison-beat {
-  color: var(--paper-light);
+.completed-comparison-performance {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 12px;
   font-size: 13px;
   font-variant-numeric: tabular-nums;
+  font-weight: 600;
+}
+.completed-comparison-performance-above {
+  color: #d8f0dc;
+}
+.completed-comparison-performance-at-or-below {
+  color: #ffd1c6;
+}
+.completed-comparison-beat {
+  color: var(--paper-light);
+}
+.completed-comparison-average-status {
+  color: inherit;
 }
 .completed-comparison-note {
   margin: 0;

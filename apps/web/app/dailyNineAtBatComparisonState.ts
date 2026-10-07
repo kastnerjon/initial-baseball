@@ -1,5 +1,7 @@
+import { getDailyNineStrictLowerAtBatRate } from '@initial-baseball/daily/comparison';
 import {
   isDailyNineComparisonApiRulesetVersion,
+  type DailyNineComparisonApiRulesetVersion,
   type DailyGuessResult,
   type DailyPublicPuzzle,
   type DailyPublicPuzzlePitch,
@@ -15,6 +17,7 @@ export type DailyNineAtBatComparisonState =
       ownPoints: number;
       resolvedAtBatCount: number;
       averagePoints: number | null;
+      strictLowerAtBatRate: number | null;
     }
   | { status: 'unavailable'; ownPoints: number };
 
@@ -24,6 +27,8 @@ export type DailyNineAtBatComparisonReadState =
       status: 'success';
       resolvedAtBatCount: number;
       averagePoints: number | null;
+      rulesetVersion?: DailyNineComparisonApiRulesetVersion;
+      scoreHistogram?: number[];
     }
   | { status: 'unavailable' };
 
@@ -76,11 +81,20 @@ export function createDailyNineAtBatComparisonState(
 ): DailyNineAtBatComparisonState {
   if (ownPoints === null) return { status: 'idle' };
   if (readState?.status === 'success') {
+    const strictLowerAtBatRate = readState.rulesetVersion === undefined
+      || readState.scoreHistogram === undefined
+      ? null
+      : getDailyNineStrictLowerAtBatRate({
+          rulesetVersion: readState.rulesetVersion,
+          resolvedAtBatCount: readState.resolvedAtBatCount,
+          scoreHistogram: readState.scoreHistogram,
+        }, ownPoints);
     return {
       status: 'success',
       ownPoints,
       resolvedAtBatCount: readState.resolvedAtBatCount,
       averagePoints: readState.averagePoints,
+      strictLowerAtBatRate,
     };
   }
   if (readState?.status === 'unavailable') {

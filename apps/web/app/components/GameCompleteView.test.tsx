@@ -39,57 +39,36 @@ describe('GameCompleteView comparison', () => {
     expect(html).toContain('Share');
   });
 
-  it('puts completed-game AVG beside personal points when displayable', () => {
-    const waiting = render({
+  it('shows completed-game AVG and strict-lower BEAT with one other result', () => {
+    const html = render({
       status: 'success',
       ownPoints: 41,
       completedGameCount: 1,
       averageTotalPoints: 35,
-      strictLowerFinishRate: 0,
-    });
-    const early = render({
-      status: 'success',
-      ownPoints: 41,
-      completedGameCount: 7,
-      averageTotalPoints: 34.26,
-      strictLowerFinishRate: 0.5,
+      strictLowerFinishRate: 1,
     });
 
-    expect(waiting).toContain('41 PTS');
-    expect(waiting).not.toContain('AVG 35.0');
-    expect(waiting).toContain('Waiting for more completed results · 1 result');
-
-    expect(early).toContain('41 PTS');
-    expect(early).toContain('AVG 34.3');
-    expect(early).toContain('Early average · 7 completed results');
-    expect(early).not.toContain('Early AVG 34.3');
+    expect(html).toContain('41 PTS');
+    expect(html).toContain('AVG 35.0');
+    expect(html).toContain('BEAT 100%');
+    expect(html).toContain('Above AVG');
+    expect(html).toContain('completed-comparison-performance-above');
+    expect(html).toContain("1 other completed result · ties aren&#x27;t counted as beaten");
   });
 
-  it('waits until 20 completions before showing strict-lower BEAT', () => {
-    const nineteen = render({
+  it('renders AVG ties as red/not-above while strict-lower BEAT remains zero', () => {
+    const html = render({
       status: 'success',
-      ownPoints: 41,
-      completedGameCount: 19,
-      averageTotalPoints: 33.5,
-      strictLowerFinishRate: 0.63,
-    });
-    const twenty = render({
-      status: 'success',
-      ownPoints: 41,
-      completedGameCount: 20,
-      averageTotalPoints: 33.5,
-      strictLowerFinishRate: 0.63,
+      ownPoints: 35,
+      completedGameCount: 1,
+      averageTotalPoints: 35,
+      strictLowerFinishRate: 0,
     });
 
-    expect(nineteen).toContain('41 PTS');
-    expect(nineteen).toContain('AVG 33.5');
-    expect(nineteen).toContain('BEAT appears at 20');
-    expect(nineteen).not.toContain('63%');
-
-    expect(twenty).toContain('41 PTS');
-    expect(twenty).toContain('AVG 33.5');
-    expect(twenty).toContain('BEAT 63%');
-    expect(twenty).toContain("ties aren&#x27;t counted as beaten");
+    expect(html).toContain('AVG 35.0');
+    expect(html).toContain('BEAT 0%');
+    expect(html).toContain('At or below AVG');
+    expect(html).toContain('completed-comparison-performance-at-or-below');
   });
 
   it('shows the revealed player name in the in-app Daily Nine scorecard without adding it to share text', () => {
