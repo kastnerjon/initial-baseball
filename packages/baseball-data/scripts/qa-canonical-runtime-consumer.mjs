@@ -19,6 +19,8 @@ const representativePlayers = [
   ['mayswi01', 'Willie Mays', 'hitter', 1948, 1973],
   ['camparo01', 'Roy Campanella', 'hitter', 1937, 1957],
   ['bankser01', 'Ernie Banks', 'hitter', 1953, 1971],
+  ['davisjd01', 'JD Davis', 'hitter', 2017, 2025],
+  ['sabatcc01', 'CC Sabathia', 'pitcher', 2001, 2019],
 ];
 
 for (const [lahmanId, displayName, playerType, firstSeason, lastSeason] of representativePlayers) {
@@ -28,6 +30,7 @@ for (const [lahmanId, displayName, playerType, firstSeason, lastSeason] of repre
     continue;
   }
   const reveal = accessor.getReveal(index.playerId);
+  check(index.displayName === displayName, `${lahmanId} index display name mismatch.`);
   check(reveal.displayName === displayName, `${lahmanId} display name mismatch.`);
   check(reveal.playerType === playerType, `${lahmanId} player type mismatch.`);
   check(reveal.career.firstSeason === firstSeason, `${lahmanId} first season mismatch.`);

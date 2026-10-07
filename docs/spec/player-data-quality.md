@@ -41,7 +41,7 @@ The visible name is the name by which baseball fans commonly know the player.
 
 Requirements:
 
-- Preserve accents and ordinary punctuation in the display name.
+- Preserve accents and ordinary punctuation in the display name. Leading runs of two or more dotted uppercase given-name initials are compacted during canonical universe generation: `J. D. Davis` / `J.D. Davis` → `JD Davis`, `C. C. Sabathia` → `CC Sabathia`. Keep the original source display spelling as a searchable alias. Single initials, interior initials, ordinary names and suffixes retain their spelling. Canonical/source IDs and redirects remain unchanged; gameplay-name inputs and issued clues are not rewritten.
 - Search also works without accents or punctuation.
 - Do not show a middle or legal name merely because one source contains it.
 - Keep useful legal names, nicknames, shortened names, and former source display names as aliases when they are not the canonical display name.

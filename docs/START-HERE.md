@@ -387,3 +387,7 @@ The owner approved per-AB and final BEAT with one other result and colors based 
 ### Comparison presentation release checkpoint — PR #319
 
 Current-Daily presentation is merged and production-verified at `c2543f9085714e5e27cc2676ea77b2ebf9792382`: exact-head CI #1082, READY Preview `dpl_AwGsMBdRdnKKdUkYXEi2F7MEfzbj`, main push CI #1083, and READY canonical production `dpl_EP7P74RHD4PxKw9EZLG7LHgcVK3g`. Read-only recheck confirmed canonical root/both private-no-store comparison routes, clean release-window error/fatal logs, and unchanged service-role-only v2 Supabase function posture. Original threshold plans are historical; current policy and detailed evidence live in `tasks/plans/ab-beat-and-small-samples.md`. Archive comparison activation and issue #320 remain separate.
+
+### Initial-based canonical display names — issue #320
+
+The bounded data-layer implementation compacts leading dotted uppercase given-name initials in canonical universe generation, preserving the source spelling as a search alias. Search/index and reveal artifacts consume the same canonical display name; identity snapshots, redirects, gameplay-name inputs, puzzle initials, scoring and persistence remain unchanged. Scope and verification: `tasks/plans/initial-based-display-names.md`. Exact release evidence belongs in the implementing PR; physical-device QA remains separate.
