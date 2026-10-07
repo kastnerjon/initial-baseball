@@ -291,23 +291,62 @@
   overflow-wrap: anywhere;
   text-align: left;
 }
+/* Daily Nine's private bottom Scoreboard: a self-contained presentation,
+   leaving Classic scorecards and the top inning grid unchanged. */
+.daily-nine-detail-card {
+  position: relative;
+  min-width: 0;
+  margin-top: 6px;
+  padding: 20px 24px 24px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--paper-light);
+}
 .daily-nine-detail-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  gap: 12px;
+  gap: 14px;
+  min-width: 0;
 }
-.daily-nine-detail-header h2 {
+.daily-nine-detail-header h2,
+.daily-nine-detail-heading {
   margin: 0;
-  font: 700 23px/1.2 var(--display-font);
   color: var(--clubhouse-deep);
+  font: 700 29px/1.15 var(--display-font);
+  letter-spacing: -0.025em;
+}
+.daily-nine-detail-summary {
+  min-height: 38px;
+  width: max-content;
+  max-width: 100%;
+  padding-right: 0;
+  color: var(--clubhouse-deep);
+}
+.daily-nine-detail-summary::after {
+  margin-left: 12px;
+  color: var(--ink-soft);
+  font-family: sans-serif;
+  font-size: 16px;
+  content: "+";
+}
+.daily-nine-detail-card-compact[open] .daily-nine-detail-summary::after { content: "−"; }
+.daily-nine-detail-summary:focus-visible { outline: 2px solid var(--clubhouse); outline-offset: 4px; }
+.daily-nine-detail-card-compact[open] .daily-nine-detail-summary { padding-right: 165px; }
+.daily-nine-detail-card-compact .daily-nine-detail-header { justify-content: flex-end; }
+.daily-nine-detail-card-compact[open] .daily-nine-detail-header {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  z-index: 1;
 }
 .daily-nine-detail-reveal {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
-  font-size: 12px;
+  gap: 9px;
+  min-height: 38px;
   color: var(--clubhouse);
+  font-size: 12px;
   white-space: nowrap;
   cursor: pointer;
 }
@@ -343,20 +382,21 @@
 }
 .daily-nine-detail-table {
   width: 100%;
-  min-width: 410px;
-  margin-top: 12px;
-  border-collapse: collapse;
+  min-width: 440px;
+  margin-top: 18px;
+  border-collapse: separate;
+  border-spacing: 0;
   table-layout: fixed;
   font-variant-numeric: tabular-nums;
 }
-.daily-nine-detail-table col:nth-child(1) { width: 9%; }
-.daily-nine-detail-table col:nth-child(2) { width: 35%; }
-.daily-nine-detail-table col:nth-child(3) { width: 23%; }
-.daily-nine-detail-table col:nth-child(4) { width: 15%; }
+.daily-nine-detail-table col:nth-child(1) { width: 12%; }
+.daily-nine-detail-table col:nth-child(2) { width: 32%; }
+.daily-nine-detail-table col:nth-child(3) { width: 24%; }
+.daily-nine-detail-table col:nth-child(4) { width: 14%; }
 .daily-nine-detail-table col:nth-child(5) { width: 18%; }
 .daily-nine-detail-table th,
 .daily-nine-detail-table td {
-  padding: 9px 4px;
+  padding: 11px 8px;
   border-bottom: 1px solid var(--line-soft);
   text-align: right;
   white-space: nowrap;
@@ -365,26 +405,49 @@
   color: var(--ink-soft);
   font-size: 10px;
   font-weight: 600;
-  letter-spacing: 0.03em;
+  letter-spacing: 0.075em;
   text-transform: uppercase;
 }
 .daily-nine-detail-table thead th:first-child,
 .daily-nine-detail-table thead th:nth-child(2),
 .daily-nine-detail-table tbody th,
-.daily-nine-detail-table tbody td:nth-child(2),
-.daily-nine-detail-table tfoot th,
-.daily-nine-detail-table tfoot td:nth-child(2) { text-align: left; }
-.daily-nine-detail-table tbody th,
+.daily-nine-detail-table tbody td:nth-child(2) { text-align: left; }
+.daily-nine-detail-table tbody th {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 400;
+}
 .daily-nine-detail-table tbody strong { color: var(--clubhouse); }
-.daily-nine-detail-table tbody td { color: var(--ink); font-size: 13px; }
-.daily-nine-detail-answer { margin-left: 6px; font-weight: 400; white-space: normal; overflow-wrap: anywhere; }
-.daily-nine-detail-outcome { font-weight: 600; }
-.daily-nine-detail-table tfoot tr { border-top: 2px solid var(--line); background: #e9f0e9; }
+.daily-nine-detail-table tbody td {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 400;
+}
+.daily-nine-detail-table tbody td:nth-child(2) { white-space: normal; overflow-wrap: anywhere; }
+.daily-nine-detail-answer { margin-left: 7px; font-weight: 400; overflow-wrap: anywhere; }
+.daily-nine-detail-table .daily-nine-detail-outcome { font-weight: 700; }
+.daily-nine-detail-table tbody tr:last-child > * { border-bottom: 0; }
 .daily-nine-detail-table tfoot th,
-.daily-nine-detail-table tfoot td { font-size: 13px; font-weight: 700; color: var(--clubhouse-deep); }
-.daily-nine-detail-beat-positive { color: #24613f !important; font-weight: 700; }
-.daily-nine-detail-beat-zero { color: var(--score-red) !important; font-weight: 700; }
-.daily-nine-detail-beat-unavailable { color: var(--ink-soft); }
+.daily-nine-detail-table tfoot td {
+  padding: 14px 8px;
+  border: 0;
+  background: #e9f1e9;
+  color: var(--clubhouse-deep);
+  font-size: 14px;
+  font-weight: 700;
+}
+.daily-nine-detail-table tfoot th:first-child { border-radius: 10px 0 0 10px; }
+.daily-nine-detail-table tfoot td:last-child { border-radius: 0 10px 10px 0; }
+.daily-nine-detail-total-label { text-align: left !important; }
+.daily-nine-detail-total-label > span:last-child {
+  display: inline-block;
+  margin-left: 18%;
+  color: var(--ink-soft);
+  font-weight: 400;
+}
+.daily-nine-detail-table .daily-nine-detail-beat-positive { color: #24613f; font-weight: 700; }
+.daily-nine-detail-table .daily-nine-detail-beat-zero { color: var(--score-red); font-weight: 700; }
+.daily-nine-detail-table .daily-nine-detail-beat-unavailable { color: var(--ink-soft); }
 @media (prefers-reduced-motion: reduce) {
   .daily-nine-detail-reveal input::after { transition: none; }
 }

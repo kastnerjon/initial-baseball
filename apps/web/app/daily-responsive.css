@@ -139,10 +139,18 @@
     grid-template-columns: 36px minmax(0, 1fr) max-content;
     gap: 12px;
   }
+  .daily-nine-detail-card { padding: 15px 14px 18px; border-radius: 12px; }
+  .daily-nine-detail-table { margin-top: 12px; }
   .daily-nine-detail-table th,
-  .daily-nine-detail-table td { padding-block: 8px; }
-  .daily-nine-detail-header h2 { font-size: 20px; }
+  .daily-nine-detail-table td { padding: 9px 6px; }
+  .daily-nine-detail-header h2,
+  .daily-nine-detail-heading { font-size: 23px; }
   .daily-nine-detail-reveal { font-size: 11px; }
+  .daily-nine-detail-card-compact[open] .daily-nine-detail-header {
+    top: 15px;
+    right: 14px;
+  }
+  .daily-nine-detail-card-compact[open] .daily-nine-detail-summary { padding-right: 152px; }
   .daily-footer {
     flex-wrap: wrap;
     gap: 4px 12px;
@@ -169,4 +177,11 @@
   .revealed-hint {
     grid-template-columns: 90px 1fr;
   }
+  .daily-nine-detail-card-compact[open] .daily-nine-detail-summary { padding-right: 0; }
+  .daily-nine-detail-card-compact[open] .daily-nine-detail-header {
+    position: static;
+    justify-content: flex-end;
+    margin-top: 6px;
+  }
+  .daily-nine-detail-table { min-width: 440px; }
 }

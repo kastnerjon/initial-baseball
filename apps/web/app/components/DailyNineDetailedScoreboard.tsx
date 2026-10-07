@@ -40,17 +40,17 @@ export function DailyNineDetailedScoreboard(props: ScoreboardProps): JSX.Element
 
   if (props.compact) {
     return (
-      <details className="pitch-results-card pitch-results-card-compact">
-        <summary className="pitch-results-summary">
-          <span className="pitch-results-kicker">Scoreboard</span>
-          <span className="pitch-results-title">{props.rows.length} completed</span>
+      <details className="pitch-results-card pitch-results-card-compact daily-nine-detail-card daily-nine-detail-card-compact">
+        <summary className="pitch-results-summary daily-nine-detail-summary">
+          <span className="daily-nine-detail-heading">Scoreboard</span>
+          <span className="sr-only">{props.rows.length} completed at-bats</span>
         </summary>
         {content}
       </details>
     );
   }
 
-  return <section className="pitch-results-card">{content}</section>;
+  return <section className="pitch-results-card daily-nine-detail-card">{content}</section>;
 }
 
 export function DailyNineDetailedScoreboardTable({
@@ -105,8 +105,9 @@ export function DailyNineDetailedScoreboardTable({
         </tbody>
         <tfoot>
           <tr>
-            <th scope="row">TOTAL</th>
-            <td>—</td>
+            <th scope="row" colSpan={2} className="daily-nine-detail-total-label">
+              <span>TOTAL</span><span aria-hidden="true">—</span>
+            </th>
             <td aria-label="Total points">{totalPoints === undefined ? '—' : formatDailyScorecardPoints(totalPoints)}</td>
             <td aria-label="Completed-game average">{summary?.average ?? '—'}</td>
             <td className={beatClass(summary?.beat ?? '—')} aria-label="Completed-game BEAT">
