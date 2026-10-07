@@ -19,7 +19,7 @@ Do not restart settled discussions because the conversation changed. Correct dri
 
 ## At-bat detail alignment
 
-October 7 owner screenshot request: center hint content/reveal button and terminal comparison metric/status/note rows using existing CSS selectors. Keep long clue text readable, section headers and player reveal unchanged. Scope and exact review/release evidence: `tasks/plans/center-at-bat-details.md` and its implementing PR. Local archive history remains separate.
+October 7 owner follow-up after reviewing the centered production UI: restore the hint content/reveal button and terminal comparison metric/status/note rows to their pre-#324 left-aligned presentation. This is a CSS-only reversal; comparison behavior, scoring, player reveal and gameplay remain unchanged. Scope: `tasks/plans/restore-left-at-bat-details.md`. PR #324 and `tasks/plans/center-at-bat-details.md` remain historical evidence of the rejected centered iteration. Local archive history remains separate.
 
 ## Same-day correction and save-isolation checkpoint
 
