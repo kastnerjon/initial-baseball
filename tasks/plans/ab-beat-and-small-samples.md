@@ -16,6 +16,8 @@ Status: complete in #316 and production verified.
 
 ## PR 2 — service-only filtered provider reads
 
+Status: implementation and hosted migration complete; exact-head CI/Preview/review gates pending.
+
 - Goal: let the existing provider return score buckets after optionally excluding one durable anonymous result ID, without exposing the filter publicly yet.
 - Owning layer: the server-only Supabase comparison adapter plus additive database read functions.
 - In scope: additive uniquely named v2 RPCs; exact puzzle/ruleset/slot filtering; optional attempt/submission-ID exclusion; AB bucket decoding with count/sum derived from persisted engine-derived points; completed buckets; service-role-only execution; focused adapter tests; hosted definition/ACL/readback proof.
