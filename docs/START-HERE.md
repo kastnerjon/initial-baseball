@@ -17,6 +17,10 @@ Use this file to resume work. It records verified current state, settled future 
 
 Do not restart settled discussions because the conversation changed. Correct drift before new implementation.
 
+## Daily Nine How to Play instructions
+
+October 7 owner-approved rewrite: points-v4 How to Play now opens with the initials/four-hints premise, emphasizes fewer hints = more points, and displays a No hints / After hints 1–4 baseball outcome + points table (HR 4, 3B 3, 2B 2, 1B 1, BB 0.5). A separate strike section explains two free strikes, third strike or Give Up = 0; the goal is a perfect 36-point nine-at-bat game. The native dialog behavior is unchanged; points-v3 and Classic copy remain ruleset-specific. Scope: `tasks/plans/clear-daily-nine-how-to.md`.
+
 ## TOTAL AVG during play
 
 October 7 owner decision: the Daily Nine scoreboard loads authoritative completed-game TOTAL AVG after saved-state hydration, including before AB 1 resolves, when an exact-puzzle/ruleset other completed result exists. The personal TOTAL remains earned points so far, not a completed-game score. Whole-game BEAT and above/below judgment still wait for final personal points. Keep first-result exclusion, archive isolation, and nonblocking behavior. Scope: `tasks/plans/pregame-total-average.md`.

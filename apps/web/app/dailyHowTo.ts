@@ -14,6 +14,10 @@ export type DailyHowToContent = {
   intro: string;
   steps: string[];
   footer: string;
+  lead?: string;
+  scoringRows?: { when: string; result: string; points: string }[];
+  strikes?: { heading: string; rules: string[] };
+  footerLabel?: string;
 };
 
 export function getDailyHowToContent(
@@ -49,14 +53,27 @@ export function getDailyHowToContent(
   if (rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION) {
     return {
       title: 'How to play Daily Nine',
-      intro: 'Guess each player from their initials. Reveal up to four hints when you need them.',
-      steps: [
-        'Correct on initials: 4 points. After hints 1–4: 3, 2, 1, then 0.5 points.',
-        'Wrong guesses one and two do not reduce your score.',
-        'A third wrong guess—or Give Up—is a strikeout and scores 0 points.',
-        'Play all 9 at-bats for a maximum score of 36.',
+      intro: 'Guess 9 baseball players using their initials and up to 4 hints.',
+      lead: 'The fewer hints you use, the more points you score.',
+      steps: [],
+      scoringRows: [
+        { when: 'No hints', result: 'Home Run (HR)', points: '4' },
+        { when: 'After 1 hint', result: 'Triple (3B)', points: '3' },
+        { when: 'After 2 hints', result: 'Double (2B)', points: '2' },
+        { when: 'After 3 hints', result: 'Single (1B)', points: '1' },
+        { when: 'After 4 hints', result: 'Walk (BB)', points: '0.5' },
       ],
-      footer: 'Earlier correct guesses are worth more.',
+      strikes: {
+        heading: 'What happens if you strike out?',
+        rules: [
+          'Each incorrect guess counts as a strike.',
+          "Your first 2 strikes don't reduce your points.",
+          'Strike 3 ends the at-bat with 0 points.',
+          'You can give up at any time for 0 points.',
+        ],
+      },
+      footerLabel: 'Your goal:',
+      footer: 'Score as many points as possible across 9 at-bats. A perfect game is 36 points!',
     };
   }
 
