@@ -1,7 +1,7 @@
 # Public Daily editorial runtime
 
 Status: Implemented contract
-Last updated: 2026-07-21
+Last updated: 2026-10-06
 
 ## Purpose
 
@@ -23,7 +23,7 @@ Define how the public Daily game chooses its nine answers when editorial records
 
 Deterministic fallback retains the established `daily-{date}` ID. An editorial puzzle receives an opaque stable ID derived from the date and the ordered canonical selection.
 
-This prevents a progression token issued for fallback from silently switching to a later approved editorial lineup. The same ordered lineup keeps the same identity when it moves from scheduled to published. Any ordered selection change produces a different identity, so an old token is rejected instead of being graded against different answers. The fingerprint exposes no canonical IDs or answer data.
+This prevents a progression token issued for fallback from silently switching to a later approved editorial lineup. The same ordered lineup keeps the same identity when it moves from scheduled to published. Any ordered selection change produces a different identity, so an old token is rejected instead of being graded against different answers. This also isolates a bounded same-day correction of an already scheduled lineup: the corrected ordered selection receives a new puzzle ID, while results already recorded against the mistaken lineup remain attached to its old ID instead of being mixed into the corrected population. Browser state tied to the old puzzle ID is intentionally incompatible after refresh. The fingerprint exposes no canonical IDs or answer data.
 
 ## Security and transport
 
@@ -37,4 +37,4 @@ When both `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` are absent, the public 
 
 ## Explicit exclusions
 
-This contract does not add automatic publication, cron jobs, published-puzzle correction/versioning, archived replay, legacy-table migration, aggregate results, public UI changes, or browser access to Supabase.
+This contract does not add automatic publication, cron jobs, published-puzzle correction/versioning, archived replay, legacy-table migration, public UI changes, or browser access to Supabase. Same-day correction is limited to an explicit editorial action while the current record is still `scheduled`; `published` and `archived` records remain immutable.

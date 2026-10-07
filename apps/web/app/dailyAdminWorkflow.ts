@@ -54,7 +54,11 @@ export type DailyAdminPlayerPreview = DailyAdminPlayerSearchResult & {
   reveal: CanonicalPlayerReveal;
 };
 
-export type DailyAdminWorkflowErrorKind = 'invalid-lineup' | 'not-future-puzzle' | 'unknown-player';
+export type DailyAdminWorkflowErrorKind =
+  | 'invalid-lineup'
+  | 'not-future-puzzle'
+  | 'not-current-scheduled-puzzle'
+  | 'unknown-player';
 
 export class DailyAdminWorkflowError extends Error {
   constructor(
@@ -189,7 +193,12 @@ export function createDailyAdminWorkflow(
     },
 
     async replaceLineup(input) {
-      assertFuturePuzzle(input.puzzleDate, resolvedDependencies);
+      const currentDailyDate = resolvedDependencies.getCurrentDailyDate();
+      const isCurrentScheduledCorrection = input.puzzleDate === currentDailyDate;
+      if (!isCurrentScheduledCorrection) {
+        assertFuturePuzzle(input.puzzleDate, resolvedDependencies);
+      }
+
       if (input.canonicalPlayerIds.length !== DAILY_AT_BAT_COUNT) {
         throw new DailyAdminWorkflowError(
           'invalid-lineup',
@@ -208,7 +217,19 @@ export function createDailyAdminWorkflow(
         }
       }
 
-      await editorialService.replaceLineup(input);
+      if (isCurrentScheduledCorrection) {
+        const current = await repository.getByDate(input.puzzleDate);
+        if (current?.status !== 'scheduled') {
+          throw new DailyAdminWorkflowError(
+            'not-current-scheduled-puzzle',
+            `Daily puzzle ${input.puzzleDate} must already be scheduled for a same-day correction.`,
+          );
+        }
+        await editorialService.correctScheduledLineup(input);
+      } else {
+        await editorialService.replaceLineup(input);
+      }
+
       const [puzzle] = await horizonService.getHorizon({
         startDate: input.puzzleDate,
         days: 1,
@@ -226,7 +247,12 @@ export function createDailyAdminWorkflow(
         occurredAt: input.occurredAt,
       };
 
-      if (input.action === 'schedule') await editorialService.schedule(transitionInput);
+      if (input.action === 'schedule') {
+        const current = await repository.getByDate(input.puzzleDate);
+        const isCurrentScheduledPuzzle = input.puzzleDate === resolvedDependencies.getCurrentDailyDate()
+          && current?.status === 'scheduled';
+        if (!isCurrentScheduledPuzzle) await editorialService.schedule(transitionInput);
+      }
       if (input.action === 'publish') await editorialService.publish(transitionInput);
       if (input.action === 'archive') await editorialService.archive(transitionInput);
 

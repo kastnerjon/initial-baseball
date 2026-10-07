@@ -158,6 +158,8 @@ The authorized editor should be able to:
 
 The published puzzle is the exact nine selected canonical IDs. The recipe remains reusable metadata and an explanation of how the proposal was formed.
 
+For a bounded same-day identity correction, the current editorial record may be corrected only while it is still `scheduled`. That correction preserves scheduled lifecycle metadata in one optimistic save rather than exposing an intermediate draft, while the ordered lineup change produces a new public puzzle identity. `published` and `archived` records remain immutable.
+
 ## Validation
 
 Recipe generation and validation belong in portable Daily logic, not React or Supabase.

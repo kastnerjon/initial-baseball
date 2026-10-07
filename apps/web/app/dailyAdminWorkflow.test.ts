@@ -3,6 +3,7 @@ import type { Player } from '@initial-baseball/shared';
 import {
   createDailyPuzzleDraft,
   getDailyPuzzleNumber,
+  scheduleDailyPuzzle,
   type DailyLineupCandidate,
   type DailyPuzzleEditorialRecord,
   type DailyPuzzleRepository,
@@ -231,6 +232,50 @@ describe('Daily admin workflow', () => {
       'recently-used',
     ]);
     expect((await repository.getByDate('2026-07-22'))?.updatedBy).toBe('daily-editor');
+  });
+
+  it('allows only an explicit same-day correction of an already scheduled lineup', async () => {
+    const repository = new InMemoryRepository();
+    const candidates = buildCandidates();
+    const scheduled = scheduleDailyPuzzle(buildDraft('2026-07-21', candidates), {
+      actorId: 'daily-editor',
+      occurredAt: '2026-07-20T19:00:00.000Z',
+    });
+    repository.seed(scheduled);
+    const replacement = candidates.find(candidate => candidate.recognizabilityRank === 253)!;
+    const correctedIds = scheduled.selections.map(selection => (
+      selection.slot === 5 ? replacement.canonicalPlayerId : selection.canonicalPlayerId
+    ));
+    const workflow = createDailyAdminWorkflow(repository, dependencies(candidates));
+
+    const corrected = await workflow.replaceLineup({
+      puzzleDate: '2026-07-21',
+      canonicalPlayerIds: correctedIds,
+      actorId: 'daily-editor',
+      occurredAt: OCCURRED_AT,
+    });
+
+    expect(corrected.status).toBe('scheduled');
+    expect(corrected.revision).toBe(2);
+    expect(corrected.selections[4]?.player?.canonicalPlayerId).toBe(replacement.canonicalPlayerId);
+    expect((await repository.getByDate('2026-07-21'))?.scheduledAt).toBe(scheduled.scheduledAt);
+
+    const rescheduled = await workflow.transitionLifecycle({
+      puzzleDate: '2026-07-21',
+      action: 'schedule',
+      actorId: 'daily-editor',
+      occurredAt: '2026-07-21T18:01:00.000Z',
+    });
+    expect(rescheduled.status).toBe('scheduled');
+    expect(rescheduled.revision).toBe(2);
+
+    repository.seed(buildDraft('2026-07-21', candidates));
+    await expect(workflow.replaceLineup({
+      puzzleDate: '2026-07-21',
+      canonicalPlayerIds: correctedIds,
+      actorId: 'daily-editor',
+      occurredAt: OCCURRED_AT,
+    })).rejects.toMatchObject({ kind: 'not-current-scheduled-puzzle' });
   });
 
   it('rejects non-future dates and canonical IDs outside the reviewed candidate universe', async () => {
