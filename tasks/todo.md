@@ -4,9 +4,8 @@
 Status: Active ordered implementation plan  
 Last updated: 2026-10-06
 
-## Current correction checkpoint
+## Immediate next work
 
-- [x] Complete #305/#306 correction and browser-save isolation: reviewed final head, CI #1048, READY Preview, merge `858129a`, push CI #1049, exact READY production, routes/browser/logs and read-only Supabase checks are verified. October 7/8 remain scheduled; no carryover seeds/results. Evidence: `tasks/plans/corrected-daily-save-isolation.md`.
 - [ ] Resume the approved archive comparison browser activation; local archive history follows. Same-day recovery is not a new general migration/reconstruction feature.
 
 Completed history belongs in PRs, canonical docs, or `tasks/lessons.md`. Durable resumption context belongs in `docs/START-HERE.md`.
