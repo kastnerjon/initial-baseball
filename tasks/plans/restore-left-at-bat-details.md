@@ -1,6 +1,6 @@
 # Restore left-aligned at-bat details
 
-Status: Planned for implementation.
+Status: CSS implementation complete; physical phone/tablet verification remains pending.
 
 ## Scope contract
 
