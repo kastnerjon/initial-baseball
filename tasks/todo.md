@@ -1,5 +1,9 @@
 # Initial Baseball Current Work
 
+
+## Immediate correction release
+
+- [ ] Finish PR #306 final-head CI/READY Preview, verify addressed review findings, merge and verify production/browser saves and result delivery. The October 6 correction and owner-requested seeded comparisons are documented in `docs/START-HERE.md`; October 7/8 remain scheduled. Return to archive comparison browser activation afterward.
 Status: Active ordered implementation plan  
 Last updated: 2026-10-06
 

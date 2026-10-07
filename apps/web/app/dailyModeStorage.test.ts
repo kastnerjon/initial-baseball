@@ -13,6 +13,8 @@ import {
   getDailyModeStorageKey,
   isDailyModeSaveCompatible,
 } from './dailyModeStorage';
+import { hasPersistedDailyGameValue } from './dailyLocalStorage';
+import { createDailyAtBatGameplayLifecycle } from './dailyAtBatGameplayLifecycle';
 
 describe('dailyModeStorage', () => {
   it('isolates disposable beta, permanent, current and other beta saves, including reset', () => {
@@ -148,6 +150,68 @@ describe('dailyModeStorage', () => {
       `${legacyKey}:puzzle:${correctedPuzzleId}`,
     )).toBe(correctedValue);
     expect(corrected.getItem(dailyKey)).toBe(correctedValue);
+    corrected.removeItem(dailyKey);
+    expect(storage.getItem(legacyKey)).toBe(oldValue);
+    expect(corrected.getItem(dailyKey)).toBeNull();
+  });
+
+  it.each(['{broken', '{}', 'null', '[]', '{"puzzleId":null}', '{"puzzleId":""}'])(
+    'keeps unclassifiable legacy state fail-closed for contribution: %s',
+    legacyValue => {
+      const storage = new FakeStorage();
+      const date = '2026-10-06';
+      const puzzleId = 'daily-2026-10-06-editorial-6aee324e';
+      const legacyKey = `initial-baseball:daily:ruleset:points-v4:${date}`;
+      storage.setItem(legacyKey, legacyValue);
+      const current = getDailyModeStorage(POINTS_V4_DAILY_RULESET_VERSION, storage, puzzleId)!;
+      let attemptsCreated = 0;
+      const lifecycle = createDailyAtBatGameplayLifecycle({
+        identity: { id: puzzleId, puzzleDate: date, puzzleNumber: 163, rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION },
+        storage: current,
+        createAttemptId: () => { attemptsCreated += 1; return 'unexpected-new-attempt'; },
+      });
+
+      expect(current.getItem(`initial-baseball:daily:${date}`)).toBe(legacyValue);
+      expect(lifecycle.prepareOwner({
+        loaded: null,
+        hadPersistedGameplayValue: hasPersistedDailyGameValue(date, current),
+        claimedGeneration: null,
+        totalAtBats: 9,
+      })).toMatchObject({ status: 'inactive', reason: 'unusable_save' });
+      expect(attemptsCreated).toBe(0);
+
+      current.removeItem(`initial-baseball:daily:${date}`);
+      expect(storage.getItem(legacyKey)).toBeNull();
+    },
+  );
+
+  it('isolates tomorrow from today and passes through contribution bookkeeping keys', () => {
+    const storage = new FakeStorage();
+    const today = '2026-10-06';
+    const tomorrow = '2026-10-07';
+    const todayId = `daily-${today}-editorial-6aee324e`;
+    const tomorrowId = `daily-${tomorrow}-editorial-abcd1234`;
+    const current = getDailyModeStorage(POINTS_V4_DAILY_RULESET_VERSION, storage, todayId)!;
+    const next = getDailyModeStorage(POINTS_V4_DAILY_RULESET_VERSION, storage, tomorrowId)!;
+    current.setItem(`initial-baseball:daily:${today}`, JSON.stringify({ puzzleId: todayId }));
+    expect(next.getItem(`initial-baseball:daily:${tomorrow}`)).toBeNull();
+    const nextValue = JSON.stringify({ puzzleId: tomorrowId, marker: 'tomorrow-progress' });
+    next.setItem(`initial-baseball:daily:${tomorrow}`, nextValue);
+    expect(getDailyModeStorage(POINTS_V4_DAILY_RULESET_VERSION, storage, tomorrowId)!
+      .getItem(`initial-baseball:daily:${tomorrow}`)).toBe(nextValue);
+    current.removeItem(`initial-baseball:daily:${today}`);
+    expect(next.getItem(`initial-baseball:daily:${tomorrow}`)).toBe(nextValue);
+
+    for (const key of [
+      `initial-baseball:daily-at-bat-attempt:v1:points-v4:${tomorrow}:${tomorrowId}`,
+      `initial-baseball:daily-result-submission:v1:points-v4:${tomorrow}:${tomorrowId}`,
+    ]) {
+      next.setItem(key, 'bookkeeping');
+      expect(storage.getItem(key)).toBe('bookkeeping');
+      expect(next.getItem(key)).toBe('bookkeeping');
+      next.removeItem(key);
+      expect(storage.getItem(key)).toBeNull();
+    }
   });
 
   it('keeps a points-v4 current-Daily save physically isolated from the historical points-v3 key', () => {

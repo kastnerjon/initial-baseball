@@ -65,7 +65,11 @@ export function getDailyModeStorage(
       }
 
       const legacyValue = storage.getItem(legacyVersionedKey(key));
-      return savedValueMatchesPuzzleId(legacyValue, puzzleScopedCurrentId) ? legacyValue : null;
+      const legacyPuzzleId = readSavedPuzzleId(legacyValue);
+      // Unknown identity is still persisted state: retain the contribution fail-closed path.
+      return legacyPuzzleId === null || legacyPuzzleId === puzzleScopedCurrentId
+        ? legacyValue
+        : null;
     },
     setItem: (key, value) => storage.setItem(translateKey(key), value),
     removeItem(key) {
@@ -74,7 +78,9 @@ export function getDailyModeStorage(
 
       const fallbackKey = legacyVersionedKey(key);
       const fallbackValue = storage.getItem(fallbackKey);
-      if (savedValueMatchesPuzzleId(fallbackValue, puzzleScopedCurrentId)) {
+      const fallbackPuzzleId = readSavedPuzzleId(fallbackValue);
+      if (fallbackValue !== null
+        && (fallbackPuzzleId === null || fallbackPuzzleId === puzzleScopedCurrentId)) {
         storage.removeItem(fallbackKey);
       }
     },
@@ -140,15 +146,14 @@ function isDailyGameplayKey(key: string): boolean {
   return key.startsWith(DEFAULT_DAILY_STORAGE_PREFIX);
 }
 
-function savedValueMatchesPuzzleId(value: string | null, puzzleId: string): boolean {
-  if (value === null) return false;
+function readSavedPuzzleId(value: string | null): string | null {
+  if (value === null) return null;
   try {
     const parsed = JSON.parse(value) as unknown;
-    return typeof parsed === 'object'
-      && parsed !== null
-      && !Array.isArray(parsed)
-      && (parsed as { puzzleId?: unknown }).puzzleId === puzzleId;
+    if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) return null;
+    const puzzleId = (parsed as { puzzleId?: unknown }).puzzleId;
+    return typeof puzzleId === 'string' && puzzleId.length > 0 ? puzzleId : null;
   } catch {
-    return false;
+    return null;
   }
 }
