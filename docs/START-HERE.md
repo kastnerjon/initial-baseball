@@ -382,4 +382,4 @@ Repository docs are the system of record. Every PR has Documentation impact; CI 
 
 ### Active: AB BEAT and small samples
 
-The owner approved per-AB and final BEAT with one other result and colors based on beating AVG (strictly higher green, equal/lower red). Portable distribution contract is the first stage; filtered provider reads, browser first-result exclusion and UI follow separately. Scope/status: `tasks/plans/ab-beat-and-small-samples.md`. Production thresholds remain unchanged until final activation.
+The owner approved per-AB and final BEAT with one other result and colors based on beating AVG (strictly higher green, equal/lower red). #316 completed and production-verified the portable distribution contract. The service-only provider stage now uses additive uniquely named v2 Supabase bucket RPCs with optional anonymous attempt/submission-ID exclusion; the original RPCs remain intact for rollback safety. Browser first-result exclusion and UI activation remain separate follow-ups. Scope/status: `tasks/plans/ab-beat-and-small-samples.md`. Production thresholds remain unchanged until final activation.

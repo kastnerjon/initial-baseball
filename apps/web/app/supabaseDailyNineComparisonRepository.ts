@@ -14,8 +14,8 @@ import {
   type DailyNineComparisonStageTimings,
 } from './dailyNineComparisonTiming';
 
-const AT_BAT_COMPARISON_FUNCTION = 'daily_nine_at_bat_comparison';
-const COMPLETED_COMPARISON_FUNCTION = 'daily_nine_completed_score_buckets';
+const AT_BAT_COMPARISON_FUNCTION = 'daily_nine_at_bat_score_buckets_v2';
+const COMPLETED_COMPARISON_FUNCTION = 'daily_nine_completed_score_buckets_v2';
 
 export type SupabaseDailyNineComparisonRepositoryErrorKind = 'invalid-row' | 'query';
 
@@ -92,6 +92,7 @@ function atBatParams(query: DailyNineAtBatComparisonQuery) {
     p_puzzle_number: query.puzzleNumber,
     p_ruleset_version: query.rulesetVersion,
     p_pitch_number: query.pitchNumber,
+    p_excluded_result_id: query.excludedResultId ?? null,
   };
 }
 
@@ -101,38 +102,46 @@ function completedParams(key: DailyNineComparisonKey) {
     p_puzzle_date: key.puzzleDate,
     p_puzzle_number: key.puzzleNumber,
     p_ruleset_version: key.rulesetVersion,
+    p_excluded_result_id: key.excludedResultId ?? null,
   };
 }
 
 function decodeAtBatSource(value: unknown): DailyNineAtBatComparisonSource {
-  const rows = rowArray(value, 'Daily Nine at-bat comparison');
-  if (rows.length !== 1) {
-    invalid(`Daily Nine at-bat comparison must return exactly one row, received ${rows.length}.`);
+  const scoreBuckets = decodeScoreBuckets(value, 'Daily Nine at-bat comparison');
+  let resolvedAtBatCount = 0;
+  let awardedPointsSum = 0;
+
+  for (const bucket of scoreBuckets) {
+    resolvedAtBatCount = nonNegativeSafeInteger(
+      resolvedAtBatCount + bucket.count,
+      'resolved-at-bat count',
+    );
+    awardedPointsSum = safeHalfPoint(
+      awardedPointsSum + safeHalfPoint(
+        bucket.points * bucket.count,
+        'score bucket point sum',
+      ),
+      'awarded-points sum',
+    );
   }
-  const row = record(rows[0], 'Daily Nine at-bat comparison row');
-  return {
-    resolvedAtBatCount: nonNegativeSafeInteger(
-      row.resolved_at_bat_count,
-      'resolved_at_bat_count',
-    ),
-    awardedPointsSum: safeHalfPoint(
-      row.awarded_points_sum,
-      'awarded_points_sum',
-    ),
-  };
+
+  return { resolvedAtBatCount, awardedPointsSum, scoreBuckets };
 }
 
 function decodeCompletedSource(value: unknown): DailyNineCompletedComparisonSource {
-  const rows = rowArray(value, 'Daily Nine completed comparison');
   return {
-    scoreBuckets: rows.map((candidate, index): DailyNineScoreBucket => {
-      const row = record(candidate, `Daily Nine completed comparison row ${index}`);
-      return {
-        points: safeHalfPoint(row.points, `scoreBuckets[${index}].points`),
-        count: positiveSafeInteger(row.result_count, `scoreBuckets[${index}].count`),
-      };
-    }),
+    scoreBuckets: decodeScoreBuckets(value, 'Daily Nine completed comparison'),
   };
+}
+
+function decodeScoreBuckets(value: unknown, field: string): DailyNineScoreBucket[] {
+  return rowArray(value, field).map((candidate, index): DailyNineScoreBucket => {
+    const row = record(candidate, `${field} row ${index}`);
+    return {
+      points: safeHalfPoint(row.points, `scoreBuckets[${index}].points`),
+      count: positiveSafeInteger(row.result_count, `scoreBuckets[${index}].count`),
+    };
+  });
 }
 
 function rowArray(value: unknown, field: string): unknown[] {
