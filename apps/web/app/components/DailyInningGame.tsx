@@ -289,6 +289,10 @@ export function DailyInningGame({
           answers={scorecardAnswers}
           {...(isDailyPointsRulesetVersion(gameState.rulesetVersion) ? { points: scorecardPoints } : {})}
           comparisons={scorecardComparisons.comparisons}
+          {...(isDailyPointsRulesetVersion(gameState.rulesetVersion) ? {
+            totalPoints: gameState.points.points,
+            completedComparison: completedComparison.state,
+          } : {})}
           pitchLines={gameState.completedPitchLines}
           title="Completed At-bats"
           emptyLabel="No completed at-bats yet."

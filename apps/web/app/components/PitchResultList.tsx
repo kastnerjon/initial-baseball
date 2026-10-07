@@ -3,9 +3,10 @@ import type { DailySharePitchLine } from '@initial-baseball/shared';
 import type { DailyScorecardAnswers, DailyScorecardPoints } from '../dailyScorecard';
 import {
   createDailyNineScorecardRows,
-  type DailyNineScorecardRow,
 } from '../dailyNineScorecardComparisonPresentation';
 import type { DailyNineScorecardComparisons } from '../useDailyNineScorecardComparisons';
+import type { DailyNineCompletedComparisonState } from '../useDailyNineCompletedComparison';
+import { DailyNineDetailedScoreboard } from './DailyNineDetailedScoreboard';
 
 type PitchResultListProps = {
   pitchLines: DailySharePitchLine[];
@@ -15,6 +16,8 @@ type PitchResultListProps = {
   answers?: DailyScorecardAnswers;
   points?: DailyScorecardPoints;
   comparisons?: DailyNineScorecardComparisons;
+  totalPoints?: number;
+  completedComparison?: DailyNineCompletedComparisonState;
 };
 
 export function PitchResultList({
@@ -25,10 +28,24 @@ export function PitchResultList({
   answers = {},
   points,
   comparisons = {},
+  totalPoints,
+  completedComparison,
 }: PitchResultListProps): JSX.Element {
   const dailyNineRows = points === undefined
     ? null
     : createDailyNineScorecardRows(pitchLines, points, comparisons);
+
+  if (dailyNineRows !== null) {
+    return <DailyNineDetailedScoreboard
+      rows={dailyNineRows}
+      answers={answers}
+      points={points!}
+      comparisons={comparisons}
+      totalPoints={totalPoints}
+      completedComparison={completedComparison}
+      compact={compact}
+    />;
+  }
 
   if (compact && pitchLines.length > 0) {
     return (
@@ -37,11 +54,7 @@ export function PitchResultList({
           <span className="pitch-results-kicker">Scorecard</span>
           <span className="pitch-results-title">{`${pitchLines.length} completed`}</span>
         </summary>
-        {dailyNineRows === null ? (
-          <ClassicPitchList pitchLines={pitchLines} title={title} answers={answers} />
-        ) : (
-          <DailyNineScorecardTable rows={dailyNineRows} title={title} answers={answers} />
-        )}
+        <ClassicPitchList pitchLines={pitchLines} title={title} answers={answers} />
       </details>
     );
   }
@@ -54,56 +67,10 @@ export function PitchResultList({
       </div>
       {pitchLines.length === 0 ? (
         <p className="pitch-results-empty">{emptyLabel}</p>
-      ) : dailyNineRows === null ? (
-        <ClassicPitchList pitchLines={pitchLines} title={title} answers={answers} />
       ) : (
-        <DailyNineScorecardTable rows={dailyNineRows} title={title} answers={answers} />
+        <ClassicPitchList pitchLines={pitchLines} title={title} answers={answers} />
       )}
     </section>
-  );
-}
-
-function DailyNineScorecardTable({
-  rows,
-  title,
-  answers,
-}: {
-  rows: DailyNineScorecardRow[];
-  title: string;
-  answers: DailyScorecardAnswers;
-}): JSX.Element {
-  return (
-    <table className="daily-nine-scorecard-table" aria-label={title}>
-      <colgroup>
-        <col className="daily-nine-scorecard-initials-column" />
-        <col className="daily-nine-scorecard-player-column" />
-        <col className="daily-nine-scorecard-outcome-column" />
-        <col className="daily-nine-scorecard-number-column" />
-        <col className="daily-nine-scorecard-number-column" />
-      </colgroup>
-      <thead>
-        <tr>
-          <th scope="col" aria-label="At-bat" />
-          <th scope="col">Player</th>
-          <th scope="col">Outcome</th>
-          <th scope="col">Score</th>
-          <th scope="col">Avg</th>
-        </tr>
-      </thead>
-      <tbody>
-        {rows.map(row => (
-          <tr key={row.pitchNumber}>
-            <th scope="row">{`${row.initials}:`}</th>
-            <td className="daily-nine-scorecard-player">
-              {answers[row.pitchNumber] ?? 'Answer unavailable'}
-            </td>
-            <td className="daily-nine-scorecard-outcome" aria-label={`Outcome ${row.outcome}`}>{row.outcome}</td>
-            <td aria-label={`Your score ${row.score}`}>{row.score}</td>
-            <td aria-label={`Average score ${row.average}`}>{row.average}</td>
-          </tr>
-        ))}
-      </tbody>
-    </table>
   );
 }
 

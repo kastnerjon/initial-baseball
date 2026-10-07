@@ -139,10 +139,10 @@
     grid-template-columns: 36px minmax(0, 1fr) max-content;
     gap: 12px;
   }
-  .daily-nine-scorecard-table th,
-  .daily-nine-scorecard-table td {
-    padding-block: 8px;
-  }
+  .daily-nine-detail-table th,
+  .daily-nine-detail-table td { padding-block: 8px; }
+  .daily-nine-detail-header h2 { font-size: 20px; }
+  .daily-nine-detail-reveal { font-size: 11px; }
   .daily-footer {
     flex-wrap: wrap;
     gap: 4px 12px;

@@ -59,10 +59,14 @@ export function GameCompleteView({
       {inningScoreboard !== undefined ? <InningScoreboard {...inningScoreboard} /> : null}
       <PitchResultList
         answers={scorecardAnswers}
-        {...(isPointsGame ? { points: atBatPoints } : {})}
+        {...(isPointsGame ? {
+          points: atBatPoints,
+          totalPoints: shareResult.points.points,
+          completedComparison: comparison,
+        } : {})}
         comparisons={atBatComparisons}
         pitchLines={shareResult.pitchLines}
-        title="At-bat Results"
+        title={isPointsGame ? 'Scoreboard' : 'At-bat Results'}
         emptyLabel="No at-bat results were recorded."
       />
       <DailyShareCard shareText={shareCardText} />
