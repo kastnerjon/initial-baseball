@@ -160,6 +160,8 @@ The published puzzle is the exact nine selected canonical IDs. The recipe remain
 
 For a bounded same-day identity correction, the current editorial record may be corrected only while it is still `scheduled`. That correction preserves scheduled lifecycle metadata in one optimistic save rather than exposing an intermediate draft, while the ordered lineup change produces a new public puzzle identity. `published` and `archived` records remain immutable.
 
+Current points-v4 browser gameplay storage is scoped by public puzzle identity. A matching pre-scoped points-v4 save may still be read for backward compatibility, but a same-date save whose embedded puzzle ID belongs to an earlier editorial identity is ignored. This keeps a corrected puzzle from inheriting stale browser progress or suppressing its resolved-at-bat contribution.
+
 ## Validation
 
 Recipe generation and validation belong in portable Daily logic, not React or Supabase.
