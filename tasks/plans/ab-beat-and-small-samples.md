@@ -16,7 +16,7 @@ Status: complete in #316 and production verified.
 
 ## PR 2 — service-only filtered provider reads
 
-Status: implementation and hosted migration complete; exact-head CI/Preview/review gates pending.
+Status: implementation and hosted migration complete; exact-head CI and READY Preview pass, hosted Supabase verification is clean, and bounded fresh-eye review found no in-scope issues.
 
 - Goal: let the existing provider return score buckets after optionally excluding one durable anonymous result ID, without exposing the filter publicly yet.
 - Owning layer: the server-only Supabase comparison adapter plus additive database read functions.
