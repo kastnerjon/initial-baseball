@@ -22,7 +22,7 @@ import { createSupabaseArchiveBetaDailyIssuedPuzzleReadRepository } from './supa
 export function getAvailableArchiveBetaIdentity(number: number, now = new Date()) {
   try {
     const identity = resolveArchiveBetaDailyIdentityForNumber(number, ARCHIVE_BETA_EPOCH);
-    return identity.puzzleDate <= getPacificDailyDateString(now) ? identity : null;
+    return identity.puzzleDate < getPacificDailyDateString(now) ? identity : null;
   } catch { return null; }
 }
 
@@ -50,7 +50,7 @@ export function createServerArchiveBetaRuntime({
   return createDailyRuntimeService({
     progressionTokens, resolveLegacyPlayerId, getCanonicalReveal,
     createPuzzle: async date => {
-      if (date < ARCHIVE_BETA_EPOCH.startDate || date > getPacificDailyDateString(now())) {
+      if (date < ARCHIVE_BETA_EPOCH.startDate || date >= getPacificDailyDateString(now())) {
         throw new DailyRuntimeRequestError('This archive puzzle is not available.');
       }
       let record;
@@ -90,7 +90,7 @@ export async function listAvailableArchiveBetaPuzzles(now = new Date()) {
       .from('permanent_daily_issued_puzzles')
       .select('daily_number,puzzle_date,puzzle_id')
       .eq('series_version', 'archive-beta-v1').eq('schema_version', 2)
-      .lte('puzzle_date', getPacificDailyDateString(now))
+      .lt('puzzle_date', getPacificDailyDateString(now))
       .order('daily_number', { ascending: false }).limit(60);
     if (error) throw error;
     return (data ?? []).map(row => {

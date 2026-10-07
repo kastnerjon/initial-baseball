@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { createArchiveBetaDailyClueFrozenIssuedPuzzle, createPermanentDailyIssuedClueSnapshot, type ArchiveBetaDailyIssuedPuzzleReadService } from '@initial-baseball/daily';
 import { CURRENT_DAILY_RULESET_VERSION, DEFAULT_DAILY_HINT_CONFIG, type Player, type DailyGameState } from '@initial-baseball/shared';
 vi.mock('server-only', () => ({}));
-const query = vi.hoisted(() => ({ select: vi.fn(), eq: vi.fn(), lte: vi.fn(), order: vi.fn(), limit: vi.fn() }));
+const query = vi.hoisted(() => ({ select: vi.fn(), eq: vi.fn(), lt: vi.fn(), order: vi.fn(), limit: vi.fn() }));
 const submission = vi.hoisted(() => vi.fn());
 vi.mock('react', () => ({ useEffect: (effect: () => void) => effect(), useCallback: (callback: unknown) => callback }));
 vi.mock('./dailyCompletedResultClient', () => ({ submitCompletedDailyResultIfNeeded: submission }));
@@ -14,7 +14,7 @@ import { DailyRuntimeRequestError } from './dailyRuntimeService';
 import { useCompletedDailyResultSubmission } from './useCompletedDailyResultSubmission';
 
 const date = '2026-10-04';
-const now = () => new Date('2026-10-05T01:00:00Z');
+const now = () => new Date('2026-10-05T07:00:00Z');
 const tokens = createDailyProgressionTokenCodec('archive-beta-runtime-test-secret-0123456789');
 const ids = Array.from({ length: 9 }, (_, i) => `ibp_${i.toString(16).padStart(20, '0')}`);
 const record = createArchiveBetaDailyClueFrozenIssuedPuzzle({
@@ -125,12 +125,12 @@ describe('playable archive beta boundaries', () => {
     expect(archive).not.toHaveBeenCalled();
   });
   it('catalog queries only bounded available beta metadata and fails closed on invalid identities', async () => {
-    for (const method of [query.select, query.eq, query.lte, query.order]) method.mockReturnValue(query);
+    for (const method of [query.select, query.eq, query.lt, query.order]) method.mockReturnValue(query);
     query.limit.mockResolvedValue({ data: [{ daily_number: 1, puzzle_date: date, puzzle_id: record.puzzleId }], error: null });
     expect(await listAvailableArchiveBetaPuzzles(now())).toEqual([record.identity]);
     expect(query.select).toHaveBeenCalledWith('daily_number,puzzle_date,puzzle_id');
     expect(query.eq).toHaveBeenCalledWith('series_version', 'archive-beta-v1');
-    expect(query.lte).toHaveBeenCalledWith('puzzle_date', date);
+    expect(query.lt).toHaveBeenCalledWith('puzzle_date', '2026-10-05');
     expect(query.limit).toHaveBeenCalledWith(60);
     query.limit.mockResolvedValue({ data: [{ daily_number: 2, puzzle_date: '2026-10-05', puzzle_id: 'archive-beta-v1-daily-2' }], error: null });
     await expect(listAvailableArchiveBetaPuzzles(now())).rejects.toThrow(/^The archive list is temporarily unavailable\.$/);
