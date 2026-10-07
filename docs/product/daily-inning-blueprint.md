@@ -190,3 +190,7 @@ The winning beta game is explicitly chosen; permanent numbering/launch epoch is 
 ## Change rule
 
 Implementation and canonical docs change together. Approved future behavior must be labeled rather than presented as live.
+
+## At-bat detail alignment
+
+The hint content and reveal button are centered below the initials, both before and after clues appear. The Hints/count header retains its existing alignment; revealed label/value blocks keep multiline text left-aligned. Terminal YOU/AVG, BEAT/status and sample note are centered beneath the outcome. Player reveal and guess/action layout retain their existing alignment. This is CSS presentation only; scoring, comparison semantics and gameplay remain unchanged. Scope: `tasks/plans/center-at-bat-details.md`.

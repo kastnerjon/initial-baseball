@@ -17,6 +17,10 @@ Use this file to resume work. It records verified current state, settled future 
 
 Do not restart settled discussions because the conversation changed. Correct drift before new implementation.
 
+## At-bat detail alignment
+
+October 7 owner screenshot request: center hint content/reveal button and terminal comparison metric/status/note rows using existing CSS selectors. Keep long clue text readable, section headers and player reveal unchanged. Scope and exact review/release evidence: `tasks/plans/center-at-bat-details.md` and its implementing PR. Local archive history remains separate.
+
 ## Same-day correction and save-isolation checkpoint
 
 October 6 slot 5 was corrected through the private ChatOps path from Tim Raines Jr. to Tim Raines Sr. after #305 merged as `c01c23bb851f3ea66e6b4dd3f95c48a23302a126`. Production `dpl_13SpUzPznbEUphP5DiPU1dTf99rj` is READY on that merge. The scheduled row is revision 10; corrected public identity is `daily-2026-10-06-editorial-6aee324e`, and original `daily-2026-10-06-editorial-eb79edef` results remain intact. This is an atomic scheduled-only correction; published/archived content remains immutable.
