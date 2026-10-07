@@ -185,7 +185,6 @@ export function DailyInningGame({
           atBatPoints: scorecardPoints,
           atBatComparisons: scorecardComparisons.comparisons,
           totalPoints: gameState.points.points,
-          gameCompleted: true,
           completedComparison: completedComparison.state,
         })
       : undefined;
@@ -231,7 +230,6 @@ export function DailyInningGame({
         atBatPoints: scorecardPoints,
         atBatComparisons: scorecardComparisons.comparisons,
         totalPoints: displayedPoints.points,
-        gameCompleted: displayedPoints.completed,
         completedComparison: completedComparison.state,
       })
     : null;

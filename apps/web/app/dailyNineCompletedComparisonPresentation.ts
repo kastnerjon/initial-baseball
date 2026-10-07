@@ -48,12 +48,14 @@ export function createDailyNineCompletedComparisonPresentation(
     };
   }
 
-  const aboveAverage = state.ownPoints > averageTotalPoints;
+  const aboveAverage = state.ownPoints === null ? null : state.ownPoints > averageTotalPoints;
   return {
     average: averageTotalPoints.toFixed(1),
-    beat: strictLowerFinishRate === null ? null : `${Math.round(strictLowerFinishRate * 100)}%`,
-    averageStatus: aboveAverage ? 'above' : 'at-or-below',
-    statusLabel: aboveAverage ? 'Above AVG' : 'At or below AVG',
+    beat: aboveAverage === null || strictLowerFinishRate === null
+      ? null
+      : `${Math.round(strictLowerFinishRate * 100)}%`,
+    averageStatus: aboveAverage === null ? null : aboveAverage ? 'above' : 'at-or-below',
+    statusLabel: aboveAverage === null ? null : aboveAverage ? 'Above AVG' : 'At or below AVG',
     note: `${count} other completed result${count === 1 ? '' : 's'}${strictLowerFinishRate === null ? '' : " · ties aren't counted as beaten"}`,
   };
 }
