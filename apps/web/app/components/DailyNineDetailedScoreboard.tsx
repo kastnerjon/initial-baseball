@@ -73,7 +73,10 @@ export function DailyNineDetailedScoreboardTable({
           <tr>
             <th scope="col">AB</th>
             <th scope="col">Player</th>
-            <th scope="col">Outcome-Score</th>
+            <th scope="col" aria-label="Outcome-Score">
+              <span className="daily-nine-detail-result-desktop">Outcome-Score</span>
+              <span className="daily-nine-detail-result-mobile">Result</span>
+            </th>
             <th scope="col">AVG</th>
             <th scope="col">BEAT %</th>
           </tr>
@@ -87,7 +90,7 @@ export function DailyNineDetailedScoreboardTable({
               <tr key={row.pitchNumber}>
                 <th scope="row">{row.pitchNumber}</th>
                 <td>
-                  <strong>{row.initials}:</strong>
+                  <strong>{row.initials}{revealAnswers ? ':' : ''}</strong>
                   {revealAnswers ? (
                     <span className="daily-nine-detail-answer">
                       {answers[row.pitchNumber] ?? 'Answer unavailable'}

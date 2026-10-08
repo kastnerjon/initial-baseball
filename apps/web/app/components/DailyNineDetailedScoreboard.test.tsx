@@ -47,6 +47,7 @@ describe('DailyNineDetailedScoreboard', () => {
     expect(html).not.toContain('Bryce Harper');
     expect(html).not.toContain('Dave Stieb');
     expect(html).not.toContain('Unresolved Player');
+    expect(html).toContain('>BH</strong>');
     expect(html).toContain('HR - 4');
     expect(html).toContain('K - 0');
     expect(html).toContain('>BEAT %<');
@@ -81,13 +82,45 @@ describe('DailyNineDetailedScoreboard', () => {
     expect(total).not.toContain('>0%</td>');
   });
 
-  it('preserves compact during-play disclosure and scrollable keyboard-accessible table', () => {
+  it('preserves compact during-play disclosure and keyboard-accessible table region', () => {
     const html = renderToStaticMarkup(<DailyNineDetailedScoreboard {...props} compact />);
     expect(html).toContain('<details class="pitch-results-card pitch-results-card-compact daily-nine-detail-card daily-nine-detail-card-compact">');
     expect(html).toContain('daily-nine-detail-summary');
     expect(html).toContain('>Scoreboard</span>');
     expect(html).not.toContain('1 completed</span>');
     expect(html).toContain('aria-label="Detailed scores by at-bat" tabindex="0"');
+  });
+
+  it('retains one accessible outcome-score header with concise mobile copy', () => {
+    const html = renderToStaticMarkup(<DailyNineDetailedScoreboardTable {...props} revealAnswers={false} />);
+    expect(html).toContain('scope="col" aria-label="Outcome-Score"');
+    expect(html).toContain('daily-nine-detail-result-desktop">Outcome-Score');
+    expect(html).toContain('daily-nine-detail-result-mobile">Result');
+  });
+
+  it('retains half points, long resolved names and missing comparisons', () => {
+    const html = renderToStaticMarkup(<DailyNineDetailedScoreboardTable
+      {...props}
+      rows={[{ pitchNumber: 1, initials: 'JS', outcome: 'BB', score: '0.5', average: '—' }]}
+      answers={{ 1: 'Jarrod Saltalamacchia', 2: 'Unresolved Player' }}
+      points={{ 1: 0.5 }} comparisons={{}} completedComparison={undefined}
+      totalPoints={0.5} revealAnswers
+    />);
+    expect(html).toContain('JS:</strong><span class="daily-nine-detail-answer">Jarrod Saltalamacchia');
+    expect(html).toContain('BB - 0.5');
+    expect(html).toContain('aria-label="Total points">0.5');
+    expect(html).toContain('aria-label="Completed-game average">—');
+    expect(html).not.toContain('Unresolved Player');
+  });
+
+  it('renders the aligned five-column TOTAL before any AB is completed', () => {
+    const html = renderToStaticMarkup(<DailyNineDetailedScoreboardTable
+      {...props} rows={[]} answers={{}} totalPoints={0} completedComparison={undefined} revealAnswers={false}
+    />);
+    expect(html).toContain('<tbody></tbody>');
+    expect(html).toMatch(/colspan="2"/i);
+    expect(html).toContain('aria-label="Total points">0');
+    expect(html).toContain('aria-label="Completed-game BEAT">—');
   });
 
   it('displays a dash for absent archived peer histograms rather than guessing BEAT', () => {
