@@ -10,7 +10,7 @@ export function DailyNineAtBatDistribution({
 }): JSX.Element {
 
   const accessibleBars = presentation.bars
-    .map(bar => `${bar.points} points (${bar.outcome}): ${bar.count} answers, ${bar.percent}%${bar.selected ? ', your score' : ''}`)
+    .map(bar => `${bar.points} points (${bar.outcome}): ${bar.count} ${bar.count === 1 ? 'answer' : 'answers'}, ${bar.percent}%${bar.selected ? ', your score' : ''}`)
     .join('; ');
 
   return (
