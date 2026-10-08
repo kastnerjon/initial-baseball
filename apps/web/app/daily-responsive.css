@@ -141,8 +141,19 @@
   }
   .daily-nine-detail-card { padding: 15px 14px 18px; border-radius: 12px; }
   .daily-nine-detail-table { margin-top: 12px; }
+  .daily-nine-detail-table col:nth-child(1) { width: 8%; }
+  .daily-nine-detail-table col:nth-child(2) { width: 30%; }
+  .daily-nine-detail-table col:nth-child(3) { width: 26%; }
+  .daily-nine-detail-table col:nth-child(4) { width: 16%; }
+  .daily-nine-detail-table col:nth-child(5) { width: 20%; }
   .daily-nine-detail-table th,
-  .daily-nine-detail-table td { padding: 9px 6px; }
+  .daily-nine-detail-table td { padding: 10px 4px; }
+  .daily-nine-detail-table thead th { letter-spacing: 0.025em; }
+  .daily-nine-detail-table tfoot th,
+  .daily-nine-detail-table tfoot td { padding: 12px 4px; font-size: 13px; }
+  .daily-nine-detail-result-desktop { display: none; }
+  .daily-nine-detail-result-mobile { display: inline; }
+  .daily-nine-detail-answer { display: block; margin: 3px 0 0; font-size: 12px; line-height: 1.4; }
   .daily-nine-detail-header h2,
   .daily-nine-detail-heading { font-size: 23px; }
   .daily-nine-detail-reveal { font-size: 11px; }
@@ -185,5 +196,4 @@
     justify-content: flex-end;
     margin-top: 6px;
   }
-  .daily-nine-detail-table { min-width: 440px; }
 }
