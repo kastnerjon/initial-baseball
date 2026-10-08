@@ -73,10 +73,10 @@ describe('DailyNineAtBatComparison', () => {
     expect(html).not.toContain('Above AVG');
     expect((html.match(/46%/g) ?? []).length).toBe(1);
     expect(html).toContain('You scored more than 46% of other players');
-    expect(html).toContain('2 points (2B): 24 answers, 24%, your score');
-    expect(html).toContain('% of answers / # answers');
+    expect(html).toContain('2 points (2B): 24 results, 24%, your score');
+    expect(html).toContain('Percent / results');
     expect(html).toContain('at-bat-distribution-count');
-    expect(html).toContain('>#24</span>');
+    expect(html).toContain('>24 results</span>');
     expect(html).toContain('>24%</strong>');
     expect(html).toContain('>YOU</span>');
     expect(html).toContain('at-bat-distribution-selected');
@@ -96,12 +96,23 @@ describe('DailyNineAtBatComparison', () => {
         scoreHistogram: [0, 0, 0, 0, 0, 0, 0, 0, 1],
       }} />,
     );
-    expect(html).toContain('0 points (K): 0 answers, 0%, your score');
+    expect(html).toContain('0 points (K): 0 results, 0%, your score');
     expect(html).toContain('>0%</strong>');
-    expect(html).toContain('>#0</span>');
+    expect(html).toContain('>0 results</span>');
     expect(html).toContain('at-bat-distribution-selected');
     expect((html.match(/>YOU<\/span>/g) ?? []).length).toBe(1);
     expect(html).toContain('You scored more than 0%');
+  });
+
+  it('uses the singular result label when one peer selected an outcome', () => {
+    const html = renderToStaticMarkup(<DailyNineAtBatComparison state={{
+      status: 'success', ownPoints: 4, resolvedAtBatCount: 1,
+      averagePoints: 4, strictLowerAtBatRate: 0,
+      rulesetVersion: 'points-v4', scoreHistogram: [0, 0, 0, 0, 0, 0, 0, 0, 1],
+    }} />);
+    expect(html).toContain('>1 result</span>');
+    expect(html).toContain('4 points (HR): 1 result, 100%, your score');
+    expect(html).not.toContain('#1</span>');
   });
 
   it('does not duplicate the peer sample or average with a one-result chart', () => {
