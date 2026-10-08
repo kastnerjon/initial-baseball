@@ -42,7 +42,8 @@ describe('Daily Nine at-bat distribution presentation', () => {
 
   it('does not invent data for older rulesets, missing histograms or unsupported buckets', () => {
     expect(createDailyNineAtBatDistributionPresentation({ ...example, rulesetVersion: 'points-v3' })).toBeNull();
-    expect(createDailyNineAtBatDistributionPresentation({ ...example, scoreHistogram: undefined })).toBeNull();
+    const { scoreHistogram: _unusedHistogram, ...withoutHistogram } = example;
+    expect(createDailyNineAtBatDistributionPresentation(withoutHistogram)).toBeNull();
     expect(createDailyNineAtBatDistributionPresentation({ ...example, resolvedAtBatCount: 0 })).toBeNull();
     expect(createDailyNineAtBatDistributionPresentation({
       ...example, scoreHistogram: [18, 12, 16, 1, 24, 0, 18, 0, 12],
