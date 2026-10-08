@@ -51,6 +51,8 @@ The canonical hitter reveal uses the supported career and season column order `A
 
 The completed Daily Nine summary uses a small `Daily #N` heading and three equal-width cards: `FINAL SCORE` (personal points), `AVERAGE` (other completed results), and `BEAT` (strict-lower percentage). The existing comparison note and above/below-average indication remain; missing or pending comparisons show dashes. There is no large Game Complete heading or checkmark on Daily Nine. Classic completion, scorecard, and sharing are unchanged.
 
+The Daily Nine copied share text reports completed-game points, average, and strict-lower BEAT % when comparison data exist. Its compact per-at-bat initials-only table has SCORE, AVG, and BEAT % columns; unavailable individual values display —, and unavailable overall metrics are omitted. Sharing continues to exclude player names, and no comparison or scoring calculations are added to UI.
+
 ## Hint and answer boundary
 
 Current-batter hints are gameplay inputs, not answers, and may be present in browser memory/initial props. The browser must not receive:
