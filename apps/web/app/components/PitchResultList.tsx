@@ -51,6 +51,7 @@ export function PitchResultList({
       rows={dailyNineRows}
       answers={answers}
       points={points!}
+      comparisons={comparisons}
       totalPoints={totalPoints ?? 0}
       totalAtBats={totalAtBats}
       {...(completedComparison === undefined ? {} : { completedComparison })}

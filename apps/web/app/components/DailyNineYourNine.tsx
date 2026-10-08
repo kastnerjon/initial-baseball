@@ -7,6 +7,7 @@ import { createDailyNineCompletedComparisonPresentation } from '../dailyNineComp
 import type { DailyNineCompletedComparisonState } from '../useDailyNineCompletedComparison';
 import type { DailyNineScorecardRow } from '../dailyNineScorecardComparisonPresentation';
 import { formatDailyScorecardPoints, type DailyScorecardAnswers, type DailyScorecardPoints } from '../dailyScorecard';
+import type { DailyNineScorecardComparisons } from '../useDailyNineScorecardComparisons';
 
 const MAX_POINTS_PER_AT_BAT = getDailyPointsRange(POINTS_V4_DAILY_RULESET_VERSION, 1)?.maximumPoints ?? 0;
 
@@ -14,6 +15,7 @@ export type DailyNineYourNineProps = {
   rows: DailyNineScorecardRow[];
   answers: DailyScorecardAnswers;
   points: DailyScorecardPoints;
+  comparisons: DailyNineScorecardComparisons;
   totalPoints: number;
   puzzleNumber?: number;
   totalAtBats: number;
@@ -62,7 +64,7 @@ export function DailyNineYourNine(props: DailyNineYourNineProps): JSX.Element {
 }
 
 export function DailyNineYourNineRows({
-  rows, answers, points, totalAtBats, currentAtBatNumber, currentAtBatInitials, revealPlayers,
+  rows, answers, points, comparisons, totalAtBats, currentAtBatNumber, currentAtBatInitials, revealPlayers,
 }: DailyNineYourNineProps & { revealPlayers: boolean }): JSX.Element {
   const remainingStart = Math.max(rows.length + 1, (currentAtBatNumber ?? 0) + 1);
   const remaining = Math.max(0, totalAtBats - remainingStart + 1);
@@ -71,9 +73,11 @@ export function DailyNineYourNineRows({
     <div className="your-nine-list">
       {rows.map(row => {
         const awardedPoints = points[row.pitchNumber];
-        const hasAverage = row.average !== '—' && row.score !== '—';
-        const status = !hasAverage ? 'pending'
-          : Number(row.score) > Number(row.average) ? 'above' : 'at-or-below';
+        const comparison = comparisons[row.pitchNumber];
+        const rawAverage = comparison?.status === 'success' && comparison.resolvedAtBatCount > 0
+          ? comparison.averagePoints : null;
+        const status = rawAverage === null || awardedPoints === undefined ? 'pending'
+          : awardedPoints > rawAverage ? 'above' : 'at-or-below';
         const fill = awardedPoints === undefined || MAX_POINTS_PER_AT_BAT <= 0 ? 0
           : Math.min(100, Math.max(0, (awardedPoints / MAX_POINTS_PER_AT_BAT) * 100));
         const answer = revealPlayers ? answers[row.pitchNumber] : undefined;

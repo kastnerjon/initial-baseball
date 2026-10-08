@@ -20,6 +20,12 @@ const props: DailyNineYourNineProps = {
     5: 'Future answer must not appear',
   },
   points: { 1: 2, 2: 4, 3: 0, 4: 0.5 },
+  comparisons: {
+    1: { status: 'success', resolvedAtBatCount: 2, averagePoints: 1.3 },
+    2: { status: 'success', resolvedAtBatCount: 3, averagePoints: 2.1 },
+    3: { status: 'success', resolvedAtBatCount: 1, averagePoints: 0 },
+    4: { status: 'unavailable' },
+  },
   totalPoints: 6.5,
   puzzleNumber: 164,
   totalAtBats: 9,
@@ -113,6 +119,18 @@ describe('Daily Nine Your Nine presentation', () => {
     expect(html).not.toContain('KGJ');
   });
 
+  it('colors close comparisons using unrounded AVG rather than the rounded display value', () => {
+    const html = renderToStaticMarkup(
+      <DailyNineYourNineRows {...props}
+        rows={[{ pitchNumber: 1, initials: 'BH', outcome: 'BB', score: '0.5', average: '0.5', beat: '50%' }]}
+        points={{ 1: 0.5 }}
+        comparisons={{ 1: { status: 'success', resolvedAtBatCount: 100, averagePoints: 0.49 } }}
+        revealPlayers={false} />,
+    );
+    expect(html).toContain('your-nine-row-above');
+    expect(html).not.toContain('your-nine-row-at-or-below');
+  });
+
   it('shows all nine results at completion without an active or upcoming row', () => {
     const rows = Array.from({ length: 9 }, (_, i) => ({
       pitchNumber: i + 1, initials: 'AA', outcome: 'HR' as const,
@@ -120,6 +138,9 @@ describe('Daily Nine Your Nine presentation', () => {
     }));
     const html = renderToStaticMarkup(<DailyNineYourNine {...props}
       rows={rows} points={Object.fromEntries(rows.map(row => [row.pitchNumber, 4]))}
+      comparisons={Object.fromEntries(rows.map(row => [row.pitchNumber, {
+        status: 'success' as const, resolvedAtBatCount: 1, averagePoints: 2,
+      }]))}
       totalPoints={36} currentAtBatNumber={null} />);
     expect(html).toContain('9 of 9 completed');
     expect((html.match(/class="your-nine-row your-nine-row-above"/g) ?? []).length).toBe(9);
