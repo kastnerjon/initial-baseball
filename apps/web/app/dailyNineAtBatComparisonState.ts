@@ -18,6 +18,8 @@ export type DailyNineAtBatComparisonState =
       resolvedAtBatCount: number;
       averagePoints: number | null;
       strictLowerAtBatRate: number | null;
+      rulesetVersion?: DailyNineComparisonApiRulesetVersion;
+      scoreHistogram?: number[];
     }
   | { status: 'unavailable'; ownPoints: number };
 
@@ -95,6 +97,8 @@ export function createDailyNineAtBatComparisonState(
       resolvedAtBatCount: readState.resolvedAtBatCount,
       averagePoints: readState.averagePoints,
       strictLowerAtBatRate,
+      ...(readState.rulesetVersion === undefined ? {} : { rulesetVersion: readState.rulesetVersion }),
+      ...(readState.scoreHistogram === undefined ? {} : { scoreHistogram: readState.scoreHistogram }),
     };
   }
   if (readState?.status === 'unavailable') {

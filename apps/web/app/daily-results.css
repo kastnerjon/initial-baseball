@@ -92,6 +92,99 @@
   color: var(--ink-soft);
   font-size: 11px;
 }
+.at-bat-distribution {
+  display: grid;
+  gap: 10px;
+  min-width: 0;
+  margin-top: 12px;
+  padding-top: 14px;
+  border-top: 1px solid var(--line-soft);
+}
+.at-bat-distribution h3 {
+  margin: 0;
+  color: var(--clubhouse-deep);
+  font: 700 20px/1.2 var(--display-font);
+  letter-spacing: -0.02em;
+}
+.at-bat-distribution-sample {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+.at-bat-distribution-bars {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+  min-width: 0;
+  padding-top: 6px;
+}
+.at-bat-distribution-column {
+  display: grid;
+  grid-template-rows: 18px 116px auto auto;
+  align-items: end;
+  justify-items: center;
+  gap: 4px;
+  min-width: 0;
+  color: var(--ink);
+  font-variant-numeric: tabular-nums;
+}
+.at-bat-distribution-percent {
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 1;
+}
+.at-bat-distribution-track {
+  display: flex;
+  width: 100%;
+  height: 116px;
+  align-items: flex-end;
+  justify-content: center;
+  border-bottom: 1px solid var(--line);
+}
+.at-bat-distribution-bar {
+  display: block;
+  width: min(100%, 56px);
+  border-radius: 5px 5px 0 0;
+  background: #becdc2;
+}
+.at-bat-distribution-selected {
+  color: var(--clubhouse);
+}
+.at-bat-distribution-selected .at-bat-distribution-bar {
+  background: var(--clubhouse);
+}
+.at-bat-distribution-points {
+  font-size: 13px;
+  line-height: 1.2;
+}
+.at-bat-distribution-outcome {
+  color: var(--ink-soft);
+  font-size: 11px;
+  line-height: 1.2;
+}
+.at-bat-distribution-selected .at-bat-distribution-outcome {
+  color: var(--clubhouse);
+}
+.at-bat-distribution-summary {
+  margin: 6px 0 0;
+  padding: 10px 12px;
+  border-radius: 7px;
+  background: #e9f0e8;
+  color: var(--clubhouse-deep);
+  font-size: 12px;
+}
+.at-bat-distribution-summary span {
+  color: var(--ink-soft);
+}
+@media (max-width: 640px) {
+  .at-bat-distribution h3 { font-size: 17px; }
+  .at-bat-distribution-bars { gap: 5px; }
+  .at-bat-distribution-column { grid-template-rows: 16px 94px auto auto; gap: 3px; }
+  .at-bat-distribution-percent { font-size: 10px; }
+  .at-bat-distribution-track { height: 94px; }
+  .at-bat-distribution-points { font-size: 12px; }
+  .at-bat-distribution-outcome { font-size: 10px; }
+}
 .player-reveal-card {
   display: grid;
   gap: 18px;

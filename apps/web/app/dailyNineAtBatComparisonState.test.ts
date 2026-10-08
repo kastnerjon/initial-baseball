@@ -149,6 +149,8 @@ describe('Daily Nine at-bat comparison presentation state', () => {
 
     expect(createDailyNineAtBatComparisonState(readState, 4)).toMatchObject({
       strictLowerAtBatRate: 1,
+      rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION,
+      scoreHistogram: readState.scoreHistogram,
     });
     expect(createDailyNineAtBatComparisonState(readState, 2)).toMatchObject({
       strictLowerAtBatRate: 0,

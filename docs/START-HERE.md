@@ -31,6 +31,10 @@ After the mobile bottom Scoreboard correction, replace only the top numerical sc
 
 The completed Daily Nine summary redesign starts with a small `Daily #N` heading, three equal `Final Score` / `Average` / `Beat` cards, and the existing peer note (without the large Game Complete heading/checkmark). The nine result circles and broader Share Results redesign remain deferred; the future shareable-image direction is Classic Scorecard, and text sharing is undecided. These are settled directions, not current implementation scope.
 
+## Resolved-at-bat distribution
+
+The owner approved a six-column Daily Nine points-v4 score distribution inspired by the supplied screenshot: each completed at-bat displays peer frequencies for K/BB/1B/2B/3B/HR, with the current score highlighted, corresponding percentages, sample size, and strict-lower BEAT context. This uses only the existing authoritative histogram after at-bat resolution; absent or incompatible data remain quiet, and historical points-v3 is unchanged. Implemented in the bounded at-bat-distribution PR following #335. This does not change score logic or share formatting.
+
 ## Bottom Daily Nine Scoreboard — first design checkpoint
 
 Owner-approved step 1 replaces only the bottom points-mode At-bat Results scorecard with a Scoreboard containing AB, Player (initials with optional local Reveal answers), combined OUTCOME-SCORE, per-AB AVG and strict-lower BEAT %, and a TOTAL row showing personal accumulated points, authoritative whole-game AVG, and final-score-only BEAT %. Missing comparisons show dashes. Canonical revealed names stay private to the resolved-session view; the copied share format is unchanged. The current top nine-column scoreboard stays unchanged through the mobile refinement; its approved nine-circle replacement is a separate future step. Classic remains unchanged. Scope: `tasks/plans/bottom-daily-nine-scoreboard.md`.
