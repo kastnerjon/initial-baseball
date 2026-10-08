@@ -33,7 +33,7 @@ The completed Daily Nine summary redesign starts with a small `Daily #N` heading
 
 ## Resolved-at-bat distribution
 
-The owner approved a six-column Daily Nine points-v4 score distribution inspired by the supplied screenshot: each completed at-bat displays peer frequencies for K/BB/1B/2B/3B/HR, with the current score highlighted, corresponding percentages, sample size, and strict-lower BEAT context. This uses only the existing authoritative histogram after at-bat resolution; absent or incompatible data remain quiet, and historical points-v3 is unchanged. Implemented in the bounded at-bat-distribution PR following #335. This does not change score logic or share formatting.
+The owner approved a six-column Daily Nine points-v4 score distribution inspired by the supplied screenshot: each completed at-bat displays peer frequencies for K/BB/1B/2B/3B/HR, with the current score highlighted, corresponding percentages, sample size, and strict-lower BEAT context. This uses only the existing authoritative histogram after at-bat resolution; absent or incompatible data remain quiet, and historical points-v3 is unchanged. Implemented in the bounded at-bat-distribution PR following #335. Owner-approved follow-up removes the duplicated YOU/AVG/BEAT/peer-note metrics above the v4 chart, moves AVG into the chart subtitle with the peer count, and retains BEAT in the bar-chart footer. Non-chart states (loading, unavailable, historical or missing histograms) retain the original textual comparison. This does not change score logic or share formatting.
 
 ## Bottom Daily Nine Scoreboard — first design checkpoint
 

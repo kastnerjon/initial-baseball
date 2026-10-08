@@ -58,11 +58,30 @@ describe('DailyNineAtBatComparison', () => {
       }} />,
     );
     expect(html).toContain('How everyone scored on this at-bat');
-    expect(html).toContain('Based on 100 other completed results');
+    expect(html).toContain('Average: 1.7 pts · Based on 100 other results');
+    expect(html).not.toContain('at-bat-comparison-values');
+    expect(html).not.toContain('at-bat-comparison-performance');
+    expect(html).not.toContain('at-bat-comparison-note');
+    expect(html).not.toContain('Above AVG');
+    expect((html.match(/46%/g) ?? []).length).toBe(1);
     expect(html).toContain('You scored more than 46% of other players');
     expect(html).toContain('2 points (2B): 24 results, 24%');
     expect(html).toContain('at-bat-distribution-selected');
     expect((html.match(/class="at-bat-distribution-column/g) ?? []).length).toBe(6);
+  });
+
+  it('does not duplicate the peer sample or average with a one-result chart', () => {
+    const html = renderToStaticMarkup(
+      <DailyNineAtBatComparison state={{
+        status: 'success', ownPoints: 2, resolvedAtBatCount: 1,
+        averagePoints: 1, strictLowerAtBatRate: 1,
+        rulesetVersion: 'points-v4',
+        scoreHistogram: [0, 0, 1, 0, 0, 0, 0, 0, 0],
+      }} />,
+    );
+    expect(html).toContain('Average: 1.0 pts · Based on 1 other result');
+    expect((html.match(/1 other result/g) ?? []).length).toBe(1);
+    expect(html).not.toContain('at-bat-comparison-values');
   });
 
   it('keeps the old textual comparison when histogram data is unavailable', () => {
@@ -73,7 +92,23 @@ describe('DailyNineAtBatComparison', () => {
       }} />,
     );
     expect(html).toContain('BEAT 100%');
+    expect(html).toContain('>YOU<');
+    expect(html).toContain('>AVG<');
+    expect(html).toContain('1 other result');
     expect(html).not.toContain('at-bat-distribution-bars');
+  });
+
+  it('retains the text comparison for historical scoring even when a histogram exists', () => {
+    const html = renderToStaticMarkup(
+      <DailyNineAtBatComparison state={{
+        status: 'success', ownPoints: 4, resolvedAtBatCount: 1,
+        averagePoints: 2, strictLowerAtBatRate: 1,
+        rulesetVersion: 'points-v3', scoreHistogram: [0, 0, 1, 0, 0, 0, 0, 0],
+      }} />,
+    );
+    expect(html).toContain('BEAT 100%');
+    expect(html).toContain('Above AVG');
+    expect(html).not.toContain('How everyone scored');
   });
 
   it('keeps personal points visible while comparison is still loading', () => {

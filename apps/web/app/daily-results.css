@@ -96,9 +96,6 @@
   display: grid;
   gap: 10px;
   min-width: 0;
-  margin-top: 12px;
-  padding-top: 14px;
-  border-top: 1px solid var(--line-soft);
 }
 .at-bat-distribution h3 {
   margin: 0;
