@@ -45,8 +45,8 @@ export function GameCompleteView({
 
   return (
     <div className="game-shell">
-      <section className="complete-card">
-        <h2>Game Complete</h2>
+      <section className={isPointsGame ? 'complete-card complete-card-daily' : 'complete-card'}>
+        <h2>{isPointsGame ? 'Daily #' + shareResult.puzzleNumber : 'Game Complete'}</h2>
         {isPointsGame ? (
           <DailyNineCompletedComparison
             points={shareResult.points.points}

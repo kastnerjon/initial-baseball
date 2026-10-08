@@ -29,7 +29,7 @@ Owner follow-up on the deployed phone view supersedes stacked answers: Reveal ON
 
 After the mobile bottom Scoreboard correction, replace only the top numerical scoreboard in a separate bounded PR with nine equal circles. Completed circles show actual HR/3B/2B/1B/BB/K results, with green shade intensity descending from HR (darkest) to K (palest). Current AB shows its number with a highlighted outline; future ABs show outlined numbers. Add a small `AT-BAT 5 OF 9` progress label, with no duplicate points/averages inside circles. Preserve the bottom detailed Scoreboard.
 
-The later Game Complete design uses a large final score, supporting statistics, nine result circles and Share Results, omitting the stadium illustration. Future shareable image direction is Classic Scorecard; text sharing is undecided and on hold. These are settled directions, not current implementation scope.
+The completed Daily Nine summary redesign starts with a small `Daily #N` heading, three equal `Final Score` / `Average` / `Beat` cards, and the existing peer note (without the large Game Complete heading/checkmark). The nine result circles and broader Share Results redesign remain deferred; the future shareable-image direction is Classic Scorecard, and text sharing is undecided. These are settled directions, not current implementation scope.
 
 ## Bottom Daily Nine Scoreboard — first design checkpoint
 

@@ -49,6 +49,8 @@ Daily Nine's bottom detailed Scoreboard presents AB number, initials (with optio
 
 The canonical hitter reveal uses the supported career and season column order `AB, R, H, HR, RBI, SB, BA, OBP, SLG, OPS`. Two-way players retain a separate pitching table, whose current column order is unchanged. Hint 4 is generated from structured career stats rather than the legacy preformatted stat line. Its compact hitter subset is `HR, RBI, SB, BA, OBP`; its pitcher subset is `W, L, SV, ERA, WHIP, K`, with `SV` omitted when unavailable. Both subsets preserve the corresponding reveal's relative order.
 
+The completed Daily Nine summary uses a small `Daily #N` heading and three equal-width cards: `FINAL SCORE` (personal points), `AVERAGE` (other completed results), and `BEAT` (strict-lower percentage). The existing comparison note and above/below-average indication remain; missing or pending comparisons show dashes. There is no large Game Complete heading or checkmark on Daily Nine. Classic completion, scorecard, and sharing are unchanged.
+
 ## Hint and answer boundary
 
 Current-batter hints are gameplay inputs, not answers, and may be present in browser memory/initial props. The browser must not receive:

@@ -8,37 +8,34 @@ type DailyNineCompletedComparisonProps = {
   state: DailyNineCompletedComparisonState;
 };
 
-export function DailyNineCompletedComparison({
-  points,
-  state,
-}: DailyNineCompletedComparisonProps): JSX.Element {
-  const presentation = state.status === 'idle'
-    ? null
-    : createDailyNineCompletedComparisonPresentation(state);
-  const average = presentation?.average === '—' ? null : presentation?.average ?? null;
+export function DailyNineCompletedComparison({ points, state }: DailyNineCompletedComparisonProps): JSX.Element {
+  const presentation = state.status === 'idle' ? null : createDailyNineCompletedComparisonPresentation(state);
 
   return (
     <section className="completed-comparison" aria-label="Final score comparison" aria-live="polite">
-      <div className="completed-comparison-headline">
-        <strong className="completed-comparison-score">{`${formatDailyScorecardPoints(points)} PTS`}</strong>
-        {average === null ? null : (
-          <>
-            <span className="completed-comparison-separator" aria-hidden="true">•</span>
-            <span className="completed-comparison-average">{`AVG ${average}`}</span>
-          </>
-        )}
-      </div>
-      {presentation?.averageStatus === null || presentation?.averageStatus === undefined ? null : (
-        <div className={`completed-comparison-performance completed-comparison-performance-${presentation.averageStatus}`}>
-          {presentation.beat === null ? null : (
-            <strong className="completed-comparison-beat">{`BEAT ${presentation.beat}`}</strong>
-          )}
-          <span className="completed-comparison-average-status">{presentation.statusLabel}</span>
+      <div className="completed-comparison-metrics">
+        <div className="completed-comparison-tile completed-comparison-tile-score">
+          <span className="completed-comparison-label">Final Score</span>
+          <div className="completed-comparison-score-line">
+            <strong className="completed-comparison-score">{formatDailyScorecardPoints(points)}</strong>
+            <span className="completed-comparison-points-unit">PTS</span>
+          </div>
         </div>
-      )}
-      {presentation === null ? null : (
-        <p className="completed-comparison-note">{presentation.note}</p>
-      )}
+        <div className="completed-comparison-tile">
+          <span className="completed-comparison-label">Average</span>
+          <strong className="completed-comparison-value">{presentation?.average ?? '—'}</strong>
+        </div>
+        <div className="completed-comparison-tile">
+          <span className="completed-comparison-label">Beat</span>
+          <strong className="completed-comparison-value">{presentation?.beat ?? '—'}</strong>
+          {presentation?.averageStatus ? (
+            <span className={'completed-comparison-average-status completed-comparison-performance-' + presentation.averageStatus}>
+              {presentation.statusLabel}
+            </span>
+          ) : null}
+        </div>
+      </div>
+      {presentation === null ? null : <p className="completed-comparison-note">{presentation.note}</p>}
     </section>
   );
 }
