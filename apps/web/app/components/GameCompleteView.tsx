@@ -9,6 +9,7 @@ import { createDailyNineScorecardShareText } from '../dailyNineScorecardComparis
 import { DailyNineCompletedComparison } from './DailyNineCompletedComparison';
 import { ScoreLine } from './ScoreLine';
 import { InningScoreboard, type InningScoreboardProps } from './InningScoreboard';
+import { isYourNineEnabled } from '../dailyNineYourNineLayout';
 
 type GameCompleteViewProps = {
   shareResult: DailyShareResult;
@@ -32,6 +33,7 @@ export function GameCompleteView({
   onResetToday,
 }: GameCompleteViewProps): JSX.Element {
   const isPointsGame = isDailyPointsRulesetVersion(shareResult.rulesetVersion);
+  const performanceLayout = isYourNineEnabled(shareResult.rulesetVersion);
   const shareCardText = isPointsGame
     ? createDailyNineScorecardShareText(
         shareText,
@@ -56,9 +58,14 @@ export function GameCompleteView({
           <ScoreLine summary={shareResult.summary} />
         )}
       </section>
-      {inningScoreboard !== undefined ? <InningScoreboard {...inningScoreboard} /> : null}
+      {!performanceLayout && inningScoreboard !== undefined ? <InningScoreboard {...inningScoreboard} /> : null}
       <PitchResultList
         answers={scorecardAnswers}
+        {...(performanceLayout ? {
+          performanceLayout,
+          puzzleNumber: shareResult.puzzleNumber,
+          totalAtBats: shareResult.points.totalAtBats,
+        } : {})}
         {...(isPointsGame ? {
           points: atBatPoints,
           totalPoints: shareResult.points.points,

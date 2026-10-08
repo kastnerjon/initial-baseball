@@ -109,6 +109,33 @@ describe('GameCompleteView comparison', () => {
     expect(html).not.toContain('JR: Jackie Robinson');
   });
 
+  it('uses only Your Nine in points-v4 completion and preserves the spoiler-safe share card', () => {
+    const html = renderToStaticMarkup(
+      <GameCompleteView
+        shareResult={{
+          ...shareResult, rulesetVersion: 'points-v4',
+          points: { points: 4, maximumPoints: 36, atBatsCompleted: 9, totalAtBats: 9, completed: true },
+        }}
+        shareText={shareText}
+        scorecardAnswers={{ 1: 'Jackie Robinson' }}
+        atBatPoints={{ 1: 4 }}
+        comparison={{ status: 'loading', ownPoints: 4 }}
+        inningScoreboard={{
+          columns: [], totalUser: { display: '4', accessibleLabel: 'Total 4' },
+          totalAverage: { display: '—', accessibleLabel: 'Unavailable' },
+        }}
+      />,
+    );
+    expect(html).toContain('Your Nine at-bat results');
+    expect(html).toContain('Reveal players');
+    expect(html).toContain('1 of 9 completed');
+    expect(html).not.toContain('Daily Nine scoreboard');
+    expect(html).not.toContain('Daily Nine detailed scoreboard');
+    expect(html).not.toContain('Jackie Robinson');
+    expect(html).toContain('Spoiler-free share card');
+    expect(html).toContain('Final Score');
+  });
+
   it('keeps the existing top inning scoreboard before the new bottom scoreboard', () => {
     const html = renderToStaticMarkup(
       <GameCompleteView

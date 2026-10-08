@@ -27,9 +27,13 @@ Owner follow-up on the deployed phone view supersedes stacked answers: Reveal ON
 
 ## Approved deferred presentation sequence
 
-After the mobile bottom Scoreboard correction, replace only the top numerical scoreboard in a separate bounded PR with nine equal circles. Completed circles show actual HR/3B/2B/1B/BB/K results, with green shade intensity descending from HR (darkest) to K (palest). Current AB shows its number with a highlighted outline; future ABs show outlined numbers. Add a small `AT-BAT 5 OF 9` progress label, with no duplicate points/averages inside circles. Preserve the bottom detailed Scoreboard.
+Historical, superseded direction: after the mobile Scoreboard correction, the owner initially approved nine outcome circles in the top scoreboard. That proposal was superseded by the October 7 unified Your Nine decision below. Do not build the nine circles while Your Nine is the active choice.
 
 The completed Daily Nine summary redesign starts with a small `Daily #N` heading, three equal `Final Score` / `Average` / `Beat` cards, and the existing peer note (without the large Game Complete heading/checkmark). The nine result circles and broader Share Results redesign remain deferred; the future shareable-image direction is Classic Scorecard, and text sharing is undecided. These are settled directions, not current implementation scope.
+
+## Unified Your Nine performance board — owner-approved
+
+October 7 owner-approved replacement for the current points-v4 game's two scoreboards: hide both the top horizontal inning table and bottom five-column Scoreboard; render one modern "Your Nine" performance board beneath active at-bat play and between completion summary and share card at the end. Each completed batter has its initials (optionally followed by the locally authorized resolved name), prominent outcome/points, subdued AVG, score-strength bar (0–4 points) and strict-lower BEAT %. The header shows running points and completed/total at-bats; current at-bat displays a NOW BATTING row, while future players remain undisclosed. A native keyboard-accessible "Reveal players" switch defaults OFF and shows names only for already resolved at-bats. Before any completion the board still shows progress; after all nine it shows all nine results. Keep both old scoreboard components, source presentation helpers, CSS and Classic/historical-v3 rendering intact behind the single reversible switch in `apps/web/app/dailyNineYourNineLayout.ts`. This is a visual-only change and cannot affect comparison semantics, spoiler-safe sharing, saved game, or scoring.
 
 ## Resolved-at-bat distribution
 
