@@ -48,7 +48,8 @@ export function DailyNineAtBatComparison({
     );
   }
 
-  if (presentation === null) return null;
+  // Narrow the historical fallback to states with authoritative ownPoints.
+  if (state.status === 'idle' || presentation === null) return null;
 
   if (distribution !== null) {
     return (
