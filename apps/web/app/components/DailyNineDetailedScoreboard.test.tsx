@@ -6,8 +6,8 @@ import { DailyNineDetailedScoreboard, DailyNineDetailedScoreboardTable } from '.
 (globalThis as Record<string, unknown>).React = React;
 
 const rows = [
-  { pitchNumber: 1, initials: 'BH', outcome: 'HR' as const, score: '4', average: '2.8' },
-  { pitchNumber: 2, initials: 'DS', outcome: 'K' as const, score: '0', average: '0.4' },
+  { pitchNumber: 1, initials: 'BH', outcome: 'HR' as const, score: '4', average: '2.8', beat: '—' },
+  { pitchNumber: 2, initials: 'DS', outcome: 'K' as const, score: '0', average: '0.4', beat: '—' },
 ];
 
 const comparisons = {
@@ -102,7 +102,7 @@ describe('DailyNineDetailedScoreboard', () => {
   it('retains half points, long resolved names and missing comparisons', () => {
     const html = renderToStaticMarkup(<DailyNineDetailedScoreboardTable
       {...props}
-      rows={[{ pitchNumber: 1, initials: 'JS', outcome: 'BB', score: '0.5', average: '—' }]}
+      rows={[{ pitchNumber: 1, initials: 'JS', outcome: 'BB', score: '0.5', average: '—', beat: '—' }]}
       answers={{ 1: 'Jarrod Saltalamacchia', 2: 'Unresolved Player' }}
       points={{ 1: 0.5 }} comparisons={{}} completedComparison={undefined}
       totalPoints={0.5} revealAnswers
