@@ -1,6 +1,7 @@
 import type { JSX } from 'react';
 import type { DailyNineAtBatComparisonState } from '../dailyNineAtBatComparisonState';
 import { DailyNineAtBatDistribution } from './DailyNineAtBatDistribution';
+import { createDailyNineAtBatDistributionPresentation } from '../dailyNineAtBatDistributionPresentation';
 
 type DailyNineAtBatComparisonProps = {
   state: DailyNineAtBatComparisonState;
@@ -12,6 +13,17 @@ export function DailyNineAtBatComparison({
   if (state.status === 'idle') return null;
 
   const presentation = createPresentation(state);
+  const distribution = state.status === 'success'
+    ? createDailyNineAtBatDistributionPresentation(state)
+    : null;
+  if (distribution !== null) {
+    return (
+      <section className="at-bat-comparison" aria-label="At-bat comparison" aria-live="polite">
+        <DailyNineAtBatDistribution presentation={distribution} average={presentation.average} />
+      </section>
+    );
+  }
+
   return (
     <section className="at-bat-comparison" aria-label="At-bat comparison" aria-live="polite">
       <div className="at-bat-comparison-values">
@@ -33,7 +45,6 @@ export function DailyNineAtBatComparison({
         </div>
       )}
       <p className="at-bat-comparison-note">{presentation.note}</p>
-      {state.status === "success" ? <DailyNineAtBatDistribution state={state} /> : null}
     </section>
   );
 }

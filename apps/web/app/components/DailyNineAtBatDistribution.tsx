@@ -1,12 +1,13 @@
 import type { JSX } from 'react';
-import type { DailyNineAtBatComparisonState } from '../dailyNineAtBatComparisonState';
-import { createDailyNineAtBatDistributionPresentation } from '../dailyNineAtBatDistributionPresentation';
+import type { DailyNineDistributionPresentation } from '../dailyNineAtBatDistributionPresentation';
 
-type SuccessfulAtBat = Extract<DailyNineAtBatComparisonState, { status: 'success' }>;
-
-export function DailyNineAtBatDistribution({ state }: { state: SuccessfulAtBat }): JSX.Element | null {
-  const presentation = createDailyNineAtBatDistributionPresentation(state);
-  if (presentation === null) return null;
+export function DailyNineAtBatDistribution({
+  presentation,
+  average,
+}: {
+  presentation: DailyNineDistributionPresentation;
+  average: string;
+}): JSX.Element {
 
   const accessibleBars = presentation.bars
     .map(bar => `${bar.points} points (${bar.outcome}): ${bar.count} results, ${bar.percent}%`)
@@ -16,7 +17,7 @@ export function DailyNineAtBatDistribution({ state }: { state: SuccessfulAtBat }
     <section className="at-bat-distribution" aria-label="At-bat score distribution">
       <h3>How everyone scored on this at-bat</h3>
       <p className="at-bat-distribution-sample">
-        {`Based on ${presentation.sampleSize} other completed result${presentation.sampleSize === 1 ? '' : 's'}`}
+        {`Average: ${average} pts · Based on ${presentation.sampleSize} other result${presentation.sampleSize === 1 ? '' : 's'}`}
       </p>
       <div className="at-bat-distribution-bars" role="img" aria-label={`Score distribution. ${accessibleBars}`}>
         {presentation.bars.map(bar => (
