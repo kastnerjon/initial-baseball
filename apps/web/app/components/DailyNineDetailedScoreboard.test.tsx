@@ -48,6 +48,7 @@ describe('DailyNineDetailedScoreboard', () => {
     expect(html).not.toContain('Dave Stieb');
     expect(html).not.toContain('Unresolved Player');
     expect(html).toContain('>BH</strong>');
+    expect(html).not.toContain('daily-nine-detail-answer-separator');
     expect(html).toContain('HR - 4');
     expect(html).toContain('K - 0');
     expect(html).toContain('>BEAT %<');
@@ -60,8 +61,8 @@ describe('DailyNineDetailedScoreboard', () => {
 
   it('shows only previously resolved names when Reveal answers is on', () => {
     const html = renderToStaticMarkup(<DailyNineDetailedScoreboardTable {...props} revealAnswers />);
-    expect(html).toContain('BH:</strong><span class="daily-nine-detail-answer">Bryce Harper');
-    expect(html).toContain('DS:</strong><span class="daily-nine-detail-answer">Dave Stieb');
+    expect(html).toContain('BH</strong><span class="daily-nine-detail-answer-separator"> - </span><span class="daily-nine-detail-answer">Bryce Harper');
+    expect(html).toContain('DS</strong><span class="daily-nine-detail-answer-separator"> - </span><span class="daily-nine-detail-answer">Dave Stieb');
     expect(html).not.toContain('Unresolved Player');
   });
 
@@ -106,7 +107,7 @@ describe('DailyNineDetailedScoreboard', () => {
       points={{ 1: 0.5 }} comparisons={{}} completedComparison={undefined}
       totalPoints={0.5} revealAnswers
     />);
-    expect(html).toContain('JS:</strong><span class="daily-nine-detail-answer">Jarrod Saltalamacchia');
+    expect(html).toContain('JS</strong><span class="daily-nine-detail-answer-separator"> - </span><span class="daily-nine-detail-answer">Jarrod Saltalamacchia');
     expect(html).toContain('BB - 0.5');
     expect(html).toContain('aria-label="Total points">0.5');
     expect(html).toContain('aria-label="Completed-game average">—');

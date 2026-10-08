@@ -132,7 +132,10 @@
   font-weight: 400;
 }
 .daily-nine-detail-table tbody td:nth-child(2) { white-space: normal; overflow-wrap: anywhere; }
-.daily-nine-detail-answer { margin-left: 7px; font-weight: 400; overflow-wrap: anywhere; }
+.daily-nine-detail-player { display: flex; align-items: baseline; gap: 4px; }
+.daily-nine-detail-player > strong,
+.daily-nine-detail-answer-separator { flex: none; white-space: nowrap; }
+.daily-nine-detail-answer { min-width: 0; font-weight: 400; overflow-wrap: anywhere; }
 .daily-nine-detail-table .daily-nine-detail-outcome { font-weight: 700; }
 .daily-nine-detail-table tbody tr:last-child > * { border-bottom: 0; }
 .daily-nine-detail-table tfoot th,
