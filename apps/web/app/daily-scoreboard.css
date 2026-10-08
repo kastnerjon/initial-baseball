@@ -97,10 +97,10 @@
   font-variant-numeric: tabular-nums;
 }
 .daily-nine-detail-table col:nth-child(1) { width: 12%; }
-.daily-nine-detail-table col:nth-child(2) { width: 32%; }
+.daily-nine-detail-table col:nth-child(2) { width: 28%; }
 .daily-nine-detail-table col:nth-child(3) { width: 24%; }
-.daily-nine-detail-table col:nth-child(4) { width: 14%; }
-.daily-nine-detail-table col:nth-child(5) { width: 18%; }
+.daily-nine-detail-table col:nth-child(4) { width: 16%; }
+.daily-nine-detail-table col:nth-child(5) { width: 20%; }
 .daily-nine-detail-result-mobile { display: none; }
 .daily-nine-detail-table th,
 .daily-nine-detail-table td {
