@@ -5,7 +5,7 @@ import { useEffect, useState } from 'react';
 import {
   type PlayerSearchResult,
 } from '@initial-baseball/engine';
-import { POINTS_V3_DAILY_RULESET_VERSION } from '@initial-baseball/shared';
+import { POINTS_V3_DAILY_RULESET_VERSION, POINTS_V4_DAILY_RULESET_VERSION } from '@initial-baseball/shared';
 import type {
   DailyGuessResult,
   DailyPublicPuzzlePitch,
@@ -95,19 +95,30 @@ export function AtBatCard({
   }, [state.query, state.selectedPlayerId]);
 
   if (resolvedTerminalResult !== null) {
+    const isPointsV4 = rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION;
+    if (isPointsV4 && terminalAwardedPoints === null) {
+      throw new Error('A resolved Daily Nine result requires authoritative awarded points.');
+    }
     return (
-      <div className="at-bat-card at-bat-card-resolved">
+      <div className={isPointsV4 ? 'at-bat-card at-bat-card-resolved at-bat-card-resolved-tiles' : 'at-bat-card at-bat-card-resolved'}>
         <div className="pitch-meta">
           <span className="pitch-number">{`At Bat ${atBat.pitchNumber}`}</span>
           <CountIndicator label="Strikes" filledCount={state.strikeCount} total={3} />
         </div>
         <div className="terminal-result-stack">
-          <ResultDisplay
-            result={resolvedTerminalResult}
-            rulesetVersion={rulesetVersion}
-            {...(terminalAwardedPoints === null ? {} : { awardedPoints: terminalAwardedPoints })}
+          {isPointsV4 ? null : (
+            <ResultDisplay
+              result={resolvedTerminalResult}
+              rulesetVersion={rulesetVersion}
+              {...(terminalAwardedPoints === null ? {} : { awardedPoints: terminalAwardedPoints })}
+            />
+          )}
+          <DailyNineAtBatComparison
+            state={comparison}
+            {...(isPointsV4 && terminalAwardedPoints !== null
+              ? { summaryPoints: terminalAwardedPoints, summaryOutcome: resolvedTerminalResult.outcome }
+              : {})}
           />
-          <DailyNineAtBatComparison state={comparison} />
         </div>
         <button
           type="button"
