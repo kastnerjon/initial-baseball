@@ -13,3 +13,7 @@
 ## Documentation impact
 
 Presentation direction reconciled in `docs/product/daily-inning-blueprint.md` and `docs/START-HERE.md`. This plan records the source screenshots' intentional comparison; the 1–9 progress banner remains a later separate owner-evaluated step. No changes to engine, API or database docs.
+
+## Independent review
+
+Review of original head `2842d3a` found one narrow-layout defect: the completed-view title plus answer switch exceeded the card content width at 320px. The <=360px fallback now allows that header to wrap and keeps the switch right aligned within the card; normal widths retain the same-line heading. Exact-component offline Chromium renders cover completed and expanded during-play views at 320, 360, 361, 375, 390, 430, 640, 641, 768 and 1366px, with resolved-name wrapping, confined table scrolling and no header overlap/page overflow. Authenticated Preview browser checks cover native keyboard disclosure, keyboard answer switching, completed view and spoiler-free share text. Hosted CI/Preview and post-merge release evidence belongs to PR #329; physical-phone owner review remains separate from these automated checks.

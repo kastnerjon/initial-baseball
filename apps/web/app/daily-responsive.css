@@ -178,6 +178,8 @@
     grid-template-columns: 90px 1fr;
   }
   .daily-nine-detail-card-compact[open] .daily-nine-detail-summary { padding-right: 0; }
+  .daily-nine-detail-header { flex-wrap: wrap; }
+  .daily-nine-detail-reveal { margin-left: auto; }
   .daily-nine-detail-card-compact[open] .daily-nine-detail-header {
     position: static;
     justify-content: flex-end;
