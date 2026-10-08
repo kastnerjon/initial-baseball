@@ -33,7 +33,7 @@ The completed Daily Nine summary redesign starts with a small `Daily #N` heading
 
 ## Resolved point callout presentation
 
-October 8 UI refinement: the resolved Daily Nine points result (for example `K 0 PTS`) uses the same green background, white text, type, padding, and rounded outline as the `Next At Bat` primary action. It stays a static result callout, not another clickable button. Only the points-mode terminal result appearance changes; incorrect feedback, Classic, scores, and progression are unchanged.
+October 8 UI refinement: the resolved Daily Nine points result (for example `K 0 PTS`) uses the same green background, white text, type, padding, and rounded outline as the `Next At Bat` primary action. It stays a static result callout, not another clickable button. On phones its font size and horizontal padding follow the existing primary button's responsive sizing. Only the points-mode terminal result appearance changes; incorrect feedback, Classic, scores, and progression are unchanged.
 
 ## Unified Your Nine performance board — owner-approved
 

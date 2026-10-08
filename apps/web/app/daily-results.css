@@ -223,6 +223,7 @@
   color: var(--ink-soft);
 }
 @media (max-width: 640px) {
+  .result-card-points .result-value { padding: 10px 12px; font-size: 13px; }
   .at-bat-distribution h3 { font-size: 17px; }
   .at-bat-distribution-bars { gap: 5px; }
   .at-bat-distribution-column { grid-template-rows: 38px 94px auto auto 12px; gap: 3px; padding: 4px 1px; }

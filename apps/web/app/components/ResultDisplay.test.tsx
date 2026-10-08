@@ -61,6 +61,13 @@ describe('ResultDisplay terminal semantics', () => {
     expect(primaryRule).toContain('color: white');
     expect(sharedRule).toContain('border-radius: 5px');
     expect(sharedRule).toContain('padding: 10px 18px');
+    const responsiveCss = readFileSync(new URL('../daily-responsive.css', import.meta.url), 'utf8');
+    const mobileResultRule = css.match(/@media \(max-width: 640px\)\s*\{\s*\.result-card-points \.result-value\s*\{([^}]+)\}/)?.[1] ?? '';
+    const mobileButtonRule = responsiveCss.match(/\.button-primary,\s*\.button-secondary\s*\{([^}]+)\}/)?.[1] ?? '';
+    for (const declaration of ['padding: 10px 12px', 'font-size: 13px']) {
+      expect(mobileResultRule).toContain(declaration);
+      expect(mobileButtonRule).toContain(declaration);
+    }
     const strikeout = renderToStaticMarkup(
       <ResultDisplay
         rulesetVersion="points-v4"
@@ -71,6 +78,7 @@ describe('ResultDisplay terminal semantics', () => {
     expect(strikeout).toContain('result-card-points');
     expect(strikeout).toContain('K 0 PTS');
     expect(strikeout).not.toContain('<button');
+    expect(strikeout).not.toMatch(/role="button"|tabindex=/);
   });
 
   it('keeps Classic terminal results baseball-native', () => {
@@ -89,5 +97,6 @@ describe('ResultDisplay terminal semantics', () => {
     expect(html).toContain('>Outcome<');
     expect(html).toContain('>3B<');
     expect(html).not.toContain('PTS');
+    expect(html).not.toContain('result-card-points');
   });
 });
