@@ -47,11 +47,48 @@
 .your-nine-list { display: grid; gap: 0; }
 .your-nine-row {
   display: grid;
-  grid-template-columns: 27px minmax(0, 1fr);
-  gap: 12px;
-  padding: 11px 0;
-  border-bottom: 1px solid var(--line-soft);
   min-width: 0;
+  border-bottom: 1px solid var(--line-soft);
+}
+.your-nine-row-toggle {
+  display: grid;
+  grid-template-columns: 27px minmax(0, 1fr) 18px;
+  align-items: start;
+  gap: 12px;
+  width: 100%;
+  min-width: 0;
+  padding: 11px 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.your-nine-row-toggle:hover { background: #f4f6f3; }
+.your-nine-row-toggle:focus-visible {
+  outline: 2px solid var(--clubhouse);
+  outline-offset: 2px;
+}
+.your-nine-expand-icon {
+  padding-top: 1px;
+  color: var(--ink-soft);
+  font-size: 19px;
+  line-height: 1;
+  text-align: center;
+}
+.your-nine-distribution {
+  min-width: 0;
+  margin: 0 0 8px 39px;
+  padding: 14px 0 6px;
+  border-top: 1px solid var(--line-soft);
+}
+.your-nine-distribution .at-bat-distribution h3 { font-size: 18px; }
+.your-nine-distribution-unavailable {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 12px;
 }
 .your-nine-ab {
   padding-top: 3px;
@@ -105,12 +142,14 @@
 }
 .your-nine-avg { color: var(--ink-soft); white-space: nowrap; }
 .your-nine-track {
+  display: block;
   height: 5px;
   overflow: hidden;
   border-radius: 10px;
   background: #e6e8e5;
 }
 .your-nine-fill {
+  display: block;
   height: 100%;
   border-radius: 10px;
   background: #81958c;
@@ -151,7 +190,8 @@
   .your-nine { gap: 12px; padding: 16px 14px; }
   .your-nine-title-group h2 { font-size: 24px; }
   .your-nine-total strong { font-size: 25px; }
-  .your-nine-row { gap: 8px; grid-template-columns: 22px minmax(0, 1fr); }
+  .your-nine-row-toggle { gap: 8px; grid-template-columns: 22px minmax(0, 1fr) 16px; }
+  .your-nine-distribution { margin-left: 30px; }
   .your-nine-row-main { gap: 8px; }
   .your-nine-player { font-size: 13px; }
   .your-nine-outcome strong { font-size: 18px; }
