@@ -48,7 +48,7 @@ describe('GameCompleteView comparison', () => {
 
   it('keeps unavailable comparisons as dashes', () => {
     const html = render({ status: 'unavailable', ownPoints: 41 });
-    expect((html.match(/>—<\\/strong>/g) ?? []).length).toBe(2);
+    expect((html.match(/>—<\/strong>/g) ?? []).length).toBe(2);
     expect(html).toContain('Comparison unavailable');
   });
 
