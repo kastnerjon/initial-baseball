@@ -27,10 +27,35 @@ const shareResult: DailyShareResult = {
 };
 
 describe('GameCompleteView comparison', () => {
+  it('shows small daily number and exactly three stat cards without Game Complete', () => {
+    const html = render({ status: 'loading', ownPoints: 41 });
+    expect(html).toContain('Daily #146');
+    expect(html).not.toContain('Game Complete');
+    expect(html).toContain('>Final Score</span>');
+    expect(html).toContain('>Average</span>');
+    expect(html).toContain('>Beat</span>');
+    expect((html.match(/class="completed-comparison-tile/g) ?? []).length).toBe(3);
+  });
+
+  it('retains Classic completion without Daily Nine comparison tiles', () => {
+    const html = renderToStaticMarkup(
+      <GameCompleteView shareResult={{ ...shareResult, rulesetVersion: 'classic-inning-v1' }} shareText={shareText} />,
+    );
+    expect(html).toContain('Game Complete');
+    expect(html).not.toContain('completed-comparison-metrics');
+    expect(html).toContain('5 R');
+  });
+
+  it('keeps unavailable comparisons as dashes', () => {
+    const html = render({ status: 'unavailable', ownPoints: 41 });
+    expect((html.match(/>—<\/strong>/g) ?? []).length).toBe(2);
+    expect(html).toContain('Comparison unavailable');
+  });
+
   it('shows personal points without baseball-summary residue while comparison loads', () => {
     const html = render({ status: 'loading', ownPoints: 41 });
 
-    expect(html).toContain('41 PTS');
+    expect(html).toContain('>41</strong>');
     expect(html).not.toContain('41/63 PTS');
     expect(html).not.toContain('9/9 AB');
     expect(html).not.toContain('2 K');
@@ -48,9 +73,9 @@ describe('GameCompleteView comparison', () => {
       strictLowerFinishRate: 1,
     });
 
-    expect(html).toContain('41 PTS');
-    expect(html).toContain('AVG 35.0');
-    expect(html).toContain('BEAT 100%');
+    expect(html).toContain('>41</strong>');
+    expect(html).toContain('>35.0</strong>');
+    expect(html).toContain('>100%</strong>');
     expect(html).toContain('Above AVG');
     expect(html).toContain('completed-comparison-performance-above');
     expect(html).toContain("1 other completed result · ties aren&#x27;t counted as beaten");
@@ -65,8 +90,8 @@ describe('GameCompleteView comparison', () => {
       strictLowerFinishRate: 0,
     });
 
-    expect(html).toContain('AVG 35.0');
-    expect(html).toContain('BEAT 0%');
+    expect(html).toContain('>35.0</strong>');
+    expect(html).toContain('>0%</strong>');
     expect(html).toContain('At or below AVG');
     expect(html).toContain('completed-comparison-performance-at-or-below');
   });
@@ -113,7 +138,7 @@ describe('GameCompleteView comparison', () => {
     const html = render({ status: 'unavailable', ownPoints: 41 });
 
     expect(html).toContain('Comparison unavailable');
-    expect(html).toContain('41 PTS');
+    expect(html).toContain('>41</strong>');
     expect(html).not.toContain('41/63 PTS');
     expect(html).not.toContain('2 K');
     expect(html).toContain('Daily Nine detailed scoreboard');
