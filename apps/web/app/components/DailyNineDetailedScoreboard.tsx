@@ -90,12 +90,17 @@ export function DailyNineDetailedScoreboardTable({
               <tr key={row.pitchNumber}>
                 <th scope="row">{row.pitchNumber}</th>
                 <td>
-                  <strong>{row.initials}{revealAnswers ? ':' : ''}</strong>
-                  {revealAnswers ? (
-                    <span className="daily-nine-detail-answer">
-                      {answers[row.pitchNumber] ?? 'Answer unavailable'}
-                    </span>
-                  ) : null}
+                  <div className="daily-nine-detail-player">
+                    <strong>{row.initials}</strong>
+                    {revealAnswers ? (
+                      <>
+                        <span className="daily-nine-detail-answer-separator"> - </span>
+                        <span className="daily-nine-detail-answer">
+                          {answers[row.pitchNumber] ?? 'Answer unavailable'}
+                        </span>
+                      </>
+                    ) : null}
+                  </div>
                 </td>
                 <td className="daily-nine-detail-outcome" aria-label={`Outcome ${row.outcome}, score ${row.score}`}>
                   {row.outcome} - {row.score}
