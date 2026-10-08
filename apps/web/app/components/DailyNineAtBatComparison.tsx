@@ -103,6 +103,6 @@ function createPresentation(
     beat: strictLowerAtBatRate === null ? null : `${Math.round(strictLowerAtBatRate * 100)}%`,
     averageStatus: aboveAverage ? 'above' : 'at-or-below',
     statusLabel: aboveAverage ? 'Above AVG' : 'At or below AVG',
-    note: `${count} other result${count === 1 ? '' : 's'}${strictLowerAtBatRate === null ? '' : " · ties aren't counted as beaten"}`,
+    note: `${count} other result${count === 1 ? '' : 's'}`,
   };
 }

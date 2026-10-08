@@ -64,7 +64,7 @@ describe('Daily Nine completed comparison presentation', () => {
       beat: '100%',
       averageStatus: 'above',
       statusLabel: 'Above AVG',
-      note: "1 other completed result · ties aren't counted as beaten",
+      note: "1 other completed result",
     });
   });
 
@@ -80,7 +80,7 @@ describe('Daily Nine completed comparison presentation', () => {
       beat: '0%',
       averageStatus: 'at-or-below',
       statusLabel: 'At or below AVG',
-      note: "1 other completed result · ties aren't counted as beaten",
+      note: "1 other completed result",
     });
   });
 
@@ -96,7 +96,7 @@ describe('Daily Nine completed comparison presentation', () => {
       beat: '50%',
       averageStatus: 'above',
       statusLabel: 'Above AVG',
-      note: "7 other completed results · ties aren't counted as beaten",
+      note: "7 other completed results",
     });
   });
 });

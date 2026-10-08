@@ -122,7 +122,11 @@ describe('Daily Nine Your Nine presentation', () => {
     expect(html).toContain('Based on 2 other results');
     expect(html).toContain('You scored more than 50% of other players');
     expect((html.match(/class="at-bat-distribution-column/g) ?? []).length).toBe(6);
-    expect(html).toContain('2 points (2B): 1 results, 50%');
+    expect(html).toContain('2 points (2B): 1 answers, 50%, your score');
+    expect(html).toContain('>#1</span>');
+    expect(html).toContain('>% of answers / # answers</p>');
+    expect(html).toContain('>YOU</span>');
+    expect(html).not.toContain('Ties aren');
     expect(html).not.toContain('Bryce Harper');
     expect(html).not.toContain('Future answer must not appear');
   });

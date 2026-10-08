@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
@@ -6,6 +7,13 @@ import { DailyNineAtBatComparison } from './DailyNineAtBatComparison';
 (globalThis as Record<string, unknown>).React = React;
 
 describe('DailyNineAtBatComparison', () => {
+  it('keeps the selected bucket dark and outlined, including zero-count buckets, on narrow screens', () => {
+    const css = readFileSync(new URL('../daily-results.css', import.meta.url), 'utf8');
+    expect(css).toMatch(/\.at-bat-distribution-selected\s*\{[^}]*background:[^;]+;[^}]*box-shadow:[^;]+;/);
+    expect(css).toMatch(/\.at-bat-distribution-selected \.at-bat-distribution-bar\s*\{[^}]*background:/);
+    expect(css).toMatch(/@media \(max-width: 640px\)[\s\S]*\.at-bat-distribution-count/);
+  });
+
   it('shows one-other-result AVG and strict-lower BEAT with explicit green status text', () => {
     const html = renderToStaticMarkup(
       <DailyNineAtBatComparison
@@ -24,7 +32,7 @@ describe('DailyNineAtBatComparison', () => {
     expect(html).toContain('BEAT 100%');
     expect(html).toContain('Above AVG');
     expect(html).toContain('at-bat-comparison-performance-above');
-    expect(html).toContain("1 other result · ties aren&#x27;t counted as beaten");
+    expect(html).toContain("1 other result");
   });
 
   it('treats a tie as BEAT 0% and explicit red/not-above status', () => {
@@ -65,9 +73,35 @@ describe('DailyNineAtBatComparison', () => {
     expect(html).not.toContain('Above AVG');
     expect((html.match(/46%/g) ?? []).length).toBe(1);
     expect(html).toContain('You scored more than 46% of other players');
-    expect(html).toContain('2 points (2B): 24 results, 24%');
+    expect(html).toContain('2 points (2B): 24 answers, 24%, your score');
+    expect(html).toContain('% of answers / # answers');
+    expect(html).toContain('at-bat-distribution-count');
+    expect(html).toContain('>#24</span>');
+    expect(html).toContain('>24%</strong>');
+    expect(html).toContain('>YOU</span>');
     expect(html).toContain('at-bat-distribution-selected');
+    expect(html).not.toMatch(/ties (?:aren't|aren&#x27;t|aren’t) counted/i);
     expect((html.match(/class="at-bat-distribution-column/g) ?? []).length).toBe(6);
+  });
+
+  it('highlights your selected outcome even when no peers chose it', () => {
+    const html = renderToStaticMarkup(
+      <DailyNineAtBatComparison state={{
+        status: 'success',
+        ownPoints: 0,
+        resolvedAtBatCount: 1,
+        averagePoints: 4,
+        strictLowerAtBatRate: 0,
+        rulesetVersion: 'points-v4',
+        scoreHistogram: [0, 0, 0, 0, 0, 0, 0, 0, 1],
+      }} />,
+    );
+    expect(html).toContain('0 points (K): 0 answers, 0%, your score');
+    expect(html).toContain('>0%</strong>');
+    expect(html).toContain('>#0</span>');
+    expect(html).toContain('at-bat-distribution-selected');
+    expect((html.match(/>YOU<\/span>/g) ?? []).length).toBe(1);
+    expect(html).toContain('You scored more than 0%');
   });
 
   it('does not duplicate the peer sample or average with a one-result chart', () => {
