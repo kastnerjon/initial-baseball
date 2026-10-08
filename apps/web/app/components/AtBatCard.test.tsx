@@ -43,6 +43,73 @@ describe('AtBatCard pending resolution feedback', () => {
     expect(html).not.toContain('Checking…');
   });
 
+  it('replaces the points-v4 terminal pill with three end-of-game-style tiles, chart and next action', () => {
+    const html = renderCard({
+      requestPending: false,
+      giveUpPending: false,
+      rulesetVersion: 'points-v4',
+      submittedResult: {
+        kind: 'strikeout', revealedCount: 0, strikeCount: 3, outcome: 'K', source: 'strikeout',
+      },
+      comparison: {
+        status: 'success', ownPoints: 0, resolvedAtBatCount: 2,
+        averagePoints: 2, strictLowerAtBatRate: 0,
+        rulesetVersion: 'points-v4',
+        scoreHistogram: [0, 0, 0, 0, 2, 0, 0, 0, 0],
+      },
+    });
+    expect(html).toContain('at-bat-card-resolved-tiles');
+    expect(html).toContain('completed-comparison-metrics at-bat-summary-metrics');
+    expect(html).toContain('Your Score');
+    expect(html).toContain('>AVG<');
+    expect(html).toContain('BEAT %');
+    expect(html).toContain('>2.0</strong>');
+    expect(html).toContain('>0%</strong>');
+    expect(html).toContain('How everyone scored on this at-bat');
+    expect(html).toContain('0 points (K): 0 results, 0%, your score');
+    expect(html).toContain('Next At Bat');
+    expect(html).toContain('Outcome: K');
+    expect(html).not.toContain('result-card-points');
+    expect(html).not.toContain('K 0 PTS');
+    expect(html).not.toContain('at-bat-comparison-values');
+  });
+
+  it('keeps your points tile while comparison data is unavailable or loading', () => {
+    for (const comparison of [
+      { status: 'loading', ownPoints: 0 } as const,
+      { status: 'unavailable', ownPoints: 0 } as const,
+    ]) {
+      const html = renderCard({
+        requestPending: false, giveUpPending: false,
+        rulesetVersion: 'points-v4',
+        submittedResult: {
+          kind: 'strikeout', revealedCount: 0, strikeCount: 3, outcome: 'K', source: 'strikeout',
+        },
+        comparison,
+      });
+      expect(html).toContain('completed-comparison-metrics at-bat-summary-metrics');
+      expect(html).toContain('Your Score');
+      expect(html).toContain('>0</strong>');
+      expect(html).toContain('BEAT %');
+      expect(html).toContain('Next At Bat');
+      expect(html).not.toContain('at-bat-comparison-values');
+      expect(html).not.toContain('result-card-points');
+      expect(html).not.toContain('at-bat-distribution-bars');
+    }
+  });
+
+  it('preserves historical v3 terminal callouts and comparison layout', () => {
+    const html = renderCard({
+      requestPending: false, giveUpPending: false, rulesetVersion: 'points-v3',
+      submittedResult: { kind: 'strikeout', revealedCount: 0, strikeCount: 3, outcome: 'K', source: 'strikeout' },
+      comparison: { status: 'loading', ownPoints: 0 },
+    });
+    expect(html).toContain('result-card-points');
+    expect(html).toContain('K 0 PTS');
+    expect(html).toContain('at-bat-comparison-values');
+    expect(html).not.toContain('at-bat-summary-metrics');
+  });
+
   it('uses the supplied terminal action label after a resolved at-bat', () => {
     const html = renderCard({
       requestPending: false,
@@ -186,7 +253,7 @@ function renderCard(input: {
   giveUpPending: boolean;
   selectedPlayerId?: string | null;
   query?: string;
-  rulesetVersion?: 'points-v2' | 'points-v3';
+  rulesetVersion?: 'points-v2' | 'points-v3' | 'points-v4';
   submittedResult?: {
     kind: 'strikeout';
     revealedCount: 0;

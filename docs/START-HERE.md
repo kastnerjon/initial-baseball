@@ -31,6 +31,10 @@ Historical, superseded direction: after the mobile Scoreboard correction, the ow
 
 The completed Daily Nine summary redesign starts with a small `Daily #N` heading, three equal `Final Score` / `Average` / `Beat` cards, and the existing peer note (without the large Game Complete heading/checkmark). The nine result circles and broader Share Results redesign remain deferred; the future shareable-image direction is Classic Scorecard, and text sharing is undecided. These are settled directions, not current implementation scope.
 
+## Resolved at-bat performance tiles
+
+October 8 approved points-v4 follow-up: replace the single terminal-result badge with three compact tiles matching the final-game summary: YOUR SCORE, AVG, BEAT %. Retain the authoritative personal score while peer data is loading or absent; show placeholders rather than invented averages/beat rates. Keep the existing six-bucket distribution directly beneath the tiles where histogram data is available, followed by the existing Next At Bat / View Results action and player reveal. Accessible outcome text remains present. Preserve Classic, historical point versions, incorrect guesses, points mathematics, answer security, and the fallback textual comparison in legacy views. Existing older callout CSS is retained for their routes.
+
 ## Resolved point callout presentation
 
 October 8 UI refinement: the resolved Daily Nine points result (for example `K 0 PTS`) uses the same green background, white text, type, padding, and rounded outline as the `Next At Bat` primary action. It stays a static result callout, not another clickable button. On phones its font size and horizontal padding follow the existing primary button's responsive sizing. Only the points-mode terminal result appearance changes; incorrect feedback, Classic, scores, and progression are unchanged.

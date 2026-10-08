@@ -188,7 +188,10 @@ describe('AtBatCard terminal output', () => {
     expect(html).toContain('Next At Bat');
     expect(html.indexOf('Next At Bat')).toBeLessThan(html.indexOf('Player Reveal'));
     expect(html).not.toContain('Next Pitch');
-    expect(html).toContain('>K 0 PTS<');
+    expect(html).toContain('Your Score');
+    expect(html).toContain('>0</strong>');
+    expect(html).toContain('Outcome: K');
+    expect(html).not.toContain('result-card-points');
     expect(html).not.toContain('>Score<');
     expect(html).not.toContain('Strikeout');
     expect(html).toContain('Player Reveal');
@@ -214,7 +217,10 @@ describe('AtBatCard terminal output', () => {
       terminalAwardedPoints: 0,
     });
 
-    expect(html).toContain('>K 0 PTS<');
+    expect(html).toContain('Your Score');
+    expect(html).toContain('>0</strong>');
+    expect(html).toContain('Outcome: K');
+    expect(html).not.toContain('result-card-points');
     expect(html).not.toContain('>Score<');
     expect(html).not.toContain('Strikeout');
     expect(html).toContain('Player Reveal');
@@ -240,7 +246,10 @@ describe('AtBatCard terminal output', () => {
       terminalAwardedPoints: 3,
     });
 
-    expect(html).toContain('>3B 3 PTS<');
+    expect(html).toContain('Your Score');
+    expect(html).toContain('>3</strong>');
+    expect(html).toContain('Outcome: 3B');
+    expect(html).not.toContain('result-card-points');
     expect(html).not.toContain('>Score<');
     expect(html).not.toContain('>Outcome<');
     expect(html).toContain('Player Reveal');

@@ -59,6 +59,49 @@
   padding-top: 8px;
   border-top: 1px solid var(--line-soft);
 }
+/* Reuse the final-score tile system in the resolved points-v4 at-bat, scaled for phones. */
+.at-bat-card-resolved-tiles {
+  grid-template-columns: minmax(0, 1fr);
+}
+.at-bat-card-resolved-tiles .button-next-at-bat {
+  width: 100%;
+}
+.at-bat-comparison-tiles {
+  gap: 16px;
+  padding-top: 0;
+  border-top: 0;
+}
+.at-bat-summary-metrics { gap: 8px; }
+.at-bat-summary-metrics .completed-comparison-tile {
+  min-height: 100px;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 12px 8px;
+  border: 1px solid var(--line-soft);
+  background: #eff2ee;
+  text-align: center;
+}
+.at-bat-summary-metrics .completed-comparison-tile-score { background: #e9f1ed; }
+.at-bat-summary-metrics .completed-comparison-label {
+  font-size: 10px;
+  letter-spacing: 0.06em;
+}
+.at-bat-summary-metrics .completed-comparison-score,
+.at-bat-summary-metrics .completed-comparison-value {
+  font-size: clamp(28px, 5vw, 44px);
+}
+@media (max-width: 640px) {
+  .at-bat-summary-metrics { gap: 7px; }
+  .at-bat-summary-metrics .completed-comparison-tile {
+    min-height: 86px;
+    padding: 11px 5px;
+    gap: 7px;
+  }
+  .at-bat-summary-metrics .completed-comparison-label { font-size: 9px; }
+  .at-bat-summary-metrics .completed-comparison-score,
+  .at-bat-summary-metrics .completed-comparison-value { font-size: clamp(26px, 7.5vw, 40px); }
+}
 .at-bat-comparison-values {
   display: flex;
   align-items: baseline;

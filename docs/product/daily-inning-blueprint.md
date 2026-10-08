@@ -29,7 +29,7 @@ Detailed content direction: `docs/product/lineup-content-system.md`.
 4. Pressing Hint reveals the next local value immediately and adopts its signed reveal-depth checkpoint; it does not call the network.
 5. Under the current `points-v4` Daily Nine policy, a correct guess scores 4 points on initials, then 3, 2, 1, or 0.5 after hints 1–4; wrong guesses one and two do not deduct.
 6. Three wrong guesses—or Give Up—produces K and 0 points.
-7. The resolved at-bat shows both the baseball outcome and the points awarded before the player reveal.
+7. The resolved at-bat shows the awarded score in a three-tile YOUR SCORE / AVG / BEAT % strip (for points-v4), followed by the existing peer histogram when available and then the player reveal. The outcome remains accessible to screen readers; older rulesets retain their native outcome/points callouts.
 8. Resolution reveals the canonical current player and supplies the next batter’s authorized hint bundle.
 9. `points-v4` continues through all nine scheduled at-bats.
 10. Completion produces a score out of 36, in 0.5-point steps, and spoiler-safe initials/outcome sharing.

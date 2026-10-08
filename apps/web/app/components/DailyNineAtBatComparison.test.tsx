@@ -53,6 +53,43 @@ describe('DailyNineAtBatComparison', () => {
     expect(html).toContain('at-bat-comparison-performance-at-or-below');
   });
 
+  it('reuses final-score tiles for points-v4 while preserving the authoritative distribution', () => {
+    const html = renderToStaticMarkup(<DailyNineAtBatComparison
+      summaryPoints={4} summaryOutcome="HR"
+      state={{
+        status: 'success', ownPoints: 4, resolvedAtBatCount: 3,
+        averagePoints: 2, strictLowerAtBatRate: 1,
+        rulesetVersion: 'points-v4',
+        scoreHistogram: [1, 0, 0, 0, 0, 0, 2, 0, 0],
+      }}
+    />);
+    expect(html).toContain('completed-comparison-metrics at-bat-summary-metrics');
+    expect((html.match(/class="completed-comparison-tile/g) ?? []).length).toBe(3);
+    expect(html).toContain('Your Score');
+    expect(html).toContain('>4</strong>');
+    expect(html).toContain('>2.0</strong>');
+    expect(html).toContain('>100%</strong>');
+    expect(html).toContain('Outcome: HR');
+    expect(html).toContain('How everyone scored on this at-bat');
+    expect(html).toContain('You scored more than 100% of other players');
+    expect(html).not.toContain('result-card-points');
+    expect(html).not.toContain('at-bat-comparison-values');
+    expect(html).not.toContain('at-bat-comparison-performance');
+  });
+
+  it('renders all three tiles with placeholders when no peer result exists', () => {
+    const html = renderToStaticMarkup(<DailyNineAtBatComparison
+      summaryPoints={0} summaryOutcome="K"
+      state={{ status: 'success', ownPoints: 0, resolvedAtBatCount: 0,
+        averagePoints: null, strictLowerAtBatRate: null }}
+    />);
+    expect(html).toContain('Your Score');
+    expect(html).toContain('>0</strong>');
+    expect(html).toContain('>—</strong>');
+    expect(html).toContain('Waiting for another result');
+    expect(html).not.toContain('at-bat-distribution-bars');
+  });
+
   it('renders six accessible distribution bars and highlights the resolved score', () => {
     const html = renderToStaticMarkup(
       <DailyNineAtBatComparison state={{
