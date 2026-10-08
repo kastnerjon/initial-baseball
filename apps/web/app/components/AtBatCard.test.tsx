@@ -80,6 +80,20 @@ describe('AtBatCard pending resolution feedback', () => {
     expect(html).not.toContain('4.5');
   });
 
+  it('keeps prefetched histogram bars hidden before an at-bat is resolved', () => {
+    const html = renderCard({
+      requestPending: false, giveUpPending: false,
+      comparison: {
+        status: 'success', ownPoints: 2, resolvedAtBatCount: 1,
+        averagePoints: 2, strictLowerAtBatRate: 0,
+        rulesetVersion: 'points-v4',
+        scoreHistogram: [0, 0, 0, 0, 1, 0, 0, 0, 0],
+      },
+    });
+    expect(html).not.toContain('at-bat-distribution');
+    expect(html).not.toContain('How everyone scored');
+  });
+
   it('renders terminal YOU / AVG loading without changing the next action', () => {
     const html = renderCard({
       requestPending: false,

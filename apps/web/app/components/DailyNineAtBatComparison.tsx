@@ -1,5 +1,6 @@
 import type { JSX } from 'react';
 import type { DailyNineAtBatComparisonState } from '../dailyNineAtBatComparisonState';
+import { DailyNineAtBatDistribution } from './DailyNineAtBatDistribution';
 
 type DailyNineAtBatComparisonProps = {
   state: DailyNineAtBatComparisonState;
@@ -32,6 +33,7 @@ export function DailyNineAtBatComparison({
         </div>
       )}
       <p className="at-bat-comparison-note">{presentation.note}</p>
+      {state.status === "success" ? <DailyNineAtBatDistribution state={state} /> : null}
     </section>
   );
 }
