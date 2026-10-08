@@ -94,6 +94,8 @@ export function DailyNineYourNineRows({
           : Math.min(100, Math.max(0, (awardedPoints / MAX_POINTS_PER_AT_BAT) * 100));
         const answer = revealPlayers ? answers[row.pitchNumber] : undefined;
         const expanded = expandedAtBat === row.pitchNumber;
+        const accessibleAverage = row.average === '—' ? 'unavailable' : `${row.average} points`;
+        const accessibleBeat = row.beat === '—' ? 'unavailable' : row.beat;
         const panelId = `${distributionId}-distribution-${row.pitchNumber}`;
         const state = expanded
           ? createDailyNineAtBatComparisonState(comparison, awardedPoints ?? null)
@@ -109,7 +111,7 @@ export function DailyNineYourNineRows({
               className="your-nine-row-toggle"
               aria-expanded={expanded}
               aria-controls={expanded ? panelId : undefined}
-              aria-label={`At-bat ${row.pitchNumber}: ${row.initials}${answer ? ` - ${answer}` : ''}, ${row.outcome}, ${row.score} points. ${expanded ? 'Hide' : 'Show'} score distribution`}
+              aria-label={`At-bat ${row.pitchNumber}: ${row.initials}${answer ? ` - ${answer}` : ''}, ${row.outcome}, ${row.score} points, average ${accessibleAverage}, beat ${accessibleBeat}. ${expanded ? 'Hide' : 'Show'} score distribution`}
               onClick={() => setExpandedAtBat(current => current === row.pitchNumber ? null : row.pitchNumber)}
             >
               <span className="your-nine-ab">{String(row.pitchNumber).padStart(2, '0')}</span>

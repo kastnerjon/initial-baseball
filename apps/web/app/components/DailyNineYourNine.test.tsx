@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
@@ -87,10 +88,18 @@ describe('Daily Nine Your Nine presentation', () => {
     expect((html.match(/class="your-nine-row-toggle"/g) ?? []).length).toBe(4);
     expect((html.match(/aria-expanded="false"/g) ?? []).length).toBe(4);
     expect(html).toContain('Show score distribution');
+    expect(html).toContain('average 1.3 points, beat 50%');
+    expect(html).toContain('average unavailable, beat unavailable');
     expect(html).not.toContain('at-bat-distribution-bars');
     expect(html).not.toContain('your-nine-distribution"');
     expect(html).not.toContain('Future answer must not appear');
     expect(html).not.toContain('At-bat 5:');
+  });
+
+  it('keeps the button-safe score-strength spans as visible bars', () => {
+    const css = readFileSync(new URL('../daily-your-nine.css', import.meta.url), 'utf8');
+    expect(css).toMatch(/\.your-nine-track\s*\{[^}]*display:\s*block;/);
+    expect(css).toMatch(/\.your-nine-fill\s*\{[^}]*display:\s*block;/);
   });
 
   it('expands only the selected completed AB using the same six-bar peer distribution and strict-lower BEAT', () => {

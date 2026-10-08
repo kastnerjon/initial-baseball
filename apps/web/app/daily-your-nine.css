@@ -142,12 +142,14 @@
 }
 .your-nine-avg { color: var(--ink-soft); white-space: nowrap; }
 .your-nine-track {
+  display: block;
   height: 5px;
   overflow: hidden;
   border-radius: 10px;
   background: #e6e8e5;
 }
 .your-nine-fill {
+  display: block;
   height: 100%;
   border-radius: 10px;
   background: #81958c;
