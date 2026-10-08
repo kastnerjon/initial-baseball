@@ -56,6 +56,6 @@ export function createDailyNineCompletedComparisonPresentation(
       : `${Math.round(strictLowerFinishRate * 100)}%`,
     averageStatus: aboveAverage === null ? null : aboveAverage ? 'above' : 'at-or-below',
     statusLabel: aboveAverage === null ? null : aboveAverage ? 'Above AVG' : 'At or below AVG',
-    note: `${count} other completed result${count === 1 ? '' : 's'}${strictLowerFinishRate === null ? '' : " · ties aren't counted as beaten"}`,
+    note: `${count} other completed result${count === 1 ? '' : 's'}`,
   };
 }

@@ -78,7 +78,7 @@ describe('GameCompleteView comparison', () => {
     expect(html).toContain('>100%</strong>');
     expect(html).toContain('Above AVG');
     expect(html).toContain('completed-comparison-performance-above');
-    expect(html).toContain("1 other completed result · ties aren&#x27;t counted as beaten");
+    expect(html).toContain("1 other completed result");
   });
 
   it('renders AVG ties as red/not-above while strict-lower BEAT remains zero', () => {
