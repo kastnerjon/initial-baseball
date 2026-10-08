@@ -39,6 +39,8 @@ const props = {
 describe('DailyNineDetailedScoreboard', () => {
   it('keeps answered names out of the default scoreboard markup and retains exact row outcomes', () => {
     const html = renderToStaticMarkup(<DailyNineDetailedScoreboard {...props} compact={false} />);
+    expect(html).toContain('daily-nine-detail-card');
+    expect(html).toContain('daily-nine-detail-header');
     expect(html).toContain('Reveal answers');
     expect(html).toContain('role="switch"');
     expect(html).not.toContain('checked=""');
@@ -50,7 +52,8 @@ describe('DailyNineDetailedScoreboard', () => {
     expect(html).toContain('>BEAT %<');
     expect(html).toContain('>100%</td>');
     expect(html).toContain('>0%</td>');
-    expect(html).toContain('>TOTAL</th>');
+    expect(html).toContain('>TOTAL</span>');
+    expect(html).toMatch(/colspan="2"/i);
     expect(html).toContain('>6.0</td>');
   });
 
@@ -71,7 +74,7 @@ describe('DailyNineDetailedScoreboard', () => {
         averageTotalPoints: 6, strictLowerFinishRate: null,
       }}
     />);
-    const total = html.slice(html.indexOf('>TOTAL</th>'));
+    const total = html.slice(html.indexOf('>TOTAL</span>'));
     expect(total).toContain('>4</td>');
     expect(total).toContain('>6.0</td>');
     expect(total).toContain('>—</td>');
@@ -80,8 +83,10 @@ describe('DailyNineDetailedScoreboard', () => {
 
   it('preserves compact during-play disclosure and scrollable keyboard-accessible table', () => {
     const html = renderToStaticMarkup(<DailyNineDetailedScoreboard {...props} compact />);
-    expect(html).toContain('<details class="pitch-results-card pitch-results-card-compact">');
+    expect(html).toContain('<details class="pitch-results-card pitch-results-card-compact daily-nine-detail-card daily-nine-detail-card-compact">');
+    expect(html).toContain('daily-nine-detail-summary');
     expect(html).toContain('>Scoreboard</span>');
+    expect(html).not.toContain('1 completed</span>');
     expect(html).toContain('aria-label="Detailed scores by at-bat" tabindex="0"');
   });
 

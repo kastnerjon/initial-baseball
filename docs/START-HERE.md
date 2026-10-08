@@ -17,6 +17,12 @@ Use this file to resume work. It records verified current state, settled future 
 
 Do not restart settled discussions because the conversation changed. Correct drift before new implementation.
 
+## Bottom Scoreboard visual refinement — owner review
+
+Owner compared the newly deployed bottom Scoreboard with the prior preferred mockup and selected a focused visual correction: light rounded bordered card, larger serif heading, Reveal answers on the heading line, no visible redundant completed-count label, compact aligned row typography, subtle separators, and an inset rounded pale-green TOTAL strip with distinct label/dash. Preserve native during-play disclosure (with a small +/− affordance), all comparisons and spoiler safety, Classic, and the unchanged top numeric scoreboard. Scope: `tasks/plans/bottom-scoreboard-visual-polish.md`. This is a presentation-only checkpoint before any nine-circle tracker work.
+
+Independent review of #329 identified and fixed the completed-view switch extending beyond the card at 320px: headers may wrap at <=360px, with the switch right aligned. Automated component renders check ten phone/tablet/desktop widths; authenticated Preview keyboard/disclosure, completed view and spoiler-free sharing are checked separately. Exact-head release evidence is retained in #329. Physical-phone owner acceptance remains pending before any top-scoreboard redesign.
+
 ## Bottom Daily Nine Scoreboard — first design checkpoint
 
 Owner-approved step 1 replaces only the bottom points-mode At-bat Results scorecard with a Scoreboard containing AB, Player (initials with optional local Reveal answers), combined OUTCOME-SCORE, per-AB AVG and strict-lower BEAT %, and a TOTAL row showing personal accumulated points, authoritative whole-game AVG, and final-score-only BEAT %. Missing comparisons show dashes. Canonical revealed names stay private to the resolved-session view; the copied share format is unchanged. The current top nine-column scoreboard stays exactly as it is until the owner judges this deployed bottom table; replacing it with 1–9 progress circles is a separate future step. Classic remains unchanged. Scope: `tasks/plans/bottom-daily-nine-scoreboard.md`.
