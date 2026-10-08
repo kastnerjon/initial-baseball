@@ -82,6 +82,49 @@ describe('Daily Nine Your Nine presentation', () => {
     expect(html).not.toContain('GAME AVG');
   });
 
+  it('makes completed rows keyboard-accessible expanders without showing charts by default', () => {
+    const html = renderToStaticMarkup(<DailyNineYourNine {...props} />);
+    expect((html.match(/class="your-nine-row-toggle"/g) ?? []).length).toBe(4);
+    expect((html.match(/aria-expanded="false"/g) ?? []).length).toBe(4);
+    expect(html).toContain('Show score distribution');
+    expect(html).not.toContain('at-bat-distribution-bars');
+    expect(html).not.toContain('your-nine-distribution"');
+    expect(html).not.toContain('Future answer must not appear');
+    expect(html).not.toContain('At-bat 5:');
+  });
+
+  it('expands only the selected completed AB using the same six-bar peer distribution and strict-lower BEAT', () => {
+    const html = renderToStaticMarkup(<DailyNineYourNineRows {...props}
+      initialExpandedAtBat={1}
+      comparisons={{
+        ...props.comparisons,
+        1: {
+          status: 'success', resolvedAtBatCount: 2, averagePoints: 1.5,
+          rulesetVersion: 'points-v4',
+          scoreHistogram: [0, 0, 1, 0, 1, 0, 0, 0, 0],
+        },
+      }}
+      revealPlayers={false} />);
+    expect((html.match(/aria-expanded="true"/g) ?? []).length).toBe(1);
+    expect((html.match(/aria-expanded="false"/g) ?? []).length).toBe(3);
+    expect(html).toContain('Hide score distribution');
+    expect(html).toContain('At-bat 1 score distribution');
+    expect(html).toContain('How everyone scored on this at-bat');
+    expect(html).toContain('Based on 2 other results');
+    expect(html).toContain('You scored more than 50% of other players');
+    expect((html.match(/class="at-bat-distribution-column/g) ?? []).length).toBe(6);
+    expect(html).toContain('2 points (2B): 1 results, 50%');
+    expect(html).not.toContain('Bryce Harper');
+    expect(html).not.toContain('Future answer must not appear');
+  });
+
+  it('shows a factual unavailable state for missing histograms, rather than invented bars', () => {
+    const html = renderToStaticMarkup(<DailyNineYourNineRows {...props} initialExpandedAtBat={4} revealPlayers={false} />);
+    expect(html).toContain('Score distribution unavailable for this at-bat');
+    expect(html).not.toContain('at-bat-distribution-bars');
+    expect(html).not.toContain('Future answer must not appear');
+  });
+
   it('never serializes resolved names when the player toggle is off', () => {
     const html = renderToStaticMarkup(<DailyNineYourNine {...props} />);
     expect(html).toContain('Reveal players');
