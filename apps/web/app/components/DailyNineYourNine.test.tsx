@@ -53,6 +53,29 @@ describe('Daily Nine Your Nine presentation', () => {
     expect(html).toContain('06–09');
   });
 
+  it('preserves authoritative pregame completed-game AVG while showing no made-up BEAT', () => {
+    const html = renderToStaticMarkup(<DailyNineYourNine {...props}
+      rows={[]} points={{}} totalPoints={0} currentAtBatNumber={1}
+      completedComparison={{
+        status: 'success', ownPoints: null, completedGameCount: 1,
+        averageTotalPoints: 18.45, strictLowerFinishRate: null,
+      }} />);
+    expect(html).toContain('GAME AVG 18.4');
+    expect(html).not.toContain('BEAT 0%');
+    expect(html).toContain('0 of 9 completed');
+  });
+
+  it('does not duplicate whole-game AVG in the completed results header', () => {
+    const completedProps: DailyNineYourNineProps = { ...props };
+    delete completedProps.currentAtBatNumber;
+    const html = renderToStaticMarkup(<DailyNineYourNine {...completedProps}
+      completedComparison={{
+        status: 'success', ownPoints: 6.5, completedGameCount: 1,
+        averageTotalPoints: 18.45, strictLowerFinishRate: 0,
+      }} />);
+    expect(html).not.toContain('GAME AVG');
+  });
+
   it('never serializes resolved names when the player toggle is off', () => {
     const html = renderToStaticMarkup(<DailyNineYourNine {...props} />);
     expect(html).toContain('Reveal players');

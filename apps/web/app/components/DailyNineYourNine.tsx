@@ -1,8 +1,14 @@
 'use client';
 
 import { useState, type JSX } from 'react';
+import { getDailyPointsRange } from '@initial-baseball/engine';
+import { POINTS_V4_DAILY_RULESET_VERSION } from '@initial-baseball/shared';
+import { createDailyNineCompletedComparisonPresentation } from '../dailyNineCompletedComparisonPresentation';
+import type { DailyNineCompletedComparisonState } from '../useDailyNineCompletedComparison';
 import type { DailyNineScorecardRow } from '../dailyNineScorecardComparisonPresentation';
 import { formatDailyScorecardPoints, type DailyScorecardAnswers, type DailyScorecardPoints } from '../dailyScorecard';
+
+const MAX_POINTS_PER_AT_BAT = getDailyPointsRange(POINTS_V4_DAILY_RULESET_VERSION, 1)?.maximumPoints ?? 0;
 
 export type DailyNineYourNineProps = {
   rows: DailyNineScorecardRow[];
@@ -11,12 +17,15 @@ export type DailyNineYourNineProps = {
   totalPoints: number;
   puzzleNumber?: number;
   totalAtBats: number;
+  completedComparison?: DailyNineCompletedComparisonState;
   currentAtBatNumber?: number | null;
   currentAtBatInitials?: string;
 };
 
 export function DailyNineYourNine(props: DailyNineYourNineProps): JSX.Element {
   const [revealPlayers, setRevealPlayers] = useState(false);
+  const gameAverage = props.completedComparison === undefined || props.completedComparison.status === 'idle'
+    ? null : createDailyNineCompletedComparisonPresentation(props.completedComparison).average;
   return (
     <section className="your-nine" aria-label="Your Nine at-bat results">
       <div className="your-nine-header">
@@ -28,6 +37,9 @@ export function DailyNineYourNine(props: DailyNineYourNineProps): JSX.Element {
           <span className="your-nine-progress">
             {`${props.rows.length} of ${props.totalAtBats} completed`}
           </span>
+          {props.currentAtBatNumber !== undefined && gameAverage !== null ? (
+            <span className="your-nine-progress">{`GAME AVG ${gameAverage}`}</span>
+          ) : null}
         </div>
         <div className="your-nine-total">
           <strong>{formatDailyScorecardPoints(props.totalPoints)} <span>PTS</span></strong>
@@ -62,8 +74,8 @@ export function DailyNineYourNineRows({
         const hasAverage = row.average !== '—' && row.score !== '—';
         const status = !hasAverage ? 'pending'
           : Number(row.score) > Number(row.average) ? 'above' : 'at-or-below';
-        const fill = awardedPoints === undefined ? 0
-          : Math.min(100, Math.max(0, (awardedPoints / 4) * 100));
+        const fill = awardedPoints === undefined || MAX_POINTS_PER_AT_BAT <= 0 ? 0
+          : Math.min(100, Math.max(0, (awardedPoints / MAX_POINTS_PER_AT_BAT) * 100));
         const answer = revealPlayers ? answers[row.pitchNumber] : undefined;
 
         return (

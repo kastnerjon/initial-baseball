@@ -53,6 +53,7 @@ export function PitchResultList({
       points={points!}
       totalPoints={totalPoints ?? 0}
       totalAtBats={totalAtBats}
+      {...(completedComparison === undefined ? {} : { completedComparison })}
       {...(puzzleNumber === undefined ? {} : { puzzleNumber })}
       {...(currentAtBatNumber === undefined ? {} : { currentAtBatNumber })}
       {...(currentAtBatInitials === undefined ? {} : { currentAtBatInitials })}
