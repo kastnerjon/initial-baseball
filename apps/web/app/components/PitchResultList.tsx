@@ -7,6 +7,7 @@ import {
 import type { DailyNineScorecardComparisons } from '../useDailyNineScorecardComparisons';
 import type { DailyNineCompletedComparisonState } from '../useDailyNineCompletedComparison';
 import { DailyNineDetailedScoreboard } from './DailyNineDetailedScoreboard';
+import { DailyNineYourNine } from './DailyNineYourNine';
 
 type PitchResultListProps = {
   pitchLines: DailySharePitchLine[];
@@ -18,6 +19,11 @@ type PitchResultListProps = {
   comparisons?: DailyNineScorecardComparisons;
   totalPoints?: number;
   completedComparison?: DailyNineCompletedComparisonState;
+  performanceLayout?: boolean;
+  puzzleNumber?: number;
+  totalAtBats?: number;
+  currentAtBatNumber?: number | null;
+  currentAtBatInitials?: string;
 };
 
 export function PitchResultList({
@@ -30,10 +36,30 @@ export function PitchResultList({
   comparisons = {},
   totalPoints,
   completedComparison,
+  performanceLayout = false,
+  puzzleNumber,
+  totalAtBats = 9,
+  currentAtBatNumber,
+  currentAtBatInitials,
 }: PitchResultListProps): JSX.Element {
   const dailyNineRows = points === undefined
     ? null
     : createDailyNineScorecardRows(pitchLines, points, comparisons);
+
+  if (dailyNineRows !== null && performanceLayout) {
+    return <DailyNineYourNine
+      rows={dailyNineRows}
+      answers={answers}
+      points={points!}
+      comparisons={comparisons}
+      totalPoints={totalPoints ?? 0}
+      totalAtBats={totalAtBats}
+      {...(completedComparison === undefined ? {} : { completedComparison })}
+      {...(puzzleNumber === undefined ? {} : { puzzleNumber })}
+      {...(currentAtBatNumber === undefined ? {} : { currentAtBatNumber })}
+      {...(currentAtBatInitials === undefined ? {} : { currentAtBatInitials })}
+    />;
+  }
 
   if (dailyNineRows !== null) {
     return <DailyNineDetailedScoreboard

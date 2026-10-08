@@ -25,6 +25,7 @@ import type {
 } from '../dailyRuntimeContracts';
 import { createDailyScorecardPoints, type DailyScorecardAnswers } from '../dailyScorecard';
 import { createDailyNineInningScoreboardPresentation } from '../dailyNineInningScoreboardPresentation';
+import { isYourNineEnabled } from '../dailyNineYourNineLayout';
 import { useCompletedDailyResultSubmission } from '../useCompletedDailyResultSubmission';
 import { useDailyGameplayResolutionRequests } from '../useDailyGameplayResolutionRequests';
 import {
@@ -135,6 +136,7 @@ export function DailyInningGame({
     savedGameRestoreController.invalidate();
   }, [savedGameRestoreController]);
 
+  const performanceLayout = isYourNineEnabled(gameState.rulesetVersion);
   const isPuzzleComplete = currentPitchIndex >= puzzle.pitches.length;
   const isGameComplete = gameState.points.completed || gameState.score.completed || isPuzzleComplete;
   const requestPending = resolutionRequests.pendingAction !== null;
@@ -177,7 +179,7 @@ export function DailyInningGame({
   }
 
   if (shareResult !== null) {
-    const completedInningScoreboard = isDailyPointsRulesetVersion(gameState.rulesetVersion)
+    const completedInningScoreboard = isDailyPointsRulesetVersion(gameState.rulesetVersion) && !performanceLayout
       ? createDailyNineInningScoreboardPresentation({
           pitches: puzzle.pitches,
           currentPitchNumber: null,
@@ -222,7 +224,7 @@ export function DailyInningGame({
   }
   const activePitch = currentPitch;
   const displayedPoints = pendingAdvance?.points ?? gameState.points;
-  const inningScoreboard = isDailyPointsRulesetVersion(gameState.rulesetVersion)
+  const inningScoreboard = isDailyPointsRulesetVersion(gameState.rulesetVersion) && !performanceLayout
     ? createDailyNineInningScoreboardPresentation({
         pitches: puzzle.pitches,
         currentPitchNumber: activePitch.pitchNumber,
@@ -240,7 +242,7 @@ export function DailyInningGame({
 
   return (
     <div className="game-shell">
-      {inningScoreboard === null ? (
+      {performanceLayout ? null : inningScoreboard === null ? (
         <DailyScorebug
           currentAtBat={activePitch.pitchNumber}
           totalAtBats={puzzle.pitches.length}
@@ -284,16 +286,24 @@ export function DailyInningGame({
         onGiveUp={() => { void handleGiveUp(); }}
         onNextPitch={handleNextPitch}
       />
-      {gameState.completedPitchLines.length > 0 ? (
+      {performanceLayout || gameState.completedPitchLines.length > 0 ? (
         <PitchResultList
           answers={scorecardAnswers}
+          {...(performanceLayout ? {
+            performanceLayout,
+            puzzleNumber: puzzle.puzzleNumber,
+            totalAtBats: puzzle.pitches.length,
+            ...(pendingAdvance === null
+              ? { currentAtBatNumber: activePitch.pitchNumber, currentAtBatInitials: activePitch.initials }
+              : { currentAtBatNumber: null }),
+          } : {})}
           {...(isDailyPointsRulesetVersion(gameState.rulesetVersion) ? { points: scorecardPoints } : {})}
           comparisons={scorecardComparisons.comparisons}
           {...(isDailyPointsRulesetVersion(gameState.rulesetVersion) ? {
-            totalPoints: gameState.points.points,
+            totalPoints: displayedPoints.points,
             completedComparison: completedComparison.state,
           } : {})}
-          pitchLines={gameState.completedPitchLines}
+          pitchLines={performanceLayout ? (pendingAdvance?.pitchLines ?? gameState.completedPitchLines) : gameState.completedPitchLines}
           title="Completed At-bats"
           emptyLabel="No completed at-bats yet."
           compact

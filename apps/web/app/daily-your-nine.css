@@ -1,0 +1,161 @@
+/* Current points-v4 Your Nine presentation. Legacy scoreboards retain their CSS. */
+.your-nine {
+  display: grid;
+  gap: 16px;
+  min-width: 0;
+  padding: 20px 24px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--paper-light);
+}
+.your-nine-header {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 12px;
+}
+.your-nine-title-group { display: grid; gap: 2px; min-width: 0; }
+.your-nine-kicker {
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .1em;
+}
+.your-nine-title-group h2 {
+  margin: 0;
+  font: 700 28px/1.15 var(--display-font);
+  letter-spacing: -.025em;
+  color: var(--clubhouse-deep);
+}
+.your-nine-progress { color: var(--ink-soft); font-size: 12px; }
+.your-nine-total { flex: none; padding-top: 5px; }
+.your-nine-total strong {
+  color: var(--clubhouse-deep);
+  font: 700 28px/1 var(--display-font);
+  font-variant-numeric: tabular-nums;
+}
+.your-nine-total strong span {
+  color: var(--ink-soft);
+  font: 600 11px/1 var(--body-font);
+}
+.your-nine-controls {
+  display: flex;
+  justify-content: flex-end;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 9px;
+}
+.your-nine-list { display: grid; gap: 0; }
+.your-nine-row {
+  display: grid;
+  grid-template-columns: 27px minmax(0, 1fr);
+  gap: 12px;
+  padding: 11px 0;
+  border-bottom: 1px solid var(--line-soft);
+  min-width: 0;
+}
+.your-nine-ab {
+  padding-top: 3px;
+  color: #818b84;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.your-nine-row-main { display: grid; gap: 9px; min-width: 0; }
+.your-nine-result-line {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+}
+.your-nine-player {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 4px;
+  min-width: 0;
+  font-size: 14px;
+  line-height: 1.35;
+}
+.your-nine-player strong { color: var(--clubhouse-deep); white-space: nowrap; }
+.your-nine-answer-separator { color: var(--ink-soft); }
+.your-nine-answer { min-width: 0; overflow-wrap: anywhere; }
+.your-nine-outcome {
+  display: flex;
+  flex: none;
+  align-items: baseline;
+  gap: 8px;
+  white-space: nowrap;
+}
+.your-nine-outcome strong {
+  color: var(--clubhouse-deep);
+  font: 700 20px/1.1 var(--display-font);
+}
+.your-nine-outcome span {
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.your-nine-comparison {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 10px;
+  align-items: center;
+  font-size: 11px;
+  font-variant-numeric: tabular-nums;
+}
+.your-nine-avg { color: var(--ink-soft); white-space: nowrap; }
+.your-nine-track {
+  height: 5px;
+  overflow: hidden;
+  border-radius: 10px;
+  background: #e6e8e5;
+}
+.your-nine-fill {
+  height: 100%;
+  border-radius: 10px;
+  background: #81958c;
+}
+.your-nine-row-above .your-nine-fill { background: #28654f; }
+.your-nine-row-at-or-below .your-nine-fill { background: #ae7866; }
+.your-nine-beat { color: var(--ink-soft); white-space: nowrap; }
+.your-nine-row-above .your-nine-beat { color: #24613f; }
+.your-nine-row-at-or-below .your-nine-beat { color: var(--score-red); }
+.your-nine-active {
+  display: grid;
+  grid-template-columns: 27px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  margin-top: 9px;
+  padding: 13px 12px;
+  border-radius: 7px;
+  background: #edf2ee;
+}
+.your-nine-active .your-nine-ab { padding-top: 0; }
+.your-nine-active strong { min-width: 0; overflow-wrap: anywhere; font-size: 13px; }
+.your-nine-active > span:last-child {
+  color: var(--clubhouse);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .06em;
+}
+.your-nine-upcoming {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 12px 0 0;
+  padding: 0 12px;
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+@media (max-width: 640px) {
+  .your-nine { gap: 12px; padding: 16px 14px; }
+  .your-nine-title-group h2 { font-size: 24px; }
+  .your-nine-total strong { font-size: 25px; }
+  .your-nine-row { gap: 8px; grid-template-columns: 22px minmax(0, 1fr); }
+  .your-nine-row-main { gap: 8px; }
+  .your-nine-player { font-size: 13px; }
+  .your-nine-outcome strong { font-size: 18px; }
+  .your-nine-outcome { gap: 5px; }
+  .your-nine-comparison { gap: 7px; font-size: 10px; }
+  .your-nine-active { gap: 8px; grid-template-columns: 22px minmax(0, 1fr) auto; }
+}
