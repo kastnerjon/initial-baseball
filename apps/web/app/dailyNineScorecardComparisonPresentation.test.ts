@@ -54,8 +54,8 @@ describe('Daily Nine scorecard comparison presentation', () => {
         2: { status: 'success', resolvedAtBatCount: 1, averagePoints: 6 },
       },
     )).toEqual([
-      { pitchNumber: 1, initials: 'BB', outcome: 'K', score: '0', average: '7.0' },
-      { pitchNumber: 2, initials: 'KGJ', outcome: 'HR', score: '7', average: '6.0' },
+      { pitchNumber: 1, initials: 'BB', outcome: 'K', score: '0', average: '7.0', beat: '—' },
+      { pitchNumber: 2, initials: 'KGJ', outcome: 'HR', score: '7', average: '6.0', beat: '—' },
     ]);
   });
 
@@ -68,20 +68,52 @@ describe('Daily Nine scorecard comparison presentation', () => {
         2: { status: 'success', resolvedAtBatCount: 5, averagePoints: 2.2 },
       },
     )).toEqual([
-      { pitchNumber: 1, initials: 'DW', outcome: 'BB', score: '0.5', average: '1.4' },
-      { pitchNumber: 2, initials: 'CCS', outcome: '2B', score: '2', average: '2.2' },
+      { pitchNumber: 1, initials: 'DW', outcome: 'BB', score: '0.5', average: '1.4', beat: '—' },
+      { pitchNumber: 2, initials: 'CCS', outcome: '2B', score: '2', average: '2.2', beat: '—' },
     ]);
   });
 
   it('formats a fixed-width share table from the same rows', () => {
     expect(formatDailyNineScorecardShareTable([
-      { pitchNumber: 1, initials: 'BB', outcome: 'K', score: '0', average: '7.0' },
-      { pitchNumber: 2, initials: 'KGJ', outcome: 'HR', score: '7', average: '—' },
+      { pitchNumber: 1, initials: 'BB', outcome: 'K', score: '0', average: '7.0', beat: '—' },
+      { pitchNumber: 2, initials: 'KGJ', outcome: 'HR', score: '7', average: '—', beat: '—' },
     ])).toEqual([
-      '       SCORE   AVG',
-      'BB:        0   7.0',
-      'KGJ:       7     —',
+      '       SCORE   AVG   BEAT %',
+      'BB:        0   7.0        —',
+      'KGJ:       7     —        —',
     ]);
+  });
+
+  it('shares per-at-bat strict-lower BEAT, preserves tied results, and leaves missing values blank', () => {
+    const rows = createDailyNineScorecardRows(
+      [{ initials: 'BH', outcome: '2B' }, { initials: 'DE', outcome: 'K' }],
+      { 1: 2, 2: 0 },
+      {
+        1: { status: 'success', rulesetVersion: 'points-v4', resolvedAtBatCount: 4,
+          averagePoints: 0.625, scoreHistogram: [2, 1, 0, 0, 1, 0, 0, 0, 0] },
+        2: { status: 'loading' },
+      },
+    );
+    expect(rows[0]?.beat).toBe('75%');
+    expect(rows[1]?.beat).toBe('—');
+    expect(formatDailyNineScorecardShareTable(rows)).toContain('BH:        2   0.6      75%');
+    const ties = createDailyNineScorecardRows(
+      [{ initials: 'BH', outcome: '2B' }], { 1: 2 },
+      { 1: { status: 'success', rulesetVersion: 'points-v4', resolvedAtBatCount: 1,
+        averagePoints: 2, scoreHistogram: [0, 0, 0, 0, 1, 0, 0, 0, 0] } },
+    );
+    expect(ties[0]?.beat).toBe('0%');
+  });
+
+  it('omits unavailable overall comparison while retaining initials-only share rows', () => {
+    const text = createDailyNineScorecardShareText(
+      ['Daily Nine #149', 'by Initial Baseball', '', '4/36 PTS', '', 'BH: HR', '', 'https://example.test/'].join('\n'),
+      4, { status: 'loading', ownPoints: 4 }, [{ initials: 'BH', outcome: 'HR' }], { 1: 4 }, {},
+    );
+    expect(text).toContain('4 PTS');
+    expect(text).not.toContain('BEAT 0%');
+    expect(text).toContain('BEAT %');
+    expect(text).not.toContain('Bryce Harper');
   });
 
   it('keeps fractional totals and row scores in scorecard share text', () => {
@@ -115,10 +147,10 @@ describe('Daily Nine scorecard comparison presentation', () => {
       'Daily Nine #149',
       'by Initial Baseball',
       '',
-      '18.5 PTS • AVG 17.3',
+      '18.5 PTS • AVG 17.3 • BEAT 63%',
       '',
-      '       SCORE   AVG',
-      'DW:      0.5   1.4',
+      '       SCORE   AVG   BEAT %',
+      'DW:      0.5   1.4        —',
       '',
       'https://example.test/',
     ].join('\n'));
@@ -157,11 +189,11 @@ describe('Daily Nine scorecard comparison presentation', () => {
       'Daily Nine #149',
       'by Initial Baseball',
       '',
-      '38 PTS • AVG 32.5',
+      '38 PTS • AVG 32.5 • BEAT 50%',
       '',
-      '       SCORE   AVG',
-      'BB:        0   7.0',
-      'KGJ:       7   6.0',
+      '       SCORE   AVG   BEAT %',
+      'BB:        0   7.0        —',
+      'KGJ:       7   6.0        —',
       '',
       'https://example.test/',
     ].join('\n'));

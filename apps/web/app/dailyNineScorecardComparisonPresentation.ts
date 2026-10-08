@@ -17,6 +17,7 @@ export type DailyNineScorecardRow = {
   outcome: DailySharePitchLine['outcome'];
   score: string;
   average: string;
+  beat: string;
 };
 
 export function createDailyNineScorecardAtBatAverage(
@@ -57,6 +58,7 @@ export function createDailyNineScorecardRows(
       outcome: line.outcome,
       score: awardedPoints === undefined ? '—' : formatDailyScorecardPoints(awardedPoints),
       average: average ?? '—',
+      beat: createDailyNineScorecardAtBatBeat(awardedPoints, comparisons[pitchNumber]) ?? '—',
     };
   });
 }
@@ -74,10 +76,16 @@ export function createDailyNineScorecardShareText(
   if (firstBlank < 0) return shareText;
 
   const scoreLineIndex = firstBlank + 1;
-  const completedAverage = createDisplayableCompletedAverage(completedComparison);
-  lines[scoreLineIndex] = completedAverage === null
-    ? `${formatDailyScorecardPoints(totalPoints)} PTS`
-    : `${formatDailyScorecardPoints(totalPoints)} PTS • AVG ${completedAverage}`;
+  const completedPresentation = completedComparison.status === 'idle'
+    ? null
+    : createDailyNineCompletedComparisonPresentation(completedComparison);
+  const completedAverage = completedPresentation?.average === '—' ? null : completedPresentation?.average ?? null;
+  const completedBeat = completedPresentation?.beat ?? null;
+  lines[scoreLineIndex] = [
+    `${formatDailyScorecardPoints(totalPoints)} PTS`,
+    ...(completedAverage === null ? [] : [`AVG ${completedAverage}`]),
+    ...(completedBeat === null ? [] : [`BEAT ${completedBeat}`]),
+  ].join(' • ');
 
   const pitchSectionStart = lines.indexOf('', scoreLineIndex + 1) + 1;
   if (pitchSectionStart <= 0) return lines.join('\n');
@@ -103,20 +111,14 @@ export function formatDailyNineScorecardShareTable(
   const labelWidth = Math.max(4, ...rows.map(row => row.initials.length + 1));
   const scoreWidth = Math.max('SCORE'.length, ...rows.map(row => row.score.length));
   const averageWidth = Math.max('AVG'.length, ...rows.map(row => row.average.length));
+  const beatWidth = Math.max('BEAT %'.length, ...rows.map(row => row.beat.length));
   const gap = '   ';
 
-  const header = `${''.padEnd(labelWidth)}${gap}${'SCORE'.padStart(scoreWidth)}${gap}${'AVG'.padStart(averageWidth)}`;
+  const header = `${''.padEnd(labelWidth)}${gap}${'SCORE'.padStart(scoreWidth)}${gap}${'AVG'.padStart(averageWidth)}${gap}${'BEAT %'.padStart(beatWidth)}`;
   const body = rows.map(row => (
-    `${`${row.initials}:`.padEnd(labelWidth)}${gap}${row.score.padStart(scoreWidth)}${gap}${row.average.padStart(averageWidth)}`
+    `${`${row.initials}:`.padEnd(labelWidth)}${gap}${row.score.padStart(scoreWidth)}${gap}${row.average.padStart(averageWidth)}${gap}${row.beat.padStart(beatWidth)}`
   ));
 
   return [header, ...body];
 }
 
-function createDisplayableCompletedAverage(
-  state: DailyNineCompletedComparisonState,
-): string | null {
-  if (state.status === 'idle') return null;
-  const average = createDailyNineCompletedComparisonPresentation(state).average;
-  return average === '—' ? null : average;
-}
