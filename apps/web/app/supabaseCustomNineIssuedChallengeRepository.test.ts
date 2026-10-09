@@ -31,7 +31,7 @@ describe('private Custom Nine Supabase row codec', () => {
     });
     const decoded = decodeCustomNineIssuedChallengeRow(encoded);
     expect(decoded).toEqual(CHALLENGE);
-    expect(Object.isFrozen(decoded.clueSnapshot.pitches[0].hintValues)).toBe(true);
+    expect(Object.isFrozen(decoded.clueSnapshot.pitches[0]?.hintValues)).toBe(true);
     encoded.canonical_player_ids[0] = 'changed';
     expect(CHALLENGE.canonicalPlayerIds[0]).toBe('player-1');
     expect(decoded.canonicalPlayerIds[0]).toBe('player-1');
