@@ -25,12 +25,33 @@ create table public.custom_nine_issued_challenges (
     ),
   constraint custom_nine_issued_challenges_frozen_clue_shape
     check (
-      jsonb_typeof(clue_snapshot) = 'object'
-      and clue_snapshot ->> 'schemaVersion' = '1'
-      and jsonb_typeof(clue_snapshot -> 'hintLayout') = 'array'
-      and jsonb_array_length(clue_snapshot -> 'hintLayout') = 4
-      and jsonb_typeof(clue_snapshot -> 'pitches') = 'array'
-      and jsonb_array_length(clue_snapshot -> 'pitches') = 9
+      coalesce(
+        jsonb_typeof(clue_snapshot) = 'object'
+        and clue_snapshot ->> 'schemaVersion' = '1'
+        and jsonb_typeof(clue_snapshot -> 'hintLayout') = 'array'
+        and jsonb_array_length(clue_snapshot -> 'hintLayout') = 4
+        and jsonb_typeof(clue_snapshot -> 'pitches') = 'array'
+        and jsonb_array_length(clue_snapshot -> 'pitches') = 9
+        and jsonb_typeof(clue_snapshot #> '{pitches,0,hintValues}') = 'array'
+        and jsonb_array_length(clue_snapshot #> '{pitches,0,hintValues}') = 4
+        and jsonb_typeof(clue_snapshot #> '{pitches,1,hintValues}') = 'array'
+        and jsonb_array_length(clue_snapshot #> '{pitches,1,hintValues}') = 4
+        and jsonb_typeof(clue_snapshot #> '{pitches,2,hintValues}') = 'array'
+        and jsonb_array_length(clue_snapshot #> '{pitches,2,hintValues}') = 4
+        and jsonb_typeof(clue_snapshot #> '{pitches,3,hintValues}') = 'array'
+        and jsonb_array_length(clue_snapshot #> '{pitches,3,hintValues}') = 4
+        and jsonb_typeof(clue_snapshot #> '{pitches,4,hintValues}') = 'array'
+        and jsonb_array_length(clue_snapshot #> '{pitches,4,hintValues}') = 4
+        and jsonb_typeof(clue_snapshot #> '{pitches,5,hintValues}') = 'array'
+        and jsonb_array_length(clue_snapshot #> '{pitches,5,hintValues}') = 4
+        and jsonb_typeof(clue_snapshot #> '{pitches,6,hintValues}') = 'array'
+        and jsonb_array_length(clue_snapshot #> '{pitches,6,hintValues}') = 4
+        and jsonb_typeof(clue_snapshot #> '{pitches,7,hintValues}') = 'array'
+        and jsonb_array_length(clue_snapshot #> '{pitches,7,hintValues}') = 4
+        and jsonb_typeof(clue_snapshot #> '{pitches,8,hintValues}') = 'array'
+        and jsonb_array_length(clue_snapshot #> '{pitches,8,hintValues}') = 4,
+        false
+      )
     )
 );
 
