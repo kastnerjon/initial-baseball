@@ -1,6 +1,6 @@
 # Daily Nine — Custom Lineup MVP
 
-Status: #347, #348 and #349 all merged and verified in production. #349 applied in Supabase as migration 20261009033237 (hosted tool assigned a different version from published repo migration `20261009032000`; do not rename the source migration or replay it; reconcile ledger explicitly per environment before CLI pushes). Next bounded concern: server-only Supabase repository adapter/row codec. Creation API and gameplay remain unimplemented.  
+Status: #347, #348 and #349 all merged and verified in production. #349 applied in Supabase as migration 20261009033237 (hosted tool assigned a different version from published repo migration `20261009032000`; do not rename the source migration or replay it; reconcile ledger explicitly per environment before CLI pushes). PR #351 implements the server-only Supabase repository adapter and strict row codec. Creation API and gameplay remain unimplemented.  
 Decision date: 2026-10-08
 
 ## Product contract
@@ -19,7 +19,7 @@ Decision date: 2026-10-08
 1. **Done #347: Portable exact-nine selection contract** — `packages/daily` validates nine distinct ordered syntactic canonical IDs, returns a defensive immutable copy, and tests all boundaries. Does not create an accessible puzzle or validate player existence. This is the present PR.
 2. **Done #348: Pure private issued challenge + service** — UUIDv4-prefixed puzzle ID, fixed points-v4, exact nine canonical identities, reusable existing four-hint snapshot validation, defensive deep freeze, provider-neutral first-write-wins issuance and private getById. No player existence check or storage yet.
 3. **Done #349: Supabase private storage migration** — one append-only challenge table with puzzle-ID PK, version/ruleset/frozen-shape checks, RLS, service-role SELECT/INSERT only. No app adapter or browser role access. Apply/verify hosted schema only after review and merge.
-4. **Next: Server-only Supabase repository adapter** — implement the existing portable first-insert/read port behind server-only module and row codec with version/collision checks; test independently.
+4. **PR #351: Server-only Supabase repository adapter** — implement the existing portable first-insert/read port behind a server-only module and strict row codec; validate returned records and challenge identity, reread the immutable winner on PK conflict, and test with mocked providers. No public route or schema change.
 5. **Creation and redacted read APIs** — validate full canonical identity and supported hint facts, freeze once, return opaque challenge URL, no untrusted-score submission. Creator/test identity handling must not turn into authorization via an untrusted client field.
 6. **Playable route/progression and result integration** — reuse existing Daily Nine engine, signed hints/reveal, point scoring, browser isolation, existing result/comparison infrastructure keyed by exact challenge ID/ruleset. Do not mix current, archives or other challenges.
 7. **Creator UI and invite/share flow** — select/reorder nine, preview without contribution, issue immutable challenge, copy/share link; mobile and accessibility QA. Public leaderboard eligibility for custom challenges is a scoped follow-up after proving contributor isolation.
@@ -36,3 +36,12 @@ Decision date: 2026-10-08
 ## Boundary note
 
 The selection and pure issued-record contracts alone are **not** a playable or shareable custom game. All issued records are private server-side data. Later work must resolve canonical existence, freeze clue snapshots, authorize gameplay and isolate all result populations before any links are exposed.
+
+## Scope contract for PR #351 — server-only repository adapter
+
+**Goal:** Connect the existing portable Custom Nine issued-challenge port to the already-deployed private Supabase table without making challenges publicly accessible.  
+**Owning layer:** `apps/web` server-only persistence adapter; portable domain validation stays in `packages/daily`.  
+**In scope:** One private Supabase insert/read adapter, strict versioned row codec reusing the existing clue-snapshot validator, first-write-wins conflict read-back, focused mocked-provider tests, and canonical status notes.  
+**Out of scope:** Schema or migration changes, synthetic records, HTTP routes, canonical existence validation/materialization, public read, hint delivery, result comparison, creator identity, UI, Specific Lineup and H2H.  
+**Acceptance:** Encode/decode with full nine-player/four-hint validation; incorrect/missing/corrupt returned rows and mismatched IDs fail closed; 23505 returns only the immutable existing record; provider errors fail closed; exact-head CI and READY Preview, bounded independent review, and full post-merge release verification.  
+**Stop conditions:** Any need for a new schema, service-role privilege, public API, or player-data lookup belongs in a separate scoped PR.
