@@ -314,9 +314,7 @@ export function DailyInningGame({
           compact
         />
       ) : null}
-      {!archive && gameState.rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION
-        ? <DailyNineLeaderboard puzzle={puzzle} viewOnly />
-        : null}
+      {!archive && gameState.rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION && <DailyNineLeaderboard puzzle={puzzle} viewOnly />}
       <button type="button" className="reset-local-result-button" onClick={handleResetToday}>
         Reset today's local result
       </button>
@@ -483,7 +481,6 @@ export function DailyInningGame({
       setRequestError('The next hint is unavailable. Reset today’s game if this continues.');
     }
   }
-
 }
 
 function requireHintBundle(bundle: DailyHintBundle | null): DailyHintBundle {
