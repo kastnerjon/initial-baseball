@@ -61,6 +61,12 @@ describe('Custom Nine first-write-wins service', () => {
     vi.mocked(provider.insertIfAbsent).mockResolvedValueOnce({ status: 'existing', challenge: wrongId });
     await expect(createCustomNineIssuedChallengeService(provider).issue(fixture()))
       .resolves.toEqual({ ok: false, error: 'immutable_conflict' });
+    vi.mocked(provider.insertIfAbsent).mockResolvedValueOnce({
+      status: 'existing',
+      challenge: { puzzleId: ID, schemaVersion: 2, rulesetVersion: 'points-v5' },
+    });
+    await expect(createCustomNineIssuedChallengeService(provider).issue(fixture()))
+      .resolves.toEqual({ ok: false, error: 'immutable_conflict' });
   });
 
   it('rejects a mismatching inserted result and a wrong record returned by lookup', async () => {
@@ -74,8 +80,11 @@ describe('Custom Nine first-write-wins service', () => {
     vi.mocked(provider.getById).mockResolvedValueOnce(wrong);
     await expect(createCustomNineIssuedChallengeService(provider).getById(ID))
       .rejects.toThrow('wrong challenge');
+    vi.mocked(provider.getById).mockResolvedValueOnce({ puzzleId: ID, schemaVersion: 2, rulesetVersion: 'points-v5' });
+    await expect(createCustomNineIssuedChallengeService(provider).getById(ID))
+      .rejects.toThrow('Unsupported Custom Nine stored challenge version.');
     await expect(createCustomNineIssuedChallengeService(provider).getById('bad'))
       .rejects.toThrow('Invalid Custom Nine puzzle ID');
-    expect(provider.getById).toHaveBeenCalledTimes(1);
+    expect(provider.getById).toHaveBeenCalledTimes(2);
   });
 });
