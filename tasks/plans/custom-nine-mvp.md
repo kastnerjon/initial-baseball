@@ -25,6 +25,15 @@ Decision date: 2026-10-08
 7. **Staged signed gameplay (bootstrap issued; hint progression staged next)** — reuse the existing Daily Nine engine and HMAC codec with a distinct Custom Nine signing domain. An opaque challenge-ID GET returns the points-v4 first-batter signed token, authorized current-batter hint bundle and checkpoints, never future hints or answer IDs. Later bounded PRs must verify Custom-only tokens to authorize hint progression, then guess resolution and exact-challenge/ruleset-isolated results with creator noncontribution. Do not mix current, archives or other challenges.
 8. **Creator UI and invite/share flow** — select/reorder nine, preview without contribution, issue immutable challenge, copy/share link; mobile and accessibility QA. Public leaderboard eligibility for custom challenges is a scoped follow-up after proving contributor isolation.
 
+## Current bounded scope — Custom Nine signed guess resolution
+
+**Goal:** Use the Custom-only signed current-batter state to resolve a guess or Give Up and return only the resolved batter's reveal and authorized successor hints.
+**Owner:** `apps/web` server-only Custom gameplay transport, composing the existing Daily runtime.
+**In scope:** A bounded `POST /api/custom-nine/challenges/{puzzleId}/resolve` accepting exactly token + canonical/legacy submitted ID or Give Up; early Custom HMAC/challenge/sentinel/`points-v4` validation; server-only immutable clue and current-answer access; existing Daily strike/terminal/next-batter/completion transitions; terminal-only canonical reveal; sanitized no-store 400/404/503; security/contract regression tests and canonical documentation.
+**Out of scope:** New scoring engine, progress token format or secret, persistence, result submission, AVG/BEAT/leaderboards, creator exclusions, browser gameplay/creation UI, schema/migrations, Universal Daily/Classic/Archive changes.
+**Acceptance:** Invalid cross-domain/challenge/version/completed tokens never access private persistence; incorrect guesses reveal nothing; terminal paths reveal only authorized resolved player, and next bundle is one batter only; ninth batter completes with null next bundle; tests, static QA, exact-head CI, READY Vercel Preview, one independent review, postmerge release verification.
+**Stop conditions:** New anti-replay identities, rule changes, public write permissions, persistent attempts or score population routing require separate decisions.
+
 ## Current bounded scope — secure Custom Nine hint progression
 
 **Goal:** Authorize restoration and one-step reveal of the signed Custom Nine current batter's frozen hints, without resolving guesses or advancing batters.

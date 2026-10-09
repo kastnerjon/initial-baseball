@@ -15,7 +15,7 @@ export async function handleCustomNineHintPost(
 ): Promise<Response> {
   try {
     const { puzzleId } = await context.params;
-    const token = await readProgressionToken(request);
+    const token = requireProgressionToken(await readCustomNineJsonBody(request));
     const result = await createServerCustomNineHintService()[action](puzzleId, token);
     return result === null
       ? Response.json({ error: 'not_found' }, { status: 404, headers: PRIVATE_HEADERS })
@@ -29,7 +29,7 @@ export async function handleCustomNineHintPost(
   }
 }
 
-async function readProgressionToken(request: Request): Promise<string> {
+export async function readCustomNineJsonBody(request: Request): Promise<unknown> {
   const reader = request.body?.getReader();
   if (!reader) throw new CustomNineHintRequestError();
   const decoder = new TextDecoder('utf-8', { fatal: true });
@@ -51,6 +51,10 @@ async function readProgressionToken(request: Request): Promise<string> {
   }
   let body: unknown;
   try { body = JSON.parse(text); } catch { throw new CustomNineHintRequestError(); }
+  return body;
+}
+
+function requireProgressionToken(body: unknown): string {
   if (
     !body || typeof body !== 'object' || Array.isArray(body)
     || Object.keys(body).length !== 1

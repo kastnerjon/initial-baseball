@@ -5,11 +5,14 @@ import {
   type CustomNineIssuedChallengeRepository,
 } from '@initial-baseball/daily';
 import type { Player } from '@initial-baseball/shared';
+import type { CanonicalPlayerReveal } from '@initial-baseball/baseball-data/runtime';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { getCanonicalDailyPlayer } from './canonicalDailyPlayerLookup';
+import { getCanonicalRevealReader, getCanonicalRuntime } from './serverCanonicalData';
 import { DailyProgressionTokenError } from './dailyProgressionToken';
 import { getDailyProgressionSecret } from './dailyProgressionSecret';
 import { DailyRuntimeRequestError, createDailyRuntimeService } from './dailyRuntimeService';
+import type { DailyResolutionRequest } from './dailyRuntimeContracts';
 import {
   CUSTOM_NINE_SESSION_DATE,
   createCustomNineProgressionTokens,
@@ -29,6 +32,8 @@ type Dependencies = {
   createSupabaseClient: (env: Record<string, string | undefined>) => SupabaseClient;
   createRepository: (client: SupabaseClient) => CustomNineIssuedChallengeRepository;
   resolvePlayer: (id: string) => Player | null;
+  resolveLegacyPlayerId: (id: string) => string;
+  getCanonicalReveal: (id: string) => CanonicalPlayerReveal;
   getProgressionSecret: (env: Record<string, string | undefined>) => string;
 };
 
@@ -36,6 +41,8 @@ const DEFAULT_DEPENDENCIES: Dependencies = {
   createSupabaseClient: createServerSupabaseClient,
   createRepository: createSupabaseCustomNineIssuedChallengeRepository,
   resolvePlayer: getCanonicalDailyPlayer,
+  resolveLegacyPlayerId: id => getCanonicalRuntime().requireCanonicalPlayerId(id),
+  getCanonicalReveal: id => getCanonicalRevealReader().getReveal(id),
   getProgressionSecret: getDailyProgressionSecret,
 };
 
@@ -81,8 +88,12 @@ export function createServerCustomNineHintService({
         return puzzle;
       },
       progressionTokens: tokens,
-      resolveLegacyPlayerId: () => { throw new CustomNineHintRequestError(); },
-      getCanonicalReveal: () => { throw new CustomNineHintRequestError(); },
+      resolveLegacyPlayerId: id => dependencies.resolveLegacyPlayerId(id),
+      getCanonicalReveal: id => {
+        const reveal = dependencies.getCanonicalReveal(id);
+        if (reveal.playerId !== id) throw new Error('Canonical reveal identity mismatch.');
+        return reveal;
+      },
     });
   }
 
@@ -106,5 +117,9 @@ export function createServerCustomNineHintService({
       execute(id, token, (runtime, value) => runtime.getHintBundle(value)),
     revealHint: (id: unknown, token: unknown) =>
       execute(id, token, (runtime, value) => runtime.revealHint(value)),
+    resolveAtBat: (id: unknown, request: DailyResolutionRequest) =>
+      execute(id, request.progressionToken, (runtime, value) =>
+        runtime.resolveAtBat({ ...request, progressionToken: value })),
+
   };
 }

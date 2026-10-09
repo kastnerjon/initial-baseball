@@ -4,6 +4,7 @@ import {
   type CustomNineIssuedChallengeRepository,
 } from '@initial-baseball/daily';
 import type { Player } from '@initial-baseball/shared';
+import type { CanonicalPlayerReveal } from '@initial-baseball/baseball-data/runtime';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { describe, expect, it, vi } from 'vitest';
 
@@ -33,7 +34,7 @@ function challenge() {
       pitches: IDS.map((canonicalPlayerId, i) => ({
         pitchNumber: i + 1, canonicalPlayerId, initials: 'P' + (i + 1),
         hintValues: i === 0 ? ['HINT_1', 'HINT_2', 'HINT_3', 'HINT_4']
-          : [FUTURE, FUTURE, FUTURE, FUTURE],
+          : [FUTURE + '_P' + (i + 1), FUTURE + '_P' + (i + 1), FUTURE + '_P' + (i + 1), FUTURE + '_P' + (i + 1)],
       })),
     }),
   });
@@ -45,6 +46,18 @@ function setup(stored: unknown | null = challenge()) {
     insertIfAbsent: vi.fn(async c => ({ status: 'inserted' as const, challenge: c })),
   };
   const dependencies = {
+    resolveLegacyPlayerId: vi.fn((id: string): string => {
+      if (id === 'legacy_correct') return IDS[0]!;
+      throw new Error('Unknown player');
+    }),
+    getCanonicalReveal: vi.fn((id: string): CanonicalPlayerReveal => ({
+      playerId: id, displayName: PRIVATE_NAME + id.slice(-2), playerType: 'hitter',
+      career: {
+        primaryPosition: 'RF', firstSeason: 1999, lastSeason: 2009,
+        teamIds: [], batting: null, pitching: null, advanced: null,
+      },
+      seasons: [],
+    }) as unknown as CanonicalPlayerReveal),
     createSupabaseClient: vi.fn(() => ({} as SupabaseClient)),
     createRepository: vi.fn(() => repository),
     resolvePlayer: vi.fn((id: string): Player | null => IDS.includes(id)
@@ -133,7 +146,130 @@ describe('Custom Nine signed hint progression', () => {
     missing.dependencies.resolvePlayer.mockReturnValueOnce(null);
     await expect(missing.service.getHintBundle(ID, missing.token)).rejects.toThrow();
     const failure = setup();
-    vi.mocked(failure.repository.getById).mockRejectedValueOnce(new Error('PRIVATE_DATABASE_CREDENTIAL'));
+    vi.mocked(failure.repository.getById).mockRejectedValueOnce(new Error('SANITIZED_BACKEND_SENTINEL'));
     await expect(failure.service.getHintBundle(ID, failure.token)).rejects.toThrow();
+  });
+});
+
+describe('Custom Nine signed guess resolution', () => {
+  const WRONG = 'ibp_ffffffffffffffffffff';
+
+  it('an incorrect guess preserves the current batter without revealing private answers', async () => {
+    const ctx = setup();
+    const reply = await ctx.service.resolveAtBat(ID, {
+      progressionToken: ctx.token, submittedPlayerId: WRONG,
+    });
+    expect(reply?.result.kind).toBe('incorrect');
+    expect(reply?.reveal).toBeNull();
+    expect(reply?.hintBundle).toMatchObject({ pitchNumber: 1, revealedCount: 0 });
+    expect(ctx.tokens.verify(reply!.progressionToken)).toEqual({ ...ctx.claims, strikeCount: 1 });
+    expect(ctx.dependencies.getCanonicalReveal).not.toHaveBeenCalled();
+    const json = JSON.stringify(reply);
+    for (const secret of [...IDS, PRIVATE_NAME, FUTURE]) expect(json).not.toContain(secret);
+    expect(ctx.repository.insertIfAbsent).not.toHaveBeenCalled();
+  });
+
+  it('third strike and Give Up reveal only the resolved batter and next authorized hints', async () => {
+    const ctx = setup();
+    let token = ctx.token;
+    for (let i = 0; i < 2; i++) {
+      const wrong = await ctx.service.resolveAtBat(ID, { progressionToken: token, submittedPlayerId: WRONG });
+      token = wrong!.progressionToken;
+      expect(ctx.dependencies.getCanonicalReveal).not.toHaveBeenCalled();
+    }
+    const result = await ctx.service.resolveAtBat(ID, { progressionToken: token, submittedPlayerId: WRONG });
+    expect(result?.result.kind).toBe('strikeout');
+    expect(result?.reveal?.playerId).toBe(IDS[0]);
+    expect(result?.hintBundle?.pitchNumber).toBe(2);
+    expect(ctx.tokens.verify(result!.progressionToken)).toEqual({ ...ctx.claims, pitchNumber: 2, outCount: 1 });
+    expect(ctx.dependencies.getCanonicalReveal).toHaveBeenCalledOnce();
+    expect(ctx.dependencies.getCanonicalReveal).toHaveBeenCalledWith(IDS[0]);
+    const json = JSON.stringify(result);
+    expect(json).toContain(FUTURE + '_P2');
+    expect(json).not.toContain(FUTURE + '_P3');
+    for (const id of IDS.slice(1)) expect(json).not.toContain(id);
+    const gaveUp = await setup().service.resolveAtBat(ID, { progressionToken: ctx.token, giveUp: true });
+    expect(gaveUp?.result.kind).toBe('strikeout');
+    expect(gaveUp?.reveal?.playerId).toBe(IDS[0]);
+  });
+
+  it('correct guesses use signed hint depth and complete only after the ninth batter', async () => {
+    const ctx = setup();
+    const opened = await ctx.service.getHintBundle(ID, ctx.token);
+    let token = opened!.hintBundle.checkpoints[2]!.progressionToken;
+    const first = await ctx.service.resolveAtBat(ID, { progressionToken: token, submittedPlayerId: IDS[0]! });
+    expect(first?.result).toMatchObject({ kind: 'correct', revealedCount: 3 });
+    expect(first?.reveal?.playerId).toBe(IDS[0]);
+    expect(first?.hintBundle?.pitchNumber).toBe(2);
+    token = first!.progressionToken;
+    for (let index = 1; index < 9; index++) {
+      const reply = await ctx.service.resolveAtBat(ID, {
+        progressionToken: token, submittedPlayerId: IDS[index]!,
+      });
+      expect(reply?.result.kind).toBe('correct');
+      expect(reply?.reveal?.playerId).toBe(IDS[index]);
+      if (index === 8) {
+        expect(reply?.hintBundle).toBeNull();
+        expect(ctx.tokens.verify(reply!.progressionToken)).toEqual({
+          ...ctx.claims, pitchNumber: 9, completed: true,
+        });
+        await expect(ctx.service.resolveAtBat(ID, {
+          progressionToken: reply!.progressionToken, giveUp: true,
+        })).rejects.toBeInstanceOf(CustomNineHintRequestError);
+      } else {
+        expect(reply?.hintBundle?.pitchNumber).toBe(index + 2);
+        const json = JSON.stringify(reply);
+        expect(json).not.toContain(FUTURE + '_P' + (index + 3));
+        for (const id of IDS.slice(index + 2)) expect(json).not.toContain(id);
+      }
+      token = reply!.progressionToken;
+    }
+    expect(ctx.repository.insertIfAbsent).not.toHaveBeenCalled();
+  });
+
+  it('rejects Universal, wrong challenge/ruleset/date, and completed tokens without Supabase reads', async () => {
+    const ctx = setup();
+    const invalid = [
+      createDailyProgressionTokenCodec(SECRET).sign(ctx.claims),
+      ctx.tokens.sign({ ...ctx.claims, puzzleId: OTHER_ID }),
+      ctx.tokens.sign({ ...ctx.claims, rulesetVersion: 'points-v3' }),
+      ctx.tokens.sign({ ...ctx.claims, puzzleDate: '2026-10-09' }),
+      ctx.tokens.sign({ ...ctx.claims, completed: true }),
+      'invalid.signature',
+    ];
+    for (const token of invalid) {
+      await expect(ctx.service.resolveAtBat(ID, {
+        progressionToken: token, submittedPlayerId: IDS[0]!,
+      })).rejects.toBeInstanceOf(CustomNineHintRequestError);
+    }
+    expect(ctx.dependencies.createSupabaseClient).not.toHaveBeenCalled();
+    expect(ctx.repository.getById).not.toHaveBeenCalled();
+  });
+
+  it('resolves legacy IDs only through the established canonical redirect boundary', async () => {
+    const ctx = setup();
+    const alias = await ctx.service.resolveAtBat(ID, {
+      progressionToken: ctx.token, submittedPlayerId: 'legacy_correct',
+    });
+    expect(alias?.result.kind).toBe('correct');
+    expect(ctx.dependencies.resolveLegacyPlayerId).toHaveBeenCalledWith('legacy_correct');
+    const direct = await ctx.service.resolveAtBat(ID, {
+      progressionToken: ctx.token, submittedPlayerId: IDS[0]!,
+    });
+    expect(direct?.result.kind).toBe('correct');
+    expect(ctx.dependencies.resolveLegacyPlayerId).toHaveBeenCalledTimes(1);
+    await expect(ctx.service.resolveAtBat(ID, {
+      progressionToken: ctx.token, submittedPlayerId: 'unknown_legacy',
+    })).rejects.toBeInstanceOf(CustomNineHintRequestError);
+  });
+
+  it('fails closed on mismatched terminal reveal identity', async () => {
+    const ctx = setup();
+    ctx.dependencies.getCanonicalReveal.mockImplementationOnce(() => ({
+      playerId: IDS[1], displayName: 'INCORRECT_REVEAL',
+    } as unknown as CanonicalPlayerReveal));
+    await expect(ctx.service.resolveAtBat(ID, {
+      progressionToken: ctx.token, submittedPlayerId: IDS[0]!,
+    })).rejects.toThrow('Canonical reveal identity mismatch');
   });
 });
