@@ -105,7 +105,7 @@ export function DailyNineLeaderboard({ puzzle, ...submission }: Props): JSX.Elem
         setMessage('Your first result has not been recorded yet. Please try again.');
         return;
       }
-      const updated = await submitDailyNineLeaderboardName(attemptId, name.trim());
+      const updated = await submitDailyNineLeaderboardName(submission.attemptId, name.trim());
       setView(updated);
       setName('');
     } catch {
