@@ -3,6 +3,7 @@ import type { DailyNineAtBatComparisonState } from '../dailyNineAtBatComparisonS
 import { DailyNineAtBatDistribution } from './DailyNineAtBatDistribution';
 import { createDailyNineAtBatDistributionPresentation } from '../dailyNineAtBatDistributionPresentation';
 import { formatDailyScorecardPoints } from '../dailyScorecard';
+import { formatDailyNinePercentileOrdinal } from '../formatDailyNinePercentileOrdinal';
 import { getDailyNineInclusiveAtBatPercentile } from '@initial-baseball/daily/comparison';
 import { POINTS_V4_DAILY_RULESET_VERSION } from '@initial-baseball/shared';
 
@@ -37,7 +38,7 @@ export function DailyNineAtBatComparison({
             <strong className="completed-comparison-value">{presentation?.average ?? '—'}</strong>
           </div>
           <div className="completed-comparison-tile">
-            <span className="completed-comparison-label">PCTL</span>
+            <span className="completed-comparison-label">Percentile</span>
             <strong className="completed-comparison-value">{presentation?.percentile ?? '—'}</strong>
           </div>
         </div>
@@ -80,7 +81,7 @@ export function DailyNineAtBatComparison({
             && state.strictLowerAtBatRate !== null ? (
             <strong className="at-bat-comparison-beat">{`BEAT ${Math.round(state.strictLowerAtBatRate * 100)}%`}</strong>
           ) : presentation.percentile === null ? null : (
-            <strong className="at-bat-comparison-beat">{`PCTL ${presentation.percentile}`}</strong>
+            <strong className="at-bat-comparison-beat">{`${presentation.percentile} Percentile`}</strong>
           )}
           <span className="at-bat-comparison-average-status">{presentation.statusLabel}</span>
         </div>
@@ -157,5 +158,5 @@ function getDisplayPercentile(
     resolvedAtBatCount: state.resolvedAtBatCount,
     scoreHistogram: state.scoreHistogram,
   }, state.ownPoints);
-  return rate === null ? null : String(Math.round(rate * 100));
+  return rate === null ? null : formatDailyNinePercentileOrdinal(Math.round(rate * 100));
 }

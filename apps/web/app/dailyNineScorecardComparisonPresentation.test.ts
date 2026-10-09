@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { formatDailyNinePercentileOrdinal } from './formatDailyNinePercentileOrdinal';
 import {
   createDailyNineScorecardAtBatAverage,
   createDailyNineScorecardAtBatPercentile,
@@ -9,6 +10,18 @@ import {
 } from './dailyNineScorecardComparisonPresentation';
 
 describe('Daily Nine scorecard comparison presentation', () => {
+  it('formats 0th through 100th correctly, including 11th–13th and 21st–23rd', () => {
+    for (let value = 0; value <= 100; value++) {
+      const suffix = value % 100 >= 11 && value % 100 <= 13 ? 'th'
+        : value % 10 === 1 ? 'st' : value % 10 === 2 ? 'nd'
+          : value % 10 === 3 ? 'rd' : 'th';
+      expect(formatDailyNinePercentileOrdinal(value)).toBe(`${value}${suffix}`);
+    }
+    for (const invalid of [-1, 100.5, 101, NaN, Infinity]) {
+      expect(() => formatDailyNinePercentileOrdinal(invalid)).toThrow(RangeError);
+    }
+  });
+
   it('withholds unavailable and empty averages but shows one other result', () => {
     expect(createDailyNineScorecardAtBatAverage(undefined)).toBeNull();
     expect(createDailyNineScorecardAtBatAverage({ status: 'loading' })).toBeNull();
@@ -46,13 +59,13 @@ describe('Daily Nine scorecard comparison presentation', () => {
     })).toBe('0%'); // tie not beaten
   });
 
-  it('uses inclusive PCTL for points-v4, including perfect ties, and withholds missing samples', () => {
+  it('uses inclusive ordinal percentile for points-v4, including perfect ties and missing samples', () => {
     const peers = { status: 'success' as const, rulesetVersion: 'points-v4' as const,
       resolvedAtBatCount: 4, averagePoints: 3.25,
       scoreHistogram: [0, 0, 0, 0, 1, 0, 1, 0, 2] };
-    expect(createDailyNineScorecardAtBatPercentile(4, peers)).toBe('100');
-    expect(createDailyNineScorecardAtBatPercentile(3, peers)).toBe('50');
-    expect(createDailyNineScorecardAtBatPercentile(0, peers)).toBe('0');
+    expect(createDailyNineScorecardAtBatPercentile(4, peers)).toBe('100th');
+    expect(createDailyNineScorecardAtBatPercentile(3, peers)).toBe('50th');
+    expect(createDailyNineScorecardAtBatPercentile(0, peers)).toBe('0th');
     const { scoreHistogram: _unusedHistogram, ...withoutHistogram } = peers;
     expect(createDailyNineScorecardAtBatPercentile(4, withoutHistogram)).toBeNull();
     expect(createDailyNineScorecardAtBatPercentile(undefined, peers)).toBeNull();
@@ -171,7 +184,7 @@ describe('Daily Nine scorecard comparison presentation', () => {
     ].join('\n'));
   });
 
-  it('shares points-v4 PCTL and tied complete-game rankings without player-name spoilers', () => {
+  it('shares ordinal percentile and tied complete-game rankings without player-name spoilers', () => {
     const text = createDailyNineScorecardShareText(
       ['Daily Nine #165', 'by Initial Baseball', '', '36/36 PTS', '', 'DJ: HR', '', 'https://example.test/'].join('\n'),
       36,
@@ -182,14 +195,14 @@ describe('Daily Nine scorecard comparison presentation', () => {
         resolvedAtBatCount: 2, averagePoints: 4, scoreHistogram: [0, 0, 0, 0, 0, 0, 0, 0, 2] } },
       'points-v4',
     );
-    expect(text).toContain('36 PTS • AVG 36.0 • PCTL 100');
-    expect(text).toContain('SCORE   AVG   PCTL');
-    expect(text).toMatch(/DJ:\s+4\s+4\.0\s+100/);
+    expect(text).toContain('36 PTS • AVG 36.0 • 100th Percentile');
+    expect(text).toContain('SCORE   AVG   Percentile');
+    expect(text).toMatch(/DJ:\s+4\s+4\.0\s+100th/);
     expect(text).not.toContain('BEAT');
     expect(text).not.toContain('Derek Jeter');
   });
 
-  it('keeps v4 PCTL unavailable for pre-completion and missing histograms', () => {
+  it('keeps percentile unavailable for pre-completion and missing histograms', () => {
     const text = createDailyNineScorecardShareText(
       ['Daily Nine #165', 'by Initial Baseball', '', '4 PTS', '', 'DJ: HR', '', 'https://example.test/'].join('\n'),
       4, { status: 'success', ownPoints: null, completedGameCount: 1,
@@ -199,8 +212,8 @@ describe('Daily Nine scorecard comparison presentation', () => {
       'points-v4',
     );
     expect(text).toContain('4 PTS • AVG 12.0');
-    expect(text).not.toContain('PCTL 0');
-    expect(text).toContain('PCTL');
+    expect(text).not.toContain('0th Percentile');
+    expect(text).toContain('Percentile');
     expect(text).not.toContain('BEAT');
   });
 

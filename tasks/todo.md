@@ -6,7 +6,7 @@ Last updated: 2026-10-08
 
 ## Immediate next work
 
-- [ ] Complete tie-inclusive PCTL rollout in the current points-v4 Your Nine, completed-game and share presentation (PR #355 terminal-at-bat and pure helper merged/deployed). Preserve historic points-v3 BEAT, exact peer populations and missing histogram fallback.
+- [x] Complete inclusive percentile rollout: #355 at-bat + #356 Your Nine, final and share merged and deployed. This follow-up uses ordinal labels (e.g., 100th Percentile), retaining points-v3 BEAT and unchanged calculations.
 
 - [x] Add an accessible, default-open Your Nine expand/collapse header while retaining running score/progress, reveal settings and row state. Separate from released Top 10 visibility #353; PR #354 must pass its own release checks.
 

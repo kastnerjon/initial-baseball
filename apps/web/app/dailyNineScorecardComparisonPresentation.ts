@@ -1,5 +1,6 @@
 import { POINTS_V4_DAILY_RULESET_VERSION, type DailyRulesetVersion, type DailySharePitchLine } from '@initial-baseball/shared';
 import { getDailyNineInclusiveAtBatPercentile } from '@initial-baseball/daily/comparison';
+import { formatDailyNinePercentileOrdinal } from './formatDailyNinePercentileOrdinal';
 import {
   formatDailyScorecardPoints,
   type DailyScorecardPoints,
@@ -43,7 +44,7 @@ export function createDailyNineScorecardAtBatBeat(
     : null;
 }
 
-/** Inclusive v4 PCTL without a percent sign, independent of rounded AVG and strict-lower BEAT. */
+/** Inclusive v4 ordinal percentile, independent of rounded AVG and strict-lower BEAT. */
 export function createDailyNineScorecardAtBatPercentile(
   ownPoints: number | undefined,
   comparison: DailyNineScorecardComparisonState | undefined,
@@ -56,7 +57,7 @@ export function createDailyNineScorecardAtBatPercentile(
     resolvedAtBatCount: comparison.resolvedAtBatCount,
     scoreHistogram: comparison.scoreHistogram,
   }, ownPoints);
-  return rate === null ? null : String(Math.round(rate * 100));
+  return rate === null ? null : formatDailyNinePercentileOrdinal(Math.round(rate * 100));
 }
 
 export function createDailyNineScorecardRows(
@@ -105,7 +106,7 @@ export function createDailyNineScorecardShareText(
   lines[scoreLineIndex] = [
     `${formatDailyScorecardPoints(totalPoints)} PTS`,
     ...(completedAverage === null ? [] : [`AVG ${completedAverage}`]),
-    ...(completedMetric === null ? [] : [inclusiveV4 ? `PCTL ${completedMetric}` : `BEAT ${completedMetric}`]),
+    ...(completedMetric === null ? [] : [inclusiveV4 ? `${formatDailyNinePercentileOrdinal(Number(completedMetric))} Percentile` : `BEAT ${completedMetric}`]),
   ].join(' • ');
 
   const pitchSectionStart = lines.indexOf('', scoreLineIndex + 1) + 1;
@@ -137,7 +138,7 @@ export function formatDailyNineScorecardShareTable(
   const labelWidth = Math.max(4, ...rows.map(row => row.initials.length + 1));
   const scoreWidth = Math.max('SCORE'.length, ...rows.map(row => row.score.length));
   const averageWidth = Math.max('AVG'.length, ...rows.map(row => row.average.length));
-  const metricLabel = inclusiveV4 ? 'PCTL' : 'BEAT %';
+  const metricLabel = inclusiveV4 ? 'Percentile' : 'BEAT %';
   const beatWidth = Math.max(metricLabel.length, ...rows.map(row => row.beat.length));
   const gap = '   ';
 

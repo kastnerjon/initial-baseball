@@ -29,7 +29,7 @@ describe('DailyNineAtBatComparison', () => {
 
     expect(html).toContain('>AVG<');
     expect(html).toContain('>2.0<');
-    expect(html).not.toContain('PCTL 100');
+    expect(html).not.toContain('100th Percentile');
     expect(html).toContain('Above AVG');
     expect(html).toContain('at-bat-comparison-performance-above');
     expect(html).toContain("1 other result");
@@ -71,7 +71,7 @@ describe('DailyNineAtBatComparison', () => {
     expect(html).toContain('>100</strong>');
     expect(html).toContain('Outcome: HR');
     expect(html).toContain('How everyone scored on this at-bat');
-    expect(html).toContain('PCTL 100 · Your score was at or above 100% of other results (ties count).');
+    expect(html).toContain('100th Percentile · Your score was at or above 100% of other results (ties count).');
     expect(html).not.toContain('result-card-points');
     expect(html).not.toContain('at-bat-comparison-values');
     expect(html).not.toContain('at-bat-comparison-performance');
@@ -108,8 +108,8 @@ describe('DailyNineAtBatComparison', () => {
     expect(html).not.toContain('at-bat-comparison-performance');
     expect(html).not.toContain('at-bat-comparison-note');
     expect(html).not.toContain('Above AVG');
-    expect((html.match(/PCTL 70/g) ?? []).length).toBe(1);
-    expect(html).toContain('PCTL 70 · Your score was at or above 70% of other results (ties count).');
+    expect((html.match(/70th Percentile/g) ?? []).length).toBe(1);
+    expect(html).toContain('70th Percentile · Your score was at or above 70% of other results (ties count).');
     expect(html).toContain('2 points (2B): 24 results, 24%, your score');
     expect(html).toContain('Percent / results');
     expect(html).toContain('at-bat-distribution-count');
@@ -138,7 +138,7 @@ describe('DailyNineAtBatComparison', () => {
     expect(html).toContain('>0 results</span>');
     expect(html).toContain('at-bat-distribution-selected');
     expect((html.match(/>YOU<\/span>/g) ?? []).length).toBe(1);
-    expect(html).toContain('PCTL 0 · Your score was at or above 0%');
+    expect(html).toContain('0th Percentile · Your score was at or above 0%');
   });
 
   it('uses the singular result label when one peer selected an outcome', () => {
@@ -149,7 +149,7 @@ describe('DailyNineAtBatComparison', () => {
     }} />);
     expect(html).toContain('>1 result</span>');
     expect(html).toContain('4 points (HR): 1 result, 100%, your score');
-    expect(html).toContain('PCTL 100');
+    expect(html).toContain('100th Percentile');
     expect(html).not.toContain('#1</span>');
   });
 
@@ -202,6 +202,6 @@ describe('DailyNineAtBatComparison', () => {
     expect(html).toContain('>4<');
     expect(html).toContain('>…<');
     expect(html).toContain('Loading comparison…');
-    expect(html).not.toContain('PCTL 0');
+    expect(html).not.toContain('0th Percentile');
   });
 });

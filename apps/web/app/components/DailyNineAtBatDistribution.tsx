@@ -1,5 +1,6 @@
 import type { JSX } from 'react';
 import type { DailyNineDistributionPresentation } from '../dailyNineAtBatDistributionPresentation';
+import { formatDailyNinePercentileOrdinal } from '../formatDailyNinePercentileOrdinal';
 
 export function DailyNineAtBatDistribution({
   presentation,
@@ -44,7 +45,7 @@ export function DailyNineAtBatDistribution({
       </div>
       <p className="at-bat-distribution-summary">
         {legacyBeatPercent === undefined
-          ? `PCTL ${presentation.percentile} · Your score was at or above ${presentation.percentile}% of other results (ties count).`
+          ? `${formatDailyNinePercentileOrdinal(presentation.percentile)} Percentile · Your score was at or above ${presentation.percentile}% of other results (ties count).`
           : `You scored more than ${legacyBeatPercent}% of other players on this at-bat.`}
       </p>
     </section>
