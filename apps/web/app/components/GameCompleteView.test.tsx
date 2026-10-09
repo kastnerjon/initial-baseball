@@ -109,7 +109,7 @@ describe('GameCompleteView comparison', () => {
     expect(html).not.toContain('JR: Jackie Robinson');
   });
 
-  it('shows PCTL 100 for a tied perfect points-v4 score without leaking answers or BEAT', () => {
+  it('shows 100th Percentile for a tied perfect v4 score without leaking answers or BEAT', () => {
     const html = renderToStaticMarkup(<GameCompleteView
       shareResult={{
         ...shareResult, rulesetVersion: 'points-v4', puzzleNumber: 165,
@@ -121,8 +121,8 @@ describe('GameCompleteView comparison', () => {
       scorecardAnswers={{ 1: 'Jackie Robinson' }}
       atBatPoints={{ 1: 4 }}
     />);
-    expect(html).toContain('>PCTL</span>');
-    expect(html).toContain('>100</strong>');
+    expect(html).toContain('>Percentile</span>');
+    expect(html).toContain('>100th</strong>');
     expect(html).toContain('At or below AVG');
     expect(html).not.toContain('>Beat</span>');
     expect(html).not.toContain('BEAT 0%');

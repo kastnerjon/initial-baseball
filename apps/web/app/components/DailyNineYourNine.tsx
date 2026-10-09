@@ -109,7 +109,7 @@ export function DailyNineYourNineRows({
         const expanded = expandedAtBat === row.pitchNumber;
         const accessibleAverage = row.average === '—' ? 'unavailable' : `${row.average} points`;
         const percentile = createDailyNineScorecardAtBatPercentile(awardedPoints, comparison) ?? '—';
-        const accessiblePercentile = percentile === '—' ? 'unavailable' : percentile;
+        const accessiblePercentile = percentile === '—' ? 'percentile unavailable' : `${percentile} percentile`;
         const panelId = `${distributionId}-distribution-${row.pitchNumber}`;
         const state = expanded
           ? createDailyNineAtBatComparisonState(comparison, awardedPoints ?? null)
@@ -125,7 +125,7 @@ export function DailyNineYourNineRows({
               className="your-nine-row-toggle"
               aria-expanded={expanded}
               aria-controls={expanded ? panelId : undefined}
-              aria-label={`At-bat ${row.pitchNumber}: ${row.initials}${answer ? ` - ${answer}` : ''}, ${row.outcome}, ${row.score} points, average ${accessibleAverage}, percentile ${accessiblePercentile}. ${expanded ? 'Hide' : 'Show'} score distribution`}
+              aria-label={`At-bat ${row.pitchNumber}: ${row.initials}${answer ? ` - ${answer}` : ''}, ${row.outcome}, ${row.score} points, average ${accessibleAverage}, ${accessiblePercentile}. ${expanded ? 'Hide' : 'Show'} score distribution`}
               onClick={() => setExpandedAtBat(current => current === row.pitchNumber ? null : row.pitchNumber)}
             >
               <span className="your-nine-ab">{String(row.pitchNumber).padStart(2, '0')}</span>
@@ -150,7 +150,7 @@ export function DailyNineYourNineRows({
                   <span className="your-nine-track" aria-hidden="true">
                     <span className="your-nine-fill" style={{ width: `${fill}%` }} />
                   </span>
-                  <strong className="your-nine-beat">{`PCTL ${percentile}`}</strong>
+                  <strong className="your-nine-beat">{percentile === '—' ? 'Percentile —' : `${percentile} Percentile`}</strong>
                 </span>
               </span>
               <span className="your-nine-expand-icon" aria-hidden="true">{expanded ? '−' : '+'}</span>

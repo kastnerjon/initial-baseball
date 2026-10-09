@@ -2,6 +2,7 @@ import type { JSX } from 'react';
 import type { DailyNineCompletedComparisonState } from '../useDailyNineCompletedComparison';
 import { createDailyNineCompletedComparisonPresentation, formatDailyNineCompletedPercentile } from '../dailyNineCompletedComparisonPresentation';
 import { formatDailyScorecardPoints } from '../dailyScorecard';
+import { formatDailyNinePercentileOrdinal } from '../formatDailyNinePercentileOrdinal';
 
 type DailyNineCompletedComparisonProps = {
   points: number;
@@ -11,6 +12,7 @@ type DailyNineCompletedComparisonProps = {
 
 export function DailyNineCompletedComparison({ points, state, currentPointsV4 = false }: DailyNineCompletedComparisonProps): JSX.Element {
   const presentation = state.status === 'idle' ? null : createDailyNineCompletedComparisonPresentation(state);
+  const inclusivePercentile = currentPointsV4 ? formatDailyNineCompletedPercentile(state) : null;
 
   return (
     <section className="completed-comparison" aria-label="Final score comparison" aria-live="polite">
@@ -27,9 +29,9 @@ export function DailyNineCompletedComparison({ points, state, currentPointsV4 = 
           <strong className="completed-comparison-value">{presentation?.average ?? '—'}</strong>
         </div>
         <div className="completed-comparison-tile">
-          <span className="completed-comparison-label">{currentPointsV4 ? 'PCTL' : 'Beat'}</span>
+          <span className="completed-comparison-label">{currentPointsV4 ? 'Percentile' : 'Beat'}</span>
           <strong className="completed-comparison-value">{currentPointsV4
-            ? formatDailyNineCompletedPercentile(state) ?? '—'
+            ? inclusivePercentile === null ? '—' : formatDailyNinePercentileOrdinal(Number(inclusivePercentile))
             : presentation?.beat ?? '—'}</strong>
           {presentation?.averageStatus ? (
             <span className={'completed-comparison-average-status completed-comparison-performance-' + presentation.averageStatus}>

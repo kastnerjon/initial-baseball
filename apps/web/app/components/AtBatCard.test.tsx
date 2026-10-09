@@ -62,9 +62,9 @@ describe('AtBatCard pending resolution feedback', () => {
     expect(html).toContain('completed-comparison-metrics at-bat-summary-metrics');
     expect(html).toContain('Your Score');
     expect(html).toContain('>AVG<');
-    expect(html).toContain('PCTL');
+    expect(html).toContain('Percentile');
     expect(html).toContain('>2.0</strong>');
-    expect(html).toContain('>0</strong>');
+    expect(html).toContain('>0th</strong>');
     expect(html).toContain('How everyone scored on this at-bat');
     expect(html).toContain('0 points (K): 0 results, 0%, your score');
     expect(html).toContain('Next At Bat');
@@ -90,7 +90,7 @@ describe('AtBatCard pending resolution feedback', () => {
       expect(html).toContain('completed-comparison-metrics at-bat-summary-metrics');
       expect(html).toContain('Your Score');
       expect(html).toContain('>0</strong>');
-      expect(html).toContain('PCTL');
+      expect(html).toContain('Percentile');
       expect(html).toContain('Next At Bat');
       expect(html).not.toContain('at-bat-comparison-values');
       expect(html).not.toContain('result-card-points');
