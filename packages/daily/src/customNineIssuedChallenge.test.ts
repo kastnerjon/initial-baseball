@@ -5,7 +5,7 @@ import {
   validateCustomNinePuzzleId,
 } from './customNineIssuedChallenge';
 
-import { fixture, ID } from './customNineIssuedChallenge.testFixture';
+import { fixture, ID, IDS } from './customNineIssuedChallenge.testFixture';
 
 describe('Custom Nine private immutable challenge', () => {
   it('validates identity, locks points-v4, and preserves canonical order plus issued clues', () => {

@@ -2,7 +2,7 @@ import { createPermanentDailyIssuedClueSnapshot } from './permanentDailyIssuedCl
 import type { CustomNineIssuedChallengeInput } from './customNineIssuedChallenge';
 
 export const ID = 'custom-nine-v1-123e4567-e89b-42d3-a456-426614174000';
-const IDS = Array.from({ length: 9 }, (_, index) => 'player-' + (index + 1));
+export const IDS = Array.from({ length: 9 }, (_, index) => 'player-' + (index + 1));
 
 export function fixture(): CustomNineIssuedChallengeInput {
   return {
