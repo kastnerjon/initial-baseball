@@ -1,6 +1,6 @@
 # Daily Nine — Custom Lineup MVP
 
-Status: PR #347 portable selection merged and production-verified; PR #348 adds the private immutable challenge record and provider-neutral issuance/read contract (no storage).  
+Status: #347 selection and #348 private issued-challenge domain contract merged and production-verified. PR #349 implements **only** private append-only Supabase schema. Repository adapter/HTTP/play follow as separate PRs.  
 Decision date: 2026-10-08
 
 ## Product contract
@@ -18,19 +18,20 @@ Decision date: 2026-10-08
 
 1. **Done in #347: Portable exact-nine selection contract** — `packages/daily` validates nine distinct ordered syntactic canonical IDs, returns a defensive immutable copy, and tests all boundaries. Does not create an accessible puzzle or validate player existence. This is the present PR.
 2. **PR #348: Pure private issued challenge + service** — UUIDv4-prefixed puzzle ID, fixed points-v4, exact nine canonical identities, reusable existing four-hint snapshot validation, defensive deep freeze, provider-neutral first-write-wins issuance and private getById. No player existence check or storage yet.
-3. **Separate Supabase migration/adapter** — append-only challenge storage, indexed private read, RLS, service-role-only permissions, no browser access; independently reviewed and hosted-verified.
-4. **Creation and redacted read APIs** — validate full canonical identity and supported hint facts, freeze once, return opaque challenge URL, no untrusted-score submission. Creator/test identity handling must not turn into authorization via an untrusted client field.
-5. **Playable route/progression and result integration** — reuse existing Daily Nine engine, signed hints/reveal, point scoring, browser isolation, existing result/comparison infrastructure keyed by exact challenge ID/ruleset. Do not mix current, archives or other challenges.
-6. **Creator UI and invite/share flow** — select/reorder nine, preview without contribution, issue immutable challenge, copy/share link; mobile and accessibility QA. Public leaderboard eligibility for custom challenges is a scoped follow-up after proving contributor isolation.
+3. **PR #349: Supabase private storage migration** — one append-only challenge table with puzzle-ID PK, version/ruleset/frozen-shape checks, RLS, service-role SELECT/INSERT only. No app adapter or browser role access. Apply/verify hosted schema only after review and merge.
+4. **Server-only Supabase repository adapter** — implement the existing portable first-insert/read port behind server-only module and row codec with version/collision checks; test independently.
+5. **Creation and redacted read APIs** — validate full canonical identity and supported hint facts, freeze once, return opaque challenge URL, no untrusted-score submission. Creator/test identity handling must not turn into authorization via an untrusted client field.
+6. **Playable route/progression and result integration** — reuse existing Daily Nine engine, signed hints/reveal, point scoring, browser isolation, existing result/comparison infrastructure keyed by exact challenge ID/ruleset. Do not mix current, archives or other challenges.
+7. **Creator UI and invite/share flow** — select/reorder nine, preview without contribution, issue immutable challenge, copy/share link; mobile and accessibility QA. Public leaderboard eligibility for custom challenges is a scoped follow-up after proving contributor isolation.
 
-## Scope contract for PR #348
+## Scope contract for PR #349
 
-**Goal:** Define and validate one frozen, private Custom Nine issued challenge and pure provider-neutral first-write-wins/read service.  
+**Goal:** Add the server-only, append-only Postgres persistence shape for the #348 challenge record, without exposing a gameplay route.  
 **Owner:** `packages/daily`.  
-**In scope:** Versioned record, opaque UUIDv4 ID validation, fixed points-v4 policy, existing hint-snapshot reuse, immutable retries/conflicts, repository interface, focused tests, index export and status documentation.  
-**Out of scope:** Supabase schema and adapter, identity generation, actual canonical existence checks, clue materialization, HTTP routes, UI, gameplay/result/leaderboard integrations, user identity, Specific Lineup and H2H.  
-**Acceptance:** Validated opaque IDs, immutable exact-nine matching frozen clues, defensive copies, first-write-wins with idempotent retries and immutable conflicts, fail-closed private reads, focused tests, full CI, bounded review, READY Preview and production verification.  
-**Stop:** Persistence, exposing answer data, identity generation and public HTTP semantics are separate concerns.
+**In scope:** One additive Supabase table and schema checks, RLS and service-role-only INSERT/SELECT privileges, Supabase runbook and canonical status documentation.  
+**Out of scope:** App repository adapter/codec, player/answer validation in SQL, ID minting, HTTP routes, hint authorization, game/result/leaderboard flows, creator identity, Specific Lineup and H2H.  
+**Acceptance:** Valid schema for private immutable records, no anon/auth access, service-role SELECT/INSERT and no UPDATE/DELETE, RLS on, exact-head CI and READY Preview, bounded review and deliberate post-merge hosted migration read-back.  
+**Stop:** Introducing any public database access, creation endpoint, or repository changes is a separate PR.
 
 ## Boundary note
 
