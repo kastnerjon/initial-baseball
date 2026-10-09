@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { createDailyShareResult, formatDailyShareText, type PlayerSearchResult } from '@initial-baseball/engine';
 import {
   CLASSIC_DAILY_RULESET_VERSION,
+  POINTS_V4_DAILY_RULESET_VERSION,
   isDailyPointsRulesetVersion,
   type DailyAtBatResolution,
   type DailyGameState,
@@ -199,6 +200,14 @@ export function DailyInningGame({
         atBatPoints={scorecardPoints}
         atBatComparisons={scorecardComparisons.comparisons}
         {...(completedInningScoreboard !== undefined ? { inningScoreboard: completedInningScoreboard } : {})}
+        {...(!archive && gameState.rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION ? {
+          leaderboard: {
+            puzzle,
+            completedAtBats: gameState.completedAtBats,
+            attemptId: gameplayPersistence.contribution?.status === 'active'
+              ? gameplayPersistence.contribution.attemptId : null,
+          },
+        } : {})}
         onResetToday={handleResetToday}
       />
     );

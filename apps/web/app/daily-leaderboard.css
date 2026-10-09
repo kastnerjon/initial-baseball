@@ -1,0 +1,21 @@
+.daily-nine-leaderboard { display:grid; gap:16px; min-width:0; padding:20px; border:1px solid var(--line); border-radius:10px; background:var(--paper-light); }
+.daily-nine-leaderboard-heading { display:flex; align-items:baseline; justify-content:space-between; gap:12px; flex-wrap:wrap; }
+.daily-nine-leaderboard-heading h2 { margin:0; font:700 24px/1.2 var(--display-font); color:var(--clubhouse-deep); }
+.daily-nine-leaderboard-eyebrow { margin:0 0 5px; color:var(--ink-soft); font:600 10px/1.25 var(--body-font); letter-spacing:.07em; text-transform:uppercase; }
+.daily-nine-leaderboard-count,.daily-nine-leaderboard-status,.daily-nine-leaderboard-note { margin:0; color:var(--ink-soft); font-size:12px; line-height:1.45; }
+.daily-nine-leaderboard-list { display:grid; gap:0; margin:0; padding:0; list-style:none; }
+.daily-nine-leaderboard-row { display:grid; grid-template-columns:36px minmax(0,1fr) auto; align-items:center; gap:10px; min-width:0; padding:10px 0; border-bottom:1px solid var(--line-soft); font-size:14px; }
+.daily-nine-leaderboard-rank { color:var(--ink-soft); font-variant-numeric:tabular-nums; }
+.daily-nine-leaderboard-name { min-width:0; overflow-wrap:anywhere; }
+.daily-nine-leaderboard-score { white-space:nowrap; font-variant-numeric:tabular-nums; }
+.daily-nine-leaderboard-own { margin:0; padding:10px 12px; border-radius:6px; background:#e9f1ed; font-size:13px; font-weight:700; color:var(--clubhouse-deep); }
+.daily-nine-leaderboard-form { display:grid; gap:8px; }
+.daily-nine-leaderboard-form label { font-size:13px; font-weight:600; }
+.daily-nine-leaderboard-fields { display:grid; grid-template-columns:minmax(0,1fr) auto; gap:8px; min-width:0; }
+.daily-nine-leaderboard-fields input { min-width:0; padding:10px 12px; border:1px solid var(--line); border-radius:5px; background:white; font:inherit; }
+.daily-nine-leaderboard-fields button { min-height:44px; }
+@media (max-width:420px) {
+  .daily-nine-leaderboard { padding:14px 12px; }
+  .daily-nine-leaderboard-fields { grid-template-columns:minmax(0,1fr); }
+  .daily-nine-leaderboard-fields button { width:100%; }
+}
