@@ -25,7 +25,7 @@ type GameCompleteViewProps = {
     puzzle: Pick<DailyPublicPuzzle, 'id' | 'puzzleDate' | 'puzzleNumber'>;
     completedAtBats: DailyCompletedAtBat[];
     attemptId: string | null;
-  };
+  } | undefined;
 };
 
 export function GameCompleteView({
