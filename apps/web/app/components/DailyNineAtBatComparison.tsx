@@ -3,6 +3,7 @@ import type { DailyNineAtBatComparisonState } from '../dailyNineAtBatComparisonS
 import { DailyNineAtBatDistribution } from './DailyNineAtBatDistribution';
 import { createDailyNineAtBatDistributionPresentation } from '../dailyNineAtBatDistributionPresentation';
 import { formatDailyScorecardPoints } from '../dailyScorecard';
+import { getDailyNineInclusiveAtBatPercentile } from '@initial-baseball/daily/comparison';
 
 type DailyNineAtBatComparisonProps = {
   state: DailyNineAtBatComparisonState;
@@ -35,8 +36,8 @@ export function DailyNineAtBatComparison({
             <strong className="completed-comparison-value">{presentation?.average ?? '—'}</strong>
           </div>
           <div className="completed-comparison-tile">
-            <span className="completed-comparison-label">BEAT %</span>
-            <strong className="completed-comparison-value">{presentation?.beat ?? '—'}</strong>
+            <span className="completed-comparison-label">PCTL</span>
+            <strong className="completed-comparison-value">{presentation?.percentile ?? '—'}</strong>
           </div>
         </div>
         {distribution !== null ? (
@@ -73,8 +74,8 @@ export function DailyNineAtBatComparison({
       </div>
       {presentation.averageStatus === null ? null : (
         <div className={`at-bat-comparison-performance at-bat-comparison-performance-${presentation.averageStatus}`}>
-          {presentation.beat === null ? null : (
-            <strong className="at-bat-comparison-beat">{`BEAT ${presentation.beat}`}</strong>
+          {presentation.percentile === null ? null : (
+            <strong className="at-bat-comparison-beat">{`PCTL ${presentation.percentile}`}</strong>
           )}
           <span className="at-bat-comparison-average-status">{presentation.statusLabel}</span>
         </div>
@@ -88,7 +89,7 @@ function createPresentation(
   state: Exclude<DailyNineAtBatComparisonState, { status: 'idle' }>,
 ): {
   average: string;
-  beat: string | null;
+  percentile: string | null;
   averageStatus: 'above' | 'at-or-below' | null;
   statusLabel: string | null;
   note: string;
@@ -96,7 +97,7 @@ function createPresentation(
   if (state.status === 'loading') {
     return {
       average: '…',
-      beat: null,
+      percentile: null,
       averageStatus: null,
       statusLabel: null,
       note: 'Loading comparison…',
@@ -105,18 +106,18 @@ function createPresentation(
   if (state.status === 'unavailable') {
     return {
       average: '—',
-      beat: null,
+      percentile: null,
       averageStatus: null,
       statusLabel: null,
       note: 'Comparison unavailable',
     };
   }
 
-  const { resolvedAtBatCount: count, averagePoints, strictLowerAtBatRate } = state;
+  const { resolvedAtBatCount: count, averagePoints } = state;
   if (count === 0) {
     return {
       average: '—',
-      beat: null,
+      percentile: null,
       averageStatus: null,
       statusLabel: null,
       note: 'Waiting for another result',
@@ -125,7 +126,7 @@ function createPresentation(
   if (averagePoints === null) {
     return {
       average: '—',
-      beat: null,
+      percentile: null,
       averageStatus: null,
       statusLabel: null,
       note: 'Comparison unavailable',
@@ -135,9 +136,21 @@ function createPresentation(
   const aboveAverage = state.ownPoints > averagePoints;
   return {
     average: averagePoints.toFixed(1),
-    beat: strictLowerAtBatRate === null ? null : `${Math.round(strictLowerAtBatRate * 100)}%`,
+    percentile: getDisplayPercentile(state),
     averageStatus: aboveAverage ? 'above' : 'at-or-below',
     statusLabel: aboveAverage ? 'Above AVG' : 'At or below AVG',
     note: `${count} other result${count === 1 ? '' : 's'}`,
   };
+}
+
+function getDisplayPercentile(
+  state: Extract<DailyNineAtBatComparisonState, { status: 'success' }>,
+): string | null {
+  if (state.rulesetVersion === undefined || state.scoreHistogram === undefined) return null;
+  const rate = getDailyNineInclusiveAtBatPercentile({
+    rulesetVersion: state.rulesetVersion,
+    resolvedAtBatCount: state.resolvedAtBatCount,
+    scoreHistogram: state.scoreHistogram,
+  }, state.ownPoints);
+  return rate === null ? null : String(Math.round(rate * 100));
 }

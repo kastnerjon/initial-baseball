@@ -41,7 +41,7 @@ export function DailyNineAtBatDistribution({
         ))}
       </div>
       <p className="at-bat-distribution-summary">
-        {`You scored more than ${presentation.beatPercent}% of other players on this at-bat.`}
+        {`PCTL ${presentation.percentile} · Your score was at or above ${presentation.percentile}% of other results (ties count).`}
       </p>
     </section>
   );

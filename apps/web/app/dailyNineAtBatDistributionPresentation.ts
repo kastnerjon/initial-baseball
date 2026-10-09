@@ -1,4 +1,5 @@
 import { POINTS_V4_DAILY_RULESET_VERSION } from '@initial-baseball/shared';
+import { getDailyNineInclusiveAtBatPercentile } from '@initial-baseball/daily/comparison';
 import type { DailyNineAtBatComparisonState } from './dailyNineAtBatComparisonState';
 
 type SuccessfulAtBat = Extract<DailyNineAtBatComparisonState, { status: 'success' }>;
@@ -15,7 +16,7 @@ export type DailyNineDistributionBar = {
 export type DailyNineDistributionPresentation = {
   sampleSize: number;
   bars: DailyNineDistributionBar[];
-  beatPercent: number;
+  percentile: number;
 };
 
 /**
@@ -32,8 +33,7 @@ export function createDailyNineAtBatDistributionPresentation(
     || histogram.length !== 9
     || !Number.isSafeInteger(total)
     || total <= 0
-    || state.strictLowerAtBatRate === null
-    || !Number.isFinite(state.strictLowerAtBatRate)) return null;
+    ) return null;
 
   if (!histogram.every(count => Number.isSafeInteger(count) && count >= 0)
     || histogram.reduce((sum, count) => sum + count, 0) !== total
@@ -49,10 +49,14 @@ export function createDailyNineAtBatDistributionPresentation(
   ] as const;
   if (!categories.some(category => category.points === state.ownPoints)) return null;
 
+  const inclusiveRate = getDailyNineInclusiveAtBatPercentile({
+    rulesetVersion, resolvedAtBatCount: total, scoreHistogram: histogram,
+  }, state.ownPoints);
+  if (inclusiveRate === null) return null;
   const maxCount = Math.max(...categories.map(category => histogram[category.index] ?? 0));
   return {
     sampleSize: total,
-    beatPercent: Math.round(state.strictLowerAtBatRate * 100),
+    percentile: Math.round(inclusiveRate * 100),
     bars: categories.map(category => {
       const count = histogram[category.index] ?? 0;
       return {

@@ -240,7 +240,7 @@ export function getDailyNineStrictLowerFinishRate(
   >,
   userPoints: number,
 ): number | null {
-  return strictLowerRate(comparison, userPoints, DAILY_AT_BAT_COUNT);
+  return comparisonRate(comparison, userPoints, DAILY_AT_BAT_COUNT, false);
 }
 
 /** Same strict-lower semantics for one AB, using its independent resolved-slot population. */
@@ -252,17 +252,38 @@ export function getDailyNineStrictLowerAtBatRate(
   userPoints: number,
 ): number | null {
   if (comparison.scoreHistogram === undefined) return null;
-  return strictLowerRate({
+  return comparisonRate({
     ...comparison, scoreHistogram: comparison.scoreHistogram,
     completedGameCount: comparison.resolvedAtBatCount,
-  }, userPoints, 1);
+  }, userPoints, 1, false);
 }
 
-function strictLowerRate(
+/** Inclusive percentile: fraction of other completed scores at or below the player's score. */
+export function getDailyNineInclusiveFinishPercentile(
+  comparison: Pick<DailyNineCompletedComparison, 'completedGameCount' | 'scoreHistogram' | 'rulesetVersion'>,
+  userPoints: number,
+): number | null {
+  return comparisonRate(comparison, userPoints, DAILY_AT_BAT_COUNT, true);
+}
+
+/** Inclusive per-at-bat percentile; matching scores count as at-or-below. */
+export function getDailyNineInclusiveAtBatPercentile(
+  comparison: Pick<DailyNineAtBatComparison, 'resolvedAtBatCount' | 'scoreHistogram' | 'rulesetVersion'>,
+  userPoints: number,
+): number | null {
+  if (comparison.scoreHistogram === undefined) return null;
+  return comparisonRate({
+    ...comparison, scoreHistogram: comparison.scoreHistogram,
+    completedGameCount: comparison.resolvedAtBatCount,
+  }, userPoints, 1, true);
+}
+
+function comparisonRate(
   comparison: Pick<DailyNineCompletedComparison,
     'completedGameCount' | 'scoreHistogram' | 'rulesetVersion'>,
   userPoints: number,
   totalAtBats: number,
+  includeTies: boolean,
 ): number | null {
   const range = requireComparisonRange(comparison.rulesetVersion, totalAtBats);
   getHistogramIndex(userPoints, range);
@@ -282,7 +303,7 @@ function strictLowerRate(
     requireNonNegativeSafeInteger(histogramCount, 'score histogram total');
 
     const points = range.minimumPoints + index * range.step;
-    if (points < userPoints) lowerCount += count;
+    if (includeTies ? points <= userPoints : points < userPoints) lowerCount += count;
   }
 
   if (histogramCount !== comparison.completedGameCount) {

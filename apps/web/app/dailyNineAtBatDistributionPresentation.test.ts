@@ -15,7 +15,7 @@ describe('Daily Nine at-bat distribution presentation', () => {
   it('renders the exact six v4 outcome buckets using the authoritative histogram', () => {
     const result = createDailyNineAtBatDistributionPresentation(example);
     expect(result?.sampleSize).toBe(100);
-    expect(result?.beatPercent).toBe(46);
+    expect(result?.percentile).toBe(70);
     expect(result?.bars.map(bar => [bar.points, bar.outcome, bar.percent, bar.selected])).toEqual([
       [0, 'K', 18, false],
       [0.5, 'BB', 12, false],
@@ -36,6 +36,7 @@ describe('Daily Nine at-bat distribution presentation', () => {
       strictLowerAtBatRate: 0,
       scoreHistogram: [1, 0, 0, 0, 0, 0, 0, 0, 0],
     });
+    expect(one?.percentile).toBe(100);
     expect(one?.bars[0]).toMatchObject({ percent: 100, selected: true });
     expect(one?.bars[1]).toMatchObject({ percent: 0, heightPercent: 0 });
   });
