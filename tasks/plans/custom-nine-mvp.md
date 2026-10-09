@@ -1,6 +1,6 @@
 # Daily Nine — Custom Lineup MVP
 
-Status: #347, #348 and #349 all merged and verified in production. #349 applied in Supabase as migration 20261009033237 (hosted tool assigned a different version from published repo migration `20261009032000`; do not rename the source migration or replay it; reconcile ledger explicitly per environment before CLI pushes). PR #351 merged and release-verified the server-only Supabase repository adapter and strict row codec. PR #352 adds only Custom Nine canonical-player validation and four-hint snapshot materialization. Creation API and gameplay remain unimplemented.  
+Status: #347, #348 and #349 all merged and verified in production. #349 applied in Supabase as migration 20261009033237 (hosted tool assigned a different version from published repo migration `20261009032000`; do not rename the source migration or replay it; reconcile ledger explicitly per environment before CLI pushes). PR #351 merged and release-verified the server-only Supabase repository adapter and strict row codec. PR #352 adds only Custom Nine canonical-player validation and four-hint snapshot materialization. Admin-protected creation API #358 is merged and release-verified. This checkpoint adds only a redacted public read; signed gameplay remains unimplemented.  
 Decision date: 2026-10-08
 
 ## Product contract
@@ -21,11 +21,20 @@ Decision date: 2026-10-08
 3. **Done #349: Supabase private storage migration** — one append-only challenge table with puzzle-ID PK, version/ruleset/frozen-shape checks, RLS, service-role SELECT/INSERT only. No app adapter or browser role access. Apply/verify hosted schema only after review and merge.
 4. **Done #351: Server-only Supabase repository adapter** — implement the existing portable first-insert/read port behind a server-only module and strict row codec; validate returned records and challenge identity, reread the immutable winner on PK conflict, and test with mocked providers. No public route or schema change.
 5. **PR #352: Canonical selection and hint snapshot materialization** — resolve nine creator-selected canonical IDs against the existing gameplay-ready server lookup, reuse Daily four-hint materialization in the exact selected order and reject missing/placeholder facts. Keep private candidate identities out of exception text. No database writes or public routes.
-6. **Staged creation API (current bounded PR), then separate redacted read API** — admin-authenticated `POST /api/custom-nine/challenges` first, exact nine validated canonical players with four frozen hints stored by existing first-write-wins service and service-role-only Supabase adapter; only opaque challenge ID returned, not a playable URL or secret record. Explicit same-origin/size/error handling; no anonymous public writes without a separately scoped abuse-control decision. Next redacted read API must never expose future hints or answers. Creator/test identity handling must not turn into authorization via an untrusted client field.
+6. **Done #358: Admin-only issuance; current bounded PR: redacted public read** — private authenticated creation stores the ordered, frozen nine with four hints and returns only an opaque ID. Add public `GET /api/custom-nine/challenges/{puzzleId}` that reads the private immutable record but exposes only puzzle ID, fixed ruleset and nine ordered initials. Malformed/unknown IDs 404, provider faults 503, no-store responses. It does not return a playable URL, signed token, hint bundle, private clue values or answers. Public writes remain a separate abuse-control decision.
 7. **Playable route/progression and result integration** — reuse existing Daily Nine engine, signed hints/reveal, point scoring, browser isolation, existing result/comparison infrastructure keyed by exact challenge ID/ruleset. Do not mix current, archives or other challenges.
 8. **Creator UI and invite/share flow** — select/reorder nine, preview without contribution, issue immutable challenge, copy/share link; mobile and accessibility QA. Public leaderboard eligibility for custom challenges is a scoped follow-up after proving contributor isolation.
 
-## Current bounded scope — private Custom Nine challenge creation API
+## Current bounded scope — redacted read of Custom Nine challenge
+
+**Goal:** Publish the minimal safe challenge metadata for an opaque ID, without making it playable.
+**Owner:** `apps/web` server-only lookup composition and read-only API route.
+**In scope:** Exact UUIDv4 challenge ID validation before Supabase; existing private first-write-wins repository and portable getById validation; explicit projection of `puzzleId`, `rulesetVersion`, and nine ordered `{ pitchNumber, initials }` only; generic 404/503, private no-store responses, mock tests and docs.
+**Out of scope:** Playable route/bootstrap, signed progression, hints, player identities or hint layout, results, public creation, new auth/rate limiting, UI, schema changes, server data writes.
+**Acceptance:** Invalid IDs never touch database; known record response includes no player canonical IDs, names, hidden hints or issued timestamp; corrupt/wrong-version rows fail closed; errors cannot echo secrets; exact-head CI and READY preview, bounded independent review and post-merge read-only checks. No synthetic production records.
+**Stop:** Any change to public disclosure beyond initials, new persistence, or auth/answer authority requires a separate scope decision.
+
+## Prior scope — private Custom Nine challenge creation API
 
 **Goal:** Wire the previously delivered pure selection/issuance/materializer/repository stages behind a safe internal creation endpoint; provide a private immutable challenge ID but do not imply playability.  
 **Owner:** `apps/web` server-only composition and thin protected HTTP route.  
