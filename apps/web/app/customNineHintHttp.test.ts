@@ -17,7 +17,7 @@ const revealHint = vi.fn();
 
 beforeEach(() => {
   vi.resetAllMocks();
-  vi.mocked(createServerCustomNineHintService).mockReturnValue({ getHintBundle, revealHint });
+  vi.mocked(createServerCustomNineHintService).mockReturnValue({ getHintBundle, revealHint, resolveAtBat: vi.fn() });
   getHintBundle.mockResolvedValue({ hintBundle: {
     pitchNumber: 1, revealedCount: 1, hints: [{ hintType: 'teams', hintValue: 'CURRENT' }],
     checkpoints: [{ revealedCount: 2, progressionToken: 'CUSTOM_SIGNED' }],
@@ -75,7 +75,7 @@ describe('Custom Nine hint endpoints', () => {
   });
 
   it('sanitizes provider and signing errors without reflecting private data', async () => {
-    revealHint.mockRejectedValueOnce(new Error('PRIVATE_NAME SERVICE_ROLE_KEY'));
+    revealHint.mockRejectedValueOnce(new Error('REDACTION_SENTINEL_X'));
     const response = await send(ADVANCE, { progressionToken: 'TOKEN' });
     expect(response.status).toBe(503);
     expect(await response.text()).toBe('{"error":"session_unavailable"}');
