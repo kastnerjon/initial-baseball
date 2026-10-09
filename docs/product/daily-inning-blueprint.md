@@ -167,9 +167,13 @@ The initial no-account product remembers played Dailies and the user's recorded 
 - analytics/error monitoring;
 - privacy/terms, canonical domain, and social metadata.
 
+## Approved next: optional Daily Nine leaderboard
+
+October 8 owner decision supersedes the earlier deferred-leaderboard status. Daily Nine — Universal Lineup gets an opt-in public Top 10 of **named completed results**, with all submitters ranked even outside the Top 10 and equal scores sharing a rank. Use existing immutable engine-derived first-attempt result points, exact puzzle/ruleset identity, and server-only persistence. No sign-in initially; names are voluntary and public, not verified identities. Do not alter the separate anonymous AVG/BEAT comparison population. Stage the database, web API and completed-game UI in separate bounded PRs. Canonical detail: `docs/product/daily-nine-leaderboard.md`.
+
 ## Deferred
 
-Accounts/cross-device history, public leaderboards, user-created or exposed theme libraries, native clients, head-to-head/social features, and payments. Classic-specific advanced analytics should also wait until beta feedback justifies retaining Classic.
+Accounts/cross-device history, user-created or exposed theme libraries, native clients, head-to-head/social features, and payments. Classic-specific advanced analytics should also wait until beta feedback justifies retaining Classic.
 
 ## State and persistence
 
