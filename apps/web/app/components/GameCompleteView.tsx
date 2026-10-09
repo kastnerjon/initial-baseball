@@ -1,7 +1,8 @@
 import type { JSX } from 'react';
-import { isDailyPointsRulesetVersion, type DailyShareResult } from '@initial-baseball/shared';
+import { isDailyPointsRulesetVersion, type DailyCompletedAtBat, type DailyPublicPuzzle, type DailyShareResult } from '@initial-baseball/shared';
 import { PitchResultList } from './PitchResultList';
 import { DailyShareCard } from './DailyShareCard';
+import { DailyNineLeaderboard } from './DailyNineLeaderboard';
 import type { DailyScorecardAnswers, DailyScorecardPoints } from '../dailyScorecard';
 import type { DailyNineCompletedComparisonState } from '../useDailyNineCompletedComparison';
 import type { DailyNineScorecardComparisons } from '../useDailyNineScorecardComparisons';
@@ -20,6 +21,11 @@ type GameCompleteViewProps = {
   atBatComparisons?: DailyNineScorecardComparisons;
   inningScoreboard?: InningScoreboardProps;
   onResetToday?: () => void;
+  leaderboard?: {
+    puzzle: Pick<DailyPublicPuzzle, 'id' | 'puzzleDate' | 'puzzleNumber'>;
+    completedAtBats: DailyCompletedAtBat[];
+    attemptId: string | null;
+  } | undefined;
 };
 
 export function GameCompleteView({
@@ -31,6 +37,7 @@ export function GameCompleteView({
   atBatComparisons = {},
   inningScoreboard,
   onResetToday,
+  leaderboard,
 }: GameCompleteViewProps): JSX.Element {
   const isPointsGame = isDailyPointsRulesetVersion(shareResult.rulesetVersion);
   const performanceLayout = isYourNineEnabled(shareResult.rulesetVersion);
@@ -76,6 +83,7 @@ export function GameCompleteView({
         title={isPointsGame ? 'Scoreboard' : 'At-bat Results'}
         emptyLabel="No at-bat results were recorded."
       />
+      {leaderboard === undefined ? null : <DailyNineLeaderboard {...leaderboard} />}
       <DailyShareCard shareText={shareCardText} />
       {onResetToday !== undefined ? (
         <button

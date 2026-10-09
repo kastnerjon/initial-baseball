@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { createDailyShareResult, formatDailyShareText, type PlayerSearchResult } from '@initial-baseball/engine';
 import {
   CLASSIC_DAILY_RULESET_VERSION,
+  POINTS_V4_DAILY_RULESET_VERSION,
   isDailyPointsRulesetVersion,
   type DailyAtBatResolution,
   type DailyGameState,
@@ -199,11 +200,15 @@ export function DailyInningGame({
         atBatPoints={scorecardPoints}
         atBatComparisons={scorecardComparisons.comparisons}
         {...(completedInningScoreboard !== undefined ? { inningScoreboard: completedInningScoreboard } : {})}
+        leaderboard={!archive && gameState.rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION ? {
+          puzzle, completedAtBats: gameState.completedAtBats,
+          attemptId: gameplayPersistence.contribution?.status === 'active'
+            ? gameplayPersistence.contribution.attemptId : null,
+        } : undefined}
         onResetToday={handleResetToday}
       />
     );
   }
-
   if (isRestoringActiveHints) {
     return (
       <div className="game-shell">
@@ -218,7 +223,6 @@ export function DailyInningGame({
       </div>
     );
   }
-
   if (currentPitch === null || (hintBundle === null && pendingAdvance === null)) {
     return <div className="game-shell" />;
   }
@@ -390,7 +394,6 @@ export function DailyInningGame({
       reveal,
     }));
   }
-
   function handleNextPitch(): void {
     if (pendingAdvance === null) {
       return;
@@ -413,7 +416,6 @@ export function DailyInningGame({
     setAtBatState(createInitialAtBatUiState());
     setRequestError(null);
   }
-
   function handleResetToday(): void {
     if (!gameplayPersistence.resetPersistedState()) return;
     completedComparison.invalidate();
@@ -424,7 +426,6 @@ export function DailyInningGame({
     setBundlePending(false);
     setHasLoadedSavedState(true);
   }
-
   function resetToInitialState(): void {
     setGameState(createInitialDailyGameState(puzzle, rulesetVersion));
     setScorecardAnswers({});
@@ -435,7 +436,6 @@ export function DailyInningGame({
     setHintBundle(initialHintBundle);
     setRequestError(null);
   }
-
   function restoreLoadedGame(loaded: LoadedSavedDailyGame | null): void {
     completedComparison.invalidate();
     scorecardComparisons.invalidate();
@@ -453,7 +453,6 @@ export function DailyInningGame({
       onErrorChange: setRequestError,
     });
   }
-
   function applySavedGame(savedGame: SavedDailyGame): void {
     setGameState(savedGame.gameState);
     setScorecardAnswers(savedGame.scorecardAnswers ?? {});
@@ -462,7 +461,6 @@ export function DailyInningGame({
     setPendingAdvance(savedGame.pendingAdvance);
     setProgressionToken(savedGame.progressionToken);
   }
-
   function handleRevealHint(): void {
     try {
       const nextReveal = revealNextHintFromBundle(
