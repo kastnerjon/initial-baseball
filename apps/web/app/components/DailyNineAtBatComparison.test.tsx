@@ -48,7 +48,7 @@ describe('DailyNineAtBatComparison', () => {
       />,
     );
 
-    expect(html).not.toContain('BEAT');
+    expect(html).toContain('BEAT 0%');
     expect(html).toContain('At or below AVG');
     expect(html).toContain('at-bat-comparison-performance-at-or-below');
   });
