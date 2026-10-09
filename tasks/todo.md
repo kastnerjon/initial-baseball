@@ -6,7 +6,7 @@ Last updated: 2026-10-08
 
 ## Immediate next work
 
-- [ ] Deliver owner-approved Daily Nine — Custom Lineup, one bounded PR at a time. Portable nine-player selection contract #347 complete; private frozen challenge contract #348 complete; private RLS/append-only Supabase schema #349 merged, applied and verified; PR #351 adds the server-only repository adapter/codec (pending PR verification); then separately build server create/read, playable signed runtime with result isolation, and mobile creator/share UI. Creator preview/test is non-contributing; no accounts yet. Plan: `tasks/plans/custom-nine-mvp.md`. Specific Lineup remains paused; H2H later.
+- [ ] Deliver owner-approved Daily Nine — Custom Lineup, one bounded PR at a time. Portable nine-player selection contract #347 complete; private frozen challenge contract #348 complete; private RLS/append-only Supabase schema #349 merged, applied and verified; PR #351 server-only repository adapter/codec merged and released; PR #352 adds canonical Custom player validation and four-hint materialization, then separately build server creation/redacted reads, playable signed runtime with result isolation, and mobile creator/share UI. Creator preview/test is non-contributing; no accounts yet. Plan: `tasks/plans/custom-nine-mvp.md`. Specific Lineup remains paused; H2H later.
 
 - [x] Ship opt-in Universal Daily Nine Top 10 named leaderboard with ties and first-attempt contribution: storage #344, API #345 and UI #346 merged; exact PR/push CI, READY production Vercel, canonical routes, hosted Supabase and runtime logs verified. PR #346 checkpoint records SHA/deployment evidence. Real physical-device completion/name submission remains a manual acceptance check.
 
