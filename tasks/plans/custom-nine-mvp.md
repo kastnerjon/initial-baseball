@@ -22,10 +22,19 @@ Decision date: 2026-10-08
 4. **Done #351: Server-only Supabase repository adapter** — implement the existing portable first-insert/read port behind a server-only module and strict row codec; validate returned records and challenge identity, reread the immutable winner on PK conflict, and test with mocked providers. No public route or schema change.
 5. **PR #352: Canonical selection and hint snapshot materialization** — resolve nine creator-selected canonical IDs against the existing gameplay-ready server lookup, reuse Daily four-hint materialization in the exact selected order and reject missing/placeholder facts. Keep private candidate identities out of exception text. No database writes or public routes.
 6. **Done #358: Admin-only issuance; current bounded PR: redacted public read** — private authenticated creation stores the ordered, frozen nine with four hints and returns only an opaque ID. Add public `GET /api/custom-nine/challenges/{puzzleId}` that reads the private immutable record but exposes only puzzle ID, fixed ruleset and nine ordered initials. Malformed/unknown IDs 404, provider faults 503, no-store responses. It does not return a playable URL, signed token, hint bundle, private clue values or answers. Public writes remain a separate abuse-control decision.
-7. **Playable route/progression and result integration** — reuse existing Daily Nine engine, signed hints/reveal, point scoring, browser isolation, existing result/comparison infrastructure keyed by exact challenge ID/ruleset. Do not mix current, archives or other challenges.
+7. **Staged signed gameplay (current PR is opening bootstrap only)** — reuse the existing Daily Nine engine and HMAC codec with a distinct Custom Nine signing domain. An opaque challenge-ID GET returns the points-v4 first-batter signed token, authorized current-batter hint bundle and checkpoints, never future hints or answer IDs. Later bounded PRs must verify Custom-only tokens to authorize hint progression, then guess resolution and exact-challenge/ruleset-isolated results with creator noncontribution. Do not mix current, archives or other challenges.
 8. **Creator UI and invite/share flow** — select/reorder nine, preview without contribution, issue immutable challenge, copy/share link; mobile and accessibility QA. Public leaderboard eligibility for custom challenges is a scoped follow-up after proving contributor isolation.
 
-## Current bounded scope — redacted read of Custom Nine challenge
+## Current bounded scope — signed opening bootstrap for Custom Nine
+
+**Goal:** Issue an opening points-v4 Custom Nine session and first-at-bat hints based solely on an immutable challenge, without creating a playable resolver.
+**Owner:** `apps/web` server-only runtime composition and thin read-only GET route.
+**In scope:** Validate puzzle ID before Supabase; retrieve the private frozen challenge, project nine public initials; materialize the first active hint bundle via the existing Daily runtime using **frozen** hint values; sign an opening token and four reveal-depth checkpoints under a Custom-specific HMAC domain derived from the existing progression secret; no-store sanitized 404/503 responses and focused source/route/security tests.
+**Out of scope:** Guess evaluation, hint advancement endpoints, final resolution, result/leaderboard writes, browser gameplay route, new account/secret, public creation, schema changes.
+**Acceptance:** Bad IDs never touch Supabase; all 9 initials in frozen order, 1 active batter bundle only, first-batter values unchanged, no answer names/IDs/future-pitch clue values in JSON; tokens verify under Custom but **not** Universal key and vice versa; exact-head CI, READY Vercel preview, bounded fresh-eyes review, read-only postmerge smoke tests.
+**Stop:** Any need to reuse Universal token signatures, change scoring or allow competitive submissions is a separate decision.
+
+## Prior scope — redacted read of Custom Nine challenge
 
 **Goal:** Publish the minimal safe challenge metadata for an opaque ID, without making it playable.
 **Owner:** `apps/web` server-only lookup composition and read-only API route.
