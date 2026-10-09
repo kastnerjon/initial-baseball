@@ -18,7 +18,7 @@ describe('Daily Nine leaderboard', () => {
   it('shows Top 10 while playing without premature submission or replay messaging', () => {
     const duringPlay = renderToStaticMarkup(<DailyNineLeaderboard puzzle={puzzle} viewOnly />);
     expect(duringPlay).toContain("Today's Top 10");
-    expect(duringPlay).toContain('Finish all nine at-bats to submit a score.');
+    expect(duringPlay).toContain('Only eligible first attempts can be submitted after completion.');
     expect(duringPlay).not.toContain('Submit score');
     expect(duringPlay).not.toContain('Replays do not qualify');
     expect(duringPlay).not.toContain('Your rank:');

@@ -65,7 +65,7 @@ export function DailyNineLeaderboard({ puzzle, ...submission }: Props): JSX.Elem
             ))}
           </ol>
         ) : <p className="daily-nine-leaderboard-status">No named scores yet. You could be first.</p>}
-      {submission.viewOnly ? <p className="daily-nine-leaderboard-note">Finish all nine at-bats to submit a score.</p> : own !== null ? <p className="daily-nine-leaderboard-own" role="status">
+      {submission.viewOnly ? <p className="daily-nine-leaderboard-note">Only eligible first attempts can be submitted after completion.</p> : own !== null ? <p className="daily-nine-leaderboard-own" role="status">
         Your rank: #{own.rank} of {view?.totalEntries} · {own.points} points
       </p> : attemptId !== null ? (
         <form className="daily-nine-leaderboard-form" onSubmit={(event) => {
