@@ -9,6 +9,8 @@ import {
   deriveDailyNineCompletedComparison,
   getDailyNineStrictLowerFinishRate,
   getDailyNineStrictLowerAtBatRate,
+  getDailyNineInclusiveAtBatPercentile,
+  getDailyNineInclusiveFinishPercentile,
   type DailyNineComparisonRepository,
 } from './dailyNineComparison';
 
@@ -329,5 +331,50 @@ describe('AB strict-lower distribution', () => {
         resolvedAtBatCount: 1, awardedPointsSum: 0, scoreBuckets,
       })).toThrow();
     }
+  });
+});
+
+describe('Inclusive Daily Nine percentiles', () => {
+  it('counts ties as at-or-below, including perfect 36-point ties', () => {
+    const comparison = deriveDailyNineCompletedComparison(V4_KEY, {
+      scoreBuckets: [{ points: 20, count: 1 }, { points: 36, count: 3 }],
+    });
+    expect(getDailyNineInclusiveFinishPercentile(comparison, 36)).toBe(1);
+    expect(getDailyNineStrictLowerFinishRate(comparison, 36)).toBe(0.25);
+    expect(getDailyNineInclusiveFinishPercentile(comparison, 20)).toBe(0.25);
+    expect(getDailyNineInclusiveFinishPercentile(comparison, 0)).toBe(0);
+  });
+
+  it('puts a four-point at-bat tied with other leaders in the 100th percentile', () => {
+    const comparison = deriveDailyNineAtBatComparison({ ...V4_KEY, pitchNumber: 1 }, {
+      resolvedAtBatCount: 4, awardedPointsSum: 13,
+      scoreBuckets: [{ points: 2, count: 1 }, { points: 3, count: 1 }, { points: 4, count: 2 }],
+    });
+    expect(getDailyNineInclusiveAtBatPercentile(comparison, 4)).toBe(1);
+    expect(getDailyNineStrictLowerAtBatRate(comparison, 4)).toBe(0.5);
+    expect(getDailyNineInclusiveAtBatPercentile(comparison, 3)).toBe(0.5);
+    expect(getDailyNineInclusiveAtBatPercentile(comparison, 0)).toBe(0);
+  });
+
+  it('gives 100th percentile to an all-zero tie but withholds empty samples', () => {
+    const comparison = deriveDailyNineAtBatComparison({ ...V4_KEY, pitchNumber: 9 }, {
+      resolvedAtBatCount: 1, awardedPointsSum: 0,
+      scoreBuckets: [{ points: 0, count: 1 }],
+    });
+    expect(getDailyNineInclusiveAtBatPercentile(comparison, 0)).toBe(1);
+    expect(getDailyNineInclusiveAtBatPercentile({ ...comparison, resolvedAtBatCount: 0,
+      scoreHistogram: Array(9).fill(0) }, 0)).toBeNull();
+    expect(getDailyNineInclusiveAtBatPercentile({ rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION, resolvedAtBatCount: 1 }, 0)).toBeNull();
+    expect(getDailyNineInclusiveFinishPercentile(
+      deriveDailyNineCompletedComparison(V4_KEY, { scoreBuckets: [] }), 36,
+    )).toBeNull();
+  });
+
+  it('rejects invalid histograms and scores under the same strict rules as BEAT', () => {
+    expect(() => getDailyNineInclusiveFinishPercentile({
+      rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION, completedGameCount: 1, scoreHistogram: [],
+    }, 36)).toThrow('invalid length');
+    const comparison = deriveDailyNineCompletedComparison(V4_KEY, { scoreBuckets: [{ points: 36, count: 1 }] });
+    expect(() => getDailyNineInclusiveFinishPercentile(comparison, 36.25)).toThrow();
   });
 });

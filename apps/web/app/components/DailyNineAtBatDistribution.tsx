@@ -4,9 +4,11 @@ import type { DailyNineDistributionPresentation } from '../dailyNineAtBatDistrib
 export function DailyNineAtBatDistribution({
   presentation,
   average,
+  legacyBeatPercent,
 }: {
   presentation: DailyNineDistributionPresentation;
   average: string;
+  legacyBeatPercent?: number;
 }): JSX.Element {
 
   const accessibleBars = presentation.bars
@@ -41,7 +43,9 @@ export function DailyNineAtBatDistribution({
         ))}
       </div>
       <p className="at-bat-distribution-summary">
-        {`You scored more than ${presentation.beatPercent}% of other players on this at-bat.`}
+        {legacyBeatPercent === undefined
+          ? `PCTL ${presentation.percentile} · Your score was at or above ${presentation.percentile}% of other results (ties count).`
+          : `You scored more than ${legacyBeatPercent}% of other players on this at-bat.`}
       </p>
     </section>
   );
