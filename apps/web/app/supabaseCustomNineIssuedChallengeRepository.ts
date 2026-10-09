@@ -47,7 +47,7 @@ export function createSupabaseCustomNineIssuedChallengeRepository(
       return { status: 'existing', challenge: existing };
     },
 
-    getById(puzzleId) {
+    async getById(puzzleId) {
       validateCustomNinePuzzleId(puzzleId);
       return readById(client, puzzleId);
     },
