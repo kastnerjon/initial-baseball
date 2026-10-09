@@ -119,7 +119,11 @@ function materializeCustomNineSessionPuzzle(
     if (player === null) throw new Error('Custom Nine player facts unavailable.');
     const issuedHints: DailyPuzzle['pitches'][number]['hints'] = {};
     challenge.clueSnapshot.hintLayout.forEach((slot, position) => {
-      issuedHints[slot.hintType] = frozen.hintValues[position];
+      const value = frozen.hintValues[position];
+      if (typeof value !== 'string' || value.trim().length === 0) {
+        throw new Error('Invalid frozen Custom Nine hint.');
+      }
+      issuedHints[slot.hintType] = value;
     });
     return {
       pitchNumber: frozen.pitchNumber,
