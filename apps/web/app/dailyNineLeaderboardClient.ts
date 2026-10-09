@@ -14,7 +14,7 @@ export async function readDailyNineLeaderboard(
     puzzleId: puzzle.id, date: puzzle.puzzleDate,
     number: String(puzzle.puzzleNumber), ruleset: 'points-v4',
   });
-  return readResponse(await fetch(PATH + '?' + search, { signal, cache: 'no-store' }));
+  return readResponse(await fetch(PATH + '?' + search, { signal, headers: { 'cache-control': 'no-store' } }));
 }
 export async function readOwnDailyNineLeaderboardRank(
   submissionId: string, signal: AbortSignal,
@@ -31,7 +31,6 @@ async function post(payload: unknown, signal?: AbortSignal): Promise<DailyNineLe
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     body: JSON.stringify(payload),
-    cache: 'no-store',
     ...(signal === undefined ? {} : { signal }),
   }));
 }

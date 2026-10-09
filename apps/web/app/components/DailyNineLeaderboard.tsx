@@ -74,7 +74,11 @@ export function DailyNineLeaderboard({ puzzle, completedAtBats, attemptId }: Pro
           <div className="daily-nine-leaderboard-fields">
             <input id="daily-nine-leaderboard-name" type="text" maxLength={32}
               placeholder="Name or nickname" autoComplete="nickname"
-              value={name} onChange={(event) => setName(event.target.value)}
+              value={name} onChange={(event) => {
+                const next = 'value' in event.target && typeof event.target.value === 'string'
+                  ? event.target.value : '';
+                setName(next);
+              }}
               disabled={submitting} required />
             <button className="button-primary" type="submit" disabled={submitting || name.trim().length === 0}>
               {submitting ? 'Submitting…' : 'Submit score'}
