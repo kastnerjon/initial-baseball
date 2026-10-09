@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { createCustomNineIssuedChallenge } from './customNineIssuedChallenge';
 import type { CustomNineIssuedChallengeRepository } from './customNineIssuedChallengeService';
 import { createCustomNineIssuedChallengeService } from './customNineIssuedChallengeService';
-import { fixture, ID } from './customNineIssuedChallenge.test';
+import { fixture, ID } from './customNineIssuedChallenge.testFixture';
 
 function repo(): CustomNineIssuedChallengeRepository {
   return {
