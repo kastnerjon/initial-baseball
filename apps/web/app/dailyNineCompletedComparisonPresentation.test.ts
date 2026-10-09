@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createDailyNineCompletedComparisonPresentation } from './dailyNineCompletedComparisonPresentation';
+import { createDailyNineCompletedComparisonPresentation, formatDailyNineCompletedPercentile } from './dailyNineCompletedComparisonPresentation';
 
 describe('Daily Nine completed comparison presentation', () => {
   it('keeps loading and unavailable states fail-quiet', () => {
@@ -82,6 +82,18 @@ describe('Daily Nine completed comparison presentation', () => {
       statusLabel: 'At or below AVG',
       note: "1 other completed result",
     });
+  });
+
+  it('formats the inclusive completed percentile while preserving historical BEAT display', () => {
+    const allTied = { status: 'success' as const, ownPoints: 36,
+      completedGameCount: 2, averageTotalPoints: 36, strictLowerFinishRate: 0,
+      inclusiveFinishPercentile: 1 };
+    expect(formatDailyNineCompletedPercentile(allTied)).toBe('100');
+    expect(createDailyNineCompletedComparisonPresentation(allTied).beat).toBe('0%');
+    expect(formatDailyNineCompletedPercentile({ ...allTied, ownPoints: null })).toBeNull();
+    expect(formatDailyNineCompletedPercentile({ ...allTied, completedGameCount: 0 })).toBeNull();
+    expect(formatDailyNineCompletedPercentile({ ...allTied, inclusiveFinishPercentile: null })).toBeNull();
+    expect(formatDailyNineCompletedPercentile({ status: 'loading', ownPoints: 36 })).toBeNull();
   });
 
   it('does not impose a separate early-sample BEAT threshold', () => {

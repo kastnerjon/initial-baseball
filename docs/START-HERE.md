@@ -33,7 +33,7 @@ The completed Daily Nine summary redesign starts with a small `Daily #N` heading
 
 ## Owner-approved inclusive percentile follow-up
 
-Replace strict-lower BEAT % labels with inclusive PCTL: peer scores at or below the player's own score, ties included. A tied perfect 36 is PCTL 100; zero peers or missing histogram is unavailable. First bounded PR adds the portable, validated inclusive histogram rule and resolved at-bat presentation. Next separate PR migrates Your Nine, final-score and share surfaces; the older strict-lower computation remains available for compatibility. This does not change result collection, game scoring, public API, or storage.
+Replace strict-lower BEAT % labels with inclusive PCTL: peer scores at or below the player's own score, ties included. A tied perfect 36 is PCTL 100; zero peers or missing histogram is unavailable. PR #355 merged at `7a9fe504dc1c71aa001d2a482a3d9a32a8b9fae0` and released the portable validated percentile rule and the points-v4 terminal at-bat PCTL presentation. The separate next PR migrates current points-v4 Your Nine, completed-game comparison and share text together. Historical points-v3 remains strict-lower BEAT, and the older computation remains available for compatibility. This does not change result collection, game scoring, public API, or storage.
 
 ## Optional Daily Nine leaderboard — staged implementation
 

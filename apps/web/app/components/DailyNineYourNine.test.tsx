@@ -22,7 +22,8 @@ const props: DailyNineYourNineProps = {
   },
   points: { 1: 2, 2: 4, 3: 0, 4: 0.5 },
   comparisons: {
-    1: { status: 'success', resolvedAtBatCount: 2, averagePoints: 1.3 },
+    1: { status: 'success', resolvedAtBatCount: 2, averagePoints: 1.25,
+      rulesetVersion: 'points-v4', scoreHistogram: [0, 1, 0, 0, 1, 0, 0, 0, 0] },
     2: { status: 'success', resolvedAtBatCount: 3, averagePoints: 2.1 },
     3: { status: 'success', resolvedAtBatCount: 1, averagePoints: 0 },
     4: { status: 'unavailable' },
@@ -46,9 +47,9 @@ describe('Daily Nine Your Nine presentation', () => {
     expect(html).toContain('K');
     expect(html).toContain('BB');
     expect(html).toContain('AVG 1.3');
-    expect(html).toContain('BEAT 50%');
-    expect(html).toContain('BEAT 0%');
-    expect(html).toContain('BEAT —');
+    expect(html).toContain('PCTL 100');
+    expect(html).toContain('PCTL —');
+    expect(html).not.toContain('BEAT');
     expect(html).toContain('width:50%');
     expect(html).toContain('width:100%');
     expect(html).toContain('role="switch"');
@@ -75,7 +76,7 @@ describe('Daily Nine Your Nine presentation', () => {
     expect(css).toContain('.your-nine-body[hidden] { display: none; }');
   });
 
-  it('preserves authoritative pregame completed-game AVG while showing no made-up BEAT', () => {
+  it('preserves authoritative pregame completed-game AVG while showing no made-up percentile', () => {
     const html = renderToStaticMarkup(<DailyNineYourNine {...props}
       rows={[]} points={{}} totalPoints={0} currentAtBatNumber={1}
       completedComparison={{
@@ -83,7 +84,7 @@ describe('Daily Nine Your Nine presentation', () => {
         averageTotalPoints: 18.45, strictLowerFinishRate: null,
       }} />);
     expect(html).toContain('GAME AVG 18.4');
-    expect(html).not.toContain('BEAT 0%');
+    expect(html).not.toContain('PCTL 0');
     expect(html).toContain('0 of 9 completed');
   });
 
@@ -103,8 +104,8 @@ describe('Daily Nine Your Nine presentation', () => {
     expect((html.match(/class="your-nine-row-toggle"/g) ?? []).length).toBe(4);
     expect((html.match(/aria-expanded="false"/g) ?? []).length).toBe(4);
     expect(html).toContain('Show score distribution');
-    expect(html).toContain('average 1.3 points, beat 50%');
-    expect(html).toContain('average unavailable, beat unavailable');
+    expect(html).toContain('average 1.3 points, percentile 100');
+    expect(html).toContain('average unavailable, percentile unavailable');
     expect(html).not.toContain('at-bat-distribution-bars');
     expect(html).not.toContain('your-nine-distribution"');
     expect(html).not.toContain('Future answer must not appear');
@@ -117,7 +118,7 @@ describe('Daily Nine Your Nine presentation', () => {
     expect(css).toMatch(/\.your-nine-fill\s*\{[^}]*display:\s*block;/);
   });
 
-  it('expands only the selected completed AB using the same six-bar peer distribution and strict-lower BEAT', () => {
+  it('expands an AB with consistent tie-inclusive percentile in its row and histogram', () => {
     const html = renderToStaticMarkup(<DailyNineYourNineRows {...props}
       initialExpandedAtBat={1}
       comparisons={{
@@ -135,13 +136,13 @@ describe('Daily Nine Your Nine presentation', () => {
     expect(html).toContain('At-bat 1 score distribution');
     expect(html).toContain('How everyone scored on this at-bat');
     expect(html).toContain('Based on 2 other results');
-    expect(html).toContain('You scored more than 50% of other players');
+    expect(html).toContain('PCTL 100 · Your score was at or above 100% of other results (ties count).');
     expect((html.match(/class="at-bat-distribution-column/g) ?? []).length).toBe(6);
     expect(html).toContain('2 points (2B): 1 result, 50%, your score');
     expect(html).toContain('>1 result</span>');
     expect(html).toContain('>Percent / results</p>');
     expect(html).toContain('>YOU</span>');
-    expect(html).not.toContain('Ties aren');
+    expect(html).not.toContain('BEAT');
     expect(html).not.toContain('Bryce Harper');
     expect(html).not.toContain('Future answer must not appear');
   });

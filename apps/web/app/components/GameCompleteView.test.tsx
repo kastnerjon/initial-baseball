@@ -109,6 +109,26 @@ describe('GameCompleteView comparison', () => {
     expect(html).not.toContain('JR: Jackie Robinson');
   });
 
+  it('shows PCTL 100 for a tied perfect points-v4 score without leaking answers or BEAT', () => {
+    const html = renderToStaticMarkup(<GameCompleteView
+      shareResult={{
+        ...shareResult, rulesetVersion: 'points-v4', puzzleNumber: 165,
+        points: { points: 36, maximumPoints: 36, atBatsCompleted: 9, totalAtBats: 9, completed: true },
+      }}
+      shareText={shareText}
+      comparison={{ status: 'success', ownPoints: 36, completedGameCount: 3,
+        averageTotalPoints: 36, strictLowerFinishRate: 0, inclusiveFinishPercentile: 1 }}
+      scorecardAnswers={{ 1: 'Jackie Robinson' }}
+      atBatPoints={{ 1: 4 }}
+    />);
+    expect(html).toContain('>PCTL</span>');
+    expect(html).toContain('>100</strong>');
+    expect(html).toContain('At or below AVG');
+    expect(html).not.toContain('>Beat</span>');
+    expect(html).not.toContain('BEAT 0%');
+    expect(html).not.toContain('Jackie Robinson');
+  });
+
   it('uses only Your Nine in points-v4 completion and preserves the spoiler-safe share card', () => {
     const html = renderToStaticMarkup(
       <GameCompleteView

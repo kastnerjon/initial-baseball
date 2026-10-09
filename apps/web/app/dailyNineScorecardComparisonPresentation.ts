@@ -1,9 +1,10 @@
-import type { DailySharePitchLine } from '@initial-baseball/shared';
+import { POINTS_V4_DAILY_RULESET_VERSION, type DailyRulesetVersion, type DailySharePitchLine } from '@initial-baseball/shared';
+import { getDailyNineInclusiveAtBatPercentile } from '@initial-baseball/daily/comparison';
 import {
   formatDailyScorecardPoints,
   type DailyScorecardPoints,
 } from './dailyScorecard';
-import { createDailyNineCompletedComparisonPresentation } from './dailyNineCompletedComparisonPresentation';
+import { createDailyNineCompletedComparisonPresentation, formatDailyNineCompletedPercentile } from './dailyNineCompletedComparisonPresentation';
 import type { DailyNineCompletedComparisonState } from './useDailyNineCompletedComparison';
 import { createDailyNineAtBatComparisonState } from './dailyNineAtBatComparisonState';
 import type {
@@ -42,6 +43,22 @@ export function createDailyNineScorecardAtBatBeat(
     : null;
 }
 
+/** Inclusive v4 PCTL without a percent sign, independent of rounded AVG and strict-lower BEAT. */
+export function createDailyNineScorecardAtBatPercentile(
+  ownPoints: number | undefined,
+  comparison: DailyNineScorecardComparisonState | undefined,
+): string | null {
+  if (ownPoints === undefined || comparison?.status !== 'success'
+    || comparison.rulesetVersion !== POINTS_V4_DAILY_RULESET_VERSION
+    || comparison.scoreHistogram === undefined) return null;
+  const rate = getDailyNineInclusiveAtBatPercentile({
+    rulesetVersion: comparison.rulesetVersion,
+    resolvedAtBatCount: comparison.resolvedAtBatCount,
+    scoreHistogram: comparison.scoreHistogram,
+  }, ownPoints);
+  return rate === null ? null : String(Math.round(rate * 100));
+}
+
 export function createDailyNineScorecardRows(
   pitchLines: DailySharePitchLine[],
   points: DailyScorecardPoints,
@@ -70,6 +87,7 @@ export function createDailyNineScorecardShareText(
   pitchLines: DailySharePitchLine[],
   points: DailyScorecardPoints,
   comparisons: DailyNineScorecardComparisons,
+  rulesetVersion?: DailyRulesetVersion,
 ): string {
   const lines = shareText.split('\n');
   const firstBlank = lines.indexOf('');
@@ -80,11 +98,14 @@ export function createDailyNineScorecardShareText(
     ? null
     : createDailyNineCompletedComparisonPresentation(completedComparison);
   const completedAverage = completedPresentation?.average === '—' ? null : completedPresentation?.average ?? null;
-  const completedBeat = completedPresentation?.beat ?? null;
+  const inclusiveV4 = rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION;
+  const completedMetric = inclusiveV4
+    ? formatDailyNineCompletedPercentile(completedComparison)
+    : completedPresentation?.beat ?? null;
   lines[scoreLineIndex] = [
     `${formatDailyScorecardPoints(totalPoints)} PTS`,
     ...(completedAverage === null ? [] : [`AVG ${completedAverage}`]),
-    ...(completedBeat === null ? [] : [`BEAT ${completedBeat}`]),
+    ...(completedMetric === null ? [] : [inclusiveV4 ? `PCTL ${completedMetric}` : `BEAT ${completedMetric}`]),
   ].join(' • ');
 
   const pitchSectionStart = lines.indexOf('', scoreLineIndex + 1) + 1;
@@ -94,10 +115,14 @@ export function createDailyNineScorecardShareText(
   if (pitchSectionEnd < 0) return lines.join('\n');
 
   const rows = createDailyNineScorecardRows(pitchLines, points, comparisons);
+  const displayRows = inclusiveV4 ? rows.map(row => ({
+    ...row,
+    beat: createDailyNineScorecardAtBatPercentile(points[row.pitchNumber], comparisons[row.pitchNumber]) ?? '—',
+  })) : rows;
   lines.splice(
     pitchSectionStart,
     pitchSectionEnd - pitchSectionStart,
-    ...formatDailyNineScorecardShareTable(rows),
+    ...formatDailyNineScorecardShareTable(displayRows, inclusiveV4),
   );
 
   return lines.join('\n');
@@ -105,16 +130,18 @@ export function createDailyNineScorecardShareText(
 
 export function formatDailyNineScorecardShareTable(
   rows: DailyNineScorecardRow[],
+  inclusiveV4 = false,
 ): string[] {
   if (rows.length === 0) return [];
 
   const labelWidth = Math.max(4, ...rows.map(row => row.initials.length + 1));
   const scoreWidth = Math.max('SCORE'.length, ...rows.map(row => row.score.length));
   const averageWidth = Math.max('AVG'.length, ...rows.map(row => row.average.length));
-  const beatWidth = Math.max('BEAT %'.length, ...rows.map(row => row.beat.length));
+  const metricLabel = inclusiveV4 ? 'PCTL' : 'BEAT %';
+  const beatWidth = Math.max(metricLabel.length, ...rows.map(row => row.beat.length));
   const gap = '   ';
 
-  const header = `${''.padEnd(labelWidth)}${gap}${'SCORE'.padStart(scoreWidth)}${gap}${'AVG'.padStart(averageWidth)}${gap}${'BEAT %'.padStart(beatWidth)}`;
+  const header = `${''.padEnd(labelWidth)}${gap}${'SCORE'.padStart(scoreWidth)}${gap}${'AVG'.padStart(averageWidth)}${gap}${metricLabel.padStart(beatWidth)}`;
   const body = rows.map(row => (
     `${`${row.initials}:`.padEnd(labelWidth)}${gap}${row.score.padStart(scoreWidth)}${gap}${row.average.padStart(averageWidth)}${gap}${row.beat.padStart(beatWidth)}`
   ));

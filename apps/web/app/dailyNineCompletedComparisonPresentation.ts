@@ -59,3 +59,11 @@ export function createDailyNineCompletedComparisonPresentation(
     note: `${count} other completed result${count === 1 ? '' : 's'}`,
   };
 }
+
+
+/** Current points-v4 tie-inclusive percentile; unavailable until own and peer scores exist. */
+export function formatDailyNineCompletedPercentile(state: DailyNineCompletedComparisonState): string | null {
+  if (state.status !== 'success' || state.ownPoints === null || state.completedGameCount === 0
+    || state.averageTotalPoints === null || state.inclusiveFinishPercentile == null) return null;
+  return String(Math.round(state.inclusiveFinishPercentile * 100));
+}

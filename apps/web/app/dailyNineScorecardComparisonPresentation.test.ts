@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   createDailyNineScorecardAtBatAverage,
+  createDailyNineScorecardAtBatPercentile,
   createDailyNineScorecardAtBatBeat,
   createDailyNineScorecardRows,
   createDailyNineScorecardShareText,
@@ -43,6 +44,20 @@ describe('Daily Nine scorecard comparison presentation', () => {
       status: 'success', resolvedAtBatCount: 1, averagePoints: 2,
       rulesetVersion: 'points-v4', scoreHistogram: [0, 0, 0, 0, 1, 0, 0, 0, 0],
     })).toBe('0%'); // tie not beaten
+  });
+
+  it('uses inclusive PCTL for points-v4, including perfect ties, and withholds missing samples', () => {
+    const peers = { status: 'success' as const, rulesetVersion: 'points-v4' as const,
+      resolvedAtBatCount: 4, averagePoints: 3.25,
+      scoreHistogram: [0, 0, 0, 0, 1, 0, 1, 0, 2] };
+    expect(createDailyNineScorecardAtBatPercentile(4, peers)).toBe('100');
+    expect(createDailyNineScorecardAtBatPercentile(3, peers)).toBe('50');
+    expect(createDailyNineScorecardAtBatPercentile(0, peers)).toBe('0');
+    const { scoreHistogram: _unusedHistogram, ...withoutHistogram } = peers;
+    expect(createDailyNineScorecardAtBatPercentile(4, withoutHistogram)).toBeNull();
+    expect(createDailyNineScorecardAtBatPercentile(undefined, peers)).toBeNull();
+    expect(createDailyNineScorecardAtBatPercentile(4, { status: 'loading' })).toBeNull();
+    expect(createDailyNineScorecardAtBatPercentile(4, { ...peers, rulesetVersion: 'points-v3' })).toBeNull();
   });
 
   it('creates one shared initials / outcome / score / average row model', () => {
@@ -154,6 +169,39 @@ describe('Daily Nine scorecard comparison presentation', () => {
       '',
       'https://example.test/',
     ].join('\n'));
+  });
+
+  it('shares points-v4 PCTL and tied complete-game rankings without player-name spoilers', () => {
+    const text = createDailyNineScorecardShareText(
+      ['Daily Nine #165', 'by Initial Baseball', '', '36/36 PTS', '', 'DJ: HR', '', 'https://example.test/'].join('\n'),
+      36,
+      { status: 'success', ownPoints: 36, completedGameCount: 3,
+        averageTotalPoints: 36, strictLowerFinishRate: 0, inclusiveFinishPercentile: 1 },
+      [{ initials: 'DJ', outcome: 'HR' }], { 1: 4 },
+      { 1: { status: 'success', rulesetVersion: 'points-v4',
+        resolvedAtBatCount: 2, averagePoints: 4, scoreHistogram: [0, 0, 0, 0, 0, 0, 0, 0, 2] } },
+      'points-v4',
+    );
+    expect(text).toContain('36 PTS • AVG 36.0 • PCTL 100');
+    expect(text).toContain('SCORE   AVG   PCTL');
+    expect(text).toMatch(/DJ:\s+4\s+4\.0\s+100/);
+    expect(text).not.toContain('BEAT');
+    expect(text).not.toContain('Derek Jeter');
+  });
+
+  it('keeps v4 PCTL unavailable for pre-completion and missing histograms', () => {
+    const text = createDailyNineScorecardShareText(
+      ['Daily Nine #165', 'by Initial Baseball', '', '4 PTS', '', 'DJ: HR', '', 'https://example.test/'].join('\n'),
+      4, { status: 'success', ownPoints: null, completedGameCount: 1,
+        averageTotalPoints: 12, strictLowerFinishRate: null },
+      [{ initials: 'DJ', outcome: 'HR' }], { 1: 4 },
+      { 1: { status: 'success', resolvedAtBatCount: 1, averagePoints: 4 } },
+      'points-v4',
+    );
+    expect(text).toContain('4 PTS • AVG 12.0');
+    expect(text).not.toContain('PCTL 0');
+    expect(text).toContain('PCTL');
+    expect(text).not.toContain('BEAT');
   });
 
   it('replaces native pitch lines with the grid while preserving the points-native header', () => {

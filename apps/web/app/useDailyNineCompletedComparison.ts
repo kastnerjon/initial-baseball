@@ -1,9 +1,10 @@
 'use client';
 
 import { useCallback, useEffect, useState } from 'react';
-import { getDailyNineStrictLowerFinishRate } from '@initial-baseball/daily/comparison';
+import { getDailyNineInclusiveFinishPercentile, getDailyNineStrictLowerFinishRate } from '@initial-baseball/daily/comparison';
 import {
   isDailyNineComparisonApiRulesetVersion,
+  POINTS_V4_DAILY_RULESET_VERSION,
   type DailyPointsSummary,
   type DailyPublicPuzzle,
   type DailyRulesetVersion,
@@ -23,6 +24,7 @@ export type DailyNineCompletedComparisonState =
       completedGameCount: number;
       averageTotalPoints: number | null;
       strictLowerFinishRate: number | null;
+      inclusiveFinishPercentile?: number | null;
     }
   | { status: 'unavailable'; ownPoints: number | null };
 
@@ -114,6 +116,11 @@ export function useDailyNineCompletedComparison(input: DailyNineCompletedCompari
           strictLowerFinishRate: ownPoints === null
             ? null
             : getDailyNineStrictLowerFinishRate(comparison, ownPoints),
+          ...(rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION ? {
+            inclusiveFinishPercentile: ownPoints === null
+              ? null
+              : getDailyNineInclusiveFinishPercentile(comparison, ownPoints),
+          } : {}),
         });
       },
       onError: () => setState({ status: 'unavailable', ownPoints }),
