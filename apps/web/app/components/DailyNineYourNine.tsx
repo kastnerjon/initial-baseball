@@ -29,39 +29,50 @@ export type DailyNineYourNineProps = {
 
 export function DailyNineYourNine(props: DailyNineYourNineProps): JSX.Element {
   const [revealPlayers, setRevealPlayers] = useState(false);
+  const [expanded, setExpanded] = useState(true);
+  const bodyId = useId();
   const gameAverage = props.completedComparison === undefined || props.completedComparison.status === 'idle'
     ? null : createDailyNineCompletedComparisonPresentation(props.completedComparison).average;
   return (
     <section className="your-nine" aria-label="Your Nine at-bat results">
-      <div className="your-nine-header">
-        <div className="your-nine-title-group">
+      <button
+        type="button"
+        className="your-nine-header"
+        aria-expanded={expanded}
+        aria-controls={bodyId}
+        onClick={() => setExpanded(current => !current)}
+      >
+        <span className="your-nine-title-group">
           {props.puzzleNumber === undefined ? null : (
             <span className="your-nine-kicker">{`DAILY #${props.puzzleNumber}`}</span>
           )}
-          <h2>Your Nine</h2>
+          <span className="your-nine-heading" role="heading" aria-level={2}>Your Nine</span>
           <span className="your-nine-progress">
             {`${props.rows.length} of ${props.totalAtBats} completed`}
           </span>
           {props.currentAtBatNumber !== undefined && gameAverage !== null ? (
             <span className="your-nine-progress">{`GAME AVG ${gameAverage}`}</span>
           ) : null}
-        </div>
-        <div className="your-nine-total">
+        </span>
+        <span className="your-nine-total">
           <strong>{formatDailyScorecardPoints(props.totalPoints)} <span>PTS</span></strong>
+        </span>
+        <span className="your-nine-disclosure-icon" aria-hidden="true">{expanded ? '−' : '+'}</span>
+      </button>
+      <div id={bodyId} className="your-nine-body" hidden={!expanded}>
+        <div className="your-nine-controls">
+          <label className="daily-nine-detail-reveal">
+            <span>Reveal players</span>
+            <input
+              type="checkbox"
+              role="switch"
+              checked={revealPlayers}
+              onChange={() => setRevealPlayers(current => !current)}
+            />
+          </label>
         </div>
+        <DailyNineYourNineRows {...props} revealPlayers={revealPlayers} />
       </div>
-      <div className="your-nine-controls">
-        <label className="daily-nine-detail-reveal">
-          <span>Reveal players</span>
-          <input
-            type="checkbox"
-            role="switch"
-            checked={revealPlayers}
-            onChange={() => setRevealPlayers(current => !current)}
-          />
-        </label>
-      </div>
-      <DailyNineYourNineRows {...props} revealPlayers={revealPlayers} />
     </section>
   );
 }

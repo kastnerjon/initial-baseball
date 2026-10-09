@@ -6,7 +6,7 @@ Last updated: 2026-10-08
 
 ## Immediate next work
 
-- [ ] Make Your Nine collapsible in a separate UI PR after the during-play Top 10 visibility change merges. Preserve current game state, answer authorization, responsive layout and accessible disclosure behavior.
+- [x] Add an accessible, default-open Your Nine expand/collapse header while retaining running score/progress, reveal settings and row state. Separate from released Top 10 visibility #353; PR #354 must pass its own release checks.
 
 - [ ] Deliver owner-approved Daily Nine — Custom Lineup, one bounded PR at a time. Portable nine-player selection contract #347 complete; private frozen challenge contract #348 complete; private RLS/append-only Supabase schema #349 merged, applied and verified; PR #351 server-only repository adapter/codec merged and released; PR #352 adds canonical Custom player validation and four-hint materialization, then separately build server creation/redacted reads, playable signed runtime with result isolation, and mobile creator/share UI. Creator preview/test is non-contributing; no accounts yet. Plan: `tasks/plans/custom-nine-mvp.md`. Specific Lineup remains paused; H2H later.
 

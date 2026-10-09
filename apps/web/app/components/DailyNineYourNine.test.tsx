@@ -60,6 +60,20 @@ describe('Daily Nine Your Nine presentation', () => {
     expect(html).toContain('06–09');
   });
 
+  it('provides a default-expanded, keyboard-operable Your Nine header while keeping the score in its toggle', () => {
+    const html = renderToStaticMarkup(<DailyNineYourNine {...props} />);
+    const panelId = html.match(/class="your-nine-header" aria-expanded="true" aria-controls="([^"]+)"/)?.[1];
+    expect(panelId).toBeTruthy();
+    expect(html).toContain(`id="${panelId}" class="your-nine-body"`);
+    expect(html).toContain('role="heading" aria-level="2"');
+    expect(html).toContain('class="your-nine-disclosure-icon" aria-hidden="true">−</span>');
+    expect(html).toContain('6.5');
+    expect(html).toContain('4 of 9 completed');
+    expect(html).toContain('Reveal players');
+    const css = readFileSync(new URL('../daily-your-nine.css', import.meta.url), 'utf8');
+    expect(css).toMatch(/\\.your-nine-body\\[hidden\\]\\s*\\{\\s*display:\\s*none;/);
+  });
+
   it('preserves authoritative pregame completed-game AVG while showing no made-up BEAT', () => {
     const html = renderToStaticMarkup(<DailyNineYourNine {...props}
       rows={[]} points={{}} totalPoints={0} currentAtBatNumber={1}
