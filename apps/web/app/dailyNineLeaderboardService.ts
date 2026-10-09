@@ -69,8 +69,7 @@ function readIdentity(input: unknown): LeaderboardIdentity | null {
 
 function eligibleCompletion(completion: StoredLeaderboardCompletion): boolean {
   return completion.rulesetVersion === 'points-v4'
-    && !completion.puzzleId.startsWith('archive-beta-v1-daily-')
-    && !completion.puzzleId.startsWith('permanent-v1-daily-');
+    && !completion.puzzleId.startsWith('archive-beta-v1-daily-');
 }
 
 function readSubmissionId(input: unknown): string | null {
@@ -90,8 +89,7 @@ function readSubmission(input: unknown): { submissionId: string; displayName: st
 }
 
 function formatLeaderboard(rows: readonly DailyNineLeaderboardRow[]): DailyNineLeaderboardView {
-  const leaders = rows.slice(0, 10).filter(row => !row.isOwnEntry || rows.indexOf(row) < 10)
-    .map(row => ({ displayName: row.displayName, points: row.points, rank: row.rank }));
+  const leaders = rows.slice(0, 10).map(row => ({ displayName: row.displayName, points: row.points, rank: row.rank }));
   const own = rows.find(row => row.isOwnEntry);
   return {
     totalEntries: rows[0]?.totalEntries ?? 0,

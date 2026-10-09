@@ -65,7 +65,12 @@ describe('Daily Nine leaderboard submission and read orchestration', () => {
     });
     await expect(service.submit({ submissionId: 'attempt1', displayName: 'Yoni' }))
       .resolves.toEqual({ ok: false, error: 'not_eligible' });
-    vi.mocked(repo.insertName).mockResolvedValueOnce('conflict');
+    vi.mocked(repo.findCompletion).mockResolvedValueOnce({
+      ...IDENTITY, puzzleId: 'permanent-v1-daily-5', submissionId: 'attempt1',
+    });
+    await expect(service.submit({ submissionId: 'attempt1', displayName: 'Yoni' }))
+      .resolves.toMatchObject({ ok: true });
+        vi.mocked(repo.insertName).mockResolvedValueOnce('conflict');
     await expect(service.submit({ submissionId: 'attempt1', displayName: 'Yoni' }))
       .resolves.toEqual({ ok: false, error: 'name_conflict' });
   });
