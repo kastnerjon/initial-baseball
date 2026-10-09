@@ -3,9 +3,9 @@ import { DAILY_AT_BAT_COUNT } from './dailyConstants';
 export const CUSTOM_NINE_LINEUP_SCHEMA_VERSION = 1 as const;
 
 export type CustomNineLineupSelection = {
-  schemaVersion: typeof CUSTOM_NINE_LINEUP_SCHEMA_VERSION;
+  readonly schemaVersion: typeof CUSTOM_NINE_LINEUP_SCHEMA_VERSION;
   /** Ordered canonical identities, not display-name guesses or source IDs. */
-  canonicalPlayerIds: readonly string[];
+  readonly canonicalPlayerIds: readonly string[];
 };
 
 /**
@@ -35,8 +35,8 @@ export function createCustomNineLineupSelection(
     unique.add(playerId);
   }
 
-  return {
+  return Object.freeze({
     schemaVersion: CUSTOM_NINE_LINEUP_SCHEMA_VERSION,
     canonicalPlayerIds: Object.freeze([...canonicalPlayerIds]),
-  };
+  });
 }

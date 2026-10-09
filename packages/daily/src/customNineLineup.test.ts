@@ -15,6 +15,8 @@ describe('Custom Nine ordered player selection', () => {
     reversed[0] = 'changed-after-validation';
     expect(selection.canonicalPlayerIds[0]).toBe('canonical-player-9');
     expect(Object.isFrozen(selection.canonicalPlayerIds)).toBe(true);
+    expect(Object.isFrozen(selection)).toBe(true);
+    expect(() => Object.assign(selection, { canonicalPlayerIds: ['tampered'] })).toThrow();
   });
 
   it('rejects too few, too many, and duplicated players, including when spread across slots', () => {
