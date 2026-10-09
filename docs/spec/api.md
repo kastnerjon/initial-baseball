@@ -1,7 +1,7 @@
 # Daily web API specification
 
 Status: Living source of truth  
-Last updated: 2026-09-26
+Last updated: 2026-10-09
 
 Daily routes are thin Next.js adapters over canonical baseball data, engine rules, and portable Daily logic. Answer-integrity rationale is in `docs/decisions/0001-daily-answer-integrity.md`.
 
@@ -32,6 +32,14 @@ The underlying private repository still reads and validates the full immutable r
 The 200 JSON has only `puzzleId`, fixed `rulesetVersion: "points-v4"`, ordered public `atBats: [{pitchNumber, initials}]`, a signed opening `progressionToken`, and `hintBundle` **for batter one only** (the same four currently active hint values and the four signed reveal-depth checkpoints used by the Daily runtime). No canonical player IDs, names, future batters' hint values, issue timestamp or private challenge record are serialized. The shared Daily runtime is reused solely to create the session and active bundle from the **frozen issued** clue snapshot; no clue values are regenerated for this request.
 
 Custom Nine HMAC signatures are **domain-separated** from Universal Daily/Classic/Archive, derived from the existing server-side `DAILY_PROGRESSION_SECRET` using a fixed Custom Nine v1 context. Tokens are not accepted by the Universal Daily endpoints or vice versa. The standard Daily claims schema uses an internal non-calendar sentinel `1970-01-01` for Custom Nine and the exact challenge ID for binding; the sentinel is not an issue date and is not returned in the API body. This checkpoint **does not yet expose hint-advancement, guessing, answer reveal, submission, sharing or creator UI endpoints**. A valid signed opening token alone does not authorize competitive results; those require separate exact-challenge checks and creator-exclusion policy.
+
+## Custom Nine signed current-batter hints (staged)
+
+`POST /api/custom-nine/challenges/{puzzleId}/hints` restores the authorized active batter's frozen four-hint bundle and remaining signed reveal-depth checkpoints; `POST /api/custom-nine/challenges/{puzzleId}/hint` returns **one next hint** and the signed successor token. Both accept **only** `{ "progressionToken": "opaque-signed-token" }` as a JSON object (max 4,096 request bytes), and neither allows guessing, batter advancement, answer reveal, result contribution or browser UI access. The client can also advance locally with the signed checkpoints already present in the bundle, identical to existing Daily Nine.
+
+Both endpoints check the URL challenge ID, then cryptographically verify the token with the **Custom-only HMAC signing domain** and require claims bound to exactly that ID, the non-calendar Custom sentinel date, an incomplete session and the immutable `points-v4` ruleset **before** reading the private issued challenge. They load and validate the server's frozen clue snapshot and reuse Daily runtime hint selection/checkpoint issuance; they do not recompute hints from live facts. Only the token-authorized batter's hint values can be returned. The full private challenge and canonical names/answer IDs are never serialized.
+
+Malformed/forged/cross-domain/cross-challenge/cross-ruleset/completed tokens return `400 { "error": "invalid_progression" }`, invalid/unknown challenge IDs return `404 { "error": "not_found" }` and unavailable configuration/provider/private records return sanitized `503 { "error": "session_unavailable" }`. Every status, including errors, is `Cache-Control: private, no-store`. Tokens are stateless and replayable (the existing anonymous-game limitation); these endpoints never write to Supabase. Custom results, creator exclusion, resolution and public creator UI remain later stages.
 
 ## Public bootstrap
 

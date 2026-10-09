@@ -1,7 +1,7 @@
 # Initial Baseball — Start Here
 
 Status: Active project handoff  
-Last updated: 2026-10-07
+Last updated: 2026-10-09
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
@@ -46,6 +46,10 @@ PR #358 merged at `d60a78dfa1ef1e7a2387cbb22eee8e434dd3a06b`: the admin-only cre
 ## Custom Nine signed bootstrap checkpoint
 
 PR #359 merged at `5f51c6fdf7f092c248610ec05fdf857cf3356e31` and released the redacted metadata GET (only challenge ID, ruleset and frozen nine initials), with exact-head/push CI, READY production, read-only 404 smoke checks and zero live writes. This bounded follow-up adds `GET /api/custom-nine/challenges/{puzzleId}/bootstrap`, issuing an isolated signed points-v4 opening token plus the **first batter's** authorized frozen four-hint bundle, checkpoints and public initials. The existing Daily runtime and HMAC codec are reused, but Custom Nine derives a separate signing domain from `DAILY_PROGRESSION_SECRET` so Universal/Custom tokens cannot cross-authenticate. No new server secret, schema, answer-bearing public record, gameplay resolve, hint advancement, results, or creator UI. The next bounded PR should add signed Custom-only hint progression, then signed guess resolution and isolated results; do not expose creation as publicly playable before all boundaries exist.
+
+## Custom Nine hint progression checkpoint
+
+After signed opening bootstrap #360, the current bounded follow-up introduces `POST /api/custom-nine/challenges/{puzzleId}/hints` (restore active frozen bundle) and `/hint` (reveal precisely one further hint with a signed successor). Both require a Custom-domain token for the exact immutable challenge, sentinel and `points-v4`, before private Supabase access; both are read-only, answer-safe, bounded, no-store and reject malformed/forged/completed/cross-boundary claims. The existing Daily runtime remains the one owner of hint selection and checkpoints. This does not make Custom Nine fully playable. Next is signed Custom-only guess resolution; results and creator UI are separate PRs.
 
 ## Optional Daily Nine leaderboard — staged implementation
 

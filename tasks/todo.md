@@ -2,7 +2,7 @@
 
 
 Status: Active ordered implementation plan  
-Last updated: 2026-10-08
+Last updated: 2026-10-09
 
 ## Immediate next work
 
@@ -10,7 +10,7 @@ Last updated: 2026-10-08
 
 - [x] Add an accessible, default-open Your Nine expand/collapse header while retaining running score/progress, reveal settings and row state. Separate from released Top 10 visibility #353; PR #354 must pass its own release checks.
 
-- [ ] Deliver Custom Lineup via bounded PRs. #347 selection, #348 issuance, #349 private hosted table, #351 adapter, #352 canonical hint materializer, #358 protected creation, #359 redacted metadata all merged. Current checkpoint issues Custom Nine-only signed opening tokens and the first batter's frozen active hint bundle. Next: signed hint progression and resolution, exact-challenge result isolation, then public creator write abuse controls and creator/share UI. No competitive creator previews and **not yet publicly playable**. Plan: `tasks/plans/custom-nine-mvp.md`. Specific Lineup paused, H2H later.
+- [ ] Deliver Custom Lineup via bounded PRs. #347 selection, #348 issuance, #349 private hosted table, #351 adapter, #352 canonical hint materializer, #358 protected creation, #359 redacted metadata all merged. Signed opening bootstrap #360 issues Custom Nine-only tokens and the first batter's frozen active bundle. Current bounded work adds Custom-only signed current-batter hint restoration and reveal; next: signed guess resolution, exact-challenge result isolation, then public creator write abuse controls and creator/share UI. No competitive creator previews and **not yet publicly playable**. Plan: `tasks/plans/custom-nine-mvp.md`. Specific Lineup paused, H2H later.
 
 - [x] Ship opt-in Universal Daily Nine Top 10 named leaderboard with ties and first-attempt contribution: storage #344, API #345 and UI #346 merged; exact PR/push CI, READY production Vercel, canonical routes, hosted Supabase and runtime logs verified. PR #346 checkpoint records SHA/deployment evidence. Real physical-device completion/name submission remains a manual acceptance check.
 
