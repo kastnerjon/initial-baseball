@@ -8,6 +8,7 @@
   border-radius: 12px;
   background: var(--paper-light);
 }
+.your-nine-header-heading { margin: 0; font: inherit; min-width: 0; }
 .your-nine-header {
   display: flex;
   align-items: start;

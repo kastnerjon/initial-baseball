@@ -65,7 +65,8 @@ describe('Daily Nine Your Nine presentation', () => {
     const panelId = html.match(/class="your-nine-header" aria-expanded="true" aria-controls="([^"]+)"/)?.[1];
     expect(panelId).toBeTruthy();
     expect(html).toContain(`id="${panelId}" class="your-nine-body"`);
-    expect(html).toContain('role="heading" aria-level="2"');
+    expect(html).toContain('<h2 class="your-nine-header-heading"><button');
+    expect(html).toContain('<span class="your-nine-heading">Your Nine</span>');
     expect(html).toContain('class="your-nine-disclosure-icon" aria-hidden="true">−</span>');
     expect(html).toContain('6.5');
     expect(html).toContain('4 of 9 completed');

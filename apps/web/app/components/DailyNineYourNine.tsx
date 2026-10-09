@@ -35,6 +35,7 @@ export function DailyNineYourNine(props: DailyNineYourNineProps): JSX.Element {
     ? null : createDailyNineCompletedComparisonPresentation(props.completedComparison).average;
   return (
     <section className="your-nine" aria-label="Your Nine at-bat results">
+      <h2 className="your-nine-header-heading">
       <button
         type="button"
         className="your-nine-header"
@@ -46,7 +47,7 @@ export function DailyNineYourNine(props: DailyNineYourNineProps): JSX.Element {
           {props.puzzleNumber === undefined ? null : (
             <span className="your-nine-kicker">{`DAILY #${props.puzzleNumber}`}</span>
           )}
-          <span className="your-nine-heading" role="heading" aria-level={2}>Your Nine</span>
+          <span className="your-nine-heading">Your Nine</span>
           <span className="your-nine-progress">
             {`${props.rows.length} of ${props.totalAtBats} completed`}
           </span>
@@ -59,6 +60,7 @@ export function DailyNineYourNine(props: DailyNineYourNineProps): JSX.Element {
         </span>
         <span className="your-nine-disclosure-icon" aria-hidden="true">{expanded ? '−' : '+'}</span>
       </button>
+      </h2>
       <div id={bodyId} className="your-nine-body" hidden={!expanded}>
         <div className="your-nine-controls">
           <label className="daily-nine-detail-reveal">
