@@ -43,16 +43,21 @@ export function createDailyNineLeaderboardService(repository: DailyNineLeaderboa
       if (completion === null || !eligibleCompletion(completion)) return { ok: false, error: 'not_eligible' };
       const status = await repository.insertName(request.submissionId, request.displayName);
       if (status === 'conflict') return { ok: false, error: 'name_conflict' };
-      return { ok: true, value: formatLeaderboard(await repository.read(completion, request.submissionId)) };
+      return { ok: true, value: formatLeaderboard(await repository.read(identityFromCompletion(completion), request.submissionId)) };
     },
     async rank(input: unknown): Promise<Result<DailyNineLeaderboardView>> {
       const id = readSubmissionId(input);
       if (id === null) return { ok: false, error: 'invalid_request' };
       const completion = await repository.findCompletion(id);
       if (completion === null || !eligibleCompletion(completion)) return { ok: false, error: 'not_eligible' };
-      return { ok: true, value: formatLeaderboard(await repository.read(completion, id)) };
+      return { ok: true, value: formatLeaderboard(await repository.read(identityFromCompletion(completion), id)) };
     },
   };
+}
+
+function identityFromCompletion(completion: StoredLeaderboardCompletion): LeaderboardIdentity {
+  const { puzzleId, puzzleDate, puzzleNumber, rulesetVersion } = completion;
+  return { puzzleId, puzzleDate, puzzleNumber, rulesetVersion };
 }
 
 function readIdentity(input: unknown): LeaderboardIdentity | null {
