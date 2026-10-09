@@ -364,7 +364,7 @@ describe('Inclusive Daily Nine percentiles', () => {
     expect(getDailyNineInclusiveAtBatPercentile(comparison, 0)).toBe(1);
     expect(getDailyNineInclusiveAtBatPercentile({ ...comparison, resolvedAtBatCount: 0,
       scoreHistogram: Array(9).fill(0) }, 0)).toBeNull();
-    expect(getDailyNineInclusiveAtBatPercentile({ ...comparison, scoreHistogram: undefined }, 0)).toBeNull();
+    expect(getDailyNineInclusiveAtBatPercentile({ rulesetVersion: POINTS_V4_DAILY_RULESET_VERSION, resolvedAtBatCount: 1 }, 0)).toBeNull();
     expect(getDailyNineInclusiveFinishPercentile(
       deriveDailyNineCompletedComparison(V4_KEY, { scoreBuckets: [] }), 36,
     )).toBeNull();
