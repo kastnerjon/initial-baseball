@@ -167,14 +167,14 @@ describe('DailyNineAtBatComparison', () => {
     expect(html).not.toContain('at-bat-comparison-values');
   });
 
-  it('keeps the old textual comparison when histogram data is unavailable', () => {
+  it('keeps textual AVG but withholds percentile when histogram data is unavailable', () => {
     const html = renderToStaticMarkup(
       <DailyNineAtBatComparison state={{
         status: 'success', ownPoints: 2, resolvedAtBatCount: 1,
         averagePoints: 1, strictLowerAtBatRate: 1,
       }} />,
     );
-    expect(html).toContain('PCTL 100');
+    expect(html).not.toContain('PCTL 100');
     expect(html).toContain('>YOU<');
     expect(html).toContain('>AVG<');
     expect(html).toContain('1 other result');
@@ -189,7 +189,7 @@ describe('DailyNineAtBatComparison', () => {
         rulesetVersion: 'points-v3', scoreHistogram: [0, 0, 1, 0, 0, 0, 0, 0],
       }} />,
     );
-    expect(html).toContain('BEAT 100%');
+    expect(html).toContain('PCTL 100');
     expect(html).toContain('Above AVG');
     expect(html).not.toContain('How everyone scored');
   });

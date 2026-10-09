@@ -32,8 +32,7 @@ export function createDailyNineAtBatDistributionPresentation(
     || histogram === undefined
     || histogram.length !== 9
     || !Number.isSafeInteger(total)
-    || total <= 0
-    ) return null;
+    || total <= 0) return null;
 
   if (!histogram.every(count => Number.isSafeInteger(count) && count >= 0)
     || histogram.reduce((sum, count) => sum + count, 0) !== total
