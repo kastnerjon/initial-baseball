@@ -31,6 +31,10 @@ Historical, superseded direction: after the mobile Scoreboard correction, the ow
 
 The completed Daily Nine summary redesign starts with a small `Daily #N` heading, three equal `Final Score` / `Average` / `Beat` cards, and the existing peer note (without the large Game Complete heading/checkmark). The nine result circles and broader Share Results redesign remain deferred; the future shareable-image direction is Classic Scorecard, and text sharing is undecided. These are settled directions, not current implementation scope.
 
+## Optional Daily Nine leaderboard — staged implementation
+
+October 8 decision: Universal Daily Nine will gain an opt-in Top 10 named leaderboard, with all named submitters ranked, ties sharing one competition rank, and eligibility limited to a browser's immutable first completed result. The current comparison population remains separate and anonymous; nicknames are public and must not be treated as authenticated identities. Later Custom Nine uses distinct puzzle-scoped leaderboards; H2H remains a separate Classic-engine game. Google/Microsoft/Yahoo sign-ins are deferred. Implementation starts with additive server-only Supabase storage and rank read in PR #344, followed by separate web API and completed-game UI PRs. **This is not yet a live feature.** Canonical policy: `docs/product/daily-nine-leaderboard.md`.
+
 ## Resolved at-bat performance tiles
 
 October 8 approved points-v4 follow-up: replace the single terminal-result badge with three compact tiles matching the final-game summary: YOUR SCORE, AVG, BEAT %. Retain the authoritative personal score while peer data is loading or absent; show placeholders rather than invented averages/beat rates. Keep the existing six-bucket distribution directly beneath the tiles where histogram data is available, followed by the existing Next At Bat / View Results action and player reveal. Accessible outcome text remains present. Preserve Classic, historical point versions, incorrect guesses, points mathematics, answer security, and the fallback textual comparison in legacy views. Existing older callout CSS is retained for their routes.
