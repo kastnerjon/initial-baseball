@@ -4,6 +4,7 @@ import { DailyNineAtBatDistribution } from './DailyNineAtBatDistribution';
 import { createDailyNineAtBatDistributionPresentation } from '../dailyNineAtBatDistributionPresentation';
 import { formatDailyScorecardPoints } from '../dailyScorecard';
 import { getDailyNineInclusiveAtBatPercentile } from '@initial-baseball/daily/comparison';
+import { POINTS_V4_DAILY_RULESET_VERSION } from '@initial-baseball/shared';
 
 type DailyNineAtBatComparisonProps = {
   state: DailyNineAtBatComparisonState;
@@ -74,7 +75,11 @@ export function DailyNineAtBatComparison({
       </div>
       {presentation.averageStatus === null ? null : (
         <div className={`at-bat-comparison-performance at-bat-comparison-performance-${presentation.averageStatus}`}>
-          {presentation.percentile === null ? null : (
+          {state.status === 'success'
+            && state.rulesetVersion !== POINTS_V4_DAILY_RULESET_VERSION
+            && state.strictLowerAtBatRate !== null ? (
+            <strong className="at-bat-comparison-beat">{`BEAT ${Math.round(state.strictLowerAtBatRate * 100)}%`}</strong>
+          ) : presentation.percentile === null ? null : (
             <strong className="at-bat-comparison-beat">{`PCTL ${presentation.percentile}`}</strong>
           )}
           <span className="at-bat-comparison-average-status">{presentation.statusLabel}</span>
@@ -146,7 +151,7 @@ function createPresentation(
 function getDisplayPercentile(
   state: Extract<DailyNineAtBatComparisonState, { status: 'success' }>,
 ): string | null {
-  if (state.rulesetVersion === undefined || state.scoreHistogram === undefined) return null;
+  if (state.rulesetVersion !== POINTS_V4_DAILY_RULESET_VERSION || state.scoreHistogram === undefined) return null;
   const rate = getDailyNineInclusiveAtBatPercentile({
     rulesetVersion: state.rulesetVersion,
     resolvedAtBatCount: state.resolvedAtBatCount,

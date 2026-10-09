@@ -174,7 +174,7 @@ describe('DailyNineAtBatComparison', () => {
         averagePoints: 1, strictLowerAtBatRate: 1,
       }} />,
     );
-    expect(html).not.toContain('PCTL 100');
+    expect(html).toContain('BEAT 100%');
     expect(html).toContain('>YOU<');
     expect(html).toContain('>AVG<');
     expect(html).toContain('1 other result');
@@ -189,7 +189,7 @@ describe('DailyNineAtBatComparison', () => {
         rulesetVersion: 'points-v3', scoreHistogram: [0, 0, 1, 0, 0, 0, 0, 0],
       }} />,
     );
-    expect(html).toContain('PCTL 100');
+    expect(html).toContain('BEAT 100%');
     expect(html).toContain('Above AVG');
     expect(html).not.toContain('How everyone scored');
   });

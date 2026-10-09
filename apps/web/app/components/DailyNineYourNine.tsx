@@ -165,7 +165,12 @@ export function DailyNineYourNineRows({
                         : 'Score distribution unavailable for this at-bat.'}
                   </p>
                 ) : (
-                  <DailyNineAtBatDistribution presentation={distribution} average={row.average} />
+                  <DailyNineAtBatDistribution
+                    presentation={distribution}
+                    average={row.average}
+                    legacyBeatPercent={Math.round((state?.status === 'success'
+                      ? state.strictLowerAtBatRate ?? 0 : 0) * 100)}
+                  />
                 )}
               </div>
             ) : null}
