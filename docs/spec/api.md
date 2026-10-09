@@ -9,6 +9,14 @@ Daily routes are thin Next.js adapters over canonical baseball data, engine rule
 
 Every route must validate input, return sanitized data, keep rules in their owning packages, avoid per-action persistence, and never reflect secrets or hidden answer data in errors. Public search returns canonical player IDs. Daily resolution may compare a syntactically canonical submitted ID directly with the server-only canonical answer ID; legacy/noncanonical IDs cross the canonical redirect boundary before comparison.
 
+## Staged private Custom Nine challenge issuance
+
+`POST /api/custom-nine/challenges` is an **administrator-authenticated, same-origin creation endpoint**, not a public creator flow. It accepts a JSON object containing only `canonicalPlayerIds`: an explicitly ordered array of exactly nine distinct canonical IDs. Requests are bounded to 4,096 bytes. The existing Basic admin principal must be authorized **before** request body processing or any persistence connection. Invalid credentials return 401, missing admin configuration 503, cross-origin mutations 403.
+
+The server validates exact ordered selection, resolves all nine against its canonical gameplay-ready player source, materializes the existing four Daily hints in that order, creates a fresh cryptographically random UUIDv4 puzzle ID with `custom-nine-v1-` prefix, freezes the ruleset `points-v4`, and first-write-wins inserts the complete answer-bearing snapshot through the existing service-role-only private repository. Success returns HTTP 201 with **only** `{ "puzzleId": "custom-nine-v1-<uuidv4>" }` and `Cache-Control: private, no-store`. There is no public GET, shareable/playable URL or gameplay transition in this checkpoint. Repeating the same lineup request deliberately mints another challenge; no idempotency key has yet been implemented.
+
+Invalid selection or JSON returns 400 (oversized 413), unknown player/unsupported hints 422, immutable ID conflict 409, and storage/unexpected failures 503. Errors are generic and must never expose canonical IDs, future hints, credentials, or provider details. All created challenge records remain server-private. **Public anonymous creation is deferred** until a separate explicit write-abuse/rate-limit and creator-exclusion decision; opening this admin-only write endpoint does not make account-free creators operational.
+
 ## Public bootstrap
 
 The Daily server runtime can create a new-session bootstrap for exactly one of two approved current modes: default Daily Nine `points-v3` or Classic Inning `classic-inning-v1`. The selected ruleset is returned explicitly as `rulesetVersion` and is signed into the first progression token and every authorized hint checkpoint. The public `/` page requests `points-v3`; `/classic` requests `classic-inning-v1`. Both routes use the same Pacific date/puzzle and shared browser game implementation, while their local persistence namespaces remain separate.
