@@ -71,7 +71,7 @@ describe('Daily Nine Your Nine presentation', () => {
     expect(html).toContain('4 of 9 completed');
     expect(html).toContain('Reveal players');
     const css = readFileSync(new URL('../daily-your-nine.css', import.meta.url), 'utf8');
-    expect(css).toMatch(/\\.your-nine-body\\[hidden\\]\\s*\\{\\s*display:\\s*none;/);
+    expect(css).toContain('.your-nine-body[hidden] { display: none; }');
   });
 
   it('preserves authoritative pregame completed-game AVG while showing no made-up BEAT', () => {
