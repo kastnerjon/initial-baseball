@@ -101,7 +101,7 @@ export function createServerCustomNineBootstrapService({
   };
 }
 
-function materializeCustomNineSessionPuzzle(
+export function materializeCustomNineSessionPuzzle(
   challenge: CustomNineIssuedChallenge,
   resolvePlayer: (id: string) => Player | null,
 ): DailyPuzzle {
