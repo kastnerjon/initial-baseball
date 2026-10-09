@@ -17,6 +17,14 @@ The server validates exact ordered selection, resolves all nine against its cano
 
 Invalid selection or JSON returns 400 (oversized 413), unknown player/unsupported hints 422, immutable ID conflict 409, and storage/unexpected failures 503. Errors are generic and must never expose canonical IDs, future hints, credentials, or provider details. All created challenge records remain server-private. **Public anonymous creation is deferred** until a separate explicit write-abuse/rate-limit and creator-exclusion decision; opening this admin-only write endpoint does not make account-free creators operational.
 
+## Custom Nine redacted public challenge metadata
+
+`GET /api/custom-nine/challenges/{puzzleId}` is a public, read-only metadata endpoint. The URL contains the **opaque, versioned UUIDv4 challenge ID**; it is not an authorization token for hint progression or result contribution. Valid IDs are checked against the existing `custom-nine-v1-<uuidv4>` contract *before* connecting to the server-only Supabase client. Invalid or unknown challenge IDs return identical HTTP 404 JSON `{ "error": "not_found" }`. Store errors, corrupt or incompatible records, or missing server configuration return sanitized HTTP 503 `{ "error": "challenge_unavailable" }`; raw provider exceptions are never returned.
+
+An existing challenge returns HTTP 200 with an explicitly projected shape: `{ "puzzleId": "...", "rulesetVersion": "points-v4", "atBats": [{ "pitchNumber": 1, "initials": "..." }, ...] }`. `atBats` contains exactly nine records in their **frozen selected order**, exposing only the same pre-play initials that Daily Nine already displays. No canonical player IDs, full names, hint layout/values, issuance timestamp, answer records, service-role information, or progression tokens are serialized. All responses carry `Cache-Control: private, no-store`.
+
+The underlying private repository still reads and validates the full immutable record on the server. This endpoint has **no writes**, no game bootstrap, and **does not make the challenge playable**; signed active-at-bat hint progression and spoiler-safe resolution are later bounded work. Do not treat a client-supplied `puzzleId` as an authority for scoring or answer revelation.
+
 ## Public bootstrap
 
 The Daily server runtime can create a new-session bootstrap for exactly one of two approved current modes: default Daily Nine `points-v3` or Classic Inning `classic-inning-v1`. The selected ruleset is returned explicitly as `rulesetVersion` and is signed into the first progression token and every authorized hint checkpoint. The public `/` page requests `points-v3`; `/classic` requests `classic-inning-v1`. Both routes use the same Pacific date/puzzle and shared browser game implementation, while their local persistence namespaces remain separate.
