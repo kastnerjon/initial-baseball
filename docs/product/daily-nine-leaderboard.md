@@ -7,7 +7,7 @@ Last updated: 2026-10-08
 
 - First release: **Daily Nine — Universal Lineup** only. The system must preserve a puzzle/ruleset identity seam for future Custom Lineup; do not implement Custom Lineup in this work.
 - A player who completes a game may optionally submit a public display name (or nickname) and their **first eligible completed attempt** to that puzzle's leaderboard. Playing without submitting remains unaffected.
-- Display the **Top 10 named entries** for the exact puzzle/date/number/points-v4 ruleset, plus the submitting player's own rank, even when it falls outside the displayed Top 10. The leaderboard retains every submitted entry.
+- Display the **Top 10 named entries** for the exact puzzle/date/number/points-v4 ruleset during active Universal Daily Nine play (read-only) and on the completed-game screen, plus the submitting player's own rank after completion, even when it falls outside the displayed Top 10. The leaderboard retains every submitted entry. Viewing it does not require game completion; naming/submitting a first-attempt score still does.
 - Equal scores share a **standard competition rank** (1, 1, 3). Submission time orders tied rows for a deterministic Top 10 display **but does not break ranking ties**; at most ten public rows are displayed, even when a tie crosses the cutoff.
 - The server derives points from the **existing immutable completed-result row**. The browser never supplies a leaderboard score. The public leaderboard returns display names, ranks and scores only; no anonymous submission IDs, completed-at-bat facts, or hidden player answers.
 - Display names are public, opt-in, whitespace-trimmed, 1–32 characters, control-character-free. Initial submission is immutable, not a profile or verified identity.
