@@ -25,6 +25,17 @@ Decision date: 2026-10-08
 7. **Staged signed gameplay (bootstrap issued; hint progression staged next)** — reuse the existing Daily Nine engine and HMAC codec with a distinct Custom Nine signing domain. An opaque challenge-ID GET returns the points-v4 first-batter signed token, authorized current-batter hint bundle and checkpoints, never future hints or answer IDs. Later bounded PRs must verify Custom-only tokens to authorize hint progression, then guess resolution and exact-challenge/ruleset-isolated results with creator noncontribution. Do not mix current, archives or other challenges.
 8. **Creator UI and invite/share flow** — select/reorder nine, preview without contribution, issue immutable challenge, copy/share link; mobile and accessibility QA. Public leaderboard eligibility for custom challenges is a scoped follow-up after proving contributor isolation.
 
+## Current bounded scope — private Custom Nine result storage
+
+**Goal:** Establish a physically isolated, append-only score population for each permanent Custom Nine challenge, without enabling submissions or creator competition.
+**Owning layer:** Supabase database schema only (service-role-only persistence boundary). Portable Daily/engine gameplay, Next routes, and browser identity are untouched.
+**In scope:** Add one migration with a private completed-result table and a private terminal-at-bat table; both foreign-keyed to immutable `custom_nine_issued_challenges.puzzle_id`, points-v4-only, immutable first-write-wins identifiers, exact-challenge index keys, engine-shaped JSON/scoring checks, RLS and service-role SELECT/INSERT only. Update operational/canonical documents.
+**Out of scope:** Submission APIs, result validation and client provenance, actual Custom writes, creator-session marks, comparison functions, leaderboards, public read grants, Universal/Archive migrations, and frontend.
+**Acceptance checks:** Validate syntax/constraints and no cross-population Daily table/RPC edits; CI and exact-head READY Preview, independent scoped review; apply hosted additive migration only after merge; verify RLS, FK/indexes and privileges with read-only hosted inspection; no synthetic challenge or result writes.
+**Stop conditions:** Any proposal to reuse Universal result tables, enable unverified competitive writes, or enforce creator exclusion via untrusted client flags requires a separately scoped authority decision.
+
+**Creator noncontribution:** No Custom result write route exists yet, so creator previews cannot enter these tables. Later admission must establish creator-browser provenance from the creation workflow and reject same-browser preview attempts before any competitive insert. Browser-local exclusion is not an account-grade identity proof: a different browser/device cannot be reliably identified as the creator without authentication. This limitation is explicit in the product contract. Split subsequent stages into provider codecs/repositories, authoritative submission/eligibility, comparison reads, then creator/browser UI. Do not confuse physical result isolation with completed creator-exclusion enforcement.
+
 ## Current bounded scope — Custom Nine signed guess resolution
 
 **Goal:** Use the Custom-only signed current-batter state to resolve a guess or Give Up and return only the resolved batter's reveal and authorized successor hints.
