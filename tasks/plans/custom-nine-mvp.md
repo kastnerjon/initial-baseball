@@ -1,6 +1,6 @@
 # Daily Nine — Custom Lineup MVP
 
-Status: #347, #348 and #349 all merged and verified in production. #349 applied in Supabase as migration 20261009033237 (SQL unchanged; committed filename reconciled to hosted ledger). Next bounded concern: server-only Supabase repository adapter/row codec. Creation API and gameplay remain unimplemented.  
+Status: #347, #348 and #349 all merged and verified in production. #349 applied in Supabase as migration 20261009033237 (hosted tool assigned a different version from published repo migration `20261009032000`; do not rename the source migration or replay it; reconcile ledger explicitly per environment before CLI pushes). Next bounded concern: server-only Supabase repository adapter/row codec. Creation API and gameplay remain unimplemented.  
 Decision date: 2026-10-08
 
 ## Product contract
