@@ -38,6 +38,7 @@ import { useDailyNineScorecardComparisons } from '../useDailyNineScorecardCompar
 import { AtBatCard } from './AtBatCard';
 import { DailyScorebug } from './DailyScorebug';
 import { GameCompleteView } from './GameCompleteView';
+import { DailyNineLeaderboard } from './DailyNineLeaderboard';
 import { InningScoreboard } from './InningScoreboard';
 import { PitchResultList } from './PitchResultList';
 import { isArchiveDailyPuzzleId } from '../dailyModeStorage';
@@ -313,6 +314,9 @@ export function DailyInningGame({
           compact
         />
       ) : null}
+      {!archive && gameState.rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION
+        ? <DailyNineLeaderboard puzzle={puzzle} viewOnly />
+        : null}
       <button type="button" className="reset-local-result-button" onClick={handleResetToday}>
         Reset today's local result
       </button>

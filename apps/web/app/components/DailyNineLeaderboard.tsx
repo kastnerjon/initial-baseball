@@ -7,10 +7,12 @@ import { readDailyNineLeaderboard, readOwnDailyNineLeaderboardRank, submitDailyN
 
 type Props = {
   puzzle: Pick<DailyPublicPuzzle, 'id' | 'puzzleDate' | 'puzzleNumber'>;
-  completedAtBats: DailyCompletedAtBat[];
-  attemptId: string | null;
-};
-export function DailyNineLeaderboard({ puzzle, completedAtBats, attemptId }: Props): JSX.Element {
+} & (
+  | { viewOnly: true; completedAtBats?: never; attemptId?: never }
+  | { viewOnly?: false; completedAtBats: DailyCompletedAtBat[]; attemptId: string | null }
+);
+export function DailyNineLeaderboard({ puzzle, ...submission }: Props): JSX.Element {
+  const attemptId = submission.viewOnly ? null : submission.attemptId;
   const [view, setView] = useState<DailyNineLeaderboardView | null>(null);
   const [loading, setLoading] = useState(true);
   const [unavailable, setUnavailable] = useState(false);
@@ -63,7 +65,7 @@ export function DailyNineLeaderboard({ puzzle, completedAtBats, attemptId }: Pro
             ))}
           </ol>
         ) : <p className="daily-nine-leaderboard-status">No named scores yet. You could be first.</p>}
-      {own !== null ? <p className="daily-nine-leaderboard-own" role="status">
+      {submission.viewOnly ? <p className="daily-nine-leaderboard-note">Finish all nine at-bats to submit a score.</p> : own !== null ? <p className="daily-nine-leaderboard-own" role="status">
         Your rank: #{own.rank} of {view?.totalEntries} · {own.points} points
       </p> : attemptId !== null ? (
         <form className="daily-nine-leaderboard-form" onSubmit={(event) => {
@@ -92,12 +94,12 @@ export function DailyNineLeaderboard({ puzzle, completedAtBats, attemptId }: Pro
   );
 
   async function submitName(): Promise<void> {
-    if (attemptId === null || submitting || name.trim().length === 0) return;
+    if (submission.viewOnly || submission.attemptId === null || submitting || name.trim().length === 0) return;
     setSubmitting(true);
     setMessage(null);
     try {
       const state = await submitCompletedDailyResultIfNeeded({
-        puzzle, rulesetVersion: 'points-v4', completedAtBats,
+        puzzle, rulesetVersion: 'points-v4', completedAtBats: submission.completedAtBats,
       }, { allowCreate: false });
       if (state !== 'submitted') {
         setMessage('Your first result has not been recorded yet. Please try again.');
