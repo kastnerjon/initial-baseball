@@ -68,7 +68,7 @@ describe('DailyNineAtBatComparison', () => {
     expect(html).toContain('Your Score');
     expect(html).toContain('>4</strong>');
     expect(html).toContain('>2.0</strong>');
-    expect(html).toContain('>100</strong>');
+    expect(html).toContain('>100th</strong>');
     expect(html).toContain('Outcome: HR');
     expect(html).toContain('How everyone scored on this at-bat');
     expect(html).toContain('100th Percentile · Your score was at or above 100% of other results (ties count).');
