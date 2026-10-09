@@ -1,14 +1,15 @@
 import type { JSX } from 'react';
 import type { DailyNineCompletedComparisonState } from '../useDailyNineCompletedComparison';
-import { createDailyNineCompletedComparisonPresentation } from '../dailyNineCompletedComparisonPresentation';
+import { createDailyNineCompletedComparisonPresentation, formatDailyNineCompletedPercentile } from '../dailyNineCompletedComparisonPresentation';
 import { formatDailyScorecardPoints } from '../dailyScorecard';
 
 type DailyNineCompletedComparisonProps = {
   points: number;
   state: DailyNineCompletedComparisonState;
+  currentPointsV4?: boolean;
 };
 
-export function DailyNineCompletedComparison({ points, state }: DailyNineCompletedComparisonProps): JSX.Element {
+export function DailyNineCompletedComparison({ points, state, currentPointsV4 = false }: DailyNineCompletedComparisonProps): JSX.Element {
   const presentation = state.status === 'idle' ? null : createDailyNineCompletedComparisonPresentation(state);
 
   return (
@@ -26,8 +27,10 @@ export function DailyNineCompletedComparison({ points, state }: DailyNineComplet
           <strong className="completed-comparison-value">{presentation?.average ?? '—'}</strong>
         </div>
         <div className="completed-comparison-tile">
-          <span className="completed-comparison-label">Beat</span>
-          <strong className="completed-comparison-value">{presentation?.beat ?? '—'}</strong>
+          <span className="completed-comparison-label">{currentPointsV4 ? 'PCTL' : 'Beat'}</span>
+          <strong className="completed-comparison-value">{currentPointsV4
+            ? formatDailyNineCompletedPercentile(state) ?? '—'
+            : presentation?.beat ?? '—'}</strong>
           {presentation?.averageStatus ? (
             <span className={'completed-comparison-average-status completed-comparison-performance-' + presentation.averageStatus}>
               {presentation.statusLabel}

@@ -5,7 +5,7 @@ import { getDailyPointsRange } from '@initial-baseball/engine';
 import { POINTS_V4_DAILY_RULESET_VERSION } from '@initial-baseball/shared';
 import { createDailyNineCompletedComparisonPresentation } from '../dailyNineCompletedComparisonPresentation';
 import type { DailyNineCompletedComparisonState } from '../useDailyNineCompletedComparison';
-import type { DailyNineScorecardRow } from '../dailyNineScorecardComparisonPresentation';
+import { createDailyNineScorecardAtBatPercentile, type DailyNineScorecardRow } from '../dailyNineScorecardComparisonPresentation';
 import { formatDailyScorecardPoints, type DailyScorecardAnswers, type DailyScorecardPoints } from '../dailyScorecard';
 import type { DailyNineScorecardComparisons } from '../useDailyNineScorecardComparisons';
 import { createDailyNineAtBatComparisonState } from '../dailyNineAtBatComparisonState';
@@ -108,7 +108,8 @@ export function DailyNineYourNineRows({
         const answer = revealPlayers ? answers[row.pitchNumber] : undefined;
         const expanded = expandedAtBat === row.pitchNumber;
         const accessibleAverage = row.average === '—' ? 'unavailable' : `${row.average} points`;
-        const accessibleBeat = row.beat === '—' ? 'unavailable' : row.beat;
+        const percentile = createDailyNineScorecardAtBatPercentile(awardedPoints, comparison) ?? '—';
+        const accessiblePercentile = percentile === '—' ? 'unavailable' : percentile;
         const panelId = `${distributionId}-distribution-${row.pitchNumber}`;
         const state = expanded
           ? createDailyNineAtBatComparisonState(comparison, awardedPoints ?? null)
@@ -124,7 +125,7 @@ export function DailyNineYourNineRows({
               className="your-nine-row-toggle"
               aria-expanded={expanded}
               aria-controls={expanded ? panelId : undefined}
-              aria-label={`At-bat ${row.pitchNumber}: ${row.initials}${answer ? ` - ${answer}` : ''}, ${row.outcome}, ${row.score} points, average ${accessibleAverage}, beat ${accessibleBeat}. ${expanded ? 'Hide' : 'Show'} score distribution`}
+              aria-label={`At-bat ${row.pitchNumber}: ${row.initials}${answer ? ` - ${answer}` : ''}, ${row.outcome}, ${row.score} points, average ${accessibleAverage}, percentile ${accessiblePercentile}. ${expanded ? 'Hide' : 'Show'} score distribution`}
               onClick={() => setExpandedAtBat(current => current === row.pitchNumber ? null : row.pitchNumber)}
             >
               <span className="your-nine-ab">{String(row.pitchNumber).padStart(2, '0')}</span>
@@ -149,7 +150,7 @@ export function DailyNineYourNineRows({
                   <span className="your-nine-track" aria-hidden="true">
                     <span className="your-nine-fill" style={{ width: `${fill}%` }} />
                   </span>
-                  <strong className="your-nine-beat">{`BEAT ${row.beat}`}</strong>
+                  <strong className="your-nine-beat">{`PCTL ${percentile}`}</strong>
                 </span>
               </span>
               <span className="your-nine-expand-icon" aria-hidden="true">{expanded ? '−' : '+'}</span>
@@ -165,12 +166,7 @@ export function DailyNineYourNineRows({
                         : 'Score distribution unavailable for this at-bat.'}
                   </p>
                 ) : (
-                  <DailyNineAtBatDistribution
-                    presentation={distribution}
-                    average={row.average}
-                    legacyBeatPercent={Math.round((state?.status === 'success'
-                      ? state.strictLowerAtBatRate ?? 0 : 0) * 100)}
-                  />
+                  <DailyNineAtBatDistribution presentation={distribution} average={row.average} />
                 )}
               </div>
             ) : null}

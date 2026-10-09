@@ -6,7 +6,7 @@ Last updated: 2026-10-08
 
 ## Immediate next work
 
-- [ ] Replace Daily Nine BEAT with tie-inclusive PCTL (at-bat first, then Your Nine / completed-game / share), retaining the existing strict-lower calculation internally and preserving comparison-population isolation.
+- [ ] Complete tie-inclusive PCTL rollout in the current points-v4 Your Nine, completed-game and share presentation (PR #355 terminal-at-bat and pure helper merged/deployed). Preserve historic points-v3 BEAT, exact peer populations and missing histogram fallback.
 
 - [x] Add an accessible, default-open Your Nine expand/collapse header while retaining running score/progress, reveal settings and row state. Separate from released Top 10 visibility #353; PR #354 must pass its own release checks.
 

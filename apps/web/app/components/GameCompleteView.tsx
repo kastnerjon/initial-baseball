@@ -1,5 +1,5 @@
 import type { JSX } from 'react';
-import { isDailyPointsRulesetVersion, type DailyCompletedAtBat, type DailyPublicPuzzle, type DailyShareResult } from '@initial-baseball/shared';
+import { isDailyPointsRulesetVersion, POINTS_V4_DAILY_RULESET_VERSION, type DailyCompletedAtBat, type DailyPublicPuzzle, type DailyShareResult } from '@initial-baseball/shared';
 import { PitchResultList } from './PitchResultList';
 import { DailyShareCard } from './DailyShareCard';
 import { DailyNineLeaderboard } from './DailyNineLeaderboard';
@@ -49,6 +49,7 @@ export function GameCompleteView({
         shareResult.pitchLines,
         atBatPoints,
         atBatComparisons,
+        shareResult.rulesetVersion,
       )
     : shareText;
 
@@ -60,6 +61,7 @@ export function GameCompleteView({
           <DailyNineCompletedComparison
             points={shareResult.points.points}
             state={comparison}
+            currentPointsV4={shareResult.rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION}
           />
         ) : (
           <ScoreLine summary={shareResult.summary} />
