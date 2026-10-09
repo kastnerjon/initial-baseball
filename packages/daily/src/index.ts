@@ -203,3 +203,9 @@ export {
   type PermanentDailyIssuedPuzzleReadRepository,
   type PermanentDailyIssuedPuzzleReadService,
 } from './permanentDailyIssuedPuzzleRead';
+
+export {
+  CUSTOM_NINE_LINEUP_SCHEMA_VERSION,
+  createCustomNineLineupSelection,
+  type CustomNineLineupSelection,
+} from './customNineLineup';
