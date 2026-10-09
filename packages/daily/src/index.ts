@@ -209,3 +209,19 @@ export {
   createCustomNineLineupSelection,
   type CustomNineLineupSelection,
 } from './customNineLineup';
+
+export {
+  CUSTOM_NINE_ISSUED_CHALLENGE_SCHEMA_VERSION,
+  CUSTOM_NINE_RULESET_VERSION,
+  createCustomNineIssuedChallenge,
+  cloneCustomNineIssuedChallenge,
+  validateCustomNinePuzzleId,
+  type CustomNineIssuedChallenge,
+  type CustomNineIssuedChallengeInput,
+} from './customNineIssuedChallenge';
+export {
+  createCustomNineIssuedChallengeService,
+  type CustomNineIssuedChallengeRepository,
+  type CustomNineIssuedChallengeInsertResult,
+  type CustomNineIssuedChallengeIssueResult,
+} from './customNineIssuedChallengeService';

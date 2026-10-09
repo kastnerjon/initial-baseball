@@ -162,7 +162,7 @@ export function hasSameImmutableClueFrozenIssuedDailyContent<I extends IssuedDai
   return left.puzzleId === right.puzzleId
     && identitiesEqual(left.identity, right.identity)
     && arraysEqual(left.canonicalPlayerIds, right.canonicalPlayerIds)
-    && clueSnapshotsEqual(left.clueSnapshot, right.clueSnapshot);
+    && areIssuedDailyClueSnapshotsEqual(left.clueSnapshot, right.clueSnapshot);
 }
 
 export function areClueFrozenIssuedDailyPuzzlesExactlyEqual<I extends IssuedDailyIdentity>(
@@ -267,7 +267,7 @@ function arraysEqual(left: readonly string[], right: readonly string[]): boolean
     && left.every((value, index) => value === right[index]);
 }
 
-function clueSnapshotsEqual(
+export function areIssuedDailyClueSnapshotsEqual(
   left: PermanentDailyIssuedClueSnapshot,
   right: PermanentDailyIssuedClueSnapshot,
 ): boolean {
