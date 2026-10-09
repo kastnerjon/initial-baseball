@@ -86,7 +86,7 @@ export function createServerCustomNineBootstrapService({
         resolveLegacyPlayerId: () => { throw new Error('Legacy Custom Nine player IDs are unsupported.'); },
         getCanonicalReveal: () => { throw new Error('Custom Nine answer resolution is not yet enabled.'); },
       });
-      const result = await runtime.getBootstrap(CUSTOM_NINE_SESSION_DATE);
+      const result = await runtime.getBootstrap(CUSTOM_NINE_SESSION_DATE, challenge.rulesetVersion);
       return {
         puzzleId: challenge.puzzleId,
         rulesetVersion: challenge.rulesetVersion,
