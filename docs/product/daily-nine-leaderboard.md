@@ -18,6 +18,6 @@ Last updated: 2026-10-08
 
 ## Implementation boundaries
 
-The storage migration adds a locked-down RLS-enabled table keyed by an existing completed-result submission ID. A service-role-only read function computes ranking directly from existing engine-derived JSON summary points; names alone are new state. The next bounded web API PR validates the public request, checks that the existing completion belongs to the requested puzzle and current points-v4 policy, and enforces immutable first-write-wins naming. A separate end-of-game UI PR reads and submits after actual completion. No direct client database access.
+The storage migration adds a locked-down RLS-enabled table keyed by an existing completed-result submission ID. A service-role-only read function computes ranking directly from existing engine-derived JSON summary points; names alone are new state. The server API validates the public request, checks that an existing completion belongs to current Universal points-v4 (not archive), and enforces immutable first-write-wins naming. A separate end-of-game UI PR reads and submits after actual completion. The public GET exposes named Top 10 without submission IDs; private rank/submit POST bodies carry the opaque ID, never URL query parameters. No direct client database access.
 
 The leaderboard read is intentionally **opt-in only** and should not be mistaken for the existing anonymous total score comparison population.
