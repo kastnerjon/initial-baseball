@@ -1,3 +1,5 @@
+import { createCustomNineCreatorBrowserMarker } from '../../../customNineCreatorBrowser';
+import { getDailyProgressionSecret } from '../../../dailyProgressionSecret';
 import {
   DAILY_ADMIN_AUTH_CHALLENGE,
   DailyAdminAuthorizationError,
@@ -42,8 +44,12 @@ export async function POST(request: Request): Promise<Response> {
     });
   }
   try {
+    // Check signing configuration before writing an immutable challenge.
+    const creatorMarker = createCustomNineCreatorBrowserMarker(getDailyProgressionSecret());
     const issued = await createServerCustomNineCreationService().issue(body.value);
-    return Response.json(issued, { status: 201, headers: PRIVATE_HEADERS });
+    const response = Response.json(issued, { status: 201, headers: PRIVATE_HEADERS });
+    response.headers.set('set-cookie', creatorMarker.creatorCookie(issued.puzzleId, request.url));
+    return response;
   } catch (error) {
     if (error instanceof ServerCustomNineCreationError) {
       const status = error.kind === 'invalid_selection' ? 400

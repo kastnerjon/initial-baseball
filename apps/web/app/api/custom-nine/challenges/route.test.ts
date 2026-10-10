@@ -27,6 +27,7 @@ const issue = vi.fn();
 beforeEach(() => {
   vi.stubEnv('DAILY_ADMIN_USERNAME', 'editor');
   vi.stubEnv('DAILY_ADMIN_PASSWORD', 'a-very-long-and-private-editor-password');
+  vi.stubEnv('DAILY_PROGRESSION_SECRET', 'a-test-progression-secret-that-is-long-enough');
   issue.mockReset();
   issue.mockResolvedValue({ puzzleId: ID });
   vi.mocked(createServerCustomNineCreationService).mockReturnValue({ issue });
@@ -49,6 +50,11 @@ describe('private Custom Nine creation POST', () => {
     expect(response.headers.get('cache-control')).toBe('private, no-store');
     expect(await response.json()).toEqual({ puzzleId: ID });
     expect(issue).toHaveBeenCalledWith({ canonicalPlayerIds: IDS });
+    const cookie = response.headers.get('set-cookie');
+    expect(cookie).toContain(`ib-custom-nine-creator-v1-${ID}=`);
+    expect(cookie).toContain(`Path=/api/custom-nine/challenges/${ID}`);
+    expect(cookie).toContain('HttpOnly; SameSite=Strict; Secure');
+    expect(cookie).not.toContain('Domain=');
     expect(JSON.stringify({ puzzleId: ID })).not.toContain('player-1');
   });
 
@@ -75,6 +81,15 @@ describe('private Custom Nine creation POST', () => {
     expect(issue).not.toHaveBeenCalled();
   });
 
+  it('refuses to issue if the creator marker secret is weak', async () => {
+    vi.stubEnv('DAILY_PROGRESSION_SECRET', 'short');
+    const response = await POST(request());
+    expect(response.status).toBe(503);
+    expect(await response.json()).toEqual({ error: 'creation_unavailable' });
+    expect(issue).not.toHaveBeenCalled();
+    expect(response.headers.has('set-cookie')).toBe(false);
+  });
+
   it('rejects malformed and oversized bodies prior to issuance', async () => {
     const malformed = await POST(request('not-json'));
     expect(malformed.status).toBe(400);
@@ -93,6 +108,7 @@ describe('private Custom Nine creation POST', () => {
     const response = await POST(request());
     expect(response.status).toBe(status);
     expect(response.headers.get('cache-control')).toBe('private, no-store');
+    expect(response.headers.has('set-cookie')).toBe(false);
     const responseText = await response.text();
     expect(JSON.parse(responseText)).toEqual({ error: kind });
     expect(responseText).not.toContain('private error');
