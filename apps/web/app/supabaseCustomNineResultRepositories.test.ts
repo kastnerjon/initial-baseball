@@ -84,6 +84,25 @@ describe('private Custom Nine result row codecs', () => {
       .toThrow();
   });
 
+  it('normalizes corrupt input into the Custom invalid-row error before any provider call', async () => {
+    const malformed = [
+      { ...COMPLETION, completedAtBats: null },
+      { ...COMPLETION, summary: { points: '36', completed: true } },
+      { ...COMPLETION, completedAtBats: [{ pitchNumber: 1 }] },
+    ];
+    for (const item of malformed) {
+      expect(() => encodeCustomNineCompletedRow(item as unknown as DailyCompletedResult))
+        .toThrow(expect.objectContaining({ kind: 'invalid-row' }));
+    }
+    const from = vi.fn();
+    const repository = createSupabaseCustomNineCompletedResultRepository(asClient(from));
+    for (const item of malformed) {
+      await expect(repository.insertIfAbsent(item as unknown as DailyCompletedResult))
+        .rejects.toMatchObject({ kind: 'invalid-row' });
+    }
+    expect(from).not.toHaveBeenCalled();
+  });
+
   it('rejects bad at-bat scope and tampered score facts', () => {
     expect(() => encodeCustomNineAtBatRow({ ...AT_BAT, puzzleId: 'archive-beta-v1-daily-1' })).toThrow();
     expect(() => encodeCustomNineAtBatRow({ ...AT_BAT, puzzleDate: '2026-10-09' })).toThrow();

@@ -20,19 +20,23 @@ export class SupabaseCustomNineResultError extends Error {
  * This is a private provider boundary, NOT authorization to insert submissions.
  */
 export function encodeCustomNineCompletedRow(result: DailyCompletedResult) {
-  requireScope(result);
-  requireComplete(result);
-  const normalized = decodeDailyCompletedResultRow(encodeDailyCompletedResultRow(result));
-  requireComplete(normalized);
-  const row = encodeDailyCompletedResultRow(normalized);
-  return {
-    submission_id: row.submission_id,
-    challenge_id: result.puzzleId,
-    schema_version: row.schema_version,
-    ruleset_version: row.ruleset_version,
-    completed_at_bats: row.completed_at_bats,
-    summary: row.summary,
-  };
+  try {
+    requireScope(result);
+    requireComplete(result);
+    const normalized = decodeDailyCompletedResultRow(encodeDailyCompletedResultRow(result));
+    requireComplete(normalized);
+    const row = encodeDailyCompletedResultRow(normalized);
+    return {
+      submission_id: row.submission_id,
+      challenge_id: result.puzzleId,
+      schema_version: row.schema_version,
+      ruleset_version: row.ruleset_version,
+      completed_at_bats: row.completed_at_bats,
+      summary: row.summary,
+    };
+  } catch {
+    return invalid('Invalid Custom Nine completed result.');
+  }
 }
 
 export function decodeCustomNineCompletedRow(raw: unknown): DailyCompletedResult {
