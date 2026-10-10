@@ -13,6 +13,7 @@ vi.mock('server-only', () => ({}));
 import { createCustomNineProgressionTokens, CUSTOM_NINE_SESSION_DATE } from './serverCustomNineBootstrap';
 import { createDailyProgressionTokenCodec, type DailyProgressionClaims } from './dailyProgressionToken';
 import { CustomNineHintRequestError, createServerCustomNineHintService } from './serverCustomNineHints';
+import { createCustomNineTerminalReceiptCodec } from './customNineTerminalReceipt';
 
 const ID = 'custom-nine-v1-123e4567-e89b-42d3-a456-426614174000';
 const OTHER_ID = 'custom-nine-v1-123e4567-e89b-42d3-a456-426614174001';
@@ -160,6 +161,7 @@ describe('Custom Nine signed guess resolution', () => {
       progressionToken: ctx.token, submittedPlayerId: WRONG,
     });
     expect(reply?.result.kind).toBe('incorrect');
+    expect(reply?.terminalReceipt).toBeNull();
     expect(reply?.reveal).toBeNull();
     expect(reply?.hintBundle).toMatchObject({ pitchNumber: 1, revealedCount: 0 });
     expect(ctx.tokens.verify(reply!.progressionToken)).toEqual({ ...ctx.claims, strikeCount: 1 });
@@ -179,6 +181,10 @@ describe('Custom Nine signed guess resolution', () => {
     }
     const result = await ctx.service.resolveAtBat(ID, { progressionToken: token, submittedPlayerId: WRONG });
     expect(result?.result.kind).toBe('strikeout');
+    expect(createCustomNineTerminalReceiptCodec(SECRET).verify(result!.terminalReceipt!)).toMatchObject({
+      puzzleId: ID, atBat: { pitchNumber: 1, initials: 'P1', outcome: 'K',
+        hintsRevealed: 0, wrongGuesses: 3, resolution: 'strikeout' },
+    });
     expect(result?.reveal?.playerId).toBe(IDS[0]);
     expect(result?.hintBundle?.pitchNumber).toBe(2);
     expect(ctx.tokens.verify(result!.progressionToken)).toEqual({ ...ctx.claims, pitchNumber: 2, outCount: 1 });
@@ -190,6 +196,8 @@ describe('Custom Nine signed guess resolution', () => {
     for (const id of IDS.slice(1)) expect(json).not.toContain(id);
     const gaveUp = await setup().service.resolveAtBat(ID, { progressionToken: ctx.token, giveUp: true });
     expect(gaveUp?.result.kind).toBe('strikeout');
+    expect(createCustomNineTerminalReceiptCodec(SECRET).verify(gaveUp!.terminalReceipt!))
+      .toMatchObject({ atBat: { wrongGuesses: 0, resolution: 'give_up' } });
     expect(gaveUp?.reveal?.playerId).toBe(IDS[0]);
   });
 
@@ -199,6 +207,8 @@ describe('Custom Nine signed guess resolution', () => {
     let token = opened!.hintBundle.checkpoints[2]!.progressionToken;
     const first = await ctx.service.resolveAtBat(ID, { progressionToken: token, submittedPlayerId: IDS[0]! });
     expect(first?.result).toMatchObject({ kind: 'correct', revealedCount: 3 });
+    expect(createCustomNineTerminalReceiptCodec(SECRET).verify(first!.terminalReceipt!))
+      .toMatchObject({ atBat: { outcome: '1B', hintsRevealed: 3, resolution: 'correct' } });
     expect(first?.reveal?.playerId).toBe(IDS[0]);
     expect(first?.hintBundle?.pitchNumber).toBe(2);
     token = first!.progressionToken;

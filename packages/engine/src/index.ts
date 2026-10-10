@@ -18,3 +18,4 @@ export * from './daily/applyDailyRuleset.js';
 export * from './daily/createDailyShareResult.js';
 export * from './daily/validateDailyCompletedResult.js';
 export * from './daily/validateDailyAtBatResult.js';
+export * from './daily/normalizeDailyTerminalAtBat.js';

@@ -487,3 +487,7 @@ Current-Daily presentation is merged and production-verified at `c2543f9085714e5
 ### Initial-based canonical display names — issue #320
 
 The bounded data-layer implementation compacts leading dotted uppercase given-name initials in canonical universe generation, preserving the source spelling as a search alias. Search/index and reveal artifacts consume the same canonical display name; identity snapshots, redirects, gameplay-name inputs, puzzle initials, scoring and persistence remain unchanged. Scope and verification: `tasks/plans/initial-based-display-names.md`. Exact release evidence belongs in the implementing PR; physical-device QA remains separate.
+
+## Custom Nine signed terminal evidence checkpoint (October 10)
+
+Custom Nine terminal guess/Give Up resolution emits a domain-separated HMAC receipt for the server-derived terminal observation and pre/post progression token digests. Incorrect nonterminal guesses receive `terminalReceipt: null`. This adds no competitive writes. Existing Daily validation establishes internal consistency, not honest play. **Next:** whole-attempt/replay/branch eligibility architecture followed by server-only admission, verified creator-browser noncontribution, and exact-challenge result isolation. The current stateless Custom session can replay; do not present receipts alone as anti-cheat proof. See `docs/spec/api.md`.

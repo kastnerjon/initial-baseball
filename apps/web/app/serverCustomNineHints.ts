@@ -11,6 +11,7 @@ import { getCanonicalDailyPlayer } from './canonicalDailyPlayerLookup';
 import { getCanonicalRevealReader, getCanonicalRuntime } from './serverCanonicalData';
 import { DailyProgressionTokenError } from './dailyProgressionToken';
 import { getDailyProgressionSecret } from './dailyProgressionSecret';
+import { createCustomNineTerminalReceiptCodec } from './customNineTerminalReceipt';
 import { DailyRuntimeRequestError, createDailyRuntimeService } from './dailyRuntimeService';
 import type { DailyResolutionRequest } from './dailyRuntimeContracts';
 import {
@@ -60,7 +61,8 @@ export function createServerCustomNineHintService({
     if (typeof token !== 'string' || token.length === 0 || token.length > 4096) {
       throw new CustomNineHintRequestError();
     }
-    const tokens = createCustomNineProgressionTokens(dependencies.getProgressionSecret(environment));
+    const secret = dependencies.getProgressionSecret(environment);
+    const tokens = createCustomNineProgressionTokens(secret);
     let claims;
     try {
       claims = tokens.verify(token);
@@ -82,7 +84,7 @@ export function createServerCustomNineHintService({
 
     // This is the same frozen, server-only puzzle used by opening bootstrap.
     const puzzle = materializeCustomNineSessionPuzzle(challenge, dependencies.resolvePlayer);
-    return createDailyRuntimeService({
+    const runtime = createDailyRuntimeService({
       createPuzzle: date => {
         if (date !== CUSTOM_NINE_SESSION_DATE) throw new CustomNineHintRequestError();
         return puzzle;
@@ -95,17 +97,18 @@ export function createServerCustomNineHintService({
         return reveal;
       },
     });
+    return { runtime, puzzle, claims, secret };
   }
 
   async function execute<T>(
     puzzleId: unknown,
     token: unknown,
-    action: (runtime: ReturnType<typeof createDailyRuntimeService>, signedToken: string) => Promise<T>,
+    action: (context: NonNullable<Awaited<ReturnType<typeof authorizedRuntime>>>, signedToken: string) => Promise<T>,
   ): Promise<T | null> {
-    const runtime = await authorizedRuntime(puzzleId, token);
-    if (runtime === null) return null;
+    const context = await authorizedRuntime(puzzleId, token);
+    if (context === null) return null;
     try {
-      return await action(runtime, token as string);
+      return await action(context, token as string);
     } catch (error) {
       if (error instanceof DailyRuntimeRequestError) throw new CustomNineHintRequestError();
       throw error;
@@ -114,12 +117,34 @@ export function createServerCustomNineHintService({
 
   return {
     getHintBundle: (id: unknown, token: unknown) =>
-      execute(id, token, (runtime, value) => runtime.getHintBundle(value)),
+      execute(id, token, (context, value) => context.runtime.getHintBundle(value)),
     revealHint: (id: unknown, token: unknown) =>
-      execute(id, token, (runtime, value) => runtime.revealHint(value)),
+      execute(id, token, (context, value) => context.runtime.revealHint(value)),
     resolveAtBat: (id: unknown, request: DailyResolutionRequest) =>
-      execute(id, request.progressionToken, (runtime, value) =>
-        runtime.resolveAtBat({ ...request, progressionToken: value })),
+      execute(id, request.progressionToken, async (context, value) => {
+        const response = await context.runtime.resolveAtBat({ ...request, progressionToken: value });
+        if (response.result.kind === 'incorrect') return { ...response, terminalReceipt: null };
+        const pitch = context.puzzle.pitches.find(
+          candidate => candidate.pitchNumber === context.claims.pitchNumber,
+        );
+        if (!pitch) throw new CustomNineHintRequestError();
+        const resolution = request.giveUp === true ? 'give_up'
+          : response.result.kind === 'correct' ? 'correct' : 'strikeout';
+        const terminalReceipt = createCustomNineTerminalReceiptCodec(context.secret).sign({
+          puzzleId: context.puzzle.id,
+          atBat: {
+            pitchNumber: pitch.pitchNumber,
+            initials: pitch.player.initials,
+            outcome: response.result.outcome,
+            hintsRevealed: context.claims.revealCount,
+            wrongGuesses: resolution === 'strikeout' ? 3 : context.claims.strikeCount,
+            resolution,
+          },
+          predecessorToken: value,
+          successorToken: response.progressionToken,
+        });
+        return { ...response, terminalReceipt };
+      }),
 
   };
 }

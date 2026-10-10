@@ -129,3 +129,12 @@ The selection and pure issued-record contracts alone are **not** a playable or s
 **Out of scope:** Issuance, Supabase writes/DDL, route handlers, public read, authenticated progression, result comparisons, creator UI, new hint types, Specific Lineup and H2H.  
 **Acceptance:** Exact order and 4×9 frozen hint values match existing Daily generation; malformed, duplicate or unresolved IDs, incomplete/placeholder hints and private error details fail closed; typecheck, focused tests, full CI, exact-head READY Preview, one bounded independent review and post-merge verification.  
 **Stop conditions:** Requiring a new hint source, changing Daily clue behavior, adding a public answer-bearing payload, or widening the canonical data contract requires a separate decision/PR.
+
+## Bounded scope — server-signed terminal Custom result evidence
+
+**Goal:** Emit proof that an individual Custom terminal observation was calculated by the server, rather than accepting the browser's score/outcome.
+**Owning layer:** `apps/web` Custom gameplay resolution and server-signed response transport.
+**In scope:** Domain-separated HMAC receipts with exact challenge, frozen initials, pitch, signed hint/strike state, outcome and resolution; pre/post signed progression-token digests; `terminalReceipt: null` for nonterminal guesses; focused tamper/action/no-spoiler tests; canonical docs.
+**Out of scope:** Public result submission, creator admission, complete-attempt continuity, anti-replay/first-attempt enforcement, Supabase writes/migrations, comparison reads, UI, and other game modes.
+**Acceptance:** Tests and exact-head CI, one independent Codex review with in-scope repairs, READY Vercel Preview, postmerge production/push-CI/Supabase/open-PR verification. No private identities in receipts.
+**Stop conditions:** Stateless replay/branching makes whole-attempt authentication necessary before public writes. Do not claim that separate valid receipts prove a unique play session.
