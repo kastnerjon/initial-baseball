@@ -147,3 +147,12 @@ The selection and pure issued-record contracts alone are **not** a playable or s
 **Out of scope:** Public result API; Supabase inserts or schema; browser cookies/creator eligibility; unique-session or first-attempt guarantees; anti-replay and persistent action-journaling; creator UI; Universal/Archive logic.
 **Acceptance:** Exact-head GitHub CI and Vercel READY Preview, bounded independent Codex review with in-scope fixes, verified merge/push CI/production/routes/logs/Supabase. No public write surfaces or private-answer leakage.
 **Stop conditions:** Never treat a signed sequence as account identity or proof of first honest play. Deliberate branch regression must continue demonstrating the protocol's limit; server-side monotonic authority is a later separately reviewed architecture decision.
+
+## Bounded scope — Custom Nine private first-attempt ledger schema
+
+**Decision:** ADR 0002; durable per-challenge/per-browser first eligible attempt and atomic server-monotonic progression, not additional stateless HMAC proof. Cross-device/cookie deletion is inherently unenforceable without accounts.
+**Owning layer:** Supabase operational persistence. Existing engine, Daily, Next routes and UI are untouched.
+**In scope:** One additive private `custom_nine_attempt_states` table with immutable issued-challenge FK, challenge-specific browser credential digest, unique server-selected attempt UUID, current signed progression token, revision, ordered terminal facts, active/completed phase and timestamps; RLS and service-role SELECT/INSERT/UPDATE only; ADR/data model/handoff update.
+**Out of scope:** Any live attempt creation or state transition, provider adapter, HTTP/creator changes, anonymous result API, public roles or grants, scores/leaderboards, Universal/Classic/Archive. No synthetic production rows.
+**Acceptance:** Reviewed SQL/schema and constraints, bounded independent review, exact-head CI + READY Preview, squash merge, apply additive hosted migration with name/ledger reconciliation, read-only verify schema/FK/RLS/role privileges/zero rows, exact push CI/production/log/open PR state.
+**Stop:** Do not connect the #367 verifier directly to competitive writes. Future provider adapter must CAS both revision and current token; current hint checkpoints are replayable and require separate stateful scoring policy.
