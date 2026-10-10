@@ -9,6 +9,10 @@ Use this file to resume work. It records verified current state, settled future 
 
 After signed terminal receipts #366, the next bounded server-only verifier checks an entire nine-at-bat receipt/token envelope against the Custom-only signing domain and authoritative frozen initials, and derives the points-v4 completion through the existing engine. It has no HTTP route, writes or creator UI. A deliberate regression demonstrates the stateless game can generate two valid signed branches; do **not** equate successful evidence verification with honest first play. Follow-up must decide server-monotonic first-attempt state/eligibility and creator-marker exclusion before activating any private competitive result submission. Canonical contract: `docs/spec/api.md`.
 
+## Custom Nine first-attempt authority — staged private storage
+
+ADR 0002 approves a challenge-scoped random browser credential and server-monotonic Supabase attempt ledger, because #367 signed receipts are replayable. This bounded schema PR adds only private attempt-state storage (no runtime writes), with composite first-attempt key, revision/current token for future atomic compare-and-swap, and server-only grants. Hosted migration must be applied and verified separately after review/merge; do not claim public competitive submission works. The next implementation stage is a provider adapter for first-insert-wins and atomic conditional update; later stages wire browser identity, creator exclusion, stateful hints/guesses and final result admission. Cross-device/cookie deletion and inspectable hints prevent account-grade anti-cheat. See `docs/decisions/0002-custom-nine-first-attempt-authority.md`.
+
 ## Resume protocol
 
 1. Read `AGENTS.md`.

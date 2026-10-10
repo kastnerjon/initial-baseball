@@ -49,6 +49,12 @@ Approved scheduled or published IDs are joined to canonical runtime data on the 
 
 Current editorial puzzle numbers/dates are beta operational identity. They must not be assumed to be the eventual permanent public Daily sequence. Broad launch will explicitly establish a new permanent Daily #1 epoch; beta history is not migrated into that archive merely because it exists in this table.
 
+## Staged Custom Nine server-monotonic attempt ledger (ADR 0002)
+
+Custom Nine's current stateless signed terminal receipts and nine-at-bat verifier do not prove genuine first play. ADR 0002 introduces an **isolated operational** Supabase table `custom_nine_attempt_states` for the first eligible attempt per permanent `challenge_id` and per challenge-scoped random browser credential digest. The browser credential is not an account or global fingerprint. `attempt_id` is server-generated UUID, not browser-chosen. The table holds the current signed Custom progression token, nonnegative `revision`, server-normalized ordered terminal facts, status (active/completed), and timestamps. A unique `(challenge_id, browser_key_digest)` blocks a second attempt from the same retained browser credential. The immutable issued-challenge FK blocks orphan attempts.
+
+RLS is enabled with no anon/authenticated grants or policies. The service role may SELECT, INSERT and UPDATE this **operational state** only; there is no delete or browser write. Later adapters MUST atomically update conditional on expected revision **and** current token, reject stale/replayed branches, and exclude creating browsers before competitive contribution. Neither the schema alone nor the #367 verifier enforces these runtime checks. Completed results and AB results remain separate first-write-wins populations and have no new public grants. There is no game/admin route using this table yet and no production records should be created in this schema stage. Anonymous cookie deletion and cross-device behavior cannot be prevented.
+
 ## Repository and security
 
 `apps/web/app/supabaseDailyPuzzleRepository.ts` implements the provider-neutral editorial puzzle port.
