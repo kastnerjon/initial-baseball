@@ -25,6 +25,15 @@ Decision date: 2026-10-08
 7. **Staged signed gameplay (bootstrap issued; hint progression staged next)** — reuse the existing Daily Nine engine and HMAC codec with a distinct Custom Nine signing domain. An opaque challenge-ID GET returns the points-v4 first-batter signed token, authorized current-batter hint bundle and checkpoints, never future hints or answer IDs. Later bounded PRs must verify Custom-only tokens to authorize hint progression, then guess resolution and exact-challenge/ruleset-isolated results with creator noncontribution. Do not mix current, archives or other challenges.
 8. **Creator UI and invite/share flow** — select/reorder nine, preview without contribution, issue immutable challenge, copy/share link; mobile and accessibility QA. Public leaderboard eligibility for custom challenges is a scoped follow-up after proving contributor isolation.
 
+## Current bounded scope — private Custom Nine result repositories
+
+**Goal:** Translate already engine-normalized points-v4 Custom results into the physically separate Custom storage tables with immutable first-write-wins semantics, without activating competitive submission.
+**Owner:** `apps/web` server-only Supabase adapter. Reuse existing `DailyCompletedResultRepository` / `DailyAtBatResultRepository` ports and strict Daily row codecs.
+**In scope:** Two private repository adapters and one Custom mapping/validation codec; exact versioned challenge identity, `1970-01-01` internal sentinel, puzzle number 1 and points-v4 only; terminal-at-bat scores in 0.5 steps; completed ordered nine-batter results only; DB duplicate-key winner reread and query-fault sanitization; tests and canonical documentation.
+**Out of scope:** Routes, result validation against an issued puzzle, creator-browser provenance, actual production result writes, leaderboard, comparison RPCs, frontend, migrations, Universal/Archive service changes.
+**Acceptance:** Invalid Daily, Archive, wrong Custom ID/date/number/ruleset or incomplete records rejected before DB; exact Custom tables selected and no fake calendar columns stored; conflict reads use immutable submission ID or four-part at-bat key; malformed stored winners and query errors fail closed; focused tests, typecheck, file-size/hidden-answer QA, exact-head CI, READY Preview, independent review, postmerge verification.
+**Stop:** Do not connect an endpoint or call insert from an unverified browser submission; creator eligibility, authoritative scoring and future competition require separate reviewed authority work.
+
 ## Current bounded scope — private Custom Nine result storage
 
 **Goal:** Establish a physically isolated, append-only score population for each permanent Custom Nine challenge, without enabling submissions or creator competition.
