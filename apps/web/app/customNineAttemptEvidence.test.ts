@@ -109,7 +109,7 @@ describe('private Custom Nine nine-at-bat evidence verifier', () => {
     const third = base.entries[2]!;
     const changedStrike = codec.sign({
       puzzleId: ID,
-      atBat: { ...codec.verify(third.receipt).atBat, resolution: 'give_up', wrongGuesses: 2 },
+      atBat: { ...codec.verify(third.receipt).atBat, resolution: 'give_up', wrongGuesses: 1 },
       predecessorToken: third.predecessorToken, successorToken: third.successorToken,
     });
     expect(() => service.verify({ ...base, entries: [
