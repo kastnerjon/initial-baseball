@@ -25,6 +25,15 @@ Decision date: 2026-10-08
 7. **Staged signed gameplay (bootstrap issued; hint progression staged next)** — reuse the existing Daily Nine engine and HMAC codec with a distinct Custom Nine signing domain. An opaque challenge-ID GET returns the points-v4 first-batter signed token, authorized current-batter hint bundle and checkpoints, never future hints or answer IDs. Later bounded PRs must verify Custom-only tokens to authorize hint progression, then guess resolution and exact-challenge/ruleset-isolated results with creator noncontribution. Do not mix current, archives or other challenges.
 8. **Creator UI and invite/share flow** — select/reorder nine, preview without contribution, issue immutable challenge, copy/share link; mobile and accessibility QA. Public leaderboard eligibility for custom challenges is a scoped follow-up after proving contributor isolation.
 
+## Current bounded scope — creating-browser provenance at issuance
+
+**Goal:** Mark the browser creating each Custom challenge so a future admission gate can exclude that browser without trusting a client flag.
+**Owning layer:** `apps/web` Custom creation HTTP and browser-provenance boundary.
+**In scope:** Preflight existing progression signing secret; set host-only, HttpOnly, SameSite=Strict, exact challenge API-path cookie (Secure on HTTPS) after successful authenticated issuance; distinct domain-separated signed HMAC per immutable challenge; strict reader reporting creator, unmarked or invalid (including tampering and duplicate cookies); focused tests; API and project documentation.
+**Out of scope:** Results POST/read, server scoring validation, persistence migrations, public unauthenticated creation, abuse controls, creator UI, leaderboard/comparison, Universal/Archive.
+**Acceptance:** Failed authorization, invalid bodies and provider errors set no cookie; missing/weak signing secret blocks issuance before insert; valid marker is challenge-scoped; forged, duplicated and malformed marker is never treated as verified non-creator; local tests/typecheck/build/full CI, independent review, READY Preview, post-merge read-only verification.
+**Stop:** Results authority and creator exclusion at submission require separate PR. Cookie loss, deletion, expiry and cross-device use cannot be prevented anonymously; do not activate public writes on this basis alone.
+
 ## Current bounded scope — private Custom Nine result repositories
 
 **Goal:** Translate already engine-normalized points-v4 Custom results into the physically separate Custom storage tables with immutable first-write-wins semantics, without activating competitive submission.
