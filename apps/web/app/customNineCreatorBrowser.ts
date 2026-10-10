@@ -32,7 +32,10 @@ export function createCustomNineCreatorBrowserMarker(secret: string) {
     inspect(cookieHeader: string | null, puzzleId: string): Provenance {
       const name = cookieName(puzzleId);
       const matches = (cookieHeader ?? '').split(';').map(part => part.trim())
-        .filter(part => part.slice(0, part.indexOf('=')) === name);
+        .filter(part => {
+          const separator = part.indexOf('=');
+          return (separator === -1 ? part : part.slice(0, separator)) === name;
+        });
       if (matches.length === 0) return 'unmarked';
       // A future admission gate must reject both 'creator' AND 'invalid'.
       const match = matches[0];

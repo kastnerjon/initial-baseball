@@ -28,6 +28,7 @@ describe('Custom Nine creating-browser marker', () => {
     expect(marker.inspect(pair.replace(/.$/, '.'), ID)).toBe('invalid');
     expect(marker.inspect(`${pair}; ${pair}`, ID)).toBe('invalid');
     expect(marker.inspect(`${pair.split('=')[0]}=garbage`, ID)).toBe('invalid');
+    expect(marker.inspect(pair.split('=')[0]!, ID)).toBe('invalid');
   });
 
   it('rejects cross-secret signatures and malformed challenge IDs', () => {
