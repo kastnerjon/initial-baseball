@@ -1,5 +1,6 @@
 import { createHash, createHmac, timingSafeEqual } from 'node:crypto';
 import { validateCustomNinePuzzleId } from '@initial-baseball/daily';
+import { normalizeDailyTerminalAtBat } from '@initial-baseball/engine';
 import type { DailyCompletedAtBat } from '@initial-baseball/shared';
 
 const DOMAIN = 'initial-baseball:custom-nine:terminal-receipt:v1';
@@ -72,16 +73,10 @@ function record(value: unknown): value is Record<string, unknown> {
 function validFact(value: unknown): value is DailyCompletedAtBat {
   if (!record(value) || !Number.isInteger(value.pitchNumber)
     || (value.pitchNumber as number) < 1 || (value.pitchNumber as number) > 9
-    || typeof value.initials !== 'string' || value.initials.length === 0
-    || value.initials.length > 40 || !Number.isInteger(value.hintsRevealed)
-    || (value.hintsRevealed as number) < 0 || (value.hintsRevealed as number) > 4
-    || !Number.isInteger(value.wrongGuesses) || (value.wrongGuesses as number) < 0
-    || (value.wrongGuesses as number) > 3) return false;
-  if (value.resolution !== 'correct' && value.resolution !== 'strikeout'
-    && value.resolution !== 'give_up') return false;
-  if (value.resolution === 'strikeout'
-    ? value.wrongGuesses !== 3 : (value.wrongGuesses as number) >= 3) return false;
-  const outcomes = ['HR', '3B', '2B', '1B', 'BB'];
-  return value.outcome === (value.resolution === 'correct'
-    ? outcomes[value.hintsRevealed as number] : 'K');
+    || typeof value.initials !== 'string' || !value.initials.trim()
+    || value.initials.length > 40) return false;
+  return normalizeDailyTerminalAtBat(value, {
+    pitchNumber: value.pitchNumber as number,
+    initials: value.initials,
+  }).ok;
 }
