@@ -138,3 +138,12 @@ The selection and pure issued-record contracts alone are **not** a playable or s
 **Out of scope:** Public result submission, creator admission, complete-attempt continuity, anti-replay/first-attempt enforcement, Supabase writes/migrations, comparison reads, UI, and other game modes.
 **Acceptance:** Tests and exact-head CI, one independent Codex review with in-scope repairs, READY Vercel Preview, postmerge production/push-CI/Supabase/open-PR verification. No private identities in receipts.
 **Stop conditions:** Stateless replay/branching makes whole-attempt authentication necessary before public writes. Do not claim that separate valid receipts prove a unique play session.
+
+## Bounded scope — Custom Nine whole-game signed evidence validation
+
+**Goal:** Verify that a supplied set of nine terminal receipts and progression tokens forms an internally consistent, correctly scored Custom Nine points-v4 completion, without accepting it for competition.
+**Owning layer:** `apps/web` server-only result-admission preparation, composing the existing pure scoring engine.
+**In scope:** Strict nine-entry envelope and size bounds; signed Custom terminal receipts and predecessor/successor token hash correspondence; exact frozen challenge/ordered initials; signed reveal/strike state, correct Give Up/strikeout out counts and next-batter transitions; existing engine-computed nine-batter summary; focused tampering and alternate-branch tests; canonical documentation.
+**Out of scope:** Public result API; Supabase inserts or schema; browser cookies/creator eligibility; unique-session or first-attempt guarantees; anti-replay and persistent action-journaling; creator UI; Universal/Archive logic.
+**Acceptance:** Exact-head GitHub CI and Vercel READY Preview, bounded independent Codex review with in-scope fixes, verified merge/push CI/production/routes/logs/Supabase. No public write surfaces or private-answer leakage.
+**Stop conditions:** Never treat a signed sequence as account identity or proof of first honest play. Deliberate branch regression must continue demonstrating the protocol's limit; server-side monotonic authority is a later separately reviewed architecture decision.

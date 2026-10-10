@@ -1,9 +1,13 @@
 # Initial Baseball — Start Here
 
 Status: Active project handoff  
-Last updated: 2026-10-09
+Last updated: 2026-10-10
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
+
+## Current Custom Nine attempt-evidence checkpoint (October 10)
+
+After signed terminal receipts #366, the next bounded server-only verifier checks an entire nine-at-bat receipt/token envelope against the Custom-only signing domain and authoritative frozen initials, and derives the points-v4 completion through the existing engine. It has no HTTP route, writes or creator UI. A deliberate regression demonstrates the stateless game can generate two valid signed branches; do **not** equate successful evidence verification with honest first play. Follow-up must decide server-monotonic first-attempt state/eligibility and creator-marker exclusion before activating any private competitive result submission. Canonical contract: `docs/spec/api.md`.
 
 ## Resume protocol
 
