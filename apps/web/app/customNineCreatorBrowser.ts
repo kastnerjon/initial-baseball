@@ -35,8 +35,9 @@ export function createCustomNineCreatorBrowserMarker(secret: string) {
         .filter(part => part.slice(0, part.indexOf('=')) === name);
       if (matches.length === 0) return 'unmarked';
       // A future admission gate must reject both 'creator' AND 'invalid'.
-      if (matches.length !== 1) return 'invalid';
-      const observed = matches[0].slice(name.length + 1);
+      const match = matches[0];
+      if (matches.length !== 1 || match === undefined) return 'invalid';
+      const observed = match.slice(name.length + 1);
       if (!/^[A-Za-z0-9_-]{43}$/.test(observed)) return 'invalid';
       const expected = Buffer.from(signature(puzzleId), 'base64url');
       const actual = Buffer.from(observed, 'base64url');

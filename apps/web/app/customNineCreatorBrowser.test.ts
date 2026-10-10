@@ -12,8 +12,8 @@ describe('Custom Nine creating-browser marker', () => {
     expect(cookie).toContain('; HttpOnly; SameSite=Strict; Secure');
     expect(cookie).toContain('Max-Age=');
     expect(cookie).not.toContain('Domain=');
-    expect(marker.inspect(cookie.split(';')[0], ID)).toBe('creator');
-    expect(marker.inspect(cookie.split(';')[0], OTHER)).toBe('unmarked');
+    expect(marker.inspect(cookie.split(';')[0]!, ID)).toBe('creator');
+    expect(marker.inspect(cookie.split(';')[0]!, OTHER)).toBe('unmarked');
   });
 
   it('allows local HTTP testing without setting Secure', () => {
@@ -22,7 +22,7 @@ describe('Custom Nine creating-browser marker', () => {
   });
 
   it('distinguishes unmarked browsers from tampered and duplicated markers', () => {
-    const pair = marker.creatorCookie(ID, 'https://example.test').split(';')[0];
+    const pair = marker.creatorCookie(ID, 'https://example.test').split(';')[0]!;
     expect(marker.inspect(null, ID)).toBe('unmarked');
     expect(marker.inspect('', ID)).toBe('unmarked');
     expect(marker.inspect(pair.replace(/.$/, '.'), ID)).toBe('invalid');
@@ -31,7 +31,7 @@ describe('Custom Nine creating-browser marker', () => {
   });
 
   it('rejects cross-secret signatures and malformed challenge IDs', () => {
-    const pair = marker.creatorCookie(ID, 'https://example.test').split(';')[0];
+    const pair = marker.creatorCookie(ID, 'https://example.test').split(';')[0]!;
     const alien = createCustomNineCreatorBrowserMarker('different-long-enough-test-progression-secret');
     expect(alien.inspect(pair, ID)).toBe('invalid');
     expect(() => marker.creatorCookie('daily-2026-10-10', 'https://example.test')).toThrow();
