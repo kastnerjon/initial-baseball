@@ -5,6 +5,10 @@ Last updated: 2026-10-11
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
+## Scorecard layout adjustment (October 11)
+
+Points-v4 completed results are ordered: Summary, Your Nine, Top 10 (Daily only), Final Score Distribution, At-Bat Score Distribution. All five are independently collapsible and open by default. The AB axis shows the played lineup initials, and the final-score badge is rendered as HTML rather than stretched SVG text. The Custom Nine roadmap is unchanged.
+
 ## Daily and Archive score distribution charts — end-of-game UI (October 11)
 
 The Daily Nine/Archive points-v4 end-of-game result scorecard now uses the existing exact-puzzle comparison reads to render a compact completed-game score histogram and nine per-AB 100% stacked bars. Rendering derives valid buckets/ranges from the engine; the browser retains the returned completed histogram, and neither scoring nor persistence changes. Empty, malformed, loading, one-peer and sparse distributions are explicit; tap/keyboard inspection and own-score markers are provided. Details: `tasks/plans/daily-archive-score-distribution-charts.md`.

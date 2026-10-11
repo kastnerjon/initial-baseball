@@ -26,6 +26,26 @@ const shareResult: DailyShareResult = {
   url: 'https://example.test/',
 };
 
+describe('Completed scorecard section order', () => {
+  it('shows five default-open disclosures in the requested order, and lineup initials', () => {
+    const html = renderToStaticMarkup(<GameCompleteView
+      shareResult={{ ...shareResult, rulesetVersion: 'points-v4',
+        points: { points: 4, maximumPoints: 36, atBatsCompleted: 9, totalAtBats: 9, completed: true } }}
+      shareText={shareText}
+      comparison={{ status: 'loading', ownPoints: 4 }}
+      atBatPoints={{ 1: 4 }}
+      leaderboard={{ puzzle: { id: 'daily-146', puzzleDate: '2026-10-11', puzzleNumber: 146 },
+        completedAtBats: [], attemptId: null }}
+    />);
+    const labels = ['Summary', 'Your Nine', 'Top 10', 'Final Score Distribution', 'At-Bat Score Distribution'];
+    const positions = labels.map(label => html.indexOf('>' + label + '</span>'));
+    expect(positions.every(pos => pos >= 0)).toBe(true);
+    expect(positions).toEqual([...positions].sort((a, b) => a - b));
+    expect((html.match(/aria-expanded="true"/g) ?? []).length).toBe(5);
+    expect(html).toContain('At-bat 1: </span>JR');
+  });
+});
+
 describe('GameCompleteView comparison', () => {
   it('shows small daily number and exactly three stat cards without Game Complete', () => {
     const html = render({ status: 'loading', ownPoints: 41 });

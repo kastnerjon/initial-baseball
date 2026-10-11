@@ -6,12 +6,13 @@ import { submitCompletedDailyResultIfNeeded } from '../dailyCompletedResultClien
 import { readDailyNineLeaderboard, readOwnDailyNineLeaderboardRank, submitDailyNineLeaderboardName, type DailyNineLeaderboardView } from '../dailyNineLeaderboardClient';
 
 type Props = {
+  showHeading?: boolean;
   puzzle: Pick<DailyPublicPuzzle, 'id' | 'puzzleDate' | 'puzzleNumber'>;
 } & (
   | { viewOnly: true; completedAtBats?: never; attemptId?: never }
   | { viewOnly?: false; completedAtBats: DailyCompletedAtBat[]; attemptId: string | null }
 );
-export function DailyNineLeaderboard({ puzzle, ...submission }: Props): JSX.Element {
+export function DailyNineLeaderboard({ puzzle, showHeading = true, ...submission }: Props): JSX.Element {
   const attemptId = submission.viewOnly ? null : submission.attemptId;
   const [view, setView] = useState<DailyNineLeaderboardView | null>(null);
   const [loading, setLoading] = useState(true);
@@ -48,7 +49,7 @@ export function DailyNineLeaderboard({ puzzle, ...submission }: Props): JSX.Elem
       <div className="daily-nine-leaderboard-heading">
         <div>
           <p className="daily-nine-leaderboard-eyebrow">Daily #{puzzle.puzzleNumber}</p>
-          <h2>Today's Top 10</h2>
+          {showHeading ? <h2>Today's Top 10</h2> : null}
         </div>
         <span className="daily-nine-leaderboard-count">{view?.totalEntries ?? 0} named entries</span>
       </div>
