@@ -1,5 +1,6 @@
 import { isSameOriginDailyAdminMutation } from '../../../../../../dailyAdminRequestSecurity';
 import { readCustomNineJsonBody } from '../../../../../../customNineHintHttp';
+import { CustomNineHintRequestError } from '../../../../../../serverCustomNineHints';
 import { createServerCustomNineIncorrectGuessService } from '../../../../../../serverCustomNineIncorrectGuesses';
 import { createServerCustomNineTerminalResolutionService } from '../../../../../../serverCustomNineTerminalResolve';
 import type { DailyResolutionRequest } from '../../../../../../dailyRuntimeContracts';
@@ -54,7 +55,10 @@ export async function POST(request: Request, context: Context): Promise<Response
       }, { status: 200, headers: HEADERS });
     }
     return errorResponse(result.kind);
-  } catch {
+  } catch (error) {
+    if (error instanceof CustomNineHintRequestError) {
+      return Response.json({ error: 'invalid_progression' }, { status: 400, headers: HEADERS });
+    }
     return Response.json({ error: 'session_unavailable' }, { status: 503, headers: HEADERS });
   }
 }
