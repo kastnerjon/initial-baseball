@@ -1,9 +1,17 @@
 # Initial Baseball — Start Here
 
 Status: Active project handoff  
-Last updated: 2026-10-10
+Last updated: 2026-10-11
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
+
+## Custom Nine server-only completed-result admission — staged (October 11)
+
+PR #374 merged as `8c7aef816ad6ed2a102acb8132762534d654576a`, exact-head CI/READY Preview and exact-main push CI/READY production verified. The private atomic transaction was installed in Supabase under hosted migration version **`20261011153434`**, name `add_custom_nine_atomic_completed_admission` (repository file version `20261011152000`; do not rename or replay). `service_role` alone can execute it; existing Custom tables remain empty. See #374 release evidence.
+
+This bounded Web-owned stage adds only a **server-only** completed-result admission service and provider RPC adapter. It requires an existing signed attempt cookie, rejects verified creators and malformed/duplicate creator markers, loads the immutable challenge and one completed private nine-terminal-fact attempt, verifies its signed completed token, validates nine frozen initials and recomputes points-v4 summaries and per-AB awards with `packages/engine`. Only then does it invoke the already-installed atomic first-accepted transaction. An exact retry reports the same stored winner. There is **no new result POST, public competition or UI** in this PR.
+
+Cookie deletion, distinct devices and legacy stateless Custom hints/guesses remain limitations and never constitute a globally unique first play. Future opt-in HTTP admission and Custom-only distribution reads must be separately reviewed.
 
 ## Custom Nine admission boundary — atomic database stage (October 11)
 
