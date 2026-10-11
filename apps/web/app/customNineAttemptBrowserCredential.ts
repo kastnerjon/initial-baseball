@@ -56,6 +56,9 @@ export function createCustomNineAttemptBrowserCredential(secret: string) {
       // Reject noncanonical base64url forms, including padded/ambiguous encodings.
       if (Buffer.from(nonce, 'base64url').toString('base64url') !== nonce
         || Buffer.from(nonce, 'base64url').length !== 32) return { kind: 'invalid' };
+      if (Buffer.from(pair[2]!, 'base64url').toString('base64url') !== pair[2]) {
+        return { kind: 'invalid' };
+      }
       const expected = Buffer.from(signature(puzzleId, nonce), 'base64url');
       const actual = Buffer.from(pair[2]!, 'base64url');
       if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) {

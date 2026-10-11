@@ -33,7 +33,15 @@ describe('challenge-scoped browser attempt credential', () => {
     expect(codec.inspect(name + '=garbage', ID)).toEqual({ kind: 'invalid' });
     expect(codec.inspect(name!, ID)).toEqual({ kind: 'invalid' });
     expect(codec.inspect(name + '=' + value!.replace(/.$/, '!'), ID)).toEqual({ kind: 'invalid' });
-    expect(codec.inspect(name + '=' + value!.replace(/.$/, 'A'), ID)).toEqual({ kind: 'invalid' });
+    const modifiedSignature = value!.slice(0, 44)
+      + (value![44] === 'A' ? 'B' : 'A') + value!.slice(45);
+    expect(codec.inspect(name + '=' + modifiedSignature, ID)).toEqual({ kind: 'invalid' });
+    // A different last character with identical decoded HMAC bytes must still fail.
+    const alphabet = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+    const last = value!.slice(-1);
+    const n = alphabet.indexOf(last);
+    const noncanonical = value!.slice(0, -1) + alphabet[(n & ~3) | ((n + 1) & 3)];
+    expect(codec.inspect(name + '=' + noncanonical, ID)).toEqual({ kind: 'invalid' });
     expect(createCustomNineAttemptBrowserCredential('a-second-long-enough-cookie-signing-secret')
       .inspect(pair, ID)).toEqual({ kind: 'invalid' });
     const foreign = codec.issue(OTHER, url).setCookie.split(';')[0]!;
