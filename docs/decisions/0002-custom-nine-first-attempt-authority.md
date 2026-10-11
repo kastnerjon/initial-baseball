@@ -37,7 +37,7 @@ The table and revision column **enable but do not themselves enforce** applicati
 ## Sequenced implementation
 
 1. **This PR:** private attempt-ledger schema, constraints, RLS and grants. No runtime adapter/routes/data inserts.
-2. Next: provider adapter offering first-insert-wins and conditional compare-and-swap with precise conflict handling, tested with concurrent stale operations.
+2. **Staged adapter PR:** Private web provider implements first-insert-wins, strict persisted-row decoding and conditional compare-and-swap on challenge/browser/attempt/revision/signed-current-token/active status, with concurrent stale-operation regression tests. No routes or hosted attempt inserts.
 3. Next: challenge-specific credential issuance/resumption on eligible bootstrap, with creator-cookie checks and signed attempt claims as necessary.
 4. Next: stateful Custom hint/guess/Give Up progression that atomically commits every scored action and rejects stale/replayed branches, preserving spoiler-safe active-batter reads.
 5. Next: exact-challenge completion and result submission in a transaction preserving first eligible attempt; creator/noncreator check, engine verification, idempotent atomic inserts and comparison isolation.

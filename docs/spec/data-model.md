@@ -55,6 +55,12 @@ Custom Nine's current stateless signed terminal receipts and nine-at-bat verifie
 
 RLS is enabled with no anon/authenticated grants or policies. The service role may SELECT, INSERT and UPDATE this **operational state** only; there is no delete or browser write. Later adapters MUST atomically update conditional on expected revision **and** current token, reject stale/replayed branches, and exclude creating browsers before competitive contribution. Neither the schema alone nor the #367 verifier enforces these runtime checks. Completed results and AB results remain separate first-write-wins populations and have no new public grants. There is no game/admin route using this table yet and no production records should be created in this schema stage. Anonymous cookie deletion and cross-device behavior cannot be prevented.
 
+### Private Custom Nine attempt repository (staged)
+
+`apps/web/app/supabaseCustomNineAttemptRepository.ts` provides only server-side `getByKey`, `getOrCreate`, and `advance` operations on `custom_nine_attempt_states`. A strict row codec enforces challenge-specific credential digests, server UUID format, safe monotonically increasing revisions, signed-token text bounds, ordered engine-consistent terminal facts and nine-batter completion. `getOrCreate` uses INSERT then winner SELECT on the composite PK conflict; `advance` uses one UPDATE filtered by exact challenge/digest/attempt UUID, expected revision, expected current token, and active status. No returned row means **conflict**, never success. A returned row is validated against the intended new revision/token/facts; errors are sanitized. No DELETE, upsert or blind overwrite is used.
+
+This code is **not connected to any HTTP route** and does not sign or cryptographically verify progression tokens; a later trusted server gameplay boundary must verify identity, creator marker, HMACs, scoring facts and immutable issued puzzle before calling the adapter. No schema changes or hosted writes occur at this stage. The hosted ledger migration is `20261010235238` even though source is `20261010235500`; preserve/reconcile both identifiers.
+
 ## Repository and security
 
 `apps/web/app/supabaseDailyPuzzleRepository.ts` implements the provider-neutral editorial puzzle port.
