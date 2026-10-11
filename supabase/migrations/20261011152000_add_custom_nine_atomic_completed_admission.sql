@@ -53,12 +53,25 @@ begin
   end if;
 
   select sum(points) into v_points_sum from unnest(p_awarded_points) as score(points);
+  -- Match the exact six-field points-v4 summary decoder contract; JSON
+  -- strings like "true"/"9" must never pass as booleans/numeric counts.
   if jsonb_typeof(p_summary) is distinct from 'object'
     or jsonb_typeof(p_summary -> 'points') is distinct from 'number'
-    or p_summary ->> 'completed' is distinct from 'true'
-    or p_summary ->> 'atBatsCompleted' is distinct from '9'
-    or p_summary ->> 'totalAtBats' is distinct from '9'
-    or (p_summary ->> 'points')::numeric is distinct from v_points_sum then
+    or jsonb_typeof(p_summary -> 'maximumPoints') is distinct from 'number'
+    or jsonb_typeof(p_summary -> 'atBatsCompleted') is distinct from 'number'
+    or jsonb_typeof(p_summary -> 'totalAtBats') is distinct from 'number'
+    or jsonb_typeof(p_summary -> 'completed') is distinct from 'boolean'
+    or jsonb_typeof(p_summary -> 'strikeouts') is distinct from 'number'
+    or p_summary -> 'completed' is distinct from 'true'::jsonb
+    or (p_summary ->> 'maximumPoints')::numeric is distinct from 36
+    or (p_summary ->> 'atBatsCompleted')::numeric is distinct from 9
+    or (p_summary ->> 'totalAtBats')::numeric is distinct from 9
+    or (p_summary ->> 'points')::numeric is distinct from v_points_sum
+    or (p_summary ->> 'strikeouts')::numeric is distinct from (
+      select count(*)::numeric
+      from jsonb_array_elements(v_attempt.terminal_at_bats) as fact(value)
+      where fact.value ->> 'outcome' = 'K'
+    ) then
     raise exception 'Invalid Custom Nine scored summary.' using errcode = '22023';
   end if;
 
