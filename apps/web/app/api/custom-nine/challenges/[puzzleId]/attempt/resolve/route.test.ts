@@ -6,6 +6,7 @@ vi.mock('../../../../../../serverCustomNineIncorrectGuesses', () => ({
 vi.mock('../../../../../../serverCustomNineTerminalResolve', () => ({
   createServerCustomNineTerminalResolutionService: vi.fn(),
 }));
+import { CustomNineHintRequestError } from '../../../../../../serverCustomNineHints';
 import { createServerCustomNineIncorrectGuessService } from '../../../../../../serverCustomNineIncorrectGuesses';
 import { createServerCustomNineTerminalResolutionService } from '../../../../../../serverCustomNineTerminalResolve';
 import { POST } from './route';
@@ -77,10 +78,28 @@ describe('single Custom Nine guess/Give Up attempt endpoint', () => {
     expect(wrong).not.toHaveBeenCalled();
     expect(terminal).not.toHaveBeenCalled();
   });
+  it('returns a sanitized 400 for unresolved submitted player IDs on either resolver path', async () => {
+    wrong.mockRejectedValueOnce(new CustomNineHintRequestError('PRIVATE_BAD_ID'));
+    const invalidBeforeTerminal = await send({ progressionToken: 'old', submittedPlayerId: 'unresolvable' });
+    expect(invalidBeforeTerminal.status).toBe(400);
+    expect(await invalidBeforeTerminal.text()).toBe('{"error":"invalid_progression"}');
+    expect(terminal).not.toHaveBeenCalled();
+
+    wrong.mockResolvedValueOnce({ kind: 'terminal_pending' });
+    terminal.mockRejectedValueOnce(new CustomNineHintRequestError('PRIVATE_BAD_ID'));
+    const invalidTerminal = await send({ progressionToken: 'old', submittedPlayerId: 'unresolvable' });
+    expect(invalidTerminal.status).toBe(400);
+    expect(await invalidTerminal.text()).toBe('{"error":"invalid_progression"}');
+  });
   it('sanitizes storage or engine failures without leaking answer', async () => {
     wrong.mockRejectedValueOnce(new Error('SECRET_SERVER_PLAYER'));
     const r = await send({ progressionToken: 'old', submittedPlayerId: 'x' });
     expect(r.status).toBe(503);
     expect(await r.text()).toBe('{"error":"session_unavailable"}');
+    wrong.mockResolvedValueOnce({ kind: 'terminal_pending' });
+    terminal.mockRejectedValueOnce(new Error('PRIVATE_PROVIDER_FAILURE'));
+    const afterDispatch = await send({ progressionToken: 'old', submittedPlayerId: 'x' });
+    expect(afterDispatch.status).toBe(503);
+    expect(await afterDispatch.text()).toBe('{"error":"session_unavailable"}');
   });
 });
