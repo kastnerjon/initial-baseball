@@ -174,3 +174,12 @@ The selection and pure issued-record contracts alone are **not** a playable or s
 **Out:** Existing stateless GET bootstrap/hint/resolve routes, browser UI, competitive submissions, migrations, score logic, public challenge creation, Universal/Archive.
 **Acceptance:** No Set-Cookie before persisted insert, for creator, unknown IDs, invalid cookie or provider error; no client-supplied attempt IDs/tokens/answer data; resume never restarts saved state; CI/review/READY Preview/postmerge verification; zero hosted rows without issued challenges.
 **Stop:** Stateless Custom endpoints remain inspectable/replayable and cannot contribute competitively. Browser reset/new device defeats anonymous identity. Stateful actions are separately scoped.
+
+## Bounded scope — Custom Nine stateful hint reveals
+
+**Goal:** Make scored hint reveals a server-validated, once-per-current-token atomic transition on the private Custom attempt ledger, and stop sending future hints/checkpoints in the opt-in reserved attempt bootstrap.
+**Owner:** `apps/web` Custom attempt stateful HTTP/service composition.
+**In:** Reuse the challenge-scoped signed cookie and creator exclusion across attempt routes; verify Custom-only HMAC token, exact challenge/date/points-v4/noncompleted identity and signed one-reveal successor; require request-presented prior token to equal persisted active token; use #369's single revision/token CAS; return only one newly revealed hint and successor on success, 409 without a hint for stale/losing branches, 403 for missing/invalid/creator cookies, 400 for invalid token, 503 for sanitized service/storage faults. Project reserved attempt bootstrap to authorized hints only and no precalculated reveal checkpoints. Focused race/forgery/retry/redaction tests; docs.
+**Out:** Existing stateless Custom GET/bootstrap/hint/hints/resolve routes, player UI, guess/Give Up/terminal transitions, result writes/admission/comparison, Supabase schema, Universal/Classic/Archive.
+**Acceptance:** Strict cookie/path and token identity, stale/replay/concurrent one-winner semantics, no uncommitted hint disclosed, no pre-signed hint-depth alternatives on opt-in bootstrap, CI/review/READY Preview/postmerge read-only production checks.
+**Stop:** This is not cheating-proof due to still-accessible stateless Custom routes and anonymous device/cookie workarounds. No result contribution without later stateful guess/terminal and explicit admission policy.

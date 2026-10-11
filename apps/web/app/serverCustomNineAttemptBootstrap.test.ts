@@ -64,6 +64,27 @@ describe('staged Custom Nine challenge-specific attempt bootstrap', () => {
     expect(deps.restore).not.toHaveBeenCalled();
   });
 
+  it('hides unrevealed hint values and pre-signed checkpoints on the reserved attempt path', async () => {
+    const { service, deps } = setup();
+    const hintBundle = {
+      pitchNumber: 1, revealedCount: 0 as const,
+      hints: [
+        { slot: 1, hintType: 'teams', hintLabel: 'Teams', hintValue: 'FIRST_PRIVATE_HINT' },
+        { slot: 2, hintType: 'position', hintLabel: 'Position', hintValue: 'SECOND_PRIVATE_HINT' },
+      ],
+      checkpoints: [{ revealedCount: 1, progressionToken: 'pre-signed-first-reveal' }],
+    } as unknown as CustomNineBootstrapResponse['hintBundle'];
+    deps.bootstrap.mockResolvedValueOnce({ ...BASE, hintBundle });
+    const reserved = await service.bootstrap(ID, null, URL);
+    expect(reserved.kind).toBe('ready');
+    if (reserved.kind !== 'ready') throw Error('Missing reserved session');
+    expect(reserved.bootstrap.hintBundle).toMatchObject({
+      revealedCount: 0, hints: [], checkpoints: [],
+    });
+    expect(JSON.stringify(reserved)).not.toContain('PRIVATE_HINT');
+    expect(JSON.stringify(reserved)).not.toContain('pre-signed-first-reveal');
+  });
+
   it('resumes existing challenge state with the original token, no new cookie or insert', async () => {
     const { service, repo, byKey, deps } = setup();
     const first = await service.bootstrap(ID, null, URL);
