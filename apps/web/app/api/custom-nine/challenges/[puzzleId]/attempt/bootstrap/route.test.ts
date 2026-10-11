@@ -63,6 +63,24 @@ describe('Custom Nine opt-in attempt POST', () => {
     },
   );
 
+  it('accepts a truly empty POST stream but rejects streamed nonempty payloads', async () => {
+    const empty = new ReadableStream<Uint8Array>({
+      start(controller) { controller.close(); },
+    });
+    const options = { body: empty, duplex: 'half' } as unknown as RequestInit;
+    const response = await send(options);
+    expect(response.status).toBe(200);
+    const unexpected = new ReadableStream<Uint8Array>({
+      start(controller) {
+        controller.enqueue(new TextEncoder().encode('{}'));
+        controller.close();
+      },
+    });
+    const rejected = await send({ body: unexpected, duplex: 'half' } as unknown as RequestInit);
+    expect(rejected.status).toBe(400);
+    expect(bootstrap).toHaveBeenCalledTimes(1);
+  });
+
   it('rejects cross-origin requests and request bodies before service', async () => {
     expect((await send({ headers: { origin: 'https://attacker.test' } })).status).toBe(403);
     expect((await send({ body: JSON.stringify({ attemptId: 'chosen' }) })).status).toBe(400);
