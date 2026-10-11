@@ -63,6 +63,8 @@ export function decodeCustomNineAttemptRow(raw: unknown): CustomNineAttemptState
     || raw.revision < 0) throw invalid();
   requireCustomNineProgressionToken(raw.current_progression_token);
   const facts = normalizeCustomNineAttemptFacts(raw.terminal_at_bats);
+  const completedAt = raw.completed_at;
+  if (completedAt !== null && !timestamp(completedAt)) throw invalid();
   if (raw.revision < facts.length
     || (raw.status !== 'active' && raw.status !== 'completed')
     || (raw.status === 'active' && (facts.length === 9 || raw.completed_at !== null))
@@ -72,7 +74,7 @@ export function decodeCustomNineAttemptRow(raw: unknown): CustomNineAttemptState
     challengeId, browserKeyDigest: digest, attemptId: raw.attempt_id,
     revision: raw.revision, currentProgressionToken: raw.current_progression_token,
     terminalAtBats: facts, status: raw.status,
-    createdAt: raw.created_at, updatedAt: raw.updated_at, completedAt: raw.completed_at,
+    createdAt: raw.created_at, updatedAt: raw.updated_at, completedAt,
   };
 }
 
