@@ -1,5 +1,16 @@
 # Daily Nine — Custom Lineup MVP
 
+## Current bounded scope — admin-only Custom Nine creator workbench (October 11)
+
+**Goal:** Provide an administrator-authenticated UI to select nine ordered canonical players and issue an immutable challenge without opening anonymous creation.
+**Owning layer:** apps/web admin presentation only, using existing player search and private creation API.
+**In scope:** Authenticated admin page and navigation, nine slots, distinct canonical search selections, reorder/remove, exact-nine validation, accessible loading/error/issuance states, mobile layout, opaque issued ID/copy, focused tests and docs.
+**Out of scope:** Anonymous creator, new API, new data/scoring, hint/answer leaks, playable link before player UI, competitive activation, abuse architecture, database migration, Daily/Archive changes.
+**Acceptance:** Server renders only after admin authentication; browser sends selected canonical IDs only to existing admin-only endpoint, not credentials or answers; duplicate/incomplete lineup disabled; issued ID safe/copyable; focused tests, CI/READY Preview, bounded Codex review, release checks.
+**Stop:** Do not bypass existing admin authorization. Public creation requires its own approved rate/abuse model.
+
+Next: Custom Nine player-facing game route, then scorecard/comparison UI and integrity/activation work.
+
 ## Current bounded scope — default-disabled Custom Nine comparison-read HTTP (October 11)
 
 **Goal:** Stage only a safe, unactivated browser read of admitted exact-challenge private Custom Nine comparison statistics.

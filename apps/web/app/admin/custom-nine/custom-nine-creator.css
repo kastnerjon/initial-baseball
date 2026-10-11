@@ -1,0 +1,38 @@
+.custom-nine-creator { max-width: 820px; margin: 0 auto; padding: 24px 16px 70px; display: grid; gap: 24px; min-width: 0; }
+.custom-nine-creator h1 { margin: 8px 0; font: 700 clamp(28px, 5vw, 40px)/1.15 var(--display-font); color: var(--clubhouse-deep); }
+.custom-nine-creator p { line-height: 1.55; color: var(--ink-soft); }
+.custom-nine-creator a { color: var(--clubhouse-deep); text-decoration: underline; }
+.custom-nine-creator-card { border: 1px solid var(--line); border-radius: 12px; background: var(--paper-light); padding: 22px; display: grid; gap: 18px; min-width: 0; }
+.custom-nine-creator-heading { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 12px; }
+.custom-nine-creator-heading h2 { margin: 0; font: 700 25px/1.2 var(--display-font); color: var(--clubhouse-deep); }
+.custom-nine-creator-heading span { color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+.custom-nine-creator-players { display: grid; gap: 0; list-style: none; padding: 0; margin: 0; }
+.custom-nine-creator-players li { display: grid; grid-template-columns: 30px minmax(0,1fr) auto; align-items: center; gap: 10px; min-height: 56px; padding: 7px 0; border-bottom: 1px solid var(--line-soft); min-width: 0; }
+.custom-nine-slot-number { font-weight: 700; color: var(--clubhouse-deep); font-variant-numeric: tabular-nums; }
+.custom-nine-slot-empty { color: var(--ink-soft); font-size: 13px; }
+.custom-nine-player-name { min-width: 0; overflow-wrap: anywhere; font-size: 14px; }
+.custom-nine-slot-actions { display: flex; gap: 4px; align-items: center; }
+.custom-nine-slot-actions button { padding: 0 9px; min-height: 40px; min-width: 36px; border: 1px solid var(--line); border-radius: 5px; background: transparent; color: var(--clubhouse-deep); cursor: pointer; }
+.custom-nine-slot-actions button:disabled { opacity: .35; cursor: not-allowed; }
+.custom-nine-search { display: grid; gap: 10px; }
+.custom-nine-search label { font-weight: 700; font-size: 14px; }
+.custom-nine-search input { width: 100%; min-width: 0; padding: 12px; border: 1px solid var(--line); border-radius: 6px; background: white; font: inherit; }
+.custom-nine-search ul { margin: 0; padding: 0; list-style: none; display: grid; gap: 5px; }
+.custom-nine-search li button { width: 100%; min-height: 44px; border: 1px solid var(--line-soft); border-radius: 5px; background: white; color: var(--ink); padding: 10px 12px; display: flex; justify-content: space-between; gap: 10px; text-align: left; cursor: pointer; }
+.custom-nine-search li button:disabled { opacity: .5; cursor: not-allowed; }
+.custom-nine-create-action { display: grid; gap: 9px; }
+.custom-nine-create-action > button { min-height: 46px; border-radius: 6px; border: 0; padding: 10px 16px; background: var(--clubhouse-deep); color: white; font-weight: 700; cursor: pointer; }
+.custom-nine-create-action > button:disabled { opacity: .45; cursor: not-allowed; }
+.custom-nine-create-action p { margin: 0; font-size: 12px; }
+.custom-nine-create-action [role="alert"] { color: var(--score-red); }
+.custom-nine-created { display: grid; gap: 12px; background: #eaf1ec; padding: 16px; border-radius: 8px; min-width: 0; }
+.custom-nine-created code { display: block; overflow-wrap: anywhere; font-size: 12px; }
+.custom-nine-created button { justify-self: start; min-height: 44px; padding: 9px 14px; border-radius: 6px; border: 1px solid var(--clubhouse-deep); color: var(--clubhouse-deep); background: transparent; cursor: pointer; }
+.custom-nine-creator button:focus-visible, .custom-nine-creator input:focus-visible { outline: 2px solid var(--clubhouse); outline-offset: 2px; }
+@media (max-width: 540px) {
+  .custom-nine-creator { padding: 16px 12px 52px; }
+  .custom-nine-creator-card { padding: 15px 12px; }
+  .custom-nine-creator-players li { grid-template-columns: 22px minmax(0,1fr); gap: 8px; }
+  .custom-nine-slot-actions { grid-column: 2; margin-top: -2px; }
+  .custom-nine-slot-actions button { min-width: 44px; }
+}

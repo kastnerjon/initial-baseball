@@ -5,6 +5,12 @@ Last updated: 2026-10-11
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
+## Custom Nine creator workbench — staged admin-only UI (October 11)
+
+The admin-only /admin/custom-nine view reuses the existing authorized Daily admin gate and private Custom Nine creation API. The workbench searches canonical player results, selects up to nine distinct IDs in batting order, moves/removes slots, and issues a frozen nine-player challenge; the response displays/copies only its opaque ID. Creating-browser provenance remains secured in the existing private API cookie. This is intentionally NOT anonymous public creation and cannot promise a playable link before the player-facing route exists.
+
+Next bounded stage: Build the actual Custom Nine player-facing challenge route and game view using immutable read/bootstrap and stateful attempt transport. Preserve hidden answers and disabled competitive flags; public creation/activation require a separate approved abuse/integrity plan.
+
 ## Custom Nine comparison HTTP transport — staged, default-disabled (October 11)
 
 The Web-only `GET /api/custom-nine/challenges/{puzzleId}/attempt/comparison` route projects only a versioned nine-AB and completed-score cohort (counts, averages and histograms). Both server-only flags `CUSTOM_NINE_COMPARISON_READ_ENABLED` and `CUSTOM_NINE_RESULT_SUBMISSION_ENABLED` must be exactly `true`; otherwise it returns 404 before the comparison service is invoked. Neither flag is enabled in this PR. Requests cannot select an exclusion or supply score/puzzle metadata. Only signed noncreator challenge-cookie attempts whose ledger is complete **and** whose server-issued UUID has a matching admitted points-v4 result may read the private cohort. Responses are sanitized, no-store, cookie-varying and contain no raw identity, tokens, clues, outcomes or player IDs. Existing Daily and Archive comparison flows do not change.

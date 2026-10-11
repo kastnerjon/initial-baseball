@@ -54,6 +54,7 @@ export function DailyAdministrationView({
           <h1 style={{ marginBottom: 8 }}>Daily lineup administration</h1>
           <p style={{ margin: 0 }}>Review, edit, approve, publish, and archive Daily lineups through the portable editorial lifecycle.</p>
           <p><a href="/admin/daily/attempts" style={textLinkStyle}>Attempt scores · AB 1–9</a></p>
+          <p><a href="/admin/custom-nine" style={textLinkStyle}>Create a Custom Nine</a></p>
         </div>
         <form action="/admin/daily/generate" method="post">
           <button type="submit" style={buttonStyle}>Generate missing drafts</button>

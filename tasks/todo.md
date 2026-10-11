@@ -8,6 +8,10 @@ Last updated: 2026-10-11
 
 - [x] Completed points-v4 results now show Summary, Your Nine, Top 10 (Daily only), Final Score Distribution, then At-Bat Score Distribution. All panels start open and collapse independently; stacked-bar labels show initials and the histogram own-score badge no longer stretches on phones. Custom Nine remains the next bounded stage.
 
+## Custom Nine admin creator UI (October 11)
+
+- [x] Stage authorized Custom Nine creation workbench: search canonical players, choose nine distinct ordered players, move/remove, issue with existing private API and copy opaque ID. No public creation, playable-link promise, competition activation or data changes. Next: player-facing route and stateful gameplay.
+
 ## Custom Nine competitive comparison transport (October 11)
 
 - [x] Stage the guarded, default-disabled Custom comparison GET over exact accepted points-v4 private results and verified completed attempt cookie. It requires two explicit enable flags, accepts no comparison query inputs, and does not enable public competition. Next: scoped creator/player browser UX, then explicit integrity/abuse review and activation decision.
