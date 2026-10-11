@@ -3,6 +3,15 @@
 Status: #347, #348 and #349 all merged and verified in production. #349 applied in Supabase as migration 20261009033237 (hosted tool assigned a different version from published repo migration `20261009032000`; do not rename the source migration or replay it; reconcile ledger explicitly per environment before CLI pushes). PR #351 merged and release-verified the server-only Supabase repository adapter and strict row codec. PR #352 adds only Custom Nine canonical-player validation and four-hint snapshot materialization. Admin-protected creation API #358 is merged and release-verified. This checkpoint adds only a redacted public read; signed gameplay remains unimplemented.  
 Decision date: 2026-10-08
 
+## Current bounded scope — atomic completed-attempt admission database primitive
+
+**Goal:** Make one eligible, completed private Custom Nine attempt persist at most one immutable completed result and nine at-bat observations, with a single all-or-nothing transaction and deterministic retry behavior.
+**Owner:** Supabase SQL migration and service-role-only RPC, not an HTTP route.
+**In scope:** `admit_custom_nine_completed_attempt(challenge_id, browser_key_digest, engine_summary, nine_engine_awards)`; row-lock the challenge/browser attempt; require completed status with nine ordered stored facts; derive submission ID from the server-issued attempt UUID; validate bounded half-point scores/summary; insert one completion and nine observations transactionally; accept exact retry, fail on conflicting/missing/partial prior results; deny anonymous/authenticated RPC execution; canonical docs.
+**Out of scope:** Cookie/creator authorization, HMAC verification in SQL, loading/scoring the challenge, result HTTP submission, comparison reads, UI, Universal/Archive, historic stateless receipt admission or new tables.
+**Acceptance:** SQL reviewed for row lock, single transaction, unique ID, retry conflict, rollback and privilege boundaries; exact-head CI and READY Vercel Preview; bounded Codex review; hosted migration and read-only function/grants/table verification only *after merge*. No synthetic competitive writes.
+**Stop conditions:** The function is **not** a participation grant: only the subsequent Web-owned server caller may check signed creator/attempt cookie eligibility and recompute `points-v4` scores from the private completed attempt and frozen challenge. A missing creator marker or a different browser is not globally trustworthy; any plan to publish this SQL function to browser roles or admit legacy stateless play is out of scope.
+
 ## Product contract
 
 - **Daily Nine — Universal Lineup** stays the existing common editorial Daily. The approved **Daily Nine — Specific Lineup** mode (team/era/difficulty, one lineup per configuration per day) is paused. **Custom Lineup** is the next priority; head-to-head follows later with its own Classic rules engine.
