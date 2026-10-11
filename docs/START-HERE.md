@@ -1,7 +1,7 @@
 # Initial Baseball — Start Here
 
 Status: Active project handoff  
-Last updated: 2026-10-10
+Last updated: 2026-10-11
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
@@ -9,9 +9,9 @@ Use this file to resume work. It records verified current state, settled future 
 
 PR #373 merged as `5141c7e7fc31decc3093f5457a48d2316a783d5a`, exact-head CI/READY Preview and postmerge push CI/READY production verified; its sole Codex P2 invalid-player-ID HTTP mapping was fixed with tests. Correct guesses, third strikes, Give Up and first/second wrong guesses now commit via the private attempt ledger, but **no competitive Custom result route is enabled**.
 
-This bounded follow-up stages a **service-role-only database function**, `admit_custom_nine_completed_attempt`, not an application caller. It locks an existing completed nine-terminal-fact attempt by challenge/browser digest, derives the sole contribution ID from the server-generated attempt UUID, and inserts one completion plus nine scored observations in a single transaction. An exact retry returns the existing winner; a mismatch or incomplete attempt fails closed. The only caller authorized in a later PR must validate the challenge/cookie/creator provenance and compute points-v4 summary and nine awards from the immutable server-stored facts using the engine. Old stateless tokens, cookie resets and other devices remain unable to prove a globally honest first play; creators are excluded only when the future caller checks the server-signed browser marker.
+PR #374 merged as `8c7aef816ad6ed2a102acb8132762534d654576a` and was exact-head CI/READY Preview, main push CI/READY production, scoped-review and canonical-route verified. Its private **service-role-only database function**, `admit_custom_nine_completed_attempt`, has been deployed and validated; it is not an application caller. It locks an existing completed nine-terminal-fact attempt by challenge/browser digest, derives the sole contribution ID from the server-generated attempt UUID, and inserts one completion plus nine scored observations in a single transaction. An exact retry returns the existing winner; a mismatch or incomplete attempt fails closed. The only caller authorized in a later PR must validate the challenge/cookie/creator provenance and compute points-v4 summary and nine awards from the immutable server-stored facts using the engine. Old stateless tokens, cookie resets and other devices remain unable to prove a globally honest first play; creators are excluded only when the future caller checks the server-signed browser marker.
 
-The Custom result tables remain unused until that service is separately reviewed; subsequent bounded work adds the server admission adapter, then an opt-in HTTP route and comparisons/UI. See `docs/decisions/0002-custom-nine-first-attempt-authority.md` and `tasks/plans/custom-nine-mvp.md`.
+**Hosted migration:** `add_custom_nine_atomic_completed_admission` applied under Supabase version `20261011153434`; the committed source migration is `20261011152000_add_custom_nine_atomic_completed_admission.sql` (do not rename or replay; reconcile the environment migration ledger before pushes). Function is `SECURITY INVOKER`, grants EXECUTE to `service_role` only (not `anon` or `authenticated`), and preserves isolated RLS tables. Read-only hosted inspection confirmed zero Custom challenges, attempts, completed results and at-bat results; no synthetic test writes. The Custom result tables remain unused until the separately reviewed Web admission caller. **Next bounded work:** Web-owned server-only creator/attempt-cookie eligibility and points-v4 engine score derivation from the completed private ledger and frozen challenge, calling the existing atomic RPC; only later enable opt-in HTTP submission and comparisons/UI. See `docs/decisions/0002-custom-nine-first-attempt-authority.md` and `tasks/plans/custom-nine-mvp.md`.
 
 ## Current Custom Nine attempt-evidence checkpoint (October 10)
 
