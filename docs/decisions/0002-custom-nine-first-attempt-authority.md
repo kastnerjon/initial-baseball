@@ -51,3 +51,7 @@ The table and revision column **enable but do not themselves enforce** applicati
 - **Client-chosen submission ID or only an INSERT-ON-CONFLICT result row:** Allows another ID for the same browser/challenge and cannot distinguish a reconstructed score.
 - **Global browser fingerprint or permanent cross-challenge identity:** Unnecessary tracking, weak spoof resistance, and privacy cost.
 - **Moving Universal Daily/Archive to per-action persistence:** Out of scope and incompatible with their accepted noncompetitive latency model.
+
+## Post-hint stage — server-only incorrect guess CAS
+
+The Web-only partial guess adapter checks signed Custom active predecessor and frozen challenge, creator/attempt cookie eligibility, and uses the engine-backed Custom resolver to commit only first/second **incorrect** strikes under atomic attempt revision/current-token CAS. It does not introduce an incorrect-only public route because that would be an answer oracle; terminal correct, third-strike and Give Up are reserved for full stateful terminal service. No scoring/result admission is active, and historical stateless Custom sessions remain noncompetitive.
