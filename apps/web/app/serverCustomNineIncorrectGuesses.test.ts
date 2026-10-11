@@ -94,6 +94,18 @@ describe('private Custom Nine nonterminal incorrect-guess persistence', () => {
     expect(JSON.stringify(second)).not.toContain('canonicalPlayerId');
   });
 
+  it('passes the same injected environment to the resolver and Supabase composition', async () => {
+    const environment = { CUSTOM_NINE_TEST_ENV: 'explicit-config', DAILY_PROGRESSION_SECRET: SECRET };
+    const s = setup();
+    const deps = s.dependencies;
+    const scoped = createServerCustomNineIncorrectGuessService({ environment, dependencies: deps });
+    expect((await scoped.attempt(ID, COOKIE, guess(INITIAL))).kind).toBe('incorrect');
+    expect(deps.challengeExists).toHaveBeenCalledWith(ID, environment);
+    expect(deps.repository).toHaveBeenCalledWith(environment);
+    expect(deps.getSecret).toHaveBeenCalledWith(environment);
+    expect(deps.resolve).toHaveBeenCalledWith(ID, guess(INITIAL), environment);
+  });
+
   it('allows exactly one competing write at the same signed predecessor', async () => {
     const s = setup();
     const results = await Promise.all([

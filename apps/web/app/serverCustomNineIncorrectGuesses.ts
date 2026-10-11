@@ -16,7 +16,8 @@ type Resolver = ReturnType<typeof createServerCustomNineHintService>['resolveAtB
 type Dependencies = {
   challengeExists: (id: string, env: Record<string, string | undefined>) => Promise<boolean>;
   repository: (env: Record<string, string | undefined>) => AttemptRepository;
-  resolve: Resolver;
+  resolve: (id: Parameters<Resolver>[0], request: Parameters<Resolver>[1],
+    env: Record<string, string | undefined>) => ReturnType<Resolver>;
   getSecret: (env: Record<string, string | undefined>) => string;
 };
 const DEFAULT_DEPENDENCIES: Dependencies = {
@@ -27,7 +28,7 @@ const DEFAULT_DEPENDENCIES: Dependencies = {
     ).getById(id) !== null;
   },
   repository: env => createSupabaseCustomNineAttemptRepository(createServerSupabaseClient(env)),
-  resolve: (id, request) => createServerCustomNineHintService().resolveAtBat(id, request),
+  resolve: (id, request, env) => createServerCustomNineHintService({ environment: env }).resolveAtBat(id, request),
   getSecret: getDailyProgressionSecret,
 };
 
@@ -103,7 +104,7 @@ export function createServerCustomNineIncorrectGuessService({
 
       const result = await dependencies.resolve(puzzleId, {
         progressionToken: token, submittedPlayerId: request.submittedPlayerId,
-      });
+      }, environment);
       if (result === null) return { kind: 'not_found' };
       if (result.result.kind !== 'incorrect') return { kind: 'terminal_pending' };
       // No terminal receipt/answer reveal may be included in a nonterminal action.
