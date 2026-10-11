@@ -97,19 +97,19 @@ export function createServerCustomNineAttemptBootstrap({
  * protocol. The legacy stateless Custom bootstrap intentionally retains its
  * prior bundle semantics and is NOT admissible as competitive evidence.
  */
-export function projectCustomNineAttemptBootstrap(
-  result: CustomNineBootstrapResponse,
-): CustomNineBootstrapResponse {
-  const bundle = result.hintBundle;
+export function projectCustomNineAttemptHintBundle(bundle: CustomNineBootstrapResponse['hintBundle']) {
   if (!Number.isInteger(bundle.revealedCount) || bundle.revealedCount < 0 || bundle.revealedCount > 4) {
     throw new Error('Invalid Custom Nine authorized hint depth.');
   }
   return {
-    ...result,
-    hintBundle: {
-      ...bundle,
-      hints: bundle.hints.filter(hint => hint.slot <= bundle.revealedCount),
-      checkpoints: [],
-    },
+    ...bundle,
+    hints: bundle.hints.filter(hint => hint.slot <= bundle.revealedCount),
+    checkpoints: [],
   };
+}
+
+export function projectCustomNineAttemptBootstrap(
+  result: CustomNineBootstrapResponse,
+): CustomNineBootstrapResponse {
+  return { ...result, hintBundle: projectCustomNineAttemptHintBundle(result.hintBundle) };
 }
