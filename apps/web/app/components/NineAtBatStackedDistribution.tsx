@@ -11,6 +11,14 @@ export function NineAtBatStackedDistribution({ points, comparisons }: {
   const [selected, setSelected] = useState<{ pitch: number; score: number } | null>(null);
   const chosen = columns.find(column => column.pitch === selected?.pitch);
   const detail = chosen?.segments.find(segment => segment.score === selected?.score);
+  const pendingGroups = ([
+    { status: 'loading', label: 'Loading' },
+    { status: 'empty', label: 'No peers' },
+    { status: 'unavailable', label: 'Unavailable' },
+  ] as const).map(group => ({
+    label: group.label,
+    pitches: columns.filter(column => column.status === group.status).map(column => 'AB' + column.pitch),
+  })).filter(group => group.pitches.length > 0);
   return (
     <section className="score-distribution-panel" aria-label="At-bat score distribution">
       <h2>At-Bat Score Distribution</h2>
@@ -28,7 +36,7 @@ export function NineAtBatStackedDistribution({ points, comparisons }: {
         <div className="score-ab-columns">
           {columns.map(column => (
             <div className="score-ab-column" key={column.pitch}>
-              <div className="score-ab-track">
+              <div className="score-ab-track" aria-label={'At-bat ' + column.pitch + ': ' + (column.status === 'empty' ? 'No other results yet' : column.status === 'loading' ? 'Loading comparison' : column.status === 'unavailable' ? 'Comparison unavailable' : 'Ready')}>
                 {column.status === 'ready' ? (
                   <>
                     <div className="score-ab-segments">
@@ -49,13 +57,18 @@ export function NineAtBatStackedDistribution({ points, comparisons }: {
                 ) : <span className="score-ab-empty" aria-hidden="true" />}
               </div>
               <strong className="score-ab-label">{'AB' + column.pitch}</strong>
-              <span className="score-ab-avg">{column.average}</span>
-              <span className={'score-ab-beat ' + (column.beat === '0%' ? 'score-negative' : column.beat === '—' ? '' : 'score-positive')}>{column.beat}</span>
+              <span className="score-ab-avg" aria-label={'At-bat ' + column.pitch + ' average ' + (column.average === '—' ? 'unavailable' : column.average + ' points')}>{column.average}</span>
+              <span className={'score-ab-beat ' + (column.beat === '0%' ? 'score-negative' : column.beat === '—' ? '' : 'score-positive')} aria-label={'At-bat ' + column.pitch + ' beat ' + (column.beat === '—' ? 'unavailable' : column.beat + ' of peers')}>{column.beat}</span>
             </div>
           ))}
         </div>
       </div>
-      <div className="score-ab-metric-labels" aria-hidden="true"><span>AVG</span><span>BEAT</span></div>
+      <div className="score-ab-metric-labels"><span>AVG</span><span>BEAT</span></div>
+      {pendingGroups.length === 0 ? null : (
+        <p className="score-ab-status" role="status">
+          {pendingGroups.map(group => group.label + ': ' + group.pitches.join(', ')).join(' · ')}
+        </p>
+      )}
       <p className="score-dist-detail" role="status" aria-live="polite">
         {detail && chosen ? 'AB' + chosen.pitch + ' · ' + detail.score + ' points · '
           + detail.count + ' result' + (detail.count === 1 ? '' : 's') + ' · '

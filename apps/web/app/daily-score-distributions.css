@@ -111,7 +111,25 @@
 .score-ab-beat { border-radius: 6px; padding: 4px 1px; background: #f0f0ec; }
 .score-ab-beat.score-positive { background: #e4f0e5; color: #24613f; }
 .score-ab-beat.score-negative { background: #f8e7e1; color: var(--score-red); }
-.score-ab-metric-labels { display: none; }
+.score-ab-metric-labels {
+  display: grid;
+  grid-template-rows: 24px 26px;
+  width: 35px;
+  height: 50px;
+  margin-top: -50px;
+  align-items: center;
+  position: relative;
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-weight: 700;
+  pointer-events: none;
+}
+.score-distribution-panel .score-ab-status {
+  margin: 12px 0 0;
+  color: var(--ink-soft);
+  font-size: 11px;
+  overflow-wrap: anywhere;
+}
 .score-distribution-panel .score-dist-detail {
   margin: 14px 0 6px;
   min-height: 34px;
@@ -144,4 +162,5 @@
   .score-ab-axis { font-size: 9px; }
   .score-ab-label, .score-ab-avg, .score-ab-beat { font-size: 9px; }
   .score-ab-marker { font-size: 9px; padding: 2px 3px; }
+  .score-ab-metric-labels { width: 28px; font-size: 9px; }
 }
