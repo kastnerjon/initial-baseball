@@ -55,3 +55,7 @@ The table and revision column **enable but do not themselves enforce** applicati
 ## Post-hint stage — server-only incorrect guess CAS
 
 The Web-only partial guess adapter checks signed Custom active predecessor and frozen challenge, creator/attempt cookie eligibility, and uses the engine-backed Custom resolver to commit only first/second **incorrect** strikes under atomic attempt revision/current-token CAS. It does not introduce an incorrect-only public route because that would be an answer oracle; terminal correct, third-strike and Give Up are reserved for full stateful terminal service. No scoring/result admission is active, and historical stateless Custom sessions remain noncompetitive.
+
+## Staged combined scored Custom resolve
+
+Existing #372 first/second incorrect-guess persistence now composes with a separate terminal-only CAS service for correct, third-strike and Give-Up actions behind one bounded, cookie-authorized attempt resolve POST. Terminal HMAC receipt and signed successor verification precede a single atomic attempt-row update. A conflict never reveals the answer; the ninth fact completes the attempt. No result admission or legacy stateless route changes. Anonymous cookie deletion and external stateless hint exposure remain limitations.
