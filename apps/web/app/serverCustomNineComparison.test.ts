@@ -34,11 +34,12 @@ const peerPayload: Omit<Extract<CustomNineComparisonResult, { kind: 'ready' }>, 
   })),
 };
 
-function setup(options: { challenge?: boolean; attempt?: CustomNineAttemptState | null } = {}) {
+function setup(options: { challenge?: boolean; attempt?: CustomNineAttemptState | null; admitted?: boolean } = {}) {
   const deps = {
     getSecret: vi.fn(() => SECRET),
     challengeExists: vi.fn(async () => options.challenge ?? true),
     getAttempt: vi.fn(async () => options.attempt === undefined ? attempt : options.attempt),
+    hasAcceptedResult: vi.fn(async () => options.admitted ?? true),
     readPeers: vi.fn(async () => peerPayload),
   };
   return { deps, service: createServerCustomNineComparisonService({
@@ -56,6 +57,7 @@ describe('private Custom Nine comparison composition', () => {
     expect(result.completed.completedGameCount).toBe(1);
     expect(deps.challengeExists).toHaveBeenCalledWith(ID, {});
     expect(deps.getAttempt).toHaveBeenCalledWith(ID, issued.browserKeyDigest, {});
+    expect(deps.hasAcceptedResult).toHaveBeenCalledWith(ID, ATTEMPT, {});
     expect(deps.readPeers).toHaveBeenCalledWith(ID, ATTEMPT, {});
     const serialized = JSON.stringify(result);
     expect(serialized).not.toContain(ATTEMPT);
@@ -86,6 +88,20 @@ describe('private Custom Nine comparison composition', () => {
     expect(await unfinished.service.read(ID, cookie)).toEqual({ kind: 'incomplete' });
     expect(unfinished.deps.readPeers).not.toHaveBeenCalled();
     expect(await setup().service.read('invalid-id', cookie)).toEqual({ kind: 'not_found' });
+  });
+
+  it('denies private cohorts when a completed ledger has no accepted completed result', async () => {
+    const { deps, service } = setup({ admitted: false });
+    expect(await service.read(ID, cookie)).toEqual({ kind: 'not_admitted' });
+    expect(deps.hasAcceptedResult).toHaveBeenCalledWith(ID, ATTEMPT, {});
+    expect(deps.readPeers).not.toHaveBeenCalled();
+  });
+
+  it('fails closed without returning private SQL errors when admission lookup errors', async () => {
+    const { deps, service } = setup();
+    deps.hasAcceptedResult.mockRejectedValueOnce(new Error('INTERNAL_DB_SECRET'));
+    await expect(service.read(ID, cookie)).rejects.toThrow('INTERNAL_DB_SECRET');
+    expect(deps.readPeers).not.toHaveBeenCalled();
   });
 
   it('remains challenge-scoped across two independent browser credentials', async () => {
