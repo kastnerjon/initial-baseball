@@ -22,11 +22,12 @@ describe('Nine at-bat stacked distribution accessibility', () => {
     expect(markup).toContain('Loading: AB1');
     expect(markup).toContain('No peers: AB2');
     expect(markup).toContain('Unavailable: AB3');
-    expect(markup).toContain('At-bat 1: Loading comparison');
-    expect(markup).toContain('At-bat 2: No other results yet');
-    expect(markup).toContain('At-bat 3: Comparison unavailable');
-    expect(markup).toContain('At-bat 4 average 0.0 points');
-    expect(markup).toContain('At-bat 4 beat 100% of peers');
+    expect(markup).toContain('AB1<span class="sr-only">: Loading comparison</span>');
+    expect(markup).toContain('AB2<span class="sr-only">: No other results yet</span>');
+    expect(markup).toContain('AB3<span class="sr-only">: Comparison unavailable</span>');
+    expect(markup).toContain('class="sr-only">At-bat 4 average </span>0.0<span class="sr-only"> points</span>');
+    expect(markup).toContain('class="sr-only">At-bat 4 beat </span>100%<span class="sr-only"> of peers</span>');
+    expect(markup).not.toMatch(/class=\"score-ab-(?:avg|beat)[^\"]*\" aria-label=/);
     expect(markup).toContain('>AVG</span>');
     expect(markup).toContain('>BEAT</span>');
   });

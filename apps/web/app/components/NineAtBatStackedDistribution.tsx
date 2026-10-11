@@ -36,7 +36,7 @@ export function NineAtBatStackedDistribution({ points, comparisons }: {
         <div className="score-ab-columns">
           {columns.map(column => (
             <div className="score-ab-column" key={column.pitch}>
-              <div className="score-ab-track" aria-label={'At-bat ' + column.pitch + ': ' + (column.status === 'empty' ? 'No other results yet' : column.status === 'loading' ? 'Loading comparison' : column.status === 'unavailable' ? 'Comparison unavailable' : 'Ready')}>
+              <div className="score-ab-track">
                 {column.status === 'ready' ? (
                   <>
                     <div className="score-ab-segments">
@@ -56,9 +56,9 @@ export function NineAtBatStackedDistribution({ points, comparisons }: {
                   </>
                 ) : <span className="score-ab-empty" aria-hidden="true" />}
               </div>
-              <strong className="score-ab-label">{'AB' + column.pitch}</strong>
-              <span className="score-ab-avg" aria-label={'At-bat ' + column.pitch + ' average ' + (column.average === '—' ? 'unavailable' : column.average + ' points')}>{column.average}</span>
-              <span className={'score-ab-beat ' + (column.beat === '0%' ? 'score-negative' : column.beat === '—' ? '' : 'score-positive')} aria-label={'At-bat ' + column.pitch + ' beat ' + (column.beat === '—' ? 'unavailable' : column.beat + ' of peers')}>{column.beat}</span>
+              <strong className="score-ab-label">{'AB' + column.pitch}{column.status === 'ready' ? null : <span className="sr-only">{': ' + (column.status === 'loading' ? 'Loading comparison' : column.status === 'empty' ? 'No other results yet' : 'Comparison unavailable')}</span>}</strong>
+              <span className="score-ab-avg"><span className="sr-only">{'At-bat ' + column.pitch + ' average '}</span>{column.average}<span className="sr-only">{column.average === '—' ? ' unavailable' : ' points'}</span></span>
+              <span className={'score-ab-beat ' + (column.beat === '0%' ? 'score-negative' : column.beat === '—' ? '' : 'score-positive')}><span className="sr-only">{'At-bat ' + column.pitch + ' beat '}</span>{column.beat}<span className="sr-only">{column.beat === '—' ? ' unavailable' : ' of peers'}</span></span>
             </div>
           ))}
         </div>
