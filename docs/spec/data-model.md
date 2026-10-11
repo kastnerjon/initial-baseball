@@ -1,7 +1,7 @@
 # Data Model Spec
 
 Status: Current persistence contract and approved next entities  
-Last updated: 2026-09-18
+Last updated: 2026-10-11
 
 ## Ownership
 
@@ -57,9 +57,9 @@ RLS is enabled with no anon/authenticated grants or policies. The service role m
 
 ### Private atomic Custom Nine completed-result admission (staged)
 
-The database-only `public.admit_custom_nine_completed_attempt` function requires a completed private ledger row for the exact challenge and browser digest, locks that row to serialize races, and uses its globally unique server-generated `attempt_id` as both the completed-result `submission_id` and nine per-AB `attempt_id` values. The function copies the terminal facts **from the ledger**, not the submitted payload, checks the server-supplied engine summary and nine bounded half-point awards, then inserts one completion plus nine AB observations in a single transaction. Exact retries reread the immutable winner; mismatched scores, incomplete attempts, or partial prior results fail closed, with rollback rather than partial contribution. No new result table or column is required; existing uniqueness constraints suffice for the deterministic attempt UUID.
+The merged, hosted database-only `public.admit_custom_nine_completed_attempt` function (PR #374, Supabase migration `20261011153434` for committed source `20261011152000_add_custom_nine_atomic_completed_admission.sql`) requires a completed private ledger row for the exact challenge and browser digest, locks that row to serialize races, and uses its globally unique server-generated `attempt_id` as both the completed-result `submission_id` and nine per-AB `attempt_id` values. The function copies the terminal facts **from the ledger**, not the submitted payload, checks the server-supplied engine summary and nine bounded half-point awards, then inserts one completion plus nine AB observations in a single transaction. Exact retries reread the immutable winner; mismatched scores, incomplete attempts, or partial prior results fail closed, with rollback rather than partial contribution. No new result table or column is required; existing uniqueness constraints suffice for the deterministic attempt UUID.
 
-The function uses `SECURITY INVOKER` and grants `EXECUTE` only to `service_role`; no anonymous/authenticated Data API access, comparisons or HTTP caller is enabled. Creator-cookie validity, signed challenge and credential scope, and engine derivation still belong to the **subsequent Web service**, not this database primitive. Existing stateless Custom hints/receipts remain ineligible.
+The function was verified in hosted Supabase as `SECURITY INVOKER` with `EXECUTE` granted only to `service_role` (not anonymous/authenticated). No public Data API access, comparisons or HTTP caller is enabled; all private Custom result/attempt tables remain empty after migration. Creator-cookie validity, signed challenge and credential scope, and engine derivation still belong to the **subsequent Web service**, not this database primitive. Existing stateless Custom hints/receipts remain ineligible.
 
 ### Combined stateful Custom Nine scored guess and terminal CAS
 
