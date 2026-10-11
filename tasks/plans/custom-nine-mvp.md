@@ -3,7 +3,16 @@
 Status: #347, #348 and #349 all merged and verified in production. #349 applied in Supabase as migration 20261009033237 (hosted tool assigned a different version from published repo migration `20261009032000`; do not rename the source migration or replay it; reconcile ledger explicitly per environment before CLI pushes). PR #351 merged and release-verified the server-only Supabase repository adapter and strict row codec. PR #352 adds only Custom Nine canonical-player validation and four-hint snapshot materialization. Admin-protected creation API #358 is merged and release-verified. This checkpoint adds only a redacted public read; signed gameplay remains unimplemented.  
 Decision date: 2026-10-08
 
-## Current bounded scope — atomic completed-attempt admission database primitive
+## Current bounded scope — server-only authoritative completion admission caller
+
+**Status:** Database admission PR #374 merged and released as `8c7aef816ad6ed2a102acb8132762534d654576a`. Hosted migration `20261011153434` corresponds to committed SQL `20261011152000_add_custom_nine_atomic_completed_admission.sql`; don't rename or replay source. Verified `service_role`-only execution, `SECURITY INVOKER`, transactional nine-at-bat writes and zero production Custom result rows. No HTTP competitive submission yet.
+
+**Goal:** Add a private Web server caller that accepts only the valid non-creator challenge-scoped attempt credential for an existing completed attempt, independently loads the frozen challenge, recomputes points-v4 completion and per-at-bat awards from stored authoritative terminal facts with the existing engine, and invokes the deployed atomic SQL RPC.
+**Scope:** Web-only server service and Supabase RPC adapter, pure dependency-injected tests; no HTTP route or UI, no new schema, no Universal/Archive changes.
+**Security:** Reject creator, invalid/duplicate/missing cookies, unknown challenge, absent/active ledger, corrupt nine-fact state, stale or wrong completed signed token and incongruent puzzle/facts. Do not accept browser-selected submission IDs, scores, receipts or terminal arrays as authority; fail closed on provider faults and mismatched RPC winner. Signed stateless historical play is ineligible. Cookie deletion and other devices remain anonymous-model limitations.
+**Acceptance:** Focused tests for valid completed attempts, creator/credential exclusion, race/retry/idempotence and provider failure, exact-head CI/READY Preview, bounded fresh-eyes review, postmerge production and Supabase read-only checks.
+
+## Completed bounded scope — atomic completed-attempt admission database primitive
 
 **Goal:** Make one eligible, completed private Custom Nine attempt persist at most one immutable completed result and nine at-bat observations, with a single all-or-nothing transaction and deterministic retry behavior.
 **Owner:** Supabase SQL migration and service-role-only RPC, not an HTTP route.
