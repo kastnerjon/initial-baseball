@@ -3,6 +3,15 @@
 Status: #347, #348 and #349 all merged and verified in production. #349 applied in Supabase as migration 20261009033237 (hosted tool assigned a different version from published repo migration `20261009032000`; do not rename the source migration or replay it; reconcile ledger explicitly per environment before CLI pushes). PR #351 merged and release-verified the server-only Supabase repository adapter and strict row codec. PR #352 adds only Custom Nine canonical-player validation and four-hint snapshot materialization. Admin-protected creation API #358 is merged and release-verified. This checkpoint adds only a redacted public read; signed gameplay remains unimplemented.  
 Decision date: 2026-10-08
 
+## Current bounded scope — server-only authoritative completed-result admission
+
+**Goal:** Admit a server-completed Custom Nine attempt only from one valid noncreator challenge browser credential, with native points-v4 scoring and idempotent stored-result identity.
+**Owner:** `apps/web` private orchestration and Supabase RPC adapter; `packages/engine` remains the source of scoring rules.
+**In scope:** Inspect signed challenge-scoped attempt and creator cookies, reject invalid/creator/absent credentials; load the issued frozen puzzle and completed private ledger; check completed signed Custom progression claims and exact ordered frozen initials; recompute the nine-AB points-v4 summary and nine awarded points with engine functions; call #374 atomic RPC with only trusted server-derived fields; validate returned server-owned attempt UUID; focus tests and canonical docs.
+**Out of scope:** Any public POST/GET result endpoint, stateless evidence promotion, leaderboard/comparison reads, browser UI, creation abuse controls, database migrations/RLS, Daily/Archive/Classic.
+**Acceptance:** Real create/existing result status from a mocked atomic provider, no provider calls for invalid creator/duplicate cookies, missing/incomplete/tampered attempts, frozen mismatch or signed token failure, no user-controlled score or submission ID; repository failure redaction; exact-head CI, READY Preview, bounded independent review, postmerge release checks.
+**Stop:** The service remains private and unused by HTTP until a separate route/eligibility review. Cookie deletion and a second device cannot establish unique-human first play.
+
 ## Current bounded scope — atomic completed-attempt admission database primitive
 
 **Goal:** Make one eligible, completed private Custom Nine attempt persist at most one immutable completed result and nine at-bat observations, with a single all-or-nothing transaction and deterministic retry behavior.
