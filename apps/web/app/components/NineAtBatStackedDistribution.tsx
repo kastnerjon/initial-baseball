@@ -4,8 +4,9 @@ import { createAtBatDistributionModels, scoreValueLabels } from '../dailyScoreDi
 import type { DailyScorecardPoints } from '../dailyScorecard';
 import type { DailyNineScorecardComparisons } from '../useDailyNineScorecardComparisons';
 
-export function NineAtBatStackedDistribution({ points, comparisons }: {
+export function NineAtBatStackedDistribution({ points, comparisons, initials = [], showHeading = true }: {
   points: DailyScorecardPoints; comparisons: DailyNineScorecardComparisons;
+  initials?: readonly string[]; showHeading?: boolean;
 }): JSX.Element {
   const columns = createAtBatDistributionModels(points, comparisons);
   const [selected, setSelected] = useState<{ pitch: number; score: number } | null>(null);
@@ -21,7 +22,7 @@ export function NineAtBatStackedDistribution({ points, comparisons }: {
   })).filter(group => group.pitches.length > 0);
   return (
     <section className="score-distribution-panel" aria-label="At-bat score distribution">
-      <h2>At-Bat Score Distribution</h2>
+      {showHeading ? <h2>At-Bat Score Distribution</h2> : null}
       <p>How other players scored on each at-bat, and where you landed.</p>
       <div className="score-dist-legend">
         {scoreValueLabels.map((score, index) => (
@@ -56,7 +57,11 @@ export function NineAtBatStackedDistribution({ points, comparisons }: {
                   </>
                 ) : <span className="score-ab-empty" aria-hidden="true" />}
               </div>
-              <strong className="score-ab-label">{'AB' + column.pitch}{column.status === 'ready' ? null : <span className="sr-only">{': ' + (column.status === 'loading' ? 'Loading comparison' : column.status === 'empty' ? 'No other results yet' : 'Comparison unavailable')}</span>}</strong>
+              <strong className="score-ab-label">
+                <span className="sr-only">{'At-bat ' + column.pitch + ': '}</span>
+                {initials[column.pitch - 1] ?? '—'}
+                {column.status === 'ready' ? null : <span className="sr-only">{': ' + (column.status === 'loading' ? 'Loading comparison' : column.status === 'empty' ? 'No other results yet' : 'Comparison unavailable')}</span>}
+              </strong>
               <span className="score-ab-avg"><span className="sr-only">{'At-bat ' + column.pitch + ' average '}</span>{column.average}<span className="sr-only">{column.average === '—' ? ' unavailable' : ' points'}</span></span>
               <span className={'score-ab-beat ' + (column.beat === '0%' ? 'score-negative' : column.beat === '—' ? '' : 'score-positive')}><span className="sr-only">{'At-bat ' + column.pitch + ' beat '}</span>{column.beat}<span className="sr-only">{column.beat === '—' ? ' unavailable' : ' of peers'}</span></span>
             </div>

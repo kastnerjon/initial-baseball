@@ -10,6 +10,7 @@ import { createDailyNineScorecardShareText } from '../dailyNineScorecardComparis
 import { DailyNineCompletedComparison } from './DailyNineCompletedComparison';
 import { ScoreLine } from './ScoreLine';
 import { DailyNineScoreDistributionCharts } from './DailyNineScoreDistributionCharts';
+import { ResultsDisclosure } from './ResultsDisclosure';
 import { InningScoreboard, type InningScoreboardProps } from './InningScoreboard';
 import { isYourNineEnabled } from '../dailyNineYourNineLayout';
 
@@ -56,25 +57,24 @@ export function GameCompleteView({
 
   return (
     <div className="game-shell">
-      <section className={isPointsGame ? 'complete-card complete-card-daily' : 'complete-card'}>
-        <h2>{isPointsGame ? 'Daily #' + shareResult.puzzleNumber : 'Game Complete'}</h2>
-        {isPointsGame ? (
-          <DailyNineCompletedComparison
-            points={shareResult.points.points}
-            state={comparison}
-            currentPointsV4={shareResult.rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION}
-          />
-        ) : (
-          <ScoreLine summary={shareResult.summary} />
-        )}
-      </section>
-      {shareResult.rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION ? (
-        <DailyNineScoreDistributionCharts
-          points={atBatPoints}
-          comparisons={atBatComparisons}
-          completedComparison={comparison}
-        />
-      ) : null}
+      {performanceLayout ? (
+        <ResultsDisclosure title="Summary">
+          <section className="complete-card complete-card-daily">
+            <h2>{'Daily #' + shareResult.puzzleNumber}</h2>
+            <DailyNineCompletedComparison points={shareResult.points.points}
+              state={comparison} currentPointsV4 />
+          </section>
+        </ResultsDisclosure>
+      ) : (
+        <section className={isPointsGame ? 'complete-card complete-card-daily' : 'complete-card'}>
+          <h2>{isPointsGame ? 'Daily #' + shareResult.puzzleNumber : 'Game Complete'}</h2>
+          {isPointsGame ? (
+            <DailyNineCompletedComparison points={shareResult.points.points} state={comparison} />
+          ) : (
+            <ScoreLine summary={shareResult.summary} />
+          )}
+        </section>
+      )}
       {!performanceLayout && inningScoreboard !== undefined ? <InningScoreboard {...inningScoreboard} /> : null}
       <PitchResultList
         answers={scorecardAnswers}
@@ -93,7 +93,18 @@ export function GameCompleteView({
         title={isPointsGame ? 'Scoreboard' : 'At-bat Results'}
         emptyLabel="No at-bat results were recorded."
       />
-      {leaderboard === undefined ? null : <DailyNineLeaderboard {...leaderboard} />}
+      {leaderboard === undefined ? null : (
+        <ResultsDisclosure title="Top 10">
+          <DailyNineLeaderboard {...leaderboard} showHeading={false} />
+        </ResultsDisclosure>
+      )}
+      {shareResult.rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION ? (
+        <DailyNineScoreDistributionCharts
+          points={atBatPoints} comparisons={atBatComparisons}
+          completedComparison={comparison}
+          initials={shareResult.pitchLines.map(line => line.initials)}
+        />
+      ) : null}
       <DailyShareCard shareText={shareCardText} />
       {onResetToday !== undefined ? (
         <button

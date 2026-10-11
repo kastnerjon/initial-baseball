@@ -1,17 +1,18 @@
 'use client';
-import { useState, type JSX } from 'react';
+import React, { useState, type JSX } from 'react';
 import type { DailyNineCompletedComparisonState } from '../useDailyNineCompletedComparison';
 import { createFinalDistributionModel } from '../dailyScoreDistributionModels';
 
-export function FinalScoreHistogram({ comparison }: { comparison: DailyNineCompletedComparisonState }): JSX.Element {
+export function FinalScoreHistogram({ comparison, showHeading = true }: { comparison: DailyNineCompletedComparisonState; showHeading?: boolean }): JSX.Element {
   const model = createFinalDistributionModel(comparison);
   const [selectedScore, setSelectedScore] = useState<number | null>(null);
   const selected = model.status === 'ready'
     ? model.bins.find(bin => bin.score === selectedScore) ?? null : null;
   const markerX = ((model.markerIndex ?? 0) + 0.5) * 10;
+  const markerPercent = model.status === 'ready' ? ((model.markerIndex ?? 0) + 0.5) * 100 / model.bins.length : 0;
   return (
     <section className="score-distribution-panel" aria-label="Final score distribution">
-      <h2>Final Score Distribution</h2>
+      {showHeading ? <h2>Final Score Distribution</h2> : null}
       <p>How many total points other players scored in this game.</p>
       {model.status !== 'ready' ? (
         <p className="score-dist-empty" role="status">
@@ -34,9 +35,11 @@ export function FinalScoreHistogram({ comparison }: { comparison: DailyNineCompl
                 ><title>{bin.score + ' points · ' + bin.count + ' results'}</title></rect>
               ))}
               <line x1={markerX} x2={markerX} y1="28" y2="132" className="score-final-marker-line" />
-              <rect x={Math.min(689, Math.max(1, markerX - 22))} y="2" width="44" height="24" rx="5" className="score-final-marker-box" />
-              <text x={Math.min(711, Math.max(23, markerX))} y="18" textAnchor="middle" className="score-final-marker-text">{model.own}</text>
             </svg>
+            <strong className="score-final-marker-label"
+              style={{ left: 'clamp(23px, ' + markerPercent + '%, calc(100% - 23px))' }}>
+              {model.own}
+            </strong>
           </div>
           <div className="score-final-ticks" aria-hidden="true">
             {Array.from({ length: 5 }, (_, i) => <span key={i}>{model.min + (model.max - model.min) * i / 4}</span>)}

@@ -147,8 +147,21 @@
 .score-final-bar:hover, .score-final-bar:focus-visible, .score-final-bar-active { fill: #508368; outline: none; stroke: #163f30; stroke-width: 2; }
 .score-final-baseline { stroke: #bac6be; stroke-width: 1; }
 .score-final-marker-line { stroke: #174c3a; stroke-width: 2; pointer-events: none; }
-.score-final-marker-box { fill: #174c3a; pointer-events: none; }
-.score-final-marker-text { fill: white; font: 700 13px sans-serif; pointer-events: none; }
+.score-final-marker-label {
+  position: absolute;
+  top: 2px;
+  transform: translateX(-50%);
+  min-width: 44px;
+  padding: 5px 6px;
+  border-radius: 5px;
+  background: #174c3a;
+  color: white;
+  font: 700 13px/14px var(--body-font);
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+  white-space: nowrap;
+  pointer-events: none;
+}
 .score-final-ticks { display: flex; justify-content: space-between; color: var(--ink-soft); font-size: 11px; }
 .score-final-select { display: flex; align-items: center; gap: 10px; margin-top: 10px; color: var(--ink-soft); font-size: 11px; }
 .score-final-select input { flex: 1; min-width: 0; height: 32px; accent-color: #174c3a; }
@@ -163,4 +176,19 @@
   .score-ab-label, .score-ab-avg, .score-ab-beat { font-size: 9px; }
   .score-ab-marker { font-size: 9px; padding: 2px 3px; }
   .score-ab-metric-labels { width: 28px; font-size: 9px; }
+}
+
+/* Reuse the Your Nine disclosure treatment for the completed results stack. */
+.results-disclosure-body > .complete-card-daily,
+.results-disclosure-body > .daily-nine-leaderboard,
+.results-disclosure-body > .score-distribution-panel {
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+.results-disclosure .score-ab-label {
+  white-space: normal;
+  overflow-wrap: anywhere;
+  line-height: 1.15;
 }

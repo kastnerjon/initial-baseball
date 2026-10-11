@@ -4,6 +4,10 @@
 Status: Active ordered implementation plan  
 Last updated: 2026-10-11
 
+## Results layout refinement (October 11)
+
+- [x] Completed points-v4 results now show Summary, Your Nine, Top 10 (Daily only), Final Score Distribution, then At-Bat Score Distribution. All panels start open and collapse independently; stacked-bar labels show initials and the histogram own-score badge no longer stretches on phones. Custom Nine remains the next bounded stage.
+
 ## Immediate next work
 
 - [x] Add true per-AB 100% stacked distributions and completed-score histogram to Daily Nine and playable Archive end-of-game result views; preserve scores/peer isolation. Scope: `tasks/plans/daily-archive-score-distribution-charts.md`. After release verification resume Custom Nine provider without competitive activation.
