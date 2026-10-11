@@ -45,7 +45,7 @@ export function FinalScoreHistogram({ comparison }: { comparison: DailyNineCompl
             <span>Explore score</span>
             <input type="range" min={model.min} max={model.max} step={model.step}
               value={selectedScore ?? model.own ?? model.min}
-              onChange={event => setSelectedScore(Number(event.currentTarget.value))}
+              onChange={event => setSelectedScore(Number((event.target as unknown as { value: string }).value))}
               aria-label="Inspect completed-game score bucket" />
           </label>
           <p className="score-dist-detail" role="status" aria-live="polite">
