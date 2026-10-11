@@ -25,6 +25,8 @@ export type DailyNineCompletedComparisonState =
       averageTotalPoints: number | null;
       strictLowerFinishRate: number | null;
       inclusiveFinishPercentile?: number | null;
+      rulesetVersion?: DailyRulesetVersion;
+      scoreHistogram?: number[];
     }
   | { status: 'unavailable'; ownPoints: number | null };
 
@@ -112,6 +114,8 @@ export function useDailyNineCompletedComparison(input: DailyNineCompletedCompari
           status: 'success',
           ownPoints,
           completedGameCount: comparison.completedGameCount,
+          rulesetVersion: comparison.rulesetVersion,
+          scoreHistogram: comparison.scoreHistogram,
           averageTotalPoints: comparison.averageTotalPoints,
           strictLowerFinishRate: ownPoints === null
             ? null

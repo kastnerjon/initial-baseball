@@ -4,6 +4,7 @@ import './styles.css';
 import './daily-shell.css';
 import './daily-game.css';
 import './daily-results.css';
+import './daily-score-distributions.css';
 import './daily-leaderboard.css';
 import './daily-scoreboard.css';
 import './daily-your-nine.css';

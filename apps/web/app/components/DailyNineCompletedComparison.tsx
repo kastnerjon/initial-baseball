@@ -40,6 +40,12 @@ export function DailyNineCompletedComparison({ points, state, currentPointsV4 = 
           ) : null}
         </div>
       </div>
+      {currentPointsV4 ? (
+        <div className="completed-comparison-extra">
+          <span>BEAT <strong>{presentation?.beat ?? '—'}</strong></span>
+          <span>Percentile <strong>{inclusivePercentile === null ? '—' : formatDailyNinePercentileOrdinal(Number(inclusivePercentile))}</strong></span>
+        </div>
+      ) : null}
       {presentation === null ? null : <p className="completed-comparison-note">{presentation.note}</p>}
     </section>
   );
