@@ -1,3 +1,4 @@
+import React from 'react';
 import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { POINTS_V4_DAILY_RULESET_VERSION as V4 } from '@initial-baseball/shared';

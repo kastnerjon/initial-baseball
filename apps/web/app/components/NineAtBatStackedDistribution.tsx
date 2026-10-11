@@ -1,5 +1,5 @@
 'use client';
-import { useState, type JSX } from 'react';
+import React, { useState, type JSX } from 'react';
 import { createAtBatDistributionModels, scoreValueLabels } from '../dailyScoreDistributionModels';
 import type { DailyScorecardPoints } from '../dailyScorecard';
 import type { DailyNineScorecardComparisons } from '../useDailyNineScorecardComparisons';
