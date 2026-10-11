@@ -1,5 +1,20 @@
 # Daily Nine — Custom Lineup MVP
 
+## Current bounded scope — guarded Custom Nine completion submission transport (October 11)
+
+**Goal:** Allow an explicitly enabled, same-origin browser with an existing signed non-creator attempt cookie to submit exactly one completed, server-monotonic nine-at-bat Custom attempt through the #375 server scorer and #374 atomic RPC; leave admission dormant by default.
+
+**Owning layer:** `apps/web` HTTP transport only. The scoring and database boundaries remain in the previously reviewed server service/provider; the portable engine, private schema, client and Universal routes do not change.
+
+**In scope:** Add `POST /api/custom-nine/challenges/{puzzleId}/attempt/submit` as a bodyless, same-origin, cookie-only route; use a strict server-only opt-in environment switch whose unset/non-`true` state returns 404 before service access; share the existing bounded bodyless parser with attempt bootstrap; map created/existing, bad credential, missing challenge, incomplete attempt and provider faults to sanitized no-store responses. Focused route and shared body tests, canonical documentation.
+
+**Out of scope:** Enabling the production switch, creating a public browser flow or leaderboard, adding new scored rules or persistence, accepting client-supplied score/tokens/facts/identity, comparison reads, rate-limit/abuse controls, and any change to Daily/Classic/Archive.
+
+**Acceptance:** Default-off cannot call scoring or Supabase even for forged body/origin, missing or foreign Origin is denied, nonempty body denied, retained cookie forwarded unchanged, 201/200 exact retry safe, other results map to 403/404/409, provider faults 503, no answer/UUID exposure, build/tests/typecheck/CI/READY Preview, one bounded independent review and postmerge release checks.
+
+**Stop:** Do not turn the feature flag on or claim public competitive gameplay before explicit review of creator/self-play, anonymous cookie-reset/multi-device limitations, existing stateless answer inspection, distribution isolation and abuse safeguards.
+
+
 Status: #347, #348 and #349 all merged and verified in production. #349 applied in Supabase as migration 20261009033237 (hosted tool assigned a different version from published repo migration `20261009032000`; do not rename the source migration or replay it; reconcile ledger explicitly per environment before CLI pushes). PR #351 merged and release-verified the server-only Supabase repository adapter and strict row codec. PR #352 adds only Custom Nine canonical-player validation and four-hint snapshot materialization. Admin-protected creation API #358 is merged and release-verified. This checkpoint adds only a redacted public read; signed gameplay remains unimplemented.  
 Decision date: 2026-10-08
 

@@ -5,6 +5,14 @@ Last updated: 2026-10-11
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
+## Custom Nine completion submission HTTP — gated stage (October 11)
+
+This bounded Web API stage connects the already reviewed #375 server-authoritative completed-result scorer to a separate **bodyless** `POST /api/custom-nine/challenges/{puzzleId}/attempt/submit` transport. Admission is **OFF by default**: unless the server-only `CUSTOM_NINE_RESULT_SUBMISSION_ENABLED` is exactly `true`, the endpoint returns private no-store 404 without touching the private score/attempt database. This work does not change Vercel environment settings or activate production submissions.
+
+When explicitly enabled in a separately approved release, a same-origin browser with a retained valid, non-creator challenge-attempt cookie may submit only the challenge URL and cookie (no score, at-bat facts, UUID, token, receipt or JSON body). The #375 service validates immutable issued-challenge identity, server-monotonic completed ledger, signed terminal state and frozen nine and recomputes points-v4 with the engine; the service-role-only #374 RPC atomically admits one first accepted score plus nine at-bat scores. A successful created write responds 201 `{"status":"created"}`; identical retry responds 200 `{"status":"existing"}`. Errors are sanitized 403/404/409/503 with `private, no-store`, no hidden answers or score facts.
+
+**Not activated:** No Custom comparison reader, leaderboard, creation UI, public gameplay or abuse-control release. Anonymous cookie clearing, new devices and legacy stateless Custom endpoints still prevent account-grade single-person enforcement. Operator review of creator/self-play safeguards and production configuration is required before ever enabling the new switch.
+
 ## Custom Nine server-only completed-result admission — staged (October 11)
 
 PR #374 merged as `8c7aef816ad6ed2a102acb8132762534d654576a`, exact-head CI/READY Preview and exact-main push CI/READY production verified. The private atomic transaction was installed in Supabase under hosted migration version **`20261011153434`**, name `add_custom_nine_atomic_completed_admission` (repository file version `20261011152000`; do not rename or replay). `service_role` alone can execute it; existing Custom tables remain empty. See #374 release evidence.
