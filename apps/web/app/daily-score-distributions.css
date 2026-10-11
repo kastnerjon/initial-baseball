@@ -104,6 +104,7 @@
   line-height: 1.1;
   pointer-events: none;
 }
+.score-ab-marker-bottom { transform: translate(-50%, 0); }
 .score-ab-empty { display: block; height: 100%; background: #f0f0ea; opacity: .45; }
 .score-ab-label, .score-ab-avg, .score-ab-beat { font-size: 11px; white-space: nowrap; }
 .score-ab-label { font-weight: 700; }

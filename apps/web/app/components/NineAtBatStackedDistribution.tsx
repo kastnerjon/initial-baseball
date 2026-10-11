@@ -52,7 +52,7 @@ export function NineAtBatStackedDistribution({ points, comparisons, initials = [
                       ))}
                     </div>
                     {column.marker === null ? null : (
-                      <span className="score-ab-marker" style={{ bottom: column.marker + '%' }} aria-hidden="true">{column.own}</span>
+                      <span className={'score-ab-marker' + (column.marker < 8 ? ' score-ab-marker-bottom' : '')} style={{ bottom: column.marker + '%' }} aria-hidden="true">{column.own}</span>
                     )}
                   </>
                 ) : <span className="score-ab-empty" aria-hidden="true" />}
