@@ -1,5 +1,16 @@
 # Daily Nine — Custom Lineup MVP
 
+## Current bounded scope — private Web Custom Nine comparison provider (October 11)
+
+**Goal:** Consume existing private exact-challenge Custom points-v4 per-AB and completed score buckets through a Web-owned server-only adapter and authenticated read composition.
+**Owning layer:** `apps/web` server provider/composition; no new engine, database, API, UI or package contract.
+**In scope:** Strict RPC decimal/count decoding; engine-owned score ranges and reusable portable Daily histogram/AVG derivation; nine isolated AB slots and completed cohort; verified signed non-creator challenge cookie; completed private attempt-ledger lookup; exclude only the persisted server-generated UUID, never a client-supplied ID; zero/one-peer, tie, fractional, multi-challenge, corrupt-row and creator/credential tests.
+**Out of scope:** Public read endpoint, browser components, submission flag changes, signup/identity guarantees, new SQL/migrations, scoring/rules changes, new persistence or abuse controls.
+**Acceptance:** Server-only imports; no raw player, clue, fact or UUID projection in the returned comparison; no browser-supplied exclusion; valid exact-version histogram and safe unavailable cases; focused tests, typecheck, CI, READY Vercel Preview, bounded independent review and postmerge production verification.
+**Stop:** If public comparison activation, creator-abuse enforcement or changes to result authority are required, reserve them for separate PRs.
+
+**Next stage after merge:** guarded Custom read HTTP transport and separate browser result/creator interface, with accepted-result eligibility and abuse safeguards independently decided before enabling competition.
+
 ## Current bounded scope — private Custom Nine comparison score buckets (October 11)
 
 **Goal:** Establish isolated, engine-scored Custom Nine per-AB and completion histograms with optional trusted own-attempt exclusion, without opening a public read surface.
