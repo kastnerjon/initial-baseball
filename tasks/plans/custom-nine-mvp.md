@@ -1,5 +1,15 @@
 # Daily Nine — Custom Lineup MVP
 
+## Current bounded scope — private Custom Nine comparison score buckets (October 11)
+
+**Goal:** Establish isolated, engine-scored Custom Nine per-AB and completion histograms with optional trusted own-attempt exclusion, without opening a public read surface.
+**Owning layer:** Supabase database read functions only; no changes to engine/Daily/Archive or Web clients.
+**In scope:** Two stable, security-invoker, service-role-only SQL RPCs filtered to exact Custom challenge and fixed points-v4, one AB slot at a time, and only ABs tied to an accepted completion; optional excluded server-issued submission UUID; grouped numeric score buckets with counts and no identity/fact leakage; existing indexes; rolled-back SQL fixture covering isolation/ties/half-points/one other/zero other/orphans/grants; canonical docs.
+**Out of scope:** Browser-provided exclusion ID, Web reader/route/score display, public feature activation, changes to write admission/DB tables, new score rule, cache/rollup/index, Daily/Archive migrations.
+**Acceptance:** Exact-challenge isolation, fixed v4 and AB 1–9, own-result excluded only when provided by future trusted caller, an orphan AB never counts, empty populations yield zero rows, public/anon/authenticated EXECUTE revoked, service role enabled; CI and READY Preview, one independent review, merged hosted migration/privileges/transaction regression, push CI/production verification.
+**Stop:** Untrusted browser-provided exclusion, public comparison activation, new infrastructure or changes to anti-cheat/creator eligibility require a separate scope.
+
+
 ## Current bounded scope — guarded Custom Nine completion submission transport (October 11)
 
 **Goal:** Allow an explicitly enabled, same-origin browser with an existing signed non-creator attempt cookie to submit exactly one completed, server-monotonic nine-at-bat Custom attempt through the #375 server scorer and #374 atomic RPC; leave admission dormant by default.

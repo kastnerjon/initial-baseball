@@ -5,6 +5,16 @@ Last updated: 2026-10-11
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
+## Custom Nine peer comparison buckets — private database stage (October 11)
+
+This bounded Supabase-only stage adds two **service-role-only** stable score-bucket functions, `custom_nine_at_bat_score_buckets_v1(challenge_id, pitch_number, excluded_submission_id)` and `custom_nine_completed_score_buckets_v1(challenge_id, excluded_submission_id)`. Both read exclusively the isolated Custom Nine points-v4 result tables and filter to the **exact issued challenge**; neither reads current Daily Nine or Archive populations or emits player identities, clues, outcomes, raw per-attempt facts or timestamps. The per-AB reader joins a matching **accepted completed result** so a stray/orphan legacy AB cannot inflate the denominator. Each row contains only `{points, result_count}`.
+
+The optional excluded ID is the **server-issued attempt UUID** shared by the completed result and all nine AB rows; a later authenticated/validated server caller must derive it from the challenge-scoped signed attempt credential and persisted ledger, never trust a browser-selected excluded ID. Existing pure Daily points-v4 histogram/strictly-lower BEAT and inclusive percentile semantics can be reused in a separate Web provider stage: ties are not BEAT; one other result suffices; no peers means AVG/BEAT unavailable. No UI/HTTP reader/feature-flag activation is added here.
+
+Migration grants function execution to `service_role` only (`PUBLIC`/anon/authenticated revoked), uses `SECURITY INVOKER` and empty search path, reuses existing indexes/RLS, and makes **no changes to result admission, gameplay, public grants or existing population schema**. `supabase/tests/custom_nine_comparison_buckets.sql` provides transaction-rolled-back regression fixtures for challenge/slot isolation, histogram grouping, half-point values, own-result exclusion, one-other/zero-other behavior, incomplete/orphan AB exclusion and execution privileges. Run the fixture only after installing and inspecting the reviewed migration.
+
+Next PR: provider decoder and server-only read composition, followed by separately reviewed gated comparison HTTP transport and Custom game presentation. Production `CUSTOM_NINE_RESULT_SUBMISSION_ENABLED` remains untouched/off pending abuse and creator safeguards.
+
 ## Custom Nine completion submission HTTP — gated stage (October 11)
 
 This bounded Web API stage connects the already reviewed #375 server-authoritative completed-result scorer to a separate **bodyless** `POST /api/custom-nine/challenges/{puzzleId}/attempt/submit` transport. Admission is **OFF by default**: unless the server-only `CUSTOM_NINE_RESULT_SUBMISSION_ENABLED` is exactly `true`, the endpoint returns private no-store 404 without touching the private score/attempt database. This work does not change Vercel environment settings or activate production submissions.
