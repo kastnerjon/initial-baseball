@@ -79,14 +79,14 @@ describe('single Custom Nine guess/Give Up attempt endpoint', () => {
     expect(terminal).not.toHaveBeenCalled();
   });
   it('returns a sanitized 400 for unresolved submitted player IDs on either resolver path', async () => {
-    wrong.mockRejectedValueOnce(new CustomNineHintRequestError('PRIVATE_BAD_ID'));
+    wrong.mockRejectedValueOnce(new CustomNineHintRequestError());
     const invalidBeforeTerminal = await send({ progressionToken: 'old', submittedPlayerId: 'unresolvable' });
     expect(invalidBeforeTerminal.status).toBe(400);
     expect(await invalidBeforeTerminal.text()).toBe('{"error":"invalid_progression"}');
     expect(terminal).not.toHaveBeenCalled();
 
     wrong.mockResolvedValueOnce({ kind: 'terminal_pending' });
-    terminal.mockRejectedValueOnce(new CustomNineHintRequestError('PRIVATE_BAD_ID'));
+    terminal.mockRejectedValueOnce(new CustomNineHintRequestError());
     const invalidTerminal = await send({ progressionToken: 'old', submittedPlayerId: 'unresolvable' });
     expect(invalidTerminal.status).toBe(400);
     expect(await invalidTerminal.text()).toBe('{"error":"invalid_progression"}');
