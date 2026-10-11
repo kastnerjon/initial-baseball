@@ -85,13 +85,20 @@ begin
         and observed.challenge_id = p_challenge_id
         and observed.ruleset_version = 'points-v4'
     ) <> 9 or exists (
-      select 1 from generate_series(1, 9) as slot(number)
+      select 1
+      from jsonb_array_elements(v_attempt.terminal_at_bats)
+        with ordinality as fact(value, slot)
       left join public.custom_nine_at_bat_results observed
         on observed.attempt_id = v_submission_id
         and observed.challenge_id = p_challenge_id
         and observed.ruleset_version = 'points-v4'
-        and observed.pitch_number = slot.number
-      where observed.awarded_points is distinct from p_awarded_points[slot.number]
+        and observed.pitch_number = fact.slot::integer
+      where observed.awarded_points is distinct from p_awarded_points[fact.slot::integer]
+        or observed.initials is distinct from fact.value ->> 'initials'
+        or observed.outcome is distinct from fact.value ->> 'outcome'
+        or observed.hints_revealed is distinct from (fact.value ->> 'hintsRevealed')::smallint
+        or observed.wrong_guesses is distinct from (fact.value ->> 'wrongGuesses')::smallint
+        or observed.resolution is distinct from fact.value ->> 'resolution'
     ) then
       raise exception 'Conflicting Custom Nine completion.' using errcode = '23505';
     end if;
