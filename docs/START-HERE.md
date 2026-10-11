@@ -5,6 +5,12 @@ Last updated: 2026-10-11
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
+## Custom Nine private comparison provider — server-only stage (October 11)
+
+The Web-owned Custom Nine comparison reader now decodes the two existing service-role-only score-bucket RPCs for the exact immutable points-v4 challenge, then reuses the portable Daily histogram/range/average service. The private composition authorizes a signed, challenge-scoped, non-creator browser attempt cookie and a matching completed server attempt ledger, deriving the excluded result ID only from the persisted server-issued attempt UUID. It returns aggregate counts, averages and offset histograms, not identities, clues, terminal facts or attempt credentials. It has no HTTP route or browser consumer.
+
+**Next bounded stage:** separately reviewed Custom Nine comparison-read HTTP transport with stricter admission/eligibility safeguards and sanitized private/no-store errors; then UI and public-integrity work. Do not enable `CUSTOM_NINE_RESULT_SUBMISSION_ENABLED`, assume a challenge link proves eligibility, or claim unique-human anti-cheat.
+
 ## Scorecard layout adjustment (October 11)
 
 Points-v4 completed results are ordered: Summary, Your Nine, Top 10 (Daily only), Final Score Distribution, At-Bat Score Distribution. All five are independently collapsible and open by default. The AB axis shows the played lineup initials, and the final-score badge is rendered as HTML rather than stretched SVG text. The Custom Nine roadmap is unchanged.
@@ -19,7 +25,7 @@ The Daily Nine/Archive points-v4 end-of-game result scorecard now uses the exist
 
 PR #377 merged as `3b3657a76de994fcbd7cc2af92da30ba63bd2036` after exact-head CI, READY Preview and completed zero-finding Codex review. The isolated Custom Nine per-slot and completed points-v4 score bucket RPCs were installed in hosted Supabase as migration **`20261011174646`** (`create_custom_nine_comparison_buckets`), while the committed migration filename is `20261011171500_create_custom_nine_comparison_buckets.sql`; **do not rename or replay**. A transaction-scoped synthetic fixture passed: exact-challenge grouping, self-exclusion, empty peer population, orphan-AB exclusion and service-role-only privileges; `ROLLBACK` left all four Custom tables empty. The original fixture required explicit `::smallint` casts for the AB slot function parameter; this follow-up records those casts with no deployed schema change.
 
-**Next bounded stage:** a server-only Custom Nine comparison provider/decoder, consuming the existing RPC buckets with points-v4 histogram/AVG/BEAT logic and trusted signed-cookie-derived own-result exclusion. No public comparison API, browser UI, submission flag change or creator-abuse controls are activated by SQL installation.
+**Completed next layer:** the separate private Web provider/decoder consumes these buckets with trusted server-ledger-derived own-result exclusion. Public comparison API, browser UI, submission flag and creator-abuse controls remain inactive.
 
 ## Custom Nine peer comparison buckets — private database stage (October 11)
 
