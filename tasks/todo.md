@@ -6,6 +6,8 @@ Last updated: 2026-10-11
 
 ## Immediate next work
 
+- [x] Add true per-AB 100% stacked distributions and completed-score histogram to Daily Nine and playable Archive end-of-game result views; preserve scores/peer isolation. Scope: `tasks/plans/daily-archive-score-distribution-charts.md`. After release verification resume Custom Nine provider without competitive activation.
+
 - [x] Complete inclusive percentile rollout: #355 at-bat + #356 Your Nine, final and share merged and deployed. This follow-up uses ordinal labels (e.g., 100th Percentile), retaining points-v3 BEAT and unchanged calculations.
 
 - [x] Add an accessible, default-open Your Nine expand/collapse header while retaining running score/progress, reveal settings and row state. Separate from released Top 10 visibility #353; PR #354 must pass its own release checks.

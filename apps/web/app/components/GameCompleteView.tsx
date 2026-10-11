@@ -9,6 +9,7 @@ import type { DailyNineScorecardComparisons } from '../useDailyNineScorecardComp
 import { createDailyNineScorecardShareText } from '../dailyNineScorecardComparisonPresentation';
 import { DailyNineCompletedComparison } from './DailyNineCompletedComparison';
 import { ScoreLine } from './ScoreLine';
+import { DailyNineScoreDistributionCharts } from './DailyNineScoreDistributionCharts';
 import { InningScoreboard, type InningScoreboardProps } from './InningScoreboard';
 import { isYourNineEnabled } from '../dailyNineYourNineLayout';
 
@@ -67,6 +68,13 @@ export function GameCompleteView({
           <ScoreLine summary={shareResult.summary} />
         )}
       </section>
+      {shareResult.rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION ? (
+        <DailyNineScoreDistributionCharts
+          points={atBatPoints}
+          comparisons={atBatComparisons}
+          completedComparison={comparison}
+        />
+      ) : null}
       {!performanceLayout && inningScoreboard !== undefined ? <InningScoreboard {...inningScoreboard} /> : null}
       <PitchResultList
         answers={scorecardAnswers}

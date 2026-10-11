@@ -5,6 +5,12 @@ Last updated: 2026-10-11
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
+## Daily and Archive score distribution charts — end-of-game UI (October 11)
+
+The Daily Nine/Archive points-v4 end-of-game result scorecard now uses the existing exact-puzzle comparison reads to render a compact completed-game score histogram and nine per-AB 100% stacked bars. Rendering derives valid buckets/ranges from the engine; the browser retains the returned completed histogram, and neither scoring nor persistence changes. Empty, malformed, loading, one-peer and sparse distributions are explicit; tap/keyboard inspection and own-score markers are provided. Details: `tasks/plans/daily-archive-score-distribution-charts.md`.
+
+**Next after this bounded chart PR:** Resume the server-only Custom Nine comparison provider/decoder from the private service-role-only SQL buckets installed in hosted migration 20261011174646. Do not activate competitive submission or publish comparison APIs as a side effect of the charts.
+
 ## Custom Nine score-bucket SQL — merged, installed and transaction-verified (October 11)
 
 PR #377 merged as `3b3657a76de994fcbd7cc2af92da30ba63bd2036` after exact-head CI, READY Preview and completed zero-finding Codex review. The isolated Custom Nine per-slot and completed points-v4 score bucket RPCs were installed in hosted Supabase as migration **`20261011174646`** (`create_custom_nine_comparison_buckets`), while the committed migration filename is `20261011171500_create_custom_nine_comparison_buckets.sql`; **do not rename or replay**. A transaction-scoped synthetic fixture passed: exact-challenge grouping, self-exclusion, empty peer population, orphan-AB exclusion and service-role-only privileges; `ROLLBACK` left all four Custom tables empty. The original fixture required explicit `::smallint` casts for the AB slot function parameter; this follow-up records those casts with no deployed schema change.
