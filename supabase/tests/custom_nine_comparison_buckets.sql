@@ -52,31 +52,31 @@ declare
   bucket jsonb;
 begin
   select coalesce(jsonb_agg(jsonb_build_array(points, result_count) order by points), '[]'::jsonb)
-    into bucket from public.custom_nine_at_bat_score_buckets_v1(a, 1, null);
+    into bucket from public.custom_nine_at_bat_score_buckets_v1(a, 1::smallint, null);
   if bucket <> '[[0.5,1],[4,1]]'::jsonb then
     raise exception 'Custom AB challenge A / orphan exclusion failed: %', bucket;
   end if;
 
   select coalesce(jsonb_agg(jsonb_build_array(points, result_count) order by points), '[]'::jsonb)
-    into bucket from public.custom_nine_at_bat_score_buckets_v1(a, 1, 'cn-test-a1');
+    into bucket from public.custom_nine_at_bat_score_buckets_v1(a, 1::smallint, 'cn-test-a1');
   if bucket <> '[[0.5,1]]'::jsonb then
     raise exception 'Custom AB own-result exclusion failed: %', bucket;
   end if;
 
   select coalesce(jsonb_agg(jsonb_build_array(points, result_count) order by points), '[]'::jsonb)
-    into bucket from public.custom_nine_at_bat_score_buckets_v1(a, 2, 'cn-test-a1');
+    into bucket from public.custom_nine_at_bat_score_buckets_v1(a, 2::smallint, 'cn-test-a1');
   if bucket <> '[]'::jsonb then
     raise exception 'Custom AB no-other-result behavior failed: %', bucket;
   end if;
 
   select coalesce(jsonb_agg(jsonb_build_array(points, result_count) order by points), '[]'::jsonb)
-    into bucket from public.custom_nine_at_bat_score_buckets_v1(b, 1, null);
+    into bucket from public.custom_nine_at_bat_score_buckets_v1(b, 1::smallint, null);
   if bucket <> '[[2,1]]'::jsonb then
     raise exception 'Custom AB challenge isolation failed: %', bucket;
   end if;
 
   select coalesce(jsonb_agg(jsonb_build_array(points, result_count) order by points), '[]'::jsonb)
-    into bucket from public.custom_nine_at_bat_score_buckets_v1(a, 10, null);
+    into bucket from public.custom_nine_at_bat_score_buckets_v1(a, 10::smallint, null);
   if bucket <> '[]'::jsonb then
     raise exception 'Custom invalid pitch admitted: %', bucket;
   end if;
