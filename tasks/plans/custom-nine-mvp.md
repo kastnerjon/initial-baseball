@@ -165,3 +165,12 @@ The selection and pure issued-record contracts alone are **not** a playable or s
 **Out of scope:** Public API, credential issuance, signing verification, creator-cookie eligibility, server-orchestrated hint/guess transactions, row-level business rules of scoring, completed/AB results and comparisons, migrations/new privileges, Universal/Archive. No production test inserts.
 **Acceptance:** Focused tests/typecheck/full CI, one bounded independent reviewer, READY same-head Preview, postmerge CI/production/canonical/log checks; Supabase ledger still empty and RLS/permissions unchanged.
 **Stop:** Only a trusted server gameplay service may feed signed tokens/engine-normalized facts to this storage adapter; CAS alone cannot establish creator nonparticipation, prevent cookie deletion or prove honest hint usage. Never connect current stateless resolve/bootstrap directly to a competitive write.
+
+## Bounded scope — Custom Nine opt-in browser attempt reservation
+
+**Goal:** Reserve/resume one private first-attempt ledger row for a retained challenge-specific anonymous browser credential, without activating gameplay results.
+**Owning layer:** `apps/web` authorization/HTTP boundary.
+**In:** New opt-in same-origin, bodyless POST `/api/custom-nine/challenges/{puzzleId}/attempt/bootstrap`; domain-separated HMAC of CSPRNG 32-byte challenge nonce; SHA-256 challenge/digest server key; host-only HttpOnly SameSite Strict one-year path-scoped cookie (Secure on HTTPS); creator marker validation (verified creators preview without rows, invalid markers fail closed); private insert-or-resume; stored signed token/current-batter hint restoration; completed/missing-row fail-closed behavior; no-store sanitized responses and focused tests, API/handoff docs.
+**Out:** Existing stateless GET bootstrap/hint/resolve routes, browser UI, competitive submissions, migrations, score logic, public challenge creation, Universal/Archive.
+**Acceptance:** No Set-Cookie before persisted insert, for creator, unknown IDs, invalid cookie or provider error; no client-supplied attempt IDs/tokens/answer data; resume never restarts saved state; CI/review/READY Preview/postmerge verification; zero hosted rows without issued challenges.
+**Stop:** Stateless Custom endpoints remain inspectable/replayable and cannot contribute competitively. Browser reset/new device defeats anonymous identity. Stateful actions are separately scoped.
