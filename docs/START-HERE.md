@@ -13,6 +13,14 @@ After signed terminal receipts #366, the next bounded server-only verifier check
 
 ADR 0002 approves a challenge-scoped random browser credential and server-monotonic Supabase attempt ledger, because #367 signed receipts are replayable. This bounded schema PR adds only private attempt-state storage (no runtime writes), with composite first-attempt key, revision/current token for future atomic compare-and-swap, and server-only grants. Hosted migration must be applied and verified separately after review/merge; do not claim public competitive submission works. The next implementation stage is a provider adapter for first-insert-wins and atomic conditional update; later stages wire browser identity, creator exclusion, stateful hints/guesses and final result admission. Cross-device/cookie deletion and inspectable hints prevent account-grade anti-cheat. See `docs/decisions/0002-custom-nine-first-attempt-authority.md`.
 
+## Custom Nine private attempt adapter checkpoint
+
+PR #368's private Supabase ledger is hosted with RLS, zero browser grants and no production rows. Hosted migration `create_custom_nine_attempt_states` received version **`20261010235238`**, while source filename is **`20261010235500_create_custom_nine_attempt_states.sql`**; reconcile this difference before future CLI pushes, never replay or rename the original migration.
+
+This stage adds only a web server-side repository and strict row codec: `getOrCreate` first-insert-wins a server-generated UUID under exact challenge and per-browser digest; `advance` uses a single conditional SQL UPDATE matching **challenge ID, credential digest, attempt UUID, old revision, exact previous signed token, active status**, returning `conflict` on no match. It appends at most one engine-normalized ordered terminal fact, completes on the ninth, and does not expose any route. Focused tests cover same-key concurrency, diverging revisions/tokens, completion immutability, corrupt rows and provider failures.
+
+**Not yet operational first-attempt enforcement.** No browser credential is issued, no existing Custom bootstrap/hint/resolve endpoint calls this adapter, no result write gate is active. Future server composition must establish creator exclusion, token HMAC validation and stateful hint/guess transitions; the adapter does not authorize browser-controlled token or terminal facts. ADR 0002 remains the authority. Next bounded stage: safe challenge-scoped HttpOnly browser credential issuance/resumption, retaining the existing creator marker policy.
+
 ## Resume protocol
 
 1. Read `AGENTS.md`.
