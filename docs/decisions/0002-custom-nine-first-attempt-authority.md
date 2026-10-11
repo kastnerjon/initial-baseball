@@ -59,3 +59,9 @@ The Web-only partial guess adapter checks signed Custom active predecessor and f
 ## Staged combined scored Custom resolve
 
 Existing #372 first/second incorrect-guess persistence now composes with a separate terminal-only CAS service for correct, third-strike and Give-Up actions behind one bounded, cookie-authorized attempt resolve POST. Terminal HMAC receipt and signed successor verification precede a single atomic attempt-row update. A conflict never reveals the answer; the ninth fact completes the attempt. No result admission or legacy stateless route changes. Anonymous cookie deletion and external stateless hint exposure remain limitations.
+
+## Post-#373 stage — atomic private completed-result admission
+
+#373 merged and verified the one-POST stateful first/second incorrect, correct, third-strike and Give Up transport. The database-only follow-up introduces a service-role-only `admit_custom_nine_completed_attempt` function. It locks a persisted **completed** challenge-scoped attempt, derives the immutable submission ID from the server-generated attempt UUID, and commits the completed score and nine awarded-at-bat rows in one transaction. A second exact call returns the stored winner; mismatched scores or partial prior rows fail closed. It does not itself verify request cookies, creator markers, signed receipts or the score engine: the later Web server caller must check all authorization and recompute points from the authoritative ledger facts and issued puzzle before invoking it. No result submission API or comparison reader is activated by this migration.
+
+A missing creator marker still cannot establish non-creator identity across devices or cookie deletion. Prior stateless signed receipts remain noncompetitive, even if internally valid. Direct client Supabase access to this RPC remains revoked.
