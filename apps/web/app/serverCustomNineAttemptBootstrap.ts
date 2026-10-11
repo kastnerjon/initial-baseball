@@ -3,8 +3,8 @@ import { validateCustomNinePuzzleId } from '@initial-baseball/daily';
 import type { CustomNineBootstrapResponse } from './serverCustomNineBootstrap';
 import { createServerCustomNineBootstrapService } from './serverCustomNineBootstrap';
 import { createServerCustomNineHintService } from './serverCustomNineHints';
-import { createCustomNineCreatorBrowserMarker } from './customNineCreatorBrowser';
 import { createCustomNineAttemptBrowserCredential } from './customNineAttemptBrowserCredential';
+import { inspectCustomNineAttemptEligibility } from './customNineAttemptEligibility';
 import { getDailyProgressionSecret } from './dailyProgressionSecret';
 import { createServerSupabaseClient } from './serverSupabaseClient';
 import { createSupabaseCustomNineAttemptRepository } from './supabaseCustomNineAttemptRepository';
@@ -51,27 +51,22 @@ export function createServerCustomNineAttemptBootstrap({
       catch { return { kind: 'not_found' }; }
 
       const secret = dependencies.getSecret(environment);
-      const creator = createCustomNineCreatorBrowserMarker(secret).inspect(cookieHeader, puzzleId);
+      const eligible = inspectCustomNineAttemptEligibility(secret, cookieHeader, puzzleId);
       const credential = createCustomNineAttemptBrowserCredential(secret);
-      const observed = credential.inspect(cookieHeader, puzzleId);
-      // Neither an invalid creator marker nor an invalid attempt credential may
-      // silently downgrade to a fresh contributing browser.
-      if (creator === 'invalid' || observed.kind === 'invalid') {
-        return { kind: 'invalid_credential' };
-      }
+      if (eligible.kind === 'invalid') return { kind: 'invalid_credential' };
 
       const bootstrap = await dependencies.bootstrap(puzzleId);
       if (bootstrap === null) return { kind: 'not_found' };
       if (bootstrap.puzzleId !== puzzleId || bootstrap.rulesetVersion !== 'points-v4') {
         throw new Error('Custom Nine bootstrap identity mismatch.');
       }
-      if (creator === 'creator') return { kind: 'preview', bootstrap };
+      if (eligible.kind === 'creator') return { kind: 'preview', bootstrap };
 
       const repo = dependencies.attemptRepository(environment);
-      const issued = observed.kind === 'absent' ? credential.issue(puzzleId, requestUrl) : null;
+      const issued = eligible.kind === 'absent' ? credential.issue(puzzleId, requestUrl) : null;
       const key = {
         challengeId: puzzleId,
-        browserKeyDigest: issued?.browserKeyDigest ?? (observed.kind === 'valid' ? observed.browserKeyDigest : ''),
+        browserKeyDigest: issued?.browserKeyDigest ?? (eligible.kind === 'valid' ? eligible.browserKeyDigest : ''),
       };
       const saved = issued === null
         ? await repo.getByKey(key)
@@ -92,7 +87,29 @@ export function createServerCustomNineAttemptBootstrap({
           hintBundle: restored.hintBundle,
         };
       }
-      return { kind: 'ready', bootstrap: response, setCookie: issued?.setCookie ?? null };
+      return { kind: 'ready', bootstrap: projectCustomNineAttemptBootstrap(response), setCookie: issued?.setCookie ?? null };
+    },
+  };
+}
+
+/**
+ * Only already-authorized hint depths are returned on the stateful attempt
+ * protocol. The legacy stateless Custom bootstrap intentionally retains its
+ * prior bundle semantics and is NOT admissible as competitive evidence.
+ */
+export function projectCustomNineAttemptBootstrap(
+  result: CustomNineBootstrapResponse,
+): CustomNineBootstrapResponse {
+  const bundle = result.hintBundle;
+  if (!Number.isInteger(bundle.revealedCount) || bundle.revealedCount < 0 || bundle.revealedCount > 4) {
+    throw new Error('Invalid Custom Nine authorized hint depth.');
+  }
+  return {
+    ...result,
+    hintBundle: {
+      ...bundle,
+      hints: bundle.hints.filter(hint => hint.slot <= bundle.revealedCount),
+      checkpoints: [],
     },
   };
 }

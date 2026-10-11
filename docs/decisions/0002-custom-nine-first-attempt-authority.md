@@ -39,7 +39,8 @@ The table and revision column **enable but do not themselves enforce** applicati
 1. **This PR:** private attempt-ledger schema, constraints, RLS and grants. No runtime adapter/routes/data inserts.
 2. **Staged adapter PR:** Private web provider implements first-insert-wins, strict persisted-row decoding and conditional compare-and-swap on challenge/browser/attempt/revision/signed-current-token/active status, with concurrent stale-operation regression tests. No routes or hosted attempt inserts.
 3. **Staged opt-in POST:** Distinct `/api/custom-nine/challenges/{puzzleId}/attempt/bootstrap` starts/resumes one challenge-specific signed HttpOnly browser credential and first durable attempt; verified creators preview only, invalid creator/attempt cookies fail closed. Prior stateless GET/hints/resolve remain unchanged and are never competitive evidence.
-4. Next: stateful Custom hint/guess/Give Up progression that atomically commits every scored action and rejects stale/replayed branches, preserving spoiler-safe active-batter reads.
+4. **Staged hint actions:** Stateful attempt hints now require prior signed token and valid challenge-only cookie, with atomic one-hint CAS and no pre-signed reveal-depth checkpoints in reserved bootstrap. The prior stateless Custom routes remain noncompetitive.
+5. Next: stateful Custom guess/Give Up progression that atomically commits every scored action and rejects stale/replayed branches, preserving spoiler-safe active-batter reads.
 5. Next: exact-challenge completion and result submission in a transaction preserving first eligible attempt; creator/noncreator check, engine verification, idempotent atomic inserts and comparison isolation.
 6. Then: user-facing Custom game, share, and comparison UI plus public creation abuse controls. One bounded PR at a time with review and exact production verification.
 
