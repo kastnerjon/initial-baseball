@@ -183,3 +183,12 @@ The selection and pure issued-record contracts alone are **not** a playable or s
 **Out:** Existing stateless Custom GET/bootstrap/hint/hints/resolve routes, player UI, guess/Give Up/terminal transitions, result writes/admission/comparison, Supabase schema, Universal/Classic/Archive.
 **Acceptance:** Strict cookie/path and token identity, stale/replay/concurrent one-winner semantics, no uncommitted hint disclosed, no pre-signed hint-depth alternatives on opt-in bootstrap, CI/review/READY Preview/postmerge read-only production checks.
 **Stop:** This is not cheating-proof due to still-accessible stateless Custom routes and anonymous device/cookie workarounds. No result contribution without later stateful guess/terminal and explicit admission policy.
+
+## Bounded scope — server-only Custom Nine nonterminal wrong-guess CAS
+
+**Goal:** Server-calculate and atomically persist the first and second incorrect guesses on a retained Custom challenge attempt without releasing an incorrect-only public answer oracle.
+**Owning layer:** `apps/web` private Custom scoring/attempt composition, consuming existing signed Custom resolution, issued challenge repository and #369 CAS.
+**In:** Exact challenge validation/existence, creator/attempt-cookie eligibility, Custom-only HMAC token scope, saved active predecessor and ordered completed-pitch invariant; canonical player guess bounded input, existing Daily-native guess calculation, signed one-strike successor with no reveal/pitch/out-count changes; exact revision/token CAS and no returned successor after conflict; focused concurrency, tamper, stale/creator, terminal-unhandled, no-leak regression tests; docs.
+**Out:** Public POST guess/resolution route, correct/third-strike/Give Up/terminal mutation, result admission or comparison, client UI, schema/RLS changes, legacy stateless Custom endpoints and Universal/Classic.
+**Acceptance:** Two incorrect guesses each monotonically commit once; stale/competing requests don't advance; no browser-selected strike or score accepted; terminal actions return private terminal_pending without DB change; no public answer-testing oracle; CI/Preview/bounded independent review, postmerge checks and zero synthetic hosted writes.
+**Stop:** Until a full stateful terminal service can commit both incorrect and terminal outcomes through one public route, do not expose this private operation as an endpoint. Stateless Custom gameplay remains noncompetitive. Anonymous cookie/device limits apply.
