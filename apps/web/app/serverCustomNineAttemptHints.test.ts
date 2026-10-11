@@ -48,6 +48,7 @@ function setup() {
     }),
   };
   const deps = {
+    challengeExists: vi.fn(async () => true),
     repository: vi.fn(() => repo),
     getSecret: vi.fn(() => SECRET),
     revealHint: vi.fn(async () => ({ hint: HINT, progressionToken: NEXT })),
@@ -79,6 +80,15 @@ describe('Custom Nine stateful hint progression', () => {
     const result = await Promise.all([service.reveal(ID, pair, INITIAL), service.reveal(ID, pair, INITIAL)]);
     expect(result.map(x => x.kind).sort()).toEqual(['conflict', 'revealed']);
     expect(repo.advance).toHaveBeenCalledTimes(2);
+  });
+
+  it('returns 404 for a valid-shaped but unissued challenge before cookie eligibility', async () => {
+    const s = setup();
+    s.deps.challengeExists.mockResolvedValueOnce(false);
+    expect(await s.service.reveal(OTHER, null, INITIAL)).toEqual({ kind: 'not_found' });
+    expect(s.deps.getSecret).not.toHaveBeenCalled();
+    expect(s.repo.getByKey).not.toHaveBeenCalled();
+    expect(s.deps.revealHint).not.toHaveBeenCalled();
   });
 
   it('rejects no/invalid/duplicate credentials and the creator before mutation', async () => {

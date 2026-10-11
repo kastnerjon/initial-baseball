@@ -1,9 +1,10 @@
 import 'server-only';
-import { validateCustomNinePuzzleId } from '@initial-baseball/daily';
+import { createCustomNineIssuedChallengeService, validateCustomNinePuzzleId } from '@initial-baseball/daily';
 import { CUSTOM_NINE_SESSION_DATE, createCustomNineProgressionTokens } from './serverCustomNineBootstrap';
 import { createServerCustomNineHintService } from './serverCustomNineHints';
 import { createServerSupabaseClient } from './serverSupabaseClient';
 import { createSupabaseCustomNineAttemptRepository } from './supabaseCustomNineAttemptRepository';
+import { createSupabaseCustomNineIssuedChallengeRepository } from './supabaseCustomNineIssuedChallengeRepository';
 import { getDailyProgressionSecret } from './dailyProgressionSecret';
 import { inspectCustomNineAttemptEligibility } from './customNineAttemptEligibility';
 import { DailyProgressionTokenError, type DailyProgressionClaims } from './dailyProgressionToken';
@@ -11,11 +12,16 @@ import { DailyProgressionTokenError, type DailyProgressionClaims } from './daily
 type Repository = Pick<ReturnType<typeof createSupabaseCustomNineAttemptRepository>, 'getByKey' | 'advance'>;
 type RevealedHint = NonNullable<Awaited<ReturnType<ReturnType<typeof createServerCustomNineHintService>['revealHint']>>>;
 type Dependencies = {
+  challengeExists: (puzzleId: string, environment: Record<string, string | undefined>) => Promise<boolean>;
   repository: (environment: Record<string, string | undefined>) => Repository;
   revealHint: (puzzleId: string, token: string) => Promise<RevealedHint | null>;
   getSecret: (environment: Record<string, string | undefined>) => string;
 };
 const DEFAULT_DEPENDENCIES: Dependencies = {
+  challengeExists: async (id, env) => {
+    const repo = createSupabaseCustomNineIssuedChallengeRepository(createServerSupabaseClient(env));
+    return (await createCustomNineIssuedChallengeService(repo).getById(id)) !== null;
+  },
   repository: env => createSupabaseCustomNineAttemptRepository(createServerSupabaseClient(env)),
   revealHint: (id, token) => createServerCustomNineHintService().revealHint(id, token),
   getSecret: getDailyProgressionSecret,
@@ -63,6 +69,9 @@ export function createServerCustomNineAttemptHintService({
       if (typeof expectedToken !== 'string' || expectedToken.length === 0 || expectedToken.length > 4096) {
         return { kind: 'invalid_progression' };
       }
+      // Public challenge existence is already discoverable through redacted
+      // metadata. Resolve it first so unknown, well-formed IDs honor 404.
+      if (!await dependencies.challengeExists(puzzleId, environment)) return { kind: 'not_found' };
       const secret = dependencies.getSecret(environment);
       const eligible = inspectCustomNineAttemptEligibility(secret, cookieHeader, puzzleId);
       if (eligible.kind !== 'valid') return { kind: 'invalid_credential' };
