@@ -20,6 +20,7 @@ type Dependencies = {
   getSecret: (environment: Environment) => string;
   challengeExists: (puzzleId: string, environment: Environment) => Promise<boolean>;
   getAttempt: (puzzleId: string, digest: string, environment: Environment) => Promise<CustomNineAttemptState | null>;
+  hasAcceptedResult: (puzzleId: string, attemptId: string, environment: Environment) => Promise<boolean>;
   readPeers: (puzzleId: string, trustedAttemptId: string, environment: Environment) => Promise<PeerComparison>;
 };
 
@@ -73,11 +74,32 @@ const DEFAULT: Dependencies = {
   getAttempt: (id, digest, environment) => createSupabaseCustomNineAttemptRepository(
     createServerSupabaseClient(environment),
   ).getByKey({ challengeId: id, browserKeyDigest: digest }),
+  hasAcceptedResult: async (id, attemptId, environment) => {
+    // An ended ledger alone is not proof of an admitted first result. Never
+    // read the comparison cohort until the exact server-owned submission has
+    // been durably accepted for this challenge and fixed points-v4 ruleset.
+    const { data, error } = await createServerSupabaseClient(environment)
+      .from('custom_nine_completed_results')
+      .select('submission_id')
+      .match({
+        submission_id: attemptId,
+        challenge_id: id,
+        schema_version: 1,
+        ruleset_version: POINTS_V4_DAILY_RULESET_VERSION,
+      })
+      .maybeSingle();
+    if (error !== null) throw new Error('Custom Nine accepted-result lookup unavailable.');
+    if (data === null) return false;
+    if (data.submission_id !== attemptId) {
+      throw new Error('Private Custom Nine accepted-result identity mismatch.');
+    }
+    return true;
+  },
   readPeers,
 };
 
 export type CustomNineComparisonResult =
-  | { kind: 'not_found' | 'ineligible' | 'incomplete' }
+  | { kind: 'not_found' | 'ineligible' | 'incomplete' | 'not_admitted' }
   | ({ kind: 'ready' } & PeerComparison);
 
 /**
@@ -111,6 +133,9 @@ export function createServerCustomNineComparisonService({
       if (attempt.status !== 'completed' || attempt.terminalAtBats.length !== 9
         || attempt.completedAt === null) return { kind: 'incomplete' };
 
+      if (!await dependencies.hasAcceptedResult(puzzleId, attempt.attemptId, environment)) {
+        return { kind: 'not_admitted' };
+      }
       const peers = await dependencies.readPeers(puzzleId, attempt.attemptId, environment);
       return { kind: 'ready', ...peers };
     },

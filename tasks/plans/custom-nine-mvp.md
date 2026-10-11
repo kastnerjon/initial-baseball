@@ -1,5 +1,16 @@
 # Daily Nine — Custom Lineup MVP
 
+## Current bounded scope — default-disabled Custom Nine comparison-read HTTP (October 11)
+
+**Goal:** Stage only a safe, unactivated browser read of admitted exact-challenge private Custom Nine comparison statistics.
+**Owning layer:** `apps/web` HTTP boundary and its existing server-only composition.
+**In scope:** URL-only immutable challenge selection; signed-cookie, completed ledger and matching accepted points-v4 result identity; exactly scoped server-own-result exclusion; strict double opt-in flags; sanitized private/no-store response with completed and nine AB histograms, averages and counts; no untrusted exclusion, origin/cross-site checks and disallowed query parameters; focused tests; canonical docs.
+**Out of scope:** Enabling environment settings, write admissions or RPC schema changes, publishing comparison to unqualified challenge visitors, browser result UI, account identity, creator-abuse controls, Daily/Archive/Classic code and new libraries.
+**Acceptance:** Default-off never calls a private service; forged/creator/absent/incomplete/unadmitted attempt is denied; only valid completed and admitted first-attempt server identity excludes own scores; no private facts appear in responses or errors; real zero-peer/one-peer/half-point cohorts preserved; exact CI, READY Preview, bounded Codex review and release verification.
+**Stop:** Real activation requires a separately approved integrity/abuse plan and explicit permission to change the flags.
+
+**Next stage:** creator/player browser UI using staged APIs, then public activation threat-model review. Do not enable `CUSTOM_NINE_RESULT_SUBMISSION_ENABLED` or `CUSTOM_NINE_COMPARISON_READ_ENABLED` as part of this PR.
+
 ## Current bounded scope — private Web Custom Nine comparison provider (October 11)
 
 **Goal:** Consume existing private exact-challenge Custom points-v4 per-AB and completed score buckets through a Web-owned server-only adapter and authenticated read composition.

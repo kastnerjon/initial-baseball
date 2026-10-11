@@ -9,6 +9,14 @@ Daily routes are thin Next.js adapters over canonical baseball data, engine rule
 
 Every route must validate input, return sanitized data, keep rules in their owning packages, avoid per-action persistence, and never reflect secrets or hidden answer data in errors. Public search returns canonical player IDs. Daily resolution may compare a syntactically canonical submitted ID directly with the server-only canonical answer ID; legacy/noncanonical IDs cross the canonical redirect boundary before comparison.
 
+## Guarded Custom Nine comparison read (disabled by default)
+
+`GET /api/custom-nine/challenges/{puzzleId}/attempt/comparison` is a server-only, challenge-scoped read of **accepted** Custom Nine points-v4 results. It returns 404 without a service/database call unless both server-only `CUSTOM_NINE_COMPARISON_READ_ENABLED=true` and `CUSTOM_NINE_RESULT_SUBMISSION_ENABLED=true` are explicitly configured. These are **not** activated by this code stage.
+
+When separately activated, the URL supplies only an immutable issued challenge ID. No query parameters, arbitrary excluded submission ID, scores, clue metadata, or browser-chosen result selection are permitted (400); foreign Origin/cross-site fetch metadata is rejected (403). The reader verifies signed noncreator challenge-scoped attempt cookie, completed private ledger and exact admitted first-attempt result before any peer read. Missing/creator/invalid/unadmitted credentials return 403, incomplete attempts 409, unknown challenge 404, provider failures 503, with generic bodies.
+
+Success body: `{schemaVersion:1, rulesetVersion:'points-v4', completed:{completedGameCount,averageTotalPoints,scoreHistogram}, atBats:[{pitchNumber,resolvedAtBatCount,averagePoints,scoreHistogram}]}` with nine ABs. Only aggregate histograms, counts and averages are returned, never answer, identity, terminal facts, browser credentials, result UUID or hidden clues. Every response uses `Cache-Control: private, no-store` and `Vary: Cookie`. Score rules and histogram calculations stay with the existing portable Daily/engine-owned implementation. The endpoint does not accept or trigger score submission.
+
 ## Guarded Custom Nine completed-result submission (disabled by default)
 
 `POST /api/custom-nine/challenges/{puzzleId}/attempt/submit` is a **bodyless, same-origin, signed-cookie-only** transport for the existing private Custom Nine completed-result admission service. It is dormant unless the server-only `CUSTOM_NINE_RESULT_SUBMISSION_ENABLED` setting is exactly `true`; absent, disabled and nonmatching values all return `404 {"error":"not_found"}` before any database/service work. Deploying the route **does not authorize switching it on**. No Vercel setting is changed as part of this stage.

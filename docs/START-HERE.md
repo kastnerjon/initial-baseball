@@ -5,6 +5,12 @@ Last updated: 2026-10-11
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
+## Custom Nine comparison HTTP transport — staged, default-disabled (October 11)
+
+The Web-only `GET /api/custom-nine/challenges/{puzzleId}/attempt/comparison` route projects only a versioned nine-AB and completed-score cohort (counts, averages and histograms). Both server-only flags `CUSTOM_NINE_COMPARISON_READ_ENABLED` and `CUSTOM_NINE_RESULT_SUBMISSION_ENABLED` must be exactly `true`; otherwise it returns 404 before the comparison service is invoked. Neither flag is enabled in this PR. Requests cannot select an exclusion or supply score/puzzle metadata. Only signed noncreator challenge-cookie attempts whose ledger is complete **and** whose server-issued UUID has a matching admitted points-v4 result may read the private cohort. Responses are sanitized, no-store, cookie-varying and contain no raw identity, tokens, clues, outcomes or player IDs. Existing Daily and Archive comparison flows do not change.
+
+**Next after this bounded transport:** Custom Nine creator/player UI stages, then explicit anti-abuse and integrity review before a separately authorized public competition activation. The mere existence of the API does not authorize enabling any flag.
+
 ## Custom Nine private comparison provider — server-only stage (October 11)
 
 The Web-owned Custom Nine comparison reader now decodes the two existing service-role-only score-bucket RPCs for the exact immutable points-v4 challenge, then reuses the portable Daily histogram/range/average service. The private composition authorizes a signed, challenge-scoped, non-creator browser attempt cookie and a matching completed server attempt ledger, deriving the excluded result ID only from the persisted server-issued attempt UUID. It returns aggregate counts, averages and offset histograms, not identities, clues, terminal facts or attempt credentials. It has no HTTP route or browser consumer.
