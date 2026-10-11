@@ -5,6 +5,12 @@ Last updated: 2026-10-11
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
+## Custom Nine score-bucket SQL — merged, installed and transaction-verified (October 11)
+
+PR #377 merged as `3b3657a76de994fcbd7cc2af92da30ba63bd2036` after exact-head CI, READY Preview and completed zero-finding Codex review. The isolated Custom Nine per-slot and completed points-v4 score bucket RPCs were installed in hosted Supabase as migration **`20261011174646`** (`create_custom_nine_comparison_buckets`), while the committed migration filename is `20261011171500_create_custom_nine_comparison_buckets.sql`; **do not rename or replay**. A transaction-scoped synthetic fixture passed: exact-challenge grouping, self-exclusion, empty peer population, orphan-AB exclusion and service-role-only privileges; `ROLLBACK` left all four Custom tables empty. The original fixture required explicit `::smallint` casts for the AB slot function parameter; this follow-up records those casts with no deployed schema change.
+
+**Next bounded stage:** a server-only Custom Nine comparison provider/decoder, consuming the existing RPC buckets with points-v4 histogram/AVG/BEAT logic and trusted signed-cookie-derived own-result exclusion. No public comparison API, browser UI, submission flag change or creator-abuse controls are activated by SQL installation.
+
 ## Custom Nine peer comparison buckets — private database stage (October 11)
 
 This bounded Supabase-only stage adds two **service-role-only** stable score-bucket functions, `custom_nine_at_bat_score_buckets_v1(challenge_id, pitch_number, excluded_submission_id)` and `custom_nine_completed_score_buckets_v1(challenge_id, excluded_submission_id)`. Both read exclusively the isolated Custom Nine points-v4 result tables and filter to the **exact issued challenge**; neither reads current Daily Nine or Archive populations or emits player identities, clues, outcomes, raw per-attempt facts or timestamps. The per-AB reader joins a matching **accepted completed result** so a stray/orphan legacy AB cannot inflate the denominator. Each row contains only `{points, result_count}`.
