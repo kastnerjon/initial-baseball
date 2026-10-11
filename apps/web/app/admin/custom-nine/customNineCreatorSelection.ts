@@ -32,3 +32,8 @@ export function isCompleteCustomNineSelection(players: readonly ChosenCustomNine
   return players.length === 9 && players.every(player => player.playerId.trim().length > 0)
     && new Set(players.map(player => player.playerId)).size === 9;
 }
+
+/** An issued immutable challenge stays visible until the creator explicitly starts again. */
+export function isCustomNineDraftEditable(issuedId: string | null, issuing: boolean): boolean {
+  return issuedId === null && !issuing;
+}

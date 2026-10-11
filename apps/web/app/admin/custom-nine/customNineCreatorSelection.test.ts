@@ -1,12 +1,18 @@
 import { describe, expect, it } from 'vitest';
 import {
-  appendCustomNinePlayer, isCompleteCustomNineSelection,
+  appendCustomNinePlayer, isCompleteCustomNineSelection, isCustomNineDraftEditable,
   moveCustomNinePlayer, removeCustomNinePlayer,
 } from './customNineCreatorSelection';
 
 const player = (i: number) => ({ playerId: 'canonical-' + i, displayName: 'Player ' + i, label: 'Player ' + i });
 
 describe('Custom Nine ordered creator selection', () => {
+  it('locks a successfully issued challenge until explicit reset', () => {
+    expect(isCustomNineDraftEditable(null, false)).toBe(true);
+    expect(isCustomNineDraftEditable(null, true)).toBe(false);
+    expect(isCustomNineDraftEditable('custom-nine-v1-issued', false)).toBe(false);
+  });
+
   it('adds at most nine unique canonical selections in the chosen order', () => {
     let chosen = Array.from({ length: 8 }, (_, i) => player(i));
     chosen = appendCustomNinePlayer(chosen, player(8)) as typeof chosen;

@@ -4,6 +4,7 @@ import React, { useEffect, useState, type JSX } from 'react';
 import {
   appendCustomNinePlayer,
   isCompleteCustomNineSelection,
+  isCustomNineDraftEditable,
   moveCustomNinePlayer,
   removeCustomNinePlayer,
   type ChosenCustomNinePlayer,
@@ -41,11 +42,12 @@ export function CustomNineCreatorView(): JSX.Element {
   const [createdId, setCreatedId] = useState<string | null>(null);
   const [issueError, setIssueError] = useState<string | null>(null);
   const [copyMessage, setCopyMessage] = useState<string | null>(null);
+  const draftEditable = isCustomNineDraftEditable(createdId, issuing);
 
   useEffect(() => {
     const trimmed = query.trim();
     setSearchError(false);
-    if (trimmed.length < 2 || players.length === 9) {
+    if (trimmed.length < 2 || players.length === 9 || !draftEditable) {
       setSuggestions([]);
       setSearchBusy(false);
       return;
@@ -70,9 +72,10 @@ export function CustomNineCreatorView(): JSX.Element {
       });
     }, 180);
     return () => { clearTimeout(timer); controller.abort(); };
-  }, [query, players.length]);
+  }, [query, players.length, draftEditable]);
 
   function add(candidate: SearchCandidate): void {
+    if (!draftEditable) return;
     setPlayers(current => appendCustomNinePlayer(current, {
       playerId: candidate.playerId,
       displayName: candidate.displayName,
@@ -80,15 +83,13 @@ export function CustomNineCreatorView(): JSX.Element {
     }));
     setQuery('');
     setSuggestions([]);
-    setCreatedId(null);
     setIssueError(null);
   }
 
   async function issue(): Promise<void> {
-    if (issuing || !isCompleteCustomNineSelection(players)) return;
+    if (!draftEditable || !isCompleteCustomNineSelection(players)) return;
     setIssuing(true);
     setIssueError(null);
-    setCreatedId(null);
     setCopyMessage(null);
     try {
       const response = await fetch('/api/custom-nine/challenges', {
@@ -161,14 +162,14 @@ export function CustomNineCreatorView(): JSX.Element {
                     <span className="custom-nine-player-name">{player.label}</span>
                     <div className="custom-nine-slot-actions">
                       <button type="button" aria-label={'Move ' + player.displayName + ' up'}
-                        disabled={index === 0 || issuing}
-                        onClick={() => { setPlayers(current => moveCustomNinePlayer(current, index, -1)); setCreatedId(null); }}>↑</button>
+                        disabled={index === 0 || !draftEditable}
+                        onClick={() => { setPlayers(current => moveCustomNinePlayer(current, index, -1)); }}>↑</button>
                       <button type="button" aria-label={'Move ' + player.displayName + ' down'}
-                        disabled={index === players.length - 1 || issuing}
-                        onClick={() => { setPlayers(current => moveCustomNinePlayer(current, index, 1)); setCreatedId(null); }}>↓</button>
+                        disabled={index === players.length - 1 || !draftEditable}
+                        onClick={() => { setPlayers(current => moveCustomNinePlayer(current, index, 1)); }}>↓</button>
                       <button type="button" aria-label={'Remove ' + player.displayName}
-                        disabled={issuing}
-                        onClick={() => { setPlayers(current => removeCustomNinePlayer(current, player.playerId)); setCreatedId(null); }}>Remove</button>
+                        disabled={!draftEditable}
+                        onClick={() => { setPlayers(current => removeCustomNinePlayer(current, player.playerId)); }}>Remove</button>
                     </div>
                   </>
                 )}
@@ -180,7 +181,7 @@ export function CustomNineCreatorView(): JSX.Element {
           <label htmlFor="custom-nine-player-search">Find a player</label>
           <input id="custom-nine-player-search" type="search" autoComplete="off"
             placeholder="Search a player by name" value={query}
-            disabled={players.length === 9 || issuing}
+            disabled={players.length === 9 || !draftEditable}
             onChange={event => {
               if ('value' in event.target && typeof event.target.value === 'string') setQuery(event.target.value);
             }} />
@@ -193,7 +194,7 @@ export function CustomNineCreatorView(): JSX.Element {
               {suggestions.map(candidate => (
                 <li key={candidate.playerId}>
                   <button type="button"
-                    disabled={players.some(player => player.playerId === candidate.playerId) || issuing}
+                    disabled={players.some(player => player.playerId === candidate.playerId) || !draftEditable}
                     onClick={() => add(candidate)}>
                     <span>{playerLabel(candidate)}</span>
                     <span>{players.some(player => player.playerId === candidate.playerId) ? 'Added' : 'Add'}</span>
@@ -204,7 +205,7 @@ export function CustomNineCreatorView(): JSX.Element {
           ) : null}
         </div>
         <div className="custom-nine-create-action">
-          <button type="button" disabled={!isCompleteCustomNineSelection(players) || issuing}
+          <button type="button" disabled={!isCompleteCustomNineSelection(players) || !draftEditable}
             onClick={() => { void issue(); }}>
             {issuing ? 'Issuing challenge…' : 'Issue immutable challenge'}
           </button>
@@ -217,6 +218,15 @@ export function CustomNineCreatorView(): JSX.Element {
               <code>{createdId}</code>
               <button type="button" onClick={() => { void copyId(); }}>Copy challenge ID</button>
               {copyMessage !== null ? <span>{copyMessage}</span> : null}
+              <p>Save or copy this ID before starting another challenge. Your issued lineup is locked.</p>
+              <button type="button" onClick={() => {
+                setPlayers([]);
+                setQuery('');
+                setSuggestions([]);
+                setCreatedId(null);
+                setIssueError(null);
+                setCopyMessage(null);
+              }}>Start another challenge</button>
             </div>
           ) : null}
         </div>
