@@ -114,6 +114,9 @@ Statistical accomplishment is not recognizability. The current weighted-stat ran
 The authorized owner can open Attempt scores from the existing lineup dashboard to inspect anonymous attempts as rows and AB 1–9 scores as columns. Date, exact lineup edition and scoring version are selectable; each edition is inspected separately. Partial games, missing scores, completion-only facts and known October 6 beta seeds are distinguished. Received-AB points, completed points and receipt times are separate. Optional CSV exports the displayed bounded page. This read-only feature does not modify gameplay, averages or result delivery; named rows/cross-device ownership still require accounts, and deletion/moderation is not part of this screen.
 
 ## Visual system
+Sitewide readability guardrail: muted body/utility text should meet at least a 7:1 contrast ratio against the main paper and card surfaces; primary UI outlines, inputs, and progress/scoreboard boundaries should meet a 3:1 non-text contrast target where they convey structure or state. The green/cream palette remains, but use darker ink and stronger separators so meaning does not depend on subtle pale-on-pale distinctions. These are styling-token changes, not new game rules.
+
+
 For active points-v4 Daily Nine gameplay, display a nine-stage progress tracker above the existing scoreboard: earlier completed at-bats use checkmarks, the active at-bat uses a filled numbered circle, and upcoming at-bats use outlined numbered circles. An explicit `AT-BAT N OF 9` caption accompanies the graphical status. This is a read-only UI projection of existing at-bat state, not a new scoring or persistence rule; the shared component may be used by Custom Nine's eventual player UI.
 
 

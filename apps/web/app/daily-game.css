@@ -39,7 +39,7 @@
   line-height: 1;
 }
 .at-bat-count-marker {
-  color: #929b90;
+  color: #69776b;
   font-size: 15px;
 }
 .at-bat-count-marker.filled {
@@ -119,7 +119,7 @@
 input[type="text"] {
   width: 100%;
   min-height: 48px;
-  border: 1px solid #a4afa1;
+  border: 1px solid var(--line);
   border-radius: 5px;
   padding: 11px 12px;
   background: white;
@@ -128,7 +128,7 @@ input[type="text"] {
   font-weight: 400;
 }
 input[type="text"]::placeholder {
-  color: #72786e;
+  color: #536252;
 }
 input[type="text"]:focus {
   border-color: var(--clubhouse);

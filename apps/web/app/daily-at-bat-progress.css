@@ -22,7 +22,7 @@
   left: 5.55%;
   right: 5.55%;
   height: 2px;
-  background: #9ca69a;
+  background: var(--line);
   transform: translateY(-50%);
 }
 .at-bat-progress-step {
