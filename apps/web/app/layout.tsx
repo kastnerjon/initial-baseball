@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import './styles.css';
 import './daily-shell.css';
 import './daily-game.css';
+import './daily-at-bat-progress.css';
 import './daily-results.css';
 import './daily-score-distributions.css';
 import './daily-leaderboard.css';
