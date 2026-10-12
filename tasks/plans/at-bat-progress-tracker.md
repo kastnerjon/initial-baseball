@@ -14,4 +14,4 @@ Status: implementation scope, 2026-10-11.
 
 **Stop conditions:** If introducing this tracker would require broad Daily/Custom UI refactors or changes to score/state models, defer integration in favor of keeping the isolated reusable component.
 
-**Architecture:** Prop¶»§q«^
+**Architecture:** Props are presentation-only (stage count, completed numbers, active number). It consumes existing game state without interpreting baseball outcomes. No engine/data/server dependencies. Reuse in Custom Nine is a follow-up, not implied activation.

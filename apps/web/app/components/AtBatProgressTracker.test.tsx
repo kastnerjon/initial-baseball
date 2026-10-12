@@ -27,4 +27,18 @@ describe('AtBatProgressTracker', () => {
   });
   it('handles a just-resolved batter without falsely advancing current at-bat', () => {
     const html = render(5, [1, 2, 3, 4, 5]);
-    expect(html).toContain('At-bat 5: compl¶»§q«^
+    expect(html).toContain('At-bat 5: completed');
+    expect(html).toContain('AT-BAT 5 OF 9');
+    expect(html).not.toContain('At-bat 6: current');
+  });
+  it('has a completed state for all nine', () => {
+    const html = render(9, [1, 2, 3, 4, 5, 6, 7, 8, 9]);
+    expect(html).toContain('ALL 9 AT-BATS COMPLETE');
+    expect(html.match(/aria-current="step"/g)).toBeNull();
+  });
+  it('rejects invalid or contradictory stage data', () => {
+    expect(() => render(0, [])).toThrow();
+    expect(() => render(5, [1, 1])).toThrow();
+    expect(() => render(4, [1, 5])).toThrow();
+  });
+});

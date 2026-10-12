@@ -37,4 +37,19 @@ export function AtBatProgressTracker({
           const status = done ? 'completed' : current ? 'current' : 'upcoming';
           return (
             <li className={`at-bat-progress-step at-bat-progress-step--${status}`} key={number}
-              ¶»§q«^
+              aria-label={`At-bat ${number}: ${status}`}
+              aria-current={current ? 'step' : undefined}>
+              <span className="at-bat-progress-circle" aria-hidden="true">
+                {done ? 'âœ“' : number}
+              </span>
+            </li>
+          );
+        })}
+      </ol>
+      <p className="at-bat-progress-caption" aria-live="polite">
+        {completed.size === totalAtBats ? `ALL ${totalAtBats} AT-BATS COMPLETE`
+          : `AT-BAT ${currentAtBat} OF ${totalAtBats}`}
+      </p>
+    </section>
+  );
+}
