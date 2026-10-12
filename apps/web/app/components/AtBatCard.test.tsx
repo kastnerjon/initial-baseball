@@ -7,6 +7,23 @@ import { AtBatCard } from './AtBatCard';
 (globalThis as Record<string, unknown>).React = React;
 
 describe('AtBatCard pending resolution feedback', () => {
+  it('moves the live v4 score into the card header and removes the question prompt', () => {
+    const html = renderCard({ requestPending: false, giveUpPending: false,
+      rulesetVersion: 'points-v4', cumulativePoints: 4.5 });
+    expect(html).toContain('Score: 4.5');
+    expect(html).not.toContain('Who is the player?');
+    expect(html).toContain('aria-label="0 of 3 strikes"');
+  });
+
+  it('shows the updated cumulative v4 score while an at-bat is resolved', () => {
+    const html = renderCard({ requestPending: false, giveUpPending: false,
+      rulesetVersion: 'points-v4', cumulativePoints: 8.5,
+      submittedResult: { kind: 'strikeout', revealedCount: 0,
+        strikeCount: 3, outcome: 'K', source: 'strikeout' } });
+    expect(html).toContain('Score: 8.5');
+    expect(html).not.toContain('Who is the player?');
+  });
+
   it('acknowledges Give Up immediately while the reveal request is pending', () => {
     const html = renderCard({ requestPending: true, giveUpPending: true });
 
@@ -262,6 +279,7 @@ function renderCard(input: {
     source: 'strikeout';
   };
   nextActionLabel?: string;
+  cumulativePoints?: number;
   comparison?: DailyNineAtBatComparisonState;
 }): string {
   return renderToStaticMarkup(
@@ -282,6 +300,7 @@ function renderCard(input: {
       requestError={null}
       comparison={input.comparison ?? { status: 'idle' }}
       terminalAwardedPoints={input.submittedResult === undefined ? null : 0}
+      cumulativePoints={input.cumulativePoints ?? 0}
       {...(input.nextActionLabel === undefined ? {} : { nextActionLabel: input.nextActionLabel })}
       onQueryChange={() => undefined}
       onSelectPlayer={() => undefined}
