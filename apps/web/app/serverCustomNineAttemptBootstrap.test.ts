@@ -33,7 +33,7 @@ const stored = (
 ): CustomNineAttemptState => ({
   challengeId: ID, browserKeyDigest: digest,
   attemptId: '123e4567-e89b-42d3-a456-426614174010',
-  revision: token === OPEN ? 0 : 1,
+  revision: token === OPEN ? 0 : token === WRONG ? 2 : 1,
   currentProgressionToken: token, terminalAtBats: facts,
   status, createdAt: '2026-10-10T16:00:00Z',
   updatedAt: '2026-10-10T16:00:00Z', completedAt: status === 'completed' ? '2026-10-10T17:00:00Z' : null,
@@ -161,6 +161,36 @@ describe('staged Custom Nine challenge-specific attempt bootstrap', () => {
     byKey.set(key, stored(key, LATER, 'active', [FIRST_FACT]));
     const resumed = await service.bootstrap(ID, pair, URL);
     expect(resumed.kind).toBe('ready');
+  });
+
+  it('rejects corrupt saved action revisions even when token and terminal facts appear valid', async () => {
+    const { service, byKey } = setup();
+    const first = await service.bootstrap(ID, null, URL);
+    if (first.kind !== 'ready' || !first.setCookie) throw Error('Expected cookie');
+    const key = [...byKey.keys()][0]!;
+    const cookie = first.setCookie.split(';')[0]!;
+    for (const revision of [0, 4]) {
+      byKey.set(key, { ...stored(key, LATER, 'active', [FIRST_FACT]), revision });
+      await expect(service.bootstrap(ID, cookie, URL)).rejects.toThrow('revision mismatch');
+    }
+    byKey.set(key, { ...stored(key, WRONG), revision: 1 });
+    await expect(service.bootstrap(ID, cookie, URL)).rejects.toThrow('revision mismatch');
+    byKey.set(key, stored(key, LATER, 'active', [FIRST_FACT]));
+    expect((await service.bootstrap(ID, cookie, URL)).kind).toBe('ready');
+  });
+
+  it('counts prior hints and nonterminal incorrect guesses when reconstructing revision', async () => {
+    const { service, byKey } = setup();
+    const first = await service.bootstrap(ID, null, URL);
+    if (first.kind !== 'ready' || !first.setCookie) throw Error('Expected cookie');
+    const key = [...byKey.keys()][0]!;
+    const cookie = first.setCookie.split(';')[0]!;
+    const terminal = { ...FIRST_FACT, outcome: '2B' as const, hintsRevealed: 2 as const, wrongGuesses: 1 };
+    byKey.set(key, { ...stored(key, LATER, 'active', [terminal]), revision: 4 });
+    const resumed = await service.bootstrap(ID, cookie, URL);
+    expect(resumed.kind).toBe('ready');
+    byKey.set(key, { ...stored(key, LATER, 'active', [terminal]), revision: 5 });
+    await expect(service.bootstrap(ID, cookie, URL)).rejects.toThrow('revision mismatch');
   });
 
   it('lets verified creating browsers preview without reserving a contributing attempt', async () => {
