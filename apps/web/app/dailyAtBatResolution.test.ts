@@ -187,7 +187,8 @@ describe('AtBatCard terminal output', () => {
 
     expect(html).toContain('Score: 0');
     expect(html).toContain('Next At Bat');
-    expect(html.indexOf('Next At Bat')).toBeLessThan(html.indexOf('Player Reveal'));
+    expect(html.indexOf('Player Reveal')).toBeLessThan(html.indexOf('Your Score'));
+    expect(html.indexOf('Player Reveal')).toBeLessThan(html.indexOf('Next At Bat'));
     expect(html).not.toContain('Next Pitch');
     expect(html).toContain('Your Score');
     expect(html).toContain('>0</strong>');
