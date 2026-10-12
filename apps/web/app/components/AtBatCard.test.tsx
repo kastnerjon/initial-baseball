@@ -10,6 +10,7 @@ describe('AtBatCard pending resolution feedback', () => {
   it('preserves the historical v3 question prompt', () => {
     const html = renderCard({ requestPending: false, giveUpPending: false, rulesetVersion: 'points-v3' });
     expect(html).toContain('Who is the player?');
+    expect(html).not.toContain('aria-live="polite"');
     expect(html).not.toContain('Score:');
   });
 
@@ -17,6 +18,8 @@ describe('AtBatCard pending resolution feedback', () => {
     const html = renderCard({ requestPending: false, giveUpPending: false,
       rulesetVersion: 'points-v4', cumulativePoints: 4.5 });
     expect(html).toContain('Score: 4.5');
+    expect(html).toContain('aria-live="polite"');
+    expect(html).toContain('aria-atomic="true"');
     expect(html).not.toContain('Who is the player?');
     expect(html).toContain('aria-label="0 of 3 strikes"');
   });
@@ -27,6 +30,8 @@ describe('AtBatCard pending resolution feedback', () => {
       submittedResult: { kind: 'strikeout', revealedCount: 0,
         strikeCount: 3, outcome: 'K', source: 'strikeout' } });
     expect(html).toContain('Score: 8.5');
+    expect(html).toContain('aria-live="polite"');
+    expect(html).toContain('aria-atomic="true"');
     expect(html).not.toContain('Who is the player?');
   });
 
