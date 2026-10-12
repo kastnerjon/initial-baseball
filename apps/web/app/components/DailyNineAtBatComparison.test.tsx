@@ -70,7 +70,11 @@ describe('DailyNineAtBatComparison', () => {
     expect(html).toContain('>2.0</strong>');
     expect(html).toContain('>100th</strong>');
     expect(html).toContain('Outcome: HR');
-    expect(html).toContain('How everyone scored on this at-bat');
+    expect(html).toContain('<details class="at-bat-distribution-disclosure"><summary>How everyone scored on this at-bat</summary>');
+    expect(html).not.toContain('<details class="at-bat-distribution-disclosure" open');
+    expect(html).not.toContain('<h3>How everyone scored on this at-bat</h3>');
+    expect(html.indexOf('at-bat-distribution-disclosure')).toBeGreaterThan(html.indexOf('at-bat-summary-metrics'));
+    expect(html.indexOf('at-bat-distribution-bars')).toBeGreaterThan(html.indexOf('</summary>'));
     expect(html).toContain('100th Percentile · Your score was at or above 100% of other results (ties count).');
     expect(html).not.toContain('result-card-points');
     expect(html).not.toContain('at-bat-comparison-values');
@@ -87,6 +91,7 @@ describe('DailyNineAtBatComparison', () => {
     expect(html).toContain('>0</strong>');
     expect(html).toContain('>—</strong>');
     expect(html).toContain('Waiting for another result');
+    expect(html).not.toContain('at-bat-distribution-disclosure');
     expect(html).not.toContain('at-bat-distribution-bars');
   });
 

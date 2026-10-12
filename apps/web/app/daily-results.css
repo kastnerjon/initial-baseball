@@ -158,6 +158,20 @@
   font: 700 20px/1.2 var(--display-font);
   letter-spacing: -0.02em;
 }
+.at-bat-distribution-disclosure {
+  min-width: 0;
+}
+.at-bat-distribution-disclosure > summary {
+  min-height: 44px;
+  padding: 10px 0;
+  color: var(--clubhouse-deep);
+  font: 700 20px/1.2 var(--display-font);
+  letter-spacing: -0.02em;
+  cursor: pointer;
+}
+.at-bat-distribution-disclosure[open] > .at-bat-distribution {
+  padding-top: 8px;
+}
 .at-bat-distribution-sample {
   margin: 0;
   color: var(--ink-soft);
@@ -266,7 +280,8 @@
 }
 @media (max-width: 640px) {
   .result-card-points .result-value { padding: 10px 12px; font-size: 13px; }
-  .at-bat-distribution h3 { font-size: 17px; }
+  .at-bat-distribution h3,
+  .at-bat-distribution-disclosure > summary { font-size: 17px; }
   .at-bat-distribution-bars { gap: 5px; }
   .at-bat-distribution-column { grid-template-rows: 38px 94px auto auto 12px; gap: 3px; padding: 4px 1px; }
   .at-bat-distribution-percent, .at-bat-distribution-count { font-size: 10px; }
