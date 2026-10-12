@@ -20,6 +20,14 @@ function contrast(a: string, b: string): number {
   return (values[0]! + 0.05) / (values[1]! + 0.05);
 }
 
+const shellCss = readFileSync(new URL('./daily-shell.css', import.meta.url), 'utf8');
+function whiteOverlayOn(background: string, alpha: number): string {
+  return '#' + [1, 3, 5].map(offset => {
+    const channel = Number.parseInt(background.slice(offset, offset + 2), 16);
+    return Math.round(channel * (1 - alpha) + 255 * alpha).toString(16).padStart(2, '0');
+  }).join('');
+}
+
 describe('sitewide contrast design tokens', () => {
   it('keeps default body text comfortably above the WCAG AA threshold', () => {
     for (const background of [token('paper'), token('paper-light')]) {
@@ -30,6 +38,21 @@ describe('sitewide contrast design tokens', () => {
   it('gives primary UI borders at least 3:1 contrast on paper and cards', () => {
     for (const background of [token('paper'), token('paper-light')]) {
       expect(contrast(token('line'), background)).toBeGreaterThanOrEqual(3);
+    }
+  });
+  it('keeps dark-scoreboard row, column and header separators above 3:1', () => {
+    const start = shellCss.indexOf('.inning-scoreboard th,');
+    const end = shellCss.indexOf('.inning-scoreboard-corner,', start);
+    expect(start).toBeGreaterThan(0);
+    expect(end).toBeGreaterThan(start);
+    const scoreboard = shellCss.slice(start, end);
+    const alphas = [...scoreboard.matchAll(/border-(?:right|top|bottom): 1px solid rgba\(255, 255, 255, (0\.\d+)\)/g)]
+      .map(match => Number(match[1]));
+    expect(alphas).toHaveLength(3);
+    for (const background of [token('clubhouse'), token('clubhouse-deep')]) {
+      for (const alpha of alphas) {
+        expect(contrast(whiteOverlayOn(background, alpha), background)).toBeGreaterThanOrEqual(3);
+      }
     }
   });
   it('retains contrasting white text on the primary green and deep green', () => {

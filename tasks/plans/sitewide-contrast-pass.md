@@ -14,4 +14,6 @@ Status: Bounded presentation-only work, October 11, 2026.
 
 **Stop conditions:** Color changes expose an unanticipated semantic use of a token that requires broad component redesign; defer those to a separate feature rather than piling changes into this PR.
 
+**Review fix:** All three dark scoreboard separators now meet the 3:1 contrast target over both deep-green and standard green fills; regression test evaluates the blended rgba color.
+
 **Audit note:** Existing secondary text `#616960` contrasted about 5.2:1 on main paper but was visually subdued. Existing `--line` `#d7dbd2` was roughly 1.4:1 against light paper, below the 3:1 target for recognizable control boundaries. Improve contrast while keeping the green/red/cream palette.
