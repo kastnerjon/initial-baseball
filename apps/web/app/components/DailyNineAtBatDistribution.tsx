@@ -6,10 +6,12 @@ export function DailyNineAtBatDistribution({
   presentation,
   average,
   legacyBeatPercent,
+  hideHeading = false,
 }: {
   presentation: DailyNineDistributionPresentation;
   average: string;
   legacyBeatPercent?: number;
+  hideHeading?: boolean;
 }): JSX.Element {
 
   const accessibleBars = presentation.bars
@@ -18,7 +20,7 @@ export function DailyNineAtBatDistribution({
 
   return (
     <section className="at-bat-distribution" aria-label="At-bat score distribution">
-      <h3>How everyone scored on this at-bat</h3>
+      {hideHeading ? null : <h3>How everyone scored on this at-bat</h3>}
       <p className="at-bat-distribution-sample">
         {`Average: ${average} pts · Based on ${presentation.sampleSize} other result${presentation.sampleSize === 1 ? '' : 's'}`}
       </p>

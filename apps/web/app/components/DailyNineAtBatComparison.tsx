@@ -43,7 +43,10 @@ export function DailyNineAtBatComparison({
           </div>
         </div>
         {distribution !== null ? (
-          <DailyNineAtBatDistribution presentation={distribution} average={presentation?.average ?? '—'} />
+          <details className="at-bat-distribution-disclosure">
+            <summary>How everyone scored on this at-bat</summary>
+            <DailyNineAtBatDistribution presentation={distribution} average={presentation?.average ?? '—'} hideHeading />
+          </details>
         ) : (
           <p className="at-bat-comparison-note">{presentation?.note ?? 'Loading comparison…'}</p>
         )}
