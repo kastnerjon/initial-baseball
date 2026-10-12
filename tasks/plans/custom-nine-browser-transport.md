@@ -8,7 +8,7 @@ Provide one reusable, typed `apps/web` browser HTTP boundary for the already-iss
 
 ## Scope contract
 
-**In scope:** `createCustomNineBrowserTransport()` methods `bootstrap(challengeId)`, `revealHint(challengeId, signedToken)`, and `resolve(challengeId, signedToken, {submittedPlayerId}|{giveUp:true})`. It explicitly models reserved and creator-preview modes; parses redacted nine-batter lineup, current authorized hints, persisted completed at-bats/current strikes, and server responses; uses challenge-specific POST endpoints and same-origin browser credentials; maps known 4xx/5xx errors to sanitized typed kinds.
+**In scope:** `createCustomNineBrowserTransport()` methods `bootstrap(challengeId)`, `revealHint(challengeId, signedToken)`, and `resolve(challengeId, signedToken, currentPitchNumber, {submittedPlayerId}|{giveUp:true})`. It explicitly models reserved and creator-preview modes; parses redacted nine-batter lineup, current authorized hints, persisted completed at-bats/current strikes, and server responses; uses challenge-specific POST endpoints and same-origin browser credentials; maps known 4xx/5xx errors to sanitized typed kinds.
 
 **Out of scope:** Visual game UI/UX, page/route rendering, headless state machine, point scoring, retry automation, player lookup, new server APIs, schema/flags/competition changes, customizable hints, or the deferred all-zero-statistics request.
 
@@ -18,7 +18,7 @@ Provide one reusable, typed `apps/web` browser HTTP boundary for the already-iss
 
 - `POST /api/custom-nine/challenges/{puzzleId}/attempt/bootstrap`: bodyless; server's challenge-specific HttpOnly cookie reserved on first eligible play or existing ledger resumed. `creator_preview` has **no** contributing `attemptProgress`; callers must not send creator previews through reserved-attempt mutations.
 - `POST .../attempt/hint`: sends only current signed progression token, receives one revealed clue and new signed token.
-- `POST .../attempt/resolve`: sends signed progression token and one canonical guessed player ID or Give Up; receives either a nonterminal strike or a terminal resolution and optional next-batter authorized clue bundle.
+- `POST .../attempt/resolve`: the caller supplies its expected current pitch **to the browser adapter only** (never in the HTTP body). The adapter sends signed progression token plus one canonical guessed player ID or Give Up, then requires the server's terminal successor to match exactly the next pitch, or to be null after pitch nine. The signed server token remains authoritative; the caller's pitch is a presentation consistency check, not a scoring input.
 - **Network ambiguity:** A mutation may have committed when its response is lost. UI/controller must re-bootstrap and reconcile authoritative state, not repeat speculative/local state transitions. A stale CAS conflict is not a free retry.
 - Terminal ninth at-bat currently completes the ledger and bootstrap returns 409 `attempt_completed`. Showing complete game from persisted receipt is **separate work**; never manufacture completion results locally.
 - The server remains source of truth. Existing Daily/Archive clients, competition gating, and Custom legacy stateless routes are unchanged.
@@ -29,4 +29,4 @@ This is a transport adapter and runtime decoder, not a second rules engine. Reus
 
 ## Release evidence
 
-Local focused client tests: 8/8 passed. Web TypeScript check passed. Fill in independent review, exact-head CI, READY Preview, merge and postmerge evidence when available.
+Local focused client tests: 11/11 passed after independent-review fixes. Web TypeScript check passed. Fill in independent review, exact-head CI, READY Preview, merge and postmerge evidence when available.
