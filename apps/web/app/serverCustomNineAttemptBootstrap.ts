@@ -150,7 +150,7 @@ function verifyCustomNineAttemptProgress(
     || claims.pitchNumber !== facts.length + 1 || facts.length >= 9
     || response.hintBundle.pitchNumber !== claims.pitchNumber
     || response.hintBundle.revealedCount !== claims.revealCount
-    || response.atBats.length !== 9 || saved.revision < facts.length) {
+    || response.atBats.length !== 9) {
     throw new Error('Custom Nine saved attempt progression mismatch.');
   }
   for (const [index, fact] of facts.entries()) {
@@ -160,6 +160,15 @@ function verifyCustomNineAttemptProgress(
       || !normalizeDailyTerminalAtBat(fact, expected).ok) {
       throw new Error('Custom Nine saved terminal facts mismatch.');
     }
+  }
+  // Each prior batter used one terminal CAS plus one CAS per exposed hint
+  // and nonterminal wrong guess. A third-strike terminal CAS itself records
+  // the third wrong guess; Give Up is terminal with the actual prior strikes.
+  const priorRevisions = facts.reduce((total, fact) => total
+    + fact.hintsRevealed
+    + (fact.resolution === 'strikeout' ? 2 : fact.wrongGuesses) + 1, 0);
+  if (saved.revision !== priorRevisions + claims.revealCount + claims.strikeCount) {
+    throw new Error('Custom Nine saved attempt revision mismatch.');
   }
   const outs = facts.filter(fact => fact.outcome === 'K').length;
   if (claims.outCount !== Math.min(3, outs)) {
