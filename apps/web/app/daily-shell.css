@@ -396,16 +396,16 @@
 .inning-scoreboard td {
   min-width: 42px;
   padding: 5px 4px;
-  border-right: 1px solid rgba(255, 255, 255, 0.14);
+  border-right: 1px solid rgba(255, 255, 255, 0.3);
   text-align: center;
   white-space: nowrap;
 }
 .inning-scoreboard thead th {
-  border-bottom: 1px solid rgba(255, 255, 255, 0.22);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.36);
   font-weight: 600;
 }
 .inning-scoreboard tbody tr + tr > * {
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  border-top: 1px solid rgba(255, 255, 255, 0.26);
 }
 .inning-scoreboard-corner,
 .inning-scoreboard-row-label {

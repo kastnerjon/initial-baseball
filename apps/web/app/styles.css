@@ -1,7 +1,7 @@
 :root {
   color-scheme: light;
   --ink: #24352c;
-  --ink-soft: #616960;
+  --ink-soft: #47554b;
   --clubhouse: #194b38;
   --clubhouse-deep: #153b2d;
   --paper: #f7f5ee;
@@ -9,8 +9,8 @@
   --score-red: #993e32;
   --score-red-dark: #803329;
   --score-gold: #e3cb94;
-  --line: #d7dbd2;
-  --line-soft: #e9eae2;
+  --line: #7c887d;
+  --line-soft: #b0b9ad;
   --display-font: Georgia, "Times New Roman", serif;
   --body-font: -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif;
   --utility-font: var(--body-font);
@@ -49,7 +49,7 @@ summary:focus-visible,
 }
 button:disabled {
   cursor: not-allowed;
-  opacity: 0.55;
+  opacity: 0.72;
 }
 ::selection {
   background: #e4d6ae;
