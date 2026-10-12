@@ -23,7 +23,7 @@ export function AtBatProgressTracker({
     || currentAtBat > totalAtBats) {
     throw new Error('Invalid at-bat tracker stage.');
   }
-  if (!Number.isSafeInteger(score)) throw new Error('Invalid at-bat tracker score.');
+  if (!Number.isFinite(score)) throw new Error('Invalid at-bat tracker score.');
   const completed = new Set(completedAtBats);
   if (completed.size !== completedAtBats.length
     || completedAtBats.some(n => !Number.isInteger(n) || n < 1 || n > currentAtBat)) {

@@ -12,7 +12,7 @@ Status: scoped implementation, October 11, 2026.
 
 **Out of scope:** Score calculation, storage, submission, answer/hint logic, gameplay API, Classic or Custom Nine player screens, sitewide contrast (PR #388), a second scoreboard, any structural UI redesign, data migrations.
 
-**Acceptance:** Score left/status right; 0/negative/large integer display; expected row for partial/completed game; no scoring duplication; responsive and keyboard/reader behavior; focused tests/typecheck/file-size and exact PR-head CI/READY Preview/independent review.
+**Acceptance:** Score left/status right; zero/negative/large/half-point score display; expected row for partial/completed game; no scoring duplication; responsive and keyboard/reader behavior; focused tests/typecheck/file-size and exact PR-head CI/READY Preview/independent review.
 
 **Stop:** If accommodating this row requires changing the rule engine or reworking parent gameplay layout, split instead of broadening the PR.
 

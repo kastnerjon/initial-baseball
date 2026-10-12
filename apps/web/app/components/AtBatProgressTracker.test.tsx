@@ -44,8 +44,11 @@ describe('AtBatProgressTracker', () => {
   it('formats zero, negative and large cumulative scores without doing scoring', () => {
     expect(render(1, [], 0)).toContain('SCORE: 0');
     expect(render(5, [1, 2, 3, 4], -1)).toContain('SCORE: -1');
+    expect(render(5, [1, 2, 3, 4], 0.5)).toContain('SCORE: 0.5');
+    expect(render(5, [1, 2, 3, 4], 1.5)).toContain('SCORE: 1.5');
     expect(render(9, [1, 2, 3, 4, 5, 6, 7, 8], 12345)).toContain('SCORE: 12,345');
     expect(() => render(2, [1], Number.NaN)).toThrow('Invalid at-bat tracker score');
+    expect(() => render(2, [1], Number.POSITIVE_INFINITY)).toThrow('Invalid at-bat tracker score');
   });
 
   it('rejects invalid or contradictory stage data', () => {
