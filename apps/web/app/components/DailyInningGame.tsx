@@ -247,7 +247,7 @@ export function DailyInningGame({
   return (
     <div className="game-shell">
       {gameState.rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION &&
-        <AtBatProgressTracker currentAtBat={activePitch.pitchNumber} completedAtBats={displayedCompletedAtBats.map(atBat => atBat.pitchNumber)} score={displayedPoints.points} />}
+        <AtBatProgressTracker currentAtBat={activePitch.pitchNumber} completedAtBats={displayedCompletedAtBats.map(atBat => atBat.pitchNumber)} />}
       {performanceLayout ? null : inningScoreboard === null ? (
         <DailyScorebug
           currentAtBat={activePitch.pitchNumber}
@@ -268,7 +268,7 @@ export function DailyInningGame({
         giveUpPending={resolutionRequests.pendingAction === 'give_up'}
         requestError={requestError}
         comparison={atBatComparisonState}
-        terminalAwardedPoints={terminalAwardedPoints}
+        terminalAwardedPoints={terminalAwardedPoints} cumulativePoints={displayedPoints.points}
         nextActionLabel={terminalPending ? 'View Results' : 'Next At Bat'}
         onQueryChange={(query) => {
           setAtBatState(currentState => ({

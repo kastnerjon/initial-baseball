@@ -37,6 +37,7 @@ type AtBatCardProps = {
   requestError: string | null;
   comparison: DailyNineAtBatComparisonState;
   terminalAwardedPoints: number | null;
+  cumulativePoints: number;
   nextActionLabel?: string;
   onQueryChange: (query: string) => void;
   onSelectPlayer: (result: PlayerSearchResult) => void;
@@ -55,6 +56,7 @@ export function AtBatCard({
   requestError,
   comparison,
   terminalAwardedPoints,
+  cumulativePoints,
   nextActionLabel = 'Next At Bat',
   onQueryChange,
   onSelectPlayer,
@@ -102,7 +104,7 @@ export function AtBatCard({
     return (
       <div className={isPointsV4 ? 'at-bat-card at-bat-card-resolved at-bat-card-resolved-tiles' : 'at-bat-card at-bat-card-resolved'}>
         <div className="pitch-meta">
-          <span className="pitch-number">{`At Bat ${atBat.pitchNumber}`}</span>
+          <span className="pitch-number" aria-live={isPointsV4 ? "polite" : undefined} aria-atomic={isPointsV4 ? "true" : undefined}>{isPointsV4 ? `Score: ${cumulativePoints.toLocaleString('en-US')}` : `At Bat ${atBat.pitchNumber}`}</span>
           <CountIndicator label="Strikes" filledCount={state.strikeCount} total={3} />
         </div>
         <div className="terminal-result-stack">
@@ -135,7 +137,7 @@ export function AtBatCard({
   return (
     <div className="at-bat-card">
       <div className="pitch-meta">
-        <span className="pitch-number">Who is the player?</span>
+        <span className="pitch-number" aria-live={rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION ? "polite" : undefined} aria-atomic={rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION ? "true" : undefined}>{rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION ? `Score: ${cumulativePoints.toLocaleString('en-US')}` : 'Who is the player?'}</span>
         <CountIndicator label="Strikes" filledCount={state.strikeCount} total={3} />
       </div>
 

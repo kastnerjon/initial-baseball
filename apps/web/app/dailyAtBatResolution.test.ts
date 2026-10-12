@@ -165,13 +165,14 @@ describe('AtBatCard terminal output', () => {
     expect(html).toContain('2 strikes left.');
   });
 
-  it('renders At Bat language and a Give up action while active', () => {
+  it('shows the score and Give up action while points-v4 play is active', () => {
     const html = renderAtBatCard({
       submittedResult: null,
       strikeCount: 0,
     });
 
-    expect(html).toContain('Who is the player?');
+    expect(html).toContain('Score: 0');
+    expect(html).not.toContain('Who is the player?');
     expect(html).not.toContain(`Pitch ${firstPitch.pitchNumber}`);
     expect(html).toContain('Give up');
     expect(html).toContain('Guess the player');
@@ -184,7 +185,7 @@ describe('AtBatCard terminal output', () => {
       terminalAwardedPoints: 0,
     });
 
-    expect(html).toContain(`At Bat ${firstPitch.pitchNumber}`);
+    expect(html).toContain('Score: 0');
     expect(html).toContain('Next At Bat');
     expect(html.indexOf('Next At Bat')).toBeLessThan(html.indexOf('Player Reveal'));
     expect(html).not.toContain('Next Pitch');
@@ -409,6 +410,7 @@ function renderAtBatCard({
       requestError: null,
       comparison: { status: 'idle' },
       terminalAwardedPoints,
+      cumulativePoints: 0,
       onQueryChange: () => undefined,
       onSelectPlayer: () => undefined,
       onRevealHint: () => undefined,
