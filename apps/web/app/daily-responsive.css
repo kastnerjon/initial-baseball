@@ -110,6 +110,18 @@
   .button-give-up {
     padding-left: 0;
   }
+  .at-bat-actions {
+    flex-wrap: wrap;
+  }
+  .at-bat-actions-right {
+    flex: 1 1 100%;
+    align-items: stretch;
+  }
+  .at-bat-actions-right > button {
+    flex: 1 1 0;
+    min-width: 0;
+    white-space: normal;
+  }
   .at-bat-card-resolved {
     grid-template-columns: 1fr;
   }

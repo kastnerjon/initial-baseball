@@ -107,6 +107,7 @@ export function AtBatCard({
           <span className="pitch-number" aria-live={isPointsV4 ? "polite" : undefined} aria-atomic={isPointsV4 ? "true" : undefined}>{isPointsV4 ? `Score: ${cumulativePoints.toLocaleString('en-US')}` : `At Bat ${atBat.pitchNumber}`}</span>
           <CountIndicator label="Strikes" filledCount={state.strikeCount} total={3} />
         </div>
+        {state.reveal === null ? null : <PlayerRevealCard reveal={state.reveal} />}
         <div className="terminal-result-stack">
           {isPointsV4 ? null : (
             <ResultDisplay
@@ -129,7 +130,6 @@ export function AtBatCard({
         >
           {nextActionLabel}
         </button>
-        {state.reveal === null ? null : <PlayerRevealCard reveal={state.reveal} />}
       </div>
     );
   }
@@ -162,18 +162,6 @@ export function AtBatCard({
             ))
           )}
         </div>
-        <button
-          type="button"
-          className="button-secondary button-hint"
-          onClick={onRevealHint}
-          disabled={hasRevealedAllHints || requestPending}
-        >
-          {hasRevealedAllHints
-            ? 'All Hints Revealed'
-            : rulesetVersion === POINTS_V3_DAILY_RULESET_VERSION
-              ? 'Reveal Next Hint · −1 point'
-              : 'Reveal Next Hint'}
-        </button>
       </section>
 
       <div className={state.selectedPlayerId === null ? 'search-shell' : 'search-shell search-shell-selected'}>
@@ -204,15 +192,29 @@ export function AtBatCard({
         >
           {giveUpPending ? 'Revealing…' : 'Give up'}
         </button>
-        <button
-          type="button"
-          className="button-primary"
-          onClick={onSubmit}
-          disabled={state.selectedPlayerId === null || requestPending}
-          aria-busy={guessPending}
-        >
-          {guessPending ? 'Checking…' : 'Submit Guess'}
-        </button>
+        <div className="at-bat-actions-right">
+          <button
+            type="button"
+            className="button-secondary button-hint"
+            onClick={onRevealHint}
+            disabled={hasRevealedAllHints || requestPending}
+          >
+            {hasRevealedAllHints
+              ? 'All Hints Revealed'
+              : rulesetVersion === POINTS_V3_DAILY_RULESET_VERSION
+                ? 'Reveal Next Hint · −1 point'
+                : 'Reveal Next Hint'}
+          </button>
+          <button
+            type="button"
+            className="button-primary"
+            onClick={onSubmit}
+            disabled={state.selectedPlayerId === null || requestPending}
+            aria-busy={guessPending}
+          >
+            {guessPending ? 'Checking…' : 'Submit Guess'}
+          </button>
+        </div>
       </div>
     </div>
   );

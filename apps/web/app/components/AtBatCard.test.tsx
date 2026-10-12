@@ -1,10 +1,24 @@
 import React from 'react';
+import { readFileSync } from 'node:fs';
+import type { CanonicalRevealViewModel } from '../canonicalRevealViewModel';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import type { DailyNineAtBatComparisonState } from '../dailyNineAtBatComparisonState';
 import { AtBatCard } from './AtBatCard';
 
 (globalThis as Record<string, unknown>).React = React;
+
+const sampleReveal: CanonicalRevealViewModel = {
+  playerId: 'test-player-id',
+  displayName: 'Miguel Tejada',
+  playerType: 'hitter',
+  primaryPosition: 'SS',
+  yearsPlayedDisplay: '1997–2013',
+  teamIds: ['BAL', 'HOU'],
+  career: { lines: [{ kind: 'hitter', stats: { AB: 8434, H: 2407, HR: 307 } }] },
+  seasons: [],
+};
+
 
 describe('AtBatCard pending resolution feedback', () => {
   it('preserves the historical v3 question prompt', () => {
@@ -33,6 +47,72 @@ describe('AtBatCard pending resolution feedback', () => {
     expect(html).toContain('aria-live="polite"');
     expect(html).toContain('aria-atomic="true"');
     expect(html).not.toContain('Who is the player?');
+  });
+
+  it('groups Reveal Next Hint beside Submit Guess without moving Give up', () => {
+    const html = renderCard({
+      requestPending: false, giveUpPending: false,
+      rulesetVersion: 'points-v4', selectedPlayerId: 'player-id',
+    });
+    const hintSection = html.slice(html.indexOf('<section class="hint-block"'), html.indexOf('</section>') + 10);
+    expect(hintSection).not.toContain('button-hint');
+    const actions = html.slice(html.indexOf('class="at-bat-actions"'));
+    expect(actions).toContain('class="at-bat-actions-right"');
+    expect(actions.indexOf('Give up')).toBeLessThan(actions.indexOf('Reveal Next Hint'));
+    expect(actions.indexOf('Reveal Next Hint')).toBeLessThan(actions.indexOf('Submit Guess'));
+    expect(html).toContain('aria-label="0 of 3 strikes"');
+  });
+
+  it('preserves hint limits, v3 cost label and pending disabled states', () => {
+    const exhausted = renderCard({ requestPending: false, giveUpPending: false,
+      rulesetVersion: 'points-v4', revealCount: 4 });
+    expect(exhausted).toMatch(/disabled=""[^>]*>All Hints Revealed<\/button>/);
+    const pending = renderCard({ requestPending: true, giveUpPending: false,
+      rulesetVersion: 'points-v3' });
+    expect(pending).toContain('Reveal Next Hint · −1 point');
+    expect(pending).toMatch(/disabled=""[^>]*>Reveal Next Hint · −1 point<\/button>/);
+  });
+
+  it('places player reveal above the score tiles and score distribution', () => {
+    const html = renderCard({
+      requestPending: false, giveUpPending: false, rulesetVersion: 'points-v4',
+      reveal: sampleReveal,
+      submittedResult: {
+        kind: 'strikeout', revealedCount: 0, strikeCount: 3,
+        outcome: 'K', source: 'strikeout',
+      },
+      comparison: {
+        status: 'success', ownPoints: 0, resolvedAtBatCount: 2,
+        averagePoints: 2, strictLowerAtBatRate: 0,
+        rulesetVersion: 'points-v4',
+        scoreHistogram: [0, 0, 0, 0, 2, 0, 0, 0, 0],
+      },
+    });
+    expect(html).toContain('Miguel Tejada');
+    expect(html.indexOf('Player Reveal')).toBeLessThan(html.indexOf('Your Score'));
+    expect(html.indexOf('Miguel Tejada')).toBeLessThan(html.indexOf('How everyone scored on this at-bat'));
+    expect(html.indexOf('How everyone scored on this at-bat')).toBeLessThan(html.indexOf('Next At Bat'));
+  });
+
+  it('uses spacing instead of decorative dividers and responsive adjacent actions', () => {
+    const game = readFileSync(new URL('../daily-game.css', import.meta.url), 'utf8');
+    const results = readFileSync(new URL('../daily-results.css', import.meta.url), 'utf8');
+    const responsive = readFileSync(new URL('../daily-responsive.css', import.meta.url), 'utf8');
+    const section = (css: string, selector: string) => {
+      const start = css.indexOf(selector + ' {');
+      expect(start).toBeGreaterThanOrEqual(0);
+      return css.slice(start, css.indexOf('}', start) + 1);
+    };
+    for (const [css, selector] of [
+      [game, '.hint-block'],
+      [results, '.at-bat-comparison'],
+      [results, '.player-reveal-card'],
+    ] as const) {
+      expect(section(css, selector)).not.toMatch(/border-(?:top|bottom)\s*:/);
+    }
+    expect(section(game, '.at-bat-actions-right')).toContain('display: flex');
+    expect(responsive).toContain('.at-bat-actions-right > button');
+    expect(responsive).toContain('min-width: 0');
   });
 
   it('acknowledges Give Up immediately while the reveal request is pending', () => {
@@ -291,6 +371,8 @@ function renderCard(input: {
   };
   nextActionLabel?: string;
   cumulativePoints?: number;
+  revealCount?: 0 | 1 | 2 | 3 | 4;
+  reveal?: CanonicalRevealViewModel | null;
   comparison?: DailyNineAtBatComparisonState;
 }): string {
   return renderToStaticMarkup(
@@ -300,11 +382,11 @@ function renderCard(input: {
       state={{
         query: input.query ?? '',
         selectedPlayerId: input.selectedPlayerId ?? null,
-        revealCount: 0,
+        revealCount: input.revealCount ?? 0,
         revealedHints: [],
         strikeCount: 0,
         submittedResult: input.submittedResult ?? null,
-        reveal: null,
+        reveal: input.reveal ?? null,
       }}
       requestPending={input.requestPending}
       giveUpPending={input.giveUpPending}

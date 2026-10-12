@@ -57,7 +57,6 @@
   display: grid;
   gap: 4px;
   padding-top: 8px;
-  border-top: 1px solid var(--line-soft);
 }
 /* Reuse the final-score tile system in the resolved points-v4 at-bat, scaled for phones. */
 .at-bat-card-resolved-tiles {
@@ -281,8 +280,7 @@
   display: grid;
   gap: 18px;
   min-width: 0;
-  padding-top: 20px;
-  border-top: 1px solid var(--line);
+  padding-top: 12px;
 }
 .player-reveal-heading {
   display: grid;
