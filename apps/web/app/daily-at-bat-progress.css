@@ -1,0 +1,87 @@
+/* Read-only progress used above the active game; intentionally portable to Custom Nine. */
+.at-bat-progress {
+  display: grid;
+  justify-items: stretch;
+  gap: 13px;
+  padding: 5px 0 11px;
+}
+.at-bat-progress-steps {
+  position: relative;
+  display: grid;
+  grid-template-columns: repeat(9, minmax(0, 1fr));
+  align-items: center;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.at-bat-progress-steps::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  top: 50%;
+  left: 5.55%;
+  right: 5.55%;
+  height: 2px;
+  background: #9ca69a;
+  transform: translateY(-50%);
+}
+.at-bat-progress-step {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  justify-items: center;
+}
+.at-bat-progress-circle {
+  display: grid;
+  width: clamp(27px, 5.2vw, 48px);
+  height: clamp(27px, 5.2vw, 48px);
+  place-items: center;
+  border: 2px solid #707e73;
+  border-radius: 50%;
+  background: var(--paper-light);
+  color: #35463b;
+  font-family: var(--utility-font);
+  font-size: clamp(12px, 2.2vw, 19px);
+  font-weight: 600;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+}
+.at-bat-progress-step--completed .at-bat-progress-circle,
+.at-bat-progress-step--current .at-bat-progress-circle {
+  border-color: var(--clubhouse-deep);
+  background: var(--clubhouse-deep);
+  color: #fff;
+}
+.at-bat-progress-step--completed .at-bat-progress-circle {
+  font-size: clamp(15px, 2.8vw, 25px);
+  font-weight: 700;
+}
+.at-bat-progress-step--current .at-bat-progress-circle {
+  outline: 2px solid var(--paper-light);
+  outline-offset: 2px;
+}
+.at-bat-progress-caption {
+  margin: 0;
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 750;
+  letter-spacing: 0.17em;
+  line-height: 1.35;
+  text-align: center;
+}
+@media (max-width: 400px) {
+  .at-bat-progress {
+    gap: 10px;
+  }
+  .at-bat-progress-steps::before {
+    left: 5.5%;
+    right: 5.5%;
+  }
+  .at-bat-progress-circle {
+    border-width: 1.5px;
+  }
+  .at-bat-progress-caption {
+    font-size: 11px;
+    letter-spacing: 0.13em;
+  }
+}

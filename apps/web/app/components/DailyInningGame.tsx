@@ -36,13 +36,13 @@ import {
 import { createDailyNineCompletedComparisonInput, useDailyNineCompletedComparison } from '../useDailyNineCompletedComparison';
 import { useDailyNineScorecardComparisons } from '../useDailyNineScorecardComparisons';
 import { AtBatCard } from './AtBatCard';
+import { AtBatProgressTracker } from './AtBatProgressTracker';
 import { DailyScorebug } from './DailyScorebug';
 import { GameCompleteView } from './GameCompleteView';
 import { DailyNineLeaderboard } from './DailyNineLeaderboard';
 import { InningScoreboard } from './InningScoreboard';
 import { PitchResultList } from './PitchResultList';
 import { isArchiveDailyPuzzleId } from '../dailyModeStorage';
-
 type DailyInningGameProps = {
   puzzle: DailyPublicPuzzle;
   rulesetVersion: DailyBootstrapRulesetVersion;
@@ -50,7 +50,6 @@ type DailyInningGameProps = {
   initialHintBundle: DailyHintBundle;
   archivePath?: string;
 };
-
 export function DailyInningGame({
   puzzle,
   rulesetVersion,
@@ -247,6 +246,8 @@ export function DailyInningGame({
 
   return (
     <div className="game-shell">
+      {gameState.rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION &&
+        <AtBatProgressTracker currentAtBat={activePitch.pitchNumber} completedAtBats={displayedCompletedAtBats.map(atBat => atBat.pitchNumber)} />}
       {performanceLayout ? null : inningScoreboard === null ? (
         <DailyScorebug
           currentAtBat={activePitch.pitchNumber}
