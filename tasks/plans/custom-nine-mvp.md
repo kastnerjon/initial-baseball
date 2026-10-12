@@ -1,5 +1,7 @@
 # Daily Nine — Custom Lineup MVP
 
+Transport follow-up: `tasks/plans/custom-nine-browser-transport.md` defines the headless Custom Nine browser HTTP adapter; UI/playability and configurable hints remain separate PRs.
+
 ## Current bounded scope — admin-only Custom Nine creator workbench (October 11)
 
 **Goal:** Provide an administrator-authenticated UI to select nine ordered canonical players and issue an immutable challenge without opening anonymous creation.
