@@ -8,6 +8,10 @@ Last updated: 2026-10-11
 
 - [x] Completed points-v4 results now show Summary, Your Nine, Top 10 (Daily only), Final Score Distribution, then At-Bat Score Distribution. All panels start open and collapse independently; stacked-bar labels show initials and the histogram own-score badge no longer stretches on phones. Custom Nine remains the next bounded stage.
 
+## Custom Nine configurable-hints roadmap (October 12)
+
+- [ ] After the Custom Nine player-facing route is playable, implement creator-configurable ordered four-hint layouts with separate batting and throwing options (subject to source coverage) and explicit career/season hitter/pitcher stats. Do not silently use two-way stats without a separately approved policy. Immutable versioned issue snapshots preserve historical puzzles. No public competition activation. Plan: `tasks/plans/custom-nine-configurable-hints.md`.
+
 ## Custom Nine admin creator UI (October 11)
 
 - [x] Stage authorized Custom Nine creation workbench: search canonical players, choose nine distinct ordered players, move/remove, issue with existing private API and copy opaque ID. No public creation, playable-link promise, competition activation or data changes. Next: player-facing route and stateful gameplay.
