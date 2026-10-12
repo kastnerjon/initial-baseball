@@ -109,10 +109,10 @@ describe('Custom Nine headless browser transport', () => {
         pitchNumber: 2, revealedCount: 0, hints: [], checkpoints: [],
       }, revision: 2 }),
     ]);
-    expect(await client.resolve(ID, 'signed-0', { submittedPlayerId: 'ibp_123' })).toEqual({
+    expect(await client.resolve(ID, 'signed-0', 1, { submittedPlayerId: 'ibp_123' })).toEqual({
       kind: 'incorrect', strikeCount: 1, progressionToken: 'signed-1', revision: 1,
     });
-    const terminal = await client.resolve(ID, 'signed-1', { giveUp: true });
+    const terminal = await client.resolve(ID, 'signed-1', 1, { giveUp: true });
     expect(terminal.kind).toBe('terminal');
     expect(JSON.parse(request.mock.calls[0]![1].body as string)).toEqual({
       progressionToken: 'signed-0', submittedPlayerId: 'ibp_123',
@@ -138,13 +138,35 @@ describe('Custom Nine headless browser transport', () => {
       { pitchNumber: 2, revealedCount: 1, hints: [hint], checkpoints: [] },
       { pitchNumber: 2, revealedCount: 0, hints: [], checkpoints: [{ revealedCount: 1, progressionToken: 'free' }] },
       { pitchNumber: 1, revealedCount: 0, hints: [], checkpoints: [] },
+      { pitchNumber: 7, revealedCount: 0, hints: [], checkpoints: [] },
     ]) {
       const { client } = setup([ok({ kind: 'terminal', progressionToken: 'signed-next',
         result: { kind: 'correct', revealedCount: 0, outcome: 'HR', source: 'initials' },
         reveal, hintBundle, revision: 1 })]);
-      await expect(client.resolve(ID, 'signed', { submittedPlayerId: 'ibp_example' }))
+      await expect(client.resolve(ID, 'signed', 9, { submittedPlayerId: 'ibp_example' }))
         .rejects.toMatchObject({ kind: 'invalid_response' });
     }
+  });
+
+  it('requires exact next pitch and a null successor after the ninth batter', async () => {
+    const valid = { kind: 'terminal', progressionToken: 'signed-end', revision: 15,
+      result: { kind: 'correct', revealedCount: 0, outcome: 'HR', source: 'initials' },
+      reveal, hintBundle: null };
+    const completed = setup([ok(valid)]);
+    expect((await completed.client.resolve(ID, 'signed', 9, { giveUp: true })).kind).toBe('terminal');
+    const premature = setup([ok(valid)]);
+    await expect(premature.client.resolve(ID, 'signed', 8, { giveUp: true }))
+      .rejects.toMatchObject({ kind: 'invalid_response' });
+    const wrong = setup([ok({ ...valid, hintBundle: {
+      pitchNumber: 7, revealedCount: 0, hints: [], checkpoints: [],
+    } })]);
+    await expect(wrong.client.resolve(ID, 'signed', 8, { giveUp: true }))
+      .rejects.toMatchObject({ kind: 'invalid_response' });
+    const notNinth = setup([ok({ ...valid, hintBundle: {
+      pitchNumber: 9, revealedCount: 0, hints: [], checkpoints: [],
+    } })]);
+    await expect(notNinth.client.resolve(ID, 'signed', 9, { giveUp: true }))
+      .rejects.toMatchObject({ kind: 'invalid_response' });
   });
 
   it('projects terminal reveal and result without arbitrary private fields', async () => {
@@ -156,7 +178,7 @@ describe('Custom Nine headless browser transport', () => {
       } },
       hintBundle: null,
     })]);
-    const value = await client.resolve(ID, 'signed', { submittedPlayerId: 'ibp_example' });
+    const value = await client.resolve(ID, 'signed', 9, { submittedPlayerId: 'ibp_example' });
     expect(value.kind).toBe('terminal');
     expect(JSON.stringify(value)).not.toContain('PRIVATE');
     if (value.kind === 'terminal') {
@@ -178,7 +200,7 @@ describe('Custom Nine headless browser transport', () => {
       if ('hint' in invalid) {
         await expect(client.revealHint(ID, 'signed')).rejects.toMatchObject({ kind: 'invalid_response' });
       } else {
-        await expect(client.resolve(ID, 'signed', { giveUp: true })).rejects.toMatchObject({ kind: 'invalid_response' });
+        await expect(client.resolve(ID, 'signed', 1, { giveUp: true })).rejects.toMatchObject({ kind: 'invalid_response' });
       }
     }
   });

@@ -56,8 +56,17 @@ export function createCustomNineBrowserTransport(fetchPort: FetchPort = fetch) {
       decodeBootstrap(await post(challengeId, 'bootstrap'), challengeId),
     revealHint: async (challengeId: string, token: string): Promise<CustomNineBrowserHintResult> =>
       decodeHint(await post(challengeId, 'hint', { progressionToken: token })),
-    resolve: async (challengeId: string, token: string, action: Guess): Promise<CustomNineBrowserResolveResult> =>
-      decodeResolution(await post(challengeId, 'resolve', { progressionToken: token, ...action })),
+    resolve: async (
+      challengeId: string, token: string, currentPitchNumber: number, action: Guess,
+    ): Promise<CustomNineBrowserResolveResult> => {
+      if (!numberIn(currentPitchNumber, 1, 9)) {
+        throw new CustomNineBrowserTransportError('invalid_request');
+      }
+      return decodeResolution(
+        await post(challengeId, 'resolve', { progressionToken: token, ...action }),
+        currentPitchNumber,
+      );
+    },
   };
 
   async function post(challengeId: string, action: string, body?: Record<string, unknown>): Promise<unknown> {
@@ -133,7 +142,7 @@ function decodeHint(value: unknown): CustomNineBrowserHintResult {
     revision: value.revision as number };
 }
 
-function decodeResolution(value: unknown): CustomNineBrowserResolveResult {
+function decodeResolution(value: unknown, currentPitchNumber: number): CustomNineBrowserResolveResult {
   if (!record(value) || !validToken(value.progressionToken)
     || !Number.isSafeInteger(value.revision) || (value.revision as number) < 1) invalid();
   if (value.kind === 'incorrect') {
@@ -149,8 +158,10 @@ function decodeResolution(value: unknown): CustomNineBrowserResolveResult {
     reveal = decodeCustomNineTerminalReveal(value.reveal);
   } catch { invalid(); }
   const next = value.hintBundle === null ? null : decodeBundle(value.hintBundle);
-  if (next !== null && (next.pitchNumber < 2 || next.revealedCount !== 0
-    || next.hints.length !== 0 || next.checkpoints.length !== 0)) invalid();
+  if (currentPitchNumber === 9 ? next !== null
+    : next === null || next.pitchNumber !== currentPitchNumber + 1
+      || next.revealedCount !== 0 || next.hints.length !== 0
+      || next.checkpoints.length !== 0) invalid();
   return { kind: 'terminal', result, reveal,
     progressionToken: value.progressionToken as string,
     hintBundle: next, revision: value.revision as number };
