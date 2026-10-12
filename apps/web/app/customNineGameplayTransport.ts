@@ -1,6 +1,7 @@
 import { normalizeDailyTerminalAtBat } from '@initial-baseball/engine';
 import type { DailyCompletedAtBat, DailyGuessResult } from '@initial-baseball/shared';
 import type { CanonicalRevealViewModel } from './canonicalRevealViewModel';
+import { decodeCustomNineTerminalResult, decodeCustomNineTerminalReveal } from './customNineGameplayPayloadCodec';
 import type { DailyAuthorizedHint, DailyHintBundle, DailyHintResponse } from './dailyRuntimeContracts';
 
 export type CustomNinePublicAtBat = Readonly<{ pitchNumber: number; initials: string }>;
@@ -118,6 +119,7 @@ function decodeBootstrap(value: unknown, requestedId: string): CustomNineBrowser
     return result.atBat;
   });
   if (hintBundle.pitchNumber !== facts.length + 1 || hintBundle.hints.length !== hintBundle.revealedCount
+    || hintBundle.hints.some((hint, index) => hint.slot !== index + 1)
     || hintBundle.checkpoints.length !== 0) invalid();
   return { attemptMode: 'reserved', puzzleId: requestedId, rulesetVersion: 'points-v4',
     progressionToken: value.progressionToken as string, atBats: pitches, hintBundle,
@@ -139,15 +141,19 @@ function decodeResolution(value: unknown): CustomNineBrowserResolveResult {
     return { kind: 'incorrect', strikeCount: value.strikeCount,
       progressionToken: value.progressionToken as string, revision: value.revision as number };
   }
-  if (value.kind !== 'terminal' || !record(value.result)
-    || !['correct', 'strikeout'].includes(String(value.result.kind))
-    || !record(value.reveal)) invalid();
-  return { kind: 'terminal',
-    result: value.result as unknown as Exclude<DailyGuessResult, { kind: 'incorrect' }>,
-    reveal: value.reveal as CanonicalRevealViewModel,
+  if (value.kind !== 'terminal') invalid();
+  let result: Exclude<DailyGuessResult, { kind: 'incorrect' }>;
+  let reveal: CanonicalRevealViewModel;
+  try {
+    result = decodeCustomNineTerminalResult(value.result);
+    reveal = decodeCustomNineTerminalReveal(value.reveal);
+  } catch { invalid(); }
+  const next = value.hintBundle === null ? null : decodeBundle(value.hintBundle);
+  if (next !== null && (next.pitchNumber < 2 || next.revealedCount !== 0
+    || next.hints.length !== 0 || next.checkpoints.length !== 0)) invalid();
+  return { kind: 'terminal', result, reveal,
     progressionToken: value.progressionToken as string,
-    hintBundle: value.hintBundle === null ? null : decodeBundle(value.hintBundle),
-    revision: value.revision as number };
+    hintBundle: next, revision: value.revision as number };
 }
 
 function decodeBundle(value: unknown): DailyHintBundle {
