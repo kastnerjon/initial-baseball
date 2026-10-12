@@ -31,7 +31,7 @@ export async function POST(request: Request, context: Context): Promise<Response
           status: 200, headers: HEADERS,
         });
       case 'ready': {
-        const response = Response.json({ ...result.bootstrap, attemptMode: 'reserved' }, {
+        const response = Response.json({ ...result.bootstrap, attemptMode: 'reserved', attemptProgress: result.attemptProgress }, {
           status: 200, headers: HEADERS,
         });
         if (result.setCookie !== null) response.headers.set('set-cookie', result.setCookie);

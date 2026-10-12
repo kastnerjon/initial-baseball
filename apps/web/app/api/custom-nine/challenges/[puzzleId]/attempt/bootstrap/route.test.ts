@@ -21,6 +21,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   bootstrap.mockResolvedValue({
     kind: 'ready', bootstrap: publicPayload,
+    attemptProgress: { strikeCount: 0, completedAtBats: [] },
     setCookie: 'opaque=v1; Path=/api/custom-nine/challenges/' + ID + '; HttpOnly; SameSite=Strict; Secure',
   });
   vi.mocked(createServerCustomNineAttemptBootstrap).mockReturnValue({ bootstrap } as never);
@@ -37,7 +38,10 @@ describe('Custom Nine opt-in attempt POST', () => {
     expect(response.headers.get('cache-control')).toBe('private, no-store');
     expect(response.headers.get('set-cookie')).toContain('; HttpOnly; SameSite=Strict; Secure');
     const json = await response.json();
-    expect(json).toMatchObject({ attemptMode: 'reserved', puzzleId: ID });
+    expect(json).toMatchObject({
+      attemptMode: 'reserved', puzzleId: ID,
+      attemptProgress: { strikeCount: 0, completedAtBats: [] },
+    });
     expect(json).not.toHaveProperty('attemptId');
     expect(json).not.toHaveProperty('browserKeyDigest');
     expect(bootstrap).toHaveBeenCalledWith(ID, null, URL);
@@ -48,7 +52,9 @@ describe('Custom Nine opt-in attempt POST', () => {
     const response = await send({ headers: { cookie: 'creator=valid' } });
     expect(response.status).toBe(200);
     expect(response.headers.get('set-cookie')).toBeNull();
-    expect(await response.json()).toMatchObject({ attemptMode: 'creator_preview' });
+    const preview = await response.json();
+    expect(preview).toMatchObject({ attemptMode: 'creator_preview' });
+    expect(preview).not.toHaveProperty('attemptProgress');
     expect(bootstrap).toHaveBeenCalledWith(ID, 'creator=valid', URL);
   });
 
