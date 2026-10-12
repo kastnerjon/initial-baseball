@@ -11,7 +11,7 @@ Date: 2026-10-11. Scope: one presentation-only PR.
 - Stop: any need to change engine scoring, game state, or other UI chat work requires another scope.
 
 ## Architecture
-No new packages. Pure existing points passed as a numeric view prop; formatting only in web UI. The tracker still receives only position/completion data. Historical versions retain their own resolved header convention. No scoring duplication.
+No new packages. Pure existing points passed as a numeric view prop; formatting only in web UI. The tracker still receives only position/completion data. Historical versions retain the original active question and their resolved header convention. The points-v4 cumulative score is an atomic polite live region for screen readers. No scoring duplication.
 
 ## Verification
 Pending.
