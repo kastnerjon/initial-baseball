@@ -137,7 +137,7 @@ export function AtBatCard({
   return (
     <div className="at-bat-card">
       <div className="pitch-meta">
-        <span className="pitch-number">{rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION ? `Score: ${cumulativePoints.toLocaleString('en-US')}` : `At Bat ${atBat.pitchNumber}`}</span>
+        <span className="pitch-number">{rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION ? `Score: ${cumulativePoints.toLocaleString('en-US')}` : 'Who is the player?'}</span>
         <CountIndicator label="Strikes" filledCount={state.strikeCount} total={3} />
       </div>
 

@@ -7,6 +7,12 @@ import { AtBatCard } from './AtBatCard';
 (globalThis as Record<string, unknown>).React = React;
 
 describe('AtBatCard pending resolution feedback', () => {
+  it('preserves the historical v3 question prompt', () => {
+    const html = renderCard({ requestPending: false, giveUpPending: false, rulesetVersion: 'points-v3' });
+    expect(html).toContain('Who is the player?');
+    expect(html).not.toContain('Score:');
+  });
+
   it('moves the live v4 score into the card header and removes the question prompt', () => {
     const html = renderCard({ requestPending: false, giveUpPending: false,
       rulesetVersion: 'points-v4', cumulativePoints: 4.5 });
