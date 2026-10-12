@@ -5,7 +5,6 @@ export type AtBatProgressTrackerProps = {
   currentAtBat: number;
   totalAtBats?: number;
   completedAtBats: readonly number[];
-  score: number;
 };
 
 /**
@@ -16,14 +15,12 @@ export function AtBatProgressTracker({
   currentAtBat,
   totalAtBats = 9,
   completedAtBats,
-  score,
 }: AtBatProgressTrackerProps): JSX.Element {
   if (!Number.isInteger(totalAtBats) || totalAtBats < 1 || totalAtBats > 9
     || !Number.isInteger(currentAtBat) || currentAtBat < 1
     || currentAtBat > totalAtBats) {
     throw new Error('Invalid at-bat tracker stage.');
   }
-  if (!Number.isFinite(score)) throw new Error('Invalid at-bat tracker score.');
   const completed = new Set(completedAtBats);
   if (completed.size !== completedAtBats.length
     || completedAtBats.some(n => !Number.isInteger(n) || n < 1 || n > currentAtBat)) {
@@ -49,13 +46,7 @@ export function AtBatProgressTracker({
           );
         })}
       </ol>
-      <div className="at-bat-progress-meta" aria-live="polite">
-        <span className="at-bat-progress-score">SCORE: {score.toLocaleString('en-US')}</span>
-        <span className="at-bat-progress-caption">
-          {completed.size === totalAtBats ? `ALL ${totalAtBats} AT-BATS COMPLETE`
-            : `AT-BAT ${currentAtBat} OF ${totalAtBats}`}
-        </span>
-      </div>
+
     </section>
   );
 }
