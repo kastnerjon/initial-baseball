@@ -1,5 +1,10 @@
 import 'server-only';
 import { validateCustomNinePuzzleId } from '@initial-baseball/daily';
+import { normalizeDailyTerminalAtBat } from '@initial-baseball/engine';
+import type { DailyCompletedAtBat } from '@initial-baseball/shared';
+import type { CustomNineAttemptState } from './customNineAttemptRowCodec';
+import type { DailyProgressionClaims } from './dailyProgressionToken';
+import { createCustomNineProgressionTokens, CUSTOM_NINE_SESSION_DATE } from './serverCustomNineBootstrap';
 import type { CustomNineBootstrapResponse } from './serverCustomNineBootstrap';
 import { createServerCustomNineBootstrapService } from './serverCustomNineBootstrap';
 import { createServerCustomNineHintService } from './serverCustomNineHints';
@@ -30,7 +35,13 @@ const DEFAULT_DEPENDENCIES: Dependencies = {
 type Result =
   | { kind: 'not_found' | 'invalid_credential' | 'completed' }
   | { kind: 'preview'; bootstrap: CustomNineBootstrapResponse }
-  | { kind: 'ready'; bootstrap: CustomNineBootstrapResponse; setCookie: string | null };
+  | { kind: 'ready'; bootstrap: CustomNineBootstrapResponse; setCookie: string | null;
+      attemptProgress: CustomNineAttemptProgress };
+
+export type CustomNineAttemptProgress = Readonly<{
+  strikeCount: DailyProgressionClaims['strikeCount'];
+  completedAtBats: readonly DailyCompletedAtBat[];
+}>;
 
 /**
  * Staged, opt-in Custom Nine POST only. Old stateless GET/hints/resolve routes
@@ -74,6 +85,9 @@ export function createServerCustomNineAttemptBootstrap({
       // A valid but no-longer-stored credential cannot reserve another attempt.
       if (saved === null) return { kind: 'invalid_credential' };
       if (saved.status === 'completed') return { kind: 'completed' };
+      if (saved.challengeId !== puzzleId || saved.browserKeyDigest !== key.browserKeyDigest) {
+        throw new Error('Custom Nine saved attempt identity mismatch.');
+      }
 
       let response = bootstrap;
       if (saved.currentProgressionToken !== bootstrap.progressionToken) {
@@ -87,7 +101,13 @@ export function createServerCustomNineAttemptBootstrap({
           hintBundle: restored.hintBundle,
         };
       }
-      return { kind: 'ready', bootstrap: projectCustomNineAttemptBootstrap(response), setCookie: issued?.setCookie ?? null };
+      const progress = verifyCustomNineAttemptProgress(
+        saved, response, createCustomNineProgressionTokens(secret).verify(saved.currentProgressionToken),
+      );
+      return {
+        kind: 'ready', bootstrap: projectCustomNineAttemptBootstrap(response),
+        attemptProgress: progress, setCookie: issued?.setCookie ?? null,
+      };
     },
   };
 }
@@ -112,4 +132,41 @@ export function projectCustomNineAttemptBootstrap(
   result: CustomNineBootstrapResponse,
 ): CustomNineBootstrapResponse {
   return { ...result, hintBundle: projectCustomNineAttemptHintBundle(result.hintBundle) };
+}
+
+
+/** Rehydrate only already-terminal results and current strikes from the signed,
+ * server-monotonic attempt. This never returns future-batter answers or hints.
+ */
+function verifyCustomNineAttemptProgress(
+  saved: CustomNineAttemptState,
+  response: CustomNineBootstrapResponse,
+  claims: DailyProgressionClaims,
+): CustomNineAttemptProgress {
+  const facts = saved.terminalAtBats;
+  if (saved.status !== 'active' || claims.version !== 1 || claims.completed
+    || claims.puzzleId !== response.puzzleId || claims.puzzleDate !== CUSTOM_NINE_SESSION_DATE
+    || claims.rulesetVersion !== response.rulesetVersion
+    || claims.pitchNumber !== facts.length + 1 || facts.length >= 9
+    || response.hintBundle.pitchNumber !== claims.pitchNumber
+    || response.hintBundle.revealedCount !== claims.revealCount
+    || response.atBats.length !== 9 || saved.revision < facts.length) {
+    throw new Error('Custom Nine saved attempt progression mismatch.');
+  }
+  for (const [index, fact] of facts.entries()) {
+    const expected = response.atBats[index];
+    if (expected?.pitchNumber !== index + 1 || expected.initials !== fact.initials
+      || fact.pitchNumber !== index + 1
+      || !normalizeDailyTerminalAtBat(fact, expected).ok) {
+      throw new Error('Custom Nine saved terminal facts mismatch.');
+    }
+  }
+  const outs = facts.filter(fact => fact.outcome === 'K').length;
+  if (claims.outCount !== Math.min(3, outs)) {
+    throw new Error('Custom Nine saved out progression mismatch.');
+  }
+  return {
+    strikeCount: claims.strikeCount,
+    completedAtBats: facts.map(fact => ({ ...fact })),
+  };
 }

@@ -1,6 +1,8 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { CustomNineBootstrapResponse } from './serverCustomNineBootstrap';
 import type { CustomNineAttemptState } from './customNineAttemptRowCodec';
+import type { DailyProgressionClaims } from './dailyProgressionToken';
+import { createCustomNineProgressionTokens, CUSTOM_NINE_SESSION_DATE } from './serverCustomNineBootstrap';
 
 vi.mock('server-only', () => ({}));
 
@@ -11,12 +13,28 @@ const ID = 'custom-nine-v1-123e4567-e89b-42d3-a456-426614174000';
 const OTHER = 'custom-nine-v1-123e4567-e89b-42d3-a456-426614174001';
 const SECRET = 'test-progression-key-long-enough-for-custom-attempt-issuance';
 const URL = 'https://example.test/api/custom-nine/challenges/' + ID + '/attempt/bootstrap';
-const OPEN = 'v1.initial-signature.token';
-const stored = (digest: string, token = OPEN, status: 'active' | 'completed' = 'active'): CustomNineAttemptState => ({
+const codec = createCustomNineProgressionTokens(SECRET);
+const signed = (overrides: Partial<DailyProgressionClaims> = {}) => codec.sign({
+  version: 1, rulesetVersion: 'points-v4',
+  puzzleId: ID, puzzleDate: CUSTOM_NINE_SESSION_DATE,
+  pitchNumber: 1, revealCount: 0, strikeCount: 0, outCount: 0,
+  completed: false, ...overrides,
+});
+const OPEN = signed();
+const LATER = signed({ pitchNumber: 2 });
+const WRONG = signed({ strikeCount: 2 });
+const FIRST_FACT = {
+  pitchNumber: 1, initials: 'P1', outcome: 'HR', hintsRevealed: 0,
+  wrongGuesses: 0, resolution: 'correct',
+} as const;
+const stored = (
+  digest: string, token = OPEN, status: 'active' | 'completed' = 'active',
+  facts: CustomNineAttemptState['terminalAtBats'] = [],
+): CustomNineAttemptState => ({
   challengeId: ID, browserKeyDigest: digest,
   attemptId: '123e4567-e89b-42d3-a456-426614174010',
   revision: token === OPEN ? 0 : 1,
-  currentProgressionToken: token, terminalAtBats: [],
+  currentProgressionToken: token, terminalAtBats: facts,
   status, createdAt: '2026-10-10T16:00:00Z',
   updatedAt: '2026-10-10T16:00:00Z', completedAt: status === 'completed' ? '2026-10-10T17:00:00Z' : null,
 });
@@ -40,7 +58,7 @@ function setup() {
   const deps = {
     bootstrap: vi.fn(async (_id: string): Promise<CustomNineBootstrapResponse | null> => BASE),
     restore: vi.fn(async (_id: string, token: string) => ({
-      hintBundle: { ...BASE.hintBundle, pitchNumber: token.includes('later') ? 2 : 1 },
+      hintBundle: { ...BASE.hintBundle, pitchNumber: token === LATER ? 2 : 1 },
     })),
     attemptRepository: vi.fn(() => repo),
     getSecret: vi.fn(() => SECRET),
@@ -56,6 +74,7 @@ describe('staged Custom Nine challenge-specific attempt bootstrap', () => {
     expect(result.kind).toBe('ready');
     if (result.kind !== 'ready') throw Error('Expected reserved attempt.');
     expect(result.bootstrap).toEqual(BASE);
+    expect(result.attemptProgress).toEqual({ strikeCount: 0, completedAtBats: [] });
     expect(result.setCookie).toContain('; HttpOnly; SameSite=Strict; Secure');
     expect(result.setCookie).not.toContain('Domain=');
     expect(result.setCookie).not.toContain('attempt_id');
@@ -91,19 +110,57 @@ describe('staged Custom Nine challenge-specific attempt bootstrap', () => {
     if (first.kind !== 'ready' || first.setCookie === null) throw Error('Missing issued cookie');
     const pair = first.setCookie.split(';')[0]!;
     const digest = [...byKey.keys()][0]!;
-    byKey.set(digest, stored(digest, 'v1.later-signed-token'));
+    byKey.set(digest, stored(digest, LATER, 'active', [FIRST_FACT]));
     const resumed = await service.bootstrap(ID, pair, URL);
     expect(resumed).toMatchObject({
       kind: 'ready', setCookie: null, bootstrap: {
-        progressionToken: 'v1.later-signed-token', hintBundle: { pitchNumber: 2 },
+        progressionToken: LATER, hintBundle: { pitchNumber: 2 },
       },
     });
+    expect(resumed.kind).toBe('ready');
+    if (resumed.kind !== 'ready') throw Error('Expected resumed attempt.');
+    expect(resumed.attemptProgress).toEqual({ strikeCount: 0, completedAtBats: [FIRST_FACT] });
     expect(repo.getOrCreate).toHaveBeenCalledTimes(1);
     expect(repo.getByKey).toHaveBeenCalledOnce();
-    expect(deps.restore).toHaveBeenCalledWith(ID, 'v1.later-signed-token');
+    expect(deps.restore).toHaveBeenCalledWith(ID, LATER);
     const replay = await service.bootstrap(ID, pair, URL);
     expect(replay.kind).toBe('ready');
     expect(repo.getOrCreate).toHaveBeenCalledTimes(1);
+  });
+
+  it('restores current signed wrong-guess strikes, never user-local state', async () => {
+    const { service, byKey } = setup();
+    const first = await service.bootstrap(ID, null, URL);
+    if (first.kind !== 'ready' || !first.setCookie) throw Error('Expected cookie');
+    const key = [...byKey.keys()][0]!;
+    byKey.set(key, stored(key, WRONG));
+    const resumed = await service.bootstrap(ID, first.setCookie.split(';')[0]!, URL);
+    expect(resumed.kind).toBe('ready');
+    if (resumed.kind !== 'ready') throw Error('Expected resumed state');
+    expect(resumed.attemptProgress).toEqual({ strikeCount: 2, completedAtBats: [] });
+    expect(resumed.bootstrap.hintBundle.pitchNumber).toBe(1);
+  });
+
+  it('fails closed for signed tokens from another challenge, incorrect pitch or invalid saved initials', async () => {
+    const { service, byKey } = setup();
+    const first = await service.bootstrap(ID, null, URL);
+    if (first.kind !== 'ready' || !first.setCookie) throw Error('Expected cookie');
+    const pair = first.setCookie.split(';')[0]!;
+    const key = [...byKey.keys()][0]!;
+    for (const token of [
+      signed({ puzzleId: OTHER }),
+      LATER,
+      signed({ pitchNumber: 2, outCount: 1 }),
+      signed({ completed: true }),
+    ]) {
+      byKey.set(key, stored(key, token));
+      await expect(service.bootstrap(ID, pair, URL)).rejects.toThrow();
+    }
+    byKey.set(key, stored(key, LATER, 'active', [{ ...FIRST_FACT, initials: 'ZZ' }]));
+    await expect(service.bootstrap(ID, pair, URL)).rejects.toThrow('terminal facts mismatch');
+    byKey.set(key, stored(key, LATER, 'active', [FIRST_FACT]));
+    const resumed = await service.bootstrap(ID, pair, URL);
+    expect(resumed.kind).toBe('ready');
   });
 
   it('lets verified creating browsers preview without reserving a contributing attempt', async () => {
@@ -165,7 +222,7 @@ describe('staged Custom Nine challenge-specific attempt bootstrap', () => {
     if (started.kind !== 'ready' || !started.setCookie) throw Error('Missing cookie');
     const pair = started.setCookie.split(';')[0]!;
     const digest = [...byKey.keys()][0]!;
-    byKey.set(digest, stored(digest, 'v1.later-signed-token'));
+    byKey.set(digest, stored(digest, LATER, 'active', [FIRST_FACT]));
     deps.restore.mockResolvedValueOnce(null as never);
     await expect(service.bootstrap(ID, pair, URL)).rejects.toThrow('stored continuation unavailable');
   });
