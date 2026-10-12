@@ -3,9 +3,9 @@ import { describe, expect, it } from 'vitest';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { AtBatProgressTracker } from './AtBatProgressTracker';
 
-const render = (currentAtBat: number, completedAtBats: number[]) =>
+const render = (currentAtBat: number, completedAtBats: number[], score = 0) =>
   renderToStaticMarkup(<AtBatProgressTracker currentAtBat={currentAtBat}
-    completedAtBats={completedAtBats} />);
+    completedAtBats={completedAtBats} score={score} />);
 
 describe('AtBatProgressTracker', () => {
   it('shows all nine numbered stages and the first current position at startup', () => {
@@ -36,6 +36,18 @@ describe('AtBatProgressTracker', () => {
     expect(html).toContain('ALL 9 AT-BATS COMPLETE');
     expect(html.match(/aria-current="step"/g)).toBeNull();
   });
+  it('renders the cumulative score left and the at-bat number right in one row', () => {
+    const html = render(4, [1, 2, 3], 240);
+    expect(html).toMatch(/class="at-bat-progress-meta"[^>]*><span class="at-bat-progress-score">SCORE: 240<\/span><span class="at-bat-progress-caption">AT-BAT 4 OF 9<\/span><\/div>/);
+    expect(html.match(/SCORE:/g)).toHaveLength(1);
+  });
+  it('formats zero, negative and large cumulative scores without doing scoring', () => {
+    expect(render(1, [], 0)).toContain('SCORE: 0');
+    expect(render(5, [1, 2, 3, 4], -1)).toContain('SCORE: -1');
+    expect(render(9, [1, 2, 3, 4, 5, 6, 7, 8], 12345)).toContain('SCORE: 12,345');
+    expect(() => render(2, [1], Number.NaN)).toThrow('Invalid at-bat tracker score');
+  });
+
   it('rejects invalid or contradictory stage data', () => {
     expect(() => render(0, [])).toThrow();
     expect(() => render(5, [1, 1])).toThrow();

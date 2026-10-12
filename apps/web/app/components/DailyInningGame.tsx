@@ -247,7 +247,7 @@ export function DailyInningGame({
   return (
     <div className="game-shell">
       {gameState.rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION &&
-        <AtBatProgressTracker currentAtBat={activePitch.pitchNumber} completedAtBats={displayedCompletedAtBats.map(atBat => atBat.pitchNumber)} />}
+        <AtBatProgressTracker currentAtBat={activePitch.pitchNumber} completedAtBats={displayedCompletedAtBats.map(atBat => atBat.pitchNumber)} score={displayedPoints.points} />}
       {performanceLayout ? null : inningScoreboard === null ? (
         <DailyScorebug
           currentAtBat={activePitch.pitchNumber}
