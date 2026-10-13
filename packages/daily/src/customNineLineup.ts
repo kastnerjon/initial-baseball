@@ -1,4 +1,4 @@
-import { DAILY_AT_BAT_COUNT } from './dailyConstants';
+import { isValidLineupLength } from './lineupLengthPolicy';
 
 export const CUSTOM_NINE_LINEUP_SCHEMA_VERSION = 1 as const;
 
@@ -19,7 +19,7 @@ export type CustomNineLineupSelection = {
 export function createCustomNineLineupSelection(
   canonicalPlayerIds: readonly string[],
 ): CustomNineLineupSelection {
-  if (!Array.isArray(canonicalPlayerIds) || canonicalPlayerIds.length !== DAILY_AT_BAT_COUNT) {
+  if (!Array.isArray(canonicalPlayerIds) || !isValidLineupLength('custom-nine-v1', canonicalPlayerIds.length)) {
     throw new Error('Custom Nine requires exactly nine players.');
   }
 

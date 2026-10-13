@@ -205,6 +205,14 @@ export {
 } from './permanentDailyIssuedPuzzleRead';
 
 export {
+  DAILY_FIVE_AT_BAT_COUNT,
+  CUSTOM_LINEUP_MIN_AT_BATS,
+  CUSTOM_LINEUP_MAX_AT_BATS,
+  isValidLineupLength,
+  type LineupLengthPolicy,
+} from './lineupLengthPolicy';
+
+export {
   CUSTOM_NINE_LINEUP_SCHEMA_VERSION,
   createCustomNineLineupSelection,
   type CustomNineLineupSelection,

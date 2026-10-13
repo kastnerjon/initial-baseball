@@ -1,4 +1,5 @@
-import { DAILY_AT_BAT_COUNT } from './dailyPuzzleSelection';
+import { DAILY_AT_BAT_COUNT } from './dailyConstants';
+import { isValidLineupLength } from './lineupLengthPolicy';
 import {
   clonePermanentDailyIssuedClueSnapshot,
   type PermanentDailyIssuedClueSnapshot,
@@ -213,7 +214,7 @@ function validateCanonicalPlayerIds(
   canonicalPlayerIds: readonly string[],
 ): void {
   const label = getSeriesLabel(identity);
-  if (canonicalPlayerIds.length !== DAILY_AT_BAT_COUNT) {
+  if (!isValidLineupLength('legacy-daily-nine', canonicalPlayerIds.length)) {
     throw new Error(
       `${label} issued puzzle must contain exactly ${DAILY_AT_BAT_COUNT} players.`,
     );
