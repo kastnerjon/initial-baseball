@@ -10,9 +10,11 @@ The **Discover Lineups** page offers exactly these initial views:
 
 | View | Eligibility and sort | Tie-break |
 |---|---|---|
-| **This Week** | Public, approved lineups ranked by eligible noncreator **accepted first completed attempts created in the past rolling seven days** | Total eligible completed attempts, then published timestamp, then challenge ID |
-| **All Time** | Public, approved lineups ranked by their total eligible noncreator **accepted first completed attempts** | Recent-seven-day eligible completions, then published timestamp, then challenge ID |
-| **New Today** | Public, approved lineups **first published since midnight UTC**, newest first | Stable challenge ID |
+| **This Week** | Public approved challenges by count of eligible noncreator first-completion **admissions** with authoritative `custom_nine_completed_results.created_at` in the rolling 7 × 24 hours ending at the query's server UTC timestamp; count **descending** | All-time accepted completion count **descending**, first-publication timestamp **descending**, challenge ID **ascending** |
+| **All Time** | Public approved challenges by total eligible noncreator first-completion admissions; count **descending**, based on all `custom_nine_completed_results.created_at` values | Rolling-seven-day accepted completion count **descending**, first-publication timestamp **descending**, challenge ID **ascending** |
+| **New Today** | Public approved challenges with immutable first-publication timestamp `first_published_at` in the calendar day **00:00:00 UTC inclusive** through next midnight **exclusive**, sorted by `first_published_at` **descending** | Challenge ID **ascending** |
+
+The canonical completion clock is the server/database-issued accepted result `created_at`, **not** the browser's attempt start, client-declared completion, or page-view time. The publication clock is the server-set immutable `first_published_at`; unpublish/re-publish must not reset it or allow gaming New Today. For stable cursor pagination, freeze a request's server UTC reference time across pages (e.g. encode an authenticated/signed cursor with that time) and carry the sort values and stable challenge-ID tie-breaker. These timestamp fields must be implemented and indexed/reviewed before activation.
 
 "Plays" and popularity are **eligible accepted completed attempts**, not page views and not guaranteed unique humans: challenge-scoped anonymous browser credentials can be reset. No inflated counts from creator preview, replay, unadmitted/orphan/partial attempts or another challenge. Show sample sizes. Popularity may favor shorter challenges; always show lineup length and offer a length filter (1–3, 4–6, 7–10) when data warrants it. Re-evaluate ranking empirically after launch; no invented composite engagement score in v1. Empty popularity windows must produce honest empty states, not false scores.
 
