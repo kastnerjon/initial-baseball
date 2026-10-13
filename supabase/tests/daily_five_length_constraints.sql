@@ -79,6 +79,22 @@ begin
     raise exception 'Issued schema v3 incorrectly admitted an absent clue snapshot.';
   exception when check_violation then null;
   end;
+  begin
+    insert into public.permanent_daily_issued_puzzles
+      (series_version,daily_number,puzzle_date,schema_version,puzzle_id,canonical_player_ids,clue_snapshot,issued_at)
+    values ('archive-beta-v1',999995,'2099-01-10',3,'archive-beta-v1-daily-999995',five_ids,
+      jsonb_build_object('schemaVersion', 1, 'hintLayout', hints), now());
+    raise exception 'Issued schema v3 incorrectly admitted a snapshot missing pitches.';
+  exception when check_violation then null;
+  end;
+  begin
+    insert into public.permanent_daily_issued_puzzles
+      (series_version,daily_number,puzzle_date,schema_version,puzzle_id,canonical_player_ids,clue_snapshot,issued_at)
+    values ('archive-beta-v1',999996,'2099-01-11',3,'archive-beta-v1-daily-999996',five_ids,
+      jsonb_build_object('hintLayout', hints, 'pitches', five_pitches), now());
+    raise exception 'Issued schema v3 incorrectly admitted a snapshot missing schemaVersion.';
+  exception when check_violation then null;
+  end;
 end
 $test$;
 

@@ -31,10 +31,10 @@ Fields include:
 - unique puzzle date and deterministic puzzle number;
 - version and optimistic revision;
 - `draft`, `scheduled`, `published`, or `archived` status;
-- exactly nine ordered `{slot, canonicalPlayerId, source}` selections in one JSONB value;
+- ordered `{slot, canonicalPlayerId, source}` selections in one JSONB value (nine for the current/default lineup contract 1; five only under future explicit contract 2);
 - creation, update, schedule, publication, and archive audit metadata.
 
-The exact nine are stored atomically so one revision guard protects the complete lineup.
+The ordered selections (currently nine) are stored atomically so one revision guard protects the complete lineup.
 
 The table does not duplicate:
 
