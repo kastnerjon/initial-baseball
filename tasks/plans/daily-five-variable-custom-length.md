@@ -1,5 +1,5 @@
 # Daily Five and variable-length Custom Lineup — approved product migration
-Status: **Stage 1 portable policy implemented; issuance and production rollout pending** (2026-10-13)
+Status: **Stages 1–2 portable length policy and hosted Daily database preparation complete; issuance and rollout pending** (2026-10-13)
 
 ## Owner decision and current-state boundary
 
@@ -41,7 +41,7 @@ The existing `DAILY_AT_BAT_COUNT = 9` is shared by Universal selection, issued p
 ## Ordered, bounded PR stages (one PR at a time)
 
 1. **Implemented — portable length policy (no deployment switch).** `packages/daily` now exports separate legacy Daily/Classic/Custom v1 exact-nine and future Daily Five exact-five/Custom 1–10 length checks with boundary and Custom v1 compatibility tests. The existing nine-player issued puzzle, clue snapshot and Custom v1 validators use the legacy policy, retaining historical errors and schemas. Future policies are not connected to issuance; versioned five-player frozen clue validation remains a later stage.
-2. **Daily schema preparation — SQL predecessor prepared; hosted work pending.** Add `lineup_contract_version` to editorial (v1 default: 9; v2: 5) and issued schema v3 (5 frozen clues), retaining exact-nine issued v1/v2. This is a separately scoped migration with transactional rollback tests; independently review, merge, apply to hosted Supabase and verify constraints/permissions **before** any five-slot inserts/inventory. It does not deploy an issuing consumer or enable public Daily Five.
+2. **Done #396 — Daily SQL predecessor hosted and verified.** Editorial `lineup_contract_version` (v1 default: 9; v2: 5), issued schema v3 (5 frozen clues) and legacy exact-nine v1/v2 were merged and installed as Supabase migration `20261013223640_prepare_daily_five_length_constraints`. Transaction-rollback test passed; 35 editorial nine-player and 9 archive-beta issued nine-player rows intact. No issuing consumer or public Daily Five activation.
 3. **Daily Five issuance and editor/content preparation.** Versioned five-slot generator/editor/issuance validation with nine-slot read compatibility; only after stage 2 hosted verification. Inspect existing scheduled lineup inventory and reconcile approvals, without truncating nine-player records.
 4. **Daily Five browser/server result compatibility.** In separately scoped PRs as necessary, update five-stage progression, signed attempts, authoritative completed-result validation, browser hydration and history, score/comparison charts and share UX, while retaining Archive nine and Classic independence. No public switch until all checks pass.
 5. **Custom schema and RPC predecessor — database-only.** Add versioned 1–10 constraints and service-role-only atomic admission/bucket functions, while retaining exact-nine Custom v1 behavior. Review SQL/RLS and transaction-rollback fixtures, merge, apply and hosted-verify **before** any variable-length runtime consumer deploys. Neither public creation nor competition activated.
@@ -49,6 +49,8 @@ The existing `DAILY_AT_BAT_COUNT = 9` is shared by Universal selection, issued p
 7. **Custom signed/private runtime.** In narrow sequential Web-owned PRs, update server-monotonic signed bootstrap/hints/resolve, exact-N terminal/completion/admission, and then comparison population reads. Every step must fail closed if a required hosted object or version is missing; no browser-chosen count.
 8. **Custom creator/player presentation.** Enable selecting and playing 1–10 via responsive accessible UI and challenge-scoped scores, with separate guarded activation/abuse review. Old v1 links and results remain playable. Maintain default-disabled Custom submission/comparison switches until authorized.
 9. **Controlled prospective Daily Five cutover.** Only after five-player approved inventory, Classic nine-player independence, client/server/schema compatibility, CI/Preview, mobile QA, cohort isolation and rollback plan. Release via explicit new date/version, with full post-merge and hosted verification.
+
+Separate follow-on Community Lineups publishing/discovery and exact-challenge results requirements live in `tasks/plans/community-custom-lineups.md`. Do not conflate public Custom gallery, creator ownership or score-read activation with Daily Five issuance.
 
 Each implementation PR must define its own scope contract, docs impact, independent review, exact-head CI, READY Vercel Preview and production verification. Never combine Daily and Custom schema changes, and never deploy a consumer before its hosted dependency is verified.
 
