@@ -8,7 +8,15 @@ Last updated: 2026-10-11
 
 - [ ] Migrate Universal to **Daily Five** (exactly 5 AB / 20 maximum) and future **Custom Lineup** to a creator-chosen **1–10** ABs (4 × N maximum), with legacy nine-player issued games and Classic unchanged. Current production still runs nine; **no activation in this decision PR**.
 - [x] Stage 1: portable length profiles distinguish legacy nine-player Daily/Classic/Custom v1 from future Daily Five five and future Custom 1–10, without activating new issuance. Existing validators preserve their exact-nine errors and behavior.
-- [ ] Stage 2: isolated additive Daily five-player editorial and permanent-issued SQL migration (`20261013160000_prepare_daily_five_length_constraints.sql`) plus rollback fixture. Require review/merge, then hosted application and verification **before any five-player inventory**. Still no public activation; later PRs own new issued/Clue schema, Daily generator/client/cohorts, Custom schema/runtime, UI and activation.
+- [x] Stage 2: additive Daily five-player editorial and permanent-issued SQL migration (#396), installed in hosted Supabase as `20261013223640_prepare_daily_five_length_constraints`; rollback fixture and unchanged nine-player counts/privileges verified. No public activation.
+- [ ] Next Daily Five: separately versioned editor and issuance support for prospective five-player inventory, preserving Classic and all nine-player historical records; then browser/result compatibility and controlled cutover.
+
+## Community Lineups — publish, discover and compare (approved October 13)
+
+- [ ] Allow players to intentionally publish eligible **Custom Lineups** (1–10 AB) while retaining private sharing and creator-controlled unpublishing. Public publishing must have stable authorized creator ownership, moderation/reporting, bounded titles, abuse limits, and separately authorized activation.
+- [ ] Add responsive **Discover Lineups** page: **This Week** (accepted noncreator completed first attempts in rolling past seven days), **All Time** (cumulative eligible completions), **New Today** (UTC publication timestamp). Exact challenge identity, stable pagination, clear lineup-length labels/filters and no answer leakage.
+- [ ] For every published lineup, provide a stable detail/play page, exact-challenge completed result histogram, avg, per-AB distributions, and an opt-in privacy-reviewed leaderboard. Never include creator attempts or unsupported attempts in competitive populations.
+- [ ] Follow `tasks/plans/community-custom-lineups.md` in bounded PRs **after playable Custom and exact-N signed results**, with explicit gated release and abuse/integrity checks; do not enable currently disabled Custom submission/comparison flags yet.
 
 ## Results layout refinement (October 11)
 
