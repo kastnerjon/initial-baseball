@@ -52,7 +52,7 @@ alter table public.permanent_daily_issued_puzzles
       )
     ),
   add constraint permanent_daily_issued_puzzles_clue_snapshot_contract
-    check (
+    check ((
       (schema_version = 1 and clue_snapshot is null)
       or (
         schema_version in (2, 3)
@@ -66,7 +66,8 @@ alter table public.permanent_daily_issued_puzzles
           or jsonb_array_length(clue_snapshot -> 'pitches') = 5
         )
       )
-    ) is true;
+    ) is true
+    );
 
 comment on column public.permanent_daily_issued_puzzles.canonical_player_ids is
   'Immutable ordered canonical IDs: issued schema v1/v2 require nine players; future clue-frozen schema v3 requires five. Never reinterpret existing issued puzzles.';
