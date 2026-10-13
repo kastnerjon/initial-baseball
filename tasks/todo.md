@@ -8,7 +8,7 @@ Last updated: 2026-10-11
 
 - [ ] Migrate Universal to **Daily Five** (exactly 5 AB / 20 maximum) and future **Custom Lineup** to a creator-chosen **1–10** ABs (4 × N maximum), with legacy nine-player issued games and Classic unchanged. Current production still runs nine; **no activation in this decision PR**.
 - [x] Stage 1: portable length profiles distinguish legacy nine-player Daily/Classic/Custom v1 from future Daily Five five and future Custom 1–10, without activating new issuance. Existing validators preserve their exact-nine errors and behavior.
-- [ ] Next: isolated additive Daily five-player editorial and permanent-issued SQL constraints, with hosted verification before any five-player inventory. Then separate Daily generator/client/cohort support, Custom schema/runtime, UI and activation. Follow `tasks/plans/daily-five-variable-custom-length.md`; do not change the global `DAILY_AT_BAT_COUNT` or truncate issued puzzles.
+- [ ] Stage 2: isolated additive Daily five-player editorial and permanent-issued SQL migration (`20261013160000_prepare_daily_five_length_constraints.sql`) plus rollback fixture. Require review/merge, then hosted application and verification **before any five-player inventory**. Still no public activation; later PRs own new issued/Clue schema, Daily generator/client/cohorts, Custom schema/runtime, UI and activation.
 
 ## Results layout refinement (October 11)
 
