@@ -5,6 +5,10 @@ Last updated: 2026-10-11
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
+## Approved next migration — Daily Five and variable-length Custom (October 13, 2026)
+
+The owner approved **Daily Five**, exactly **5** at-bats (points-v4 maximum **20**), replacing the nine-batter Universal Daily only after a prospective, separately versioned rollout. **Custom Lineup** will accept **1–10 distinct ordered canonical players**, with maximum **4 × N** points (4–40), not a minimum of five. Previously issued nine-player Daily/Archive/Custom games and Classic must retain immutable identities, lengths, scoring and results. **Implementation has not begun**; current production is still Daily Nine and the staged Custom v1 still requires exactly nine. Do not change the global `DAILY_AT_BAT_COUNT`, truncate scheduled/published lineups, or enable Custom competition as a shortcut. The approved migration sequence, versioning, database/compatibility safeguards and release gates are specified in `tasks/plans/daily-five-variable-custom-length.md`. First next bounded step: portable separate length-policy/legacy compatibility contract; no production activation.
+
 ## Custom Nine creator workbench — staged admin-only UI (October 11)
 
 The admin-only /admin/custom-nine view reuses the existing authorized Daily admin gate and private Custom Nine creation API. The workbench searches canonical player results, selects up to nine distinct IDs in batting order, moves/removes slots, and issues a frozen nine-player challenge; the response displays/copies only its opaque ID. Creating-browser provenance remains secured in the existing private API cookie. This is intentionally NOT anonymous public creation and cannot promise a playable link before the player-facing route exists.

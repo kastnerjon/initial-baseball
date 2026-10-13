@@ -83,6 +83,9 @@ Decision date: 2026-10-08
 
 ## Product contract
 
+**Superseding owner decision (October 13, 2026; not implemented):** Future Custom Lineup allows **1–10 distinct ordered canonical players**, instead of requiring exactly nine. The older exact-nine specification below remains the **current Custom Nine v1 implementation** and an immutable requirement for all previously issued v1 records; do not reinterpret/overwrite it. Variable length needs a separately versioned issuance/DB/signed-attempt/completion/comparison contract, with an additive migration; public competition remains disabled. Daily Five (five AB) will replace the normal Universal Daily only in a distinct prospective cutover, preserving nine-player historical puzzles and Classic. See `tasks/plans/daily-five-variable-custom-length.md`.
+
+
 - **Daily Nine — Universal Lineup** stays the existing common editorial Daily. The approved **Daily Nine — Specific Lineup** mode (team/era/difficulty, one lineup per configuration per day) is paused. **Custom Lineup** is the next priority; head-to-head follows later with its own Classic rules engine.
 - A creator manually chooses **exactly nine different canonical players in an explicit batting order**, then creates a stable, shareable challenge link. No team/era/WAR automatic-pool limit applies to manual choices; selection still requires real canonical identities with supported hints.
 - Once issued, the nine identities, clue categories, hint values, order, and ruleset are **frozen**, not regenerated when a friend opens the link or when player metadata changes. A custom challenge does not silently roll over every day; the link identifies the same puzzle.

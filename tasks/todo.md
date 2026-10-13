@@ -4,6 +4,11 @@
 Status: Active ordered implementation plan  
 Last updated: 2026-10-11
 
+## Approved Daily Five / Custom 1–10 migration (October 13)
+
+- [ ] Migrate Universal to **Daily Five** (exactly 5 AB / 20 maximum) and future **Custom Lineup** to a creator-chosen **1–10** ABs (4 × N maximum), with legacy nine-player issued games and Classic unchanged. Current production still runs nine; **no activation in this decision PR**.
+- [ ] Next bounded implementation: separate mode-specific new-issuance length policy and exact historical puzzle validation in portable packages; then staged Daily issuance/client/cohorts, Custom versioned private schema/runtime, creator/player UI and explicit activation. Follow `tasks/plans/daily-five-variable-custom-length.md`. No global change of `DAILY_AT_BAT_COUNT`, silent scheduled/published nine truncation, public Custom creation or competition flag activation.
+
 ## Results layout refinement (October 11)
 
 - [x] Completed points-v4 results now show Summary, Your Nine, Top 10 (Daily only), Final Score Distribution, then At-Bat Score Distribution. All panels start open and collapse independently; stacked-bar labels show initials and the histogram own-score badge no longer stretches on phones. Custom Nine remains the next bounded stage.
