@@ -1,5 +1,6 @@
 import type { HintConfigSlot, HintType } from '@initial-baseball/shared';
-import { DAILY_AT_BAT_COUNT } from './dailyPuzzleSelection';
+import { DAILY_AT_BAT_COUNT } from './dailyConstants';
+import { isValidLineupLength } from './lineupLengthPolicy';
 
 export const PERMANENT_DAILY_ISSUED_CLUE_SNAPSHOT_SCHEMA_VERSION = 1 as const;
 
@@ -106,7 +107,7 @@ function validateHintLayout(
 function validatePitches(
   pitches: readonly PermanentDailyIssuedPitchClueSnapshot[],
 ): void {
-  if (pitches.length !== DAILY_AT_BAT_COUNT) {
+  if (!isValidLineupLength('legacy-daily-nine', pitches.length)) {
     throw new Error(
       `Permanent Daily clue snapshot must contain exactly ${DAILY_AT_BAT_COUNT} pitches.`,
     );

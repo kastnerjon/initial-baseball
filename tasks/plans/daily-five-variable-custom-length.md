@@ -1,5 +1,5 @@
 # Daily Five and variable-length Custom Lineup — approved product migration
-Status: **Approved product direction, implementation not started** (2026-10-13)
+Status: **Stage 1 portable policy implemented; issuance and production rollout pending** (2026-10-13)
 
 ## Owner decision and current-state boundary
 
@@ -40,7 +40,7 @@ The existing `DAILY_AT_BAT_COUNT = 9` is shared by Universal selection, issued p
 
 ## Ordered, bounded PR stages (one PR at a time)
 
-1. **Portable policy and exact-identity compatibility (no deployment switch).** Establish separate Universal future-issuance, Classic legacy and Custom v1/new-version length validation with focused pure tests (1, 5, 9, 10). Preserve all existing nine-player signed records.
+1. **Implemented — portable length policy (no deployment switch).** `packages/daily` now exports separate legacy Daily/Classic/Custom v1 exact-nine and future Daily Five exact-five/Custom 1–10 length checks with boundary and Custom v1 compatibility tests. The existing nine-player issued puzzle, clue snapshot and Custom v1 validators use the legacy policy, retaining historical errors and schemas. Future policies are not connected to issuance; versioned five-player frozen clue validation remains a later stage.
 2. **Daily schema preparation — database-only predecessor.** Add version-conditional five-slot support to editorial and permanent issued-puzzle Supabase constraints using an additive migration. Keep legacy nine and immutable issued rows valid. Independently review, merge, apply to hosted Supabase, and verify versioned constraints/permissions **before** attempting any five-slot inserts or inventory. No client/issuance consumer in this PR.
 3. **Daily Five issuance and editor/content preparation.** Versioned five-slot generator/editor/issuance validation with nine-slot read compatibility; only after stage 2 hosted verification. Inspect existing scheduled lineup inventory and reconcile approvals, without truncating nine-player records.
 4. **Daily Five browser/server result compatibility.** In separately scoped PRs as necessary, update five-stage progression, signed attempts, authoritative completed-result validation, browser hydration and history, score/comparison charts and share UX, while retaining Archive nine and Classic independence. No public switch until all checks pass.
