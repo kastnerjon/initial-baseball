@@ -49,6 +49,15 @@ Approved scheduled or published IDs are joined to canonical runtime data on the 
 
 Current editorial puzzle numbers/dates are beta operational identity. They must not be assumed to be the eventual permanent public Daily sequence. Broad launch will explicitly establish a new permanent Daily #1 epoch; beta history is not migrated into that archive merely because it exists in this table.
 
+## Daily Five database predecessor — schema-only, no activation (October 13)
+
+The additive migration `20261013160000_prepare_daily_five_length_constraints.sql` prepares the existing service-role-only Daily editorial and immutable issued-puzzle tables for **future** five-player issuance without enabling it.
+
+- `daily_editorial_puzzles.lineup_contract_version` is an explicit smallint: **1 (default) = nine players**, **2 = five players**. This is distinct from the existing editorial `version` (content edition) and `revision` (optimistic concurrency). The JSON `selections` constraint enforces exactly the version's length. Existing inserts and rows remain version 1 and nine players.
+- `permanent_daily_issued_puzzles.schema_version` keeps existing schema **1/2 = nine immutable IDs** and permits future schema **3 = exactly five IDs plus a frozen clue snapshot**. The inner clue snapshot format remains version 1; schema 3 must contain five pitches. Existing series identifiers (`permanent-v1` and `archive-beta-v1`), primary/unique keys, grants, RLS, and append-only behavior are unchanged.
+- There is **no new issuer or data migration** in this SQL-only predecessor. New schema/length rows must not be written until a separately reviewed version-aware service issues and validates them. The prior nine-player archive and already-published records must remain unchanged.
+- Transaction-rolled-back acceptance fixtures are provided in `supabase/tests/daily_five_length_constraints.sql`; run them on hosted DB only after the migration has passed its review and been merged/applied. Check the actual hosted constraints and the existing version/count distribution first and afterward.
+
 ## Custom Nine peer comparison buckets — private database stage (October 11)
 
 This bounded Supabase-only stage adds two **service-role-only** stable score-bucket functions, `custom_nine_at_bat_score_buckets_v1(challenge_id, pitch_number, excluded_submission_id)` and `custom_nine_completed_score_buckets_v1(challenge_id, excluded_submission_id)`. Both read exclusively the isolated Custom Nine points-v4 result tables and filter to the **exact issued challenge**; neither reads current Daily Nine or Archive populations or emits player identities, clues, outcomes, raw per-attempt facts or timestamps. The per-AB reader joins a matching **accepted completed result** so a stray/orphan legacy AB cannot inflate the denominator. Each row contains only `{points, result_count}`.
