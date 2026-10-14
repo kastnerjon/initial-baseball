@@ -126,6 +126,13 @@ function validateHintLayout(
     );
   }
 
+  // Array.forEach skips holes. Reject sparse arrays before cloning/freeze.
+  for (let index = 0; index < hintLayout.length; index++) {
+    if (!Object.prototype.hasOwnProperty.call(hintLayout, index) || !hintLayout[index]) {
+      throw new Error(`Permanent Daily clue snapshot hint ${index + 1} layout slot is required.`);
+    }
+  }
+
   const seenTypes = new Set<HintType>();
   hintLayout.forEach((hint, index) => {
     const expectedSlot = index + 1;
@@ -167,6 +174,12 @@ function validatePitches(
     );
   }
 
+  for (let index = 0; index < pitches.length; index++) {
+    if (!Object.prototype.hasOwnProperty.call(pitches, index) || !pitches[index]) {
+      throw new Error(`Permanent Daily clue snapshot pitch ${index + 1} is required.`);
+    }
+  }
+
   const seenPlayerIds = new Set<string>();
   pitches.forEach((pitch, index) => {
     const expectedPitchNumber = index + 1;
@@ -190,6 +203,11 @@ function validatePitches(
       throw new Error(
         `Permanent Daily clue snapshot pitch ${pitch.pitchNumber} must contain exactly ${DAILY_HINT_COUNT} hint values.`,
       );
+    }
+    for (let hintIndex = 0; hintIndex < pitch.hintValues.length; hintIndex++) {
+      if (!Object.prototype.hasOwnProperty.call(pitch.hintValues, hintIndex)) {
+        throw new Error(`Permanent Daily clue snapshot pitch ${pitch.pitchNumber} hint ${hintIndex + 1} value is required.`);
+      }
     }
     pitch.hintValues.forEach((value, hintIndex) => {
       requireNonEmpty(

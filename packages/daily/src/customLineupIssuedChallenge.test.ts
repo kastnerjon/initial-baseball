@@ -186,6 +186,33 @@ describe('Custom Lineup v2 portable contracts (not hosted issuance)', () => {
     })).toThrow('Unsupported permanent Daily clue snapshot schema version');
   });
 
+  it('rejects sparse clue layout, pitch and hint arrays before freezing', () => {
+    const valid = input(5);
+
+    const hintLayout = [...valid.clueSnapshot.hintLayout];
+    delete hintLayout[1];
+    expect(() => createCustomLineupIssuedChallenge({
+      ...valid, clueSnapshot: { ...valid.clueSnapshot, hintLayout },
+    })).toThrow('hint 2 layout slot is required');
+
+    const pitches = [...valid.clueSnapshot.pitches];
+    delete pitches[2];
+    expect(() => createCustomLineupIssuedChallenge({
+      ...valid, clueSnapshot: { ...valid.clueSnapshot, pitches },
+    })).toThrow('pitch 3 is required');
+
+    const hintValues = [...valid.clueSnapshot.pitches[0]!.hintValues];
+    delete hintValues[2];
+    expect(() => createCustomLineupIssuedChallenge({
+      ...valid,
+      clueSnapshot: {
+        ...valid.clueSnapshot,
+        pitches: valid.clueSnapshot.pitches.map((pitch, i) =>
+          i === 0 ? { ...pitch, hintValues } : pitch),
+      },
+    })).toThrow('pitch 1 hint 3 value is required');
+  });
+
   it('preserves v1 exact-nine IDs, clues and rules without reinterpretation', () => {
     const v1 = createCustomNineIssuedChallenge(legacyFixture());
     expect(v1.schemaVersion).toBe(1);
