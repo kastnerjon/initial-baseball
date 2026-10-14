@@ -2,6 +2,7 @@ import { createDailyPointsSummary, getDailyAtBatPoints } from '@initial-baseball
 import {
   CURRENT_DAILY_RULESET_VERSION,
   LEGACY_DAILY_RULESET_VERSION,
+  POINTS_V4_DAILY_RULESET_VERSION,
   isDailyRulesetVersion,
   type DailyCompletedAtBat,
   type DailyGameState,
@@ -216,6 +217,7 @@ function normalizeSavedDailyGame(
     revealedHints?: DailyAtBatUiState['revealedHints'];
     reveal?: DailyAtBatUiState['reveal'];
   };
+  const { wrongGuesses: storedWrongGuesses, ...legacyAtBatWithoutHistory } = legacyAtBatState;
   const pitchLines = savedGame.gameState.completedPitchLines.map(normalizeSharePitchLine);
   const rulesetVersion = normalizeRulesetVersion(
     savedGame.gameState.rulesetVersion,
@@ -233,6 +235,17 @@ function normalizeSavedDailyGame(
   const pendingAdvance = savedGame.pendingAdvance === null
     ? null
     : normalizePendingAdvance(savedGame.pendingAdvance, rulesetVersion, publicPuzzle.pitches.length);
+
+  const normalizedAtBatState: DailyAtBatUiState = {
+    ...legacyAtBatWithoutHistory,
+    revealedHints: legacyAtBatState.revealedHints ?? [],
+    reveal: legacyAtBatState.reveal ?? null,
+    submittedResult: normalizeDailyGuessResult(savedGame.atBatState.submittedResult),
+  };
+  if (rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION && storedWrongGuesses !== undefined) {
+    normalizedAtBatState.wrongGuesses =
+      normalizeWrongGuessHistory(storedWrongGuesses, legacyAtBatState.strikeCount);
+  }
 
   return {
     ...savedGame,
@@ -253,14 +266,25 @@ function normalizeSavedDailyGame(
       completedPitchLines: pitchLines,
       shareResult: normalizeShareResult(savedGame.gameState.shareResult, rulesetVersion, points),
     },
-    atBatState: {
-      ...legacyAtBatState,
-      revealedHints: legacyAtBatState.revealedHints ?? [],
-      reveal: legacyAtBatState.reveal ?? null,
-      submittedResult: normalizeDailyGuessResult(savedGame.atBatState.submittedResult),
-    },
+    atBatState: normalizedAtBatState,
     pendingAdvance,
   };
+}
+
+// Optional browser-local display data: never used to validate gameplay or scores.
+function normalizeWrongGuessHistory(
+  value: unknown,
+  strikeCount: number,
+): NonNullable<DailyAtBatUiState['wrongGuesses']> {
+  if (!Array.isArray(value)) return [];
+  const maximum = Number.isInteger(strikeCount) ? Math.max(0, Math.min(3, strikeCount)) : 0;
+  return value.slice(0, maximum)
+    .filter((guess): guess is { playerId: string; displayName: string } =>
+      isRecord(guess)
+      && typeof guess.playerId === 'string' && guess.playerId.length > 0 && guess.playerId.length <= 128
+      && typeof guess.displayName === 'string'
+      && guess.displayName.trim().length > 0 && guess.displayName.length <= 128)
+    .map(guess => ({ playerId: guess.playerId, displayName: guess.displayName }));
 }
 
 function normalizePendingAdvance(

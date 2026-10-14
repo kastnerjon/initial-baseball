@@ -223,3 +223,7 @@ Implementation and canonical docs change together. Approved future behavior must
 ## At-bat detail alignment
 
 Hint content, the Reveal Next Hint button, and terminal YOU/AVG plus BEAT/status/sample-note rows use the established left-aligned presentation. The Hints/count header, player reveal and guess/action layout retain their existing alignment. This is CSS presentation only; scoring, comparison semantics and gameplay remain unchanged. The October 7 centered iteration in PR #324 was rejected after production review and reversed. Scope: `tasks/plans/restore-left-at-bat-details.md`.
+
+## Current-at-bat wrong-guess history
+
+In points-v4 Daily (not Classic), after a server-confirmed incorrect guess, the active at-bat shows the submitted player's display name below search under “Already guessed.” This history is browser-local display data, survives a valid same-puzzle save/restore, and resets at the next at-bat or local-game reset. It does not add guess events to public results, change server authority, alter strikes or scoring, reveal the mystery player, or affect historical completed records.

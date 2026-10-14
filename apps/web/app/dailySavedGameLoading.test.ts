@@ -92,6 +92,44 @@ describe('malformed Daily save decoding', () => {
     )).toBeNull();
   });
 
+  it('restores confirmed wrong-guess names and tolerates old or malformed histories', () => {
+    const storage = new FakeStorage();
+    persistValidSave(storage);
+    mutateStoredSave(storage, saved => {
+      saved.atBatState.strikeCount = 2;
+      saved.atBatState.wrongGuesses = [
+        { playerId: 'griffey', displayName: 'Ken Griffey Jr.' },
+        { playerId: 'puckett', displayName: 'Kirby Puckett' },
+      ];
+    });
+    expect(loadSavedDailyGame(DEMO_DAILY_PUZZLE, INITIAL_TOKEN, storage)?.atBatState.wrongGuesses)
+      .toEqual([
+        { playerId: 'griffey', displayName: 'Ken Griffey Jr.' },
+        { playerId: 'puckett', displayName: 'Kirby Puckett' },
+      ]);
+
+    mutateStoredSave(storage, saved => { delete saved.atBatState.wrongGuesses; });
+    expect(loadSavedDailyGame(DEMO_DAILY_PUZZLE, INITIAL_TOKEN, storage)?.atBatState)
+      .not.toHaveProperty('wrongGuesses');
+
+    mutateStoredSave(storage, saved => {
+      saved.atBatState.wrongGuesses = [
+        { playerId: 'griffey', displayName: 'Ken Griffey Jr.' },
+        { playerId: 'bad', displayName: '' },
+        { playerId: 'extra', displayName: 'Should not appear' },
+      ];
+    });
+    expect(loadSavedDailyGame(DEMO_DAILY_PUZZLE, INITIAL_TOKEN, storage)?.atBatState.wrongGuesses)
+      .toEqual([{ playerId: 'griffey', displayName: 'Ken Griffey Jr.' }]);
+
+    mutateStoredSave(storage, value => {
+      value.gameState.rulesetVersion = 'points-v3';
+    });
+    const classicSave = loadSavedDailyGame(DEMO_DAILY_PUZZLE, INITIAL_TOKEN, storage);
+    expect(classicSave).not.toBeNull();
+    expect(classicSave?.atBatState).not.toHaveProperty('wrongGuesses');
+  });
+
   it('treats a storage read exception as unreadable rather than throwing', () => {
     const storage = new ThrowingReadStorage();
 

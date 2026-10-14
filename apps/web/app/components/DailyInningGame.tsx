@@ -19,7 +19,7 @@ import { createDailySavedGameRestoreController } from '../dailySavedGameRestoreC
 import { useDailyGameplayPersistence } from '../useDailyGameplayPersistence';
 import { createDailyShareUrl } from '../dailyShareUrl';
 import type { CanonicalRevealViewModel } from '../canonicalRevealViewModel';
-import { type DailyAtBatUiState, createInitialAtBatUiState, createInitialDailyGameState } from '../dailyClientState';
+import { type DailyAtBatUiState, createInitialAtBatUiState, createInitialDailyGameState, withConfirmedIncorrectGuess } from '../dailyClientState';
 import type {
   DailyBootstrapRulesetVersion,
   DailyHintBundle,
@@ -323,25 +323,24 @@ export function DailyInningGame({
   );
 
   async function handleSubmit(): Promise<void> {
-    if (atBatState.selectedPlayerId === null) {
-      return;
-    }
+    if (atBatState.selectedPlayerId === null) return;
+    // Capture the actual selected player before an asynchronous response can arrive.
+    const submittedPlayerId = atBatState.selectedPlayerId;
+    const submittedDisplayName = atBatState.query.trim();
     await resolutionRequests.resolveAtBat({
       progressionToken,
-      action: { submittedPlayerId: atBatState.selectedPlayerId },
+      action: { submittedPlayerId },
       onSuccess: (response) => {
         setProgressionToken(response.progressionToken);
         const { result } = response;
 
         if (result.kind === 'incorrect') {
           setHintBundle(requireHintBundle(response.hintBundle));
-          setAtBatState(currentState => ({
-            ...currentState,
-            query: '',
-            selectedPlayerId: null,
-            strikeCount: result.strikeCount,
-            submittedResult: result,
-          }));
+          setAtBatState(currentState => withConfirmedIncorrectGuess(
+            currentState, result,
+            { playerId: submittedPlayerId, displayName: submittedDisplayName },
+            gameState.rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION,
+          ));
           return;
         }
 

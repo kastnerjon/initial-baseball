@@ -185,6 +185,35 @@ input[type="text"]:focus {
   font-size: 11px;
   white-space: nowrap;
 }
+.wrong-guess-history {
+  display: grid;
+  gap: 7px;
+  min-width: 0;
+}
+.wrong-guess-history-label {
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 600;
+}
+.wrong-guess-history ul {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.wrong-guess-history li {
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  padding: 5px 9px;
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  color: var(--ink-soft);
+  background: #f3f3f0;
+  font-size: 13px;
+}
+
 .at-bat-actions {
   display: flex;
   align-items: center;
