@@ -347,6 +347,7 @@ describe('AtBatCard pending resolution feedback', () => {
     const html = renderCard({
       requestPending: false,
       giveUpPending: false,
+      rulesetVersion: 'points-v4',
       wrongGuesses: [
         { playerId: 'griffey', displayName: 'Ken Griffey Jr.' },
         { playerId: 'puckett', displayName: 'Kirby Puckett' },
