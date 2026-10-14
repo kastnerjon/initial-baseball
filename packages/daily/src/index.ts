@@ -157,6 +157,8 @@ export {
   PERMANENT_DAILY_ISSUED_CLUE_SNAPSHOT_SCHEMA_VERSION,
   clonePermanentDailyIssuedClueSnapshot,
   clonePermanentDailyFiveIssuedClueSnapshot,
+  createCustomLineupIssuedClueSnapshot,
+  cloneCustomLineupIssuedClueSnapshot,
   createPermanentDailyIssuedClueSnapshot,
   createPermanentDailyFiveIssuedClueSnapshot,
   type PermanentDailyIssuedClueSnapshot,
@@ -225,6 +227,21 @@ export {
   isValidLineupLength,
   type LineupLengthPolicy,
 } from './lineupLengthPolicy';
+
+export {
+  CUSTOM_LINEUP_SELECTION_SCHEMA_VERSION,
+  createCustomLineupSelection,
+  type CustomLineupSelection,
+} from './customLineupSelection';
+export {
+  CUSTOM_LINEUP_ISSUED_CHALLENGE_SCHEMA_VERSION,
+  CUSTOM_LINEUP_RULESET_VERSION,
+  createCustomLineupIssuedChallenge,
+  cloneCustomLineupIssuedChallenge,
+  validateCustomLineupPuzzleId,
+  type CustomLineupIssuedChallenge,
+  type CustomLineupIssuedChallengeInput,
+} from './customLineupIssuedChallenge';
 
 export {
   CUSTOM_NINE_LINEUP_SCHEMA_VERSION,

@@ -44,7 +44,7 @@ export type PermanentDailyIssuedClueSnapshot = {
  * values. It deliberately does not store outcomes or point values so archive
  * plays can use the ruleset selected when that play starts.
  */
-type DailyClueSnapshotLengthPolicy = 'legacy-daily-nine' | 'future-daily-five';
+type DailyClueSnapshotLengthPolicy = 'legacy-daily-nine' | 'future-daily-five' | 'future-custom-lineup';
 
 export function createPermanentDailyIssuedClueSnapshot(
   input: PermanentDailyIssuedClueSnapshotInput,
@@ -60,6 +60,19 @@ export function createPermanentDailyFiveIssuedClueSnapshot(
   input: PermanentDailyIssuedClueSnapshotInput,
 ): PermanentDailyIssuedClueSnapshot {
   return createSnapshotForPolicy(input, 'future-daily-five');
+}
+
+/** Portable 1–10 Custom v2 clue validation; does not issue or expose answers. */
+export function createCustomLineupIssuedClueSnapshot(
+  input: PermanentDailyIssuedClueSnapshotInput,
+): PermanentDailyIssuedClueSnapshot {
+  return createSnapshotForPolicy(input, 'future-custom-lineup');
+}
+
+export function cloneCustomLineupIssuedClueSnapshot(
+  snapshot: PermanentDailyIssuedClueSnapshot,
+): PermanentDailyIssuedClueSnapshot {
+  return cloneSnapshotForPolicy(snapshot, 'future-custom-lineup');
 }
 
 export function clonePermanentDailyIssuedClueSnapshot(
@@ -142,8 +155,13 @@ function validatePitches(
 ): void {
   const atBatCount = policy === 'legacy-daily-nine'
     ? DAILY_AT_BAT_COUNT
-    : DAILY_FIVE_AT_BAT_COUNT;
+    : policy === 'future-daily-five'
+      ? DAILY_FIVE_AT_BAT_COUNT
+      : pitches.length;
   if (!isValidLineupLength(policy, pitches.length)) {
+    if (policy === 'future-custom-lineup') {
+      throw new Error('Custom Lineup clue snapshot requires 1 through 10 pitches.');
+    }
     throw new Error(
       `Permanent Daily clue snapshot must contain exactly ${atBatCount} pitches.`,
     );
