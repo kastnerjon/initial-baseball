@@ -1,7 +1,11 @@
 import type { DailyPuzzleStatus } from '@initial-baseball/shared';
 import { DAILY_AT_BAT_COUNT, getDailyPuzzleNumber } from './dailyPuzzleSelection';
+import { isValidLineupLength } from './lineupLengthPolicy';
 
 export type DailyEditorialSelectionSource = 'generated' | 'manual';
+
+/** Explicit SQL editorial lineup contract, unrelated to record version/revision. */
+export type DailyEditorialLineupContractVersion = 1 | 2;
 
 export type DailyEditorialSelection = {
   slot: number;
@@ -334,14 +338,33 @@ async function requirePuzzle(
 }
 
 function validateSelections(selections: readonly DailyEditorialSelection[]): void {
-  if (selections.length !== DAILY_AT_BAT_COUNT) {
-    throw new Error(`Daily puzzle must contain exactly ${DAILY_AT_BAT_COUNT} selections.`);
+  // The existing draft/editor and scheduler must remain nine-only until a
+  // separate version-aware persistence and issuance consumer is deployed.
+  validateDailyEditorialSelectionsForContract(selections, 1);
+}
+
+/**
+ * Portable editorial shape validation for the installed versioned SQL contract.
+ * v1 remains nine; v2 is five. This does not create, schedule, or issue v2 puzzles.
+ */
+export function validateDailyEditorialSelectionsForContract(
+  selections: readonly DailyEditorialSelection[],
+  lineupContractVersion: DailyEditorialLineupContractVersion,
+): void {
+  if (lineupContractVersion !== 1 && lineupContractVersion !== 2) {
+    throw new Error(`Unsupported Daily editorial lineup contract: ${String(lineupContractVersion)}.`);
+  }
+
+  const atBatCount = lineupContractVersion === 1 ? DAILY_AT_BAT_COUNT : 5;
+  const lengthPolicy = lineupContractVersion === 1 ? 'legacy-daily-nine' : 'future-daily-five';
+  if (!isValidLineupLength(lengthPolicy, selections.length)) {
+    throw new Error(`Daily puzzle must contain exactly ${atBatCount} selections.`);
   }
 
   const slots = new Set<number>();
   const canonicalPlayerIds = new Set<string>();
   for (const selection of selections) {
-    validateSlot(selection.slot);
+    validateSlot(selection.slot, atBatCount);
     validateCanonicalPlayerId(selection.canonicalPlayerId);
     if (slots.has(selection.slot)) throw new Error(`Duplicate Daily puzzle slot: ${selection.slot}.`);
     if (canonicalPlayerIds.has(selection.canonicalPlayerId)) {
@@ -360,9 +383,9 @@ function normalizeSelections(
     .map(selection => ({ ...selection }));
 }
 
-function validateSlot(slot: number): void {
-  if (!Number.isInteger(slot) || slot < 1 || slot > DAILY_AT_BAT_COUNT) {
-    throw new Error(`Daily puzzle slot must be between 1 and ${DAILY_AT_BAT_COUNT}; received ${slot}.`);
+function validateSlot(slot: number, atBatCount: number = DAILY_AT_BAT_COUNT): void {
+  if (!Number.isInteger(slot) || slot < 1 || slot > atBatCount) {
+    throw new Error(`Daily puzzle slot must be between 1 and ${atBatCount}; received ${slot}.`);
   }
 }
 
