@@ -275,7 +275,7 @@ function normalizeSavedDailyGame(
 function normalizeWrongGuessHistory(
   value: unknown,
   strikeCount: number,
-): DailyAtBatUiState['wrongGuesses'] {
+): NonNullable<DailyAtBatUiState['wrongGuesses']> {
   if (!Array.isArray(value)) return [];
   const maximum = Number.isInteger(strikeCount) ? Math.max(0, Math.min(3, strikeCount)) : 0;
   return value.slice(0, maximum)
