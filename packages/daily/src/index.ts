@@ -156,7 +156,9 @@ export {
 export {
   PERMANENT_DAILY_ISSUED_CLUE_SNAPSHOT_SCHEMA_VERSION,
   clonePermanentDailyIssuedClueSnapshot,
+  clonePermanentDailyFiveIssuedClueSnapshot,
   createPermanentDailyIssuedClueSnapshot,
+  createPermanentDailyFiveIssuedClueSnapshot,
   type PermanentDailyIssuedClueSnapshot,
   type PermanentDailyIssuedClueSnapshotInput,
   type PermanentDailyIssuedHintLayoutSlot,

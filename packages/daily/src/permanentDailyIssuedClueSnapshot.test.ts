@@ -3,7 +3,9 @@ import type { HintType } from '@initial-baseball/shared';
 import {
   PERMANENT_DAILY_ISSUED_CLUE_SNAPSHOT_SCHEMA_VERSION,
   clonePermanentDailyIssuedClueSnapshot,
+  clonePermanentDailyFiveIssuedClueSnapshot,
   createPermanentDailyIssuedClueSnapshot,
+  createPermanentDailyFiveIssuedClueSnapshot,
 } from './permanentDailyIssuedClueSnapshot';
 
 type MutableHintLayoutSlot = {
@@ -141,6 +143,68 @@ describe('Permanent Daily issued clue snapshot', () => {
     expect(clone.hintLayout).not.toBe(snapshot.hintLayout);
     expect(clone.pitches).not.toBe(snapshot.pitches);
     expect(clone.pitches[0]?.hintValues).not.toBe(snapshot.pitches[0]?.hintValues);
+  });
+  it('freezes five ordered players for future schema-v3 issuance without changing the inner schema', () => {
+    const input = buildInput();
+    input.pitches = input.pitches.slice(0, 5);
+    const frozen = createPermanentDailyFiveIssuedClueSnapshot(input);
+
+    expect(frozen.schemaVersion).toBe(1);
+    expect(frozen.pitches.map((pitch) => pitch.pitchNumber)).toEqual([1, 2, 3, 4, 5]);
+    expect(frozen.pitches).toHaveLength(5);
+    expect(frozen.hintLayout).toHaveLength(4);
+    expect(frozen.pitches[0]?.hintValues).toHaveLength(4);
+    expect(() => createPermanentDailyIssuedClueSnapshot(input)).toThrow('exactly 9 pitches');
+    expect(() => createPermanentDailyFiveIssuedClueSnapshot(buildInput()))
+      .toThrow('exactly 5 pitches');
+
+    input.pitches[0]!.initials = 'CHANGED';
+    input.pitches[0]!.hintValues[0] = 'changed';
+    expect(frozen.pitches[0]?.initials).toBe('P1');
+    expect(frozen.pitches[0]?.hintValues[0]).toBe('2000s');
+    const cloned = clonePermanentDailyFiveIssuedClueSnapshot(frozen);
+    expect(cloned).toEqual(frozen);
+    expect(cloned).not.toBe(frozen);
+    expect(cloned.pitches[0]?.hintValues).not.toBe(frozen.pitches[0]?.hintValues);
+    expect(() => clonePermanentDailyIssuedClueSnapshot(frozen)).toThrow('exactly 9 pitches');
+  });
+
+  it('rejects malformed five-player pitch order, identities, and clues', () => {
+    const input = buildInput();
+    input.pitches = input.pitches.slice(0, 5);
+    for (const count of [0, 4, 6]) {
+      const invalid = { ...input, pitches: buildInput().pitches.slice(0, count) };
+      expect(() => createPermanentDailyFiveIssuedClueSnapshot(invalid))
+        .toThrow('exactly 5 pitches');
+    }
+
+    const order = buildInput();
+    order.pitches = order.pitches.slice(0, 5);
+    order.pitches[4]!.pitchNumber = 6;
+    expect(() => createPermanentDailyFiveIssuedClueSnapshot(order))
+      .toThrow('exact pitch order 1 through 5');
+
+    const duplicate = buildInput();
+    duplicate.pitches = duplicate.pitches.slice(0, 5);
+    duplicate.pitches[4]!.canonicalPlayerId = 'player-1';
+    expect(() => createPermanentDailyFiveIssuedClueSnapshot(duplicate))
+      .toThrow('Duplicate permanent Daily clue snapshot player');
+
+    const clue = buildInput();
+    clue.pitches = clue.pitches.slice(0, 5);
+    clue.pitches[2]!.hintValues[3] = '   ';
+    expect(() => createPermanentDailyFiveIssuedClueSnapshot(clue))
+      .toThrow('pitch 3 hint 4 value is required');
+  });
+
+  it('rejects unsupported inner schema versions when cloning five-player snapshots', () => {
+    const input = buildInput();
+    input.pitches = input.pitches.slice(0, 5);
+    const valid = createPermanentDailyFiveIssuedClueSnapshot(input);
+    expect(() => clonePermanentDailyFiveIssuedClueSnapshot({
+      ...valid,
+      schemaVersion: 2 as 1,
+    })).toThrow('Unsupported permanent Daily clue snapshot schema version');
   });
 });
 

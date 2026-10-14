@@ -1,6 +1,6 @@
 import type { HintConfigSlot, HintType } from '@initial-baseball/shared';
 import { DAILY_AT_BAT_COUNT } from './dailyConstants';
-import { isValidLineupLength } from './lineupLengthPolicy';
+import { DAILY_FIVE_AT_BAT_COUNT, isValidLineupLength } from './lineupLengthPolicy';
 
 export const PERMANENT_DAILY_ISSUED_CLUE_SNAPSHOT_SCHEMA_VERSION = 1 as const;
 
@@ -44,21 +44,39 @@ export type PermanentDailyIssuedClueSnapshot = {
  * values. It deliberately does not store outcomes or point values so archive
  * plays can use the ruleset selected when that play starts.
  */
+type DailyClueSnapshotLengthPolicy = 'legacy-daily-nine' | 'future-daily-five';
+
 export function createPermanentDailyIssuedClueSnapshot(
   input: PermanentDailyIssuedClueSnapshotInput,
 ): PermanentDailyIssuedClueSnapshot {
-  validateHintLayout(input.hintLayout);
-  validatePitches(input.pitches);
+  return createSnapshotForPolicy(input, 'legacy-daily-nine');
+}
 
-  return {
-    schemaVersion: PERMANENT_DAILY_ISSUED_CLUE_SNAPSHOT_SCHEMA_VERSION,
-    hintLayout: input.hintLayout.map((slot) => ({ ...slot })),
-    pitches: clonePitches(input.pitches),
-  };
+/**
+ * Staged future five-player snapshot constructor for issued Daily schema v3.
+ * The inner snapshot schema remains v1; no issuing path is activated here.
+ */
+export function createPermanentDailyFiveIssuedClueSnapshot(
+  input: PermanentDailyIssuedClueSnapshotInput,
+): PermanentDailyIssuedClueSnapshot {
+  return createSnapshotForPolicy(input, 'future-daily-five');
 }
 
 export function clonePermanentDailyIssuedClueSnapshot(
   snapshot: PermanentDailyIssuedClueSnapshot,
+): PermanentDailyIssuedClueSnapshot {
+  return cloneSnapshotForPolicy(snapshot, 'legacy-daily-nine');
+}
+
+export function clonePermanentDailyFiveIssuedClueSnapshot(
+  snapshot: PermanentDailyIssuedClueSnapshot,
+): PermanentDailyIssuedClueSnapshot {
+  return cloneSnapshotForPolicy(snapshot, 'future-daily-five');
+}
+
+function cloneSnapshotForPolicy(
+  snapshot: PermanentDailyIssuedClueSnapshot,
+  policy: DailyClueSnapshotLengthPolicy,
 ): PermanentDailyIssuedClueSnapshot {
   if (snapshot.schemaVersion !== PERMANENT_DAILY_ISSUED_CLUE_SNAPSHOT_SCHEMA_VERSION) {
     throw new Error(
@@ -66,10 +84,24 @@ export function clonePermanentDailyIssuedClueSnapshot(
     );
   }
 
-  return createPermanentDailyIssuedClueSnapshot({
+  return createSnapshotForPolicy({
     hintLayout: snapshot.hintLayout,
     pitches: snapshot.pitches,
-  });
+  }, policy);
+}
+
+function createSnapshotForPolicy(
+  input: PermanentDailyIssuedClueSnapshotInput,
+  policy: DailyClueSnapshotLengthPolicy,
+): PermanentDailyIssuedClueSnapshot {
+  validateHintLayout(input.hintLayout);
+  validatePitches(input.pitches, policy);
+
+  return {
+    schemaVersion: PERMANENT_DAILY_ISSUED_CLUE_SNAPSHOT_SCHEMA_VERSION,
+    hintLayout: input.hintLayout.map((slot) => ({ ...slot })),
+    pitches: clonePitches(input.pitches),
+  };
 }
 
 function validateHintLayout(
@@ -106,10 +138,14 @@ function validateHintLayout(
 
 function validatePitches(
   pitches: readonly PermanentDailyIssuedPitchClueSnapshot[],
+  policy: DailyClueSnapshotLengthPolicy,
 ): void {
-  if (!isValidLineupLength('legacy-daily-nine', pitches.length)) {
+  const atBatCount = policy === 'legacy-daily-nine'
+    ? DAILY_AT_BAT_COUNT
+    : DAILY_FIVE_AT_BAT_COUNT;
+  if (!isValidLineupLength(policy, pitches.length)) {
     throw new Error(
-      `Permanent Daily clue snapshot must contain exactly ${DAILY_AT_BAT_COUNT} pitches.`,
+      `Permanent Daily clue snapshot must contain exactly ${atBatCount} pitches.`,
     );
   }
 
@@ -118,7 +154,7 @@ function validatePitches(
     const expectedPitchNumber = index + 1;
     if (pitch.pitchNumber !== expectedPitchNumber) {
       throw new Error(
-        `Permanent Daily clue snapshot requires exact pitch order 1 through ${DAILY_AT_BAT_COUNT}; expected ${expectedPitchNumber} but received ${String(pitch.pitchNumber)}.`,
+        `Permanent Daily clue snapshot requires exact pitch order 1 through ${atBatCount}; expected ${expectedPitchNumber} but received ${String(pitch.pitchNumber)}.`,
       );
     }
 
