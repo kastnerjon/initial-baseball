@@ -242,7 +242,7 @@ function normalizeSavedDailyGame(
     reveal: legacyAtBatState.reveal ?? null,
     submittedResult: normalizeDailyGuessResult(savedGame.atBatState.submittedResult),
   };
-  if (rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION) {
+  if (rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION && storedWrongGuesses !== undefined) {
     normalizedAtBatState.wrongGuesses =
       normalizeWrongGuessHistory(storedWrongGuesses, legacyAtBatState.strikeCount);
   }

@@ -109,8 +109,8 @@ describe('malformed Daily save decoding', () => {
       ]);
 
     mutateStoredSave(storage, saved => { delete saved.atBatState.wrongGuesses; });
-    expect(loadSavedDailyGame(DEMO_DAILY_PUZZLE, INITIAL_TOKEN, storage)?.atBatState.wrongGuesses)
-      .toEqual([]);
+    expect(loadSavedDailyGame(DEMO_DAILY_PUZZLE, INITIAL_TOKEN, storage)?.atBatState)
+      .not.toHaveProperty('wrongGuesses');
 
     mutateStoredSave(storage, saved => {
       saved.atBatState.wrongGuesses = [
