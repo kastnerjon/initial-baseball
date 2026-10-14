@@ -4,6 +4,7 @@ import {
   correctScheduledDailyPuzzleLineup,
   createDailyPuzzleDraft,
   createDailyPuzzleEditorialService,
+  validateDailyEditorialSelectionsForContract,
   publishDailyPuzzle,
   replaceDailyPuzzleSelection,
   scheduleDailyPuzzle,
@@ -226,6 +227,61 @@ describe('Daily puzzle lifecycle', () => {
       actorId: 'editor-1',
       occurredAt: CREATED_AT,
     })).rejects.toThrow('already exists');
+  });
+});
+
+
+describe('prospective Daily Five editorial validation (not issuance)', () => {
+  it('accepts five distinct ordered slots and preserves historical nine-player contract', () => {
+    const five = buildSelections().slice(0, 5).reverse();
+    expect(() => validateDailyEditorialSelectionsForContract(five, 2)).not.toThrow();
+    expect(() => validateDailyEditorialSelectionsForContract(buildSelections(), 1)).not.toThrow();
+    expect(() => validateDailyEditorialSelectionsForContract(five, 1))
+      .toThrow('exactly 9 selections');
+    expect(() => validateDailyEditorialSelectionsForContract(buildSelections(), 2))
+      .toThrow('exactly 5 selections');
+  });
+
+  it('rejects incomplete and overlong five-player lineups', () => {
+    for (const count of [0, 4, 6, 9]) {
+      expect(() => validateDailyEditorialSelectionsForContract(buildSelections().slice(0, count), 2))
+        .toThrow('exactly 5 selections');
+    }
+  });
+
+  it('requires exact slots 1 through 5 with distinct canonical identities', () => {
+    const five = buildSelections().slice(0, 5);
+    expect(() => validateDailyEditorialSelectionsForContract(
+      five.map((selection, index) => index === 4 ? { ...selection, slot: 6 } : selection), 2,
+    )).toThrow('between 1 and 5');
+    expect(() => validateDailyEditorialSelectionsForContract(
+      five.map((selection, index) => index === 4 ? { ...selection, slot: 3 } : selection), 2,
+    )).toThrow('Duplicate Daily puzzle slot');
+    expect(() => validateDailyEditorialSelectionsForContract(
+      five.map((selection, index) => index === 4
+        ? { ...selection, canonicalPlayerId: five[0]!.canonicalPlayerId }
+        : selection), 2,
+    )).toThrow('Duplicate canonical Daily player');
+    expect(() => validateDailyEditorialSelectionsForContract(
+      five.map((selection, index) => index === 0 ? { ...selection, canonicalPlayerId: '  ' } : selection), 2,
+    )).toThrow('canonical player ID is required');
+  });
+
+  it('does not allow five-player content through the current nine-only draft writer', () => {
+    expect(() => createDailyPuzzleDraft({
+      id: 'daily-2026-07-29-v2',
+      puzzleDate: '2026-07-29',
+      puzzleNumber: 94,
+      selections: buildSelections().slice(0, 5),
+      actorId: 'editor-1',
+      occurredAt: CREATED_AT,
+    })).toThrow('exactly 9 selections');
+  });
+
+  it('fails closed on an unsupported runtime contract version', () => {
+    expect(() => validateDailyEditorialSelectionsForContract(
+      buildSelections().slice(0, 5), 3 as 2,
+    )).toThrow('Unsupported Daily editorial lineup contract');
   });
 });
 
