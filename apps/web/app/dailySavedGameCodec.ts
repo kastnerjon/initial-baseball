@@ -236,6 +236,17 @@ function normalizeSavedDailyGame(
     ? null
     : normalizePendingAdvance(savedGame.pendingAdvance, rulesetVersion, publicPuzzle.pitches.length);
 
+  const normalizedAtBatState: DailyAtBatUiState = {
+    ...legacyAtBatWithoutHistory,
+    revealedHints: legacyAtBatState.revealedHints ?? [],
+    reveal: legacyAtBatState.reveal ?? null,
+    submittedResult: normalizeDailyGuessResult(savedGame.atBatState.submittedResult),
+  };
+  if (rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION) {
+    normalizedAtBatState.wrongGuesses =
+      normalizeWrongGuessHistory(storedWrongGuesses, legacyAtBatState.strikeCount);
+  }
+
   return {
     ...savedGame,
     scorecardAnswers: restoreDailyScorecardAnswers(
@@ -255,15 +266,7 @@ function normalizeSavedDailyGame(
       completedPitchLines: pitchLines,
       shareResult: normalizeShareResult(savedGame.gameState.shareResult, rulesetVersion, points),
     },
-    atBatState: {
-      ...legacyAtBatWithoutHistory,
-      revealedHints: legacyAtBatState.revealedHints ?? [],
-      ...(rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION
-        ? { wrongGuesses: normalizeWrongGuessHistory(storedWrongGuesses, legacyAtBatState.strikeCount) }
-        : {}),
-      reveal: legacyAtBatState.reveal ?? null,
-      submittedResult: normalizeDailyGuessResult(savedGame.atBatState.submittedResult),
-    },
+    atBatState: normalizedAtBatState,
     pendingAdvance,
   };
 }
