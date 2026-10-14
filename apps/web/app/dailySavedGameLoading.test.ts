@@ -121,6 +121,13 @@ describe('malformed Daily save decoding', () => {
     });
     expect(loadSavedDailyGame(DEMO_DAILY_PUZZLE, INITIAL_TOKEN, storage)?.atBatState.wrongGuesses)
       .toEqual([{ playerId: 'griffey', displayName: 'Ken Griffey Jr.' }]);
+
+    mutateStoredSave(storage, value => {
+      value.gameState.rulesetVersion = 'points-v3';
+    });
+    const classicSave = loadSavedDailyGame(DEMO_DAILY_PUZZLE, INITIAL_TOKEN, storage);
+    expect(classicSave).not.toBeNull();
+    expect(classicSave?.atBatState).not.toHaveProperty('wrongGuesses');
   });
 
   it('treats a storage read exception as unreadable rather than throwing', () => {

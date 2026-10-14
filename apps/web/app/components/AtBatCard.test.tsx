@@ -358,6 +358,12 @@ describe('AtBatCard pending resolution feedback', () => {
     expect(html).toContain('Kirby Puckett');
     const cleanCard = renderCard({ requestPending: false, giveUpPending: false });
     expect(cleanCard).not.toContain('Already guessed');
+    const classic = renderCard({ requestPending: false, giveUpPending: false,
+      rulesetVersion: 'points-v3', wrongGuesses: [
+        { playerId: 'griffey', displayName: 'Ken Griffey Jr.' },
+      ] });
+    expect(classic).not.toContain('Already guessed');
+    expect(classic).not.toContain('Ken Griffey Jr.');
     expect(cleanCard).not.toContain('Ken Griffey Jr.');
   });
 

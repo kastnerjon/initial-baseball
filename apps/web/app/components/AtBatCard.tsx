@@ -168,11 +168,11 @@ export function AtBatCard({
         />
       </div>
 
-      {state.wrongGuesses.length > 0 ? (
+      {rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION && (state.wrongGuesses?.length ?? 0) > 0 ? (
         <section className="wrong-guess-history" aria-label="Wrong guesses for this at-bat" aria-live="polite">
           <span className="wrong-guess-history-label">Already guessed</span>
           <ul>
-            {state.wrongGuesses.map((guess, index) => (
+            {state.wrongGuesses?.map((guess, index) => (
               <li key={index}>{guess.displayName}</li>
             ))}
           </ul>

@@ -226,4 +226,4 @@ Hint content, the Reveal Next Hint button, and terminal YOU/AVG plus BEAT/status
 
 ## Current-at-bat wrong-guess history
 
-After a server-confirmed incorrect guess, the active Daily at-bat shows the submitted player's display name below search under “Already guessed.” This history is browser-local display data, survives a valid same-puzzle save/restore, and resets at the next at-bat or local-game reset. It does not add guess events to public results, change server authority, alter strikes or scoring, reveal the mystery player, or affect historical completed records.
+In points-v4 Daily (not Classic), after a server-confirmed incorrect guess, the active at-bat shows the submitted player's display name below search under “Already guessed.” This history is browser-local display data, survives a valid same-puzzle save/restore, and resets at the next at-bat or local-game reset. It does not add guess events to public results, change server authority, alter strikes or scoring, reveal the mystery player, or affect historical completed records.

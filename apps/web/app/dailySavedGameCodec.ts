@@ -2,6 +2,7 @@ import { createDailyPointsSummary, getDailyAtBatPoints } from '@initial-baseball
 import {
   CURRENT_DAILY_RULESET_VERSION,
   LEGACY_DAILY_RULESET_VERSION,
+  POINTS_V4_DAILY_RULESET_VERSION,
   isDailyRulesetVersion,
   type DailyCompletedAtBat,
   type DailyGameState,
@@ -216,6 +217,7 @@ function normalizeSavedDailyGame(
     revealedHints?: DailyAtBatUiState['revealedHints'];
     reveal?: DailyAtBatUiState['reveal'];
   };
+  const { wrongGuesses: storedWrongGuesses, ...legacyAtBatWithoutHistory } = legacyAtBatState;
   const pitchLines = savedGame.gameState.completedPitchLines.map(normalizeSharePitchLine);
   const rulesetVersion = normalizeRulesetVersion(
     savedGame.gameState.rulesetVersion,
@@ -254,9 +256,11 @@ function normalizeSavedDailyGame(
       shareResult: normalizeShareResult(savedGame.gameState.shareResult, rulesetVersion, points),
     },
     atBatState: {
-      ...legacyAtBatState,
+      ...legacyAtBatWithoutHistory,
       revealedHints: legacyAtBatState.revealedHints ?? [],
-      wrongGuesses: normalizeWrongGuessHistory(legacyAtBatState.wrongGuesses, legacyAtBatState.strikeCount),
+      ...(rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION
+        ? { wrongGuesses: normalizeWrongGuessHistory(storedWrongGuesses, legacyAtBatState.strikeCount) }
+        : {}),
       reveal: legacyAtBatState.reveal ?? null,
       submittedResult: normalizeDailyGuessResult(savedGame.atBatState.submittedResult),
     },

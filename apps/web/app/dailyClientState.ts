@@ -18,7 +18,7 @@ export type DailyAtBatUiState = {
   revealCount: 0 | 1 | 2 | 3 | 4;
   revealedHints: DailyHintResponse['hint'][];
   strikeCount: number;
-  wrongGuesses: { playerId: string; displayName: string }[];
+  wrongGuesses?: { playerId: string; displayName: string }[];
   submittedResult: DailyGuessResult | null;
   reveal: CanonicalRevealViewModel | null;
 };
@@ -59,8 +59,24 @@ export function createInitialAtBatUiState(): DailyAtBatUiState {
     revealCount: 0,
     revealedHints: [],
     strikeCount: 0,
-    wrongGuesses: [],
     submittedResult: null,
     reveal: null,
+  };
+}
+
+/** Display-only browser state. The server decides whether a guess was incorrect. */
+export function withConfirmedIncorrectGuess(
+  state: DailyAtBatUiState,
+  result: Extract<DailyGuessResult, { kind: 'incorrect' }>,
+  selection: { playerId: string; displayName: string },
+  trackNames: boolean,
+): DailyAtBatUiState {
+  return {
+    ...state,
+    query: '',
+    selectedPlayerId: null,
+    strikeCount: result.strikeCount,
+    submittedResult: result,
+    ...(trackNames ? { wrongGuesses: [...(state.wrongGuesses ?? []), selection].slice(-3) } : {}),
   };
 }
