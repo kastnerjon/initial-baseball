@@ -75,7 +75,7 @@ describe('Custom Lineup v2 portable contracts (not hosted issuance)', () => {
 
     requested.canonicalPlayerIds[0] = 'tampered';
     (requested.clueSnapshot.pitches[0]!.hintValues as string[])[0] = 'tampered';
-    expect(issued.canonicalPlayerIds[0]).toBe(reversed[0]);
+    expect(issued.canonicalPlayerIds[0]).toBe(IDS[n - 1]);
     expect(issued.clueSnapshot.pitches[0]?.hintValues[0]).toBe('2000s');
 
     const cloned = cloneCustomLineupIssuedChallenge(issued);
