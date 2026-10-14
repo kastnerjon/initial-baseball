@@ -1,4 +1,5 @@
 import { isValidLineupLength } from './lineupLengthPolicy';
+import { validateCustomCanonicalPlayerIds } from './customLineupSelection';
 
 export const CUSTOM_NINE_LINEUP_SCHEMA_VERSION = 1 as const;
 
@@ -23,17 +24,7 @@ export function createCustomNineLineupSelection(
     throw new Error('Custom Nine requires exactly nine players.');
   }
 
-  const unique = new Set<string>();
-  for (const playerId of canonicalPlayerIds) {
-    if (typeof playerId !== 'string' || playerId.length === 0
-      || playerId.trim() !== playerId || playerId.length > 200) {
-      throw new Error('Custom Nine requires valid canonical player IDs.');
-    }
-    if (unique.has(playerId)) {
-      throw new Error('Custom Nine cannot include the same player more than once.');
-    }
-    unique.add(playerId);
-  }
+  validateCustomCanonicalPlayerIds(canonicalPlayerIds, 'Custom Nine');
 
   return Object.freeze({
     schemaVersion: CUSTOM_NINE_LINEUP_SCHEMA_VERSION,

@@ -44,7 +44,7 @@ export type PermanentDailyIssuedClueSnapshot = {
  * values. It deliberately does not store outcomes or point values so archive
  * plays can use the ruleset selected when that play starts.
  */
-type DailyClueSnapshotLengthPolicy = 'legacy-daily-nine' | 'future-daily-five';
+type DailyClueSnapshotLengthPolicy = 'legacy-daily-nine' | 'future-daily-five' | 'future-custom-lineup';
 
 export function createPermanentDailyIssuedClueSnapshot(
   input: PermanentDailyIssuedClueSnapshotInput,
@@ -60,6 +60,19 @@ export function createPermanentDailyFiveIssuedClueSnapshot(
   input: PermanentDailyIssuedClueSnapshotInput,
 ): PermanentDailyIssuedClueSnapshot {
   return createSnapshotForPolicy(input, 'future-daily-five');
+}
+
+/** Portable 1–10 Custom v2 clue validation; does not issue or expose answers. */
+export function createCustomLineupIssuedClueSnapshot(
+  input: PermanentDailyIssuedClueSnapshotInput,
+): PermanentDailyIssuedClueSnapshot {
+  return createSnapshotForPolicy(input, 'future-custom-lineup');
+}
+
+export function cloneCustomLineupIssuedClueSnapshot(
+  snapshot: PermanentDailyIssuedClueSnapshot,
+): PermanentDailyIssuedClueSnapshot {
+  return cloneSnapshotForPolicy(snapshot, 'future-custom-lineup');
 }
 
 export function clonePermanentDailyIssuedClueSnapshot(
@@ -113,6 +126,13 @@ function validateHintLayout(
     );
   }
 
+  // Array.forEach skips holes. Reject sparse arrays before cloning/freeze.
+  for (let index = 0; index < hintLayout.length; index++) {
+    if (!Object.prototype.hasOwnProperty.call(hintLayout, index) || !hintLayout[index]) {
+      throw new Error(`Permanent Daily clue snapshot hint ${index + 1} layout slot is required.`);
+    }
+  }
+
   const seenTypes = new Set<HintType>();
   hintLayout.forEach((hint, index) => {
     const expectedSlot = index + 1;
@@ -142,11 +162,22 @@ function validatePitches(
 ): void {
   const atBatCount = policy === 'legacy-daily-nine'
     ? DAILY_AT_BAT_COUNT
-    : DAILY_FIVE_AT_BAT_COUNT;
+    : policy === 'future-daily-five'
+      ? DAILY_FIVE_AT_BAT_COUNT
+      : pitches.length;
   if (!isValidLineupLength(policy, pitches.length)) {
+    if (policy === 'future-custom-lineup') {
+      throw new Error('Custom Lineup clue snapshot requires 1 through 10 pitches.');
+    }
     throw new Error(
       `Permanent Daily clue snapshot must contain exactly ${atBatCount} pitches.`,
     );
+  }
+
+  for (let index = 0; index < pitches.length; index++) {
+    if (!Object.prototype.hasOwnProperty.call(pitches, index) || !pitches[index]) {
+      throw new Error(`Permanent Daily clue snapshot pitch ${index + 1} is required.`);
+    }
   }
 
   const seenPlayerIds = new Set<string>();
@@ -172,6 +203,11 @@ function validatePitches(
       throw new Error(
         `Permanent Daily clue snapshot pitch ${pitch.pitchNumber} must contain exactly ${DAILY_HINT_COUNT} hint values.`,
       );
+    }
+    for (let hintIndex = 0; hintIndex < pitch.hintValues.length; hintIndex++) {
+      if (!Object.prototype.hasOwnProperty.call(pitch.hintValues, hintIndex)) {
+        throw new Error(`Permanent Daily clue snapshot pitch ${pitch.pitchNumber} hint ${hintIndex + 1} value is required.`);
+      }
     }
     pitch.hintValues.forEach((value, hintIndex) => {
       requireNonEmpty(

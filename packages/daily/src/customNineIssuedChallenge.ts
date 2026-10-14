@@ -1,6 +1,7 @@
 import type { PermanentDailyIssuedClueSnapshot } from './permanentDailyIssuedClueSnapshot';
 import { clonePermanentDailyIssuedClueSnapshot } from './permanentDailyIssuedClueSnapshot';
 import { createCustomNineLineupSelection } from './customNineLineup';
+import { freezeCustomClueSnapshot, normalizeCustomIssuedAt } from './customIssuedChallengeShared';
 
 export const CUSTOM_NINE_ISSUED_CHALLENGE_SCHEMA_VERSION = 1 as const;
 export const CUSTOM_NINE_RULESET_VERSION = 'points-v4' as const;
@@ -35,13 +36,13 @@ export function createCustomNineIssuedChallenge(input: CustomNineIssuedChallenge
       throw new Error('Custom Nine clue snapshot does not match the selected player order.');
     }
   });
-  const issuedAt = normalizeIssuedAt(input.issuedAt);
+  const issuedAt = normalizeCustomIssuedAt(input.issuedAt);
   return Object.freeze({
     schemaVersion: CUSTOM_NINE_ISSUED_CHALLENGE_SCHEMA_VERSION,
     puzzleId: input.puzzleId,
     rulesetVersion: CUSTOM_NINE_RULESET_VERSION,
     canonicalPlayerIds: lineup.canonicalPlayerIds,
-    clueSnapshot: freezeSnapshot(snapshot),
+    clueSnapshot: freezeCustomClueSnapshot(snapshot),
     issuedAt,
   });
 }
@@ -60,22 +61,3 @@ export function validateCustomNinePuzzleId(puzzleId: string): void {
   }
 }
 
-function normalizeIssuedAt(issuedAt: string): string {
-  if (typeof issuedAt !== 'string' || issuedAt.length < 20 || issuedAt.length > 40) {
-    throw new Error('Invalid Custom Nine issue timestamp.');
-  }
-  const timestamp = Date.parse(issuedAt);
-  if (!Number.isFinite(timestamp)) throw new Error('Invalid Custom Nine issue timestamp.');
-  return new Date(timestamp).toISOString();
-}
-
-function freezeSnapshot(snapshot: PermanentDailyIssuedClueSnapshot): PermanentDailyIssuedClueSnapshot {
-  for (const hint of snapshot.hintLayout) Object.freeze(hint);
-  for (const pitch of snapshot.pitches) {
-    Object.freeze(pitch.hintValues);
-    Object.freeze(pitch);
-  }
-  Object.freeze(snapshot.hintLayout);
-  Object.freeze(snapshot.pitches);
-  return Object.freeze(snapshot);
-}
