@@ -13,6 +13,8 @@ declare
   v_current_count integer;
   v_caught boolean;
   v_invalid_ids jsonb;
+  v_v2_ids jsonb;
+  v_v2_snapshot jsonb;
 begin
   select count(*) into v_current_count
   from public.custom_nine_issued_challenges;
@@ -50,6 +52,10 @@ begin
         from public.custom_nine_issued_challenges where puzzle_id=v_id) <> v_n then
       raise exception 'Stored Custom v2 length incorrect for %',v_n;
     end if;
+    if v_n = 10 then
+      v_v2_ids := v_ids;
+      v_v2_snapshot := v_snapshot;
+    end if;
   end loop;
 
   -- The old schema-v1 record remains valid and exact-nine, with the old URL format.
@@ -79,37 +85,41 @@ begin
   end;
   if not v_caught then raise exception 'v1 five/eight-player regression'; end if;
 
-  -- Validator must reject 0/11, duplicates, mismatched order, and missing hints.
-  if public.custom_lineup_v2_issued_shape_valid('[]'::jsonb, v_snapshot)
-    or public.custom_lineup_v2_issued_shape_valid(
-      to_jsonb(array(select 'x' from generate_series(1,11))),v_snapshot) then
-    raise exception 'Zero/eleven Custom length accepted';
-  end if;
-  v_invalid_ids := jsonb_set(v_ids,'{1}',v_ids->0);
-  if public.custom_lineup_v2_issued_shape_valid(v_invalid_ids,v_snapshot) then
+  -- For invalid lengths, every other clue and player identity is coherent.
+  if public.custom_lineup_v2_issued_shape_valid(
+    '[]'::jsonb, jsonb_set(v_v2_snapshot, '{pitches}', '[]'::jsonb)
+  ) then raise exception 'Zero-player Custom accepted'; end if;
+
+  v_invalid_ids := v_v2_ids || jsonb_build_array('test-player-11');
+  v_pitches := (v_v2_snapshot -> 'pitches') || jsonb_build_array(
+    jsonb_build_object('pitchNumber', 11, 'canonicalPlayerId', 'test-player-11',
+      'initials', 'T11', 'hintValues', jsonb_build_array('a','b','c','d'))
+  );
+  if public.custom_lineup_v2_issued_shape_valid(
+    v_invalid_ids, jsonb_set(v_v2_snapshot, '{pitches}', v_pitches)
+  ) then raise exception 'Eleven-player Custom accepted'; end if;
+
+  v_invalid_ids := jsonb_set(v_v2_ids, '{1}', v_v2_ids -> 0);
+  if public.custom_lineup_v2_issued_shape_valid(v_invalid_ids, v_v2_snapshot) then
     raise exception 'Duplicate Custom identities accepted';
   end if;
 
-  select jsonb_agg(jsonb_build_object(
-    'pitchNumber',idx,'canonicalPlayerId','test-player-' || idx,
-    'initials','T' || idx,'hintValues',jsonb_build_array('a','b','c','d')
-  ) order by idx) into v_pitches from generate_series(1,9) as idx;
-  v_snapshot := jsonb_build_object('schemaVersion',1,
-    'hintLayout',jsonb_build_array(
-      jsonb_build_object('slot',1,'hintType','main_decade','displayLabel','Decade'),
-      jsonb_build_object('slot',2,'hintType','teams','displayLabel','Teams'),
-      jsonb_build_object('slot',3,'hintType','position','displayLabel','Position'),
-      jsonb_build_object('slot',4,'hintType','stats','displayLabel','Stats')
-    ),'pitches',v_pitches);
   if public.custom_lineup_v2_issued_shape_valid(
-    v_ids,jsonb_set(v_snapshot,'{pitches,0,canonicalPlayerId}','"WRONG"'::jsonb))
+    v_v2_ids, jsonb_set(v_v2_snapshot,'{pitches,0,canonicalPlayerId}','"WRONG"'::jsonb))
     or public.custom_lineup_v2_issued_shape_valid(
-    v_ids,jsonb_set(v_snapshot,'{pitches,0,hintValues}','["a"]'::jsonb))
+    v_v2_ids, jsonb_set(v_v2_snapshot,'{pitches,0,hintValues}','["a"]'::jsonb))
     or public.custom_lineup_v2_issued_shape_valid(
-    v_ids,jsonb_set(v_snapshot,'{pitches,0,pitchNumber}','2'::jsonb)) then
+    v_v2_ids, jsonb_set(v_v2_snapshot,'{pitches,0,pitchNumber}','2'::jsonb)) then
     raise exception 'Invalid frozen Custom clues accepted';
   end if;
 
+  for v_n in 1..3 loop
+    if public.custom_lineup_v2_issued_shape_valid(
+      v_v2_ids, jsonb_set(v_v2_snapshot,'{pitches,0,hintValues,0}',
+        to_jsonb((array['Unknown','Teams unavailable','Stats unavailable'])[v_n]))) then
+      raise exception 'Unsupported Custom fallback accepted';
+    end if;
+  end loop;
   if (select count(*) from public.custom_nine_issued_challenges)
     <> v_current_count + 5 then
     raise exception 'Unexpected Custom fixture row count';

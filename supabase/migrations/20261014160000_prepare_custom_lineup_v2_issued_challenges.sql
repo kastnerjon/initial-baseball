@@ -91,7 +91,9 @@ begin
     for v_hint_index in 0..3 loop
       v_value := v_pitch -> 'hintValues' -> v_hint_index;
       if jsonb_typeof(v_value) is distinct from 'string'
-        or length(btrim(v_pitch -> 'hintValues' ->> v_hint_index)) = 0 then
+        or length(btrim(v_pitch -> 'hintValues' ->> v_hint_index)) = 0
+        or (v_pitch -> 'hintValues' ->> v_hint_index)
+          in ('Unknown', 'Teams unavailable', 'Stats unavailable') then
         return false;
       end if;
     end loop;
