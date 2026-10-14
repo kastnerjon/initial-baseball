@@ -1,7 +1,8 @@
 import { DAILY_AT_BAT_COUNT } from './dailyConstants';
-import { isValidLineupLength } from './lineupLengthPolicy';
+import { DAILY_FIVE_AT_BAT_COUNT, isValidLineupLength } from './lineupLengthPolicy';
 import {
   clonePermanentDailyIssuedClueSnapshot,
+  clonePermanentDailyFiveIssuedClueSnapshot,
   type PermanentDailyIssuedClueSnapshot,
 } from './permanentDailyIssuedClueSnapshot';
 import {
@@ -15,6 +16,8 @@ import {
 
 export const ISSUED_DAILY_PUZZLE_SCHEMA_VERSION = 1 as const;
 export const CLUE_FROZEN_ISSUED_DAILY_PUZZLE_SCHEMA_VERSION = 2 as const;
+/** Reserved, opt-in five-player outer schema; no runtime persistence consumer yet. */
+export const FIVE_CLUE_FROZEN_ISSUED_DAILY_PUZZLE_SCHEMA_VERSION = 3 as const;
 
 export type IssuedDailyIdentity =
   | PermanentDailyIdentity
@@ -48,6 +51,12 @@ export type ClueFrozenIssuedDailyPuzzle<I extends IssuedDailyIdentity> = {
   issuedAt: string;
 };
 
+export type FiveClueFrozenIssuedDailyPuzzle<I extends IssuedDailyIdentity> =
+  Omit<ClueFrozenIssuedDailyPuzzle<I>, 'schemaVersion'> & {
+    schemaVersion: typeof FIVE_CLUE_FROZEN_ISSUED_DAILY_PUZZLE_SCHEMA_VERSION;
+  };
+
+/** Existing repository/read unions deliberately remain v1/v2 until adapters are reviewed. */
 export type IssuedDailyPuzzleRecord<I extends IssuedDailyIdentity> =
   | IssuedDailyPuzzle<I>
   | ClueFrozenIssuedDailyPuzzle<I>;
@@ -65,16 +74,9 @@ export interface IssuedDailyPuzzleRepository<I extends IssuedDailyIdentity> {
 export function createIssuedDailyPuzzle<I extends IssuedDailyIdentity>(
   input: IssuedDailyPuzzleInput<I>,
 ): IssuedDailyPuzzle<I> {
-  validateIssuedDailyIdentity(input.identity);
-  validateCanonicalPlayerIds(input.identity, input.canonicalPlayerIds);
-  const issuedAt = normalizeIssuedAt(input.identity, input.issuedAt);
-
   return {
+    ...createIssuedDailyPuzzleBase(input, 'legacy-daily-nine'),
     schemaVersion: ISSUED_DAILY_PUZZLE_SCHEMA_VERSION,
-    puzzleId: createIssuedDailyPuzzleId(input.identity),
-    identity: { ...input.identity },
-    canonicalPlayerIds: [...input.canonicalPlayerIds],
-    issuedAt,
   };
 }
 
@@ -85,20 +87,57 @@ export function createClueFrozenIssuedDailyPuzzle<I extends IssuedDailyIdentity>
   const clueSnapshot = clonePermanentDailyIssuedClueSnapshot(input.clueSnapshot);
   const label = getSeriesLabel(input.identity);
 
-  clueSnapshot.pitches.forEach((pitch, index) => {
-    const canonicalPlayerId = legacyEnvelope.canonicalPlayerIds[index];
-    if (pitch.canonicalPlayerId !== canonicalPlayerId) {
-      throw new Error(
-        `${label} clue snapshot player at pitch ${pitch.pitchNumber} does not match frozen batting order.`,
-      );
-    }
-  });
+  requireCluesMatchFrozenOrder(label, legacyEnvelope.canonicalPlayerIds, clueSnapshot);
 
   return {
     ...legacyEnvelope,
     schemaVersion: CLUE_FROZEN_ISSUED_DAILY_PUZZLE_SCHEMA_VERSION,
     clueSnapshot,
   };
+}
+
+/** Portable construction only: schema v3 is not in existing read/write unions. */
+export function createFiveClueFrozenIssuedDailyPuzzle<I extends IssuedDailyIdentity>(
+  input: ClueFrozenIssuedDailyPuzzleInput<I>,
+): FiveClueFrozenIssuedDailyPuzzle<I> {
+  const envelope = createIssuedDailyPuzzleBase(input, 'future-daily-five');
+  const clueSnapshot = clonePermanentDailyFiveIssuedClueSnapshot(input.clueSnapshot);
+  requireCluesMatchFrozenOrder(getSeriesLabel(input.identity), envelope.canonicalPlayerIds, clueSnapshot);
+
+  return {
+    ...envelope,
+    schemaVersion: FIVE_CLUE_FROZEN_ISSUED_DAILY_PUZZLE_SCHEMA_VERSION,
+    clueSnapshot,
+  };
+}
+
+function createIssuedDailyPuzzleBase<I extends IssuedDailyIdentity>(
+  input: IssuedDailyPuzzleInput<I>,
+  policy: 'legacy-daily-nine' | 'future-daily-five',
+): Omit<IssuedDailyPuzzle<I>, 'schemaVersion'> {
+  validateIssuedDailyIdentity(input.identity);
+  validateCanonicalPlayerIds(input.identity, input.canonicalPlayerIds, policy);
+  const issuedAt = normalizeIssuedAt(input.identity, input.issuedAt);
+  return {
+    puzzleId: createIssuedDailyPuzzleId(input.identity),
+    identity: { ...input.identity },
+    canonicalPlayerIds: [...input.canonicalPlayerIds],
+    issuedAt,
+  };
+}
+
+function requireCluesMatchFrozenOrder(
+  label: string,
+  canonicalPlayerIds: readonly string[],
+  snapshot: PermanentDailyIssuedClueSnapshot,
+): void {
+  snapshot.pitches.forEach((pitch, index) => {
+    if (pitch.canonicalPlayerId !== canonicalPlayerIds[index]) {
+      throw new Error(
+        `${label} clue snapshot player at pitch ${pitch.pitchNumber} does not match frozen batting order.`,
+      );
+    }
+  });
 }
 
 export function cloneIssuedDailyPuzzleRecord<I extends IssuedDailyIdentity>(
@@ -160,10 +199,7 @@ export function hasSameImmutableClueFrozenIssuedDailyContent<I extends IssuedDai
   left: ClueFrozenIssuedDailyPuzzle<I>,
   right: ClueFrozenIssuedDailyPuzzle<I>,
 ): boolean {
-  return left.puzzleId === right.puzzleId
-    && identitiesEqual(left.identity, right.identity)
-    && arraysEqual(left.canonicalPlayerIds, right.canonicalPlayerIds)
-    && areIssuedDailyClueSnapshotsEqual(left.clueSnapshot, right.clueSnapshot);
+  return hasSameClueFrozenContent(left, right);
 }
 
 export function areClueFrozenIssuedDailyPuzzlesExactlyEqual<I extends IssuedDailyIdentity>(
@@ -172,6 +208,32 @@ export function areClueFrozenIssuedDailyPuzzlesExactlyEqual<I extends IssuedDail
 ): boolean {
   return hasSameImmutableClueFrozenIssuedDailyContent(left, right)
     && left.issuedAt === right.issuedAt;
+}
+
+export function hasSameImmutableFiveClueFrozenIssuedDailyContent<I extends IssuedDailyIdentity>(
+  left: FiveClueFrozenIssuedDailyPuzzle<I>,
+  right: FiveClueFrozenIssuedDailyPuzzle<I>,
+): boolean {
+  return hasSameClueFrozenContent(left, right);
+}
+
+export function areFiveClueFrozenIssuedDailyPuzzlesExactlyEqual<I extends IssuedDailyIdentity>(
+  left: FiveClueFrozenIssuedDailyPuzzle<I>,
+  right: FiveClueFrozenIssuedDailyPuzzle<I>,
+): boolean {
+  return hasSameImmutableFiveClueFrozenIssuedDailyContent(left, right)
+    && left.issuedAt === right.issuedAt;
+}
+
+function hasSameClueFrozenContent<I extends IssuedDailyIdentity>(
+  left: ClueFrozenIssuedDailyPuzzle<I> | FiveClueFrozenIssuedDailyPuzzle<I>,
+  right: ClueFrozenIssuedDailyPuzzle<I> | FiveClueFrozenIssuedDailyPuzzle<I>,
+): boolean {
+  return left.schemaVersion === right.schemaVersion
+    && left.puzzleId === right.puzzleId
+    && identitiesEqual(left.identity, right.identity)
+    && arraysEqual(left.canonicalPlayerIds, right.canonicalPlayerIds)
+    && areIssuedDailyClueSnapshotsEqual(left.clueSnapshot, right.clueSnapshot);
 }
 
 export function validateIssuedDailySeriesVersion(value: string): void {
@@ -212,11 +274,13 @@ function validateIssuedDailyIdentity(identity: IssuedDailyIdentity): void {
 function validateCanonicalPlayerIds(
   identity: IssuedDailyIdentity,
   canonicalPlayerIds: readonly string[],
+  policy: 'legacy-daily-nine' | 'future-daily-five',
 ): void {
   const label = getSeriesLabel(identity);
-  if (!isValidLineupLength('legacy-daily-nine', canonicalPlayerIds.length)) {
+  const expectedCount = policy === 'legacy-daily-nine' ? DAILY_AT_BAT_COUNT : DAILY_FIVE_AT_BAT_COUNT;
+  if (!isValidLineupLength(policy, canonicalPlayerIds.length)) {
     throw new Error(
-      `${label} issued puzzle must contain exactly ${DAILY_AT_BAT_COUNT} players.`,
+      `${label} issued puzzle must contain exactly ${expectedCount} players.`,
     );
   }
 

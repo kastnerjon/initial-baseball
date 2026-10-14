@@ -185,6 +185,16 @@ export {
 } from './permanentDailyIssuedPuzzle';
 
 export {
+  PERMANENT_DAILY_FIVE_ISSUED_PUZZLE_SCHEMA_VERSION,
+  createPermanentDailyFiveIssuedPuzzle,
+  clonePermanentDailyFiveIssuedPuzzle,
+  hasSameImmutablePermanentDailyFiveContent,
+  arePermanentDailyFivePuzzlesExactlyEqual,
+  type PermanentDailyFiveIssuedPuzzle,
+  type PermanentDailyFiveIssuedPuzzleInput,
+} from './permanentDailyFiveIssuedPuzzle';
+
+export {
   createPermanentDailyClueFrozenIssuedPuzzleService,
   type PermanentDailyClueFrozenIssuedPuzzleService,
   type PermanentDailyClueFrozenIssuedPuzzleStoreResult,
