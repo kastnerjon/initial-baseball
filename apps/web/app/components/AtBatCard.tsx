@@ -11,8 +11,7 @@ import type {
   DailyPublicPuzzlePitch,
   DailyRulesetVersion,
 } from '@initial-baseball/shared';
-import type { CanonicalRevealViewModel } from '../canonicalRevealViewModel';
-import type { DailyHintResponse } from '../dailyRuntimeContracts';
+import type { DailyAtBatUiState } from '../dailyClientState';
 import type { DailyNineAtBatComparisonState } from '../dailyNineAtBatComparisonState';
 import { DailyNineAtBatComparison } from './DailyNineAtBatComparison';
 import { PlayerRevealCard } from './PlayerRevealCard';
@@ -23,15 +22,7 @@ import { SearchInput } from './SearchInput';
 type AtBatCardProps = {
   atBat: DailyPublicPuzzlePitch;
   rulesetVersion: DailyRulesetVersion;
-  state: {
-    query: string;
-    selectedPlayerId: string | null;
-    revealCount: 0 | 1 | 2 | 3 | 4;
-    revealedHints: DailyHintResponse['hint'][];
-    strikeCount: number;
-    submittedResult: DailyGuessResult | null;
-    reveal: CanonicalRevealViewModel | null;
-  };
+  state: DailyAtBatUiState;
   requestPending: boolean;
   giveUpPending: boolean;
   requestError: string | null;
@@ -176,6 +167,17 @@ export function AtBatCard({
           onSelect={handleSelect}
         />
       </div>
+
+      {state.wrongGuesses.length > 0 ? (
+        <section className="wrong-guess-history" aria-label="Wrong guesses for this at-bat" aria-live="polite">
+          <span className="wrong-guess-history-label">Already guessed</span>
+          <ul>
+            {state.wrongGuesses.map((guess, index) => (
+              <li key={index}>{guess.displayName}</li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
 
       {state.submittedResult !== null && state.submittedResult.kind === 'incorrect' ? (
         <ResultDisplay result={state.submittedResult} rulesetVersion={rulesetVersion} />

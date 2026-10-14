@@ -256,11 +256,28 @@ function normalizeSavedDailyGame(
     atBatState: {
       ...legacyAtBatState,
       revealedHints: legacyAtBatState.revealedHints ?? [],
+      wrongGuesses: normalizeWrongGuessHistory(legacyAtBatState.wrongGuesses, legacyAtBatState.strikeCount),
       reveal: legacyAtBatState.reveal ?? null,
       submittedResult: normalizeDailyGuessResult(savedGame.atBatState.submittedResult),
     },
     pendingAdvance,
   };
+}
+
+// Optional browser-local display data: never used to validate gameplay or scores.
+function normalizeWrongGuessHistory(
+  value: unknown,
+  strikeCount: number,
+): DailyAtBatUiState['wrongGuesses'] {
+  if (!Array.isArray(value)) return [];
+  const maximum = Number.isInteger(strikeCount) ? Math.max(0, Math.min(3, strikeCount)) : 0;
+  return value.slice(0, maximum)
+    .filter((guess): guess is { playerId: string; displayName: string } =>
+      isRecord(guess)
+      && typeof guess.playerId === 'string' && guess.playerId.length > 0 && guess.playerId.length <= 128
+      && typeof guess.displayName === 'string'
+      && guess.displayName.trim().length > 0 && guess.displayName.length <= 128)
+    .map(guess => ({ playerId: guess.playerId, displayName: guess.displayName }));
 }
 
 function normalizePendingAdvance(

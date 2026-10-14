@@ -326,9 +326,12 @@ export function DailyInningGame({
     if (atBatState.selectedPlayerId === null) {
       return;
     }
+    // Capture the actual selected player before an asynchronous response can arrive.
+    const submittedPlayerId = atBatState.selectedPlayerId;
+    const submittedDisplayName = atBatState.query.trim();
     await resolutionRequests.resolveAtBat({
       progressionToken,
-      action: { submittedPlayerId: atBatState.selectedPlayerId },
+      action: { submittedPlayerId },
       onSuccess: (response) => {
         setProgressionToken(response.progressionToken);
         const { result } = response;
@@ -340,6 +343,10 @@ export function DailyInningGame({
             query: '',
             selectedPlayerId: null,
             strikeCount: result.strikeCount,
+            wrongGuesses: [
+              ...currentState.wrongGuesses,
+              { playerId: submittedPlayerId, displayName: submittedDisplayName },
+            ].slice(-3),
             submittedResult: result,
           }));
           return;

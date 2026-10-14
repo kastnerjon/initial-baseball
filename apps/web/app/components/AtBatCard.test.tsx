@@ -343,6 +343,24 @@ describe('AtBatCard pending resolution feedback', () => {
     expect(html).not.toContain('player-reveal-stat-strip');
   });
 
+  it('shows confirmed wrong guesses below search during the current at-bat', () => {
+    const html = renderCard({
+      requestPending: false,
+      giveUpPending: false,
+      wrongGuesses: [
+        { playerId: 'griffey', displayName: 'Ken Griffey Jr.' },
+        { playerId: 'puckett', displayName: 'Kirby Puckett' },
+      ],
+    });
+    expect(html).toContain('Wrong guesses for this at-bat');
+    expect(html.indexOf('search-shell')).toBeLessThan(html.indexOf('Already guessed'));
+    expect(html).toContain('Ken Griffey Jr.');
+    expect(html).toContain('Kirby Puckett');
+    const cleanCard = renderCard({ requestPending: false, giveUpPending: false });
+    expect(cleanCard).not.toContain('Already guessed');
+    expect(cleanCard).not.toContain('Ken Griffey Jr.');
+  });
+
   it('does not show an empty search-results state after a player is selected', () => {
     const html = renderCard({
       requestPending: false,
@@ -373,6 +391,7 @@ function renderCard(input: {
   cumulativePoints?: number;
   revealCount?: 0 | 1 | 2 | 3 | 4;
   reveal?: CanonicalRevealViewModel | null;
+  wrongGuesses?: { playerId: string; displayName: string }[];
   comparison?: DailyNineAtBatComparisonState;
 }): string {
   return renderToStaticMarkup(
@@ -385,6 +404,7 @@ function renderCard(input: {
         revealCount: input.revealCount ?? 0,
         revealedHints: [],
         strikeCount: 0,
+        wrongGuesses: input.wrongGuesses ?? [],
         submittedResult: input.submittedResult ?? null,
         reveal: input.reveal ?? null,
       }}

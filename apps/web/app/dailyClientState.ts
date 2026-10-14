@@ -18,6 +18,7 @@ export type DailyAtBatUiState = {
   revealCount: 0 | 1 | 2 | 3 | 4;
   revealedHints: DailyHintResponse['hint'][];
   strikeCount: number;
+  wrongGuesses: { playerId: string; displayName: string }[];
   submittedResult: DailyGuessResult | null;
   reveal: CanonicalRevealViewModel | null;
 };
@@ -58,6 +59,7 @@ export function createInitialAtBatUiState(): DailyAtBatUiState {
     revealCount: 0,
     revealedHints: [],
     strikeCount: 0,
+    wrongGuesses: [],
     submittedResult: null,
     reveal: null,
   };
