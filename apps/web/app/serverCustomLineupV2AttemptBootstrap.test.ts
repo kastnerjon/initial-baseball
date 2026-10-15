@@ -92,6 +92,17 @@ describe('private Custom v2 first-attempt reservation',()=>{
     expect(createCustomNineAttemptBrowserCredential(SECRET).inspect('',V1)).toEqual({kind:'absent'});
     expect(createCustomNineCreatorBrowserMarker(SECRET).inspect(null,V1)).toBe('unmarked');
     expect(createCustomLineupV2CreatorBrowserMarker(SECRET).inspect(null,ID)).toBe('unmarked');
+    // A 43-character HMAC uses only the two high-order bits of its last base64url
+    // character; alternate low bits must not validate the same signature bytes.
+    const alphabet='ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789-_';
+    const canonical=createCustomLineupV2CreatorBrowserMarker(SECRET).creatorCookie(ID,URL).split(';')[0]!;
+    const last=canonical.slice(-1),index=alphabet.indexOf(last);
+    const noncanonical=canonical.slice(0,-1)+alphabet[(index&~3)|((index+1)&3)];
+    expect(createCustomLineupV2CreatorBrowserMarker(SECRET).inspect(noncanonical,ID)).toBe('invalid');
+    const v1Cookie=createCustomNineCreatorBrowserMarker(SECRET).creatorCookie(V1,URL).split(';')[0]!;
+    const v1Last=v1Cookie.slice(-1),v1Index=alphabet.indexOf(v1Last);
+    const v1Changed=v1Cookie.slice(0,-1)+alphabet[(v1Index&~3)|((v1Index+1)&3)];
+    expect(createCustomNineCreatorBrowserMarker(SECRET).inspect(v1Changed,V1)).toBe('invalid');
     expect(()=>v2.issue(V1,URL)).toThrow();
   });
   it('never reserves creator-marked challenge, and blocks forged/duplicate cookies',async()=>{

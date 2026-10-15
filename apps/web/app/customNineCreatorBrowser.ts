@@ -58,6 +58,11 @@ function createScopedCreatorMarker(secret: string, scope: Scope) {
       if (matches.length !== 1 || match === undefined) return 'invalid';
       const observed = match.slice(name.length + 1);
       if (!/^[A-Za-z0-9_-]{43}$/.test(observed)) return 'invalid';
+      // Base64url's last character may have multiple spellings for the same
+      // decoded HMAC bytes. Require the canonical encoding before equality.
+      if (Buffer.from(observed, 'base64url').toString('base64url') !== observed) {
+        return 'invalid';
+      }
       const expected = Buffer.from(signature(puzzleId), 'base64url');
       const actual = Buffer.from(observed, 'base64url');
       return actual.length === expected.length && timingSafeEqual(actual, expected)
