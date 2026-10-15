@@ -17,8 +17,9 @@ Last updated: 2026-10-15
 - [x] PR #416 merged as `106fa52`, exact-main CI passed and production READY: responsive, server-flag-gated `/custom/{v2-id}` gameplay UI, scorecard, restore, correct/wrong/hint/give-up and bodyless completed admission. Flag remains OFF.
 - [x] PR #417 points-v4 Daily Nine boxed revealed hints merged at `8ebb728c`, production READY and main push CI succeeded on retry following an unrelated 5-second baseball-data test timeout; mobile authenticated QA remains open.
 - [x] PR #418 private schema-v2 1–10 Custom Lineup immutable issuer merged as `d7c855c`; exact-main CI SUCCESS and production READY; no creation route or flag activation at that checkpoint.
-- [ ] Current PR: administrator-only v2 challenge POST with separate scoped creator marker and no public gameplay. Plan: `tasks/plans/custom-lineup-v2-admin-issuer-route.md`.
-- [ ] After private issuer: admin-authorized v2 issuance transport with creator exclusion marker, then responsive 1–10 creator UI; separate end-to-end abuse/privacy/activation review before any public gameplay or comparisons.
+- [x] PR #419 admin-only version-2 challenge POST merged as `5592ff4`: signed scoped creator marker, server-origin/auth checks, opaque ID only. No gameplay activation; exact-head CI and Preview passed. Exact-main push CI SUCCESS, production READY and Supabase healthy; live HTTP route probing remains unverified.
+- [ ] Current PR: responsive `/admin/custom-lineup` v2 1–10 selection, reorder/remove and admin issuance UI, reusing the legacy exact-nine component without changing its default policy. Plan: `tasks/plans/custom-lineup-v2-admin-creator-ui.md`.
+- [ ] Next: staged 1/5/9/10-player end-to-end gameplay and mobile QA, abuse/privacy safeguards, and controlled activation decision before public links, comparisons, discovery or sharing.
 
 ## Current Custom v2 database checkpoint (October 14)
 
