@@ -15,7 +15,9 @@ Last updated: 2026-10-15
 - [x] PR #414 default-disabled same-origin v2 attempt transport for bootstrap, hint, unified resolve and bodyless submission; merged `a2f0c0d`, exact-main CI passed, Vercel production READY; flag off.
 - [x] PR #415 strict 1–10 v2 client DTO and headless transport against the gated v2 API, merged `0c301b9`, exact-main CI passed and production READY; no public activation.
 - [x] PR #416 merged as `106fa52`, exact-main CI passed and production READY: responsive, server-flag-gated `/custom/{v2-id}` gameplay UI, scorecard, restore, correct/wrong/hint/give-up and bodyless completed admission. Flag remains OFF.
-- [ ] Next: creator issuance workflow, abuse/privacy and explicit controlled activation, then score/comparison reads, discovery and sharing.
+- [x] PR #417 points-v4 Daily Nine boxed revealed hints merged at `8ebb728c`, production READY and main push CI succeeded on retry following an unrelated 5-second baseball-data test timeout; mobile authenticated QA remains open.
+- [ ] Current PR: private schema-v2 1–10 Custom Lineup immutable issuer using existing four-hint materialization and hosted service-role-only table. No HTTP route or activation. Plan: `tasks/plans/custom-lineup-v2-private-issuance.md`.
+- [ ] After private issuer: admin-authorized v2 issuance transport with creator exclusion marker, then responsive 1–10 creator UI; separate end-to-end abuse/privacy/activation review before any public gameplay or comparisons.
 
 ## Current Custom v2 database checkpoint (October 14)
 

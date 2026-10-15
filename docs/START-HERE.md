@@ -5,6 +5,14 @@ Last updated: 2026-10-15
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
+## Custom Lineup v2 private issuer — current PR
+
+The next bounded Web-only PR stages private issuance of immutable schema-v2 challenges with 1–10 ordered distinct canonical players, default four-hint snapshots, service-role-only insert and sanitized opaque ID output. It adds **no HTTP creation route or public creator UI**, changes no environment flags and does not activate public Custom play. Existing v1 nine-player issuance remains unchanged. See `tasks/plans/custom-lineup-v2-private-issuance.md`. Next bounded work: admin-authorized v2 issuance route with creator exclusion marker; creator interface in a separate PR.
+
+## Verified Daily Nine hint PR #417 checkpoint
+
+PR #417 merged at `8ebb728c207537c983eec22a3a5739fd4f45a89d`. Exact-head CI and READY Preview passed. Main push CI first timed out in the pre-existing full-player baseball-data validation (5-second default) and succeeded on its one failed-job retry. Vercel production `dpl_6miMKDvh3DCGijYAmyngF5pwnxE5` is READY on that SHA; no error/fatal events observed in the checked recent runtime window, Supabase ACTIVE_HEALTHY, and zero open PRs at this checkpoint. Direct protected-preview/mobile visual QA and fresh canonical-route HTTP response verification are still unverified; do not claim those checks complete. No public Custom flag activation.
+
 ## Daily Nine hint presentation (October 15)
 
 The current points-v4 Daily Nine hint values share the existing Already guessed box treatment (padding, border, background and wrapping), with bold labels kept beside each value. Hint content/order, scoring and mechanics are unchanged. Classic and Custom styles are unchanged. Scope: `tasks/plans/daily-nine-boxed-hints.md`.

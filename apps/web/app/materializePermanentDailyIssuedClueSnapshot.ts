@@ -1,5 +1,6 @@
 import 'server-only';
 import {
+  createCustomLineupIssuedClueSnapshot,
   createPermanentDailyIssuedClueSnapshot,
   type PermanentDailyIssuedClueSnapshot,
 } from '@initial-baseball/daily';
@@ -56,9 +57,20 @@ export function materializeArchiveBetaDailyIssuedClueSnapshot(
   );
 }
 
+/** Private v2 issuance uses the same canonical lookup and default Daily hint values. */
+export function materializeCustomLineupV2IssuedClueSnapshot(
+  orderedCanonicalPlayerIds: readonly string[],
+  resolvePlayer: IssuedDailyCluePlayerResolver = getCanonicalDailyPlayer,
+  createPitch: DailyPitchFactory = createDailyPuzzlePitch,
+): PermanentDailyIssuedClueSnapshot {
+  return materializeIssuedDailyClueSnapshot(
+    orderedCanonicalPlayerIds, 'Custom Lineup', undefined, resolvePlayer, createPitch,
+  );
+}
+
 function materializeIssuedDailyClueSnapshot(
   orderedCanonicalPlayerIds: readonly string[],
-  seriesLabel: 'Permanent Daily' | 'Archive beta Daily',
+  seriesLabel: 'Permanent Daily' | 'Archive beta Daily' | 'Custom Lineup',
   puzzleDate: string | undefined,
   resolvePlayer: IssuedDailyCluePlayerResolver,
   createPitch: DailyPitchFactory,
@@ -106,5 +118,7 @@ function materializeIssuedDailyClueSnapshot(
     };
   });
 
-  return createPermanentDailyIssuedClueSnapshot({ hintLayout, pitches });
+  return seriesLabel === 'Custom Lineup'
+    ? createCustomLineupIssuedClueSnapshot({ hintLayout, pitches })
+    : createPermanentDailyIssuedClueSnapshot({ hintLayout, pitches });
 }
