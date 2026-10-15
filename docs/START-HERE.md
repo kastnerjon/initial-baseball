@@ -1,9 +1,17 @@
 # Initial Baseball — Start Here
 
 Status: Active project handoff  
-Last updated: 2026-10-11
+Last updated: 2026-10-15
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
+
+## Custom Lineup v2 gated gameplay transport (October 15)
+
+PR #414 stages four body-bounded, same-origin POST routes at `/api/custom-lineup/challenges/{puzzleId}/attempt/{bootstrap|hint|resolve|submit}`. All are **404 before any service or database work unless server-only `CUSTOM_LINEUP_V2_GAMEPLAY_TRANSPORT_ENABLED` is exactly `true`**. It is not set by this PR. The routes reuse the existing signed v2 service layer for first attempt/restoration, one hint, unified atomic wrong/correct/give-up resolution, and bodyless exact-N admission. All responses are private/no-store and sanitized; terminal player reveals pass through the existing canonical view-model whitelist, and completed bootstrap contains no live token. There is no public creator UI, challenge issuance, discovery/comparison activation or production flag change. Scope and threat boundary: `tasks/plans/custom-lineup-v2-gated-gameplay-transport.md`.
+
+## Verified Custom v2 completed admission checkpoint (October 15)
+
+PR #413 merged as `6e632f964334c990ac2d337c4f1b9589a970be3d`, exact-main CI passed, production deployment READY, canonical home/archive/classic 200, no error/fatal runtime logs in inspected window, and zero open PRs. Hosted v2 first-attempt admission RPC is installed with service-role-only execute permission; v2 issued/attempt/completed/per-AB populations remained empty. This remains a **private staged** backend, not a public Custom Lineup launch.
 
 ## Custom v2 private completed-result admission (October 15)
 
