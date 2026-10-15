@@ -5,7 +5,15 @@ Last updated: 2026-10-15
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
-## Custom Lineup v2 responsive administrator creator — current PR
+## Custom Lineup v2 browser-to-HTTP contract QA — current PR
+
+Test-only acceptance integrates the existing versioned browser transport and HTTP handler with deterministic private service fixtures at N=1/5/9/10. It checks resume, earned hint depth, wrong/terminal outcomes, points-v4 limits, idempotent submission and creator ineligibility, plus default-off behavior. **This is not full hosted DB or physical mobile E2E.** No runtime flag changes. Scope: `tasks/plans/custom-lineup-v2-browser-http-acceptance.md`; next isolated staging + real browser/mobile QA, abuse/privacy threat-model and controlled rollout.
+
+## Verified Custom Lineup creator PR #420
+
+PR #420 merged as `6189206759acb1a13d72dfd8ca3d99e5d10b9a14`. The independent review's initial import finding was fixed, final exact-head CI and Vercel Preview passed, exact-main push CI SUCCESS, production Vercel `dpl_ABjLUMUzHkxcJAyz3wRfjJT6Pkbu` READY on matching SHA, Supabase ACTIVE_HEALTHY and no error/fatal runtime logs in the inspected window. No public Custom gameplay activation and zero open PRs at checkpoint. Fresh direct route-HTTP probing and protected-preview mobile browser QA remain unverified.
+
+## Custom Lineup v2 responsive administrator creator — implemented
 
 The new bounded UI PR stages `/admin/custom-lineup` behind existing Basic admin authorization. It reuses the legacy Custom Nine creator component and styles with an explicit v2 mode: select 1–10 distinct canonical players, reorder/remove, validate, and POST only IDs to #419 admin-authenticated v2 creation. Issued results contain an opaque ID only; no player links are advertised as publicly playable. The old nine-only administrator creator remains the default mode and unchanged in behavior. Scope: `tasks/plans/custom-lineup-v2-admin-creator-ui.md`; next: controlled game E2E tests and mobile visual QA, abuse/privacy controls, and separate release authorization. Public gameplay flags remain off.
 

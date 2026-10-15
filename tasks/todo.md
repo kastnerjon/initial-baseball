@@ -18,7 +18,8 @@ Last updated: 2026-10-15
 - [x] PR #417 points-v4 Daily Nine boxed revealed hints merged at `8ebb728c`, production READY and main push CI succeeded on retry following an unrelated 5-second baseball-data test timeout; mobile authenticated QA remains open.
 - [x] PR #418 private schema-v2 1–10 Custom Lineup immutable issuer merged as `d7c855c`; exact-main CI SUCCESS and production READY; no creation route or flag activation at that checkpoint.
 - [x] PR #419 admin-only version-2 challenge POST merged as `5592ff4`: signed scoped creator marker, server-origin/auth checks, opaque ID only. No gameplay activation; exact-head CI and Preview passed. Exact-main push CI SUCCESS, production READY and Supabase healthy; live HTTP route probing remains unverified.
-- [ ] Current PR: responsive `/admin/custom-lineup` v2 1–10 selection, reorder/remove and admin issuance UI, reusing the legacy exact-nine component without changing its default policy. Plan: `tasks/plans/custom-lineup-v2-admin-creator-ui.md`.
+- [x] PR #420 responsive admin-only `/admin/custom-lineup` v2 1–10 editor merged as `6189206`; exact-head CI, independent review (one corrected import), exact-main push CI and Vercel production READY. No public activation.
+- [ ] Current test-only PR: actual v2 browser transport ↔ HTTP adapter integration with controlled N=1/5/9/10 private-service fixtures and no flag change. Plan: `tasks/plans/custom-lineup-v2-browser-http-acceptance.md`.
 - [ ] Next: staged 1/5/9/10-player end-to-end gameplay and mobile QA, abuse/privacy safeguards, and controlled activation decision before public links, comparisons, discovery or sharing.
 
 ## Current Custom v2 database checkpoint (October 14)
