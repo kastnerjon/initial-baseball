@@ -54,7 +54,7 @@ describe('AtBatCard pending resolution feedback', () => {
       requestPending: false, giveUpPending: false,
       rulesetVersion: 'points-v4', selectedPlayerId: 'player-id',
     });
-    const hintSection = html.slice(html.indexOf('<section class="hint-block"'), html.indexOf('</section>') + 10);
+    const hintSection = html.slice(html.indexOf('aria-label="Revealed hints"'), html.indexOf('</section>') + 10);
     expect(hintSection).not.toContain('button-hint');
     const actions = html.slice(html.indexOf('class="at-bat-actions"'));
     expect(actions).toContain('class="at-bat-actions-right"');

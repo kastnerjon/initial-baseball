@@ -5,6 +5,14 @@ Last updated: 2026-10-15
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
+## Daily Nine hint presentation (October 15)
+
+The current points-v4 Daily Nine hint values share the existing Already guessed box treatment (padding, border, background and wrapping), with bold labels kept beside each value. Hint content/order, scoring and mechanics are unchanged. Classic and Custom styles are unchanged. Scope: `tasks/plans/daily-nine-boxed-hints.md`.
+
+## Verified PR #416 checkpoint
+
+Main `106fa52034e0fed23473c8ae96b33d83149c7909`: push CI passed, Vercel production `dpl_AyNkTDD5TNJr1mhRH3Ra8DqefyYP` READY on that SHA; canonical routes healthy, Classic retains its redirect, no error/fatal production logs in the inspected 30-minute window, zero open PRs. Supabase is ACTIVE_HEALTHY with documented v2 migrations installed. Custom Lineup v2 remains disabled and has not been publicly activated.
+
 ## Custom Lineup v2 responsive player screen (October 15)
 
 PR #416 stages a responsive browser-facing game screen at `/custom/{custom-lineup-v2-id}`, still **404 when the existing server-only `CUSTOM_LINEUP_V2_GAMEPLAY_TRANSPORT_ENABLED` flag is off**. This screen reuses the private signed 1–10 browser transport and existing canonical player reveal/points engine: current-batter initials, server-returned hint depth, explicit searched-player selection, wrong guesses and strikes, terminal reveal, and exact-N completed scorecard and bodyless result submission. Creator browsers are only shown a noncompetitive preview. Server first-attempt restoration is authoritative across reloads and conflicts. No public issuer, Discover, comparisons/leaderboard, account identity or abuse policy is activated; the production flag is not set by this PR. Scope: `tasks/plans/custom-lineup-v2-responsive-gameplay-ui.md`.
