@@ -12,19 +12,11 @@ vi.mock('./serverCustomLineupV2IncorrectGuesses', () => ({
 vi.mock('./serverCustomLineupV2CompletedAdmission', () => ({
   createServerCustomLineupV2CompletedAdmissionService: vi.fn(),
 }));
-vi.mock('./canonicalRevealViewModel', () => ({
-  createCanonicalRevealViewModel: vi.fn(() => ({
-    playerId: 'ibp_safe', displayName: 'Correct Player',
-    playerType: 'hitter', primaryPosition: 'RF', yearsPlayedDisplay: '1990–2000',
-    teamIds: [], career: { lines: [] }, seasons: [],
-  })),
-}));
 
 import { createServerCustomLineupV2AttemptBootstrap } from './serverCustomLineupV2AttemptBootstrap';
 import { createServerCustomLineupV2AttemptHintService } from './serverCustomLineupV2AttemptHints';
 import { createServerCustomLineupV2IncorrectGuessService } from './serverCustomLineupV2IncorrectGuesses';
 import { createServerCustomLineupV2CompletedAdmissionService } from './serverCustomLineupV2CompletedAdmission';
-import { createCanonicalRevealViewModel } from './canonicalRevealViewModel';
 import { handleCustomLineupV2GameplayPost, isCustomLineupV2GameplayTransportEnabled }
   from './serverCustomLineupV2GameplayHttp';
 
@@ -146,7 +138,7 @@ describe('off-by-default Custom v2 gameplay HTTP transport', () => {
       revision: 1, completedAt: '2026-10-15T12:00:00Z',
     });
     const result = await send('bootstrap');
-    const json = await result.json();
+    const json = await result.json() as Record<string, unknown>;
     expect(json.attemptMode).toBe('completed');
     expect(json).not.toHaveProperty('progressionToken');
     expect(json).not.toHaveProperty('hintBundle');
@@ -189,17 +181,20 @@ describe('off-by-default Custom v2 gameplay HTTP transport', () => {
     expect(attempt).toHaveBeenCalledWith(ID,cookie,body);
     attempt.mockResolvedValueOnce({
       kind:'terminal',result:{kind:'correct',revealedCount:0,outcome:'HR',source:'initials'},
-      reveal:{playerId:'PRIVATE_RAW_CANONICAL',secret:'PRIVATE_ANSWER'},
+      reveal:{
+        playerId:player,displayName:'Correct Player',playerType:'hitter',
+        primaryPosition:'RF',yearsPlayedDisplay:'1990–2000',
+        teamIds:[],career:{lines:[{kind:'hitter',stats:{HR:10}}]},seasons:[],
+        secret:'PRIVATE_ANSWER',
+      },
       progressionToken:'signed-next',revision:2,completed:false,
       hintBundle:{pitchNumber:2,revealedCount:0,hints:[],checkpoints:[]},
     });
     const terminal=await send('resolve', {body:JSON.stringify({progressionToken:'signed-wrong',giveUp:true})});
-    const json=await terminal.json();
+    const json=await terminal.json() as { kind: string; reveal: { displayName: string } };
     expect(json.kind).toBe('terminal');
     expect(json.reveal.displayName).toBe('Correct Player');
-    expect(JSON.stringify(json)).not.toContain('PRIVATE_RAW_CANONICAL');
     expect(JSON.stringify(json)).not.toContain('PRIVATE_ANSWER');
-    expect(vi.mocked(createCanonicalRevealViewModel)).toHaveBeenCalledOnce();
     expect(attempt).toHaveBeenCalledTimes(2);
     expect((await send('resolve',{body:JSON.stringify({progressionToken:'signed',submittedPlayerId:'A R'})})).status).toBe(400);
     expect((await send('resolve',{body:JSON.stringify({progressionToken:'signed',giveUp:false})})).status).toBe(400);

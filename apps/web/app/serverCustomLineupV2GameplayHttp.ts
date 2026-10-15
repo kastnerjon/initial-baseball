@@ -1,6 +1,6 @@
 import 'server-only';
 import { validateCustomLineupPuzzleId } from '@initial-baseball/daily';
-import { createCanonicalRevealViewModel } from './canonicalRevealViewModel';
+import { decodeCustomNineTerminalReveal } from './customNineGameplayPayloadCodec';
 import { hasUnexpectedCustomNinePostBody } from './customNineAttemptRequestBody';
 import { readCustomNineJsonBody } from './customNineHintHttp';
 import { CustomNineHintRequestError } from './serverCustomNineHints';
@@ -124,7 +124,7 @@ export async function handleCustomLineupV2GameplayPost(
     }, { headers: HEADERS });
     return Response.json({
       kind: 'terminal', result: result.result,
-      reveal: createCanonicalRevealViewModel(result.reveal),
+      reveal: decodeCustomNineTerminalReveal(result.reveal),
       progressionToken: result.progressionToken, revision: result.revision,
       completed: result.completed, hintBundle: result.hintBundle,
     }, { headers: HEADERS });
