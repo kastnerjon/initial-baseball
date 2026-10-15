@@ -1,0 +1,147 @@
+.custom-lineup-page {
+  min-height: 100svh;
+  background: #f5f7fb;
+  color: #152238;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+.custom-lineup-shell { max-width: 1120px; padding: 28px 22px 36px; margin: 0 auto; }
+.custom-lineup-masthead {
+  display: grid; grid-template-columns: auto minmax(0,1fr) auto; gap: 28px;
+  align-items: center; padding: 30px 34px; color: #fff;
+  background: #15263f; border-radius: 13px;
+}
+.custom-lineup-wordmark {
+  display: grid; place-items: center; height: 56px; width: 56px;
+  border: 2px solid #7c9dc7; border-radius: 10px; color: #fff;
+  font-size: 22px; font-weight: 800; text-decoration: none; letter-spacing: -.04em;
+}
+.custom-lineup-wordmark span { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); }
+.custom-lineup-masthead-title { min-width: 0; }
+.custom-lineup-kicker {
+  font-size: 11px; font-weight: 750; letter-spacing: .13em; text-transform: uppercase;
+  color: #3863a0;
+}
+.custom-lineup-masthead .custom-lineup-kicker { color: #b4ccec; }
+.custom-lineup-masthead h1 {
+  margin: 5px 0; font-size: clamp(26px, 4vw, 38px); font-weight: 780;
+  line-height: 1.05; color: #fff; letter-spacing: -.035em;
+}
+.custom-lineup-masthead p { margin: 6px 0 0; color: #d5e1f2; font-size: 13px; line-height: 1.5; }
+.custom-lineup-length {
+  border: 1px solid #6280a6; border-radius: 999px; padding: 7px 12px;
+  white-space: nowrap; font-size: 12px; font-weight: 700; color: #e4efff;
+}
+.custom-lineup-grid {
+  display: grid; grid-template-columns: minmax(0, .93fr) minmax(0, 1.25fr);
+  align-items: start; gap: 18px; margin-top: 18px;
+}
+.custom-lineup-scorecard, .custom-lineup-panel {
+  min-width: 0; background: white; border: 1px solid #d9e2ee;
+  border-radius: 12px; box-shadow: 0 4px 20px rgb(29 48 73 / 5%);
+}
+.custom-lineup-scorecard { overflow: hidden; }
+.custom-lineup-scorecard-heading {
+  padding: 22px 24px 18px; display: flex; gap: 12px; justify-content: space-between;
+  align-items: end; border-bottom: 1px solid #e3e9f1;
+}
+.custom-lineup-scorecard-heading h2 { margin: 5px 0 0; font-size: 21px; color: #152238; }
+.custom-lineup-total { color: #56657b; font-size: 13px; text-align: right; white-space: nowrap; }
+.custom-lineup-total strong { color: #153b77; font-size: 24px; font-variant-numeric: tabular-nums; }
+.custom-lineup-score-rows { list-style: none; margin: 0; padding: 6px 0; }
+.custom-lineup-score-row {
+  display: grid; grid-template-columns: 38px minmax(0,1fr) 66px 38px;
+  gap: 12px; padding: 11px 22px; align-items: center;
+  border-left: 3px solid transparent; font-size: 13px;
+}
+.custom-lineup-score-row + .custom-lineup-score-row { border-top: 1px solid #eef1f5; }
+.custom-lineup-score-row.is-current { background: #edf4ff; border-left-color: #245cad; }
+.custom-lineup-batter-number { color: #8190a5; font-weight: 750; font-size: 12px; }
+.custom-lineup-batter-initials { color: #1b2d48; font-size: 17px; letter-spacing: .015em; overflow-wrap: anywhere; }
+.custom-lineup-batter-outcome { text-align: right; color: #50627d; font-variant-numeric: tabular-nums; }
+.custom-lineup-batter-points { text-align: right; font-weight: 780; color: #264c89; font-variant-numeric: tabular-nums; }
+.custom-lineup-panel { padding: 24px; display: grid; gap: 18px; }
+.custom-lineup-panel h2 { margin: 0; font-size: 26px; letter-spacing: -.025em; color: #152238; }
+.custom-lineup-panel p { margin: 0; line-height: 1.5; }
+.custom-lineup-active-heading, .custom-lineup-clue-header {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+}
+.custom-lineup-strikes { font-size: 12px; color: #a63636; font-weight: 750; }
+.custom-lineup-big-initials {
+  display: grid; place-items: center; min-height: 138px;
+  color: #15263f; font-size: clamp(64px, 11vw, 94px);
+  font-weight: 800; line-height: 1; letter-spacing: -.045em;
+  border-block: 1px solid #e3e9f1; overflow-wrap: anywhere;
+}
+.custom-lineup-clues { display: grid; gap: 10px; }
+.custom-lineup-clue-header { padding-bottom: 6px; border-bottom: 1px solid #e6edf6; }
+.custom-lineup-clue-header h3 { margin: 0; font-size: 14px; }
+.custom-lineup-clue-header span { font-size: 12px; color: #6c7a91; }
+.custom-lineup-muted { color: #6b7990; font-size: 13px; line-height: 1.5; }
+.custom-lineup-clues dl { display: grid; gap: 0; margin: 0; }
+.custom-lineup-clues dl div {
+  display: grid; grid-template-columns: minmax(95px, .45fr) minmax(0,1fr); gap: 12px;
+  padding: 10px 0; border-bottom: 1px solid #edf0f5; align-items: baseline;
+}
+.custom-lineup-clues dt { color: #65738a; font-size: 12px; }
+.custom-lineup-clues dd { margin: 0; font-size: 14px; overflow-wrap: anywhere; }
+.custom-lineup-panel form { display: grid; gap: 12px; }
+.custom-lineup-search-label { font-size: 12px; font-weight: 700; }
+.custom-lineup-search-field { position: relative; display: flex; gap: 8px; }
+.custom-lineup-search-field input {
+  width: 100%; min-width: 0; min-height: 46px; border: 1px solid #b8c6d9;
+  border-radius: 7px; background: #fff; color: #172b46; padding: 12px;
+  font: inherit; font-size: 16px;
+}
+.custom-lineup-search-field button { border: 0; background: transparent; color: #245cad; cursor: pointer; }
+.custom-lineup-suggestions {
+  list-style: none; margin: -8px 0 0; padding: 5px; max-height: 200px; overflow-y: auto;
+  border: 1px solid #bac8db; border-radius: 7px; background: white;
+  box-shadow: 0 12px 30px rgb(25 40 64 / 15%);
+}
+.custom-lineup-suggestions button {
+  width: 100%; border: 0; padding: 11px 12px; text-align: left;
+  font: inherit; font-size: 14px; background: transparent; cursor: pointer; color: #182943;
+}
+.custom-lineup-suggestions button:hover, .custom-lineup-suggestions button:focus-visible { background: #eaf2ff; }
+.custom-lineup-actions { display: flex; gap: 9px; flex-wrap: wrap; align-items: center; }
+.custom-lineup-primary, .custom-lineup-secondary, .custom-lineup-quiet {
+  min-height: 43px; padding: 10px 15px; border-radius: 7px;
+  font: inherit; font-size: 13px; font-weight: 750; cursor: pointer;
+}
+.custom-lineup-primary { background: #184a92; border: 1px solid #184a92; color: white; }
+.custom-lineup-secondary { background: white; border: 1px solid #8fa8ca; color: #214e89; }
+.custom-lineup-quiet { background: transparent; border: 1px solid transparent; color: #a03636; }
+.custom-lineup-page button:disabled { opacity: .45; cursor: not-allowed; }
+.custom-lineup-page button:focus-visible, .custom-lineup-page a:focus-visible,
+.custom-lineup-page input:focus-visible { outline: 3px solid #e6a744; outline-offset: 3px; }
+.custom-lineup-error { padding: 11px 14px; border-left: 3px solid #c13838;
+  background: #fff1f1; color: #832828; font-size: 13px; }
+.custom-lineup-status { margin: 28px 0; text-align: center; color: #647389; }
+.custom-lineup-finished { gap: 14px; }
+.custom-lineup-panel .player-reveal-card { min-width: 0; }
+.custom-lineup-footer {
+  display: flex; justify-content: space-between; gap: 16px; margin-top: 20px;
+  padding: 14px 4px; font-size: 12px; color: #748196;
+}
+.custom-lineup-footer a { color: #234e89; }
+@media (max-width: 780px) {
+  .custom-lineup-shell { padding: 12px 12px 24px; }
+  .custom-lineup-masthead { gap: 14px; padding: 20px; grid-template-columns: 1fr auto; }
+  .custom-lineup-wordmark { display: none; }
+  .custom-lineup-masthead p { max-width: 300px; }
+  .custom-lineup-grid { grid-template-columns: minmax(0,1fr); gap: 12px; margin-top: 12px; }
+  .custom-lineup-grid > .custom-lineup-panel { order: 1; }
+  .custom-lineup-grid > .custom-lineup-scorecard { order: 2; }
+  .custom-lineup-scorecard-heading { padding: 15px 18px; }
+  .custom-lineup-score-row { padding: 10px 17px; grid-template-columns: 28px minmax(0,1fr) 58px 28px; gap: 8px; }
+  .custom-lineup-panel { padding: 18px; }
+  .custom-lineup-big-initials { min-height: 105px; font-size: clamp(58px, 14vw, 76px); }
+  .custom-lineup-actions > button { flex: 1 1 auto; }
+}
+@media (max-width: 380px) {
+  .custom-lineup-masthead { padding: 16px; }
+  .custom-lineup-length { padding: 6px 8px; font-size: 11px; }
+  .custom-lineup-masthead h1 { font-size: 25px; }
+  .custom-lineup-actions { display: grid; grid-template-columns: 1fr 1fr; }
+  .custom-lineup-actions .custom-lineup-quiet { grid-column: 1 / -1; }
+}

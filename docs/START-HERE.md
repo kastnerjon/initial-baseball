@@ -5,6 +5,14 @@ Last updated: 2026-10-15
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
+## Custom Lineup v2 responsive player screen (October 15)
+
+PR #416 stages a responsive browser-facing game screen at `/custom/{custom-lineup-v2-id}`, still **404 when the existing server-only `CUSTOM_LINEUP_V2_GAMEPLAY_TRANSPORT_ENABLED` flag is off**. This screen reuses the private signed 1–10 browser transport and existing canonical player reveal/points engine: current-batter initials, server-returned hint depth, explicit searched-player selection, wrong guesses and strikes, terminal reveal, and exact-N completed scorecard and bodyless result submission. Creator browsers are only shown a noncompetitive preview. Server first-attempt restoration is authoritative across reloads and conflicts. No public issuer, Discover, comparisons/leaderboard, account identity or abuse policy is activated; the production flag is not set by this PR. Scope: `tasks/plans/custom-lineup-v2-responsive-gameplay-ui.md`.
+
+## Verified Custom v2 browser transport checkpoint
+
+PR #415 merged as `0c301b92b02d701a3467f241da279cec6bd7fe95`; exact-head review and CI passed, exact-main push CI passed, production Vercel READY, canonical routes healthy, unpublished Custom page 404 and no production error/fatal logs in inspected window. No runtime config change or public activation.
+
 ## Custom Lineup v2 headless browser protocol (October 15)
 
 PR #415 stages a strict, version-2-only browser transport for the already merged, default-disabled four Custom Lineup attempt POST routes. It supports immutable **1–10**-AB opening/restoration, creator preview, completed-game readback, one-at-a-time signed hints, all atomic wrong/correct/give-up outcomes, and bodyless first-result admission. Server cookies, tokens, terminal scoring, and progression remain authoritative; the client validates incoming public payload shapes, enforces exact at-bat length/future-hint constraints, uses the preexisting canonical terminal reveal decoder and never invents an attempt ID or score. This does **not** add a React page or change the production feature flag. Scope: `tasks/plans/custom-lineup-v2-browser-transport.md`.

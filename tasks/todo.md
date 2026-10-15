@@ -13,8 +13,9 @@ Last updated: 2026-10-15
 - [x] PR #412 private v2 same-browser active/completed attempt restoration, signed ledger and earned-only hints; merged as `70ec78e`, exact-main CI passed and production READY.
 - [x] PR #413 private, server-only noncreator completed first-attempt admission, portable points-v4 exact-N scoring, and installed atomic v2 RPC; merged `6e632f9`, exact-main CI passed and production READY; no public route.
 - [x] PR #414 default-disabled same-origin v2 attempt transport for bootstrap, hint, unified resolve and bodyless submission; merged `a2f0c0d`, exact-main CI passed, Vercel production READY; flag off.
-- [ ] Current PR #415: strict 1–10 client DTO and headless transport against existing gated v2 API, no public/UI activation.
-- [ ] Next: responsive Custom Lineup player UI, then creator issuance flow and abuse/privacy controlled activation, followed by score/comparison display.
+- [x] PR #415 strict 1–10 v2 client DTO and headless transport against the gated v2 API, merged `0c301b9`, exact-main CI passed and production READY; no public activation.
+- [ ] Current PR #416: responsive, server-flag-gated `/custom/{v2-id}` gameplay UI, scorecard, restore, correct/wrong/hint/give-up and bodyless completed admission. Flag remains OFF.
+- [ ] Next: creator issuance workflow, abuse/privacy and explicit controlled activation, then score/comparison reads, discovery and sharing.
 
 ## Current Custom v2 database checkpoint (October 14)
 
