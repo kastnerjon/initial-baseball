@@ -1,13 +1,21 @@
 # Daily web API specification
 
 Status: Living source of truth  
-Last updated: 2026-10-09
+Last updated: 2026-10-15
 
 Daily routes are thin Next.js adapters over canonical baseball data, engine rules, and portable Daily logic. Answer-integrity rationale is in `docs/decisions/0001-daily-answer-integrity.md`.
 
 ## General rules
 
 Every route must validate input, return sanitized data, keep rules in their owning packages, avoid per-action persistence, and never reflect secrets or hidden answer data in errors. Public search returns canonical player IDs. Daily resolution may compare a syntactically canonical submitted ID directly with the server-only canonical answer ID; legacy/noncanonical IDs cross the canonical redirect boundary before comparison.
+
+## Disabled-by-default Custom Lineup v2 gameplay transport (PR #414)
+
+Four `POST /api/custom-lineup/challenges/{puzzleId}/attempt/{bootstrap|hint|resolve|submit}` transports are staged behind server-only `CUSTOM_LINEUP_V2_GAMEPLAY_TRANSPORT_ENABLED=true`. The default/unset/other values respond `404 {"error":"not_found"}` **before** challenge validation, cookie inspection, storage or server service access. This PR does not set or activate the flag and does not provide a public Custom Lineup UI or creator issuance flow.
+
+Every enabled POST requires exact same-origin `Origin` (including rejecting a missing Origin: 403), no query string (400), v2-only opaque challenge UUID, and `Cache-Control: private, no-store; Vary: Cookie`. Nonempty `bootstrap` or `submit` body is rejected (400). JSON hint/resolve request bodies are UTF-8 byte-bounded by the existing Custom Nine reader (4096 bytes) and strict keyed-shape validators: hint accepts only `{progressionToken}`, resolve accepts only `{progressionToken,submittedPlayerId}` with canonical player ID or `{progressionToken,giveUp:true}`. The token is signed by the separate v2 domain. Neither an attempt ID nor player ID from a browser can be used as a result authority.
+
+The bootstrap service returns sanitized `attemptMode:'reserved'` with redacted current-batter hints and completed-at-bat outcomes, setting a scoped HttpOnly browser cookie only on first reservation; `creator_preview` is noncompetitive. Already completed games return `attemptMode:'completed'` and saved outcomes/timestamp/revision **without** a live progression token. Hints produce only one successfully CAS-committed hint/token/revision. **All** guesses, including correct, incorrect, third strike and give-up, are sent to the **same** v2 atomic guess service; failed-CAS requests cannot reveal a tested answer. Terminal results expose only the canonical reveal view-model whitelist after successful mutation, plus next-batter redacted hint bundle when applicable. Bodyless submit calls the installed service-role-only atomic completed admission service, returning only `{status:'created'|'existing'}` (201/200). Errors return sanitized 400/403/404/409/503. The legacy Daily/Classic and Custom Nine v1 routes are untouched.
 
 ## Guarded Custom Nine comparison read (disabled by default)
 

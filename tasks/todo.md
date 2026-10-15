@@ -2,7 +2,7 @@
 
 
 Status: Active ordered implementation plan  
-Last updated: 2026-10-11
+Last updated: 2026-10-15
 
 ## Current Custom v2 signed-attempt milestone (October 14)
 
@@ -11,8 +11,9 @@ Last updated: 2026-10-11
 - [x] Private v2 signed hint revelation with existing attempt ledger CAS (no public route).
 - [x] PR #411 private v2 atomic wrong-guess/terminal CAS (correct, third strike, give-up, N=1–10), merged as `a7533c9`, exact-main CI successful, production READY; no public route.
 - [x] PR #412 private v2 same-browser active/completed attempt restoration, signed ledger and earned-only hints; merged as `70ec78e`, exact-main CI passed and production READY.
-- [ ] Current PR #413: server-only authenticated noncreator completed first-attempt admission, portable points-v4 exact-N scoring and installed atomic v2 RPC; no public route.
-- [ ] Next: responsive creator/game API and UI, score/comparison display, abuse/privacy review before public release.
+- [x] PR #413 private, server-only noncreator completed first-attempt admission, portable points-v4 exact-N scoring, and installed atomic v2 RPC; merged `6e632f9`, exact-main CI passed and production READY; no public route.
+- [ ] Current PR #414: disabled-by-default same-origin Custom v2 attempt transport for bootstrap, hint, unified resolve and bodyless admission. No public activation.
+- [ ] Next: reusable strict 1–10 browser transport and responsive Custom Lineup player UI; then creator workflow, abuse/privacy and explicit controlled release, scoring/comparison display.
 
 ## Current Custom v2 database checkpoint (October 14)
 
