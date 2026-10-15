@@ -66,7 +66,7 @@ function setup(n:number){
    primaryPosition:'RF'} as Player:null),
   getReveal:vi.fn((id:string)=>({playerId:id,displayName:'SECRET_ANSWER',playerType:'hitter',
     career:{primaryPosition:'RF',firstSeason:2001,lastSeason:2002,teamIds:[],
-      batting:null,pitching:null,advanced:null},seasons:[]} as CanonicalPlayerReveal)),
+      batting:null,pitching:null,advanced:null},seasons:[]} as unknown as CanonicalPlayerReveal)),
   getSecret:vi.fn(()=>SECRET)};
  const service=createServerCustomLineupV2IncorrectGuessService({dependencies});
  return {service,repository,dependencies,read:()=>saved,replace:(v:CustomNineAttemptState|null)=>{saved=v;}};

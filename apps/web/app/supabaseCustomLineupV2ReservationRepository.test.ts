@@ -124,7 +124,7 @@ describe('v2 exact-N terminal CAS',()=>{
     {from:()=>({update})} as unknown as SupabaseClient,n);
   const expected=decodeCustomLineupV2AttemptRow(data,n);
   const fact={pitchNumber:1,initials:'P1',outcome:'HR' as const,
-    hintsRevealed:0,wrongGuesses:0,resolution:'correct' as const};
+    hintsRevealed:0 as const,wrongGuesses:0 as const,resolution:'correct' as const};
   const pair=await Promise.all([
     repo.advanceTerminal(expected,'signed.correct.successor',fact),
     repo.advanceTerminal(expected,'signed.alternate.successor',fact),
