@@ -136,7 +136,7 @@ describe('Custom Lineup v2 strict browser transport, 1–10',()=>{
 
   it('blocks forged out-of-range requests before network and rejects missing next-batter bundle',async()=>{
     const s=setup([]);
-    for(const [pitch,n] of [[0,1],[11,10],[1,0],[1,11]]){
+    for(const [pitch,n] of [[0,1],[11,10],[1,0],[1,11]] as const){
       await expect(s.client.resolve(ID,'signed',pitch,n,{giveUp:true}))
         .rejects.toMatchObject({kind:'invalid_request'});
     }
