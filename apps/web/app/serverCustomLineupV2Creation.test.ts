@@ -32,9 +32,9 @@ function clueSnapshot(ids: readonly string[]) {
 
 function setup() {
   const client = {} as SupabaseClient;
-  const insertIfAbsent = vi.fn(async (challenge: CustomLineupIssuedChallenge) => ({
-    status: 'inserted' as const, challenge,
-  }));
+  const insertIfAbsent = vi.fn(async (challenge: CustomLineupIssuedChallenge): Promise<{
+    status: 'inserted' | 'existing'; challenge: CustomLineupIssuedChallenge;
+  }> => ({ status: 'inserted', challenge }));
   const dependencies = {
     createSupabaseClient: vi.fn(() => client),
     createRepository: vi.fn(() => ({ insertIfAbsent })),
