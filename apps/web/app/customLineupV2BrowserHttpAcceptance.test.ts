@@ -142,7 +142,8 @@ function controlledSession(n: number, creator = false) {
     headers.set('origin', 'https://example.test');
     if (cookie) headers.set('cookie', cookie);
     const request = new Request('https://example.test' + path, {
-      method: init.method, headers, body: init.body,
+      method: 'POST', headers,
+      ...(init.body === undefined || init.body === null ? {} : { body: init.body }),
     });
     const reply = await handleCustomLineupV2GameplayPost(
       request, { params: Promise.resolve({ puzzleId: ID }) }, action,
