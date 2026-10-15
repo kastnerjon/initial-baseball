@@ -5,6 +5,10 @@ Last updated: 2026-10-11
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
+## Custom v2 private nonterminal incorrect-guess CAS (October 14)
+
+The staged Web-only service accepts only canonical player IDs and signed challenge-scoped v2 browser credentials, excludes creator browsers, validates the immutable 1–10 challenge and exact saved progression/revision, and evaluates guesses with the existing Daily runtime. Only first and second incorrect guesses commit by the existing atomic token-and-revision CAS. Correct guesses and third strikes return `terminal_pending` without revealing an answer, terminal receipt, future clues or new token. There is no public route, continuation, completed admission or competition activation. No SQL migrations were added.
+
 ## Custom v2 private signed hint CAS (October 14)
 
 The staged Web-only v2 service authorizes each hint using the challenge-scoped v2 browser credential, rejects creator browsers, validates immutable N and signed current progression, checks the saved ledger token and prior revision/facts, and atomically advances one reveal depth. A stale/concurrent request returns conflict without leaking an uncommitted clue. The response includes only the newly authorized current-batter hint and signed successor. There is **no public v2 HTTP route, UI, guess/terminal continuation, result admission or competition activation**; progressed browser bootstrap still returns `continuation_pending`. No SQL migrations were added.
