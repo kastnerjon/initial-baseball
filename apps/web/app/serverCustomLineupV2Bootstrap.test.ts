@@ -1,4 +1,3 @@
-import { createHmac } from 'node:crypto';
 import {
   createCustomLineupIssuedChallenge, createCustomLineupIssuedClueSnapshot,
 } from '@initial-baseball/daily';
@@ -64,6 +63,12 @@ describe('private Custom Lineup v2 signed opening',()=>{
     for(const privateValue of ['PRIVATE_FUTURE_CLUE','PRIVATE_ANSWER_NAME','canonicalPlayerIds','clueSnapshot',...IDS])
       expect(json).not.toContain(privateValue);
     expect(deps.resolvePlayer).toHaveBeenCalledTimes(n);
+  });
+  it('rejects short master secrets before deriving the isolated signing key',()=>{
+    for(const secret of ['', 'guessable', 'x'.repeat(31)]) {
+      expect(()=>createCustomLineupV2ProgressionTokens(secret)).toThrow('at least 32');
+    }
+    expect(()=>createCustomLineupV2ProgressionTokens('x'.repeat(32))).not.toThrow();
   });
   it('isolates v2 pitch ten from Daily and old Custom Nine tokens',()=>{
     const v2=createCustomLineupV2ProgressionTokens(SECRET);

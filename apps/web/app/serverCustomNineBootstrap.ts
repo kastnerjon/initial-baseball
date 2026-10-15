@@ -5,7 +5,6 @@ import {
   validateCustomNinePuzzleId,
   type CustomNineIssuedChallenge,
   type CustomNineIssuedChallengeRepository,
-  type PermanentDailyIssuedClueSnapshot,
 } from '@initial-baseball/daily';
 import {
   DEFAULT_DAILY_HINT_CONFIG,

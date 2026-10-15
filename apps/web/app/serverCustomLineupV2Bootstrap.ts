@@ -18,6 +18,9 @@ const SIGNING_DOMAIN = 'initial-baseball:custom-lineup-v2:progression:v1';
 
 /** An independent signing domain and explicit 10-pitch limit; Daily/v1 stay nine-only. */
 export function createCustomLineupV2ProgressionTokens(secret: string) {
+  // Check master-key strength before HMAC domain derivation: the resulting
+  // digest length says nothing about the entropy of the input secret.
+  if (secret.length < 32) throw new Error('Custom Lineup progression secret must be at least 32 characters.');
   const domainSecret = createHmac('sha256', secret).update(SIGNING_DOMAIN).digest('hex');
   return createDailyProgressionTokenCodec(domainSecret, 10);
 }
