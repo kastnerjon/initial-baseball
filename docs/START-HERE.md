@@ -5,6 +5,10 @@ Last updated: 2026-10-11
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
+## Custom v2 private signed hint CAS (October 14)
+
+The staged Web-only v2 service authorizes each hint using the challenge-scoped v2 browser credential, rejects creator browsers, validates immutable N and signed current progression, checks the saved ledger token and prior revision/facts, and atomically advances one reveal depth. A stale/concurrent request returns conflict without leaking an uncommitted clue. The response includes only the newly authorized current-batter hint and signed successor. There is **no public v2 HTTP route, UI, guess/terminal continuation, result admission or competition activation**; progressed browser bootstrap still returns `continuation_pending`. No SQL migrations were added.
+
 ## Custom v2 first-attempt ledger reservation (October 14)
 
 This Web-only stage adds v2-domain browser and creator cookies, an immutable challenge-length-checked first-attempt Supabase reservation, and a private redacted opening service. It intentionally adds no public v2 API, UI, hint/resolve mutation or competitive admission. Saved progressed attempts cannot be opened by this stage: it fails closed until a separate signed continuation service is reviewed. The original v1 attempt and Daily/Classic gameplay remain independent.

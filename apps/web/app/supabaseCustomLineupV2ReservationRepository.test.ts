@@ -65,3 +65,44 @@ describe('Custom v2 private attempt reservation and exact N row decoder',()=>{
      .rejects.toMatchObject({kind:'query',message:expect.not.stringContaining('PRIVATE_KEY')});
  });
 });
+
+
+describe('v2 hint-only revision CAS', () => {
+ it.each([1,5,9,10])('serializes one hint winner for N=%i without changing terminal facts',async n=>{
+  const data=row(),key=KEY;
+  let current={...data};
+  const update=vi.fn((payload:Record<string,unknown>)=>{
+    const predicates:Record<string,unknown>={};
+    const builder={
+      eq:(k:string,v:unknown)=>{predicates[k]=v;return builder;},
+      select:()=>({maybeSingle:async()=>{
+        if(!Object.entries(predicates).every(([k,v])=>(current as Record<string,unknown>)[k]===v))
+          return {data:null,error:null};
+        current={...current,...payload};
+        return {data:{...current},error:null};
+      }}),
+    };return builder;
+  });
+  const client={from:()=>({update})} as unknown as SupabaseClient;
+  const repo=createSupabaseCustomLineupV2ReservationRepository(client,n);
+  const expected=decodeCustomLineupV2AttemptRow(data,n);
+  const results=await Promise.all([
+    repo.advanceHint(expected,'next.signed.token'),repo.advanceHint(expected,'other.signed.token'),
+  ]);
+  expect(results.map(result=>result.status).sort()).toEqual(['advanced','conflict']);
+  expect(current.revision).toBe(1);
+  expect(current.status).toBe('active');
+  expect(current.terminal_at_bats).toEqual([]);
+  expect(current.completed_at).toBeNull();
+  expect(update).toHaveBeenCalledTimes(2);
+ });
+ it('rejects invalid expected state and identical successor before provider writes',async()=>{
+  const update=vi.fn();
+  const repo=createSupabaseCustomLineupV2ReservationRepository(
+    {from:()=>({update})} as unknown as SupabaseClient,5);
+  const expected=decodeCustomLineupV2AttemptRow(row(),5);
+  await expect(repo.advanceHint(expected,TOKEN)).rejects.toMatchObject({kind:'invalid-row'});
+  await expect(repo.advanceHint({...expected,revision:-1},'next')).rejects.toMatchObject({kind:'invalid-row'});
+  expect(update).not.toHaveBeenCalled();
+ });
+});
