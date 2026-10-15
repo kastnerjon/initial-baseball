@@ -48,12 +48,17 @@ function oneHintStep(before: DailyProgressionClaims, after: DailyProgressionClai
     && !after.completed;
 }
 
-/** Verify immutable preceding facts and the exact number of successful ledger mutations.
- * This guards future pitch transitions without granting a resume or resolve path here.
+/** Verify immutable terminal facts and exact durable mutation count for active
+ * and completed v2 attempts. Does not authorize a mutation or expose clues.
  */
 export function validCustomLineupV2SavedHistory(state: CustomNineAttemptState, claims: DailyProgressionClaims,
   challenge: CustomLineupIssuedChallenge) {
-  if (state.status !== 'active' || state.terminalAtBats.length !== claims.pitchNumber - 1) return false;
+  const n = challenge.canonicalPlayerIds.length;
+  const completed = state.status === 'completed';
+  if (claims.completed !== completed
+    || state.terminalAtBats.length !== (completed ? n : claims.pitchNumber - 1)
+    || (completed && (claims.pitchNumber !== n || claims.revealCount !== 0
+      || claims.strikeCount !== 0))) return false;
   let priorRevisions = 0;
   let outs = 0;
   for (const [i, fact] of state.terminalAtBats.entries()) {
@@ -68,7 +73,8 @@ export function validCustomLineupV2SavedHistory(state: CustomNineAttemptState, c
     if (fact.outcome === 'K') outs += 1;
   }
   return claims.outCount === Math.min(3, outs)
-    && state.revision === priorRevisions + claims.revealCount + claims.strikeCount;
+    && state.revision === priorRevisions
+      + (completed ? 0 : claims.revealCount + claims.strikeCount);
 }
 
 /** Private v2 only. No HTTP consumer or result admission. One signed hint per durable CAS. */

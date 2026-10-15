@@ -9,8 +9,9 @@ Last updated: 2026-10-11
 - [x] #407 private exact-challenge 1–10 comparison RPCs merged/hosted as `20261014235929` and rollback-tested; #408 signed v2 opening merged/production READY as `c41ad7df`.
 - [x] Private v2 first-attempt reservation: separate v2/creator cookies, immutable N-backed ledger row, fail-closed resume. Does not add public routes or score admission.
 - [x] Private v2 signed hint revelation with existing attempt ledger CAS (no public route).
-- [ ] PR #411 private v2 atomic wrong-guess/terminal CAS (correct, third strike, give-up, N=1–10), under review; no public route.
-- [ ] Subsequently: complete-game restore and atomic result admission, responsive creator/game UI, abuse/privacy review before public release.
+- [x] PR #411 private v2 atomic wrong-guess/terminal CAS (correct, third strike, give-up, N=1–10), merged as `a7533c9`, exact-main CI successful, production READY; no public route.
+- [ ] Current: private same-browser v2 active/completed attempt restoration, already-revealed hints, signed state/history consistency, no public HTTP route.
+- [ ] Next: atomic completed-result admission, responsive creator/game UI, abuse/privacy review before public release.
 
 ## Current Custom v2 database checkpoint (October 14)
 
