@@ -51,7 +51,7 @@ function oneHintStep(before: DailyProgressionClaims, after: DailyProgressionClai
 /** Verify immutable preceding facts and the exact number of successful ledger mutations.
  * This guards future pitch transitions without granting a resume or resolve path here.
  */
-function validSavedHistory(state: CustomNineAttemptState, claims: DailyProgressionClaims,
+export function validCustomLineupV2SavedHistory(state: CustomNineAttemptState, claims: DailyProgressionClaims,
   challenge: CustomLineupIssuedChallenge) {
   if (state.status !== 'active' || state.terminalAtBats.length !== claims.pitchNumber - 1) return false;
   let priorRevisions = 0;
@@ -111,7 +111,7 @@ export function createServerCustomLineupV2AttemptHintService({
       if (state === null) return { kind: 'invalid_credential' };
       if (state.status === 'completed') return { kind: 'completed' };
       if (state.currentProgressionToken !== expectedToken) return { kind: 'conflict' };
-      if (!validSavedHistory(state, before, challenge)) return { kind: 'invalid_progression' };
+      if (!validCustomLineupV2SavedHistory(state, before, challenge)) return { kind: 'invalid_progression' };
 
       // The frozen challenge is server-only. Only the newly authorized clue is returned.
       const puzzle = materializeCustomNineSessionPuzzle(challenge, dependencies.resolvePlayer);

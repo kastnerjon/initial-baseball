@@ -5,6 +5,10 @@ Last updated: 2026-10-11
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
+## Custom v2 private atomic guess/terminal CAS (October 14)
+
+PR #411 stages one Web-only guess authority for 1–10 Custom Lineup v2: first and second wrong guesses use nonterminal token/revision CAS; correct answers, third strikes, and explicit give-ups atomically append immutable terminal facts and advance or complete exactly N batters. Every branch must win the same persisted revision before returning its result, closing the concurrent correct-answer oracle discovered in independent review. Future clues remain redacted. No public route, saved continuation/read, competition result admission or activation. No SQL migration.
+
 ## Custom v2 private signed hint CAS (October 14)
 
 The staged Web-only v2 service authorizes each hint using the challenge-scoped v2 browser credential, rejects creator browsers, validates immutable N and signed current progression, checks the saved ledger token and prior revision/facts, and atomically advances one reveal depth. A stale/concurrent request returns conflict without leaking an uncommitted clue. The response includes only the newly authorized current-batter hint and signed successor. There is **no public v2 HTTP route, UI, guess/terminal continuation, result admission or competition activation**; progressed browser bootstrap still returns `continuation_pending`. No SQL migrations were added.
