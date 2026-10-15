@@ -64,9 +64,9 @@ function controlledSession(n: number, creator = false) {
   const isCreator = (header: string | null) =>
     creatorMarker.inspect(header, ID) === 'creator';
   const token = () => 'signed-' + revision;
-  const activeBundle = (): Opening['hintBundle'] => ({
+  const activeBundle = () => ({
     pitchNumber: facts.length + 1, revealedCount: hintDepth as 0 | 1,
-    hints: hintDepth ? [{ slot: 1 as const, ...HINT }] : [], checkpoints: [],
+    hints: hintDepth ? [{ slot: 1 as const, ...HINT }] : [], checkpoints: [] as never[],
   });
   const open = (): Opening => ({
     puzzleId: ID, rulesetVersion: 'points-v4', atBats,
@@ -107,7 +107,7 @@ function controlledSession(n: number, creator = false) {
     if (!correct) strikes++;
     revision++;
     if (!correct && strikes < 3 && guess.giveUp !== true) {
-      return { kind: 'incorrect', strikeCount: strikes, revision,
+      return { kind: 'incorrect', strikeCount: strikes as 1 | 2, revision,
         progressionToken: token() };
     }
     const strikeout = !correct;
