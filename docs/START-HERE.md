@@ -5,13 +5,21 @@ Last updated: 2026-10-11
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
+## Custom v2 private completed-result admission (October 15)
+
+PR #413 stages the private server-only completed-first-attempt admission bridge for immutable 1–10-player Custom Lineup v2. It verifies challenge-scoped noncreator browser credentials, exact signed v2 completed progression and ledger mutation history, then computes the points-v4 per-batter awards and 4 × N summary from the existing portable engine. The server-only adapter calls the **already installed, service-role-only** `admit_custom_lineup_v2_completed_attempt` RPC, which atomically creates one completed-game row and N matching at-bat result rows, with exact-retry idempotence and conflicting-retry rejection. The older nine-only Daily completed-result validator remains unchanged. No new migration, public v2 HTTP route, UI, result/read switch, Discover page or competition activation is introduced. See `tasks/plans/custom-lineup-v2-private-completed-admission.md`.
+
+## Verified October 15 Custom v2 restoration checkpoint
+
+PR #412 merged as `70ec78e5a95c9c9d50c20cbe398f5adbe855ddf1`; exact-main push CI passed, Vercel production was READY, canonical `/`, `/archive`, `/classic` responded 200, no production error/fatal logs were seen in the inspected window and no PRs remained open. Hosted Custom v2 issued, attempt and completed populations were still empty. This private continuation is **not** a public Custom Lineup launch.
+
 ## Custom v2 signed saved-attempt continuation (October 15)
 
 The private Web-only v2 attempt bootstrap can rehydrate an existing browser's exact saved 1–10-at-bat progression instead of restarting it. An authorized same-challenge browser credential and creator exclusion are preserved; the saved v2-domain token, immutable frozen challenge, historical terminal facts, out count and exact CAS revision must all agree. Only previously revealed hints for the current batter are projected, without future clues, checkpoint tokens, hidden canonical player IDs, or creating another attempt. Completed attempts return immutable terminal history and metadata with no live progression token. There is **no public HTTP route, UI, competition admission, or activation**. Scope/negative fixtures in `tasks/plans/custom-lineup-v2-saved-continuation.md`.
 
 ## Custom v2 private atomic guess/terminal CAS (October 14)
 
-PR #411 stages one Web-only guess authority for 1–10 Custom Lineup v2: first and second wrong guesses use nonterminal token/revision CAS; correct answers, third strikes, and explicit give-ups atomically append immutable terminal facts and advance or complete exactly N batters. Every branch must win the same persisted revision before returning its result, closing the concurrent correct-answer oracle discovered in independent review. Future clues remain redacted. No public route, saved continuation/read, competition result admission or activation. No SQL migration.
+PR #411 (merged as `a7533c9`) stages one Web-only guess authority for 1–10 Custom Lineup v2: first and second wrong guesses use nonterminal token/revision CAS; correct answers, third strikes, and explicit give-ups atomically append immutable terminal facts and advance or complete exactly N batters. Every branch must win the same persisted revision before returning its result, closing the concurrent correct-answer oracle discovered in independent review. Future clues remain redacted. No public route, saved continuation/read, competition result admission or activation. No SQL migration.
 
 ## Custom v2 private signed hint CAS (October 14)
 
