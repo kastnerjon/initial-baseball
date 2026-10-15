@@ -1,4 +1,4 @@
-import type { JSX } from 'react';
+import React, { type JSX } from 'react';
 import { getDailyAtBatPoints } from '@initial-baseball/engine';
 import type { DailyCompletedAtBat } from '@initial-baseball/shared';
 import type { CustomLineupV2PublicAtBat } from '../customLineupV2BrowserTransport';

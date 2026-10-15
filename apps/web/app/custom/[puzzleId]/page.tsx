@@ -1,4 +1,4 @@
-import type { JSX } from 'react';
+import React, { type JSX } from 'react';
 import { notFound } from 'next/navigation';
 import { validateCustomLineupPuzzleId } from '@initial-baseball/daily';
 import { isCustomLineupV2GameplayTransportEnabled } from '../../serverCustomLineupV2GameplayHttp';

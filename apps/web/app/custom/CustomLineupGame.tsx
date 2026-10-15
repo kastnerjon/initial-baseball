@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState, type JSX } from 'react';
+import React, { useCallback, useEffect, useMemo, useState, type JSX } from 'react';
 import {
   createCustomLineupV2BrowserTransport, CustomLineupV2TransportError,
   type CustomLineupV2BrowserState, type CustomLineupV2BrowserResolution,
