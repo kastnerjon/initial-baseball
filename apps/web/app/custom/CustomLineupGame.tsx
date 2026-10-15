@@ -245,7 +245,10 @@ export function CustomLineupGame({ puzzleId }: { puzzleId: string }): JSX.Elemen
                     <input id="custom-lineup-search" type="search" autoComplete="off"
                       placeholder="Search by full name" value={query} disabled={busy}
                       onChange={event => {
-                        setQuery(event.target.value); setSelected(null);
+                        if ('value' in event.target && typeof event.target.value === 'string') {
+                          setQuery(event.target.value);
+                          setSelected(null);
+                        }
                       }} />
                     {selected !== null ? <button type="button" onClick={() => {
                       setSelected(null); setQuery(''); setSuggestions([]);
