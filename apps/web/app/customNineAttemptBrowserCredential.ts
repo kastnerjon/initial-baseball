@@ -1,9 +1,16 @@
 import 'server-only';
 import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
-import { validateCustomNinePuzzleId } from '@initial-baseball/daily';
+import { validateCustomNinePuzzleId, validateCustomLineupPuzzleId } from '@initial-baseball/daily';
 
-const COOKIE_PREFIX = 'ib-custom-nine-attempt-v1-';
-const DOMAIN = 'initial-baseball:custom-nine:attempt-browser:v1';
+type Scope = Readonly<{ prefix: string; domain: string; path: string; validate: (id: string) => void }>;
+const V1: Scope = {
+  prefix: 'ib-custom-nine-attempt-v1-', domain: 'initial-baseball:custom-nine:attempt-browser:v1',
+  path: '/api/custom-nine/challenges/', validate: validateCustomNinePuzzleId,
+};
+const V2: Scope = {
+  prefix: 'ib-custom-lineup-v2-attempt-', domain: 'initial-baseball:custom-lineup:attempt-browser:v2',
+  path: '/api/custom-lineup/challenges/', validate: validateCustomLineupPuzzleId,
+};
 const MAX_AGE = 365 * 24 * 60 * 60;
 type Inspection =
   | { kind: 'absent' }
@@ -12,20 +19,29 @@ type Inspection =
 
 /** Anonymous challenge-only bearer credential; deleting cookies defeats continuity. */
 export function createCustomNineAttemptBrowserCredential(secret: string) {
-  if (secret.trim().length < 32) throw new Error('Custom Nine attempt signing unavailable.');
+  return createScopedCredential(secret, V1);
+}
+
+/** Opaque, separately signed v2 browser identity. No public route is enabled. */
+export function createCustomLineupV2AttemptBrowserCredential(secret: string) {
+  return createScopedCredential(secret, V2);
+}
+
+function createScopedCredential(secret: string, scope: Scope) {
+  if (secret.trim().length < 32) throw new Error('Custom attempt signing unavailable.');
 
   function name(puzzleId: string): string {
-    validateCustomNinePuzzleId(puzzleId);
-    return COOKIE_PREFIX + puzzleId;
+    scope.validate(puzzleId);
+    return scope.prefix + puzzleId;
   }
   function signature(puzzleId: string, nonce: string): string {
     return createHmac('sha256', secret)
-      .update(DOMAIN + ':cookie\n' + puzzleId + '\n' + nonce)
+      .update(scope.domain + ':cookie\n' + puzzleId + '\n' + nonce)
       .digest('base64url');
   }
   function digest(puzzleId: string, nonce: string): string {
     return createHash('sha256')
-      .update(DOMAIN + ':digest\n' + puzzleId + '\n' + nonce)
+      .update(scope.domain + ':digest\n' + puzzleId + '\n' + nonce)
       .digest('hex');
   }
 
@@ -38,7 +54,7 @@ export function createCustomNineAttemptBrowserCredential(secret: string) {
       return {
         browserKeyDigest: digest(puzzleId, nonce),
         setCookie: cookieName + '=' + token
-          + '; Path=/api/custom-nine/challenges/' + puzzleId
+          + '; Path=' + scope.path + puzzleId
           + '; Max-Age=' + MAX_AGE + '; HttpOnly; SameSite=Strict'
           + (secure ? '; Secure' : ''),
       };

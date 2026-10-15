@@ -4,10 +4,16 @@
 Status: Active ordered implementation plan  
 Last updated: 2026-10-11
 
+## Current Custom v2 signed-attempt milestone (October 14)
+
+- [x] #407 private exact-challenge 1–10 comparison RPCs merged/hosted as `20261014235929` and rollback-tested; #408 signed v2 opening merged/production READY as `c41ad7df`.
+- [ ] Private v2 first-attempt reservation: separate v2/creator cookies, immutable N-backed ledger row, fail-closed resume. Does not add public routes or score admission.
+- [ ] Subsequently: v2 hint/guess/terminal CAS, complete-game restore and atomic admission, responsive creator/game UI, abuse/privacy review before public release.
+
 ## Current Custom v2 database checkpoint (October 14)
 
 - [x] Installed and transaction-rollback-verified #401/#403/#404/#405 (hosted versions `20261014225941`, `20261014230002`, `20261014230010`, `20261014231406`); all four Custom v2 private tables have zero real records. Reconcile hosted migration-history versions before any `db push`.
-- [ ] Next bounded database change: v2 schema-2 private exact-challenge 1–10 AB/completed comparison RPCs, guarded by trusted server-side own-result identity. Then separate signed runtime/playable UI work; do not enable public competition.
+- [x] #407: private v2 exact-challenge 1–10 AB/completed comparison RPCs, hosted and verified. Signed runtime/playable UI and public competition remain separate.
 - [x] PR #406: Daily points-v4 wrong-guess history deployed in production without changing Classic.
 
 ## Approved Daily Five / Custom 1–10 migration (October 13)
