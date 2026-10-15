@@ -106,3 +106,33 @@ describe('v2 hint-only revision CAS', () => {
   expect(update).not.toHaveBeenCalled();
  });
 });
+
+describe('v2 exact-N terminal CAS',()=>{
+ it.each([1,5,9,10])('appends exactly one terminal fact for N=%i; completes only at N',async n=>{
+  const data=row();
+  let current={...data} as Record<string,unknown>;
+  const update=vi.fn((payload:Record<string,unknown>)=>{
+   const predicates:Record<string,unknown>={};
+   const builder={eq:(k:string,v:unknown)=>{predicates[k]=v;return builder;},
+    select:()=>({maybeSingle:async()=>{
+     if(!Object.entries(predicates).every(([k,v])=>current[k]===v))
+       return {data:null,error:null};
+     current={...current,...payload};return {data:{...current},error:null};
+    }})};return builder;
+  });
+  const repo=createSupabaseCustomLineupV2ReservationRepository(
+    {from:()=>({update})} as unknown as SupabaseClient,n);
+  const expected=decodeCustomLineupV2AttemptRow(data,n);
+  const fact={pitchNumber:1,initials:'P1',outcome:'HR' as const,
+    hintsRevealed:0,wrongGuesses:0,resolution:'correct' as const};
+  const pair=await Promise.all([
+    repo.advanceTerminal(expected,'signed.correct.successor',fact),
+    repo.advanceTerminal(expected,'signed.alternate.successor',fact),
+  ]);
+  expect(pair.map(x=>x.status).sort()).toEqual(['advanced','conflict']);
+  expect(current.revision).toBe(1);
+  expect((current.terminal_at_bats as unknown[]).length).toBe(1);
+  expect(current.status).toBe(n===1?'completed':'active');
+  expect(current.completed_at===null).toBe(n!==1);
+ });
+});

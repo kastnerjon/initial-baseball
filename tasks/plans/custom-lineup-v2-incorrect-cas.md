@@ -1,14 +1,17 @@
-# Custom Lineup v2 private incorrect-guess CAS
+# Custom Lineup v2 private atomic guess + terminal CAS
 
-Status: staged Web-only service (October 14, 2026).
+Status: revised in PR #411 after independent P1 review (October 14, 2026).
 
 ## Scope contract
-- Goal: commit only the first and second wrong guess for the active v2 batter, with exactly one durable signed strike/revision transition.
-- Owner: apps/web private server service, using existing Daily runtime and v2 repository CAS.
-- In scope: immutable-N and challenge-scoped cookie checks, v2 token domain, exact durable revision/history, canonical player ID input, stale/concurrent conflicts, terminal-pending responses, N=1/5/9/10 tests and documentation.
-- Out of scope: third-strike append, correct-answer or give-up terminal transition, next batter, restoration, HTTP/UI, comparison, admission, migration and v1/Daily/Classic/Archive changes.
-- Acceptance: two signed strikes, no third mutation, no answer oracle disclosure, concurrency one winner, creator/tamper/foreign token rejection, exact-head CI, READY preview, independent review.
-- Stop: if safe transition requires terminal admission or new persistence model, split it into the next PR.
+- Goal: authorize every guess (including correct, third strike, and give-up) via exactly one durable signed CAS transition; no concurrent answer oracle.
+- Owner: apps/web private server composition and existing v2 Supabase ledger adapter. Pure evaluation remains in the existing Daily runtime/engine.
+- In scope: v2 browser/creator checks, immutable N, signed saved-state history, canonical IDs, first/second wrong guess CAS, terminal fact append/next-batter and exact-N completion, redacted hints, stale/concurrent mixed-guess adversarial tests, docs.
+- Out of scope: HTTP exposure, responsive UI, persisted restore, atomic competition result admission, leaderboard, migrations, v1/Daily/Classic/Archive rules.
+- Acceptance: all branches win the same revision CAS before returning a distinguishable result; one winner across mixed candidate fanout; no failed-CAS answer; N=1/5/9/10, replay, history, completed N, creator exclusion; exact-head CI, READY preview, review, merge verification.
+- Stop: new schema or result-admission semantics go to separate PRs. No public consumer before abuse/privacy review.
 
-## Architecture
-Reuses the v2 hint-only token+revision CAS for nonterminal strikes because it changes exactly the same two persisted fields. Shares the previous-history integrity validator with v2 hints. The immutable frozen challenge remains server-side. No public API and no new database schema.
+## Architecture and review disposition
+Independent review of original nonterminal-only PR identified a P1 concurrent answer oracle: correct guesses returned terminal_pending without CAS, while incorrect guesses consumed strikes. Terminal and nonterminal guess authority cannot be split safely. Revised scope joins both branches behind one persisted revision/token predicate, using existing repository CAS and Daily runtime. No new data store, route or rules. Web owns auth and persistence, engine owns outcomes. No Custom v2 external client yet.
+
+## Next
+Persisted restoration; atomic completed-game population admission; player UI; controlled release.

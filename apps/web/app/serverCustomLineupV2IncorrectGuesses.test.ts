@@ -1,6 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import { createCustomLineupIssuedChallenge, createCustomLineupIssuedClueSnapshot } from '@initial-baseball/daily';
 import type { Player } from '@initial-baseball/shared';
+import type { CanonicalPlayerReveal } from '@initial-baseball/baseball-data/runtime';
 vi.mock('server-only', () => ({}));
 import { createCustomLineupV2AttemptBrowserCredential } from './customNineAttemptBrowserCredential';
 import { createCustomLineupV2CreatorBrowserMarker } from './customNineCreatorBrowser';
@@ -47,11 +48,26 @@ function setup(n:number){
    saved={...saved,revision:saved.revision+1,currentProgressionToken:next};
    return {status:'advanced' as const,state:{...saved}};
   }),
+  advanceTerminal:vi.fn(async(expected:CustomNineAttemptState,next:string,
+    fact:import('@initial-baseball/shared').DailyCompletedAtBat)=>{
+   if(!saved||saved.revision!==expected.revision||saved.currentProgressionToken!==expected.currentProgressionToken
+     || saved.status!=='active')return {status:'conflict' as const};
+   const terminalAtBats=[...saved.terminalAtBats,fact];
+   const completed=terminalAtBats.length===n;
+   saved={...saved,revision:saved.revision+1,currentProgressionToken:next,
+     terminalAtBats,status:completed?'completed':'active',
+     completedAt:completed?'2026-10-14T21:00:00Z':null};
+   return {status:'advanced' as const,state:{...saved}};
+  }),
  };
  const dependencies={readChallenge:vi.fn(async()=>challenge(n)),repository:vi.fn(()=>repository),
   resolvePlayer:vi.fn((id:string):Player|null=>IDS.includes(id)?{
    id,fullName:'SECRET_ANSWER',displayName:'SECRET_ANSWER',primaryRole:'hitter',
-   primaryPosition:'RF'} as Player:null),getSecret:vi.fn(()=>SECRET)};
+   primaryPosition:'RF'} as Player:null),
+  getReveal:vi.fn((id:string)=>({playerId:id,displayName:'SECRET_ANSWER',playerType:'hitter',
+    career:{primaryPosition:'RF',firstSeason:2001,lastSeason:2002,teamIds:[],
+      batting:null,pitching:null,advanced:null},seasons:[]} as CanonicalPlayerReveal)),
+  getSecret:vi.fn(()=>SECRET)};
  const service=createServerCustomLineupV2IncorrectGuessService({dependencies});
  return {service,repository,dependencies,read:()=>saved,replace:(v:CustomNineAttemptState|null)=>{saved=v;}};
 }
@@ -72,14 +88,22 @@ describe('private Custom Lineup v2 nonterminal incorrect CAS',()=>{
    expect(JSON.stringify(result)).not.toContain('PRIVATE_HINT');
    token=result.progressionToken;
   }
-  expect(await s.service.attempt(ID,COOKIE,guess(token))).toEqual({kind:'terminal_pending'});
+  const third=await s.service.attempt(ID,COOKIE,guess(token));
+  expect(third).toMatchObject({kind:'terminal',result:{kind:'strikeout',outcome:'K'},completed:n===1});
   expect(s.repository.advanceHint).toHaveBeenCalledTimes(2);
-  expect(s.read()?.terminalAtBats).toEqual([]);
+  expect(s.repository.advanceTerminal).toHaveBeenCalledTimes(1);
+  expect(s.read()?.terminalAtBats).toMatchObject([{resolution:'strikeout',wrongGuesses:3}]);
  });
- it('blocks correct guesses without saving a revision or leaking an answer',async()=>{
+ it('atomically commits correct guesses, withholds future hints and rejects replay',async()=>{
   const s=setup(10);
-  expect(await s.service.attempt(ID,COOKIE,guess(INITIAL,IDS[0]))).toEqual({kind:'terminal_pending'});
+  const result=await s.service.attempt(ID,COOKIE,guess(INITIAL,IDS[0]));
+  expect(result).toMatchObject({kind:'terminal',result:{kind:'correct'},revision:1,completed:false,
+    hintBundle:{hints:[],checkpoints:[]}});
   expect(s.repository.advanceHint).not.toHaveBeenCalled();
+  expect(s.repository.advanceTerminal).toHaveBeenCalledTimes(1);
+  expect(s.read()?.terminalAtBats).toMatchObject([{resolution:'correct',wrongGuesses:0}]);
+  expect(await s.service.attempt(ID,COOKIE,guess(INITIAL,IDS[0]))).toEqual({kind:'conflict'});
+  expect(JSON.stringify(result)).not.toContain('PRIVATE_FUTURE_HINT');
  });
  it('enforces single-winner CAS and rejects stale tokens',async()=>{
   const s=setup(5);
@@ -89,13 +113,42 @@ describe('private Custom Lineup v2 nonterminal incorrect CAS',()=>{
   expect(await s.service.attempt(ID,COOKIE,guess(INITIAL))).toEqual({kind:'conflict'});
   expect(s.read()?.revision).toBe(1);
  });
+ it('serializes mixed correct/incorrect fanout without identifying an uncommitted answer',async()=>{
+  const s=setup(10);
+  const attempts=await Promise.all([
+    ...Array.from({length:8},(_,i)=>s.service.attempt(ID,COOKIE,guess(INITIAL,IDS[i+1]))),
+    s.service.attempt(ID,COOKIE,guess(INITIAL,IDS[0])),
+  ]);
+  expect(attempts.filter(x=>x.kind!=='conflict')).toHaveLength(1);
+  const winner=attempts.find(x=>x.kind!=='conflict');
+  expect(['terminal','incorrect']).toContain(winner?.kind);
+  expect(s.read()?.revision).toBe(1);
+ });
+ it('persists give-up terminal with existing wrong guesses, exactly once',async()=>{
+  const s=setup(5);
+  const wrong=await s.service.attempt(ID,COOKIE,guess(INITIAL));
+  expect(wrong.kind).toBe('incorrect');
+  if(wrong.kind!=='incorrect')throw Error('missing strike');
+  const result=await s.service.attempt(ID,COOKIE,{progressionToken:wrong.progressionToken,giveUp:true});
+  expect(result).toMatchObject({kind:'terminal',result:{kind:'strikeout'},revision:2});
+  expect(s.read()?.terminalAtBats).toMatchObject([{resolution:'give_up',wrongGuesses:1}]);
+  expect(await s.service.attempt(ID,COOKIE,{progressionToken:wrong.progressionToken,giveUp:true}))
+    .toEqual({kind:'conflict'});
+ });
+ it('completes N=1 challenge at the first terminal and rejects further mutation',async()=>{
+  const s=setup(1);
+  expect(await s.service.attempt(ID,COOKIE,guess(INITIAL,IDS[0])))
+    .toMatchObject({kind:'terminal',completed:true,hintBundle:null});
+  expect(s.read()?.status).toBe('completed');
+  expect(await s.service.attempt(ID,COOKIE,guess(INITIAL,IDS[0]))).toEqual({kind:'completed'});
+ });
  it('rejects creator, missing, malformed, cross-domain tokens and extra input',async()=>{
   const s=setup(9);
   const creator=createCustomLineupV2CreatorBrowserMarker(SECRET).creatorCookie(ID,'https://test.example').split(';')[0]!;
   for(const c of [null,creator,COOKIE+'; '+creator,COOKIE+'; '+COOKIE])
    expect(await s.service.attempt(ID,c,guess(INITIAL))).toEqual({kind:'invalid_credential'});
   for(const request of [null,{},guess(''),guess(INITIAL,'not-canonical'),
-    {...guess(INITIAL),giveUp:true},guess(createCustomNineProgressionTokens(SECRET).sign(CLAIMS))])
+    {...guess(INITIAL),giveUp:false},guess(createCustomNineProgressionTokens(SECRET).sign(CLAIMS))])
    expect(await s.service.attempt(ID,COOKIE,request)).toEqual({kind:'invalid_progression'});
   expect(s.repository.advanceHint).not.toHaveBeenCalled();
  });
@@ -113,5 +166,10 @@ describe('private Custom Lineup v2 nonterminal incorrect CAS',()=>{
   const s=setup(10);
   s.repository.advanceHint.mockResolvedValueOnce({status:'conflict'} as never);
   expect(await s.service.attempt(ID,COOKIE,guess(INITIAL))).toEqual({kind:'conflict'});
+ });
+ it('never exposes an uncommitted answer on terminal CAS conflict',async()=>{
+  const s=setup(9);
+  s.repository.advanceTerminal.mockResolvedValueOnce({status:'conflict'} as never);
+  expect(await s.service.attempt(ID,COOKIE,guess(INITIAL,IDS[0]))).toEqual({kind:'conflict'});
  });
 });

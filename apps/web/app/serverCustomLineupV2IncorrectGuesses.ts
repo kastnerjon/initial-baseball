@@ -1,6 +1,8 @@
 import 'server-only';
 import { cloneCustomLineupIssuedChallenge, validateCustomLineupPuzzleId, type CustomLineupIssuedChallenge } from '@initial-baseball/daily';
-import type { Player } from '@initial-baseball/shared';
+import { normalizeDailyTerminalAtBat } from '@initial-baseball/engine';
+import type { DailyCompletedAtBat, Player } from '@initial-baseball/shared';
+import type { CanonicalPlayerReveal } from '@initial-baseball/baseball-data/runtime';
 import { createCustomLineupV2AttemptBrowserCredential } from './customNineAttemptBrowserCredential';
 import { createCustomLineupV2CreatorBrowserMarker } from './customNineCreatorBrowser';
 import type { CustomNineAttemptState } from './customNineAttemptRowCodec';
@@ -8,6 +10,8 @@ import { DailyProgressionTokenError, type DailyProgressionClaims } from './daily
 import { getDailyProgressionSecret } from './dailyProgressionSecret';
 import { DailyRuntimeRequestError, createDailyRuntimeService } from './dailyRuntimeService';
 import { getCanonicalDailyPlayer } from './canonicalDailyPlayerLookup';
+import { getCanonicalRevealReader } from './serverCanonicalData';
+import { projectCustomNineAttemptHintBundle } from './serverCustomNineAttemptBootstrap';
 import { CUSTOM_NINE_SESSION_DATE, materializeCustomNineSessionPuzzle } from './serverCustomNineBootstrap';
 import { createCustomLineupV2ProgressionTokens } from './serverCustomLineupV2Bootstrap';
 import { validCustomLineupV2SavedHistory } from './serverCustomLineupV2AttemptHints';
@@ -15,24 +19,30 @@ import { createServerSupabaseClient } from './serverSupabaseClient';
 import { createSupabaseCustomLineupV2IssuedReader } from './supabaseCustomLineupV2IssuedReader';
 import { createSupabaseCustomLineupV2ReservationRepository } from './supabaseCustomLineupV2ReservationRepository';
 
-type Repository = Pick<ReturnType<typeof createSupabaseCustomLineupV2ReservationRepository>, 'getByKey' | 'advanceHint'>;
+type Repository = Pick<ReturnType<typeof createSupabaseCustomLineupV2ReservationRepository>, 'getByKey' | 'advanceHint' | 'advanceTerminal'>;
 type Dependencies = {
   readChallenge: (id: string, env: Record<string, string | undefined>) => Promise<CustomLineupIssuedChallenge | null>;
   repository: (env: Record<string, string | undefined>, n: number) => Repository;
   resolvePlayer: (id: string) => Player | null;
+  getReveal: (id: string) => CanonicalPlayerReveal;
   getSecret: (env: Record<string, string | undefined>) => string;
 };
 const DEFAULT: Dependencies = {
   readChallenge: (id, env) => createSupabaseCustomLineupV2IssuedReader(createServerSupabaseClient(env)).getById(id),
   repository: (env, n) => createSupabaseCustomLineupV2ReservationRepository(createServerSupabaseClient(env), n),
   resolvePlayer: getCanonicalDailyPlayer,
+  getReveal: id => getCanonicalRevealReader().getReveal(id),
   getSecret: getDailyProgressionSecret,
 };
 
 export type CustomLineupV2IncorrectGuessResult =
   | { kind: 'not_found' | 'invalid_credential' | 'invalid_progression' | 'completed' | 'conflict' }
-  | { kind: 'terminal_pending' }
-  | { kind: 'incorrect'; progressionToken: string; revision: number; strikeCount: 1 | 2 };
+  | { kind: 'incorrect'; progressionToken: string; revision: number; strikeCount: 1 | 2 }
+  | { kind: 'terminal';
+      result: Extract<Awaited<ReturnType<ReturnType<typeof createDailyRuntimeService>['resolveAtBat']>>['result'], { kind: 'correct' | 'strikeout' }>;
+      reveal: NonNullable<Awaited<ReturnType<ReturnType<typeof createDailyRuntimeService>['resolveAtBat']>>['reveal']>;
+      progressionToken: string; revision: number; completed: boolean;
+      hintBundle: ReturnType<typeof projectCustomNineAttemptHintBundle> | null };
 
 function validScope(claims: DailyProgressionClaims, id: string, n: number): boolean {
   return claims.version === 1 && claims.rulesetVersion === 'points-v4'
@@ -48,8 +58,9 @@ function exactIncorrectStep(before: DailyProgressionClaims, after: DailyProgress
     && !after.completed;
 }
 
-/** Private, nonterminal incorrect guesses only. Correct guesses and third strikes
- * are deliberately withheld until terminal ledger admission is available.
+/** Private, single-authority v2 resolution: no public HTTP consumer.
+ * Every accepted guess must win the persisted revision CAS before any
+ * distinguishable outcome is returned, including correct and terminal guesses.
  */
 export function createServerCustomLineupV2IncorrectGuessService({
   environment = process.env, dependencies = DEFAULT,
@@ -62,11 +73,16 @@ export function createServerCustomLineupV2IncorrectGuessService({
       catch { return { kind: 'not_found' }; }
       if (!request || typeof request !== 'object' || Array.isArray(request)) return { kind: 'invalid_progression' };
       const input = request as Record<string, unknown>;
+      const giveUp = input.giveUp === true;
       if (typeof input.progressionToken !== 'string' || !input.progressionToken
         || input.progressionToken.length > 4096
-        || typeof input.submittedPlayerId !== 'string'
-        || !/^ibp_[0-9a-f]{20}$/.test(input.submittedPlayerId)
-        || Object.keys(input).some(key => key !== 'progressionToken' && key !== 'submittedPlayerId')) {
+        || (giveUp
+          ? input.submittedPlayerId !== undefined
+          : typeof input.submittedPlayerId !== 'string'
+            || !/^ibp_[0-9a-f]{20}$/.test(input.submittedPlayerId))
+        || Object.keys(input).some(key => key !== 'progressionToken'
+          && key !== 'submittedPlayerId' && key !== 'giveUp')
+        || (input.giveUp !== undefined && !giveUp)) {
         return { kind: 'invalid_progression' };
       }
 
@@ -97,7 +113,6 @@ export function createServerCustomLineupV2IncorrectGuessService({
       if (state.status === 'completed') return { kind: 'completed' };
       if (state.currentProgressionToken !== token) return { kind: 'conflict' };
       if (!validCustomLineupV2SavedHistory(state, before, challenge)) return { kind: 'invalid_progression' };
-      if (before.strikeCount === 2) return { kind: 'terminal_pending' };
 
       const puzzle = materializeCustomNineSessionPuzzle(challenge, dependencies.resolvePlayer);
       const runtime = createDailyRuntimeService({
@@ -107,34 +122,75 @@ export function createServerCustomLineupV2IncorrectGuessService({
         },
         progressionTokens: tokens,
         resolveLegacyPlayerId: () => { throw new DailyRuntimeRequestError('Legacy IDs unsupported.'); },
-        getCanonicalReveal: () => { throw new Error('Terminal reveal unsupported.'); },
+        getCanonicalReveal: id => {
+          const reveal = dependencies.getReveal(id);
+          if (reveal.playerId !== id) throw new Error('Custom v2 reveal identity mismatch.');
+          return reveal;
+        },
       });
       let resolved: Awaited<ReturnType<typeof runtime.resolveAtBat>>;
       try {
         resolved = await runtime.resolveAtBat({
-          progressionToken: token, submittedPlayerId: input.submittedPlayerId,
+          progressionToken: token,
+          ...(giveUp ? { giveUp: true } : { submittedPlayerId: input.submittedPlayerId as string }),
         });
       } catch (error) {
         if (error instanceof DailyRuntimeRequestError) return { kind: 'invalid_progression' };
-        // Correct guesses and strikeouts cannot disclose their answers here.
-        // A missing terminal reveal is an expected private pending transition.
-        if (error instanceof Error && error.message === 'Terminal reveal unsupported.') {
-          return { kind: 'terminal_pending' };
-        }
         throw error;
       }
-      if (resolved.result.kind !== 'incorrect') return { kind: 'terminal_pending' };
       let after: DailyProgressionClaims;
       try { after = tokens.verify(resolved.progressionToken); }
-      catch { throw new Error('Invalid Custom v2 signed incorrect successor.'); }
-      if (!exactIncorrectStep(before, after) || resolved.result.strikeCount !== after.strikeCount) {
-        throw new Error('Invalid Custom v2 signed incorrect successor.');
+      catch { throw new Error('Invalid Custom v2 signed successor.'); }
+      if (resolved.result.kind === 'incorrect') {
+        if (giveUp || resolved.reveal !== null
+          || !exactIncorrectStep(before, after)
+          || resolved.result.strikeCount !== after.strikeCount) {
+          throw new Error('Invalid Custom v2 signed incorrect successor.');
+        }
+        const committed = await repository.advanceHint(state, resolved.progressionToken);
+        if (committed.status === 'conflict') return { kind: 'conflict' };
+        return {
+          kind: 'incorrect', progressionToken: committed.state.currentProgressionToken,
+          revision: committed.state.revision, strikeCount: after.strikeCount as 1 | 2,
+        };
       }
-      const committed = await repository.advanceHint(state, resolved.progressionToken);
+
+      const result = resolved.result;
+      const resolution: DailyCompletedAtBat['resolution'] = giveUp ? 'give_up'
+        : result.kind === 'correct' ? 'correct' : 'strikeout';
+      const final = before.pitchNumber === n;
+      const expectedOuts = Math.min(3, before.outCount + (result.kind === 'strikeout' ? 1 : 0));
+      const frozenPitch = challenge.clueSnapshot.pitches[before.pitchNumber - 1];
+      if (!frozenPitch || frozenPitch.pitchNumber !== before.pitchNumber
+        || after.version !== before.version || after.rulesetVersion !== before.rulesetVersion
+        || after.puzzleId !== before.puzzleId || after.puzzleDate !== before.puzzleDate
+        || after.pitchNumber !== (final ? before.pitchNumber : before.pitchNumber + 1)
+        || after.revealCount !== 0 || after.strikeCount !== 0
+        || after.outCount !== expectedOuts || after.completed !== final
+        || result.revealedCount !== before.revealCount
+        || resolved.reveal === null
+        || (final ? resolved.hintBundle !== null : resolved.hintBundle === null)
+        || (result.kind === 'strikeout' && (!giveUp && before.strikeCount !== 2))
+        || (result.kind === 'correct' && giveUp)) {
+        throw new Error('Invalid Custom v2 signed terminal successor.');
+      }
+      const fact: DailyCompletedAtBat = {
+        pitchNumber: before.pitchNumber, initials: frozenPitch.initials,
+        outcome: result.outcome, hintsRevealed: before.revealCount,
+        wrongGuesses: resolution === 'strikeout' ? 3 : before.strikeCount,
+        resolution,
+      };
+      if (!normalizeDailyTerminalAtBat(fact, {
+        pitchNumber: before.pitchNumber, initials: frozenPitch.initials,
+      }).ok) throw new Error('Invalid Custom v2 terminal fact.');
+      const committed = await repository.advanceTerminal(state, resolved.progressionToken, fact);
       if (committed.status === 'conflict') return { kind: 'conflict' };
       return {
-        kind: 'incorrect', progressionToken: committed.state.currentProgressionToken,
-        revision: committed.state.revision, strikeCount: after.strikeCount as 1 | 2,
+        kind: 'terminal', result, reveal: resolved.reveal,
+        progressionToken: committed.state.currentProgressionToken,
+        revision: committed.state.revision, completed: final,
+        hintBundle: resolved.hintBundle === null
+          ? null : projectCustomNineAttemptHintBundle(resolved.hintBundle),
       };
     },
   };
