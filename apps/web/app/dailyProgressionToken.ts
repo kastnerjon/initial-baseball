@@ -33,14 +33,17 @@ export class DailyProgressionTokenError extends Error {
   }
 }
 
-export function createDailyProgressionTokenCodec(secret: string): DailyProgressionTokenCodec {
+export function createDailyProgressionTokenCodec(
+  secret: string,
+  maximumPitchNumber: 9 | 10 = 9,
+): DailyProgressionTokenCodec {
   if (secret.length < MINIMUM_SECRET_LENGTH) {
     throw new Error(`Daily progression secret must be at least ${MINIMUM_SECRET_LENGTH} characters.`);
   }
 
   return {
     sign(claims) {
-      const validatedClaims = requireDailyProgressionClaims(claims);
+      const validatedClaims = requireDailyProgressionClaims(claims, maximumPitchNumber);
       const payload = encodeBase64Url(JSON.stringify(validatedClaims));
       const signingInput = `${TOKEN_PREFIX}.${payload}`;
       return `${signingInput}.${sign(signingInput, secret)}`;
@@ -63,7 +66,7 @@ export function createDailyProgressionTokenCodec(secret: string): DailyProgressi
       }
 
       try {
-        return requireDailyProgressionClaims(JSON.parse(decodeBase64Url(payload)) as unknown);
+        return requireDailyProgressionClaims(JSON.parse(decodeBase64Url(payload)) as unknown, maximumPitchNumber);
       } catch (error) {
         if (error instanceof DailyProgressionTokenError) {
           throw error;
@@ -74,7 +77,10 @@ export function createDailyProgressionTokenCodec(secret: string): DailyProgressi
   };
 }
 
-function requireDailyProgressionClaims(value: unknown): DailyProgressionClaims {
+function requireDailyProgressionClaims(
+  value: unknown,
+  maximumPitchNumber: 9 | 10,
+): DailyProgressionClaims {
   if (!isRecord(value)) {
     throw new DailyProgressionTokenError('Daily progression claims must be an object.');
   }
@@ -91,7 +97,7 @@ function requireDailyProgressionClaims(value: unknown): DailyProgressionClaims {
     || claims.puzzleId.length > 200
     || typeof claims.puzzleDate !== 'string'
     || !DAILY_DATE_PATTERN.test(claims.puzzleDate)
-    || !isRangeInteger(claims.pitchNumber, 1, 9)
+    || !isRangeInteger(claims.pitchNumber, 1, maximumPitchNumber)
     || !isRangeInteger(claims.revealCount, 0, 4)
     || !isRangeInteger(claims.strikeCount, 0, 2)
     || !isRangeInteger(claims.outCount, 0, 3)

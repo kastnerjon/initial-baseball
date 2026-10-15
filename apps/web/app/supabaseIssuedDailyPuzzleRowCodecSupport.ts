@@ -1,6 +1,7 @@
 import {
   PERMANENT_DAILY_ISSUED_CLUE_SNAPSHOT_SCHEMA_VERSION,
   createPermanentDailyIssuedClueSnapshot,
+  createCustomLineupIssuedClueSnapshot,
   type PermanentDailyIssuedHintLayoutSlot,
 } from '@initial-baseball/daily';
 
@@ -16,7 +17,10 @@ export class SupabasePermanentDailyIssuedPuzzleRepositoryError extends Error {
   }
 }
 
-export function decodeIssuedDailyClueSnapshot(value: unknown) {
+export function decodeIssuedDailyClueSnapshot(
+  value: unknown,
+  policy: 'legacy-nine' | 'custom-v2' = 'legacy-nine',
+) {
   const snapshot = record(value, 'clue_snapshot');
   if (snapshot.schemaVersion !== PERMANENT_DAILY_ISSUED_CLUE_SNAPSHOT_SCHEMA_VERSION) {
     invalid(
@@ -67,7 +71,7 @@ export function decodeIssuedDailyClueSnapshot(value: unknown) {
     });
 
   try {
-    return createPermanentDailyIssuedClueSnapshot({ hintLayout, pitches });
+    return (policy === 'custom-v2' ? createCustomLineupIssuedClueSnapshot : createPermanentDailyIssuedClueSnapshot)({ hintLayout, pitches });
   } catch (error) {
     return invalid(
       error instanceof Error ? error.message : 'Persisted Daily clue snapshot is invalid.',

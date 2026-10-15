@@ -102,7 +102,7 @@ export function createServerCustomNineBootstrapService({
 }
 
 export function materializeCustomNineSessionPuzzle(
-  challenge: CustomNineIssuedChallenge,
+  challenge: Pick<CustomNineIssuedChallenge, 'puzzleId' | 'canonicalPlayerIds' | 'clueSnapshot'>,
   resolvePlayer: (id: string) => Player | null,
 ): DailyPuzzle {
   const hints = challenge.clueSnapshot.hintLayout.map(slot => {

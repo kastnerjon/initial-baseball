@@ -5,11 +5,15 @@ Last updated: 2026-10-11
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
+## Custom v2 signed-bootstrap read predecessor (October 14)
+
+The next bounded Web-only step is a private schema-v2 issued-challenge reader plus an isolated 1–10-pitch signed opening bootstrap. This prepares opening/hints for later server-monotonic attempt integration but does **not** add a route, public switch, creator cookie, accepted result, or competitive permission. Legacy Daily/Classic and Custom Nine v1 token limits remain exactly nine by default, and signed v2 tokens are cryptographically domain-separated. Hint and terminal authorization remain future separate PRs.
+
 ## Verified October 14 hosted Custom v2 checkpoint
 
 The four staged Custom v2 SQL predecessors #401/#403/#404/#405 are **installed and transaction-rollback verified** in hosted Supabase (tool-assigned versions `20261014225941`, `20261014230002`, `20261014230010`, `20261014231406`). The #404 rollback test was successfully run by the owner in Supabase SQL Editor; the other fixtures passed in the authorized connection. Hosted Custom v2 tables remain empty; atomic admission exists privately. Do not blindly replay committed migration filename versions via `supabase db push` because the hosted ledger uses different timestamps. PR #406 wrong-guess history is merged and READY in production at `2c4aeb0b`, with green push CI and no open PRs. No Custom v2 gameplay consumer, HTTP result admission, public creation/competition or publication is activated.
 
-Next isolated prerequisite: private Custom v2 exact-challenge comparison read RPCs, followed by versioned signed runtime and playable Custom UI in separate PRs.
+PR #407 private Custom v2 exact-challenge comparison functions are merged, installed as hosted version `20261014235929` (repo filename version differs), rollback-tested and production READY at main `30bce9ac`. The next stage is versioned signed runtime and playable Custom UI in separate PRs.
 
 ## Approved next migration — Daily Five and variable-length Custom (October 13, 2026)
 
