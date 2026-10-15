@@ -11,7 +11,7 @@ The new bounded UI PR stages `/admin/custom-lineup` behind existing Basic admin 
 
 ## Verified administrator-only v2 creation transport PR #419
 
-PR #419 merged as `5592ff4ec8933c839aa7b883bfb0778cb70a0cd7`, after exact-head CI passed, Vercel Preview READY and independent Codex review reported no major findings. Admin-only issuance reuses v2 private #418 and separate challenge-scoped creator-exclusion marker, without changing gameplay activation. Postmerge CI and production were running at initial check; update this paragraph only after exact-main completion is verified.
+PR #419 merged as `5592ff4ec8933c839aa7b883bfb0778cb70a0cd7`, after exact-head CI passed, Vercel Preview READY and independent Codex review reported no major findings. Admin-only issuance reuses v2 private #418 and separate challenge-scoped creator-exclusion marker, without changing gameplay activation. Main push CI SUCCESS (workflow 38819803296), production Vercel deployment `dpl_GrjFvfGDfFFZGspjsNc7eq5MahBH` READY on exact main SHA, Supabase ACTIVE_HEALTHY, no error/fatal production runtime logs in checked interval and no other open PRs at the #419 checkpoint. Live HTTP route probing remains unverified; gameplay flags were not enabled.
 
 ## Custom Lineup v2 admin-only creation transport — implemented
 

@@ -3,7 +3,7 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { DailyAdminAuthorizationError, requireDailyAdminPrincipal } from '../../dailyAdminAuthorization';
 import { DAILY_ADMIN_AUTH_PATH } from '../../dailyAdminPaths';
-import { CustomNineCreatorView } from './CustomNineCreatorView';
+import { CustomNineCreatorView } from '../custom-nine/CustomNineCreatorView';
 import '../custom-nine/custom-nine-creator.css';
 
 export const dynamic = 'force-dynamic';
