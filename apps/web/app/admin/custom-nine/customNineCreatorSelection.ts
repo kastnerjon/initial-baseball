@@ -6,8 +6,9 @@ export type ChosenCustomNinePlayer = Readonly<{
 
 export function appendCustomNinePlayer(
   players: readonly ChosenCustomNinePlayer[], candidate: ChosenCustomNinePlayer,
+  maximumPlayers = 9,
 ): readonly ChosenCustomNinePlayer[] {
-  if (players.length >= 9 || !candidate.playerId.trim()
+  if (players.length >= maximumPlayers || !candidate.playerId.trim()
     || players.some(player => player.playerId === candidate.playerId)) return players;
   return [...players, candidate];
 }
@@ -29,8 +30,17 @@ export function moveCustomNinePlayer(
 }
 
 export function isCompleteCustomNineSelection(players: readonly ChosenCustomNinePlayer[]): boolean {
-  return players.length === 9 && players.every(player => player.playerId.trim().length > 0)
-    && new Set(players.map(player => player.playerId)).size === 9;
+  return isValidUniqueSelection(players) && players.length === 9;
+}
+
+/** Only the new v2 creator accepts 1–10 ordered, distinct canonical selections. */
+export function isCompleteCustomLineupSelection(players: readonly ChosenCustomNinePlayer[]): boolean {
+  return players.length >= 1 && players.length <= 10 && isValidUniqueSelection(players);
+}
+
+function isValidUniqueSelection(players: readonly ChosenCustomNinePlayer[]): boolean {
+  return players.every(player => player.playerId.trim().length > 0)
+    && new Set(players.map(player => player.playerId)).size === players.length;
 }
 
 /** An issued immutable challenge stays visible until the creator explicitly starts again. */

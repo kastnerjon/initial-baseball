@@ -5,9 +5,17 @@ Last updated: 2026-10-15
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
-## Custom Lineup v2 admin-only creation transport — current PR
+## Custom Lineup v2 responsive administrator creator — current PR
 
-The bounded Web API PR adds a Basic-authenticated same-origin v2 POST route that delegates to the already deployed private issuer, checks creator HMAC configuration before any write, sets the separate challenge-scoped creator-exclusion cookie, and returns only an opaque challenge ID. It does **not** add public creation or turn on gameplay. Scope: `tasks/plans/custom-lineup-v2-admin-issuer-route.md`. Next: admin-only responsive v2 1–10 creator interface, separate E2E/mobile/privacy checks and explicit activation decision.
+The new bounded UI PR stages `/admin/custom-lineup` behind existing Basic admin authorization. It reuses the legacy Custom Nine creator component and styles with an explicit v2 mode: select 1–10 distinct canonical players, reorder/remove, validate, and POST only IDs to #419 admin-authenticated v2 creation. Issued results contain an opaque ID only; no player links are advertised as publicly playable. The old nine-only administrator creator remains the default mode and unchanged in behavior. Scope: `tasks/plans/custom-lineup-v2-admin-creator-ui.md`; next: controlled game E2E tests and mobile visual QA, abuse/privacy controls, and separate release authorization. Public gameplay flags remain off.
+
+## Verified administrator-only v2 creation transport PR #419
+
+PR #419 merged as `5592ff4ec8933c839aa7b883bfb0778cb70a0cd7`, after exact-head CI passed, Vercel Preview READY and independent Codex review reported no major findings. Admin-only issuance reuses v2 private #418 and separate challenge-scoped creator-exclusion marker, without changing gameplay activation. Postmerge CI and production were running at initial check; update this paragraph only after exact-main completion is verified.
+
+## Custom Lineup v2 admin-only creation transport — implemented
+
+The merged Web API PR #419 adds a Basic-authenticated same-origin v2 POST route that delegates to the already deployed private issuer, checks creator HMAC configuration before any write, sets the separate challenge-scoped creator-exclusion cookie, and returns only an opaque challenge ID. It does **not** add public creation or turn on gameplay. Scope: `tasks/plans/custom-lineup-v2-admin-issuer-route.md`. Next: admin-only responsive v2 1–10 creator interface, separate E2E/mobile/privacy checks and explicit activation decision.
 
 ## Verified private Custom Lineup v2 issuance PR #418
 
@@ -15,7 +23,7 @@ PR #418 merged as `d7c855c41eb6d31b0bfe649bb24598c05cf55063`. Independent Codex 
 
 ## Custom Lineup v2 private issuer — implemented
 
-The next bounded Web-only PR stages private issuance of immutable schema-v2 challenges with 1–10 ordered distinct canonical players, default four-hint snapshots, service-role-only insert and sanitized opaque ID output. It adds **no HTTP creation route or public creator UI**, changes no environment flags and does not activate public Custom play. Existing v1 nine-player issuance remains unchanged. See `tasks/plans/custom-lineup-v2-private-issuance.md`. Next bounded work: admin-authorized v2 issuance route with creator exclusion marker; creator interface in a separate PR.
+The merged Web-only PR #418 stages private issuance of immutable schema-v2 challenges with 1–10 ordered distinct canonical players, default four-hint snapshots, service-role-only insert and sanitized opaque ID output. It adds **no HTTP creation route or public creator UI**, changes no environment flags and does not activate public Custom play. Existing v1 nine-player issuance remains unchanged. See `tasks/plans/custom-lineup-v2-private-issuance.md`. Next bounded work: admin-authorized v2 issuance route with creator exclusion marker; creator interface in a separate PR.
 
 ## Verified Daily Nine hint PR #417 checkpoint
 

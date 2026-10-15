@@ -1,12 +1,32 @@
 import { describe, expect, it } from 'vitest';
 import {
-  appendCustomNinePlayer, isCompleteCustomNineSelection, isCustomNineDraftEditable,
+  appendCustomNinePlayer, isCompleteCustomNineSelection, isCompleteCustomLineupSelection, isCustomNineDraftEditable,
   moveCustomNinePlayer, removeCustomNinePlayer,
 } from './customNineCreatorSelection';
 
 const player = (i: number) => ({ playerId: 'canonical-' + i, displayName: 'Player ' + i, label: 'Player ' + i });
 
 describe('Custom Nine ordered creator selection', () => {
+  it('supports ordered unique 1–10 v2 selections while preserving exact-nine v1', () => {
+    expect(isCompleteCustomLineupSelection([])).toBe(false);
+    for (const n of [1, 5, 9, 10]) {
+      const chosen = Array.from({ length: n }, (_, i) => player(i));
+      expect(isCompleteCustomLineupSelection(chosen)).toBe(true);
+      expect(isCompleteCustomNineSelection(chosen)).toBe(n === 9);
+    }
+    const allTen = Array.from({ length: 10 }, (_, i) => player(i));
+    expect(appendCustomNinePlayer(allTen, player(10), 10)).toBe(allTen);
+    expect(appendCustomNinePlayer(allTen, player(1), 10)).toBe(allTen);
+    expect(isCompleteCustomLineupSelection([...allTen, player(10)])).toBe(false);
+    expect(isCompleteCustomLineupSelection([player(0), player(0)])).toBe(false);
+    const selected = appendCustomNinePlayer([player(0)], player(1), 10);
+    expect(selected.map(p => p.playerId)).toEqual(['canonical-0', 'canonical-1']);
+    expect(moveCustomNinePlayer(selected, 1, -1).map(p => p.playerId))
+      .toEqual(['canonical-1', 'canonical-0']);
+    expect(removeCustomNinePlayer(selected, 'canonical-0').map(p => p.playerId))
+      .toEqual(['canonical-1']);
+  });
+
   it('locks a successfully issued challenge until explicit reset', () => {
     expect(isCustomNineDraftEditable(null, false)).toBe(true);
     expect(isCustomNineDraftEditable(null, true)).toBe(false);
