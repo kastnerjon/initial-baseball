@@ -103,6 +103,12 @@
   color: var(--ink);
   overflow-wrap: anywhere;
 }
+.hint-block-daily-nine .revealed-hint {
+  align-items: center;
+}
+.hint-block-daily-nine .revealed-hint .hint-label {
+  font-weight: 700;
+}
 .hint-empty {
   color: var(--ink-soft);
 }
@@ -203,7 +209,9 @@ input[type="text"]:focus {
   padding: 0;
   list-style: none;
 }
-.wrong-guess-history li {
+.wrong-guess-history li,
+.hint-block-daily-nine .hint-value {
+  min-width: 0;
   max-width: 100%;
   overflow-wrap: anywhere;
   padding: 5px 9px;

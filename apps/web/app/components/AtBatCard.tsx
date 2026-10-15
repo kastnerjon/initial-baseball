@@ -136,7 +136,7 @@ export function AtBatCard({
         <strong className="initials-value">{atBat.initials}</strong>
       </div>
 
-      <section className="hint-block" aria-label="Revealed hints">
+      <section className={rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION ? 'hint-block hint-block-daily-nine' : 'hint-block'} aria-label="Revealed hints">
         <div className="hint-heading">
           <span className="hint-label">Hints</span>
           <span className="hint-progress">{`${state.revealCount}/4 hints`}</span>
