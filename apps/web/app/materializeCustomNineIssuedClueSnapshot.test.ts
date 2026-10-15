@@ -6,13 +6,28 @@ vi.mock('./canonicalDailyPlayerLookup', () => ({ getCanonicalDailyPlayer: vi.fn(
 
 import { createDailyPuzzlePitch } from './dailyPuzzleAdapters';
 import { materializeCustomNineIssuedClueSnapshot } from './materializeCustomNineIssuedClueSnapshot';
-import { materializePermanentDailyIssuedClueSnapshot } from './materializePermanentDailyIssuedClueSnapshot';
+import { materializeCustomLineupV2IssuedClueSnapshot, materializePermanentDailyIssuedClueSnapshot } from './materializePermanentDailyIssuedClueSnapshot';
 
 const IDS = Array.from({ length: 9 }, (_, index) => `canonical-player-${index + 1}`);
 const PLAYERS = new Map(IDS.map((id, index) => [id, player(index + 1)] as const));
 const resolve = (id: string) => PLAYERS.get(id) ?? null;
 
 describe('Custom Nine canonical player and clue materialization', () => {
+  it.each([1, 5, 9, 10])('builds v2 %i-player snapshots using the existing Daily hint source', n => {
+    const ids = Array.from({ length: n }, (_, index) => 'canonical-player-' + (index + 1));
+    const v2Resolve = (id: string) => id === 'canonical-player-10' ? player(10) : resolve(id);
+    const hints = materializeCustomLineupV2IssuedClueSnapshot(ids, v2Resolve);
+    expect(hints.pitches.map(p => p.canonicalPlayerId)).toEqual(ids);
+    expect(hints.pitches.map(p => p.pitchNumber)).toEqual(ids.map((_, i) => i + 1));
+    expect(hints.pitches.every(p => p.hintValues.length === 4)).toBe(true);
+  });
+
+  it('rejects zero/eleven or unknown players during v2 materialization', () => {
+    expect(() => materializeCustomLineupV2IssuedClueSnapshot([], resolve)).toThrow();
+    expect(() => materializeCustomLineupV2IssuedClueSnapshot(Array(11).fill('duplicate'), resolve)).toThrow();
+    expect(() => materializeCustomLineupV2IssuedClueSnapshot(['absent-id'], resolve)).toThrow();
+  });
+
   it('freezes the exact four existing Daily hint categories and values in selected order', () => {
     const order = [...IDS].reverse();
     const resolvePlayer = vi.fn(resolve);
