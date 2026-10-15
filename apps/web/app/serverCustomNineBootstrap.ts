@@ -5,6 +5,7 @@ import {
   validateCustomNinePuzzleId,
   type CustomNineIssuedChallenge,
   type CustomNineIssuedChallengeRepository,
+  type PermanentDailyIssuedClueSnapshot,
 } from '@initial-baseball/daily';
 import {
   DEFAULT_DAILY_HINT_CONFIG,
@@ -102,7 +103,7 @@ export function createServerCustomNineBootstrapService({
 }
 
 export function materializeCustomNineSessionPuzzle(
-  challenge: CustomNineIssuedChallenge,
+  challenge: Pick<CustomNineIssuedChallenge, 'puzzleId' | 'canonicalPlayerIds' | 'clueSnapshot'>,
   resolvePlayer: (id: string) => Player | null,
 ): DailyPuzzle {
   const hints = challenge.clueSnapshot.hintLayout.map(slot => {
