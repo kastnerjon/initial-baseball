@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { createCustomLineupIssuedChallenge, createCustomLineupIssuedClueSnapshot } from '@initial-baseball/daily';
 import { createCustomLineupV2ProgressionTokens } from './serverCustomLineupV2Bootstrap';
 import { CUSTOM_NINE_SESSION_DATE, createCustomNineProgressionTokens } from './serverCustomNineBootstrap';
 import { createCustomLineupV2AttemptBrowserCredential, createCustomNineAttemptBrowserCredential } from './customNineAttemptBrowserCredential';
@@ -12,6 +13,26 @@ const OTHER = 'custom-lineup-v2-123e4567-e89b-42d3-a456-426614174001';
 const V1 = 'custom-nine-v1-123e4567-e89b-42d3-a456-426614174000';
 const SECRET = 'long-private-credential-and-progression-secret-for-v2-tests';
 const URL = 'https://example.test/api/custom-lineup/challenges/' + ID + '/attempt/bootstrap';
+const IDS = Array.from({length:10},(_,i)=>'ibp_'+(i+1).toString(16).padStart(20,'0'));
+const HINTS = [
+  {slot:1 as const,hintType:'main_decade' as const,displayLabel:'Decade'},
+  {slot:2 as const,hintType:'teams' as const,displayLabel:'Teams'},
+  {slot:3 as const,hintType:'position' as const,displayLabel:'Position'},
+  {slot:4 as const,hintType:'stats' as const,displayLabel:'Stats'},
+];
+function challenge(n:number){
+ return createCustomLineupIssuedChallenge({
+  puzzleId:ID, issuedAt:'2026-10-14T12:00:00Z',
+  canonicalPlayerIds:IDS.slice(0,n),
+  clueSnapshot:createCustomLineupIssuedClueSnapshot({
+   hintLayout:HINTS,
+   pitches:IDS.slice(0,n).map((canonicalPlayerId,i)=>({
+    pitchNumber:i+1,canonicalPlayerId,initials:'P'+(i+1),
+    hintValues:['DECADE_'+(i+1),'TEAMS_'+(i+1),'POSITION_'+(i+1),'STATS_'+(i+1)],
+   })),
+  }),
+ });
+}
 const tokens = createCustomLineupV2ProgressionTokens(SECRET);
 const OPEN = tokens.sign({ version:1, rulesetVersion:'points-v4', puzzleId:ID,
   puzzleDate:CUSTOM_NINE_SESSION_DATE, pitchNumber:1, revealCount:0,
@@ -51,6 +72,7 @@ function setup(n:number) {
   const deps={
     opening:vi.fn(async()=>opening(n)),
     repository:vi.fn((_env:Record<string,string|undefined>,_count:number)=>repo),
+    readChallenge:vi.fn(async()=>challenge(n)),
     getSecret:vi.fn(()=>SECRET),
   };
   return {map,repo,deps,service:createServerCustomLineupV2AttemptBootstrap({dependencies:deps})};
@@ -78,6 +100,7 @@ describe('private Custom v2 first-attempt reservation',()=>{
     expect(second.setCookie).toBeNull();
     expect(repo.getOrCreate).toHaveBeenCalledOnce();
     expect(repo.getByKey).toHaveBeenCalledOnce();
+    expect(deps.readChallenge).not.toHaveBeenCalled();
     expect(JSON.stringify(second)).not.toContain('SECRET_FIRST_HINT');
   });
   it('keeps v2 credentials and creator provenance isolated from v1 and other challenges',async()=>{
@@ -115,6 +138,7 @@ describe('private Custom v2 first-attempt reservation',()=>{
     expect(result.bootstrap.hintBundle.hints).toEqual([]);
     expect(repo.getOrCreate).not.toHaveBeenCalled();
     expect(deps.repository).not.toHaveBeenCalled();
+    expect(deps.readChallenge).not.toHaveBeenCalled();
     const forged=creator.split('=')[0]+'=garbage';
     expect(await service.bootstrap(ID,forged,URL)).toEqual({kind:'invalid_credential'});
     const cookie=createCustomLineupV2AttemptBrowserCredential(SECRET).issue(ID,URL).setCookie.split(';')[0]!;
@@ -132,15 +156,116 @@ describe('private Custom v2 first-attempt reservation',()=>{
     expect(await service.bootstrap(ID,cookie,URL)).toEqual({kind:'invalid_credential'});
     expect(repo.getOrCreate).toHaveBeenCalledOnce();
     map.set(digest,saved(digest,OPEN,'active',1));
-    expect(await service.bootstrap(ID,cookie,URL)).toEqual({kind:'continuation_pending'});
+    await expect(service.bootstrap(ID,cookie,URL)).rejects.toThrow('history mismatch');
     const advanced=tokens.sign({...tokens.verify(OPEN),pitchNumber:10});
     map.set(digest,saved(digest,advanced,'active',3));
-    expect(await service.bootstrap(ID,cookie,URL)).toEqual({kind:'continuation_pending'});
+    await expect(service.bootstrap(ID,cookie,URL)).rejects.toThrow('history mismatch');
     map.set(digest,saved(digest,createCustomNineProgressionTokens(SECRET).sign({
       ...tokens.verify(OPEN),puzzleId:V1,
     })));
     await expect(service.bootstrap(ID,cookie,URL)).rejects.toThrow();
     expect(repo.getOrCreate).toHaveBeenCalledOnce();
+  });
+  it.each([1,5,9,10])('resumes signed N=%i strikes and earned clues without resetting',async n=>{
+    const s=setup(n);
+    const first=await s.service.bootstrap(ID,null,URL);
+    if(first.kind!=='ready')throw Error('first attempt missing');
+    const cookie=first.setCookie!.split(';')[0]!;
+    const digest=[...s.map.keys()][0]!;
+    const progressed=tokens.sign({...tokens.verify(OPEN),revealCount:2,strikeCount:1});
+    s.map.set(digest,saved(digest,progressed,'active',3));
+    const restored=await s.service.bootstrap(ID,cookie,URL);
+    expect(restored).toMatchObject({
+      kind:'ready',setCookie:null,attemptProgress:{strikeCount:1,completedAtBats:[]},
+      bootstrap:{progressionToken:progressed,
+        hintBundle:{pitchNumber:1,revealedCount:2,checkpoints:[],
+          hints:[
+            {slot:1,hintLabel:'Decade',hintValue:'DECADE_1'},
+            {slot:2,hintLabel:'Teams',hintValue:'TEAMS_1'},
+          ]}},
+    });
+    expect(JSON.stringify(restored)).not.toContain('POSITION_1');
+    expect(JSON.stringify(restored)).not.toContain('STATS_1');
+    expect(JSON.stringify(restored)).not.toContain('DECADE_2');
+    expect(JSON.stringify(restored)).not.toContain('ibp_');
+    expect(s.repo.getOrCreate).toHaveBeenCalledOnce();
+    expect(s.deps.readChallenge).toHaveBeenCalledOnce();
+    expect(s.map.get(digest)?.revision).toBe(3);
+    const repeated=await s.service.bootstrap(ID,cookie,URL);
+    expect(repeated).toEqual(restored);
+  });
+  it.each([5,9,10])('resumes N=%i after completed batters, with precise active batter',async n=>{
+    const s=setup(n);
+    const first=await s.service.bootstrap(ID,null,URL);
+    if(first.kind!=='ready')throw Error('first attempt missing');
+    const cookie=first.setCookie!.split(';')[0]!;
+    const digest=[...s.map.keys()][0]!;
+    const terminalAtBats=[
+      {pitchNumber:1,initials:'P1',outcome:'HR' as const,hintsRevealed:0 as const,
+       wrongGuesses:0,resolution:'correct' as const},
+      {pitchNumber:2,initials:'P2',outcome:'K' as const,hintsRevealed:0 as const,
+       wrongGuesses:1,resolution:'give_up' as const},
+    ];
+    const token=tokens.sign({...tokens.verify(OPEN),pitchNumber:3,
+      revealCount:1,strikeCount:2,outCount:1});
+    s.map.set(digest,{...saved(digest,token,'active',6),terminalAtBats});
+    const restored=await s.service.bootstrap(ID,cookie,URL);
+    expect(restored).toMatchObject({kind:'ready',setCookie:null,
+      attemptProgress:{strikeCount:2,completedAtBats:terminalAtBats},
+      bootstrap:{progressionToken:token,
+        hintBundle:{pitchNumber:3,revealedCount:1,checkpoints:[],
+          hints:[{slot:1,hintValue:'DECADE_3'}]}}});
+    expect(JSON.stringify(restored)).not.toContain('TEAMS_3');
+    expect(JSON.stringify(restored)).not.toContain('DECADE_4');
+    expect(s.map.get(digest)?.revision).toBe(6);
+  });
+  it.each([1,5,9,10])('reads completed N=%i attempts without issuing live tokens or future clues',async n=>{
+    const s=setup(n);
+    const first=await s.service.bootstrap(ID,null,URL);
+    if(first.kind!=='ready')throw Error('first attempt missing');
+    const cookie=first.setCookie!.split(';')[0]!;
+    const digest=[...s.map.keys()][0]!;
+    const terminalAtBats=Array.from({length:n},(_,i)=>({
+      pitchNumber:i+1,initials:'P'+(i+1),outcome:'HR' as const,
+      hintsRevealed:0 as const,wrongGuesses:0,resolution:'correct' as const,
+    }));
+    const finished=tokens.sign({...tokens.verify(OPEN),pitchNumber:n,completed:true});
+    s.map.set(digest,{...saved(digest,finished,'completed',n),terminalAtBats});
+    const restored=await s.service.bootstrap(ID,cookie,URL);
+    expect(restored).toMatchObject({kind:'completed',revision:n,
+      completedAt:expect.any(String),completedAtBats:terminalAtBats});
+    if(restored.kind!=='completed')throw Error('completed not restored');
+    expect(restored.atBats).toHaveLength(n);
+    expect(JSON.stringify(restored)).not.toContain('progressionToken');
+    expect(JSON.stringify(restored)).not.toContain('hintBundle');
+    expect(JSON.stringify(restored)).not.toContain('ibp_');
+    expect(s.repo.getOrCreate).toHaveBeenCalledOnce();
+  });
+  it('fails closed for tampered past facts, forged counts and issued snapshot drift',async()=>{
+    const s=setup(5);
+    const initial=await s.service.bootstrap(ID,null,URL);
+    if(initial.kind!=='ready')throw Error('first attempt missing');
+    const cookie=initial.setCookie!.split(';')[0]!;
+    const digest=[...s.map.keys()][0]!;
+    const claims=tokens.verify(OPEN);
+    const token=tokens.sign({...claims,pitchNumber:2});
+    const fact={pitchNumber:1,initials:'P1',outcome:'HR' as const,
+      hintsRevealed:0 as const,wrongGuesses:0,resolution:'correct' as const};
+    const valid={...saved(digest,token,'active',1),terminalAtBats:[fact]};
+    for(const invalid of [
+      {...valid,revision:2},
+      {...valid,terminalAtBats:[{...fact,initials:'P2'}]},
+      {...valid,currentProgressionToken:tokens.sign({...claims,pitchNumber:2,outCount:1})},
+    ]){
+      s.map.set(digest,invalid);
+      await expect(s.service.bootstrap(ID,cookie,URL)).rejects.toThrow('history mismatch');
+    }
+    s.map.set(digest,valid);
+    s.deps.readChallenge.mockResolvedValueOnce(challenge(1) as never);
+    await expect(s.service.bootstrap(ID,cookie,URL)).rejects.toThrow('history mismatch');
+    s.deps.readChallenge.mockResolvedValueOnce(null as never);
+    await expect(s.service.bootstrap(ID,cookie,URL)).rejects.toThrow('challenge unavailable');
+    expect(s.repo.getOrCreate).toHaveBeenCalledOnce();
   });
   it('rejects invalid challenge and mismatched opening before any reservation',async()=>{
     const {service,deps,repo}=setup(5);
