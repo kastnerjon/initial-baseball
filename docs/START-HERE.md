@@ -5,6 +5,14 @@ Last updated: 2026-10-15
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
+## Custom Lineup v2 headless browser protocol (October 15)
+
+PR #415 stages a strict, version-2-only browser transport for the already merged, default-disabled four Custom Lineup attempt POST routes. It supports immutable **1–10**-AB opening/restoration, creator preview, completed-game readback, one-at-a-time signed hints, all atomic wrong/correct/give-up outcomes, and bodyless first-result admission. Server cookies, tokens, terminal scoring, and progression remain authoritative; the client validates incoming public payload shapes, enforces exact at-bat length/future-hint constraints, uses the preexisting canonical terminal reveal decoder and never invents an attempt ID or score. This does **not** add a React page or change the production feature flag. Scope: `tasks/plans/custom-lineup-v2-browser-transport.md`.
+
+## Verified Custom v2 API staging checkpoint
+
+PR #414 merged as `a2f0c0d6beadf54507326891a251fe59d9691fe3`; exact-main CI SUCCESS, production Vercel READY, canonical home/archive/classic 200, unpublished Custom player routes 404, no error/fatal logs in inspected window and zero open PRs. Hosted Custom v2 issued/attempt/completed/per-AB populations remain 0; no migration or environment flag activation took place.
+
 ## Custom Lineup v2 gated gameplay transport (October 15)
 
 PR #414 stages four body-bounded, same-origin POST routes at `/api/custom-lineup/challenges/{puzzleId}/attempt/{bootstrap|hint|resolve|submit}`. All are **404 before any service or database work unless server-only `CUSTOM_LINEUP_V2_GAMEPLAY_TRANSPORT_ENABLED` is exactly `true`**. It is not set by this PR. The routes reuse the existing signed v2 service layer for first attempt/restoration, one hint, unified atomic wrong/correct/give-up resolution, and bodyless exact-N admission. All responses are private/no-store and sanitized; terminal player reveals pass through the existing canonical view-model whitelist, and completed bootstrap contains no live token. There is no public creator UI, challenge issuance, discovery/comparison activation or production flag change. Scope and threat boundary: `tasks/plans/custom-lineup-v2-gated-gameplay-transport.md`.
