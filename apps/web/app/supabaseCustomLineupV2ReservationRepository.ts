@@ -55,6 +55,41 @@ export function createSupabaseCustomLineupV2ReservationRepository(
   }
   return {
     getByKey,
+    /** Hint-only CAS: no terminal facts, status or completed timestamp changes. */
+    async advanceHint(expected: CustomNineAttemptState, successorToken: string): Promise<
+      | { status: 'advanced'; state: CustomNineAttemptState }
+      | { status: 'conflict' }
+    > {
+      const prior = decode({
+        challenge_id: expected.challengeId, browser_key_digest: expected.browserKeyDigest,
+        attempt_id: expected.attemptId, revision: expected.revision,
+        current_progression_token: expected.currentProgressionToken,
+        terminal_at_bats: expected.terminalAtBats, status: expected.status,
+        created_at: expected.createdAt, updated_at: expected.updatedAt,
+        completed_at: expected.completedAt,
+      }, { challengeId: expected.challengeId, browserKeyDigest: expected.browserKeyDigest });
+      if (prior.status !== 'active' || prior.revision >= Number.MAX_SAFE_INTEGER) throw invalid();
+      requireCustomNineProgressionToken(successorToken);
+      if (successorToken === prior.currentProgressionToken) throw invalid();
+      const result = await query(() => client.from(TABLE).update({
+        revision: prior.revision + 1,
+        current_progression_token: successorToken,
+        updated_at: new Date().toISOString(),
+      }).eq('challenge_id', prior.challengeId)
+        .eq('browser_key_digest', prior.browserKeyDigest)
+        .eq('attempt_id', prior.attemptId)
+        .eq('revision', prior.revision)
+        .eq('current_progression_token', prior.currentProgressionToken)
+        .eq('status', 'active').select(COLUMNS).maybeSingle());
+      if (result.error !== null) throw failure();
+      if (result.data === null) return { status: 'conflict' };
+      const next = decode(result.data, prior);
+      if (next.attemptId !== prior.attemptId || next.revision !== prior.revision + 1
+        || next.currentProgressionToken !== successorToken || next.status !== 'active'
+        || next.completedAt !== null
+        || JSON.stringify(next.terminalAtBats) !== JSON.stringify(prior.terminalAtBats)) throw invalid();
+      return { status: 'advanced', state: next };
+    },
     async getOrCreate(key: CustomLineupV2ReservationKey, initialToken: string) {
       requireKey(key);
       requireCustomNineProgressionToken(initialToken);

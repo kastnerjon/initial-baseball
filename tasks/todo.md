@@ -7,8 +7,9 @@ Last updated: 2026-10-11
 ## Current Custom v2 signed-attempt milestone (October 14)
 
 - [x] #407 private exact-challenge 1–10 comparison RPCs merged/hosted as `20261014235929` and rollback-tested; #408 signed v2 opening merged/production READY as `c41ad7df`.
-- [ ] Private v2 first-attempt reservation: separate v2/creator cookies, immutable N-backed ledger row, fail-closed resume. Does not add public routes or score admission.
-- [ ] Subsequently: v2 hint/guess/terminal CAS, complete-game restore and atomic admission, responsive creator/game UI, abuse/privacy review before public release.
+- [x] Private v2 first-attempt reservation: separate v2/creator cookies, immutable N-backed ledger row, fail-closed resume. Does not add public routes or score admission.
+- [x] Private v2 signed hint revelation with existing attempt ledger CAS (no public route).
+- [ ] Subsequently: v2 wrong-guess/terminal CAS, complete-game restore and atomic admission, responsive creator/game UI, abuse/privacy review before public release.
 
 ## Current Custom v2 database checkpoint (October 14)
 
