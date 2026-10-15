@@ -19,7 +19,7 @@ const render=(n:number,completed:number,current:number|null)=>
 describe('Custom v2 responsive scorecard 1–10 presentations',()=>{
   it.each([1,5,9,10])('renders N=%i exact numbered rows without future answers',n=>{
     const html=render(n,0,1);
-    expect(html.match(/class="custom-lineup-score-row/g)?.length).toBe(n);
+    expect(html.match(/<li class="custom-lineup-score-row/g)?.length).toBe(n);
     expect(html).toContain('aria-current="step"');
     expect(html).toContain('At bat');
     expect(html).not.toContain('PRIVATE_ANSWER');
