@@ -240,6 +240,11 @@ describe('Custom Lineup v2 browser-to-HTTP contract acceptance', () => {
     }
     expect(await s.client.submit(ID)).toBe('created');
     expect(await s.client.submit(ID)).toBe('existing');
+    const rawSubmissions = s.wire.filter(x => x.action === 'submit')
+      .slice(-2).map(x => x.payload);
+    expect(rawSubmissions).toEqual([{ status: 'created' }, { status: 'existing' }]);
+    expect(JSON.stringify(rawSubmissions)).not.toContain('PRIVATE_ATTEMPT_UUID');
+    expect(JSON.stringify(rawSubmissions)).not.toContain('summary');
     expect(s.submit).toHaveBeenCalledTimes(3);
     expect(s.network.mock.calls.every(call => !String(call[1].body ?? '').includes('score')))
       .toBe(true);
