@@ -5,9 +5,13 @@ Last updated: 2026-10-11
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
+## Custom v2 first-attempt ledger reservation (October 14)
+
+This Web-only stage adds v2-domain browser and creator cookies, an immutable challenge-length-checked first-attempt Supabase reservation, and a private redacted opening service. It intentionally adds no public v2 API, UI, hint/resolve mutation or competitive admission. Saved progressed attempts cannot be opened by this stage: it fails closed until a separate signed continuation service is reviewed. The original v1 attempt and Daily/Classic gameplay remain independent.
+
 ## Custom v2 signed-bootstrap read predecessor (October 14)
 
-The next bounded Web-only step is a private schema-v2 issued-challenge reader plus an isolated 1–10-pitch signed opening bootstrap. This prepares opening/hints for later server-monotonic attempt integration but does **not** add a route, public switch, creator cookie, accepted result, or competitive permission. Legacy Daily/Classic and Custom Nine v1 token limits remain exactly nine by default, and signed v2 tokens are cryptographically domain-separated. Hint and terminal authorization remain future separate PRs.
+PR #408 merged at `c41ad7df2fcc672d2dc5a989a4b513805f8e8fe5`, with successful push CI and READY production. This private schema-v2 issued-challenge reader and signed opening bootstrap are implemented. This prepares opening/hints for later server-monotonic attempt integration but does **not** add a route, public switch, creator cookie, accepted result, or competitive permission. Legacy Daily/Classic and Custom Nine v1 token limits remain exactly nine by default, and signed v2 tokens are cryptographically domain-separated. Hint and terminal authorization remain future separate PRs.
 
 ## Verified October 14 hosted Custom v2 checkpoint
 

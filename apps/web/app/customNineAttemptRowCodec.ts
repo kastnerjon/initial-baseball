@@ -1,4 +1,4 @@
-import { validateCustomNinePuzzleId } from '@initial-baseball/daily';
+import { validateCustomNinePuzzleId, validateCustomLineupPuzzleId } from '@initial-baseball/daily';
 import { normalizeDailyTerminalAtBat } from '@initial-baseball/engine';
 import type { DailyCompletedAtBat, DailyPublicPuzzle } from '@initial-baseball/shared';
 
@@ -34,8 +34,9 @@ export function requireCustomNineProgressionToken(value: unknown): asserts value
   }
 }
 
-export function normalizeCustomNineAttemptFacts(value: unknown): readonly DailyCompletedAtBat[] {
-  if (!Array.isArray(value) || value.length > 9) throw invalid();
+export function normalizeCustomNineAttemptFacts(value: unknown, atBatCount = 9): readonly DailyCompletedAtBat[] {
+  if (!Number.isInteger(atBatCount) || atBatCount < 1 || atBatCount > 10
+    || !Array.isArray(value) || value.length > atBatCount) throw invalid();
   return value.map((fact: unknown, index: number) => {
     if (!record(fact) || typeof fact.initials !== 'string'
       || fact.initials.trim().length === 0 || fact.initials.length > 40
@@ -52,23 +53,37 @@ export function normalizeCustomNineAttemptFacts(value: unknown): readonly DailyC
 
 /** Decode only private PostgREST rows. Never serialize this into a browser response. */
 export function decodeCustomNineAttemptRow(raw: unknown): CustomNineAttemptState {
+  return decodeCustomAttemptRow(raw, 9, 'v1');
+}
+
+export function decodeCustomLineupV2AttemptRow(raw: unknown, atBatCount: number): CustomNineAttemptState {
+  if (!Number.isInteger(atBatCount) || atBatCount < 1 || atBatCount > 10) throw invalid();
+  return decodeCustomAttemptRow(raw, atBatCount, 'v2');
+}
+
+function decodeCustomAttemptRow(raw: unknown, atBatCount: number, version: 'v1' | 'v2'): CustomNineAttemptState {
   if (!record(raw)) throw invalid();
   const challengeId = raw.challenge_id;
   const digest = raw.browser_key_digest;
   if (typeof challengeId !== 'string' || typeof digest !== 'string') throw invalid();
-  requireCustomNineAttemptKey(challengeId, digest);
+  if (version === 'v1') {
+    requireCustomNineAttemptKey(challengeId, digest);
+  } else {
+    try { validateCustomLineupPuzzleId(challengeId); } catch { throw invalid(); }
+    if (!/^[0-9a-f]{64}$/.test(digest)) throw invalid();
+  }
   if (typeof raw.attempt_id !== 'string'
     || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(raw.attempt_id)
     || typeof raw.revision !== 'number' || !Number.isSafeInteger(raw.revision)
     || raw.revision < 0) throw invalid();
   requireCustomNineProgressionToken(raw.current_progression_token);
-  const facts = normalizeCustomNineAttemptFacts(raw.terminal_at_bats);
+  const facts = normalizeCustomNineAttemptFacts(raw.terminal_at_bats, atBatCount);
   const completedAt = raw.completed_at;
   if (completedAt !== null && !timestamp(completedAt)) throw invalid();
   if (raw.revision < facts.length
     || (raw.status !== 'active' && raw.status !== 'completed')
-    || (raw.status === 'active' && (facts.length === 9 || raw.completed_at !== null))
-    || (raw.status === 'completed' && (facts.length !== 9 || !timestamp(raw.completed_at)))
+    || (raw.status === 'active' && (facts.length === atBatCount || raw.completed_at !== null))
+    || (raw.status === 'completed' && (facts.length !== atBatCount || !timestamp(raw.completed_at)))
     || !timestamp(raw.created_at) || !timestamp(raw.updated_at)) throw invalid();
   return {
     challengeId, browserKeyDigest: digest, attemptId: raw.attempt_id,
