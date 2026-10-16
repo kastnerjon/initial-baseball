@@ -42,6 +42,7 @@ function send(action: typeof actions[number], options: RequestInit = {}, id=ID, 
       method: 'POST',
       ...options,
       headers: { origin: 'https://example.test', cookie,
+        ...(options.body === undefined ? {} : { 'content-type': 'application/json' }),
         ...(options.headers as Record<string, string> | undefined) },
     }),
     { params: Promise.resolve({ puzzleId: id }) }, action,
@@ -171,6 +172,28 @@ describe('off-by-default Custom v2 gameplay HTTP transport', () => {
       .toBe(400);
     expect((await send('hint', { body: 'invalid-json' })).status).toBe(400);
     expect(hint).toHaveBeenCalledTimes(1);
+  });
+
+  it('requires application/json for signed hint and resolve mutations before service dispatch', async () => {
+    for (const action of ['hint', 'resolve'] as const) {
+      const body = action === 'hint' ? { progressionToken: 'signed-open' }
+        : { progressionToken: 'signed-open', submittedPlayerId: player };
+      for (const type of ['text/plain', 'application/x-www-form-urlencoded',
+        'application/merge-patch+json', '']) {
+        const result = await send(action, {
+          headers: { 'content-type': type }, body: JSON.stringify(body),
+        });
+        expect(result.status).toBe(400);
+        expect(await result.json()).toEqual({ error: 'invalid_request' });
+      }
+      const result = await send(action, {
+        headers: { 'content-type': 'application/json; charset=UTF-8' },
+        body: JSON.stringify(body),
+      });
+      expect(result.status).toBe(200);
+    }
+    expect(hint).toHaveBeenCalledTimes(1);
+    expect(attempt).toHaveBeenCalledTimes(1);
   });
 
   it('dispatches all wrong and terminal guesses through the SAME atomic v2 service', async () => {

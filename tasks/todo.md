@@ -21,8 +21,10 @@ Last updated: 2026-10-15
 - [x] PR #420 responsive admin-only `/admin/custom-lineup` v2 1–10 editor merged as `6189206`; exact-head CI, independent review (one corrected import), exact-main push CI and Vercel production READY. No public activation.
 - [x] PR #421 cross-layer v2 browser ↔ HTTP acceptance fixtures N=1/5/9/10 merged as `8f83404`; final review/test/Preview and exact-main push CI SUCCESS, Vercel production READY; no public activation.
 - [x] PR #422 generic noindex/nofollow/nocache and no-referrer metadata on unlisted Custom v2 pages merged as `7b3982e`; exact-head checks and READY Preview passed; main production push checks tracked separately.
-- [ ] Current search-abuse PR: cap trimmed public `/api/players/search` queries at 100 chars before materializing the canonical search candidates, matching Custom gameplay client. Plan: `tasks/plans/canonical-player-search-query-bound.md`.
-- [ ] Next: staged 1/5/9/10-player end-to-end gameplay and mobile QA, abuse/privacy safeguards, and controlled activation decision before public links, comparisons, discovery or sharing.
+- [x] PR #423 caps trimmed public `/api/players/search` queries at 100 chars before canonical candidate materialization; main CI SUCCESS and Vercel production READY as `7548f2f`. This is not a rate limit. Plan: `tasks/plans/canonical-player-search-query-bound.md`.
+- [x] PR #424 **closed without merge**: independent review showed the proposed resolve-key check was redundant, so no non-behavioral PR was merged.
+- [ ] Current bounded PR: require `application/json` media type for gated v2 Custom hint/resolve mutations before bounded body parse/service calls; preserve bodyless actions. Plan: `tasks/plans/custom-lineup-v2-json-media-type.md`.
+- [ ] Next: isolated hosted 1/5/9/10-player end-to-end gameplay and mobile QA, abuse/privacy/rate-limit safeguards, and controlled activation decision before public links, comparisons, discovery or sharing.
 
 ## Current Custom v2 database checkpoint (October 14)
 
