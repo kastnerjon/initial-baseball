@@ -5,7 +5,24 @@ Last updated: 2026-10-15
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
-## Current bounded PR — JSON media type for Custom v2 gameplay mutations
+## October 16 hosted QA milestone — staged runner, not a passed hosted test
+
+PR #425 is merged at b2d8689683254fa7d7a357b0ef6f4f104b16fb67.
+Main CI run 38841759530 succeeded; production Vercel deployment
+dpl_B6axVWJ98LrZaxfkMpQa2fP7ZD79 is READY on that SHA, and
+Supabase remains ACTIVE_HEALTHY. No open PRs at this checkpoint.
+
+The next bounded work adds a local application to isolated hosted Supabase branch
+HTTP acceptance runner and expands mocked protocol and issuer coverage to
+every supported N=1–10, without opening public Custom gameplay. The new script
+is executable only with explicitly configured localhost target, isolated
+branch reference, matching Supabase URL and opt-in flag. A successful local
+syntax check or mocked test is NOT hosted E2E evidence. See
+tasks/plans/custom-lineup-v2-hosted-qa-runner.md for the runbook and
+remaining prerequisites. Branch creation has a separately confirmed hourly
+cost; do not create it or run against production without consent.
+
+## Completed PR #425 — JSON media type for Custom v2 gameplay mutations
 
 The flag-gated Custom Lineup v2 `hint` and `resolve` actions already parse a bounded JSON body but currently accept valid JSON under `text/plain` or missing JSON media types. Require `application/json` (optional media type parameters) before stream parsing and service calls, matching the shipped v2 browser transport. Leave bodyless `bootstrap`/`submit` untouched, preserve no-store/same-origin checks, keep the flag OFF, and test valid/invalid media types. This is request protocol hardening, not a substitute for IP/credential throttling, hosted gameplay QA, CSRF defense, or approval to activate. Scope: `tasks/plans/custom-lineup-v2-json-media-type.md`.
 
