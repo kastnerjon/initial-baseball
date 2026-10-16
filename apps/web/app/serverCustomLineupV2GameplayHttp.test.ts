@@ -201,6 +201,21 @@ describe('off-by-default Custom v2 gameplay HTTP transport', () => {
     expect(attempt).toHaveBeenCalledTimes(2);
   });
 
+  it('rejects malformed resolve action keys before invoking the atomic v2 service', async () => {
+    const invalid = [
+      { progressionToken: 'signed', giveUp: true, submittedPlayerId: player },
+      { progressionToken: 'signed', giveUp: true, arbitrary: 'extra' },
+      { progressionToken: 'signed', typo: 'giveUp' },
+      { progressionToken: 'signed', submittedPlayerId: player, extra: true },
+    ];
+    for (const body of invalid) {
+      const result = await send('resolve', { body: JSON.stringify(body) });
+      expect(result.status).toBe(400);
+      expect(await result.json()).toEqual({ error: 'invalid_request' });
+    }
+    expect(attempt).not.toHaveBeenCalled();
+  });
+
   it('submits only the bodyless completed ledger, with no submission ID or summary', async () => {
     const result=await send('submit');
     expect(result.status).toBe(201);

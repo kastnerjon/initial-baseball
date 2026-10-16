@@ -28,11 +28,15 @@ function tokenOnly(value: unknown): string | null {
 }
 function resolveBody(value: unknown): { progressionToken: string; giveUp: true }
   | { progressionToken: string; submittedPlayerId: string } | null {
-  if (!record(value) || Object.keys(value).length !== 2) return null;
+  if (!record(value)) return null;
+  const keys = Object.keys(value);
+  if (keys.length !== 2 || !keys.includes('progressionToken')) return null;
   const token = value.progressionToken;
   if (typeof token !== 'string' || !token || token.length > 4096) return null;
-  if (value.giveUp === true) return { progressionToken: token, giveUp: true };
-  if (typeof value.submittedPlayerId === 'string'
+  if (keys.includes('giveUp') && value.giveUp === true) {
+    return { progressionToken: token, giveUp: true };
+  }
+  if (keys.includes('submittedPlayerId') && typeof value.submittedPlayerId === 'string'
     && /^ibp_[0-9a-f]{20}$/.test(value.submittedPlayerId)) {
     return { progressionToken: token, submittedPlayerId: value.submittedPlayerId };
   }

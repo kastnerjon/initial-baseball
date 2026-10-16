@@ -5,9 +5,13 @@ Last updated: 2026-10-15
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
-## Public canonical player-search input bound — current PR
+## Current bounded PR — strict Custom Lineup v2 resolve action keys
 
-A bounded Web API hardening PR limits trimmed `/api/players/search?q=` queries to 100 characters before loading or searching canonical player candidates; empty or overlong searches return the same safe `{ results: [] }` shape. This matches the staged Custom gameplay client request ceiling, preserves ordinary Daily/Classic/admin search behavior and changes no gameplay rules or dataset. It reduces oversized-query search work but is **not rate limiting or anti-spam protection**. Scope: `tasks/plans/canonical-player-search-query-bound.md`. Public Custom gameplay and creation remain restricted; hosted 1/5/9/10 E2E, mobile and anti-abuse controls remain release gates.
+The gated v2 resolve handler currently accepts `{ progressionToken, giveUp: true, arbitrary: ... }` because it checks the field count but not the permitted second field. Tighten the action discriminator to require exactly `giveUp` or `submittedPlayerId`, and test mixed/unrecognized/extraneous keys before the atomic attempt service. Existing valid give-up and player-guess flows remain unchanged; the flag stays OFF. Scope: `tasks/plans/custom-lineup-v2-strict-resolve-schema.md`.
+
+## Verified public canonical search PR #423
+
+PR #423 merged as `7548f2f4bad4fe15666d45c3e68466cdfdf4e152`, with exact-head CI SUCCESS, Vercel Preview READY and bounded independent review. Main push CI SUCCESS (run 38829485147); Vercel production `dpl_A3LtWnT5FYKdSaA7njff6fmXmVCC` READY on the exact merge SHA. Public `/api/players/search?q=` rejects empty or trimmed >100-character queries before canonical dataset lookup and returns `{ results: [] }`. Homepage, Archive and Classic were HTTP 200; disabled v2 Custom example remained HTTP 404. Supabase was healthy, no recent production error/fatal logs and no open PRs at that checkpoint. This is **not rate limiting**; hosted 1/5/9/10 E2E, mobile and abuse/privacy controls remain release gates. Scope: `tasks/plans/canonical-player-search-query-bound.md`.
 
 ## Verified unlisted Custom Lineup metadata PR #422
 
