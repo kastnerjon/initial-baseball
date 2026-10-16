@@ -20,7 +20,8 @@ Last updated: 2026-10-15
 - [x] PR #419 admin-only version-2 challenge POST merged as `5592ff4`: signed scoped creator marker, server-origin/auth checks, opaque ID only. No gameplay activation; exact-head CI and Preview passed. Exact-main push CI SUCCESS, production READY and Supabase healthy; live HTTP route probing remains unverified.
 - [x] PR #420 responsive admin-only `/admin/custom-lineup` v2 1–10 editor merged as `6189206`; exact-head CI, independent review (one corrected import), exact-main push CI and Vercel production READY. No public activation.
 - [x] PR #421 cross-layer v2 browser ↔ HTTP acceptance fixtures N=1/5/9/10 merged as `8f83404`; final review/test/Preview and exact-main push CI SUCCESS, Vercel production READY; no public activation.
-- [ ] Current privacy PR: noindex/nofollow/nocache + no-referrer generic metadata on unlisted Custom v2 challenge routes, without exposing challenge IDs or turning on gameplay. Plan: `tasks/plans/custom-lineup-v2-private-page-metadata.md`.
+- [x] PR #422 generic noindex/nofollow/nocache and no-referrer metadata on unlisted Custom v2 pages merged as `7b3982e`; exact-head checks and READY Preview passed; main production push checks tracked separately.
+- [ ] Current search-abuse PR: cap trimmed public `/api/players/search` queries at 100 chars before materializing the canonical search candidates, matching Custom gameplay client. Plan: `tasks/plans/canonical-player-search-query-bound.md`.
 - [ ] Next: staged 1/5/9/10-player end-to-end gameplay and mobile QA, abuse/privacy safeguards, and controlled activation decision before public links, comparisons, discovery or sharing.
 
 ## Current Custom v2 database checkpoint (October 14)
