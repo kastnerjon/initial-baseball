@@ -11,7 +11,7 @@ A bounded Web API hardening PR limits trimmed `/api/players/search?q=` queries t
 
 ## Verified unlisted Custom Lineup metadata PR #422
 
-PR #422 merged as `7b3982e5bc7ac5c67c90f1dd0c7a43234fa27fcc`, after successful exact-head GitHub CI, READY Preview, and independent review with no blocking findings. Generic noindex/nofollow/nocache and no-referrer metadata is attached only to the private Custom challenge route; default-disabled gameplay is unchanged. Exact-main push CI and production were still running at the first post-merge check; record final values after confirmed.
+PR #422 merged as `7b3982e5bc7ac5c67c90f1dd0c7a43234fa27fcc`, after successful exact-head GitHub CI, READY Preview, and independent review with no blocking findings. Generic noindex/nofollow/nocache and no-referrer metadata is attached only to the private Custom challenge route; default-disabled gameplay is unchanged. Exact-main push CI SUCCESS (workflow 38828635251), Vercel production `dpl_3wwNXrWcp4wHUmZZawk2Cuo4nkaB` READY on the matching SHA, and no public Custom v2 activation. Production runtime errors/fatals were absent in the inspected interval; live mobile browser QA remains outstanding.
 
 ## Custom Lineup v2 unlisted-page metadata privacy — implemented
 
