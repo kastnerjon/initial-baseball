@@ -29,7 +29,7 @@ begin
   select count(*) into v_initial_completed from public.custom_nine_completed_results;
   select count(*) into v_initial_at_bats from public.custom_nine_at_bat_results;
 
-  for v_n in select unnest(array[1, 5, 9, 10]) loop
+  for v_n in select unnest(array[1,2,3,4,5,6,7,8,9,10]) loop
     v_attempt := gen_random_uuid();
     v_id := 'custom-lineup-v2-' || v_attempt::text;
     v_digest := md5(v_id) || md5(v_id || '-browser');
@@ -197,13 +197,13 @@ begin
   end if;
 
   if (select count(*) from public.custom_nine_issued_challenges)
-      <> v_initial_issued + 5
+      <> v_initial_issued + 11
     or (select count(*) from public.custom_nine_attempt_states)
-      <> v_initial_attempts + 5
+      <> v_initial_attempts + 11
     or (select count(*) from public.custom_nine_completed_results)
-      <> v_initial_completed + 5
+      <> v_initial_completed + 11
     or (select count(*) from public.custom_nine_at_bat_results)
-      <> v_initial_at_bats + 34 then
+      <> v_initial_at_bats + 64 then
     raise exception 'Unexpected private Custom result population';
   end if;
 

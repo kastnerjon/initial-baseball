@@ -19,7 +19,7 @@ begin
   select count(*) into v_current_count
   from public.custom_nine_issued_challenges;
 
-  for v_n in select unnest(array[1,5,9,10]) loop
+  for v_n in select unnest(array[1,2,3,4,5,6,7,8,9,10]) loop
     select jsonb_agg('test-player-' || idx order by idx)
       into v_ids from generate_series(1,v_n) as idx;
     select jsonb_agg(jsonb_build_object(
@@ -121,7 +121,7 @@ begin
     end if;
   end loop;
   if (select count(*) from public.custom_nine_issued_challenges)
-    <> v_current_count + 5 then
+    <> v_current_count + 11 then
     raise exception 'Unexpected Custom fixture row count';
   end if;
   if has_table_privilege('anon','public.custom_nine_issued_challenges','select')

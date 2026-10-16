@@ -5,6 +5,12 @@ Last updated: 2026-10-15
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
+## October 16 hosted PostgreSQL v2 all-length verification — passed, HTTP still outstanding
+
+After PR #426 (main `824cd8d8ee17708d8b28e75b8a2e29333d9d46d8`, push CI SUCCESS, production READY), a standalone no-cost Supabase QA project was created because branch creation requires a Pro organization. Only the ten Custom v1/v2 SQL migrations were applied; production-directed Daily ChatOps and scheduled rollover were excluded. Five rollback-only SQL fixtures passed on the hosted QA database with N=1–10 coverage, including validation, attempts, results, atomic admission and comparison buckets. The existing legacy v1 comparison fixture passed as well; the four Custom table populations in both staging and production remained zero.
+
+This is **hosted database QA only**, not a completed app-to-database HTTP or mobile/browser test. A staged server-only Supabase secret is not available through the connected tools; do not use production keys or weaken private grants. PR scope: `tasks/plans/custom-v2-hosted-postgres-all-lengths.md`. Public Custom remains OFF, and a separate hosted HTTP, responsive, abuse/privacy and activation gate remains.
+
 ## October 16 hosted QA milestone — staged runner, not a passed hosted test
 
 PR #425 is merged at b2d8689683254fa7d7a357b0ef6f4f104b16fb67.

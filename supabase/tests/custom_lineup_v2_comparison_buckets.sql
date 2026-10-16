@@ -13,7 +13,7 @@ begin
    (select count(*) from public.custom_nine_completed_results),
    (select count(*) from public.custom_nine_at_bat_results)
  ];
- for n in select unnest(array[1,5,9,10]) loop
+ for n in select unnest(array[1,2,3,4,5,6,7,8,9,10]) loop
    challenge := 'custom-lineup-v2-' || gen_random_uuid()::text;
    attempt := gen_random_uuid();
    select jsonb_agg('player-'||s order by s) into ids from generate_series(1,n) s;
@@ -132,10 +132,10 @@ begin
    or not has_function_privilege('service_role','public.custom_lineup_v2_completed_score_buckets_v1(text,text)','execute') then
      raise exception 'Comparison EXECUTE role isolation failed';
  end if;
- if (select count(*) from public.custom_nine_issued_challenges) <> baseline[1]+5
-   or (select count(*) from public.custom_nine_attempt_states) <> baseline[2]+5
-   or (select count(*) from public.custom_nine_completed_results) <> baseline[3]+6
-   or (select count(*) from public.custom_nine_at_bat_results) <> baseline[4]+31 then
+ if (select count(*) from public.custom_nine_issued_challenges) <> baseline[1]+11
+   or (select count(*) from public.custom_nine_attempt_states) <> baseline[2]+11
+   or (select count(*) from public.custom_nine_completed_results) <> baseline[3]+12
+   or (select count(*) from public.custom_nine_at_bat_results) <> baseline[4]+61 then
     raise exception 'Fixture population inconsistent';
  end if;
 end;
