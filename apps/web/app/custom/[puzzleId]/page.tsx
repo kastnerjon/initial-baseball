@@ -1,4 +1,5 @@
 import React, { type JSX } from 'react';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { validateCustomLineupPuzzleId } from '@initial-baseball/daily';
 import { isCustomLineupV2GameplayTransportEnabled } from '../../serverCustomLineupV2GameplayHttp';
@@ -6,6 +7,16 @@ import { CustomLineupGame } from '../CustomLineupGame';
 import '../custom-lineup.css';
 
 export const dynamic = 'force-dynamic';
+
+/** An unlisted challenge URL is not a published community listing.
+ * Generic metadata must not contain puzzle IDs, answers or frozen clues.
+ */
+export const metadata: Metadata = {
+  title: 'Custom Lineup | Initial Baseball',
+  description: 'An unlisted baseball initials challenge.',
+  robots: { index: false, follow: false, nocache: true },
+  referrer: 'no-referrer',
+};
 
 /** Activation is separately approved. Until then every Custom v2 page is 404,
  * including for a syntactically valid ID, before a database read can occur.

@@ -5,9 +5,17 @@ Last updated: 2026-10-15
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
-## Custom Lineup v2 browser-to-HTTP contract QA — current PR
+## Custom Lineup v2 unlisted-page metadata privacy — current PR
 
-Test-only acceptance integrates the existing versioned browser transport and HTTP handler with deterministic private service fixtures at N=1/5/9/10. It checks resume, earned hint depth, wrong/terminal outcomes, points-v4 limits, idempotent submission and creator ineligibility, plus default-off behavior. **This is not full hosted DB or physical mobile E2E.** No runtime flag changes. Scope: `tasks/plans/custom-lineup-v2-browser-http-acceptance.md`; next isolated staging + real browser/mobile QA, abuse/privacy threat-model and controlled rollout.
+Small page-only release safeguard: future flag-enabled private `/custom/{v2-id}` pages explicitly set generic non-answer metadata, `robots` noindex/nofollow/nocache and no-referrer. Unlisted URLs are not approved community directory listings. This is indexing/referrer hygiene, **not authentication, crawler secrecy, public activation, or a substitute for staging QA**. Scope: `tasks/plans/custom-lineup-v2-private-page-metadata.md`. After this PR: isolated full-stack 1/5/9/10 QA, physical mobile inspection, anti-abuse/privacy controls, and explicit release authorization.
+
+## Verified v2 browser-to-HTTP acceptance PR #421
+
+PR #421 merged as `8f83404e523327d77649ce2559dbdb88e0bda54c`. Exact-head CI SUCCESS, Preview READY; independent review identified four test-fidelity/privacy issues which were corrected and threads resolved. Exact-main push CI SUCCESS and production Vercel `dpl_4DcqUodjtt3Q76JmtGgvhJQJj7QR` READY on matching main; Supabase ACTIVE_HEALTHY, no errors/fatals observed in recent production logs and zero open PRs. Direct homepage and Archive checks 200, disabled Custom v2 example 404; admin route required authentication. No public Custom activation.
+
+## Custom Lineup v2 browser-to-HTTP contract QA — implemented
+
+Merged #421 test-only acceptance integrates the existing versioned browser transport and HTTP handler with deterministic private service fixtures at N=1/5/9/10. It checks resume, earned hint depth, wrong/terminal outcomes, points-v4 limits, idempotent submission and creator ineligibility, plus default-off behavior. **This is not full hosted DB or physical mobile E2E.** No runtime flag changes. Scope: `tasks/plans/custom-lineup-v2-browser-http-acceptance.md`; next isolated staging + real browser/mobile QA, abuse/privacy threat-model and controlled rollout.
 
 ## Verified Custom Lineup creator PR #420
 

@@ -14,11 +14,22 @@ vi.mock('../CustomLineupGame', () => ({
 }));
 import { isCustomLineupV2GameplayTransportEnabled }
   from '../../serverCustomLineupV2GameplayHttp';
-import CustomLineupPage from './page';
+import CustomLineupPage, { metadata } from './page';
 
 const ID='custom-lineup-v2-123e4567-e89b-42d3-a456-426614174000';
 beforeEach(()=>{vi.clearAllMocks();vi.mocked(isCustomLineupV2GameplayTransportEnabled).mockReturnValue(false);});
 describe('Custom v2 page release boundary',()=>{
+  it('keeps every unlisted challenge non-indexable without exposing challenge details',()=>{
+    expect(metadata.title).toBe('Custom Lineup | Initial Baseball');
+    expect(metadata.description).toBe('An unlisted baseball initials challenge.');
+    expect(metadata.robots).toEqual({ index: false, follow: false, nocache: true });
+    expect(metadata.referrer).toBe('no-referrer');
+    const exported = JSON.stringify(metadata);
+    for (const forbidden of [ID, 'ibp_', 'canonicalPlayerIds', 'clueSnapshot', 'PRIVATE_ANSWER']) {
+      expect(exported).not.toContain(forbidden);
+    }
+  });
+
   it('404s every challenge when flag is off, even a valid v2 identifier',async()=>{
     await expect(CustomLineupPage({params:Promise.resolve({puzzleId:ID})}))
       .rejects.toThrow('NOT_FOUND');
