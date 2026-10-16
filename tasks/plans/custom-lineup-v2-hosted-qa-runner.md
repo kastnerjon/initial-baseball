@@ -1,26 +1,31 @@
 # Custom Lineup v2 — isolated hosted gameplay acceptance runner
 
-Status: Bounded release-verification tooling; staged only. Hosted execution is NOT yet verified.
+Status: Bounded release-verification tooling; staged only. Full hosted application-to-database execution has NOT yet passed.
 
-## Scope contract
+## Goal and scope
 
-- Goal: Provide one repeatable real HTTP to Next.js application to hosted Supabase test of signed Custom v2 issuance, gameplay and completed admission against a disposable database branch, without contaminating production.
-- Owning layer: Web application QA tooling (apps/web/scripts/qa-custom-v2-hosted.mjs), plus focused tests for previously missing intermediate N lengths.
-- In scope: Runner-owned localhost HTTP server with validated branch environment; explicit independent creator/player cookie contexts; 1/5/9/10 issued challenge matrix; signed hint/guess/restore/complete/submit paths; creator exclusion, forged/cross-origin attempts and replay, third strike and give-up; pinned production-project ref and strict environment guard; all N=1–10 in existing HTTP/mock issuer tests; small documentation checkpoint corrections.
-- Out of scope: New product rules, database schema, hosted Supabase branch creation and billing approval, changing Vercel flags, activating any public Custom route, testing deployed-browser UI/mobile, public publication/discovery, rate limiting, private v1 fixtures, and unapproved production fixture inserts.
-- Acceptance: Node syntax check; guard rejects missing environment before network calls; N=1–10 existing contract tests; full repository CI and Preview READY; independent bounded review. Hosted acceptance is complete only after an operator actually runs the script with a branch-backed server and inspects the branch results.
-- Stop conditions: Branch creation requires unapproved cost; staging connection appears to target production; any uncontrolled Vercel/DB environment setting or source-code disclosure; test discovers runtime defect needing a new security or persistence architectural decision. File a bounded follow-up rather than weakening guards.
+The runner exercises real HTTP through its own localhost Next.js process to the isolated hosted Supabase Custom v2 database, without writing to production. It does not change game rules, schemas, public flags or authorization.
 
-## Runbook (after cost authorization)
+The repository's isolated QA project is standalone on the Supabase Free plan, NOT a database branch. Database branching requires Pro. Project ref: iklbnlicgsxxhaoiscor; production ref: dwreeiydvwikpamlokji (hard-denied in source). The standalone QA project is paused until a staging-only server secret is provisioned. The existing Custom v1/v2 migrations and rollback-only SQL matrix have already passed there, but no end-to-end application game was run.
 
-1. Create a disposable Supabase branch of initial-baseball-db and record its project ref. Verify installed migrations, RLS, private grants, and absence of production game rows. The branch incurs hourly billing and requires explicit approval.
-2. Provide branch-specific server credentials through approved secret configuration only. Do not print keys or commit local env files.
-3. Build the web app from the reviewed commit. Supply SUPABASE_URL=https://BRANCH_REF.supabase.co, the branch service role key, an isolated DAILY_PROGRESSION_SECRET, admin credentials and CUSTOM_LINEUP_V2_GAMEPLAY_TRANSPORT_ENABLED=true to the QA runner. It starts and stops the localhost Next.js server itself with the exact validated environment. Do not separately start a server or use production credentials. Leave public Vercel flags OFF.
-4. Set CUSTOM_V2_QA_BRANCH_REF and CUSTOM_V2_QA_PLAYER_IDS to ten distinct supported canonical ibp player IDs. The production project ref is pinned in reviewed source (dwreeiydvwikpamlokji), not operator-supplied. The runner chooses an ephemeral localhost port.
-5. Execute node apps/web/scripts/qa-custom-v2-hosted.mjs once. The runner launches and owns the local web server, refusing the known production Supabase ref, mismatched branch API URL, and missing explicit flags. It issues six synthetic challenges and writes attempts/completions to the BRANCH ONLY. It does not delete rows; destroy the branch after evidence is captured.
-6. Verify branch challenge, attempt, completed-result and per-AB counts against the four primary lengths and two N=1 terminations, immutable versioned IDs, 4 times N maximum and first-only admissions. Inspect HTML/API/logs for unauthorized answer disclosure and collect sanitized results only in the private QA artifact.
-7. Run real mobile browser checks and legacy Custom Nine v1 verification separately; an HTTP script cannot establish visual quality. Keep public flags OFF. Destroy the disposable branch and confirm production Custom table counts unchanged.
+## Safety preflight
 
-The script starts the tested web process with its validated staging environment and rejects the pinned production project. It cannot independently prove that another remote project is a disposable branch when operator-supplied provenance is misleading. Branch creation approval, credential provenance, and teardown remain human-verified release gates.
+1. Verify the target is a disposable, isolated hosted project through the Supabase console/connector. Check its project ref, active status, Custom tables and grants. Never use production or a production credential. Restore the paused QA project only when ready to execute.
+2. Provision a **QA-project-specific** service-role or compatible server secret using Supabase's approved secret settings; supply it through a private environment mechanism in the local QA sandbox, not Git, logs, CLI arguments, a public client variable or this chat. The connected Supabase tools cannot currently retrieve these privileged keys.
+3. Set CUSTOM_V2_QA_PROJECT_REF to the verified QA project ref. Set SUPABASE_URL to the matching canonical https://PROJECT_REF.supabase.co endpoint. The runner rejects the production ref, HTTP, wrong host, path/query additions and malformed URLs.
+4. Supply SUPABASE_SERVICE_ROLE_KEY, a nonproduction DAILY_PROGRESSION_SECRET at least 32 characters, isolated DAILY_ADMIN_USERNAME and DAILY_ADMIN_PASSWORD, CUSTOM_LINEUP_V2_GAMEPLAY_TRANSPORT_ENABLED=true **only within the runner-owned local environment**, and CUSTOM_V2_QA_PLAYER_IDS containing 10 unique, supported canonical ibp_ IDs with complete frozen clue data. Do not enable the public Vercel flag. Do not use a remotely running production-configured Next.js server.
+5. Build the reviewed web commit with its canonical baseball-data runtime and dependencies. Run the no-network guard smoke suite first:
 
-Evidence labels: Mocked browser/HTTP coverage is not live branch-backed HTTP; live branch-backed HTTP is not mobile browser QA; none of these is public activation.
+    node --test apps/web/scripts/qa-custom-v2-hosted.test.mjs
+
+6. Run the real staged acceptance once with the explicit private environment:
+
+    node apps/web/scripts/qa-custom-v2-hosted.mjs
+
+   The script launches and stops its own loopback Next.js process on an ephemeral port and uses the validated nonproduction database connection. It exercises all 10 lineup lengths N=1,2,3,4,5,6,7,8,9,10 and two additional one-batter endings (third strike and give-up). It validates issuer redaction, creator-exclusion, first reservation/restoration, hints, wrong guesses, authoritative signed correct progression, forged/replayed tokens, cross-origin refusal, terminal scores, first-only completed-result admission and idempotent replays. The runner produces no production fixture inserts.
+7. On successful execution, verify the isolated QA project has exactly 12 newly issued challenges, 12 completed noncreator attempts, 12 accepted completions and 57 per-AB result rows, assuming the four tables were empty at the start. If a test fails, record actual counts rather than inventing success and investigate only in that isolated project.
+8. Inspect any logged error for leakage; do not paste secrets or raw answer identities in evidence. Conduct actual mobile/browser QA (including historical v1) separately. Pause or destroy the isolated QA project when finished and reconfirm production remains unchanged.
+
+## Evidence boundaries
+
+Successful Node guard tests only establish preflight; mocked HTTP and existing hosted SQL rollback fixtures do not establish end-to-end gameplay. This runner requires valid QA-only secrets and must actually run before its full hosted result can be reported. Even a successful run does not authorize public activation, public creation, publication/discovery or competitions; those require separate abuse/privacy controls and a release decision.

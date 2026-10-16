@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Explicit, destructive-to-fixture HTTP acceptance. NEVER point at production.
-// Starts its own localhost Next server with validated isolated branch credentials.
+// Starts its own localhost Next server with validated isolated project credentials.
 import assert from 'node:assert/strict';
 import { spawn } from 'node:child_process';
 import { createServer } from 'node:net';
@@ -15,11 +15,12 @@ function required(name) {
 }
 // Never let the operator supply the production ref as an arbitrary comparison value.
 const PRODUCTION_REF = 'dwreeiydvwikpamlokji';
-const branchRef = required('CUSTOM_V2_QA_BRANCH_REF');
-assert.notEqual(branchRef, PRODUCTION_REF, 'Production Supabase is prohibited');
-assert.match(branchRef, /^[a-z0-9]{20}$/);
-assert.equal(new URL(required('SUPABASE_URL')).hostname,
-  branchRef + '.supabase.co', 'Local server must use the specified branch URL');
+const projectRef = required('CUSTOM_V2_QA_PROJECT_REF');
+assert.notEqual(projectRef, PRODUCTION_REF, 'Production Supabase is prohibited');
+assert.match(projectRef, /^[a-z0-9]{20}$/);
+const projectUrl = new URL(required('SUPABASE_URL'));
+assert.equal(projectUrl.href, 'https://' + projectRef + '.supabase.co/',
+  'Staging API must use exact HTTPS URL of the specified nonproduction project');
 required('SUPABASE_SERVICE_ROLE_KEY');
 assert.ok(required('DAILY_PROGRESSION_SECRET').length >= 32,
   'An isolated staging signing secret is required');
@@ -100,7 +101,7 @@ function browser() {
   };
 }
 
-const acceptedLengths = [1, 5, 9, 10];
+const acceptedLengths = Array.from({ length: 10 }, (_, i) => i + 1);
 function attemptPath(id, action) {
   return '/api/custom-lineup/challenges/' + id + '/attempt/' + action;
 }
@@ -242,7 +243,7 @@ try {
   for (const n of acceptedLengths) await play(n);
   await alternativeFinish('third-strike');
   await alternativeFinish('give-up');
-  console.log('Hosted Custom v2 staged acceptance passed on isolated branch.');
+  console.log('Hosted Custom v2 staged acceptance passed on isolated nonproduction project.');
 } finally {
   server.kill('SIGTERM');
 }
