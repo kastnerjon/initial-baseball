@@ -14,6 +14,8 @@ export type DailyEditorialSelection = {
 };
 
 export type DailyPuzzleEditorialRecord = {
+  /** Legacy repository/service shape is contract 1 only; never accept prospective v2. */
+  readonly lineupContractVersion?: never;
   id: string;
   puzzleDate: string;
   puzzleNumber: number;
@@ -145,6 +147,26 @@ export function createDailyPuzzleEditorialService(
   };
 }
 
+/**
+ * Schema-contract-v2 editorial draft for a future five-at-bat Daily.
+ * This pure constructor is not wired to the existing nine-only repository
+ * or schedule/publish flows; activation requires a version-aware adapter.
+ */
+export type ProspectiveDailyFiveEditorialDraft =
+  Omit<DailyPuzzleEditorialRecord, 'lineupContractVersion'> & {
+    readonly lineupContractVersion: 2;
+  };
+
+export function createProspectiveDailyFiveEditorialDraft(
+  input: CreateDailyPuzzleDraftInput,
+): ProspectiveDailyFiveEditorialDraft {
+  validateDate(input.puzzleDate);
+  validatePuzzleNumber(input.puzzleDate, input.puzzleNumber);
+  validateActorAndTimestamp(input.actorId, input.occurredAt);
+  validateDailyEditorialSelectionsForContract(input.selections, 2);
+  return { ...buildDailyPuzzleDraftRecord(input), lineupContractVersion: 2 };
+}
+
 export function createDailyPuzzleDraft(
   input: CreateDailyPuzzleDraftInput,
 ): DailyPuzzleEditorialRecord {
@@ -152,7 +174,12 @@ export function createDailyPuzzleDraft(
   validatePuzzleNumber(input.puzzleDate, input.puzzleNumber);
   validateActorAndTimestamp(input.actorId, input.occurredAt);
   validateSelections(input.selections);
+  return buildDailyPuzzleDraftRecord(input);
+}
 
+function buildDailyPuzzleDraftRecord(
+  input: CreateDailyPuzzleDraftInput,
+): DailyPuzzleEditorialRecord {
   return {
     id: input.id,
     puzzleDate: input.puzzleDate,

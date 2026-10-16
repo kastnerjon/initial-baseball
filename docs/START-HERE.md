@@ -5,6 +5,10 @@ Last updated: 2026-10-15
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
+## October 16 prospective Daily Five editorial draft — pure domain stage
+
+The approved five-at-bat future Daily now has a version-marked, draft-only portable constructor reusing the existing calendar, actor and lineup validation. It demands exactly five ordered, distinct canonical selections (contract 2). Current nine-player editorial draft creation remains nine-only and unchanged. This step performs **no database write, scheduling, publication, issuance, runtime, UI or feature-flag change**. See tasks/plans/daily-five-prospective-editorial-draft.md. Next requires separately reviewed version-aware persistence/editor and prospective issuance without changing historical Daily/Archive/Classic.
+
 ## October 16 hosted QA runner adapted for Supabase Free standalone project
 
 A bounded staging-only runner change now accepts the existing separate Supabase QA project instead of requiring a paid database branch. It pins the production ref exclusion, verifies the exact HTTPS project URL, and exercises every Custom Lineup length N=1–10 plus third-strike and give-up in its eventual real HTTP acceptance. Four no-network startup-guard tests pass. The QA project remains paused; a securely provisioned QA-only server credential and an actual runner execution are **still required** before hosted application gameplay can be called verified. See tasks/plans/custom-v2-standalone-hosted-runner.md and tasks/plans/custom-lineup-v2-hosted-qa-runner.md; no public flag change.

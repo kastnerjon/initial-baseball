@@ -41,6 +41,7 @@ export {
 export {
   archiveDailyPuzzle,
   createDailyPuzzleDraft,
+  createProspectiveDailyFiveEditorialDraft,
   createDailyPuzzleEditorialService,
   validateDailyEditorialSelectionsForContract,
   publishDailyPuzzle,
@@ -51,6 +52,7 @@ export {
   type DailyEditorialSelection,
   type DailyEditorialSelectionSource,
   type DailyEditorialLineupContractVersion,
+  type ProspectiveDailyFiveEditorialDraft,
   type DailyPuzzleEditorialRecord,
   type DailyPuzzleEditorialService,
   type DailyPuzzleRepository,
