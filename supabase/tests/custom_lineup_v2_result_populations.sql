@@ -25,7 +25,7 @@ begin
   select count(*) into v_start_completed from public.custom_nine_completed_results;
   select count(*) into v_start_ab from public.custom_nine_at_bat_results;
 
-  for v_n in select unnest(array[1,5,9,10,-9]) loop
+  for v_n in select unnest(array[1,2,3,4,5,6,7,8,9,10,-9]) loop
     v_schema := case when v_n < 0 then 1 else 2 end;
     v_attempt := gen_random_uuid();
     v_digest := md5(v_attempt::text) || md5(v_attempt::text || '-digest');
@@ -157,10 +157,10 @@ begin
     end if;
   end loop;
 
-  if (select count(*) from public.custom_nine_issued_challenges) <> v_start_issued + 5
-    or (select count(*) from public.custom_nine_attempt_states) <> v_start_attempt + 5
-    or (select count(*) from public.custom_nine_completed_results) <> v_start_completed + 5
-    or (select count(*) from public.custom_nine_at_bat_results) <> v_start_ab + 34 then
+  if (select count(*) from public.custom_nine_issued_challenges) <> v_start_issued + 11
+    or (select count(*) from public.custom_nine_attempt_states) <> v_start_attempt + 11
+    or (select count(*) from public.custom_nine_completed_results) <> v_start_completed + 11
+    or (select count(*) from public.custom_nine_at_bat_results) <> v_start_ab + 64 then
     raise exception 'Unexpected Custom result fixture population';
   end if;
   if has_table_privilege('anon','public.custom_nine_completed_results','select')

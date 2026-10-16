@@ -24,7 +24,7 @@ begin
     from public.custom_nine_issued_challenges;
 
   -- Test both variable v2 sizes and historical exact-nine v1.
-  for v_n in select unnest(array[1, 5, 9, 10, -9]) loop
+  for v_n in select unnest(array[1,2,3,4,5,6,7,8,9,10,-9]) loop
     select jsonb_agg('fixture-player-' || i order by i)
       into v_ids from generate_series(1, abs(v_n)) as i;
     select jsonb_agg(jsonb_build_object(
@@ -130,9 +130,9 @@ begin
   end loop;
 
   if (select count(*) from public.custom_nine_attempt_states)
-       <> v_base_attempt_count + 5
+       <> v_base_attempt_count + 11
     or (select count(*) from public.custom_nine_issued_challenges)
-       <> v_base_challenge_count + 5 then
+       <> v_base_challenge_count + 11 then
     raise exception 'Unexpected Custom fixture row population';
   end if;
 

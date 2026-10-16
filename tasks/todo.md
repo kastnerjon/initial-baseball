@@ -24,7 +24,8 @@ Last updated: 2026-10-15
 - [x] PR #423 caps trimmed public `/api/players/search` queries at 100 chars before canonical candidate materialization; main CI SUCCESS and Vercel production READY as `7548f2f`. This is not a rate limit. Plan: `tasks/plans/canonical-player-search-query-bound.md`.
 - [x] PR #424 **closed without merge**: independent review showed the proposed resolve-key check was redundant, so no non-behavioral PR was merged.
 - [x] PR #425: required JSON media type for gated v2 Custom hint/resolve mutations. Merged b2d8689; exact-main CI SUCCESS, Vercel production READY. Plan: tasks/plans/custom-lineup-v2-json-media-type.md.
-- [ ] Next: execute isolated hosted Custom v2 browser/HTTP/database QA (1/5/9/10 representative cases and N=2–4/6–8 parameterized mocked coverage). Staging runner: tasks/plans/custom-lineup-v2-hosted-qa-runner.md. Mobile QA, abuse/privacy/rate-limit safeguards and controlled activation remain separate gates. Never write fixtures to production.
+- [x] Hosted isolated PostgreSQL v2 regression passed on a standalone $0/month QA project (Supabase Free plan cannot branch): Custom migrations and rollback-only SQL fixtures at N=1–10, plus v1 comparison, passed; no Custom rows remain in QA or production. Scope: `tasks/plans/custom-v2-hosted-postgres-all-lengths.md`. This does NOT establish application-to-DB hosted gameplay.
+- [ ] Next: execute isolated hosted Custom v2 **application HTTP-to-database gameplay** QA with staging-only server secret (N=1/5/9/10 representative and all N=1–10 mocked and SQL coverage already proven). Staging runner: tasks/plans/custom-lineup-v2-hosted-qa-runner.md. Mobile QA, abuse/privacy/rate-limit safeguards and controlled activation remain separate gates. Never write fixtures to production.
 
 ## Current Custom v2 database checkpoint (October 14)
 
