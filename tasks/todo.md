@@ -25,6 +25,7 @@ Last updated: 2026-10-15
 - [x] PR #424 **closed without merge**: independent review showed the proposed resolve-key check was redundant, so no non-behavioral PR was merged.
 - [x] PR #425: required JSON media type for gated v2 Custom hint/resolve mutations. Merged b2d8689; exact-main CI SUCCESS, Vercel production READY. Plan: tasks/plans/custom-lineup-v2-json-media-type.md.
 - [x] Hosted isolated PostgreSQL v2 regression passed on a standalone $0/month QA project (Supabase Free plan cannot branch): Custom migrations and rollback-only SQL fixtures at N=1–10, plus v1 comparison, passed; no Custom rows remain in QA or production. Scope: `tasks/plans/custom-v2-hosted-postgres-all-lengths.md`. This does NOT establish application-to-DB hosted gameplay.
+- [x] Responsive Custom v2 browser QA at 320/375/390/430px and N=1/5/9/10 showed no scorecard horizontal scroll, plus N=10 creator selection at 320px; a terminal restore 503 lost visible error feedback and was corrected in a bounded presentation-only PR. See tasks/plans/custom-v2-terminal-retry-feedback.md. Mocked HTTP, not hosted database QA.
 - [ ] Next: execute isolated hosted Custom v2 **application HTTP-to-database gameplay** QA with staging-only server secret (N=1/5/9/10 representative and all N=1–10 mocked and SQL coverage already proven). Staging runner: tasks/plans/custom-lineup-v2-hosted-qa-runner.md. Mobile QA, abuse/privacy/rate-limit safeguards and controlled activation remain separate gates. Never write fixtures to production.
 
 ## Current Custom v2 database checkpoint (October 14)

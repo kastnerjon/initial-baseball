@@ -5,6 +5,10 @@ Last updated: 2026-10-15
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
+## October 16 Custom v2 mobile QA and recoverable terminal restore error
+
+Browser viewport QA (Chromium, local mock HTTP) exercised Custom v2 N=1/5/9/10 at 320/375/390/430px; all exact-N scorecards fit without horizontal scroll, and creator N=10 selection fit at 320px. A real UI defect was reproduced: when server bootstrap failed after clicking Next batter on a committed terminal reveal, the existing sanitized error state was invisible. A bounded web-only follow-up shows the error on the terminal panel without hiding the authorized reveal or removing retry. See tasks/plans/custom-v2-terminal-retry-feedback.md. This is NOT full hosted HTTP-to-Supabase acceptance. Custom public flag remains disabled.
+
 ## October 16 hosted PostgreSQL v2 all-length verification — passed, HTTP still outstanding
 
 After PR #426 (main `824cd8d8ee17708d8b28e75b8a2e29333d9d46d8`, push CI SUCCESS, production READY), a standalone no-cost Supabase QA project was created because branch creation requires a Pro organization. Only the ten Custom v1/v2 SQL migrations were applied; production-directed Daily ChatOps and scheduled rollover were excluded. Five rollback-only SQL fixtures passed on the hosted QA database with N=1–10 coverage, including validation, attempts, results, atomic admission and comparison buckets. The existing legacy v1 comparison fixture passed as well; the four Custom table populations in both staging and production remained zero.

@@ -5,8 +5,8 @@ import {
   createCustomLineupV2BrowserTransport, CustomLineupV2TransportError,
   type CustomLineupV2BrowserState, type CustomLineupV2BrowserResolution,
 } from '../customLineupV2BrowserTransport';
-import { PlayerRevealCard } from '../components/PlayerRevealCard';
 import { CustomLineupScorecard } from './CustomLineupScorecard';
+import { CustomLineupTerminalPanel } from './CustomLineupTerminalPanel';
 
 type Candidate = { playerId: string; displayName: string };
 function isCandidate(value: unknown): value is Candidate {
@@ -206,15 +206,8 @@ export function CustomLineupGame({ puzzleId }: { puzzleId: string }): JSX.Elemen
                 </button> : null}
               </section>
             ) : terminal !== null ? (
-              <section className="custom-lineup-panel" aria-live="polite">
-                <span className="custom-lineup-kicker">At-bat result</span>
-                <h2>{terminal.result.outcome}</h2>
-                <PlayerRevealCard reveal={terminal.reveal} />
-                <button type="button" className="custom-lineup-primary" disabled={loading}
-                  onClick={() => { void restore(); }}>
-                  {terminal.completed ? 'View final score' : 'Next batter'}
-                </button>
-              </section>
+              <CustomLineupTerminalPanel terminal={terminal} error={error}
+                loading={loading} onContinue={() => { void restore(); }} />
             ) : game.attemptMode === 'reserved' ? (
               <section className="custom-lineup-panel" aria-label="Current at-bat">
                 <div className="custom-lineup-active-heading">
