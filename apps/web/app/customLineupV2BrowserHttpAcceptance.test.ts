@@ -181,7 +181,7 @@ function controlledSession(n: number, creator = false) {
 }
 
 describe('Custom Lineup v2 browser-to-HTTP contract acceptance', () => {
-  it.each([1, 5, 9, 10])('restores and completes exact N=%i with no answer leaks or duplicate admission', async n => {
+  it.each([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])('restores and completes exact N=%i with no answer leaks or duplicate admission', async n => {
     const s = controlledSession(n);
     const opening = await s.client.bootstrap(ID);
     expect(opening.attemptMode).toBe('reserved');

@@ -23,8 +23,8 @@ Last updated: 2026-10-15
 - [x] PR #422 generic noindex/nofollow/nocache and no-referrer metadata on unlisted Custom v2 pages merged as `7b3982e`; exact-head checks and READY Preview passed; main production push checks tracked separately.
 - [x] PR #423 caps trimmed public `/api/players/search` queries at 100 chars before canonical candidate materialization; main CI SUCCESS and Vercel production READY as `7548f2f`. This is not a rate limit. Plan: `tasks/plans/canonical-player-search-query-bound.md`.
 - [x] PR #424 **closed without merge**: independent review showed the proposed resolve-key check was redundant, so no non-behavioral PR was merged.
-- [ ] Current bounded PR: require `application/json` media type for gated v2 Custom hint/resolve mutations before bounded body parse/service calls; preserve bodyless actions. Plan: `tasks/plans/custom-lineup-v2-json-media-type.md`.
-- [ ] Next: isolated hosted 1/5/9/10-player end-to-end gameplay and mobile QA, abuse/privacy/rate-limit safeguards, and controlled activation decision before public links, comparisons, discovery or sharing.
+- [x] PR #425: required JSON media type for gated v2 Custom hint/resolve mutations. Merged b2d8689; exact-main CI SUCCESS, Vercel production READY. Plan: tasks/plans/custom-lineup-v2-json-media-type.md.
+- [ ] Next: execute isolated hosted Custom v2 browser/HTTP/database QA (1/5/9/10 representative cases and N=2–4/6–8 parameterized mocked coverage). Staging runner: tasks/plans/custom-lineup-v2-hosted-qa-runner.md. Mobile QA, abuse/privacy/rate-limit safeguards and controlled activation remain separate gates. Never write fixtures to production.
 
 ## Current Custom v2 database checkpoint (October 14)
 

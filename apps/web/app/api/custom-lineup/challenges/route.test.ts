@@ -44,7 +44,7 @@ function request(body: unknown = { canonicalPlayerIds: IDS }, headers: Record<st
 }
 
 describe('private Custom Lineup v2 creation POST', () => {
-  it.each([1, 5, 9, 10])('issues only the opaque identifier for %i ordered IDs with private no-store response', async n => {
+  it.each([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])('issues only the opaque identifier for %i ordered IDs with private no-store response', async n => {
     const selected = Array.from({ length: n }, (_, i) => 'player-' + (i + 1));
     const response = await POST(request({ canonicalPlayerIds: selected }));
     expect(response.status).toBe(201);
