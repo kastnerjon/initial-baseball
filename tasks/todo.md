@@ -40,7 +40,8 @@ Last updated: 2026-10-15
 - [ ] Migrate Universal to **Daily Five** (exactly 5 AB / 20 maximum) and future **Custom Lineup** to a creator-chosen **1–10** ABs (4 × N maximum), with legacy nine-player issued games and Classic unchanged. Current production still runs nine; **no activation in this decision PR**.
 - [x] Stage 1: portable length profiles distinguish legacy nine-player Daily/Classic/Custom v1 from future Daily Five five and future Custom 1–10, without activating new issuance. Existing validators preserve their exact-nine errors and behavior.
 - [x] Stage 2: additive Daily five-player editorial and permanent-issued SQL migration (#396), installed in hosted Supabase as `20261013223640_prepare_daily_five_length_constraints`; rollback fixture and unchanged nine-player counts/privileges verified. No public activation.
-- [ ] Next Daily Five: separately versioned editor and issuance support for prospective five-player inventory, preserving Classic and all nine-player historical records; then browser/result compatibility and controlled cutover.
+- [x] Staged prospective Daily Five editorial draft constructor in packages/daily (contract 2, exact five, canonical unique slots, reused identity/actor validations); pure/no persistence, no activation. Focused Daily lifecycle + new draft tests passed. Plan: tasks/plans/daily-five-prospective-editorial-draft.md.
+- [ ] Next Daily Five: separately versioned repository/editor support for prospective five-player inventory, then distinct issuance, browser/result compatibility and controlled cutover. This draft-only stage does not permit scheduling or publishing five-player Dailies.
 
 ## Community Lineups — publish, discover and compare (approved October 13)
 

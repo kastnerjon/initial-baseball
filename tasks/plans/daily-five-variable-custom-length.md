@@ -1,5 +1,5 @@
 # Daily Five and variable-length Custom Lineup — approved product migration
-Status: **Stages 1–2 portable length policy and hosted Daily database preparation complete; issuance and rollout pending** (2026-10-13)
+Status: **Stages 1–2 portable length policy and hosted Daily database preparation complete; prospective five-slot draft-only constructor staged; issuance and rollout pending** (updated 2026-10-16)
 
 ## Owner decision and current-state boundary
 
@@ -60,3 +60,8 @@ Each implementation PR must define its own scope contract, docs impact, independ
 - Custom Lineup: exactly the creator's 1–10 ordered distinct selections, max `4 × N`; completion only after all N.
 - Previously issued nine-player Daily/Archive/Custom and Classic flows remain intact at their original lengths and scores.
 - No cross-population contamination, stale save reassignment, spoofed completion, hidden-answer leak, unsafe migration, or unintended activation.
+
+
+## October 16 draft-only follow-up
+
+The future five-player editorial contract now has an explicit pure constructor that validates an exact-five, unique, canonical slot set and produces a contract-version-2 draft. The current draft editor and repository continue to accept only nine-player records; no five-player record is persisted, scheduled or issued by this change. The next independent stage is version-aware safe storage/editor wiring and separately reviewed issuance. See tasks/plans/daily-five-prospective-editorial-draft.md.
