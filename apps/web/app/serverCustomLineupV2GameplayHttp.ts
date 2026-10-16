@@ -99,6 +99,9 @@ export async function handleCustomLineupV2GameplayPost(
         status: result.status === 'created' ? 201 : 200, headers: HEADERS,
       });
     }
+    // Hint and resolve are JSON-only mutations. Check media type before reading a stream.
+    if (request.headers.get('content-type')?.split(';', 1)[0]?.trim().toLowerCase()
+      !== 'application/json') return response('invalid_request', 400);
     const body: unknown = await readCustomNineJsonBody(request);
     if (action === 'hint') {
       const token = tokenOnly(body);

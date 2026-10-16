@@ -5,9 +5,15 @@ Last updated: 2026-10-15
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
-## Public canonical player-search input bound — current PR
+## Current bounded PR — JSON media type for Custom v2 gameplay mutations
 
-A bounded Web API hardening PR limits trimmed `/api/players/search?q=` queries to 100 characters before loading or searching canonical player candidates; empty or overlong searches return the same safe `{ results: [] }` shape. This matches the staged Custom gameplay client request ceiling, preserves ordinary Daily/Classic/admin search behavior and changes no gameplay rules or dataset. It reduces oversized-query search work but is **not rate limiting or anti-spam protection**. Scope: `tasks/plans/canonical-player-search-query-bound.md`. Public Custom gameplay and creation remain restricted; hosted 1/5/9/10 E2E, mobile and anti-abuse controls remain release gates.
+The flag-gated Custom Lineup v2 `hint` and `resolve` actions already parse a bounded JSON body but currently accept valid JSON under `text/plain` or missing JSON media types. Require `application/json` (optional media type parameters) before stream parsing and service calls, matching the shipped v2 browser transport. Leave bodyless `bootstrap`/`submit` untouched, preserve no-store/same-origin checks, keep the flag OFF, and test valid/invalid media types. This is request protocol hardening, not a substitute for IP/credential throttling, hosted gameplay QA, CSRF defense, or approval to activate. Scope: `tasks/plans/custom-lineup-v2-json-media-type.md`.
+
+## Verified search hardening PR #423 and rejected PR #424
+
+PR #423 merged as `7548f2f4bad4fe15666d45c3e68466cdfdf4e152` after exact-head CI, READY Preview and independent review. Main push CI SUCCESS (38829485147), production Vercel `dpl_A3LtWnT5FYKdSaA7njff6fmXmVCC` READY on that exact SHA, canonical homepage/Archive/Classic HTTP 200, disabled v2 Custom example 404, Supabase healthy, zero open PRs at checkpoint and no production error/fatal logs inspected. Trimmed `/api/players/search` queries over 100 characters now short circuit before canonical candidate loading; **not rate limiting**. Scope: `tasks/plans/canonical-player-search-query-bound.md`.
+
+PR #424 was **closed without merge** after the independent reviewer correctly identified that its proposed resolve-action key validation was redundant with the existing two-property constraint. No PR #424 code reached main or production.
 
 ## Verified unlisted Custom Lineup metadata PR #422
 
