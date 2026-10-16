@@ -5,6 +5,10 @@ Last updated: 2026-10-15
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
+## October 16 hosted QA runner adapted for Supabase Free standalone project
+
+A bounded staging-only runner change now accepts the existing separate Supabase QA project instead of requiring a paid database branch. It pins the production ref exclusion, verifies the exact HTTPS project URL, and exercises every Custom Lineup length N=1–10 plus third-strike and give-up in its eventual real HTTP acceptance. Four no-network startup-guard tests pass. The QA project remains paused; a securely provisioned QA-only server credential and an actual runner execution are **still required** before hosted application gameplay can be called verified. See tasks/plans/custom-v2-standalone-hosted-runner.md and tasks/plans/custom-lineup-v2-hosted-qa-runner.md; no public flag change.
+
 ## October 16 Custom v2 mobile QA and recoverable terminal restore error
 
 Browser viewport QA (Chromium, local mock HTTP) exercised Custom v2 N=1/5/9/10 at 320/375/390/430px; all exact-N scorecards fit without horizontal scroll, and creator N=10 selection fit at 320px. A real UI defect was reproduced: when server bootstrap failed after clicking Next batter on a committed terminal reveal, the existing sanitized error state was invisible. A bounded web-only follow-up shows the error on the terminal panel without hiding the authorized reveal or removing retry. See tasks/plans/custom-v2-terminal-retry-feedback.md. This is NOT full hosted HTTP-to-Supabase acceptance. Custom public flag remains disabled.
