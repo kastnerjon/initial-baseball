@@ -5,9 +5,17 @@ Last updated: 2026-10-15
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
-## Custom Lineup v2 unlisted-page metadata privacy — current PR
+## Public canonical player-search input bound — current PR
 
-Small page-only release safeguard: future flag-enabled private `/custom/{v2-id}` pages explicitly set generic non-answer metadata, `robots` noindex/nofollow/nocache and no-referrer. Unlisted URLs are not approved community directory listings. This is indexing/referrer hygiene, **not authentication, crawler secrecy, public activation, or a substitute for staging QA**. Scope: `tasks/plans/custom-lineup-v2-private-page-metadata.md`. After this PR: isolated full-stack 1/5/9/10 QA, physical mobile inspection, anti-abuse/privacy controls, and explicit release authorization.
+A bounded Web API hardening PR limits trimmed `/api/players/search?q=` queries to 100 characters before loading or searching canonical player candidates; empty or overlong searches return the same safe `{ results: [] }` shape. This matches the staged Custom gameplay client request ceiling, preserves ordinary Daily/Classic/admin search behavior and changes no gameplay rules or dataset. It reduces oversized-query search work but is **not rate limiting or anti-spam protection**. Scope: `tasks/plans/canonical-player-search-query-bound.md`. Public Custom gameplay and creation remain restricted; hosted 1/5/9/10 E2E, mobile and anti-abuse controls remain release gates.
+
+## Verified unlisted Custom Lineup metadata PR #422
+
+PR #422 merged as `7b3982e5bc7ac5c67c90f1dd0c7a43234fa27fcc`, after successful exact-head GitHub CI, READY Preview, and independent review with no blocking findings. Generic noindex/nofollow/nocache and no-referrer metadata is attached only to the private Custom challenge route; default-disabled gameplay is unchanged. Exact-main push CI and production were still running at the first post-merge check; record final values after confirmed.
+
+## Custom Lineup v2 unlisted-page metadata privacy — implemented
+
+Merged #422 page-only release safeguard: future flag-enabled private `/custom/{v2-id}` pages explicitly set generic non-answer metadata, `robots` noindex/nofollow/nocache and no-referrer. Unlisted URLs are not approved community directory listings. This is indexing/referrer hygiene, **not authentication, crawler secrecy, public activation, or a substitute for staging QA**. Scope: `tasks/plans/custom-lineup-v2-private-page-metadata.md`. After this PR: isolated full-stack 1/5/9/10 QA, physical mobile inspection, anti-abuse/privacy controls, and explicit release authorization.
 
 ## Verified v2 browser-to-HTTP acceptance PR #421
 
