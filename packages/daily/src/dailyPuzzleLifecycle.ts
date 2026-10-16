@@ -14,6 +14,8 @@ export type DailyEditorialSelection = {
 };
 
 export type DailyPuzzleEditorialRecord = {
+  /** Legacy repository/service shape is contract 1 only; never accept prospective v2. */
+  readonly lineupContractVersion?: never;
   id: string;
   puzzleDate: string;
   puzzleNumber: number;
@@ -150,9 +152,10 @@ export function createDailyPuzzleEditorialService(
  * This pure constructor is not wired to the existing nine-only repository
  * or schedule/publish flows; activation requires a version-aware adapter.
  */
-export type ProspectiveDailyFiveEditorialDraft = DailyPuzzleEditorialRecord & {
-  readonly lineupContractVersion: 2;
-};
+export type ProspectiveDailyFiveEditorialDraft =
+  Omit<DailyPuzzleEditorialRecord, 'lineupContractVersion'> & {
+    readonly lineupContractVersion: 2;
+  };
 
 export function createProspectiveDailyFiveEditorialDraft(
   input: CreateDailyPuzzleDraftInput,

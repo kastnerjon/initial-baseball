@@ -1,8 +1,10 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, expectTypeOf, it } from 'vitest';
 import {
   createDailyPuzzleDraft,
   createProspectiveDailyFiveEditorialDraft,
   getDailyPuzzleNumber,
+  type ProspectiveDailyFiveEditorialDraft,
+  type DailyPuzzleEditorialRecord,
 } from './index';
 
 const date = '2026-11-16';
@@ -21,6 +23,11 @@ const input = (slots: readonly number[] = [1, 2, 3, 4, 5]) => ({
 });
 
 describe('prospective Daily Five editorial contract only', () => {
+  it('is not assignable to the legacy nine-only repository record type', () => {
+    expectTypeOf<ProspectiveDailyFiveEditorialDraft>()
+      .not.toExtend<DailyPuzzleEditorialRecord>();
+  });
+
   it('creates a marked draft with exactly five ordered canonical selections, no scheduling or publication', () => {
     const draft = createProspectiveDailyFiveEditorialDraft(input([5, 3, 1, 4, 2]));
     expect(draft.lineupContractVersion).toBe(2);
