@@ -15,8 +15,8 @@ Supabase remains ACTIVE_HEALTHY. No open PRs at this checkpoint.
 The next bounded work adds a local application to isolated hosted Supabase branch
 HTTP acceptance runner and expands mocked protocol and issuer coverage to
 every supported N=1–10, without opening public Custom gameplay. The new script
-is executable only with explicitly configured localhost target, isolated
-branch reference, matching Supabase URL and opt-in flag. A successful local
+launches its own localhost Next.js process with the validated isolated
+branch environment, pinned production-project exclusion and opt-in flag. A successful local
 syntax check or mocked test is NOT hosted E2E evidence. See
 tasks/plans/custom-lineup-v2-hosted-qa-runner.md for the runbook and
 remaining prerequisites. Branch creation has a separately confirmed hourly

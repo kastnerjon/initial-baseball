@@ -1,8 +1,11 @@
 #!/usr/bin/env node
 // Explicit, destructive-to-fixture HTTP acceptance. NEVER point at production.
-// Run only with a disposable Supabase branch and a localhost Next.js server
-// using that branch's service-role configuration.
+// Starts its own localhost Next server with validated isolated branch credentials.
 import assert from 'node:assert/strict';
+import { spawn } from 'node:child_process';
+import { createServer } from 'node:net';
+import { setTimeout as delay } from 'node:timers/promises';
+import { fileURLToPath } from 'node:url';
 
 const env = process.env;
 function required(name) {
@@ -10,18 +13,16 @@ function required(name) {
   assert.ok(value, name + ' must be explicitly configured');
   return value;
 }
-const base = new URL(required('CUSTOM_V2_QA_BASE_URL'));
-assert.ok(['localhost', '127.0.0.1'].includes(base.hostname),
-  'Hosted QA can only target a local Next server wired to an isolated hosted DB');
-assert.equal(base.pathname, '/', 'Base URL must be site root');
-assert.ok(base.protocol === 'http:' || base.protocol === 'https:');
+// Never let the operator supply the production ref as an arbitrary comparison value.
+const PRODUCTION_REF = 'dwreeiydvwikpamlokji';
 const branchRef = required('CUSTOM_V2_QA_BRANCH_REF');
-const productionRef = required('CUSTOM_V2_QA_PRODUCTION_REF');
-assert.notEqual(branchRef, productionRef, 'Production Supabase is prohibited');
+assert.notEqual(branchRef, PRODUCTION_REF, 'Production Supabase is prohibited');
 assert.match(branchRef, /^[a-z0-9]{20}$/);
 assert.equal(new URL(required('SUPABASE_URL')).hostname,
   branchRef + '.supabase.co', 'Local server must use the specified branch URL');
 required('SUPABASE_SERVICE_ROLE_KEY');
+assert.ok(required('DAILY_PROGRESSION_SECRET').length >= 32,
+  'An isolated staging signing secret is required');
 assert.equal(required('CUSTOM_LINEUP_V2_GAMEPLAY_TRANSPORT_ENABLED'), 'true',
   'Only local staging gameplay may be enabled');
 const username = required('DAILY_ADMIN_USERNAME');
@@ -31,6 +32,45 @@ assert.equal(players.length, 10, 'Exactly ten fixture IDs are required');
 assert.equal(new Set(players).size, 10, 'Fixtures must have distinct canonical IDs');
 for (const id of players) assert.match(id, /^ibp_[0-9a-f]{20}$/);
 const admin = 'Basic ' + Buffer.from(username + ':' + password).toString('base64');
+
+// The runner owns the tested Next.js process, avoiding mismatched local server
+// environments and refusing to reuse an unrelated process on a fixed port.
+const webRoot = fileURLToPath(new URL('../', import.meta.url));
+const nextBinary = fileURLToPath(new URL('../node_modules/next/dist/bin/next', import.meta.url));
+let base;
+async function reserveLocalPort() {
+  const listener = createServer();
+  await new Promise((resolve, reject) => {
+    listener.once('error', reject);
+    listener.listen(0, '127.0.0.1', resolve);
+  });
+  const address = listener.address();
+  assert.ok(address && typeof address !== 'string');
+  await new Promise((resolve, reject) => listener.close(error => error ? reject(error) : resolve()));
+  return address.port;
+}
+async function startValidatedWebServer() {
+  const port = await reserveLocalPort();
+  base = new URL('http://127.0.0.1:' + port + '/');
+  const child = spawn(process.execPath,
+    [nextBinary, 'start', '-H', '127.0.0.1', '-p', String(port)], {
+      cwd: webRoot, env: { ...env, PORT: String(port), HOSTNAME: '127.0.0.1' },
+      stdio: ['ignore', 'pipe', 'pipe'],
+    });
+  child.stdout.resume();
+  child.stderr.resume();
+  for (let tries = 0; tries < 120; tries++) {
+    if (child.exitCode !== null) break;
+    try {
+      const health = await fetch(base, { signal: AbortSignal.timeout(1500) });
+      if (health.status === 200) return child;
+    } catch { /* process may not be listening yet */ }
+    await delay(250);
+  }
+  child.kill('SIGTERM');
+  throw new Error('Isolated staging Next.js server did not become ready');
+}
+
 
 function browser() {
   const cookies = new Map();
@@ -197,8 +237,13 @@ async function alternativeFinish(mode) {
   console.log('PASS Custom v2 hosted DB ' + mode);
 }
 
-for (const n of acceptedLengths) await play(n);
-await alternativeFinish('third-strike');
-await alternativeFinish('give-up');
-console.log('Hosted Custom v2 staged acceptance passed. No production changes.');
+const server = await startValidatedWebServer();
+try {
+  for (const n of acceptedLengths) await play(n);
+  await alternativeFinish('third-strike');
+  await alternativeFinish('give-up');
+  console.log('Hosted Custom v2 staged acceptance passed on isolated branch.');
+} finally {
+  server.kill('SIGTERM');
+}
 
