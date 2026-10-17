@@ -30,11 +30,20 @@ export function DailyFiveDraftWorkbench({ writesEnabled = false }: {
   const [saving, setSaving] = useState(false);
   const [savedId, setSavedId] = useState<string | null>(null);
   const [saveError, setSaveError] = useState<string | null>(null);
+  const [dateOccupancy, setDateOccupancy] = useState<{
+    date: string;
+    status: 'available' | 'occupied' | 'error';
+    contract?: 1 | 2;
+    lifecycle?: string;
+  } | null>(null);
+  // Only a resolved, unoccupied date can pass the UI's advisory preflight.
+  // The database unique constraint remains the authoritative collision guard.
+  const dateAvailable = dateOccupancy?.date === date && dateOccupancy.status === 'available';
   const complete = players.length === 5 && !!date;
   const editable = !saving && savedId === null;
 
   async function saveDraft(): Promise<void> {
-    if (!writesEnabled || !complete || !editable) return;
+    if (!writesEnabled || !complete || !editable || !dateAvailable) return;
     setSaving(true);
     setSaveError(null);
     try {
@@ -65,6 +74,45 @@ export function DailyFiveDraftWorkbench({ writesEnabled = false }: {
       setSaving(false);
     }
   }
+
+  useEffect(() => {
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(date)) {
+      setDateOccupancy(null);
+      return;
+    }
+    const controller = new AbortController();
+    setDateOccupancy(null);
+    void fetch('/admin/daily-five/calendar?date=' + encodeURIComponent(date), {
+      credentials: 'same-origin', signal: controller.signal,
+    }).then(async response => {
+      if (!response.ok) throw new Error('calendar unavailable');
+      const data: unknown = await response.json();
+      if (!data || typeof data !== 'object' || Array.isArray(data)
+        || !('date' in data) || data.date !== date || !('occupancy' in data)) {
+        throw new Error('invalid calendar response');
+      }
+      let result: { date: string; status: 'available' | 'occupied' | 'error'; contract?: 1 | 2; lifecycle?: string };
+      if (data.occupancy === null) {
+        result = { date, status: 'available' };
+      } else {
+        const record = data.occupancy;
+        if (typeof record !== 'object' || Array.isArray(record)
+          || !('puzzleDate' in record) || record.puzzleDate !== date
+          || !('lineupContractVersion' in record)
+          || (record.lineupContractVersion !== 1 && record.lineupContractVersion !== 2)
+          || !('status' in record) || typeof record.status !== 'string'
+          || !['draft', 'scheduled', 'published', 'archived'].includes(record.status)) {
+          throw new Error('invalid calendar occupancy');
+        }
+        result = { date, status: 'occupied', contract: record.lineupContractVersion,
+          lifecycle: record.status };
+      }
+      if (!controller.signal.aborted) setDateOccupancy(result);
+    }).catch(() => {
+      if (!controller.signal.aborted) setDateOccupancy({ date, status: 'error' });
+    });
+    return () => controller.abort();
+  }, [date]);
 
   useEffect(() => {
     const trimmed = query.trim();
@@ -116,6 +164,13 @@ export function DailyFiveDraftWorkbench({ writesEnabled = false }: {
       <label htmlFor="five-puzzle-date">Target puzzle date</label>
       <input type="date" id="five-puzzle-date" value={date} disabled={!editable}
         onChange={event => { if ('value' in event.target && typeof event.target.value === 'string') setDate(event.target.value); }} />
+      <p role="status">{!date ? 'Choose a date to inspect editorial occupancy.'
+        : dateOccupancy?.date !== date ? 'Checking calendar date…'
+          : dateOccupancy.status === 'available' ? 'No editorial puzzle currently occupies this date.'
+            : dateOccupancy.status === 'occupied'
+              ? 'Date already occupied by a ' + (dateOccupancy.contract === 1 ? 'nine-player' : 'five-player')
+                + ' editorial puzzle (' + dateOccupancy.lifecycle + ').'
+              : 'Calendar status unavailable. Saving is blocked.'}</p>
       <ol className="custom-nine-creator-players">
         {Array.from({ length: 5 }, (_, index) => {
           const player = players[index];
@@ -159,7 +214,7 @@ export function DailyFiveDraftWorkbench({ writesEnabled = false }: {
           : complete ? 'Draft is complete. Saving will not schedule or publish it.'
             : 'Choose a date and five distinct players.'}</p>
       {saveError ? <p role="alert">{saveError}</p> : null}
-      <button type="button" disabled={!writesEnabled || !complete || !editable}
+      <button type="button" disabled={!writesEnabled || !complete || !editable || !dateAvailable}
         onClick={() => { void saveDraft(); }}>
         {saving ? 'Saving…' : !writesEnabled
           ? 'Save five-player draft — unavailable during staging'

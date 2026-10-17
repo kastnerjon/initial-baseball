@@ -43,7 +43,8 @@ Last updated: 2026-10-15
 - [x] Staged prospective Daily Five editorial draft constructor in packages/daily (contract 2, exact five, canonical unique slots, reused identity/actor validations); pure/no persistence, no activation. Focused Daily lifecycle + new draft tests passed. Plan: tasks/plans/daily-five-prospective-editorial-draft.md.
 - [x] Added isolated insert/read-only v2 Daily Five draft repository plus explicit contract-1 nine/v2 five row codec boundaries, duplicate-date conflict and optimistic-update contract fence. Focused tests and web typecheck passed. No live route or production write. Scope: tasks/plans/daily-five-draft-storage-adapter.md.
 - [x] Admin-only future Daily Five draft workbench: five-slot canonical search and reorder, date input, Basic-auth page, guarded draft-only POST and default-OFF server storage gate. No production writes or activation. Scope: tasks/plans/daily-five-admin-draft-editor.md.
-- [ ] Next Daily Five: design version-aware calendar/horizon coexistence and safe cutover for five-player editorial records, with production draft writes still OFF; separately stage issued schema-v3 and browser/result compatibility before activating five-player Daily. Classic/Archive history remains nine-player.
+- [x] Read-only admin Daily Five date occupancy preview recognizes shared calendar v1 nine/v2 five records without selections; auth-protected no-store GET, explicit fail-closed unknown/error behavior, and editor Save preflight guard. No activation. Scope: tasks/plans/daily-five-calendar-occupancy-preview.md.
+- [ ] Next Daily Five: implement a separately reviewed version-aware mixed-calendar/horizon read strategy and explicit cutover policy, with production draft writes OFF; subsequently stage issued schema-v3 and browser/result compatibility before activation. Classic/Archive history remains nine-player.
 
 ## Community Lineups — publish, discover and compare (approved October 13)
 
