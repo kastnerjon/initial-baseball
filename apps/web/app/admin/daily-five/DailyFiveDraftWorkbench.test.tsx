@@ -9,6 +9,7 @@ describe('future Daily Five admin editor shell', () => {
     expect(html.match(/Unselected/g)).toHaveLength(5);
     expect(html).toContain('type="date"');
     expect(html).toContain('Search by name');
+    expect(html).toContain('class="custom-nine-search"');
     expect(html).toContain('Save five-player draft');
     expect(html).toMatch(/<button type="button" disabled="">Save five-player draft/);
     expect(html).not.toContain('/admin/daily/lifecycle');

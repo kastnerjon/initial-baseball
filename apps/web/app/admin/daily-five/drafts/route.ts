@@ -5,6 +5,8 @@ import {
 } from '../../../dailyAdminAuthorization';
 import { isSameOriginDailyAdminMutation } from '../../../dailyAdminRequestSecurity';
 import { readDailyResultJsonBody } from '../../../dailyResultRequestBody';
+import { getPacificDailyDateString } from '../../../getPacificDailyDateString';
+import { resolveCanonicalPlayerId } from '../../../serverCanonicalData';
 import { createServerSupabaseClient } from '../../../serverSupabaseClient';
 import {
   SupabaseDailyPuzzleRepositoryError,
@@ -55,12 +57,31 @@ export async function POST(request: Request): Promise<Response> {
     || !input.canonicalPlayerIds.every(id => typeof id === 'string')) {
     return Response.json({ error: 'invalid_draft' }, { status: 400, headers: PRIVATE });
   }
+  // Contract-v2 shares a date-unique table with current nine-player Daily.
+  // Never place draft inventory on today or historical dates.
+  if (input.puzzleDate <= getPacificDailyDateString()) {
+    return Response.json({ error: 'invalid_draft' }, { status: 400, headers: PRIVATE });
+  }
+
+  // Browser search is not an authority: validate exact canonical membership
+  // server-side rather than persisting unresolved or redirected IDs.
+  const ids = input.canonicalPlayerIds as string[];
+  let canonical: boolean;
+  try {
+    canonical = ids.every(id => resolveCanonicalPlayerId(id) === id);
+  } catch {
+    return Response.json({ error: 'unavailable' }, { status: 503, headers: PRIVATE });
+  }
+  if (!canonical) {
+    return Response.json({ error: 'invalid_draft' }, { status: 400, headers: PRIVATE });
+  }
+
   try {
     const draft = createProspectiveDailyFiveEditorialDraft({
       id: 'daily-five-draft-' + randomUUID(),
       puzzleDate: input.puzzleDate,
       puzzleNumber: getDailyPuzzleNumber(input.puzzleDate),
-      selections: (input.canonicalPlayerIds as string[]).map((canonicalPlayerId, index) => ({
+      selections: ids.map((canonicalPlayerId, index) => ({
         slot: index + 1, canonicalPlayerId, source: 'manual',
       })),
       actorId, occurredAt: new Date().toISOString(),

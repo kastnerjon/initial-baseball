@@ -137,7 +137,7 @@ export function DailyFiveDraftWorkbench({ writesEnabled = false }: {
           </li>;
         })}
       </ol>
-      {players.length < 5 && editable ? <div>
+      {players.length < 5 && editable ? <div className="custom-nine-search">
         <label htmlFor="five-player-search">Find canonical player</label>
         <input id="five-player-search" type="search" maxLength={100}
           value={query} onChange={event => { if ('value' in event.target && typeof event.target.value === 'string') setQuery(event.target.value); }}

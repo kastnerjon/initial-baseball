@@ -2,12 +2,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
 vi.mock('../../../serverSupabaseClient', () => ({ createServerSupabaseClient: vi.fn(() => ({})) }));
+vi.mock('../../../serverCanonicalData', () => ({ resolveCanonicalPlayerId: vi.fn((id: string) => id) }));
+vi.mock('../../../getPacificDailyDateString', () => ({ getPacificDailyDateString: vi.fn(() => '2026-10-17') }));
 vi.mock('../../../supabaseProspectiveDailyFiveDraftRepository', () => ({
   createSupabaseProspectiveDailyFiveDraftRepository: vi.fn(() => ({ insertDraft: vi.fn() })),
 }));
 
 import { POST } from './route';
 import { createServerSupabaseClient } from '../../../serverSupabaseClient';
+import { resolveCanonicalPlayerId } from '../../../serverCanonicalData';
 import { createSupabaseProspectiveDailyFiveDraftRepository }
   from '../../../supabaseProspectiveDailyFiveDraftRepository';
 
@@ -22,6 +25,7 @@ beforeEach(() => {
   vi.stubEnv('DAILY_ADMIN_PASSWORD', 'a-very-long-and-private-editor-password');
   vi.stubEnv('DAILY_FIVE_DRAFT_WRITES_ENABLED', '');
   insertDraft.mockReset();
+  vi.mocked(resolveCanonicalPlayerId).mockImplementation(id => id);
   insertDraft.mockResolvedValue(saved);
   vi.mocked(createSupabaseProspectiveDailyFiveDraftRepository).mockReturnValue({
     getByDate: vi.fn(), insertDraft,
@@ -77,6 +81,33 @@ describe('future Daily Five admin draft staging endpoint', () => {
     }
     expect((await POST(request(undefined, { 'content-type': 'text/plain' }))).status).toBe(415);
     expect(insertDraft).not.toHaveBeenCalled();
+  });
+
+  it('rejects today and historical dates without reading runtime or writing storage', async () => {
+    vi.stubEnv('DAILY_FIVE_DRAFT_WRITES_ENABLED', 'true');
+    for (const puzzleDate of ['2026-10-17', '2026-10-16', '2026-01-01']) {
+      const response = await POST(request({ puzzleDate, canonicalPlayerIds: IDS }));
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({ error: 'invalid_draft' });
+    }
+    expect(resolveCanonicalPlayerId).not.toHaveBeenCalled();
+    expect(createServerSupabaseClient).not.toHaveBeenCalled();
+  });
+
+  it('rejects unknown or redirected player identifiers before storage', async () => {
+    vi.stubEnv('DAILY_FIVE_DRAFT_WRITES_ENABLED', 'true');
+    vi.mocked(resolveCanonicalPlayerId).mockImplementation(id =>
+      id === IDS[4] ? null : id);
+    expect((await POST(request())).status).toBe(400);
+    vi.mocked(resolveCanonicalPlayerId).mockImplementation(id =>
+      id === IDS[4] ? IDS[0]! : id);
+    expect((await POST(request())).status).toBe(400);
+    expect(createServerSupabaseClient).not.toHaveBeenCalled();
+    vi.mocked(resolveCanonicalPlayerId).mockImplementation(() => {
+      throw new Error('runtime unavailable');
+    });
+    expect((await POST(request())).status).toBe(503);
+    expect(createServerSupabaseClient).not.toHaveBeenCalled();
   });
 
   it('creates a five-slot marked draft only after an explicit server opt-in', async () => {
