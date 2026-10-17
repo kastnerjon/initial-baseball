@@ -11,12 +11,14 @@ import { createSupabaseDailyEditorialCalendarOccupancyReader } from '../../../su
 const DATE = '2026-11-18';
 const AUTH = 'Basic ' + Buffer.from('editor:a-very-long-and-private-editor-password').toString('base64');
 const getByDate = vi.fn();
+const getHorizon = vi.fn();
 
 beforeEach(() => {
   vi.stubEnv('DAILY_ADMIN_USERNAME', 'editor');
   vi.stubEnv('DAILY_ADMIN_PASSWORD', 'a-very-long-and-private-editor-password');
   getByDate.mockReset();
-  vi.mocked(createSupabaseDailyEditorialCalendarOccupancyReader).mockReturnValue({ getByDate });
+  getHorizon.mockReset();
+  vi.mocked(createSupabaseDailyEditorialCalendarOccupancyReader).mockReturnValue({ getByDate, getHorizon });
 });
 afterEach(() => { vi.unstubAllEnvs(); vi.clearAllMocks(); });
 function request(date = DATE, authorization = AUTH): Request {
@@ -59,6 +61,51 @@ describe('private Daily Five editorial calendar inspection', () => {
     const empty = await GET(request());
     expect(await empty.json()).toEqual({ date: DATE, occupancy: null });
     const failed = await GET(request());
+    expect(failed.status).toBe(503);
+    expect(await failed.json()).toEqual({ error: 'unavailable' });
+  });
+
+  it('offers authenticated read-only mixed-contract horizon without answers', async () => {
+    const slots = [
+      { date: DATE, occupancy: { puzzleDate: DATE, lineupContractVersion: 1, status: 'scheduled' } },
+      { date: '2026-11-19', occupancy: { puzzleDate: '2026-11-19', lineupContractVersion: 2, status: 'draft' } },
+      { date: '2026-11-20', occupancy: null },
+    ];
+    getHorizon.mockResolvedValueOnce(slots);
+    const requestRange = new Request(
+      'https://example.test/admin/daily-five/calendar?startDate=' + DATE + '&days=3',
+      { headers: { authorization: AUTH } },
+    );
+    const response = await GET(requestRange);
+    expect(response.status).toBe(200);
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+    expect(await response.json()).toEqual({ startDate: DATE, days: 3, slots });
+    expect(getHorizon).toHaveBeenCalledWith(DATE, 3);
+    expect(getByDate).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    'startDate=2026-02-30&days=3',
+    'startDate=2026-11-18&days=0',
+    'startDate=2026-11-18&days=32',
+    'startDate=2026-11-18&days=2.5',
+    'startDate=2026-11-18',
+    'startDate=2026-11-18&days=2&date=2026-11-18',
+    'startDate=2026-11-18&days=2&days=3',
+    'date=2026-11-18&extra=1',
+  ])('rejects malformed or ambiguous range params: %s', async query => {
+    const response = await GET(new Request('https://example.test/admin/daily-five/calendar?' + query,
+      { headers: { authorization: AUTH } }));
+    expect(response.status).toBe(400);
+    expect(createServerSupabaseClient).not.toHaveBeenCalled();
+  });
+
+  it('rejects unauthorized horizon reads and fails closed on provider errors', async () => {
+    const url = 'https://example.test/admin/daily-five/calendar?startDate=' + DATE + '&days=2';
+    expect((await GET(new Request(url))).status).toBe(401);
+    expect(createServerSupabaseClient).not.toHaveBeenCalled();
+    getHorizon.mockRejectedValueOnce(new Error('secret'));
+    const failed = await GET(new Request(url, { headers: { authorization: AUTH } }));
     expect(failed.status).toBe(503);
     expect(await failed.json()).toEqual({ error: 'unavailable' });
   });

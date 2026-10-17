@@ -5,6 +5,10 @@ Last updated: 2026-10-15
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
+## October 17 mixed-contract editorial horizon reader — read-only staging
+
+The authenticated Daily Five editorial calendar endpoint now supports a bounded `startDate` + `days` (1–31) horizon alongside the existing single-date `date` query. It returns ordered date-only slots with explicit contract-1/contract-2 occupancy and real empty dates, never selections or answer information; malformed or unexpected records and database failures fail closed. This is metadata-only and does **not** change the legacy Daily Nine horizon, generator, scheduler or issuer; Daily Five draft writes remain OFF. See `tasks/plans/daily-five-version-aware-calendar-horizon-read.md`. Future cutover needs a separate compatibility decision and PR.
+
 ## October 17 read-only shared calendar inspection — staging
 
 Future Daily Five administration now offers a private date-occupancy preview that reads only puzzle_date, lineup_contract_version (nine/contract 1 or five/contract 2) and lifecycle status, with no player IDs or hints. Unexpected versions and provider failures are not considered vacant. The draft editor blocks Save until the date is confirmed empty; this is advisory only and does not replace the database unique-date constraint. The server-side Daily Five draft write flag remains OFF, and the legacy nine-only horizon is NOT altered. See tasks/plans/daily-five-calendar-occupancy-preview.md. Safe mixed-version horizon/scheduling and issuance remain a separate stage.
