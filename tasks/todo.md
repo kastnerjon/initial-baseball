@@ -4,6 +4,13 @@
 Status: Active ordered implementation plan  
 Last updated: 2026-10-15
 
+## Current Daily Five editorial coexistence staging (October 17)
+
+- [x] Read-only contract-aware single-date calendar occupancy (#433) distinguishes current nine and prospective five without answers.
+- [x] Read-only, bounded mixed-version calendar horizon metadata/empty-date inspection, with auth, no-store and fail-closed decoding. See `tasks/plans/daily-five-version-aware-calendar-horizon-read.md`. **No change to Daily Nine horizon.**
+- [ ] Independently plan and implement transactional future-calendar cutover and issuance, immutable schema-v3 issued five-player puzzles, and legacy browser/Archive/Classic compatibility in separate PRs.
+- [ ] Do not enable `DAILY_FIVE_DRAFT_WRITES_ENABLED` or create production five-player editorial records until those safeguards are approved.
+
 ## Current Custom v2 signed-attempt milestone (October 14)
 
 - [x] #407 private exact-challenge 1–10 comparison RPCs merged/hosted as `20261014235929` and rollback-tested; #408 signed v2 opening merged/production READY as `c41ad7df`.
