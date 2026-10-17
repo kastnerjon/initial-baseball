@@ -75,3 +75,8 @@ The prospective five-player draft now has a separate, server-only insert/read re
 ## October 17 admin-only five-player drafting workbench
 
 Authorized administrators can compose exact-five canonical selections with date, search, order and duplicate protection via /admin/daily-five. The protected draft POST reuses contract-2 insertion but remains **server-disabled** (DAILY_FIVE_DRAFT_WRITES_ENABLED defaults OFF) because contract-2 editorial rows currently share the unique calendar date table read by the contract-1 Daily Nine horizon. No actual production five-player drafts, issuance, scheduling or visible gameplay are allowed by this staging step. See tasks/plans/daily-five-admin-draft-editor.md.
+
+
+## October 17 shared-calendar read-only occupancy visibility
+
+Future Daily Five administration can now inspect only versioned date occupancy (contract 1 nine, contract 2 five, lifecycle status) without decoding a five-player row through the nine-only repository or exposing selections. Invalid/unknown version and provider failures fail closed; editor Save requires a fresh occupied-date check but still relies on SQL uniqueness for concurrent conflicts. The actual five-player draft-write flag stays OFF and Daily Nine horizon generation remains legacy. Scope: tasks/plans/daily-five-calendar-occupancy-preview.md.

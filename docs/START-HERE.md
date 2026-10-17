@@ -5,6 +5,10 @@ Last updated: 2026-10-15
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
+## October 17 read-only shared calendar inspection — staging
+
+Future Daily Five administration now offers a private date-occupancy preview that reads only puzzle_date, lineup_contract_version (nine/contract 1 or five/contract 2) and lifecycle status, with no player IDs or hints. Unexpected versions and provider failures are not considered vacant. The draft editor blocks Save until the date is confirmed empty; this is advisory only and does not replace the database unique-date constraint. The server-side Daily Five draft write flag remains OFF, and the legacy nine-only horizon is NOT altered. See tasks/plans/daily-five-calendar-occupancy-preview.md. Safe mixed-version horizon/scheduling and issuance remain a separate stage.
+
 ## October 17 admin-only prospective Daily Five draft editor — gated staging
 
 Authenticated Daily administrators can now open /admin/daily-five to build an ordered exact-five canonical-player draft by searching, adding, rearranging or removing players and selecting a date. A separate POST only accepts authenticated same-origin bounded JSON, validates the domain contract, and uses the existing v2 insert-only repository. **Production writes remain explicitly OFF** unless DAILY_FIVE_DRAFT_WRITES_ENABLED=true is configured after future calendar/issuance coexistence review; the normal UI cannot Save in the default state. The Daily Nine horizon and Classic/Archive issuance remain unchanged. See tasks/plans/daily-five-admin-draft-editor.md.
