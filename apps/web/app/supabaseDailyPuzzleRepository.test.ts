@@ -81,7 +81,8 @@ describe('Supabase Daily puzzle repository', () => {
     const select = vi.fn().mockReturnValue({ maybeSingle });
     const secondEq = vi.fn().mockReturnValue({ select });
     const firstEq = vi.fn().mockReturnValue({ eq: secondEq });
-    const update = vi.fn().mockReturnValue({ eq: firstEq });
+    const versionEq = vi.fn().mockReturnValue({ eq: firstEq });
+    const update = vi.fn().mockReturnValue({ eq: versionEq });
 
     const result = await createSupabaseDailyPuzzleRepository(asClient(
       vi.fn().mockReturnValue({ update }),
@@ -93,7 +94,8 @@ describe('Supabase Daily puzzle repository', () => {
     expect(updateRow).not.toHaveProperty('id');
     expect(updateRow).not.toHaveProperty('puzzle_date');
     expect(updateRow).not.toHaveProperty('created_at');
-    expect(firstEq).toHaveBeenCalledWith('puzzle_date', PUZZLE_DATE);
+    expect(versionEq).toHaveBeenCalledWith('puzzle_date', PUZZLE_DATE);
+    expect(firstEq).toHaveBeenCalledWith('lineup_contract_version', 1);
     expect(secondEq).toHaveBeenCalledWith('revision', 0);
   });
 
@@ -106,7 +108,8 @@ describe('Supabase Daily puzzle repository', () => {
     const select = vi.fn().mockReturnValue({ maybeSingle });
     const secondEq = vi.fn().mockReturnValue({ select });
     const firstEq = vi.fn().mockReturnValue({ eq: secondEq });
-    const update = vi.fn().mockReturnValue({ eq: firstEq });
+    const versionEq = vi.fn().mockReturnValue({ eq: firstEq });
+    const update = vi.fn().mockReturnValue({ eq: versionEq });
 
     await expect(createSupabaseDailyPuzzleRepository(asClient(
       vi.fn().mockReturnValue({ update }),
@@ -213,6 +216,7 @@ function toRow(record: DailyPuzzleEditorialRecord): Record<string, unknown> {
     version: record.version,
     revision: record.revision,
     status: record.status,
+    lineup_contract_version: 1,
     selections: record.selections.map(selection => ({ ...selection })),
     created_at: record.createdAt,
     created_by: record.createdBy,

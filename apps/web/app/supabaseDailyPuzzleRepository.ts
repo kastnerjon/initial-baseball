@@ -20,6 +20,7 @@ const DAILY_PUZZLE_COLUMNS = [
   'version',
   'revision',
   'status',
+  'lineup_contract_version',
   'selections',
   'created_at',
   'created_by',
@@ -102,6 +103,7 @@ async function updateDailyPuzzle(
     .from(DAILY_PUZZLES_TABLE)
     .update(encodeDailyPuzzleUpdate(record))
     .eq('puzzle_date', record.puzzleDate)
+    .eq('lineup_contract_version', 1)
     .eq('revision', expectedRevision)
     .select(DAILY_PUZZLE_COLUMNS)
     .maybeSingle();

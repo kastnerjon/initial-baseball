@@ -5,6 +5,10 @@ Last updated: 2026-10-15
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
+## October 17 isolated Daily Five draft storage — staged, not activated
+
+A separate server-only database adapter can read/insert untouched five-player editorial drafts under contract 2. The legacy nine-player adapter explicitly reads contract 1 and inserts contract 1; its optimistic revision updates require contract 1. All future-five decoding checks exactly five ordered, distinct canonical IDs, draft status, revision zero and lifecycle metadata. No admin or public caller imports the new adapter and no production database writes, migrations or public feature flags are involved. See tasks/plans/daily-five-draft-storage-adapter.md. The next step remains a separately reviewed admin-only draft workflow followed by distinct issuance and compatibility work.
+
 ## October 16 prospective Daily Five editorial draft — pure domain stage
 
 The approved five-at-bat future Daily now has a version-marked, draft-only portable constructor reusing the existing calendar, actor and lineup validation. It demands exactly five ordered, distinct canonical selections (contract 2). Current nine-player editorial draft creation remains nine-only and unchanged. This step performs **no database write, scheduling, publication, issuance, runtime, UI or feature-flag change**. See tasks/plans/daily-five-prospective-editorial-draft.md. Next requires separately reviewed version-aware persistence/editor and prospective issuance without changing historical Daily/Archive/Classic.

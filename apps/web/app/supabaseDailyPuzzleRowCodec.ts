@@ -2,8 +2,13 @@ import type {
   DailyEditorialSelection,
   DailyPuzzleEditorialRecord,
   DailyPuzzleRepositorySaveOptions,
+  ProspectiveDailyFiveEditorialDraft,
 } from '@initial-baseball/daily';
-import { DAILY_AT_BAT_COUNT, getDailyPuzzleNumber } from '@initial-baseball/daily';
+import {
+  DAILY_AT_BAT_COUNT,
+  createProspectiveDailyFiveEditorialDraft,
+  getDailyPuzzleNumber,
+} from '@initial-baseball/daily';
 
 export type SupabaseDailyPuzzleRepositoryErrorKind = 'conflict' | 'invalid-row' | 'query';
 
@@ -35,6 +40,19 @@ export function validateDailyPuzzleRevisionTransition(
 
 export function encodeDailyPuzzleInsert(
   record: DailyPuzzleEditorialRecord,
+): Record<string, unknown> {
+  return { ...encodeEditorialInsertFields(record), lineup_contract_version: 1 };
+}
+
+export function encodeProspectiveDailyFiveDraftInsert(
+  draft: ProspectiveDailyFiveEditorialDraft,
+): Record<string, unknown> {
+  validateProspectiveFiveDraft(draft);
+  return { ...encodeEditorialInsertFields(draft), lineup_contract_version: 2 };
+}
+
+function encodeEditorialInsertFields(
+  record: Omit<DailyPuzzleEditorialRecord, 'lineupContractVersion'>,
 ): Record<string, unknown> {
   return {
     id: record.id,
@@ -77,6 +95,29 @@ export function encodeDailyPuzzleUpdate(
 
 export function decodeDailyPuzzleRow(value: unknown): DailyPuzzleEditorialRecord {
   const row = requireObject(value, 'Daily puzzle row');
+  requireLineupContract(row, 1);
+  return decodeEditorialRow(row, DAILY_AT_BAT_COUNT);
+}
+
+/** Private read codec for future five-player drafts only. */
+export function decodeProspectiveDailyFiveDraftRow(value: unknown): ProspectiveDailyFiveEditorialDraft {
+  const row = requireObject(value, 'Daily Five draft row');
+  requireLineupContract(row, 2);
+  const record = decodeEditorialRow(row, 5);
+  const draft: ProspectiveDailyFiveEditorialDraft = { ...record, lineupContractVersion: 2 };
+  validateProspectiveFiveDraft(draft);
+  return draft;
+}
+
+function requireLineupContract(row: Record<string, unknown>, expected: 1 | 2): void {
+  if (row.lineup_contract_version !== expected) {
+    throwInvalidRow('lineup_contract_version must be ' + expected);
+  }
+}
+
+function decodeEditorialRow(
+  row: Record<string, unknown>, atBatCount: 5 | 9,
+): DailyPuzzleEditorialRecord {
   const record: DailyPuzzleEditorialRecord = {
     id: requireNonEmptyString(row.id, 'id'),
     puzzleDate: requireCalendarDate(row.puzzle_date, 'puzzle_date'),
@@ -84,7 +125,7 @@ export function decodeDailyPuzzleRow(value: unknown): DailyPuzzleEditorialRecord
     version: requireInteger(row.version, 'version', 1),
     revision: requireInteger(row.revision, 'revision', 0),
     status: requireStatus(row.status),
-    selections: requireSelections(row.selections),
+    selections: requireSelections(row.selections, atBatCount),
     createdAt: requireTimestamp(row.created_at, 'created_at'),
     createdBy: requireNonEmptyString(row.created_by, 'created_by'),
     updatedAt: requireTimestamp(row.updated_at, 'updated_at'),
@@ -104,14 +145,38 @@ export function decodeDailyPuzzleRow(value: unknown): DailyPuzzleEditorialRecord
   return record;
 }
 
-function requireSelections(value: unknown): readonly DailyEditorialSelection[] {
-  if (!Array.isArray(value) || value.length !== DAILY_AT_BAT_COUNT) {
-    throwInvalidRow(`selections must contain exactly ${DAILY_AT_BAT_COUNT} entries`);
+/** Refuse v2 schedule/publish/revision, malformed selection and actor mutations. */
+function validateProspectiveFiveDraft(draft: ProspectiveDailyFiveEditorialDraft): void {
+  if (draft.lineupContractVersion !== 2 || draft.status !== 'draft'
+    || draft.version !== 1 || draft.revision !== 0
+    || draft.updatedAt !== draft.createdAt || draft.updatedBy !== draft.createdBy
+    || draft.scheduledAt !== null || draft.scheduledBy !== null
+    || draft.publishedAt !== null || draft.publishedBy !== null
+    || draft.archivedAt !== null || draft.archivedBy !== null) {
+    throwInvalidRow('five-player editorial record must be an untouched contract-v2 draft');
+  }
+  try {
+    createProspectiveDailyFiveEditorialDraft({
+      id: draft.id, puzzleDate: draft.puzzleDate, puzzleNumber: draft.puzzleNumber,
+      selections: draft.selections, actorId: draft.createdBy, occurredAt: draft.createdAt,
+    });
+    if (draft.selections.some((selection, index) => selection.slot !== index + 1)) {
+      throwInvalidRow('five-player draft has invalid slot ordering');
+    }
+  } catch (error) {
+    if (error instanceof SupabaseDailyPuzzleRepositoryError) throw error;
+    throwInvalidRow('five-player editorial draft failed domain validation');
+  }
+}
+
+function requireSelections(value: unknown, atBatCount: number): readonly DailyEditorialSelection[] {
+  if (!Array.isArray(value) || value.length !== atBatCount) {
+    throwInvalidRow(`selections must contain exactly ${atBatCount} entries`);
   }
   const selections = value.map((entry, index): DailyEditorialSelection => {
     const selection = requireObject(entry, `selections[${index}]`);
     const slot = requireInteger(selection.slot, `selections[${index}].slot`, 1);
-    if (slot > DAILY_AT_BAT_COUNT) throwInvalidRow(`selection slot ${slot} is out of range`);
+    if (slot > atBatCount) throwInvalidRow(`selection slot ${slot} is out of range`);
     const source = selection.source;
     if (source !== 'generated' && source !== 'manual') {
       throwInvalidRow(`selections[${index}].source is invalid`);
@@ -126,10 +191,10 @@ function requireSelections(value: unknown): readonly DailyEditorialSelection[] {
     };
   });
 
-  if (new Set(selections.map(selection => selection.slot)).size !== DAILY_AT_BAT_COUNT) {
+  if (new Set(selections.map(selection => selection.slot)).size !== atBatCount) {
     throwInvalidRow('selections contain duplicate slots');
   }
-  if (new Set(selections.map(selection => selection.canonicalPlayerId)).size !== DAILY_AT_BAT_COUNT) {
+  if (new Set(selections.map(selection => selection.canonicalPlayerId)).size !== atBatCount) {
     throwInvalidRow('selections contain duplicate canonical player IDs');
   }
   return selections.sort((left, right) => left.slot - right.slot);

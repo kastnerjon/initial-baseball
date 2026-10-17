@@ -65,3 +65,8 @@ Each implementation PR must define its own scope contract, docs impact, independ
 ## October 16 draft-only follow-up
 
 The future five-player editorial contract now has an explicit pure constructor that validates an exact-five, unique, canonical slot set and produces a contract-version-2 draft. The current draft editor and repository continue to accept only nine-player records; no five-player record is persisted, scheduled or issued by this change. The next independent stage is version-aware safe storage/editor wiring and separately reviewed issuance. See tasks/plans/daily-five-prospective-editorial-draft.md.
+
+
+## October 17 stage — isolated draft storage adapter
+
+The prospective five-player draft now has a separate, server-only insert/read repository using installed editorial lineup contract 2, and legacy nine-player row read/write paths explicitly use contract 1. Insert validates untouched five-player draft shape, no update or publish operations are exposed; this is not wired into any route or editor and causes no production writes. Next: a distinct admin-only workflow, followed by separately approved prospective issuance and historical compatibility. See tasks/plans/daily-five-draft-storage-adapter.md.
