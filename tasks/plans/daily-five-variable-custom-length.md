@@ -70,3 +70,8 @@ The future five-player editorial contract now has an explicit pure constructor t
 ## October 17 stage — isolated draft storage adapter
 
 The prospective five-player draft now has a separate, server-only insert/read repository using installed editorial lineup contract 2, and legacy nine-player row read/write paths explicitly use contract 1. Insert validates untouched five-player draft shape, no update or publish operations are exposed; this is not wired into any route or editor and causes no production writes. Next: a distinct admin-only workflow, followed by separately approved prospective issuance and historical compatibility. See tasks/plans/daily-five-draft-storage-adapter.md.
+
+
+## October 17 admin-only five-player drafting workbench
+
+Authorized administrators can compose exact-five canonical selections with date, search, order and duplicate protection via /admin/daily-five. The protected draft POST reuses contract-2 insertion but remains **server-disabled** (DAILY_FIVE_DRAFT_WRITES_ENABLED defaults OFF) because contract-2 editorial rows currently share the unique calendar date table read by the contract-1 Daily Nine horizon. No actual production five-player drafts, issuance, scheduling or visible gameplay are allowed by this staging step. See tasks/plans/daily-five-admin-draft-editor.md.

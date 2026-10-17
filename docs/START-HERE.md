@@ -5,6 +5,10 @@ Last updated: 2026-10-15
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
+## October 17 admin-only prospective Daily Five draft editor — gated staging
+
+Authenticated Daily administrators can now open /admin/daily-five to build an ordered exact-five canonical-player draft by searching, adding, rearranging or removing players and selecting a date. A separate POST only accepts authenticated same-origin bounded JSON, validates the domain contract, and uses the existing v2 insert-only repository. **Production writes remain explicitly OFF** unless DAILY_FIVE_DRAFT_WRITES_ENABLED=true is configured after future calendar/issuance coexistence review; the normal UI cannot Save in the default state. The Daily Nine horizon and Classic/Archive issuance remain unchanged. See tasks/plans/daily-five-admin-draft-editor.md.
+
 ## October 17 isolated Daily Five draft storage — staged, not activated
 
 A separate server-only database adapter can read/insert untouched five-player editorial drafts under contract 2. The legacy nine-player adapter explicitly reads contract 1 and inserts contract 1; its optimistic revision updates require contract 1. All future-five decoding checks exactly five ordered, distinct canonical IDs, draft status, revision zero and lifecycle metadata. No admin or public caller imports the new adapter and no production database writes, migrations or public feature flags are involved. See tasks/plans/daily-five-draft-storage-adapter.md. The next step remains a separately reviewed admin-only draft workflow followed by distinct issuance and compatibility work.
