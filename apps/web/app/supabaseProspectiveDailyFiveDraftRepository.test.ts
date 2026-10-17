@@ -99,6 +99,8 @@ describe('isolated prospective Daily Five draft storage', () => {
     for (const draft of [
       ...[4, 6].map(n => ({ ...five(), selections: Array.from({ length: n }, (_, i) => player(i)) })),
       { ...five(), lineupContractVersion: 1 },
+      { ...five(), id: '' },
+      { ...five(), id: '   ' },
       { ...five(), status: 'scheduled' },
       { ...five(), revision: 1 },
       { ...five(), publishedAt: TIME },

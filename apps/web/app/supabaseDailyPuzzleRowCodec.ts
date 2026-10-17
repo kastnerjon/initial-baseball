@@ -147,6 +147,10 @@ function decodeEditorialRow(
 
 /** Refuse v2 schedule/publish/revision, malformed selection and actor mutations. */
 function validateProspectiveFiveDraft(draft: ProspectiveDailyFiveEditorialDraft): void {
+  // Match the persisted row decoder before an INSERT can consume a unique date.
+  if (typeof draft.id !== 'string' || draft.id.trim().length === 0) {
+    throwInvalidRow('five-player editorial draft id is required');
+  }
   if (draft.lineupContractVersion !== 2 || draft.status !== 'draft'
     || draft.version !== 1 || draft.revision !== 0
     || draft.updatedAt !== draft.createdAt || draft.updatedBy !== draft.createdBy
