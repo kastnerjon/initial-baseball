@@ -41,7 +41,8 @@ Last updated: 2026-10-15
 - [x] Stage 1: portable length profiles distinguish legacy nine-player Daily/Classic/Custom v1 from future Daily Five five and future Custom 1–10, without activating new issuance. Existing validators preserve their exact-nine errors and behavior.
 - [x] Stage 2: additive Daily five-player editorial and permanent-issued SQL migration (#396), installed in hosted Supabase as `20261013223640_prepare_daily_five_length_constraints`; rollback fixture and unchanged nine-player counts/privileges verified. No public activation.
 - [x] Staged prospective Daily Five editorial draft constructor in packages/daily (contract 2, exact five, canonical unique slots, reused identity/actor validations); pure/no persistence, no activation. Focused Daily lifecycle + new draft tests passed. Plan: tasks/plans/daily-five-prospective-editorial-draft.md.
-- [ ] Next Daily Five: separately versioned repository/editor support for prospective five-player inventory, then distinct issuance, browser/result compatibility and controlled cutover. This draft-only stage does not permit scheduling or publishing five-player Dailies.
+- [x] Added isolated insert/read-only v2 Daily Five draft repository plus explicit contract-1 nine/v2 five row codec boundaries, duplicate-date conflict and optimistic-update contract fence. Focused tests and web typecheck passed. No live route or production write. Scope: tasks/plans/daily-five-draft-storage-adapter.md.
+- [ ] Next Daily Five: separately review an admin-only, version-aware five-player draft editor workflow; five-player scheduling, issuance, history/browser/results, Classic separation and controlled activation remain later distinct stages.
 
 ## Community Lineups — publish, discover and compare (approved October 13)
 
