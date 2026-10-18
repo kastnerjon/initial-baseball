@@ -1,3 +1,5 @@
+> Superseded product direction, October 17, 2026: the fixed-five Daily target and Daily Five/Your Five naming below are historical. The active direction is administrator-configurable **Daily Lineup**, after unlisted user-created Custom Lineups. Do not enable five-only draft writes or issue five-player production puzzles from this plan. Preserve implemented compatibility seams; reassess them against `custom-first-variable-daily-direction.md` before reuse.
+
 # Daily Five and variable-length Custom Lineup — approved product migration
 Status: **Stages 1–2 portable length policy and hosted Daily database preparation complete; prospective five-slot draft-only constructor staged; issuance and rollout pending** (updated 2026-10-16)
 

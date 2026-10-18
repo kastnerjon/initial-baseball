@@ -1,3 +1,5 @@
+> Priority correction, October 17, 2026: launch unlisted/private-link user-created Custom Lineups first. Public Discover, publishing and leaderboards described below remain deferred and must not block private sharing. Creator authorization and abuse protections still apply to public creation. See `custom-first-variable-daily-direction.md`.
+
 # Community Lineups — public publishing, discovery, and per-lineup results
 
 Status: **Approved product direction; implementation not yet begun** (2026-10-13)
@@ -51,7 +53,7 @@ Use existing accepted Custom result storage as the source of truth. Start with i
 5. **Per-lineup results and optional leaderboard:** reuse the existing exact-challenge Custom comparison service and saved score distribution; enable guarded presentation only after admission, anti-abuse and privacy review. Empty and creator-exclusion cases tested.
 6. **Explicit activation:** security/abuse validation, staging QA with 1/5/9/10 AB and historical v1 challenges, mobile checks, exact CI/READY Preview, feature-flag/canary rollback plan, hosted Supabase constraints and monitoring; only then turn on public creation, publication or competitive contribution.
 
-Do not fold a public directory migration, viewer UI, result admission and creator authentication into one PR. Do not weaken the existing Custom competition gates. Daily Five remains a **separate** release workstream.
+Do not fold a public directory migration, viewer UI, result admission and creator authentication into one PR. Do not weaken the existing Custom competition gates. Configurable Daily Lineup follows private-link Custom launch; fixed-five Daily is superseded.
 
 ## Final acceptance
 

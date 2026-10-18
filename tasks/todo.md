@@ -4,6 +4,16 @@
 Status: Active ordered implementation plan  
 Last updated: 2026-10-15
 
+## Active order — October 17 owner correction
+
+1. Finish unlisted Custom Lineup sharing using the existing immutable 1–10 issuer and signed gameplay; the existing admin creator is staging, not ordinary-user creation.
+2. Verify isolated QA health and securely provision its own server credential; execute real application HTTP-to-QA-Supabase acceptance. Never substitute production credentials.
+3. Implement reviewed creator authorization and durable per-IP/credential abuse controls in separate bounded PRs; complete creator → link → friend gameplay and mobile verification.
+4. Activate only after correctness, security/privacy, exact-head CI/READY Preview and controlled rollout gates pass. Discover, publishing and leaderboards remain deferred.
+5. Then migrate to administrator-configurable **Daily Lineup**, freezing length into each issued puzzle. Preserve historical nine-player/Archive/Classic data. Fixed-five Daily is superseded; draft writes stay OFF.
+
+PR #434 is deferred as a draft; preserve its branch and reassess its minimal calendar reader later. Environment creation succeeded without snapshot deletion. See `tasks/plans/custom-first-variable-daily-direction.md`.
+
 ## Current Custom v2 signed-attempt milestone (October 14)
 
 - [x] #407 private exact-challenge 1–10 comparison RPCs merged/hosted as `20261014235929` and rollback-tested; #408 signed v2 opening merged/production READY as `c41ad7df`.
