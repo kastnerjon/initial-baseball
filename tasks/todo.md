@@ -4,6 +4,11 @@
 Status: Active ordered implementation plan  
 Last updated: 2026-10-15
 
+## October 18 current Custom creation work
+
+- [x] #439 private budget merged as `6cb676e`, independent local concurrency verified, production applied as hosted migration `20261018193404`; exact grants/RLS and zero rows verified.
+- [ ] Stage and review the default-off public no-sign-in issuer POST with trusted Vercel IP, day-scoped HMAC, private quota, and signed creator marker. UI/release approval remain separate; `tasks/plans/public-custom-lineup-creator-route.md`.
+
 ## October 18 hosted Custom acceptance
 
 - [x] Owner chose no required sign-in for public Custom creation; accounts and cross-device ownership/history remain later.

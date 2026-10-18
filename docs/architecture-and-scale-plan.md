@@ -3,6 +3,10 @@
 Status: Living architecture source of truth  
 Last updated: 2026-09-23
 
+## Public creation boundary staged (October 18)
+
+Web route `/api/custom-lineup/create` is a default-disabled, no-sign-in POST using Vercel-verified singular client IP, a separate server-only HMAC key, and service-role-only atomic quota before the existing immutable v2 issuer. It requires both the public creation flag and the v2 gameplay gate. Existing admin authentication, signed attempts, preview exclusion and game scoring are unchanged. The route provides only opaque ID and creator cookie on success; failures are sanitized. No public page, WAF activation or account identity is introduced. See `tasks/plans/public-custom-lineup-creator-route.md`.
+
 ## Staged no-sign-in Custom creation budget (October 18)
 
 The owner chose no required account for Custom creation. Before opening that Web boundary, `reserve_custom_lineup_creation_budget(text)` provides a private Supabase reservation: 10 admitted creation attempts per server-derived day-scoped HMAC/IP digest per 10-minute fixed window, plus 1,000 globally per UTC day. One stable transaction lock serializes all workers and expiry across date boundaries; database time is chosen after lock acquisition. RLS and service-role-only table/RPC grants deny browser access. Only bounded counters/digests/windows are stored; lazy expiry deletes them on the next request. No raw IP, selected player, challenge relationship or account identity is stored here.
