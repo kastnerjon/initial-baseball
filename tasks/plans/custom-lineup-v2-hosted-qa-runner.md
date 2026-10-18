@@ -1,12 +1,12 @@
 # Custom Lineup v2 — isolated hosted gameplay acceptance runner
 
-Status: Bounded release-verification tooling; staged only. Full hosted application-to-database execution has NOT yet passed.
+Status: Real isolated application HTTP-to-hosted-Supabase acceptance PASSED October 18, 2026, after the runner-only loopback origin correction. Public activation remains OFF. Evidence: `custom-v2-hosted-origin-alignment.md`.
 
 ## Goal and scope
 
 The runner exercises real HTTP through its own localhost Next.js process to the isolated hosted Supabase Custom v2 database, without writing to production. It does not change game rules, schemas, public flags or authorization.
 
-The repository's isolated QA project is standalone on the Supabase Free plan, NOT a database branch. Database branching requires Pro. Project ref: iklbnlicgsxxhaoiscor; production ref: dwreeiydvwikpamlokji (hard-denied in source). The standalone QA project is paused until a staging-only server secret is provisioned. The existing Custom v1/v2 migrations and rollback-only SQL matrix have already passed there, but no end-to-end application game was run.
+The repository's isolated QA project is standalone on the Supabase Free plan, NOT a database branch. Database branching requires Pro. Project ref: iklbnlicgsxxhaoiscor; production ref: dwreeiydvwikpamlokji (hard-denied in source). The standalone QA project was restored for the successful October 18 run and pause was requested afterward. Its existing Custom migrations were reused. The temporary QA-only server credential copy was removed; future runs must securely provision their own authorized QA environment again. Hosted application acceptance now supplements the earlier rollback-only SQL matrix.
 
 ## Safety preflight
 
@@ -16,7 +16,7 @@ The repository's isolated QA project is standalone on the Supabase Free plan, NO
 4. Supply SUPABASE_SERVICE_ROLE_KEY, a nonproduction DAILY_PROGRESSION_SECRET at least 32 characters, isolated DAILY_ADMIN_USERNAME and DAILY_ADMIN_PASSWORD, CUSTOM_LINEUP_V2_GAMEPLAY_TRANSPORT_ENABLED=true **only within the runner-owned local environment**, and CUSTOM_V2_QA_PLAYER_IDS containing 10 unique, supported canonical ibp_ IDs with complete frozen clue data. Do not enable the public Vercel flag. Do not use a remotely running production-configured Next.js server.
 5. Build the reviewed web commit with its canonical baseball-data runtime and dependencies. Run the no-network guard smoke suite first:
 
-    node --test apps/web/scripts/qa-custom-v2-hosted.test.mjs
+    node --test apps/web/scripts/qa-custom-v2-hosted*.test.mjs
 
 6. Run the real staged acceptance once with the explicit private environment:
 
@@ -28,4 +28,4 @@ The repository's isolated QA project is standalone on the Supabase Free plan, NO
 
 ## Evidence boundaries
 
-Successful Node guard tests only establish preflight; mocked HTTP and existing hosted SQL rollback fixtures do not establish end-to-end gameplay. This runner requires valid QA-only secrets and must actually run before its full hosted result can be reported. Even a successful run does not authorize public activation, public creation, publication/discovery or competitions; those require separate abuse/privacy controls and a release decision.
+Node guard tests only establish preflight; mocked HTTP and hosted SQL rollback fixtures alone do not establish end-to-end gameplay. The October 18 actual runner execution passed for all N=1–10 and both alternate endings. Request URLs use localhost to match NextRequest normalization; the server still binds only to 127.0.0.1. All application origin checks remain unchanged. Even a successful run does not authorize public activation, public creation, publication/discovery or competitions; those require separate abuse/privacy controls and a release decision.

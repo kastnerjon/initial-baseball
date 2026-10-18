@@ -4,6 +4,12 @@
 Status: Active ordered implementation plan  
 Last updated: 2026-10-15
 
+## October 18 hosted Custom acceptance
+
+- [x] Real application HTTP→isolated Supabase acceptance passed at every N=1–10 plus third-strike/Give Up; verified 12/12/12/57 QA rows and zero production Custom rows. Runner-only localhost origin fix preserves application security. See `tasks/plans/custom-v2-hosted-origin-alignment.md`.
+- [ ] Next: secure ordinary-user creation and durable abuse/rate controls; actual browser/mobile/v1 acceptance; controlled production activation. Custom gameplay remains OFF.
+- [ ] My Results / previous-game score history: GitHub #437, separately scoped after Custom launch priority.
+
 ## Custom share-link implementation
 
 - [x] Add a gated copyable challenge URL and creator preview to the existing admin v2 creator.
@@ -42,7 +48,7 @@ PR #434 is deferred as a draft; preserve its branch and reassess its minimal cal
 - [x] Hosted isolated PostgreSQL v2 regression passed on a standalone $0/month QA project (Supabase Free plan cannot branch): Custom migrations and rollback-only SQL fixtures at N=1–10, plus v1 comparison, passed; no Custom rows remain in QA or production. Scope: `tasks/plans/custom-v2-hosted-postgres-all-lengths.md`. This does NOT establish application-to-DB hosted gameplay.
 - [x] Responsive Custom v2 browser QA at 320/375/390/430px and N=1/5/9/10 showed no scorecard horizontal scroll, plus N=10 creator selection at 320px; a terminal restore 503 lost visible error feedback and was corrected in a bounded presentation-only PR. See tasks/plans/custom-v2-terminal-retry-feedback.md. Mocked HTTP, not hosted database QA.
 - [x] Refit Custom v2 real HTTP hosted-QA runner for the no-cost standalone Supabase QA project: exact HTTPS provenance, production-ref rejection, all N=1–10 plus two alternate endings, four no-network guard tests. Runbook corrected; staging-only secret/full hosted HTTP execution remain blocked. Plan: tasks/plans/custom-v2-standalone-hosted-runner.md.
-- [ ] Next: execute isolated hosted Custom v2 **application HTTP-to-database gameplay** QA with staging-only server secret (N=1/5/9/10 representative and all N=1–10 mocked and SQL coverage already proven). Staging runner: tasks/plans/custom-lineup-v2-hosted-qa-runner.md. Mobile QA, abuse/privacy/rate-limit safeguards and controlled activation remain separate gates. Never write fixtures to production.
+- [x] Isolated hosted Custom v2 application HTTP-to-database gameplay QA passed October 18 for N=1–10 and both alternate endings. Mobile/v1, public creator, abuse/privacy/rate controls and controlled activation remain separate gates. Never write fixtures to production.
 
 ## Current Custom v2 database checkpoint (October 14)
 
