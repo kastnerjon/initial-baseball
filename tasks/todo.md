@@ -4,6 +4,11 @@
 Status: Active ordered implementation plan  
 Last updated: 2026-10-15
 
+## Custom share-link implementation
+
+- [x] Add a gated copyable challenge URL and creator preview to the existing admin v2 creator.
+- [ ] Complete ordinary-user authorization, durable abuse/rate controls, QA-only credential provisioning and hosted creator → share → friend acceptance before activation. See `tasks/plans/custom-lineup-creator-share-link.md`.
+
 ## Active order — October 17 owner correction
 
 1. Finish unlisted Custom Lineup sharing using the existing immutable 1–10 issuer and signed gameplay; the existing admin creator is staging, not ordinary-user creation.
