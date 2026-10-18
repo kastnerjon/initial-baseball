@@ -1,5 +1,9 @@
 # Initial Baseball — Start Here
 
+## October 18 named Custom publishing/search direction (#441)
+
+The owner confirmed **every newly created Custom Lineup must have a name**, private by default, eligible for deliberate public publishing/unpublishing through a separate anonymous-owner management capability (not the playable URL or creator-preview cookie). Public Discover searches titles and voluntary creator display aliases; most-played weekly/all-time rankings count only accepted noncreator completed first attempts, not views/replays. This is sequenced after unlisted 1–10 creator release and review gates. The portable 3–60-code-point title validator is staging only: no current API, database, or UI enforcement. Plan: `tasks/plans/community-custom-lineups.md`; issue #441.
+
 Status: Active project handoff  
 Last updated: 2026-10-15
 

@@ -30,3 +30,30 @@ An attempted multi-session contention probe did not observe the held advisory lo
 ## Subsequent verified completion
 
 PR #439 merged as `6cb676e` after exact-head CI SUCCESS and Preview READY. A local PostgreSQL 18 sandbox with genuinely distinct database processes observed 10 approvals and 22 denials from 32 parallel same-digest requests, both counters at 10. A separately observed advisory lock blocked another reservation for 3,923ms until release. The stable lock and post-acquisition clock ordering address the cross-midnight lock-order concern, but no real midnight transition was exercised. Production hosted migration `20261018193404` installed reviewed SQL; RLS/grants verified, zero counters, no production fixtures. This completion supersedes the historical draft blocker above. The Web adapter is a separate PR.
+
+## October 18 follow-up: database-authoritative day validation
+
+The independent #440 code reviewer found a midnight/clock-skew bypass in the
+original Web budget protocol: a request could sign yesterday's IP digest, wait
+behind the database lock until after midnight, and reserve today's bucket with
+a different key from following requests. The unchanged global day ceiling
+does not enforce the intended same-IP 10-in-10-minutes limit in that case.
+
+The follow-up database-only migration replaces the unused, service-role-only
+one-argument RPC with a two-argument reservation accepting the *server-signed
+digest's claimed UTC day*. Under the same stable advisory lock, after
+capturing database time, the RPC rejects a mismatch without inserting or
+incrementing any counters and returns the authoritative day in a
+machine-readable response. The Web adapter must retry after deriving an HMAC
+for that returned database day; it must never trust browser-submitted dates.
+Regular admission and quota denial also return the DB day. Removing the old
+single-argument signature prevents stale servers from silently skipping the
+new check. No public callers or feature activation exist at this stage.
+
+Updated `supabase/tests/custom_lineup_creation_budget.sql` uses the new
+signature and asserts both the no-consumption mismatch and the regular
+10/window and global/day limits in one transaction rolled back. Local
+PostgreSQL 18 checks additionally verified service-role-only EXECUTE,
+SECURITY INVOKER, malformed days and unchanged counter constraints. Actual
+UTC-midnight passage still requires end-to-end controlled QA; neither
+production activation nor public creator endpoint is authorized here.
