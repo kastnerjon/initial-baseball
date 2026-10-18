@@ -3,6 +3,12 @@
 Status: Living architecture source of truth  
 Last updated: 2026-09-23
 
+## Staged no-sign-in Custom creation budget (October 18)
+
+The owner chose no required account for Custom creation. Before opening that Web boundary, `reserve_custom_lineup_creation_budget(text)` provides a private Supabase reservation: 10 admitted creation attempts per server-derived day-scoped HMAC/IP digest per 10-minute fixed window, plus 1,000 globally per UTC day. One stable transaction lock serializes all workers and expiry across date boundaries; database time is chosen after lock acquisition. RLS and service-role-only table/RPC grants deny browser access. Only bounded counters/digests/windows are stored; lazy expiry deletes them on the next request. No raw IP, selected player, challenge relationship or account identity is stored here.
+
+This primitive is not wired to a public route and does not authorize activation. Its next Web consumer must derive the HMAC from a verified platform IP, fail closed on missing provenance/configuration/provider, reserve before expensive materialization, and never trust a browser digest. Existing immutable issuance, creator-preview exclusion and first-attempt ledger remain unchanged. Gameplay edge limits and release/privacy/browser gates remain separate. Scope: `tasks/plans/custom-lineup-creation-budget.md`.
+
 ## Product goal
 
 Build a polished daily baseball guessing product that supports at least 10,000 plays per day without a rewrite. Daily Nine is the normal/default public game. Classic Inning remains a distinct retained beta implementation over the same daily puzzle but is hidden by default at the web availability boundary. Infrastructure preserves inexpensive game/ruleset seams without requiring both games to be publicly exposed or to survive launch.

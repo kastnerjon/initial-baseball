@@ -5,6 +5,12 @@ Last updated: 2026-10-15
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
+## October 18 no-sign-in creator decision and durable budget staging
+
+The owner chose **no sign-in required** for ordinary-user Custom creation; optional accounts/cross-device history remain later. The database-only draft stages a private atomic budget (10 creation attempts/IP digest/10 minutes; 1,000 globally/day). Isolated QA migration `20261018192340` and its single-session rollback fixture passed; zero budget rows remain. Production schema is untouched. Actual concurrent contention/rollover verification remains outstanding; a connected-tool timing probe did not establish overlapping sessions. It is not a public API or an activated rate limit: trusted-IP/HMAC Web integration and creator UI follow separately. One stable transaction lock covers date rollover and lazy expiry. No game tables, public database grants, flags or firewall settings change. Scope: `tasks/plans/custom-lineup-creation-budget.md`.
+
+PR #438 merged as `1c878cd`; main push CI #39157241273 SUCCESS and exact-main production `dpl_DFgSy8ZhSzW5KWkroPdEcthkchfB` READY. Fresh homepage/Archive/Classic probes passed; disabled v2 page 404 and unauthenticated admin creator 401. No error/fatal logs in the inspected deployment window. Production Supabase healthy, QA paused after the completed acceptance run; QA was subsequently restored for this budget regression. Only preserved draft #434 remained open at that checkpoint.
+
 ## October 18 real hosted Custom acceptance — passed; public release still gated
 
 The real Next.js production-server HTTP→isolated Supabase suite passed for every N=1–10, third-strike and Give Up, using baseline bb952dc plus the runner-only loopback origin fix. NextRequest normalizes 127.0.0.1 to localhost; the old runner Origin therefore received 403 before issuance. Only QA request URLs changed; server binding, strict app origin checks, production-ref denial and public flags remain unchanged. Six startup/origin guards pass and CI now runs them.

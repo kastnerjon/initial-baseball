@@ -6,6 +6,9 @@ Last updated: 2026-10-15
 
 ## October 18 hosted Custom acceptance
 
+- [x] Owner chose no required sign-in for public Custom creation; accounts and cross-device ownership/history remain later.
+- [ ] Stage private durable creation-budget RPC, then wire verified-platform-IP/HMAC reservation into a separate public creator implementation. No public activation or production counters in the database-only scope. See `tasks/plans/custom-lineup-creation-budget.md`.
+
 - [x] Real application HTTP→isolated Supabase acceptance passed at every N=1–10 plus third-strike/Give Up; verified 12/12/12/57 QA rows and zero production Custom rows. Runner-only localhost origin fix preserves application security. See `tasks/plans/custom-v2-hosted-origin-alignment.md`.
 - [ ] Next: secure ordinary-user creation and durable abuse/rate controls; actual browser/mobile/v1 acceptance; controlled production activation. Custom gameplay remains OFF.
 - [ ] My Results / previous-game score history: GitHub #437, separately scoped after Custom launch priority.
