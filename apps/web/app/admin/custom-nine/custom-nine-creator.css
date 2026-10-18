@@ -36,3 +36,10 @@
   .custom-nine-slot-actions { grid-column: 2; margin-top: -2px; }
   .custom-nine-slot-actions button { min-width: 44px; }
 }
+
+.custom-lineup-share-link { display: grid; gap: 10px; min-width: 0; }
+.custom-lineup-share-link label { font-size: 13px; font-weight: 700; }
+.custom-lineup-share-link input { width: 100%; min-width: 0; box-sizing: border-box; padding: 10px; border: 1px solid var(--line); border-radius: 5px; background: white; font: inherit; font-size: 13px; }
+.custom-lineup-share-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.custom-lineup-share-actions a { overflow-wrap: anywhere; padding: 10px 0; }
+.custom-lineup-share-actions a:focus-visible { outline: 2px solid var(--clubhouse); outline-offset: 2px; }

@@ -5,6 +5,12 @@ Last updated: 2026-10-15
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
+## Custom creator share-link staging
+
+PR #435 merged as `13bf0cda1b4372956a2ca457346a9ec9d8b530c8`; exact-main push CI passed and Vercel production `dpl_CkXfgGw4AWkRC7Lqtz5aPvRMHfoN` is READY. The isolated QA project is now ACTIVE_HEALTHY. Read-only checks found zero issued, attempt, completed-result and at-bat Custom rows in both QA and production. QA server credential provisioning remains blocked by browser sign-in; no production key was used.
+
+The existing admin-only v2 creator now offers an answer-free same-origin challenge URL, Copy challenge link with a selectable fallback, and creator preview when the server gameplay gate is enabled. With the flag OFF (including production), links remain hidden and the existing ID-only staging flow stays available. No public creator/API/competition activation or hosted HTTP success is implied. Scope: `tasks/plans/custom-lineup-creator-share-link.md`.
+
 ## October 17 corrected priority and restored environment
 
 The owner superseded the fixed-five roadmap: **Custom Lineups first**, unlisted by default, with secure ordinary-user creation, share links and friend gameplay. Current creation is admin-only and therefore does not satisfy that goal. Public Discover/publishing/leaderboards are deferred. Future **Daily Lineup** uses administrator-selected supported lengths frozen into issued contracts; preserve nine-player history, Archive, scoring and Classic. Existing five-only staging is historical groundwork, not launch authorization. Keep its write flag OFF. Active direction and bounded next work: `tasks/plans/custom-first-variable-daily-direction.md`.

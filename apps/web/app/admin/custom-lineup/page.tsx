@@ -1,7 +1,8 @@
-import type { JSX } from 'react';
+import React, { type JSX } from 'react';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { DailyAdminAuthorizationError, requireDailyAdminPrincipal } from '../../dailyAdminAuthorization';
+import { isCustomLineupV2GameplayTransportEnabled } from '../../serverCustomLineupV2GameplayHttp';
 import { DAILY_ADMIN_AUTH_PATH } from '../../dailyAdminPaths';
 import { CustomNineCreatorView } from '../custom-nine/CustomNineCreatorView';
 import '../custom-nine/custom-nine-creator.css';
@@ -23,5 +24,5 @@ export default async function AdminCustomLineupPage(): Promise<JSX.Element> {
     </main>;
   }
 
-  return <CustomNineCreatorView mode="v2" />;
+  return <CustomNineCreatorView mode="v2" gameplayAvailable={isCustomLineupV2GameplayTransportEnabled()} />;
 }

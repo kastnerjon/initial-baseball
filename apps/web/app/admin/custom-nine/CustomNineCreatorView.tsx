@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, type JSX } from 'react';
+import { CustomLineupShareLink } from '../custom-lineup/CustomLineupShareLink';
 import {
   appendCustomNinePlayer,
   isCompleteCustomNineSelection,
@@ -33,8 +34,9 @@ function playerLabel(player: SearchCandidate): string {
 }
 
 /** Admin-only staging view. Public creation requires separate abuse controls. */
-export function CustomNineCreatorView({ mode = 'v1' }: {
+export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false }: {
   mode?: 'v1' | 'v2';
+  gameplayAvailable?: boolean;
 } = {}): JSX.Element {
   const isV2 = mode === 'v2';
   const maximumPlayers = isV2 ? 10 : 9;
@@ -233,7 +235,8 @@ export function CustomNineCreatorView({ mode = 'v1' }: {
           {createdId !== null ? (
             <div className="custom-nine-created" role="status">
               <strong>Challenge issued.</strong>
-              <p>{isV2 ? 'This challenge is issued privately. Gameplay links remain disabled until a separately approved release.' : 'The opaque challenge ID is ready. Playable challenge links are a separate upcoming stage.'}</p>
+              {isV2 && gameplayAvailable ? <CustomLineupShareLink key={createdId} puzzleId={createdId} />
+                : <p>{isV2 ? 'This challenge is issued privately. Gameplay links remain disabled until a separately approved release.' : 'The opaque challenge ID is ready. Playable challenge links are a separate upcoming stage.'}</p>}
               <code>{createdId}</code>
               <button type="button" onClick={() => { void copyId(); }}>Copy challenge ID</button>
               {copyMessage !== null ? <span>{copyMessage}</span> : null}
