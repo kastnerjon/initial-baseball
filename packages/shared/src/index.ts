@@ -7,3 +7,4 @@ export * from './types/dailyCompletedResult.js';
 export * from './validators/validateGameSettings.js';
 export * from './types/dailyAtBatResult.js';
 export * from './types/dailyNineComparisonApi.js';
+export * from './validators/parseCustomLineupTitle.js';
