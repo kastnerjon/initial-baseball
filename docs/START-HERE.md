@@ -5,6 +5,14 @@ Last updated: 2026-10-15
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
+## October 17 corrected priority and restored environment
+
+The owner superseded the fixed-five roadmap: **Custom Lineups first**, unlisted by default, with secure ordinary-user creation, share links and friend gameplay. Current creation is admin-only and therefore does not satisfy that goal. Public Discover/publishing/leaderboards are deferred. Future **Daily Lineup** uses administrator-selected supported lengths frozen into issued contracts; preserve nine-player history, Archive, scoring and Classic. Existing five-only staging is historical groundwork, not launch authorization. Keep its write flag OFF. Active direction and bounded next work: `tasks/plans/custom-first-variable-daily-direction.md`.
+
+Verified baseline: GitHub main `0ac48c90797ed9405ce874ba1a00682826eb740b`; Vercel production `dpl_BDpa1tMRkAMEmLvchPDnWZxmSVKQ` READY on that SHA. PR #434 (`4ab30dd`) remains unmerged and was converted to draft: its read-only calendar seam may be reusable, but contract-2=five assumptions require reassessment and must not delay Custom. A fresh nonpersistent Vercel Sandbox was successfully created; the earlier storage creation blocker did not reproduce. No snapshots were deleted, storage allowance reset was not established, and recovery state was preserved. A local checkout also succeeded.
+
+Production Supabase `dwreeiydvwikpamlokji` was ACTIVE_HEALTHY. Isolated QA `iklbnlicgsxxhaoiscor` was INACTIVE; restoration was requested successfully. Verify health before executing QA. No production credentials, application data or database schema were changed. The hosted HTTP runner still needs a securely provisioned QA-only service credential; connected tools expose publishable keys only. No hosted HTTP success or public Custom activation is claimed.
+
 ## October 17 read-only shared calendar inspection — staging
 
 Future Daily Five administration now offers a private date-occupancy preview that reads only puzzle_date, lineup_contract_version (nine/contract 1 or five/contract 2) and lifecycle status, with no player IDs or hints. Unexpected versions and provider failures are not considered vacant. The draft editor blocks Save until the date is confirmed empty; this is advisory only and does not replace the database unique-date constraint. The server-side Daily Five draft write flag remains OFF, and the legacy nine-only horizon is NOT altered. See tasks/plans/daily-five-calendar-occupancy-preview.md. Safe mixed-version horizon/scheduling and issuance remain a separate stage.
