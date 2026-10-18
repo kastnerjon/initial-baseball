@@ -11,7 +11,7 @@ import {
 const HEADERS = { 'cache-control': 'private, no-store' } as const;
 const MAX_BODY_BYTES = 4096;
 
-export function isPublicCustomLineupCreationEnabled(
+function isPublicCustomLineupCreationEnabled(
   env: Record<string, string | undefined> = process.env,
 ): boolean {
   return env.CUSTOM_LINEUP_PUBLIC_CREATION_ENABLED === 'true'
