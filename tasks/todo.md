@@ -1,5 +1,9 @@
 # Initial Baseball Current Work
 
+## October 18 UTC-day creation-budget safety gate (#443)
+
+- [ ] Install and verify the database-authoritative UTC-day claim on the private Custom creation budget RPC, and update the gated Web adapter to rehash/retry on the DB day. #443 corrects the cross-midnight digest bypass; Web integration is separately reviewed in #440. Both must pass exact CI/Preview, and public creation remains OFF pending names, mobile/WAF/privacy and hosted QA. See `tasks/plans/custom-lineup-creation-budget.md`.
+
 ## October 18 named community Custom direction (#441)
 
 - [ ] Require a bounded name for every **new** private/public Custom Lineup; portable title validator staged, but no persistence/API/UI enforcement yet. Old v1/v2 games remain readable.
