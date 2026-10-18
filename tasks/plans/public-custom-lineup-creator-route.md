@@ -20,3 +20,7 @@ The authenticated administrator POST remains unchanged. Creator marker is previe
 ## Operational checkpoint
 
 Database #439 merged as 6cb676e. Production applied the exact reviewed additive source as hosted migration 20261018193404. Read-only verification: table/function exist; RLS on, SECURITY INVOKER, service-role-only function execute; zero counter rows. Isolated QA still inactive. The local PostgreSQL 18 concurrency test used 32 independent processes and a directly observed held transaction lock; no real UTC-midnight transition was exercised.
+
+## UTC-day consistency dependency (#443)
+
+An independent #440 review found a midnight clock-skew bypass in the initial day-scoped HMAC/DB window protocol. The database-only follow-up #443 replaces the original reservation RPC with `reserve_custom_lineup_creation_budget(p_client_digest text,p_claimed_utc_day text)`, responding with `server_utc_day`. The Web adapter checks the DB day, retries at most once with a recomputed HMAC for the authoritative day on a nonadmitting mismatch (`retry_after_seconds=0`), and fails closed on missing/malformed/inconsistent/repeated mismatch replies. Production installation of #443 and hosted integration QA are prerequisites to any enabling of #440; the flag remains OFF.

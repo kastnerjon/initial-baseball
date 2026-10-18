@@ -53,28 +53,44 @@ export async function reservePublicCustomLineupCreation(
   if (ip === null || !secret || secret.trim().length < MIN_SECRET_LENGTH) {
     throw new Error('Creation budget configuration unavailable.');
   }
-  const day = now().toISOString().slice(0, 10);
-  const digest = deriveCreationBudgetDigest(ip, day, secret);
+  let day = now().toISOString().slice(0, 10);
   const client = createServerSupabaseClient(environment);
-  const { data, error } = await client.rpc('reserve_custom_lineup_creation_budget', {
-    p_client_digest: digest,
-  });
-  if (error || !Array.isArray(data) || data.length !== 1) {
-    throw new Error('Creation budget provider unavailable.');
-  }
-  const result: unknown = data[0];
-  if (result === null || typeof result !== 'object') {
+  // Database time is authoritative. A queued pre-midnight request must never
+  // reserve a post-midnight 10-minute bucket under yesterday's HMAC key.
+  for (let attempt = 0; attempt < 2; attempt++) {
+    const digest = deriveCreationBudgetDigest(ip, day, secret);
+    const { data, error } = await client.rpc('reserve_custom_lineup_creation_budget', {
+      p_client_digest: digest,
+      p_claimed_utc_day: day,
+    });
+    if (error || !Array.isArray(data) || data.length !== 1) {
+      throw new Error('Creation budget provider unavailable.');
+    }
+    const result: unknown = data[0];
+    if (result === null || typeof result !== 'object') {
+      throw new Error('Invalid creation budget response.');
+    }
+    const value = result as Record<string, unknown>;
+    const actualDay = value.server_utc_day;
+    if (typeof actualDay !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(actualDay)) {
+      throw new Error('Invalid creation budget response.');
+    }
+    if (value.allowed === false && value.retry_after_seconds === 0
+      && actualDay !== day) {
+      day = actualDay;
+      continue; // Zero-quota-cost clock reconciliation, at most once.
+    }
+    if (actualDay !== day) throw new Error('Invalid creation budget response.');
+    if (value.allowed === true && value.retry_after_seconds === 0) {
+      return { allowed: true };
+    }
+    if (value.allowed === false
+      && Number.isInteger(value.retry_after_seconds)
+      && typeof value.retry_after_seconds === 'number'
+      && value.retry_after_seconds >= 1 && value.retry_after_seconds <= 86400) {
+      return { allowed: false, retryAfterSeconds: value.retry_after_seconds };
+    }
     throw new Error('Invalid creation budget response.');
   }
-  const value = result as Record<string, unknown>;
-  if (value.allowed === true && value.retry_after_seconds === 0) {
-    return { allowed: true };
-  }
-  if (value.allowed === false
-    && Number.isInteger(value.retry_after_seconds)
-    && typeof value.retry_after_seconds === 'number'
-    && value.retry_after_seconds >= 1 && value.retry_after_seconds <= 86400) {
-    return { allowed: false, retryAfterSeconds: value.retry_after_seconds };
-  }
-  throw new Error('Invalid creation budget response.');
+  throw new Error('Creation budget UTC day changed repeatedly.');
 }
