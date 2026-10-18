@@ -25,6 +25,13 @@ begin
   if p_claimed_utc_day is null or p_claimed_utc_day !~ '^[0-9]{4}-[0-9]{2}-[0-9]{2}$' then
     raise exception 'Invalid claimed budget date.' using errcode = '22023';
   end if;
+  -- A well-shaped date can still be impossible (e.g. February 29 in a
+  -- non-leap year). Reject it as bad input, never as retryable clock skew.
+  begin
+    perform p_claimed_utc_day::date;
+  exception when invalid_datetime_format or datetime_field_overflow then
+    raise exception 'Invalid claimed budget date.' using errcode = '22023';
+  end;
 
   -- Stable namespace for this feature, independent of date/client/window.
   -- Serializes lazy expiry too, avoiding cross-midnight cleanup deadlocks.

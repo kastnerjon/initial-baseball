@@ -40,11 +40,13 @@ begin
   if exists(select 1 from public.custom_lineup_creation_budgets) then
     raise exception 'Mismatched day consumed quota.';
   end if;
-  begin
-    perform * from public.reserve_custom_lineup_creation_budget(v_key,'not-a-date');
-    raise exception 'Malformed UTC day unexpectedly accepted.';
-  exception when invalid_parameter_value then null;
-  end;
+  foreach v_invalid in array array['not-a-date','2026-99-99','2026-02-29'] loop
+    begin
+      perform * from public.reserve_custom_lineup_creation_budget(v_key,v_invalid);
+      raise exception 'Invalid UTC day unexpectedly accepted: %', v_invalid;
+    exception when invalid_parameter_value then null;
+    end;
+  end loop;
 
   for v_n in 1..10 loop
     select allowed, retry_after_seconds into v_allowed, v_retry
