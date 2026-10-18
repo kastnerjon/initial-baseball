@@ -6,6 +6,7 @@ import { spawn } from 'node:child_process';
 import { createServer } from 'node:net';
 import { setTimeout as delay } from 'node:timers/promises';
 import { fileURLToPath } from 'node:url';
+import { createCustomV2QaBaseUrl } from './qa-custom-v2-hosted-origin.mjs';
 
 const env = process.env;
 function required(name) {
@@ -52,7 +53,7 @@ async function reserveLocalPort() {
 }
 async function startValidatedWebServer() {
   const port = await reserveLocalPort();
-  base = new URL('http://127.0.0.1:' + port + '/');
+  base = createCustomV2QaBaseUrl(port);
   const child = spawn(process.execPath,
     [nextBinary, 'start', '-H', '127.0.0.1', '-p', String(port)], {
       cwd: webRoot, env: { ...env, PORT: String(port), HOSTNAME: '127.0.0.1' },

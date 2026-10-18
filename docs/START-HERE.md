@@ -5,6 +5,12 @@ Last updated: 2026-10-15
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
+## October 18 real hosted Custom acceptance — passed; public release still gated
+
+The real Next.js production-server HTTP→isolated Supabase suite passed for every N=1–10, third-strike and Give Up, using baseline bb952dc plus the runner-only loopback origin fix. NextRequest normalizes 127.0.0.1 to localhost; the old runner Origin therefore received 403 before issuance. Only QA request URLs changed; server binding, strict app origin checks, production-ref denial and public flags remain unchanged. Six startup/origin guards pass and CI now runs them.
+
+QA counts went from zero to 12 issued / 12 completed attempts / 12 accepted results / 57 at-bat rows. Production Custom counts stayed zero. The owner-approved QA-only credential was copied privately into a disposable sandbox, then its file was removed and transfer server stopped; no persistent QA secret provisioning is claimed. QA pause was requested after the run, retaining fixture evidence. Full evidence/scope: `tasks/plans/custom-v2-hosted-origin-alignment.md`. Ordinary-user creator authorization, durable abuse/rate limits, live browser-to-QA/mobile/v1 checks and controlled activation remain outstanding. The My Results request is separately tracked in GitHub #437.
+
 ## Custom creator share-link staging
 
 PR #435 merged as `13bf0cda1b4372956a2ca457346a9ec9d8b530c8`; exact-main push CI passed and Vercel production `dpl_CkXfgGw4AWkRC7Lqtz5aPvRMHfoN` is READY. The isolated QA project is now ACTIVE_HEALTHY. Read-only checks found zero issued, attempt, completed-result and at-bat Custom rows in both QA and production. QA server credential provisioning remains blocked by browser sign-in; no production key was used.
