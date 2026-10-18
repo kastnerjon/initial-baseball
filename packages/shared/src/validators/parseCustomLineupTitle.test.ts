@@ -28,7 +28,7 @@ describe('Custom Lineup name contract (private and public)', () => {
   it('rejects nontext, controls, injected markup and invisible format characters', () => {
     for (const input of [null, undefined, {}, ['title'], 22, true, '', '   ', '<img src=x>',
       'No <script>', 'a\nb', 'a\rb', 'a\tb', 'No\u202eRace', 'A\u200bB', 'a\u0000b',
-      '\ud800a title']) {
+      '\ud800a title', '\uFE0F\uFE0F\uFE0F', '\u0301\u0301\u0301', '!!!']) {
       expect(parseCustomLineupTitle(input)).toEqual({ ok: false });
     }
   });

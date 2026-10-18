@@ -16,6 +16,11 @@ export function parseCustomLineupTitle(value: unknown): ParsedCustomLineupTitle 
   // and HTML markup delimiters instead of attempting unsafe HTML sanitization.
   if (/[<>\p{C}\p{Zl}\p{Zp}]/u.test(value)) return { ok: false };
   const title = value.normalize('NFC').trim().replace(/\s+/gu, ' ');
+  // Variation selectors and combining marks alone render as a blank title.
+  // Require a visible letter, number, pictograph or regional indicator.
+  if (!/[\p{L}\p{N}\p{Extended_Pictographic}\p{Regional_Indicator}]/u.test(title)) {
+    return { ok: false };
+  }
   const length = Array.from(title).length;
   if (length < CUSTOM_LINEUP_TITLE_MIN_LENGTH || length > CUSTOM_LINEUP_TITLE_MAX_LENGTH) {
     return { ok: false };
