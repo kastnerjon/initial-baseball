@@ -9,9 +9,40 @@ Daily routes are thin Next.js adapters over canonical baseball data, engine rule
 
 Every route must validate input, return sanitized data, keep rules in their owning packages, avoid per-action persistence, and never reflect secrets or hidden answer data in errors. Public search returns canonical player IDs. Daily resolution may compare a syntactically canonical submitted ID directly with the server-only canonical answer ID; legacy/noncanonical IDs cross the canonical redirect boundary before comparison.
 
+## Default-disabled anonymous Custom creator HTTP boundary (PR #440)
+
+`POST /api/custom-lineup/create` is a staged, **default-OFF** Web-only issuer
+for an ordered selection of 1–10 canonical baseball player IDs. It returns
+only an opaque immutable v2 puzzle ID and a scoped HttpOnly signed creator
+preview/exclusion cookie, not roster identities, hints, signed answer material
+or a public title. The body is UTF-8 JSON-only, 4,096-byte bounded,
+exact-same-origin with no query parameters. A 1–10 player selection is validated
+by the existing immutable v2 issuing service; there is no parallel game rule.
+Both server-only flags `CUSTOM_LINEUP_PUBLIC_CREATION_ENABLED=true` and
+`CUSTOM_LINEUP_V2_GAMEPLAY_TRANSPORT_ENABLED=true` are required; otherwise
+it responds with a generic 404 before any budget/issuance request.
+
+When intentionally activated after separate approval, this route requires a
+verified single Vercel ingress client IP, separate server-only budget HMAC
+secret, and service-role-only Supabase atomic reservation before issuing a
+challenge. The two-argument budget RPC verifies the HMAC's claimed UTC day
+against the DB's UTC day **after** the advisory lock; one zero-quota-cost
+server-derived rehash/retry is allowed for clock skew/midnight. Absent or
+untrusted ingress, key, database, or inconsistent response fails closed
+with sanitized 503. Quota denials are 429 with Retry-After; the 10/10-minute
+client budget and 1,000/day global cap remain database-authoritative.
+
+This is staging, not permission to activate anonymous creation. Every new
+Custom Lineup must ultimately require a bounded human-entered name under
+the separately staged shared contract (#442); creation name storage/API/UI
+integration (#441) and creator management/public publishing remain separate.
+Do not enable this route without naming, WAF/privacy review, hosted browser
+and mobile QA and controlled release approval. The legacy admin creator is
+unchanged and existing v1 games remain compatible.
+
 ## Disabled-by-default Custom Lineup v2 gameplay transport (PR #414)
 
-Four `POST /api/custom-lineup/challenges/{puzzleId}/attempt/{bootstrap|hint|resolve|submit}` transports are staged behind server-only `CUSTOM_LINEUP_V2_GAMEPLAY_TRANSPORT_ENABLED=true`. The default/unset/other values respond `404 {"error":"not_found"}` **before** challenge validation, cookie inspection, storage or server service access. This PR does not set or activate the flag and does not provide a public Custom Lineup UI or creator issuance flow.
+Four `POST /api/custom-lineup/challenges/{puzzleId}/attempt/{bootstrap|hint|resolve|submit}` transports are staged behind server-only `CUSTOM_LINEUP_V2_GAMEPLAY_TRANSPORT_ENABLED=true`. The default/unset/other values respond `404 {"error":"not_found"}` **before** challenge validation, cookie inspection, storage or server service access. The gameplay transport itself does not issue challenges; a separate default-OFF anonymous creator route is staged above. No public Custom Lineup UI or flag activation occurs in this stage.
 
 Every enabled POST requires exact same-origin `Origin` (including rejecting a missing Origin: 403), no query string (400), v2-only opaque challenge UUID, and `Cache-Control: private, no-store; Vary: Cookie`. Nonempty `bootstrap` or `submit` body is rejected (400). JSON hint/resolve request bodies are UTF-8 byte-bounded by the existing Custom Nine reader (4096 bytes) and strict keyed-shape validators: hint accepts only `{progressionToken}`, resolve accepts only `{progressionToken,submittedPlayerId}` with canonical player ID or `{progressionToken,giveUp:true}`. The token is signed by the separate v2 domain. Neither an attempt ID nor player ID from a browser can be used as a result authority.
 

@@ -9,6 +9,10 @@ Last updated: 2026-10-15
 
 Use this file to resume work. It records verified current state, settled future requirements, genuinely open decisions, and the exact next bounded work. Pull requests and `tasks/lessons.md` retain history.
 
+## October 18 #439 merged and public creation Web boundary staged
+
+PR #439 merged at `6cb676e` after 32 real independent local PostgreSQL connections produced 10 allowed/22 denied; an observed held advisory lock forced another session to wait 3,923 ms. A real UTC-midnight transition was not exercised. Production installed the exact reviewed additive source as hosted migration `20261018193404`. Read-only inspection confirmed RLS on, invoker RPC granted only to `service_role`, browser roles denied, and zero counter rows. QA is inactive. This PR now stages the default-disabled no-sign-in creation POST using verified Vercel client IP and server-only day-scoped HMAC; no public UI or activation is included. Database-authoritative UTC-day quota reconciliation is a separately scoped dependency (#443). No production secret/flag activation, public page or browser acceptance is implied; see `tasks/plans/public-custom-lineup-creator-route.md`. Previous draft checkpoint below is historical.
+
 ## October 18 no-sign-in creator decision and durable budget staging
 
 The owner chose **no sign-in required** for ordinary-user Custom creation; optional accounts/cross-device history remain later. The database-only draft stages a private atomic budget (10 creation attempts/IP digest/10 minutes; 1,000 globally/day). Isolated QA migration `20261018192340` and its single-session rollback fixture passed; zero budget rows remain. Production schema is untouched. Actual concurrent contention/rollover verification remains outstanding; a connected-tool timing probe did not establish overlapping sessions. It is not a public API or an activated rate limit: trusted-IP/HMAC Web integration and creator UI follow separately. One stable transaction lock covers date rollover and lazy expiry. No game tables, public database grants, flags or firewall settings change. Scope: `tasks/plans/custom-lineup-creation-budget.md`.

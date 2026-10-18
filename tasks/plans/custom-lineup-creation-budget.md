@@ -27,6 +27,10 @@ Single-session rollback fixture passed on isolated QA after applying this additi
 
 An attempted multi-session contention probe did not observe the held advisory lock through the connected SQL tools and consequently did not establish concurrent execution; its expected-contention assertion failed. This is **not** a passing concurrency test. Before merge, verify contention/rollover serialization with genuinely independent database connections, and confirm the bounded review finding is resolved. No second full review is needed. Baseline typecheck/lint, source whitespace and file-size checks passed; exact-head PR CI and READY Preview remain required. The owner requested a natural stopping point; preserve this as a draft until the remaining checks pass.
 
+## Subsequent verified completion
+
+PR #439 merged as `6cb676e` after exact-head CI SUCCESS and Preview READY. A local PostgreSQL 18 sandbox with genuinely distinct database processes observed 10 approvals and 22 denials from 32 parallel same-digest requests, both counters at 10. A separately observed advisory lock blocked another reservation for 3,923ms until release. The stable lock and post-acquisition clock ordering address the cross-midnight lock-order concern, but no real midnight transition was exercised. Production hosted migration `20261018193404` installed reviewed SQL; RLS/grants verified, zero counters, no production fixtures. This completion supersedes the historical draft blocker above. The Web adapter is a separate PR.
+
 ## October 18 follow-up: database-authoritative day validation
 
 The independent #440 code reviewer found a midnight/clock-skew bypass in the
