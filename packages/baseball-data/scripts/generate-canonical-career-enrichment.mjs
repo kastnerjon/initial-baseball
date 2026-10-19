@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { deriveRegularSeasonPeaks } from './canonical-career-peaks.mjs';
 import {
   deriveCareerOnBasePercentage,
   deriveSluggingPercentage,
@@ -14,6 +15,7 @@ const careerCardPath = resolve(packageDir, 'reports/canonical-career-cards/caree
 const battingCareerPath = resolve(packageDir, 'reports/canonical-career-aggregates/batting-careers.json');
 const battingSourceRowsPath = resolve(packageDir, 'reports/canonical-season-facts/batting-source-rows.json');
 const hallOfFamePath = resolve(packageDir, 'data/lahman/HallOfFame.csv');
+const seasonCardsPath = resolve(packageDir, 'reports/canonical-season-cards/season-cards.json');
 const outputDir = resolve(packageDir, 'reports/canonical-career-enrichment');
 const strict = process.argv.includes('--strict');
 
@@ -22,10 +24,12 @@ const inputs = {
   battingCareers: readJson(battingCareerPath),
   battingSourceRows: readJson(battingSourceRowsPath),
   hallOfFame: readText(hallOfFamePath),
+  seasonCards: readJson(seasonCardsPath),
 };
 
 const cards = inputs.careerCards.value.cards ?? [];
 const battingByPlayerId = uniqueIndex(inputs.battingCareers.value.facts ?? [], row => row.playerId, 'batting career');
+const seasonCardsByPlayerId = group(inputs.seasonCards.value.cards ?? [], row => row.playerId);
 const battingSourceRowsByPlayerId = group(inputs.battingSourceRows.value.facts ?? [], row => row.playerId);
 const hallRowsByLahmanId = group(parseCsv(inputs.hallOfFame.text).filter(row => row.playerID), row => row.playerID.trim());
 const issues = [];
@@ -38,6 +42,7 @@ const sourceManifest = {
   careerCards: manifestJson(inputs.careerCards),
   battingCareers: manifestJson(inputs.battingCareers),
   battingSourceRows: manifestJson(inputs.battingSourceRows),
+  seasonCards: manifestJson(inputs.seasonCards),
   hallOfFame: {
     path: relativePath(hallOfFamePath),
     sha256: sha256(inputs.hallOfFame.text),
@@ -71,6 +76,7 @@ if (strict && issues.length) process.exitCode = 1;
 function buildEnrichment(card) {
   const batting = battingByPlayerId.get(card.playerId) ?? null;
   const sourceRows = battingSourceRowsByPlayerId.get(card.playerId) ?? [];
+  const seasons = seasonCardsByPlayerId.get(card.playerId) ?? [];
   const hallRows = hallRowsByLahmanId.get(card.lahmanPlayerId) ?? [];
   const playerRows = hallRows.filter(row => String(row.category ?? '').trim().toLowerCase() === 'player');
   const inductedRows = playerRows.filter(row => String(row.inducted ?? '').trim().toUpperCase() === 'Y');
@@ -117,6 +123,7 @@ function buildEnrichment(card) {
       allStarSelections: null,
       leagueLeaders: null,
     },
+    regularSeasonPeaks: deriveRegularSeasonPeaks(seasons),
     provenance: {
       ops: ops == null ? null : 'derived_from_complete_canonical_lahman_career_source_rows',
       battingSourceRowCount: sourceRows.length,
@@ -139,6 +146,10 @@ function validate(rows, out) {
   for (const row of rows) {
     const card = cardsById.get(row.playerId);
     if (!card || card.lahmanPlayerId !== row.lahmanPlayerId) out.push(`Identity mismatch: ${row.playerId}`);
+    const expectedPeaks = deriveRegularSeasonPeaks(seasonCardsByPlayerId.get(row.playerId) ?? []);
+    if (JSON.stringify(row.regularSeasonPeaks) !== JSON.stringify(expectedPeaks)) {
+      out.push(`Regular-season peak mismatch: ${row.playerId}`);
+    }
     if (row.advanced.ops != null) {
       if (row.provenance.battingSourceCompleteness !== 'complete') out.push(`OPS populated from incomplete source rows: ${row.playerId}`);
       if (row.advanced.onBasePercentage == null || row.advanced.sluggingPercentage == null) out.push(`OPS missing component: ${row.playerId}`);

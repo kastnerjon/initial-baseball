@@ -1,5 +1,9 @@
 # Initial Baseball Current Work
 
+## October 19 — Canonical regular-season career peaks (PR #452)
+
+- [ ] Stage nullable highest single-season home runs and pitching strikeouts with season year from canonical Lahman-backed cards. Keep the new runtime field optional and do not activate any new hint, UI, external API, data-source refresh, or rewrite previously issued puzzles. Require exact-head CI, READY Preview and independent review. Scope: `tasks/plans/canonical-regular-season-career-peaks.md`.
+
 ## October 19 — Team-history hint and reveal (#450)
 
 - [ ] Remove five-team hint cap; show full chronological club stints including returns; align post-reveal chronology and mobile wrapping. Do not modify prior immutable issued hints or the underlying season datasets. Require independent review, exact-head CI, READY Preview. Scope: `tasks/plans/team-history-hints-450.md`.

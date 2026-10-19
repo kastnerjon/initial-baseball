@@ -147,6 +147,7 @@ function buildReveal(card) {
       pitching: clone(card.summary.pitching),
       advanced: clone(enrichment?.advanced ?? null),
       achievements: clone(enrichment?.achievements ?? null),
+      regularSeasonPeaks: clone(enrichment?.regularSeasonPeaks ?? { homeRuns: null, strikeouts: null }),
     },
     seasons,
     provenance: {

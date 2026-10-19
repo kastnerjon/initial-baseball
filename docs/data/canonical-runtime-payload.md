@@ -34,7 +34,7 @@ Season context is mandatory because the same franchise can have different public
 
 Each reveal record contains a career summary and one ordered row per regular season. Career and season rows include the applicable batting, pitching, advanced, achievement, source-team, fan-facing team, and position fields.
 
-The runtime generator only joins validated canonical records. It does not derive statistics. Unsupported fields remain `null` until their upstream enrichment is populated.
+The runtime generator only joins validated canonical records. It does not derive statistics. Unsupported fields remain `null` until their upstream enrichment is populated. Career reveals also carry optional `regularSeasonPeaks` (peak regular-season home runs and pitching strikeouts with years), derived upstream from season cards. Existing schema-1 reveal readers may omit this new optional field.
 
 ## Sharding
 
