@@ -35,7 +35,7 @@ if (publicCreatorQa) {
     'Public creation must be enabled only in the isolated QA child server');
   assert.ok(required('CUSTOM_LINEUP_CREATION_BUDGET_SECRET').trim().length >= 32,
     'A distinct isolated QA creation budget secret is required');
-  assert.equal(required('CUSTOM_V2_QA_SIMULATED_VERCEL_INGRESS'), 'true',
+  assert.equal(env.CUSTOM_V2_QA_SIMULATED_VERCEL_INGRESS, 'true',
     'Explicit acknowledgement of locally simulated Vercel ingress is required');
 }
 const username = publicCreatorQa ? null : required('DAILY_ADMIN_USERNAME');
