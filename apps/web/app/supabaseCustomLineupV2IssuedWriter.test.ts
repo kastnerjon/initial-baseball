@@ -38,6 +38,22 @@ function clientForInsert(data: unknown, error: { code: string } | null = null, w
   return { client: { from } as unknown as SupabaseClient, insert, match };
 }
 
+describe('anonymous management verifier storage', () => {
+  it('writes a digest with the frozen challenge in one insert without returning it', async () => {
+    const issued = challenge(1);
+    const digest = 'c'.repeat(64);
+    const { client, insert } = clientForInsert(encodeCustomLineupV2IssuedRow(issued));
+    const result = await createSupabaseCustomLineupV2IssuedWriter(client)
+      .insertIfAbsent(issued, 'Mets Legends', digest);
+    expect(result.status).toBe('inserted');
+    expect(insert).toHaveBeenCalledWith({
+      ...encodeCustomLineupV2IssuedRow(issued), display_title: 'Mets Legends',
+      owner_capability_digest: digest,
+    });
+    expect(JSON.stringify(result)).not.toContain(digest);
+  });
+});
+
 describe('named immutable writer', () => {
   it('writes an optional title on the exact same row insert, never on a second write', async () => {
     const issued = challenge(3);

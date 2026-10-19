@@ -80,3 +80,7 @@ A separately scoped Web presentation/metadata-only reader displays a valid priva
 ## Anonymous owner management credential prerequisite (October 18)
 
 A private additive schema migration stages nullable `owner_capability_digest` on issued v2 challenges, checked to 64 lower-case hexadecimal characters and never granted to browsers. The later issuer will mint 32 cryptographically random bytes and store their SHA-256 digest in the same immutable row INSERT, returning the secret **only to the creator** for a separate management link (never as part of the shareable play URL or preview cookie). Publication/unpublication later requires a server-side secret check against this digest, rate limiting and safe credential transport. Old v1/v2 issued challenges retain NULL. This is only persistence groundwork, not a public creator launch or owner-authorization endpoint.
+
+## Owner-code issuance stage (October 18)
+
+The default-disabled ordinary-user issuer creates a fresh 32-byte CSPRNG capability, stores only SHA-256 of its base64url text alongside the immutable roster and title in one INSERT, and returns the code only to the creator in a private, no-store JSON response. The no-account creation UI shows a copyable owner code to save privately and warns it cannot be recovered without an account. The code is independent of the friend URL and creator-preview cookie. Existing admin issuance, v1/v2 historical challenges, signed attempts and scoring remain unchanged. Management verification, publishing, search, leaderboards, and release activation are out of scope.

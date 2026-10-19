@@ -64,8 +64,8 @@ export async function POST(request: Request): Promise<Response> {
     }
 
     const issued = await createServerCustomLineupV2CreationService()
-      .issue({ canonicalPlayerIds: selected.canonicalPlayerIds }, title.title);
-    const response = Response.json({ puzzleId: issued.puzzleId }, {
+      .issueAnonymous({ canonicalPlayerIds: selected.canonicalPlayerIds }, title.title);
+    const response = Response.json({ puzzleId: issued.puzzleId, ownerCapability: issued.ownerCapability }, {
       status: 201, headers: HEADERS,
     });
     response.headers.set('set-cookie', creatorMarker.creatorCookie(issued.puzzleId, request.url));

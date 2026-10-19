@@ -25,6 +25,7 @@ import {
 const BASE_URL = 'https://example.test/api/custom-lineup/create';
 const ID = 'custom-lineup-v2-123e4567-e89b-42d3-a456-426614174000';
 const issue = vi.fn();
+const OWNER = 'A'.repeat(43);
 const reserve = vi.mocked(reservePublicCustomLineupCreation);
 
 beforeEach(() => {
@@ -32,10 +33,10 @@ beforeEach(() => {
   vi.stubEnv('CUSTOM_LINEUP_V2_GAMEPLAY_TRANSPORT_ENABLED', 'true');
   vi.stubEnv('DAILY_PROGRESSION_SECRET', 'private-test-progression-secret-long-enough');
   issue.mockReset();
-  issue.mockResolvedValue({ puzzleId: ID });
+  issue.mockResolvedValue({ puzzleId: ID, ownerCapability: OWNER });
   reserve.mockReset();
   reserve.mockResolvedValue({ allowed: true });
-  vi.mocked(createServerCustomLineupV2CreationService).mockReturnValue({ issue });
+  vi.mocked(createServerCustomLineupV2CreationService).mockReturnValue({ issueAnonymous: issue, issue: vi.fn() });
 });
 afterEach(() => { vi.unstubAllEnvs(); vi.clearAllMocks(); });
 
@@ -63,8 +64,9 @@ describe('default-disabled, anonymous Custom v2 creation', () => {
       const ids = Array.from({ length }, (_, i) => 'ibp_' + String(i + 1).padStart(20, '0'));
       const response = await POST(request(ids));
       expect(response.status).toBe(201);
-      expect(await response.json()).toEqual({ puzzleId: ID });
+      expect(await response.json()).toEqual({ puzzleId: ID, ownerCapability: OWNER });
       expect(response.headers.get('cache-control')).toBe('private, no-store');
+      expect(JSON.stringify(response.headers)).not.toContain(OWNER);
       expect(response.headers.get('set-cookie')).toContain('HttpOnly; SameSite=Strict; Secure');
       expect(response.headers.get('set-cookie')).toContain('ib-custom-lineup-creator-v2-');
       expect(issue).toHaveBeenLastCalledWith({ canonicalPlayerIds: ids }, '1998 Yankees Legends');

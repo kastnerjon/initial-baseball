@@ -53,6 +53,7 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
   const [searchError, setSearchError] = useState(false);
   const [issuing, setIssuing] = useState(false);
   const [createdId, setCreatedId] = useState<string | null>(null);
+  const [createdOwnerCapability, setCreatedOwnerCapability] = useState<string | null>(null);
   const [issueError, setIssueError] = useState<string | null>(null);
   const [copyMessage, setCopyMessage] = useState<string | null>(null);
   const draftEditable = isCustomNineDraftEditable(createdId, issuing);
@@ -143,11 +144,32 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
           : /^custom-nine-v1-[a-f0-9-]{36}$/.test(value.puzzleId))) {
         throw new Error('Invalid issue response');
       }
+      if (isPublic) {
+        const owner = 'ownerCapability' in value ? value.ownerCapability : null;
+        if (typeof owner !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(owner)) {
+          throw new Error('Missing one-time owner management code');
+        }
+        setCreatedOwnerCapability(owner);
+      }
       setCreatedId(value.puzzleId);
     } catch {
       setIssueError('Challenge could not be issued. Try again later.');
     } finally {
       setIssuing(false);
+    }
+  }
+
+  async function copyOwnerCapability(): Promise<void> {
+    if (!createdOwnerCapability) return;
+    try {
+      const clipboard = (navigator as Navigator & {
+        clipboard?: { writeText: (text: string) => Promise<void> };
+      }).clipboard;
+      if (!clipboard) throw new Error('Clipboard unavailable');
+      await clipboard.writeText(createdOwnerCapability);
+      setCopyMessage('Owner code copied. Store it securely.');
+    } catch {
+      setCopyMessage('Could not copy automatically. Select the owner code below.');
     }
   }
 
@@ -268,7 +290,19 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
               <strong>Challenge issued.</strong>
               {isV2 && gameplayAvailable ? <CustomLineupShareLink key={createdId} puzzleId={createdId} />
                 : <p>{isV2 ? 'This challenge is issued privately. Gameplay links remain disabled until a separately approved release.' : 'The opaque challenge ID is ready. Playable challenge links are a separate upcoming stage.'}</p>}
-              {isPublic ? <p>Your lineup is locked. Use the link above to share it.</p> : <>
+              {isPublic ? <>
+                <p>Your lineup is locked. Use the link above to share it.</p>
+                {createdOwnerCapability ? <div>
+                  <strong>Save your private owner code</strong>
+                  <p>Keep this separate from the play link. You will need it to
+                    manage publishing later. This code cannot be recovered without an account.</p>
+                  <code>{createdOwnerCapability}</code>
+                  <button type="button" onClick={() => { void copyOwnerCapability(); }}>
+                    Copy owner code
+                  </button>
+                  {copyMessage !== null ? <span>{copyMessage}</span> : null}
+                </div> : null}
+              </> : <>
                 <code>{createdId}</code>
                 <button type="button" onClick={() => { void copyId(); }}>Copy challenge ID</button>
                 {copyMessage !== null ? <span>{copyMessage}</span> : null}
@@ -280,6 +314,7 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
                 setTitle('');
                 setSuggestions([]);
                 setCreatedId(null);
+                setCreatedOwnerCapability(null);
                 setIssueError(null);
                 setCopyMessage(null);
               }}>Start another challenge</button>

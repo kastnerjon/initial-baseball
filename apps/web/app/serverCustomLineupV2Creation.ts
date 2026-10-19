@@ -1,6 +1,6 @@
 import 'server-only';
 import { parseCustomLineupTitle } from '@initial-baseball/shared';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import {
   createCustomLineupIssuedChallenge,
   createCustomLineupSelection,
@@ -28,6 +28,7 @@ interface Dependencies {
   createRepository: (client: SupabaseClient) => IssuedRepository;
   materializeClues: (ids: readonly string[]) => PermanentDailyIssuedClueSnapshot;
   mintUuid: () => string;
+  mintOwnerCapability?: () => string;
   issuedAt: () => string;
 }
 const DEFAULT: Dependencies = {
@@ -35,6 +36,7 @@ const DEFAULT: Dependencies = {
   createRepository: createSupabaseCustomLineupV2IssuedWriter,
   materializeClues: materializeCustomLineupV2IssuedClueSnapshot,
   mintUuid: randomUUID,
+  mintOwnerCapability: () => randomBytes(32).toString('base64url'),
   issuedAt: () => new Date().toISOString(),
 };
 
@@ -49,11 +51,12 @@ export function createServerCustomLineupV2CreationService({
   environment?: Record<string, string | undefined>;
   dependencies?: Dependencies;
 } = {}) {
-  return {
-    async issue(payload: unknown, displayTitle?: string): Promise<{ puzzleId: string }> {
+  async function issueInternal(
+    payload: unknown, displayTitle: string | undefined, owned: boolean,
+  ): Promise<{ puzzleId: string; ownerCapability: string | null }> {
       const ids = readSelection(payload);
       const parsedTitle = displayTitle === undefined ? null : parseCustomLineupTitle(displayTitle);
-      if (parsedTitle !== null && !parsedTitle.ok) {
+      if ((owned && !parsedTitle?.ok) || (parsedTitle !== null && !parsedTitle.ok)) {
         throw new ServerCustomLineupV2CreationError('invalid_selection');
       }
       let requested: CustomLineupIssuedChallenge;
@@ -70,16 +73,38 @@ export function createServerCustomLineupV2CreationService({
         throw new ServerCustomLineupV2CreationError('unsupported_players');
       }
 
+      // The management capability is separate from both the unlisted play URL
+      // and the creator-preview cookie. Only its digest enters persistence.
+      const ownerCapability = owned
+        ? (dependencies.mintOwnerCapability ?? DEFAULT.mintOwnerCapability!)() : null;
+      if (ownerCapability !== null && !/^[A-Za-z0-9_-]{43}$/.test(ownerCapability)) {
+        throw new Error('Owner capability mint failed.');
+      }
+      const ownerDigest = ownerCapability === null ? undefined
+        : createHash('sha256').update(ownerCapability, 'utf8').digest('hex');
       const repository = dependencies.createRepository(dependencies.createSupabaseClient(environment));
-      const result = await repository.insertIfAbsent(
-        requested, parsedTitle?.ok ? parsedTitle.title : undefined,
-      );
+      const result = ownerDigest === undefined
+        ? await repository.insertIfAbsent(requested, parsedTitle?.ok ? parsedTitle.title : undefined)
+        : await repository.insertIfAbsent(requested, parsedTitle?.ok ? parsedTitle.title : undefined,
+          ownerDigest);
       // A UUID collision must not masquerade as successfully issued content.
       if (result.status !== 'inserted'
         || JSON.stringify(result.challenge) !== JSON.stringify(requested)) {
         throw new ServerCustomLineupV2CreationError('immutable_conflict');
       }
-      return { puzzleId: requested.puzzleId };
+      return { puzzleId: requested.puzzleId, ownerCapability };
+  }
+  return {
+    async issue(payload: unknown, displayTitle?: string): Promise<{ puzzleId: string }> {
+      const result = await issueInternal(payload, displayTitle, false);
+      return { puzzleId: result.puzzleId };
+    },
+    async issueAnonymous(payload: unknown, displayTitle: string): Promise<{
+      puzzleId: string; ownerCapability: string;
+    }> {
+      const result = await issueInternal(payload, displayTitle, true);
+      if (result.ownerCapability === null) throw new Error('Missing owner capability.');
+      return { puzzleId: result.puzzleId, ownerCapability: result.ownerCapability };
     },
   };
 }
