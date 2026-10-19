@@ -184,7 +184,7 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
         <section className="custom-nine-creator-card" aria-labelledby="custom-lineup-title-heading">
           <h2 id="custom-lineup-title-heading">Name your puzzle</h2>
           <label htmlFor="custom-lineup-puzzle-title">Puzzle name (3–60 characters)</label>
-          <input id="custom-lineup-puzzle-title" type="text" maxLength={60}
+          <input id="custom-lineup-puzzle-title" type="text"
             autoComplete="off" value={title} disabled={!draftEditable}
             placeholder="e.g. 1998 Yankees Legends"
             onChange={event => {
