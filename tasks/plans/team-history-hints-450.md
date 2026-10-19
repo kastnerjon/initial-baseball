@@ -12,3 +12,9 @@
 Legacy generated player `teamsDisplay` was sorted by first year, globally deduplicated and sliced to five. Canonical career display identities were globally deduplicated and sorted alphabetically, and the Web reveal view model performed another global dedup. Source data supports season-level club appearances; intra-year transaction order is unavailable and uses a stable club-code fallback. Adjacent chronological club rows collapse into one stint; a later return is preserved.
 
 A lightweight offline derivation from committed Lahman appearance/team facts and reviewed player identities corrects existing legacy team lists during build/test without changing the committed player population or season coverage. Historical issued Daily/Archive/Custom hint snapshots remain frozen and may retain original five-club values.
+
+## Independent #451 review corrections (October 19)
+
+- Use the same year-and-team keyed `buildTeamDisplayIdentityIndex` as canonical reveals to preserve an abbreviation change across seasons (e.g. TBA: TBD → TBR). The Carl Crawford regression checks both abbreviations in the generated hint.
+- Turbo may execute baseball-data build and test concurrently. Generate each override JSON into a unique same-directory temporary file and rename into place atomically, so readers never observe a truncated JSON. No test/build graph changes or runtime dependencies.
+- Do not merge until updated exact-head CI and Preview pass and the two review findings have been resolved.

@@ -1,7 +1,8 @@
-import { readdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { readdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
+import { randomUUID } from 'node:crypto';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { collapseChronologicalTeamStints, parseCsv } from './team-display-identities.mjs';
+import { buildTeamDisplayIdentityIndex, collapseChronologicalTeamStints, parseCsv } from './team-display-identities.mjs';
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const readJson = (path) => JSON.parse(readFileSync(resolve(packageRoot, path), 'utf8'));
@@ -20,19 +21,20 @@ for (const filename of readdirSync(snapshotDir).filter((file) => /^players-[0-9a
   }
 }
 
-const teamAbbreviation = new Map();
-for (const row of readRows('data/lahman/Teams.csv')) {
-  if (row.teamID) {
-    teamAbbreviation.set(row.teamID, row.teamIDBR?.trim() || row.teamIDretro?.trim() || row.teamID);
-  }
-}
+// Match the year-scoped identity resolver used by canonical career reveals.
+// The same teamID can have different abbreviations in different seasons.
+const teamDisplayIndex = buildTeamDisplayIdentityIndex(
+  readFileSync(resolve(packageRoot, 'data/lahman/Teams.csv'), 'utf8'),
+);
 
 const historyByLahmanId = new Map();
 for (const row of readRows('data/lahman/Appearances.csv')) {
   const year = Number.parseInt(row.yearID, 10);
   if (!row.playerID || !row.teamID || !Number.isInteger(year)) continue;
   const history = historyByLahmanId.get(row.playerID) ?? [];
-  history.push({ year, abbreviation: teamAbbreviation.get(row.teamID) ?? row.teamID });
+  const identity = teamDisplayIndex.get(`${year}:${row.teamID}`);
+  if (!identity) throw new Error(`Missing team display identity for ${year}:${row.teamID}`);
+  history.push({ year, abbreviation: identity.abbreviation });
   historyByLahmanId.set(row.playerID, history);
 }
 
@@ -96,5 +98,9 @@ if (players.some((player) => player.id === 'chadwick:ffe07567')) {
 }
 
 const output = resolve(packageRoot, 'src/generated/team-history-overrides.json');
-writeFileSync(output, JSON.stringify(overrides, null, 2) + '\n');
+// Build and test can run concurrently under Turbo. Write to a distinct file,
+// then atomically replace the shared JSON so readers never see partial output.
+const temporary = `${output}.${process.pid}.${randomUUID()}.tmp`;
+writeFileSync(temporary, JSON.stringify(overrides, null, 2) + '\n');
+renameSync(temporary, output);
 console.log(`Generated ${Object.keys(overrides).length} chronological team-history overrides.`);
