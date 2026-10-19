@@ -30,29 +30,4 @@ describe('PlayerRevealCard stat columns', () => {
     const headings = [...html.matchAll(/<thead>(.*?)<\/thead>/g)].map((match) =>
       [...(match[1] ?? '').matchAll(/<abbr title="[^"]+">([^<]+)<\/abbr>/g)].map((column) => column[1]));
 
-    expect(headings).toEqual([
-      ['AB', 'R', 'H', 'HR', 'RBI', 'SB', 'BA', 'OBP', 'SLG', 'OPS'],
-      ['W', 'L', 'SV', 'ERA', 'WHIP', 'K', 'IP'],
-      ['AB', 'R', 'H', 'HR', 'RBI', 'SB', 'BA', 'OBP', 'SLG', 'OPS'],
-      ['W', 'L', 'SV', 'ERA', 'WHIP', 'K', 'IP'],
-    ]);
-    expect(html.match(/role="region" aria-label="(?:Career|Season-by-season) batting/g)).toHaveLength(2);
-    expect(html.match(/role="region" aria-label="(?:Career|Season-by-season) pitching/g)).toHaveLength(2);
-  });
-});
-
-
-describe('PlayerRevealCard season table mobile presentation contract', () => {
-  it('marks Team separately so narrow CSS can let it scroll while Season remains the row header', () => {
-    const html = renderToStaticMarkup(<PlayerRevealCard reveal={reveal} />);
-    const seasonTables = [...html.matchAll(/<div class="player-reveal-stat-strip"[^>]*aria-label="Season-by-season[^>]*>(.*?)<\/table>/g)]
-      .map((match) => match[1] ?? '');
-
-    expect(seasonTables).toHaveLength(2);
-    for (const table of seasonTables) {
-      expect(table).toContain('<th scope="col" class="stat-team">Team</th>');
-      expect(table).toContain('<th scope="row">2025</th>');
-      expect(table).toContain('<td class="stat-team">NYA</td>');
-    }
-  });
-});
+    expect(headings).toEqual¶»§q«^

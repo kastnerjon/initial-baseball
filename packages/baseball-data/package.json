@@ -27,33 +27,4 @@
     "generate:canonical-universe": "node ./scripts/generate-canonical-universe.mjs",
     "generate:canonical-universe:strict": "node ./scripts/generate-canonical-universe.mjs --strict",
     "generate:canonical-season-facts": "node ./scripts/generate-canonical-season-facts.mjs",
-    "generate:canonical-season-facts:strict": "node ./scripts/generate-canonical-season-facts.mjs --strict",
-    "generate:canonical-season-aggregates": "node ./scripts/generate-canonical-season-aggregates.mjs",
-    "generate:canonical-season-aggregates:strict": "node ./scripts/generate-canonical-season-aggregates.mjs --strict",
-    "generate:canonical-season-cards": "node ./scripts/generate-canonical-season-cards.mjs",
-    "generate:canonical-season-cards:strict": "node ./scripts/generate-canonical-season-cards.mjs --strict",
-    "qa:canonical-season-cards": "node ./scripts/qa-canonical-season-cards.mjs",
-    "generate:canonical-career-aggregates": "node ./scripts/generate-canonical-career-aggregates.mjs",
-    "generate:canonical-career-aggregates:strict": "node ./scripts/generate-canonical-career-aggregates.mjs --strict",
-    "generate:canonical-career-cards": "node ./scripts/generate-canonical-career-cards.mjs",
-    "generate:canonical-career-cards:strict": "node ./scripts/generate-canonical-career-cards.mjs --strict",
-    "generate:canonical-season-enrichment": "node ./scripts/generate-canonical-season-enrichment.mjs",
-    "generate:canonical-season-enrichment:strict": "node ./scripts/generate-canonical-season-enrichment.mjs --strict",
-    "generate:canonical-career-enrichment": "node ./scripts/generate-canonical-career-enrichment.mjs",
-    "generate:canonical-career-enrichment:strict": "node ./scripts/generate-canonical-career-enrichment.mjs --strict",
-    "generate:canonical-runtime-payload": "node ./scripts/generate-canonical-runtime-payload.mjs",
-    "generate:canonical-runtime-payload:strict": "node ./scripts/generate-canonical-runtime-payload.mjs --strict",
-    "qa:canonical-runtime-consumer": "pnpm build && node ./scripts/qa-canonical-runtime-consumer.mjs",
-    "audit:current": "node ./scripts/audit-current-data.mjs",
-    "audit:current:strict": "node ./scripts/audit-current-data.mjs --strict",
-    "test": "vitest run --passWithNoTests",
-    "lint": "tsc -p tsconfig.json --noEmit",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
-  },
-  "dependencies": {
-    "@initial-baseball/shared": "workspace:*"
-  },
-  "devDependencies": {
-    "vitest": "^3.0.0"
-  }
-}
+    "generate:canonical-season-fact¶»§q«^
