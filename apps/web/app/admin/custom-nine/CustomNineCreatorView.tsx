@@ -268,13 +268,16 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
               <strong>Challenge issued.</strong>
               {isV2 && gameplayAvailable ? <CustomLineupShareLink key={createdId} puzzleId={createdId} />
                 : <p>{isV2 ? 'This challenge is issued privately. Gameplay links remain disabled until a separately approved release.' : 'The opaque challenge ID is ready. Playable challenge links are a separate upcoming stage.'}</p>}
-              <code>{createdId}</code>
-              <button type="button" onClick={() => { void copyId(); }}>Copy challenge ID</button>
-              {copyMessage !== null ? <span>{copyMessage}</span> : null}
-              <p>Save or copy this ID before starting another challenge. Your issued lineup is locked.</p>
+              {isPublic ? <p>Your lineup is locked. Use the link above to share it.</p> : <>
+                <code>{createdId}</code>
+                <button type="button" onClick={() => { void copyId(); }}>Copy challenge ID</button>
+                {copyMessage !== null ? <span>{copyMessage}</span> : null}
+                <p>Save or copy this ID before starting another challenge. Your issued lineup is locked.</p>
+              </>}
               <button type="button" onClick={() => {
                 setPlayers([]);
                 setQuery('');
+                setTitle('');
                 setSuggestions([]);
                 setCreatedId(null);
                 setIssueError(null);
