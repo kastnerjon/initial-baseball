@@ -28,7 +28,9 @@ type Terminal = Extract<CustomLineupV2BrowserResolution, { kind: 'terminal' }>;
 /** Server-authoritative, same-browser Custom v2 game. A refresh reopens the
  * durable first attempt; local state is display-only and never authoritative.
  */
-export function CustomLineupGame({ puzzleId }: { puzzleId: string }): JSX.Element {
+export function CustomLineupGame({ puzzleId, displayTitle = null }: {
+  puzzleId: string; displayTitle?: string | null;
+}): JSX.Element {
   const client = useMemo(() => createCustomLineupV2BrowserTransport(), []);
   const [game, setGame] = useState<CustomLineupV2BrowserState | null>(null);
   const [loading, setLoading] = useState(true);
@@ -166,7 +168,7 @@ export function CustomLineupGame({ puzzleId }: { puzzleId: string }): JSX.Elemen
           <a className="custom-lineup-wordmark" href="/" aria-label="Initial Baseball home">IB <span>Initial Baseball</span></a>
           <div className="custom-lineup-masthead-title">
             <span className="custom-lineup-kicker">The ballpark · Community lineups</span>
-            <h1>Custom Lineup</h1>
+            <h1>{displayTitle ?? 'Custom Lineup'}</h1>
             <p>Recognize the players from their initials. Every clue costs points.</p>
           </div>
           <span className="custom-lineup-length">{pitches.length || '–'} batters</span>
