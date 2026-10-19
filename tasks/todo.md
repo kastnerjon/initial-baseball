@@ -4,6 +4,10 @@
 
 - [ ] Install and verify the database-authoritative UTC-day claim on the private Custom creation budget RPC, and update the gated Web adapter to rehash/retry on the DB day. #443 corrects the cross-midnight digest bypass; Web integration is separately reviewed in #440. Both must pass exact CI/Preview, and public creation remains OFF pending names, mobile/WAF/privacy and hosted QA. See `tasks/plans/custom-lineup-creation-budget.md`.
 
+## October 18 named public Custom issuer contract
+
+- [ ] Require normalized private 3–60-character `title` in the gated ordinary-user Custom POST, reserve quota only after title validation, and store title in the same insert as frozen answer facts. Existing private/admin v1/v2 and historical null titles remain compatible. No public flag/creator UI activation; requires independent code review and browser QA before launch.
+
 ## October 18 Custom puzzle name persistence
 
 - [ ] Stage optional, validated `display_title` on private issued v2 challenges. Historical v1/v2 rows remain null-compatible. No browser grants, public flag, published directory, or writer changes. Separate Web issuance PR must require the title before public activation.

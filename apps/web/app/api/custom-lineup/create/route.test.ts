@@ -43,7 +43,7 @@ function request(ids: string[] = ['ibp_00000000000000000001'], headers: Record<s
   return new Request(url, {
     method: 'POST',
     headers: { origin: new URL(url).origin, 'content-type': 'application/json', ...headers },
-    body: JSON.stringify({ canonicalPlayerIds: ids }),
+    body: JSON.stringify({ canonicalPlayerIds: ids, title: '1998 Yankees Legends' }),
   });
 }
 
@@ -67,7 +67,7 @@ describe('default-disabled, anonymous Custom v2 creation', () => {
       expect(response.headers.get('cache-control')).toBe('private, no-store');
       expect(response.headers.get('set-cookie')).toContain('HttpOnly; SameSite=Strict; Secure');
       expect(response.headers.get('set-cookie')).toContain('ib-custom-lineup-creator-v2-');
-      expect(issue).toHaveBeenLastCalledWith({ canonicalPlayerIds: ids });
+      expect(issue).toHaveBeenLastCalledWith({ canonicalPlayerIds: ids }, '1998 Yankees Legends');
     }
     expect(reserve).toHaveBeenCalledTimes(10);
     expect(issue).toHaveBeenCalledTimes(10);
@@ -83,6 +83,35 @@ describe('default-disabled, anonymous Custom v2 creation', () => {
     expect((await POST(huge)).status).toBe(413);
     expect(reserve).not.toHaveBeenCalled();
     expect(issue).not.toHaveBeenCalled();
+  });
+
+  it('requires a bounded name and rejects invalid public payloads before quota', async () => {
+    for (const payload of [
+      { canonicalPlayerIds: ['ibp_00000000000000000001'] },
+      { canonicalPlayerIds: [], title: '' },
+      { canonicalPlayerIds: [], title: 'x' },
+      { canonicalPlayerIds: [], title: '<script>' },
+      { canonicalPlayerIds: [], title: '\uFE0F\uFE0F\uFE0F' },
+      { canonicalPlayerIds: [], title: 'Valid', publish: true },
+      { canonicalPlayerIds: [], title: 'x'.repeat(61) },
+    ]) {
+      const original = request();
+      const response = await POST(new Request(original, { body: JSON.stringify(payload) }));
+      expect(response.status).toBe(400);
+    }
+    expect(reserve).not.toHaveBeenCalled();
+    expect(issue).not.toHaveBeenCalled();
+  });
+
+  it('normalizes a whitespace-heavy name and submits only the title to private issuer', async () => {
+    const original = request();
+    const response = await POST(new Request(original, {
+      body: JSON.stringify({ canonicalPlayerIds: ['ibp_00000000000000000001'], title: '  The   Big Red  Machine ' }),
+    }));
+    expect(response.status).toBe(201);
+    expect(issue).toHaveBeenCalledWith({
+      canonicalPlayerIds: ['ibp_00000000000000000001'],
+    }, 'The Big Red Machine');
   });
 
   it('returns 429 with retry-after and does not issue on a denied reservation', async () => {

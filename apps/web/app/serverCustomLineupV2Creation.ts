@@ -1,4 +1,5 @@
 import 'server-only';
+import { parseCustomLineupTitle } from '@initial-baseball/shared';
 import { randomUUID } from 'node:crypto';
 import {
   createCustomLineupIssuedChallenge,
@@ -49,8 +50,12 @@ export function createServerCustomLineupV2CreationService({
   dependencies?: Dependencies;
 } = {}) {
   return {
-    async issue(payload: unknown): Promise<{ puzzleId: string }> {
+    async issue(payload: unknown, displayTitle?: string): Promise<{ puzzleId: string }> {
       const ids = readSelection(payload);
+      const parsedTitle = displayTitle === undefined ? null : parseCustomLineupTitle(displayTitle);
+      if (parsedTitle !== null && !parsedTitle.ok) {
+        throw new ServerCustomLineupV2CreationError('invalid_selection');
+      }
       let requested: CustomLineupIssuedChallenge;
       try {
         const clueSnapshot = dependencies.materializeClues(ids);
@@ -66,7 +71,9 @@ export function createServerCustomLineupV2CreationService({
       }
 
       const repository = dependencies.createRepository(dependencies.createSupabaseClient(environment));
-      const result = await repository.insertIfAbsent(requested);
+      const result = await repository.insertIfAbsent(
+        requested, parsedTitle?.ok ? parsedTitle.title : undefined,
+      );
       // A UUID collision must not masquerade as successfully issued content.
       if (result.status !== 'inserted'
         || JSON.stringify(result.challenge) !== JSON.stringify(requested)) {

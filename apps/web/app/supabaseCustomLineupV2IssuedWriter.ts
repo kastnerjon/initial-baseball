@@ -20,7 +20,9 @@ export class CustomLineupV2IssuedWriteError extends Error {
 }
 
 /** Encode only the already-validated immutable schema-v2 fields. */
-export function encodeCustomLineupV2IssuedRow(challenge: CustomLineupIssuedChallenge) {
+export function encodeCustomLineupV2IssuedRow(
+  challenge: CustomLineupIssuedChallenge, displayTitle?: string,
+) {
   const value = cloneCustomLineupIssuedChallenge(challenge);
   return {
     puzzle_id: value.puzzleId,
@@ -38,15 +40,16 @@ export function encodeCustomLineupV2IssuedRow(challenge: CustomLineupIssuedChall
       })),
     },
     issued_at: value.issuedAt,
+    ...(displayTitle === undefined ? {} : { display_title: displayTitle }),
   };
 }
 
 /** Service-role only. Insert once; never mutate or upsert an issued answer snapshot. */
 export function createSupabaseCustomLineupV2IssuedWriter(client: SupabaseClient) {
   return {
-    async insertIfAbsent(challenge: CustomLineupIssuedChallenge):
+    async insertIfAbsent(challenge: CustomLineupIssuedChallenge, displayTitle?: string):
       Promise<{ status: 'inserted' | 'existing'; challenge: CustomLineupIssuedChallenge }> {
-      const row = encodeCustomLineupV2IssuedRow(challenge);
+      const row = encodeCustomLineupV2IssuedRow(challenge, displayTitle);
       let response;
       try {
         response = await client.from(TABLE).insert(row).select(COLUMNS).single();

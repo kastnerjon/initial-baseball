@@ -1,3 +1,4 @@
+import { parseCustomLineupTitle } from '@initial-baseball/shared';
 import { createCustomLineupV2CreatorBrowserMarker } from '../../../customNineCreatorBrowser';
 import { getDailyProgressionSecret } from '../../../dailyProgressionSecret';
 import { readDailyResultJsonBody } from '../../../dailyResultRequestBody';
@@ -38,6 +39,19 @@ export async function POST(request: Request): Promise<Response> {
     return fail('invalid_selection', body.error === 'payload_too_large' ? 413 : 400);
   }
 
+  // A public/unlisted puzzle must be named even though old admin v1/v2
+  // challenges can still be read and old private test issuers are compatible.
+  const payload = body.value;
+  if (payload === null || typeof payload !== 'object' || Array.isArray(payload)
+    || Object.keys(payload).length !== 2
+    || !Object.prototype.hasOwnProperty.call(payload, 'canonicalPlayerIds')
+    || !Object.prototype.hasOwnProperty.call(payload, 'title')) {
+    return fail('invalid_selection', 400);
+  }
+  const selected = payload as { canonicalPlayerIds: unknown; title: unknown };
+  const title = parseCustomLineupTitle(selected.title);
+  if (!title.ok) return fail('invalid_selection', 400);
+
   try {
     // Check signing configuration before reserving quota, and reserve before
     // expensive player snapshot materialization or immutable DB issuance.
@@ -49,7 +63,8 @@ export async function POST(request: Request): Promise<Response> {
       return response;
     }
 
-    const issued = await createServerCustomLineupV2CreationService().issue(body.value);
+    const issued = await createServerCustomLineupV2CreationService()
+      .issue({ canonicalPlayerIds: selected.canonicalPlayerIds }, title.title);
     const response = Response.json({ puzzleId: issued.puzzleId }, {
       status: 201, headers: HEADERS,
     });
