@@ -48,9 +48,33 @@ export function decodeCustomNineTerminalReveal(value: unknown): CanonicalRevealV
     primaryPosition: value.primaryPosition as string | null,
     yearsPlayedDisplay: value.yearsPlayedDisplay as string,
     teamIds: teams(value.teamIds),
-    career: { lines: lines(value.career.lines) },
+    career: {
+      lines: lines(value.career.lines),
+      ...decodeRegularSeasonPeaks(value.career.regularSeasonPeaks),
+    },
     seasons,
   };
+}
+
+/** Whitelist optional resolved-only career highs; keep old v1/v2 Custom responses valid. */
+function decodeRegularSeasonPeaks(value: unknown): {
+  regularSeasonPeaks?: CanonicalRevealViewModel['career']['regularSeasonPeaks'];
+} {
+  if (value === undefined) return {};
+  if (!record(value)) malformed();
+  return {
+    regularSeasonPeaks: {
+      homeRuns: decodeCareerPeak(value.homeRuns),
+      strikeouts: decodeCareerPeak(value.strikeouts),
+    },
+  };
+}
+
+function decodeCareerPeak(value: unknown): { season: number; value: number } | null {
+  if (value === null) return null;
+  if (!record(value) || !integer(value.season, 1800, 2100)
+    || !Number.isSafeInteger(value.value) || (value.value as number) < 0) malformed();
+  return { season: value.season as number, value: value.value as number };
 }
 
 function teams(value: unknown): string[] {

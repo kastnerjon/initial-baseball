@@ -3,6 +3,17 @@ import { describe, expect, it } from 'vitest';
 import { createCanonicalRevealViewModel } from './canonicalRevealViewModel';
 
 describe('createCanonicalRevealViewModel', () => {
+  it('preserves sourced career season peaks for a resolved player', () => {
+    const source = buildTwoWayReveal();
+    source.career.regularSeasonPeaks = {
+      homeRuns: { season: 2024, value: 54 },
+      strikeouts: { season: 2022, value: 219 },
+    };
+    const model = createCanonicalRevealViewModel(source);
+    expect(model.career.regularSeasonPeaks).toEqual(source.career.regularSeasonPeaks);
+    expect(model.seasons[0]?.lines[0]?.stats.HR).toBe(44);
+  });
+
   it('preserves both batting and pitching lines for a two-way player', () => {
     const viewModel = createCanonicalRevealViewModel(buildTwoWayReveal());
 

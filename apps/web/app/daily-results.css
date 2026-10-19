@@ -327,6 +327,44 @@
   max-height: none;
   text-overflow: clip;
 }
+.player-reveal-career-peaks {
+  min-width: 0;
+  display: grid;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line-soft);
+}
+.player-reveal-career-peaks h3 {
+  margin: 0;
+  color: var(--clubhouse);
+  font-size: 12px;
+  font-weight: 600;
+}
+.player-reveal-career-peaks dl {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 20px;
+  margin: 0;
+}
+.player-reveal-career-peaks dl > div {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px;
+}
+.player-reveal-career-peaks dt {
+  color: var(--ink-soft);
+  font-size: 12px;
+}
+.player-reveal-career-peaks dd {
+  margin: 0;
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.player-reveal-career-peaks dd span {
+  color: var(--ink-soft);
+}
 .player-reveal-stat-lines {
   display: grid;
   gap: 16px;
