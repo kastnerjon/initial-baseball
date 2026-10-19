@@ -64,3 +64,7 @@ The portable `parseCustomLineupTitle` validator rejects invalid/unsafe input, NF
 ## Final acceptance
 
 A creator can issue an authorized 1–10 player challenge, choose private vs public publication, recover/retain ownership according to the approved policy, and later unpublish. Public viewers discover approved public lineups through the three tabs, play the exact frozen challenge and see accurate challenge-scoped results; unissued/private/hidden and legacy records remain isolated. No unexpected answer leak, forged ranked play, creator-score contribution or change to Universal Daily/Archive/Classic.
+
+## Name persistence prerequisite (October 18)
+
+A separate database-only migration adds nullable `display_title` to the service-role-only issued challenge table with a v2-only 3–60-code-point bounded constraint. NULL remains valid for historical v1/v2 rows and old fixture issuers. The new public creation API must require the existing shared Unicode title validator and persist the normalized title atomically with the issued roster in a following Web PR. The column is private, not public discoverability; publication, ownership and moderation metadata remain separate.
