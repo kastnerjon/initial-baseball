@@ -68,3 +68,7 @@ A creator can issue an authorized 1–10 player challenge, choose private vs pub
 ## Name persistence prerequisite (October 18)
 
 A separate database-only migration adds nullable `display_title` to the service-role-only issued challenge table with a v2-only 3–60-code-point bounded constraint. NULL remains valid for historical v1/v2 rows and old fixture issuers. The new public creation API must require the existing shared Unicode title validator and persist the normalized title atomically with the issued roster in a following Web PR. The column is private, not public discoverability; publication, ownership and moderation metadata remain separate.
+
+## Public creator page staged (October 18)
+
+A bounded Web presentation change reuses `CustomNineCreatorView` player search/reorder/share-link behavior with an explicit `audience=public` mode, title input and the approved `POST /api/custom-lineup/create` boundary. The public route `/create` is server-side 404 unless **both** public creation and Custom v2 gameplay gates are enabled. Admin v1/v2 remain unchanged and no public feature activation occurs. The page only creates unlisted/private links; later publication/ownership/search/leaderboard scope remains issue #441.
