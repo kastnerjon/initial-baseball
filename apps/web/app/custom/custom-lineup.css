@@ -24,7 +24,7 @@
 .custom-lineup-masthead .custom-lineup-kicker { color: #b4ccec; }
 .custom-lineup-masthead h1 {
   margin: 5px 0; font-size: clamp(26px, 4vw, 38px); font-weight: 780;
-  line-height: 1.05; color: #fff; letter-spacing: -.035em;
+  line-height: 1.05; color: #fff; letter-spacing: -.035em; overflow-wrap: anywhere;
 }
 .custom-lineup-masthead p { margin: 6px 0 0; color: #d5e1f2; font-size: 13px; line-height: 1.5; }
 .custom-lineup-length {
