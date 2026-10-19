@@ -66,6 +66,24 @@ describe('private Custom Lineup v2 issuance', () => {
     expect(JSON.stringify(result)).not.toContain('player-');
   });
 
+  it('persists a normalized title with issuance, but keeps the answer-free response', async () => {
+    const { service, insertIfAbsent } = setup();
+    const result = await service.issue({ canonicalPlayerIds: players(1) }, '  Mets   Legends  ');
+    expect(result).toEqual({ puzzleId: ID });
+    expect(insertIfAbsent).toHaveBeenCalledWith(expect.anything(), 'Mets Legends');
+    expect(JSON.stringify(result)).not.toContain('Mets');
+  });
+
+  it('refuses malformed titles before player materialization or storage', async () => {
+    for (const title of ['', 'a', '<img>', '\uFE0F\uFE0F\uFE0F', 'x'.repeat(61)]) {
+      const { service, dependencies } = setup();
+      await expect(service.issue({ canonicalPlayerIds: players(1) }, title))
+        .rejects.toMatchObject({ kind: 'invalid_selection' });
+      expect(dependencies.materializeClues).not.toHaveBeenCalled();
+      expect(dependencies.createSupabaseClient).not.toHaveBeenCalled();
+    }
+  });
+
   it.each([
     null, [], {}, { canonicalPlayerIds: [] },
     { canonicalPlayerIds: players(11) },

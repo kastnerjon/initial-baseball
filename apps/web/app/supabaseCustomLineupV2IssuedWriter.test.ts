@@ -38,6 +38,20 @@ function clientForInsert(data: unknown, error: { code: string } | null = null, w
   return { client: { from } as unknown as SupabaseClient, insert, match };
 }
 
+describe('named immutable writer', () => {
+  it('writes an optional title on the exact same row insert, never on a second write', async () => {
+    const issued = challenge(3);
+    const { client, insert } = clientForInsert(encodeCustomLineupV2IssuedRow(issued));
+    const result = await createSupabaseCustomLineupV2IssuedWriter(client)
+      .insertIfAbsent(issued, 'Mets Legends');
+    expect(result.status).toBe('inserted');
+    expect(insert).toHaveBeenCalledWith({
+      ...encodeCustomLineupV2IssuedRow(issued),
+      display_title: 'Mets Legends',
+    });
+  });
+});
+
 describe('private version-2 immutable writer', () => {
   it.each([1, 5, 9, 10])('inserts a schema-2 %i-player snapshot without changing the input', async n => {
     const expected = challenge(n);

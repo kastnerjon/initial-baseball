@@ -12,10 +12,10 @@ Every route must validate input, return sanitized data, keep rules in their owni
 ## Default-disabled anonymous Custom creator HTTP boundary (PR #440)
 
 `POST /api/custom-lineup/create` is a staged, **default-OFF** Web-only issuer
-for an ordered selection of 1–10 canonical baseball player IDs. It returns
+for `{canonicalPlayerIds, title}`: an ordered selection of 1–10 canonical baseball player IDs and a required 3–60-character sanitized human title. It returns
 only an opaque immutable v2 puzzle ID and a scoped HttpOnly signed creator
 preview/exclusion cookie, not roster identities, hints, signed answer material
-or a public title. The body is UTF-8 JSON-only, 4,096-byte bounded,
+or public indexed metadata. The title is normalized/validated before reserving creation quota, and is persisted with the immutable issued challenge in its same row insert. The body is UTF-8 JSON-only, 4,096-byte bounded,
 exact-same-origin with no query parameters. A 1–10 player selection is validated
 by the existing immutable v2 issuing service; there is no parallel game rule.
 Both server-only flags `CUSTOM_LINEUP_PUBLIC_CREATION_ENABLED=true` and
@@ -32,10 +32,7 @@ untrusted ingress, key, database, or inconsistent response fails closed
 with sanitized 503. Quota denials are 429 with Retry-After; the 10/10-minute
 client budget and 1,000/day global cap remain database-authoritative.
 
-This is staging, not permission to activate anonymous creation. Every new
-Custom Lineup must ultimately require a bounded human-entered name under
-the separately staged shared contract (#442); creation name storage/API/UI
-integration (#441) and creator management/public publishing remain separate.
+This is staging, not permission to activate anonymous creation. Newly issued anonymous Custom Lineups now require the bounded name under the shared contract (#442) and store it in the private issued table (#444). The actual creator UI (#441), safe title read/view, browser/mobile QA, and creator management/public publishing remain separate.
 Do not enable this route without naming, WAF/privacy review, hosted browser
 and mobile QA and controlled release approval. The legacy admin creator is
 unchanged and existing v1 games remain compatible.
