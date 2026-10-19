@@ -9,9 +9,13 @@ vi.mock('../../serverCustomLineupV2GameplayHttp', () => ({
   isCustomLineupV2GameplayTransportEnabled: vi.fn(() => false),
 }));
 vi.mock('../CustomLineupGame', () => ({
-  CustomLineupGame: ({ puzzleId }: { puzzleId: string }) =>
-    React.createElement('div', {'data-testid':'custom-game'}, puzzleId),
+  CustomLineupGame: ({ puzzleId, displayTitle }: { puzzleId: string; displayTitle?: string | null }) =>
+    React.createElement('div', {'data-testid':'custom-game'}, puzzleId, displayTitle),
 }));
+vi.mock('../../serverCustomLineupV2DisplayTitle', () => ({
+  readCustomLineupV2DisplayTitle: vi.fn(async () => null),
+}));
+import { readCustomLineupV2DisplayTitle } from '../../serverCustomLineupV2DisplayTitle';
 import { isCustomLineupV2GameplayTransportEnabled }
   from '../../serverCustomLineupV2GameplayHttp';
 import CustomLineupPage, { metadata } from './page';
@@ -34,6 +38,7 @@ describe('Custom v2 page release boundary',()=>{
     await expect(CustomLineupPage({params:Promise.resolve({puzzleId:ID})}))
       .rejects.toThrow('NOT_FOUND');
     expect(isCustomLineupV2GameplayTransportEnabled).toHaveBeenCalledOnce();
+    expect(readCustomLineupV2DisplayTitle).not.toHaveBeenCalled();
   });
   it('rejects legacy and malformed IDs even when enabled',async()=>{
     vi.mocked(isCustomLineupV2GameplayTransportEnabled).mockReturnValue(true);
@@ -41,6 +46,15 @@ describe('Custom v2 page release boundary',()=>{
       await expect(CustomLineupPage({params:Promise.resolve({puzzleId:id})}))
         .rejects.toThrow('NOT_FOUND');
     }
+  });
+  it('shows a sanitized unlisted title with its link but keeps search metadata generic', async () => {
+    vi.mocked(isCustomLineupV2GameplayTransportEnabled).mockReturnValue(true);
+    vi.mocked(readCustomLineupV2DisplayTitle).mockResolvedValue('Yankees Legends');
+    const page = await CustomLineupPage({params: Promise.resolve({puzzleId: ID})});
+    const html = renderToStaticMarkup(page);
+    expect(html).toContain('Yankees Legends');
+    expect(readCustomLineupV2DisplayTitle).toHaveBeenCalledWith(ID);
+    expect(JSON.stringify(metadata)).not.toContain('Yankees Legends');
   });
   it('renders only the opaque authorized challenge ID when explicitly enabled',async()=>{
     vi.mocked(isCustomLineupV2GameplayTransportEnabled).mockReturnValue(true);

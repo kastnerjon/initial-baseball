@@ -4,6 +4,10 @@
 
 - [ ] Install and verify the database-authoritative UTC-day claim on the private Custom creation budget RPC, and update the gated Web adapter to rehash/retry on the DB day. #443 corrects the cross-midnight digest bypass; Web integration is separately reviewed in #440. Both must pass exact CI/Preview, and public creation remains OFF pending names, mobile/WAF/privacy and hosted QA. See `tasks/plans/custom-lineup-creation-budget.md`.
 
+## October 18 unlisted Custom v2 title on game page
+
+- [ ] Read only `display_title` server-side for a valid gated Custom v2 link and present the sanitized name in the play heading, with a generic fallback for historical NULL/invalid/unavailable metadata. Keep HTML/OpenGraph noindex and do not query frozen player/clue fields or alter gameplay scoring.
+
 ## October 18 public no-account creator screen
 
 - [ ] Stage a default-OFF `/create` page reusing the ordered 1–10 player picker and guarded public issuer POST, requiring a human-entered name and providing private share link/creator preview. Keep v1/admin untouched; do not activate until hosted mobile/abuse/privacy QA.

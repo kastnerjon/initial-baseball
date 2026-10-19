@@ -9,6 +9,15 @@ vi.mock('../customLineupV2BrowserTransport', () => ({
 import { CustomLineupGame } from './CustomLineupGame';
 
 describe('Custom Lineup v2 first render', () => {
+  it('renders a user title as escaped text, without changing the loading game rules', () => {
+    const html = renderToStaticMarkup(<CustomLineupGame
+      puzzleId="custom-lineup-v2-123e4567-e89b-42d3-a456-426614174000"
+      displayTitle="Mets & Friends" />);
+    expect(html).toContain('Mets &amp; Friends');
+    expect(html).toContain('Opening your lineup');
+    expect(html).not.toContain('canonicalPlayerIds');
+    expect(html).not.toContain('clueSnapshot');
+  });
   it('shows only an intentional loading shell with no puzzle answers or browser state', () => {
     const html = renderToStaticMarkup(
       <CustomLineupGame puzzleId="custom-lineup-v2-123e4567-e89b-42d3-a456-426614174000" />,

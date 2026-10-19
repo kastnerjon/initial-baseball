@@ -3,6 +3,7 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { validateCustomLineupPuzzleId } from '@initial-baseball/daily';
 import { isCustomLineupV2GameplayTransportEnabled } from '../../serverCustomLineupV2GameplayHttp';
+import { readCustomLineupV2DisplayTitle } from '../../serverCustomLineupV2DisplayTitle';
 import { CustomLineupGame } from '../CustomLineupGame';
 import '../custom-lineup.css';
 
@@ -28,5 +29,6 @@ export default async function CustomLineupPage({
   const { puzzleId } = await params;
   try { validateCustomLineupPuzzleId(puzzleId); }
   catch { notFound(); }
-  return <CustomLineupGame puzzleId={puzzleId} />;
+  const displayTitle = await readCustomLineupV2DisplayTitle(puzzleId);
+  return <CustomLineupGame puzzleId={puzzleId} displayTitle={displayTitle} />;
 }

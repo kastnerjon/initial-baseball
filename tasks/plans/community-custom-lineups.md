@@ -72,3 +72,7 @@ A separate database-only migration adds nullable `display_title` to the service-
 ## Public creator page staged (October 18)
 
 A bounded Web presentation change reuses `CustomNineCreatorView` player search/reorder/share-link behavior with an explicit `audience=public` mode, title input and the approved `POST /api/custom-lineup/create` boundary. The public route `/create` is server-side 404 unless **both** public creation and Custom v2 gameplay gates are enabled. Admin v1/v2 remain unchanged and no public feature activation occurs. The page only creates unlisted/private links; later publication/ownership/search/leaderboard scope remains issue #441.
+
+## Private challenge display name (October 18)
+
+A separately scoped Web presentation/metadata-only reader displays a valid private v2 puzzle title in the play-page heading to a holder of the unlisted link, while the browser-facing metadata remains a generic noindex/no-referrer description. It reads only the `display_title` column using a server-only client after the v2 game gate and puzzle ID checks; NULL, rejected text, a missing row or metadata lookup failure falls back to `Custom Lineup` without altering the signed first-play attempt. It does not publish, index, or enumerate puzzles, and does not read or surface frozen answer IDs or clues.
