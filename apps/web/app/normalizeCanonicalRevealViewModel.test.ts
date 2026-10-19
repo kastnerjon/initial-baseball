@@ -33,6 +33,24 @@ describe('normalizeCanonicalRevealViewModel', () => {
     ]);
   });
 
+  it('preserves validated peaks and rejects corrupted saved data without inventing counts', () => {
+    const base = {
+      playerId: 'ibp_bonds', displayName: 'Barry Bonds', playerType: 'hitter',
+      primaryPosition: 'LF', yearsPlayedDisplay: '1986–2007', teamIds: ['SFG'],
+      career: { lines: [], regularSeasonPeaks: {
+        homeRuns: { season: 2001, value: 73 },
+        strikeouts: { season: '1997', value: -1 },
+      } },
+      seasons: [],
+    } as unknown as CanonicalRevealViewModel;
+
+    expect(normalizeCanonicalRevealViewModel(base).career.regularSeasonPeaks).toEqual({
+      homeRuns: { season: 2001, value: 73 }, strikeouts: null,
+    });
+    const missing = { ...base, career: { lines: [] } } as CanonicalRevealViewModel;
+    expect(normalizeCanonicalRevealViewModel(missing).career.regularSeasonPeaks).toBeUndefined();
+  });
+
   it('leaves the current multi-line shape intact', () => {
     const reveal: CanonicalRevealViewModel = {
       playerId: 'ibp_ohtani',

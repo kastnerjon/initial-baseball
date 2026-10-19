@@ -17,6 +17,7 @@ export function normalizeCanonicalRevealViewModel(
     ...input,
     career: {
       lines: normalizeLines(reveal.career),
+      ...normalizePeakFields(reveal.career),
     },
     seasons: seasons.flatMap((value) => {
       if (!isRecord(value) || typeof value.season !== 'number' || !Array.isArray(value.teamIds)) {
@@ -29,6 +30,29 @@ export function normalizeCanonicalRevealViewModel(
       }];
     }),
   };
+}
+
+/** Saved browser results may predate the optional field or contain bad local data. */
+function normalizePeakFields(value: unknown): {
+  regularSeasonPeaks?: CanonicalRevealViewModel['career']['regularSeasonPeaks'];
+} {
+  if (!isRecord(value) || !isRecord(value.regularSeasonPeaks)) return {};
+  const peaks = value.regularSeasonPeaks;
+  return {
+    regularSeasonPeaks: {
+      homeRuns: normalizePeak(peaks.homeRuns),
+      strikeouts: normalizePeak(peaks.strikeouts),
+    },
+  };
+}
+
+function normalizePeak(input: unknown): { season: number; value: number } | null {
+  if (!isRecord(input)
+    || typeof input.season !== 'number' || !Number.isSafeInteger(input.season) || input.season < 1
+    || typeof input.value !== 'number' || !Number.isSafeInteger(input.value) || input.value < 0) {
+    return null;
+  }
+  return { season: input.season, value: input.value };
 }
 
 function normalizeLines(value: unknown): CanonicalRevealStatLine[] {

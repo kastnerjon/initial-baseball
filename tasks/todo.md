@@ -1,5 +1,9 @@
 # Initial Baseball Current Work
 
+## October 19 — Post-reveal single-season highs (#453)
+
+- [ ] Display sourced highest regular-season home runs (hitters), pitching strikeouts (pitchers), or both (two-way) on the **resolved player reveal** only; omit unavailable values and maintain historical saved reveals. Reuse #452 canonical data and existing reveal authorization, preserve answer secrecy, four hints and scoring. Require targeted tests, exact-head CI, READY Preview, independent review, and post-merge production verification. Scope: `tasks/plans/reveal-single-season-highs.md`.
+
 ## October 19 — Canonical regular-season career peaks (PR #452)
 
 - [ ] Stage nullable highest single-season home runs and pitching strikeouts with season year from canonical Lahman-backed cards. Keep the new runtime field optional and do not activate any new hint, UI, external API, data-source refresh, or rewrite previously issued puzzles. Require exact-head CI, READY Preview and independent review. Scope: `tasks/plans/canonical-regular-season-career-peaks.md`.

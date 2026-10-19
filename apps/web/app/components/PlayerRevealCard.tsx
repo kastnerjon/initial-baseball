@@ -39,6 +39,7 @@ export function PlayerRevealCard({
         </p>
       </div>
       <CareerStatStrip reveal={viewModel} columnOverrides={columns} />
+      <CareerSeasonPeaks reveal={viewModel} />
       <SeasonStatsDisclosure reveal={viewModel} columnOverrides={columns} />
     </section>
   );
@@ -73,6 +74,31 @@ function CareerStatStrip({
         );
       })}
     </div>
+  );
+}
+
+function CareerSeasonPeaks({ reveal }: { reveal: CanonicalRevealViewModel }): JSX.Element | null {
+  const peaks = reveal.career.regularSeasonPeaks;
+  const entries = [
+    ...(reveal.playerType !== 'pitcher' && peaks?.homeRuns
+      ? [{ kind: 'hr', label: 'Home runs', ...peaks.homeRuns }] : []),
+    ...(reveal.playerType !== 'hitter' && peaks?.strikeouts
+      ? [{ kind: 'so', label: 'Strikeouts', ...peaks.strikeouts }] : []),
+  ];
+  if (entries.length === 0) return null;
+
+  return (
+    <section className="player-reveal-career-peaks" aria-label="Single-season highs">
+      <h3>Single-season highs</h3>
+      <dl>
+        {entries.map((entry) => (
+          <div key={entry.kind}>
+            <dt>{entry.label}</dt>
+            <dd><strong>{entry.value}</strong> <span>({entry.season})</span></dd>
+          </div>
+        ))}
+      </dl>
+    </section>
   );
 }
 

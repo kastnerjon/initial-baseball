@@ -22,6 +22,7 @@ export type CanonicalRevealViewModel = {
   teamIds: string[];
   career: {
     lines: CanonicalRevealStatLine[];
+    regularSeasonPeaks?: CanonicalPlayerReveal['career']['regularSeasonPeaks'];
   };
   seasons: Array<{
     season: number;
@@ -47,6 +48,8 @@ export function createCanonicalRevealViewModel(
         pitching: reveal.career.pitching,
         advanced: reveal.career.advanced,
       }),
+      ...(reveal.career.regularSeasonPeaks
+        ? { regularSeasonPeaks: reveal.career.regularSeasonPeaks } : {}),
     },
     seasons: reveal.seasons.map((season) => ({
       season: season.season,
