@@ -4,6 +4,10 @@
 
 - [ ] Install and verify the database-authoritative UTC-day claim on the private Custom creation budget RPC, and update the gated Web adapter to rehash/retry on the DB day. #443 corrects the cross-midnight digest bypass; Web integration is separately reviewed in #440. Both must pass exact CI/Preview, and public creation remains OFF pending names, mobile/WAF/privacy and hosted QA. See `tasks/plans/custom-lineup-creation-budget.md`.
 
+## October 18 public no-account creator screen
+
+- [ ] Stage a default-OFF `/create` page reusing the ordered 1–10 player picker and guarded public issuer POST, requiring a human-entered name and providing private share link/creator preview. Keep v1/admin untouched; do not activate until hosted mobile/abuse/privacy QA.
+
 ## October 18 named public Custom issuer contract
 
 - [ ] Require normalized private 3–60-character `title` in the gated ordinary-user Custom POST, reserve quota only after title validation, and store title in the same insert as frozen answer facts. Existing private/admin v1/v2 and historical null titles remain compatible. No public flag/creator UI activation; requires independent code review and browser QA before launch.

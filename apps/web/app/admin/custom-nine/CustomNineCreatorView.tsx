@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useEffect, useState, type JSX } from 'react';
+import { parseCustomLineupTitle } from '@initial-baseball/shared';
 import { CustomLineupShareLink } from '../custom-lineup/CustomLineupShareLink';
 import {
   appendCustomNinePlayer,
@@ -33,15 +34,19 @@ function playerLabel(player: SearchCandidate): string {
   return player.displayName + years;
 }
 
-/** Admin-only staging view. Public creation requires separate abuse controls. */
-export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false }: {
+/** Reuses the exact tested ordered picker for admin and no-sign-in creators. */
+export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, audience = 'admin' }: {
   mode?: 'v1' | 'v2';
   gameplayAvailable?: boolean;
+  audience?: 'admin' | 'public';
 } = {}): JSX.Element {
   const isV2 = mode === 'v2';
+  const isPublic = audience === 'public' && isV2;
   const maximumPlayers = isV2 ? 10 : 9;
-  const creationEndpoint = isV2 ? '/api/custom-lineup/challenges' : '/api/custom-nine/challenges';
+  const creationEndpoint = isPublic ? '/api/custom-lineup/create'
+    : isV2 ? '/api/custom-lineup/challenges' : '/api/custom-nine/challenges';
   const [query, setQuery] = useState('');
+  const [title, setTitle] = useState('');
   const [suggestions, setSuggestions] = useState<SearchCandidate[]>([]);
   const [players, setPlayers] = useState<readonly ChosenCustomNinePlayer[]>([]);
   const [searchBusy, setSearchBusy] = useState(false);
@@ -51,6 +56,7 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false }
   const [issueError, setIssueError] = useState<string | null>(null);
   const [copyMessage, setCopyMessage] = useState<string | null>(null);
   const draftEditable = isCustomNineDraftEditable(createdId, issuing);
+  const titleValid = parseCustomLineupTitle(title).ok;
   const validSelection = isV2
     ? isCompleteCustomLineupSelection(players)
     : isCompleteCustomNineSelection(players);
@@ -101,7 +107,7 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false }
   }
 
   async function issue(): Promise<void> {
-    if (!draftEditable || !validSelection) return;
+    if (!draftEditable || !validSelection || (isPublic && !titleValid)) return;
     setIssuing(true);
     setIssueError(null);
     setCopyMessage(null);
@@ -110,17 +116,22 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false }
         method: 'POST',
         credentials: 'same-origin',
         headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ canonicalPlayerIds: players.map(player => player.playerId) }),
+        body: JSON.stringify({
+          canonicalPlayerIds: players.map(player => player.playerId),
+          ...(isPublic ? { title: parseCustomLineupTitle(title).ok ? title : '' } : {}),
+        }),
       });
-      if (response.status === 401) {
+      if (!isPublic && response.status === 401) {
         setIssueError('Administrator authorization is required. Sign in to the admin dashboard again.');
         return;
       }
       if (!response.ok) {
-        setIssueError(response.status === 422
+        setIssueError(response.status === 429 && isPublic
+          ? 'You have reached the creation limit. Try again later.'
+          : response.status === 422
           ? 'At least one player does not have the required four-hint game data. Replace that player.'
           : response.status === 400
-            ? isV2 ? 'Choose 1–10 distinct players and try again.' : 'The nine-player selection is invalid. Verify all slots and try again.'
+            ? isV2 ? isPublic ? 'Enter a name and select 1–10 distinct players.' : 'Choose 1–10 distinct players and try again.' : 'The nine-player selection is invalid. Verify all slots and try again.'
             : 'Challenge could not be issued. Try again later.');
         return;
       }
@@ -155,16 +166,36 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false }
   return (
     <main className="custom-nine-creator">
       <header>
-        <p className="eyebrow">Authorized operations · {isV2 ? 'Custom Lineup v2' : 'Staged Custom Nine'}</p>
-        <h1>{isV2 ? 'Create a Custom Lineup' : 'Create a Custom Nine'}</h1>
-        <p>{isV2
+        <p className="eyebrow">{isPublic ? 'Make your own challenge' : 'Authorized operations · ' + (isV2 ? 'Custom Lineup v2' : 'Staged Custom Nine')}</p>
+        <h1>{isPublic ? 'Create a Lineup' : isV2 ? 'Create a Custom Lineup' : 'Create a Custom Nine'}</h1>
+        <p>{isPublic
+          ? 'Name your challenge, choose 1–10 baseball players in order, and share it privately with friends.'
+          : isV2
           ? 'Choose 1–10 different canonical players in batting order. Players and clues are frozen when issued.'
           : 'Select exactly nine different canonical players in batting order. Players and their clues are frozen when you issue the challenge.'}</p>
-        <p><a href="/admin/daily">Back to Daily administration</a></p>
-        <p><a href={isV2 ? '/admin/custom-nine' : '/admin/custom-lineup'}>
-          {isV2 ? 'Legacy Custom Nine creator' : 'Custom Lineup 1–10 creator'}
-        </a></p>
+        {isPublic ? <p>Your lineup is unlisted: only friends with your link can play it.</p> : <>
+          <p><a href="/admin/daily">Back to Daily administration</a></p>
+          <p><a href={isV2 ? '/admin/custom-nine' : '/admin/custom-lineup'}>
+            {isV2 ? 'Legacy Custom Nine creator' : 'Custom Lineup 1–10 creator'}
+          </a></p>
+        </>}
       </header>
+      {isPublic ? (
+        <section className="custom-nine-creator-card" aria-labelledby="custom-lineup-title-heading">
+          <h2 id="custom-lineup-title-heading">Name your puzzle</h2>
+          <label htmlFor="custom-lineup-puzzle-title">Puzzle name (3–60 characters)</label>
+          <input id="custom-lineup-puzzle-title" type="text" maxLength={60}
+            autoComplete="off" value={title} disabled={!draftEditable}
+            placeholder="e.g. 1998 Yankees Legends"
+            onChange={event => {
+              if ('value' in event.target && typeof event.target.value === 'string') {
+                setTitle(event.target.value);
+              }
+            }} />
+          {title.length > 0 && !titleValid
+            ? <p role="status">Use a name of 3–60 visible characters.</p> : null}
+        </section>
+      ) : null}
       <section className="custom-nine-creator-card" aria-labelledby="custom-nine-lineup-heading">
         <div className="custom-nine-creator-heading">
           <h2 id="custom-nine-lineup-heading">Your lineup</h2>
@@ -226,11 +257,11 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false }
           ) : null}
         </div>
         <div className="custom-nine-create-action">
-          <button type="button" disabled={!validSelection || !draftEditable}
+          <button type="button" disabled={!validSelection || !draftEditable || (isPublic && !titleValid)}
             onClick={() => { void issue(); }}>
-            {issuing ? 'Issuing challenge…' : 'Issue immutable challenge'}
+            {issuing ? 'Creating challenge…' : isPublic ? 'Create challenge' : 'Issue immutable challenge'}
           </button>
-          <p>Admin-only staging. Issuing does not activate public competitive participation.</p>
+          <p>{isPublic ? 'Friends can play your exact lineup from the share link. No account required.' : 'Admin-only staging. Issuing does not activate public competitive participation.'}</p>
           {issueError !== null ? <p role="alert">{issueError}</p> : null}
           {createdId !== null ? (
             <div className="custom-nine-created" role="status">
