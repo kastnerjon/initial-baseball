@@ -49,20 +49,27 @@ export function resolveTeamDisplayIdentities({ season, teamIds, index }) {
     });
 }
 
-export function collapseCareerTeamDisplayIdentities(seasons) {
-  const identities = new Map();
-
-  for (const season of seasons) {
-    for (const identity of season.teamIdentities ?? []) {
-      const key = `${identity.abbreviation}|${identity.displayName}`;
-      if (!identities.has(key)) identities.set(key, { ...identity });
+// A chronological stint ends when the next represented club differs.
+// Adjacent seasons collapse, but later returns remain visible.
+export function collapseChronologicalTeamStints(history) {
+  const ordered = [...history].filter((team) => team.abbreviation)
+    .sort((left, right) => left.year - right.year
+      || left.abbreviation.localeCompare(right.abbreviation));
+  const stints = [];
+  for (const team of ordered) {
+    if (stints.at(-1)?.abbreviation !== team.abbreviation) {
+      stints.push({ ...team });
     }
   }
+  return stints;
+}
 
-  return [...identities.values()].sort(
-    (left, right) => left.abbreviation.localeCompare(right.abbreviation)
-      || left.displayName.localeCompare(right.displayName),
-  );
+export function collapseCareerTeamDisplayIdentities(seasons) {
+  return collapseChronologicalTeamStints(
+    seasons.flatMap((season) => (season.teamIdentities ?? []).map((identity) => ({
+      ...identity, year: season.season,
+    }))),
+  ).map(({ year: _year, ...identity }) => identity);
 }
 
 export function auditTeamDisplayIdentityCoverage({ seasons, index }) {
@@ -96,7 +103,7 @@ function sameIdentity(left, right) {
     && left.displayName === right.displayName;
 }
 
-function parseCsv(text) {
+export function parseCsv(text) {
   const rows = [];
   let row = [];
   let field = '';

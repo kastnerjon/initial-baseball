@@ -103,6 +103,14 @@
   color: var(--ink);
   overflow-wrap: anywhere;
 }
+/* Complete earned career history wraps on narrow screens. */
+.hint-teams .hint-value {
+  min-width: 0;
+  white-space: normal;
+  overflow: visible;
+  max-height: none;
+  text-overflow: clip;
+}
 .hint-block-daily-nine .revealed-hint {
   align-items: center;
 }

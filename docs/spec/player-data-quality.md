@@ -206,3 +206,6 @@ Player-data cleanup is launch-ready when:
 ## Change rule
 
 This specification and the implementation must be updated together whenever canonical identity, source policy, display-name, alias, merge, season/career ownership, missing-data, enrichment, or runtime-serving behavior changes.
+
+## Chronological Teams hint and reveal (October 19, 2026)
+Newly issued Teams hints and revealed career club lists use the full represented history, ordered by career stints. Adjacent consecutive records for a club collapse; later returns are shown again. Same-season club order is deterministic where transaction dates are unavailable. Already-issued hints remain immutable; no underlying player or season data coverage is broadened, and hidden-answer gating remains server-authoritative.

@@ -133,3 +133,16 @@ function buildTwoWayReveal(): CanonicalPlayerReveal {
     },
   };
 }
+
+describe('chronological career team identity preservation', () => {
+  it('preserves repeated club stints supplied by canonical reveal facts', () => {
+    const source = buildTwoWayReveal();
+    source.career.teamIdentities = [
+      { sourceTeamId: 'TOR', abbreviation: 'TOR', displayName: 'Toronto Blue Jays' },
+      { sourceTeamId: 'BOS', abbreviation: 'BOS', displayName: 'Boston Red Sox' },
+      { sourceTeamId: 'TOR', abbreviation: 'TOR', displayName: 'Toronto Blue Jays' },
+    ];
+    const model = createCanonicalRevealViewModel(source);
+    expect(model.teamIds).toEqual(['TOR', 'BOS', 'TOR']);
+  });
+});

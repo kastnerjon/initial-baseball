@@ -1,6 +1,7 @@
 import type { Player } from '@initial-baseball/shared';
 import generatedPlayers from './generated/players.json';
 import generatedPitcherSaves from './generated/pitcher-saves.json';
+import generatedTeamHistoryOverrides from './generated/team-history-overrides.json';
 
 export {
   applyPlayerAdminCorrection,
@@ -28,6 +29,7 @@ export type NormalizedPlayerRow = {
 };
 
 const pitcherSaves = generatedPitcherSaves as Record<string, number>;
+const teamHistoryOverrides = generatedTeamHistoryOverrides as Record<string, string>;
 const generatedPlayerRows = generatedPlayers as unknown as Player[];
 const displayNameOverrides: Readonly<Record<string, string>> = {
   'david americo ortiz arias': 'David Ortiz',
@@ -115,7 +117,9 @@ function normalizeName(value: string): string {
     .toLocaleLowerCase();
 }
 
-export const baseballPlayers = generatedPlayerRows.map(normalizePlayerDisplayName).map((player) => {
+export const baseballPlayers = generatedPlayerRows.map(normalizePlayerDisplayName).map((row) => {
+  const correctedTeams = teamHistoryOverrides[row.id];
+  const player = correctedTeams === undefined ? row : { ...row, teamsDisplay: correctedTeams };
   if (player.careerStats?.kind !== 'pitcher') {
     return player;
   }

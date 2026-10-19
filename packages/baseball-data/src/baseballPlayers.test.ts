@@ -19,6 +19,17 @@ const DEMO_PLAYER_NAMES = [
 ];
 
 describe('baseballPlayers', () => {
+  it('includes complete chronological return stints for sourced many-team careers', () => {
+    const rickey = baseballPlayers.find(p => p.displayName === 'Rickey Henderson');
+    const edwin = baseballPlayers.find(p => p.displayName === 'Edwin Jackson');
+    const crawford = baseballPlayers.find(p => p.displayName === 'Carl Crawford');
+    expect(rickey?.teamsDisplay.split(', ').slice(0, 3)).toEqual(['OAK', 'NYY', 'OAK']);
+    expect(rickey?.teamsDisplay.split(', ').at(-1)).toBe('LAD');
+    expect(edwin?.teamsDisplay.split(', ').length).toBeGreaterThan(10);
+    expect(crawford?.teamsDisplay).toContain('TBD, TBR');
+  });
+
+
   it('contains a broad searchable player universe', () => {
     expect(baseballPlayers.length).toBeGreaterThanOrEqual(1000);
   });

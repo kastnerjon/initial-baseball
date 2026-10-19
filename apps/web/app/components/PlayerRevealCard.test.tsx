@@ -56,3 +56,12 @@ describe('PlayerRevealCard season table mobile presentation contract', () => {
     }
   });
 });
+
+describe('PlayerRevealCard full team history', () => {
+  it('displays long ordered careers with repeated club appearances', () => {
+    const clubs = ['OAK','NYY','OAK','TOR','OAK','SDP','ANA','SDP','OAK','NYN','SEA','SDP','BOS','LAD'];
+    const html = renderToStaticMarkup(<PlayerRevealCard reveal={{ ...reveal, teamIds: clubs }} />);
+    expect(html).toContain(clubs.join(', '));
+    expect(html).toContain('class="player-reveal-teams"');
+  });
+});

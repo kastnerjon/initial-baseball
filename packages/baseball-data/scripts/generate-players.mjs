@@ -1,5 +1,6 @@
 import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
+import { collapseChronologicalTeamStints } from './team-display-identities.mjs';
 
 const PEOPLE_SHARDS = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9', 'a', 'b', 'c', 'd', 'e', 'f'];
 const PEOPLE_URL = 'https://raw.githubusercontent.com/chadwickbureau/register/master/data/people-';
@@ -539,22 +540,9 @@ function derivePrimaryPosition(positionGames) {
 }
 
 function deriveTeamsDisplay(teamHistory) {
-  const uniqueTeams = [];
-  const seen = new Set();
-
-  teamHistory
-    .filter((team) => team.abbreviation)
-    .sort((left, right) => left.year - right.year || left.abbreviation.localeCompare(right.abbreviation))
-    .forEach((team) => {
-      if (seen.has(team.abbreviation)) {
-        return;
-      }
-
-      seen.add(team.abbreviation);
-      uniqueTeams.push(team.abbreviation);
-    });
-
-  return uniqueTeams.slice(0, 5).join(', ');
+  return collapseChronologicalTeamStints(teamHistory)
+    .map((team) => team.abbreviation)
+    .join(', ');
 }
 
 function deriveMainDecade(decadeGames) {

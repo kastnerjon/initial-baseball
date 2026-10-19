@@ -381,6 +381,26 @@ describe('AtBatCard pending resolution feedback', () => {
   });
 });
 
+describe('Many-team earned hint rendering', () => {
+  const history = 'OAK, NYY, OAK, TOR, OAK, SDP, ANA, SDP, OAK, NYN, SEA, SDP, BOS, LAD';
+
+  it('shows complete earned chronology without silent omission', () => {
+    const html = renderCard({ requestPending: false, giveUpPending: false,
+      revealCount: 2, revealedHints: [{ hintType: 'teams', hintLabel: 'Teams', hintValue: history }] });
+    expect(html).toContain(history);
+    expect(html).toContain('class="revealed-hint hint-teams"');
+    const css = readFileSync(new URL('../daily-game.css', import.meta.url), 'utf8');
+    expect(css).toContain('.hint-teams .hint-value');
+    expect(css).toContain('white-space: normal;');
+  });
+
+  it('does not expose a Teams hint that the server has not provided', () => {
+    const html = renderCard({ requestPending: false, giveUpPending: false });
+    expect(html).not.toContain(history);
+    expect(html).not.toContain('hint-teams');
+  });
+});
+
 function renderCard(input: {
   requestPending: boolean;
   giveUpPending: boolean;
@@ -400,6 +420,7 @@ function renderCard(input: {
   reveal?: CanonicalRevealViewModel | null;
   wrongGuesses?: { playerId: string; displayName: string }[];
   comparison?: DailyNineAtBatComparisonState;
+  revealedHints?: Array<{ hintType: 'teams'; hintLabel: 'Teams'; hintValue: string }>;
 }): string {
   return renderToStaticMarkup(
     <AtBatCard
@@ -409,7 +430,7 @@ function renderCard(input: {
         query: input.query ?? '',
         selectedPlayerId: input.selectedPlayerId ?? null,
         revealCount: input.revealCount ?? 0,
-        revealedHints: [],
+        revealedHints: input.revealedHints ?? [],
         strikeCount: 0,
         wrongGuesses: input.wrongGuesses ?? [],
         submittedResult: input.submittedResult ?? null,

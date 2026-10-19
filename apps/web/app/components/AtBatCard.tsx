@@ -146,7 +146,7 @@ export function AtBatCard({
             <p className="hint-empty">Know it already? Make your guess below.</p>
           ) : (
             state.revealedHints.map((hint) => (
-              <div key={hint.hintLabel} className="revealed-hint">
+              <div key={hint.hintLabel} className={hint.hintLabel === "Teams" ? "revealed-hint hint-teams" : "revealed-hint"}>
                 <span className="hint-label">{hint.hintLabel}</span>
                 <p className="hint-value">{hint.hintValue}</p>
               </div>
