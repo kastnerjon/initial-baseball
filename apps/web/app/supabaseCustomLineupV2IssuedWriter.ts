@@ -21,7 +21,7 @@ export class CustomLineupV2IssuedWriteError extends Error {
 
 /** Encode only the already-validated immutable schema-v2 fields. */
 export function encodeCustomLineupV2IssuedRow(
-  challenge: CustomLineupIssuedChallenge, displayTitle?: string,
+  challenge: CustomLineupIssuedChallenge, displayTitle?: string, ownerCapabilityDigest?: string,
 ) {
   const value = cloneCustomLineupIssuedChallenge(challenge);
   return {
@@ -41,15 +41,18 @@ export function encodeCustomLineupV2IssuedRow(
     },
     issued_at: value.issuedAt,
     ...(displayTitle === undefined ? {} : { display_title: displayTitle }),
+    ...(ownerCapabilityDigest === undefined ? {} : { owner_capability_digest: ownerCapabilityDigest }),
   };
 }
 
 /** Service-role only. Insert once; never mutate or upsert an issued answer snapshot. */
 export function createSupabaseCustomLineupV2IssuedWriter(client: SupabaseClient) {
   return {
-    async insertIfAbsent(challenge: CustomLineupIssuedChallenge, displayTitle?: string):
+    async insertIfAbsent(
+      challenge: CustomLineupIssuedChallenge, displayTitle?: string, ownerCapabilityDigest?: string,
+    ):
       Promise<{ status: 'inserted' | 'existing'; challenge: CustomLineupIssuedChallenge }> {
-      const row = encodeCustomLineupV2IssuedRow(challenge, displayTitle);
+      const row = encodeCustomLineupV2IssuedRow(challenge, displayTitle, ownerCapabilityDigest);
       let response;
       try {
         response = await client.from(TABLE).insert(row).select(COLUMNS).single();

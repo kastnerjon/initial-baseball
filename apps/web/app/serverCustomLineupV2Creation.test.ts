@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import {
   createCustomLineupIssuedClueSnapshot,
   type CustomLineupIssuedChallenge,
@@ -41,6 +42,7 @@ function setup() {
     materializeClues: vi.fn((ids: readonly string[]) => clueSnapshot(ids)),
     mintUuid: vi.fn(() => '123e4567-e89b-42d3-a456-426614174000'),
     issuedAt: vi.fn(() => DATE),
+    mintOwnerCapability: vi.fn(() => 'A'.repeat(43)),
   };
   const service = createServerCustomLineupV2CreationService({ environment: ENV, dependencies });
   return { service, insertIfAbsent, dependencies };
@@ -72,6 +74,34 @@ describe('private Custom Lineup v2 issuance', () => {
     expect(result).toEqual({ puzzleId: ID });
     expect(insertIfAbsent).toHaveBeenCalledWith(expect.anything(), 'Mets Legends');
     expect(JSON.stringify(result)).not.toContain('Mets');
+  });
+
+  it('creates a separate random owner management code and stores only its digest', async () => {
+    const { service, insertIfAbsent, dependencies } = setup();
+    const response = await service.issueAnonymous({ canonicalPlayerIds: players(2) },
+      '  Subway   Series ');
+    expect(response).toEqual({ puzzleId: ID, ownerCapability: 'A'.repeat(43) });
+    const digest = createHash('sha256').update(response.ownerCapability).digest('hex');
+    expect(insertIfAbsent).toHaveBeenCalledWith(expect.anything(), 'Subway Series', digest);
+    expect(digest).toMatch(/^[0-9a-f]{64}$/);
+    expect(digest).not.toContain(response.ownerCapability);
+    expect(dependencies.mintOwnerCapability).toHaveBeenCalledOnce();
+    const old = await service.issue({ canonicalPlayerIds: players(1) });
+    expect(old).toEqual({ puzzleId: ID });
+    expect(insertIfAbsent).toHaveBeenLastCalledWith(expect.anything(), undefined);
+    expect(dependencies.mintOwnerCapability).toHaveBeenCalledOnce();
+  });
+
+  it('fails closed when owner code generation is malformed or insert collides', async () => {
+    const { service, insertIfAbsent, dependencies } = setup();
+    dependencies.mintOwnerCapability.mockReturnValueOnce('short');
+    await expect(service.issueAnonymous({canonicalPlayerIds: players(1)}, 'Valid Title'))
+      .rejects.toThrow();
+    expect(insertIfAbsent).not.toHaveBeenCalled();
+    insertIfAbsent.mockResolvedValueOnce({ status: 'existing',
+      challenge: {} as CustomLineupIssuedChallenge });
+    await expect(service.issueAnonymous({ canonicalPlayerIds: players(1)}, 'Valid Title'))
+      .rejects.toMatchObject({ kind: 'immutable_conflict' });
   });
 
   it('refuses malformed titles before player materialization or storage', async () => {

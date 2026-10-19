@@ -13,9 +13,9 @@ Every route must validate input, return sanitized data, keep rules in their owni
 
 `POST /api/custom-lineup/create` is a staged, **default-OFF** Web-only issuer
 for `{canonicalPlayerIds, title}`: an ordered selection of 1–10 canonical baseball player IDs and a required 3–60-character sanitized human title. It returns
-only an opaque immutable v2 puzzle ID and a scoped HttpOnly signed creator
+an opaque v2 puzzle ID, a one-time random owner management code in a private no-store JSON body, and a scoped HttpOnly signed creator
 preview/exclusion cookie, not roster identities, hints, signed answer material
-or public indexed metadata. The title is normalized/validated before reserving creation quota, and is persisted with the immutable issued challenge in its same row insert. The body is UTF-8 JSON-only, 4,096-byte bounded,
+or public indexed metadata. The title is normalized/validated before reserving creation quota, and is persisted with the immutable issued challenge in its same row insert. A random 32-byte owner management capability is minted only for the anonymous issuer; its SHA-256 digest is persisted in that same insert, and its plaintext is returned once only to the creator. The friend link and creator-preview cookie are never management credentials. Publishing and owner verification are not enabled. The body is UTF-8 JSON-only, 4,096-byte bounded,
 exact-same-origin with no query parameters. A 1–10 player selection is validated
 by the existing immutable v2 issuing service; there is no parallel game rule.
 Both server-only flags `CUSTOM_LINEUP_PUBLIC_CREATION_ENABLED=true` and
