@@ -4,6 +4,10 @@
 
 - [ ] Install and verify the database-authoritative UTC-day claim on the private Custom creation budget RPC, and update the gated Web adapter to rehash/retry on the DB day. #443 corrects the cross-midnight digest bypass; Web integration is separately reviewed in #440. Both must pass exact CI/Preview, and public creation remains OFF pending names, mobile/WAF/privacy and hosted QA. See `tasks/plans/custom-lineup-creation-budget.md`.
 
+## October 18 no-sign-in Custom creator ownership
+
+- [ ] Stage nullable, private v2-only `owner_capability_digest` on the existing immutable issued challenge table. Digests are SHA-256 of a random 32-byte owner capability generated at issuance in a separate Web PR; never derive it from a puzzle ID or preview cookie, and never store plaintext. Old puzzles remain compatible; public creation and publication stay OFF.
+
 ## October 18 unlisted Custom v2 title on game page
 
 - [ ] Read only `display_title` server-side for a valid gated Custom v2 link and present the sanitized name in the play heading, with a generic fallback for historical NULL/invalid/unavailable metadata. Keep HTML/OpenGraph noindex and do not query frozen player/clue fields or alter gameplay scoring.

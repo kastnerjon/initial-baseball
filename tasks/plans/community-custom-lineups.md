@@ -76,3 +76,7 @@ A bounded Web presentation change reuses `CustomNineCreatorView` player search/r
 ## Private challenge display name (October 18)
 
 A separately scoped Web presentation/metadata-only reader displays a valid private v2 puzzle title in the play-page heading to a holder of the unlisted link, while the browser-facing metadata remains a generic noindex/no-referrer description. It reads only the `display_title` column using a server-only client after the v2 game gate and puzzle ID checks; NULL, rejected text, a missing row or metadata lookup failure falls back to `Custom Lineup` without altering the signed first-play attempt. It does not publish, index, or enumerate puzzles, and does not read or surface frozen answer IDs or clues.
+
+## Anonymous owner management credential prerequisite (October 18)
+
+A private additive schema migration stages nullable `owner_capability_digest` on issued v2 challenges, checked to 64 lower-case hexadecimal characters and never granted to browsers. The later issuer will mint 32 cryptographically random bytes and store their SHA-256 digest in the same immutable row INSERT, returning the secret **only to the creator** for a separate management link (never as part of the shareable play URL or preview cookie). Publication/unpublication later requires a server-side secret check against this digest, rate limiting and safe credential transport. Old v1/v2 issued challenges retain NULL. This is only persistence groundwork, not a public creator launch or owner-authorization endpoint.
