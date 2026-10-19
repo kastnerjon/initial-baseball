@@ -47,7 +47,7 @@
     "qa:canonical-runtime-consumer": "pnpm build && node ./scripts/qa-canonical-runtime-consumer.mjs",
     "audit:current": "node ./scripts/audit-current-data.mjs",
     "audit:current:strict": "node ./scripts/audit-current-data.mjs --strict",
-    "test": "pnpm generate:team-history-overrides && node --test scripts/team-display-identities.test.mjs && vitest run --passWithNoTests",
+    "test": "pnpm generate:team-history-overrides && node --test scripts/team-display-identities.test.mjs scripts/canonical-career-peaks.test.mjs && vitest run --passWithNoTests",
     "lint": "tsc -p tsconfig.json --noEmit",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },

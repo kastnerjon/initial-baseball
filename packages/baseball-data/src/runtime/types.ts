@@ -70,6 +70,8 @@ export type CanonicalRevealSeason = {
   achievements: Record<string, unknown> | null;
 };
 
+export type CanonicalRegularSeasonPeak = { season: number; value: number };
+
 export type CanonicalPlayerReveal = {
   schemaVersion: 1;
   playerId: string;
@@ -87,6 +89,11 @@ export type CanonicalPlayerReveal = {
     pitching: CanonicalPitchingLine | null;
     advanced: CanonicalAdvancedLine | null;
     achievements: Record<string, unknown> | null;
+    /** Derived, source-backed highlights; absent in older schema-1 payloads. */
+    regularSeasonPeaks?: {
+      homeRuns: CanonicalRegularSeasonPeak | null;
+      strikeouts: CanonicalRegularSeasonPeak | null;
+    };
   };
   seasons: CanonicalRevealSeason[];
   provenance: {

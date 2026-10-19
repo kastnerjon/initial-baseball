@@ -22,6 +22,7 @@ Career enrichment currently adds:
 - career slugging percentage derived from unrounded canonical Lahman career totals after checking the underlying source rows for required components;
 - career OPS as on-base percentage plus slugging percentage;
 - Hall of Fame induction metadata from the committed Lahman `HallOfFame.csv` table;
+- highest single regular-season home run total and pitching strikeout total, including the season year, derived from the existing canonical season cards; ties choose the earliest season, known zeros remain zero, and completely missing values remain null;
 - explicit provenance and source hashes.
 
 OBP uses `(H + BB + HBP) / (AB + BB + HBP + SF)`, following [Baseball-Reference's formula](https://www.baseball-reference.com/glossary/on-base-percentage/). The sacrifice-fly rule did not apply before 1908, in 1931–1938, or in 1940–1953; a blank Lahman `SF` field in those seasons is therefore inapplicable to the formula and contributes zero. The rule applied in 1908–1930 and 1939, then again from 1954 onward, so a blank `SF` in those periods remains unavailable. The historical rule changes are documented by [SABR](https://sabr.org/journal/article/the-sacrifice-fly/) and [Retrosheet's rule-change record](https://www.retrosheet.org/rules/RulesChangesSummary.pdf). Unknown required fields such as `HBP` are never treated as zero.
@@ -29,6 +30,10 @@ OBP uses `(H + BB + HBP) / (AB + BB + HBP + SF)`, following [Baseball-Reference'
 Career OBP and SLG are computed from career counting-stat totals, not averaged season rates or rounded display values. The pipeline checks source-row availability for each rate's own required components, so an unavailable derived season rate does not invalidate a career rate when the career inputs are supported. Unknown required inputs still keep that rate unavailable. OPS is the sum of the unrounded derived OBP and SLG values.
 
 This rule matters for historical data. Ernie Banks's 1953 row has an unknown `SF` field, but the rule was not in effect that season; his 1953 OBP and career OBP/OPS can be calculated from the supported counts. Willie Mays's early blank `SF` fields from years when the rule was absent are handled the same way. This rule does not fill missing sacrifice flies from a season when the rule was active or unknown hit-by-pitches.
+
+## Staged career peaks (no gameplay change)
+
+`regularSeasonPeaks.homeRuns` and `regularSeasonPeaks.strikeouts` are optional on schema-1 runtime career reveals for backward compatibility. They are the highest supported **single-season** counts, not career totals, league-leading claims, or postseason records. Because canonical season cards aggregate multi-team seasons first, a traded player's season is counted once. No live MLB Stats API calls, hint-type changes, issued clue rewrites, or new user-facing columns are included here. These source-backed facts enable later independently reviewed presentation or hints.
 
 ## Deliberately unsupported values
 
