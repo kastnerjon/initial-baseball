@@ -29,4 +29,15 @@ test('career identity chronology is not alphabetized and preserves returns', () 
     { season: 2002, teamIdentities: [{ abbreviation: 'TOR', displayName: 'Toronto' }] },
     { season: 2003, teamIdentities: [{ abbreviation: 'BOS', displayName: 'Boston' }] },
     { season: 2004, teamIdentities: [{ abbreviation: 'BOS', displayName: 'Boston' }] },
-    { season: 2005, teamIde¶»§q«^
+    { season: 2005, teamIdentities: [{ abbreviation: 'TOR', displayName: 'Toronto' }] },
+  ];
+  assert.deepEqual(collapseCareerTeamDisplayIdentities(seasons).map(x => x.abbreviation), ['TOR', 'BOS', 'TOR']);
+});
+
+test('same-season clubs use deterministic code order when transaction dates are unavailable', () => {
+  const index = new Map([
+    ['2009:B', { sourceTeamId: 'B', abbreviation: 'Z', displayName: 'Zed' }],
+    ['2009:A', { sourceTeamId: 'A', abbreviation: 'A', displayName: 'Aye' }],
+  ]);
+  assert.deepEqual(resolveTeamDisplayIdentities({ season: 2009, teamIds: ['B', 'A'], index }).map(x => x.abbreviation), ['A', 'Z']);
+});

@@ -43,4 +43,108 @@ export function resolveTeamDisplayIdentities({ season, teamIds, index }) {
     .map((sourceTeamId) => {
       const identity = index.get(teamIdentityKey(season, sourceTeamId));
       if (!identity) {
-        throw new Error(`Missing t¶»§q«^
+        throw new Error(`Missing team display identity for ${season}:${sourceTeamId}`);
+      }
+      return { ...identity };
+    });
+}
+
+// A chronological stint ends when the next represented club differs.
+// Adjacent seasons collapse, but later returns remain visible.
+export function collapseChronologicalTeamStints(history) {
+  const ordered = [...history].filter((team) => team.abbreviation)
+    .sort((left, right) => left.year - right.year
+      || left.abbreviation.localeCompare(right.abbreviation));
+  const stints = [];
+  for (const team of ordered) {
+    if (stints.at(-1)?.abbreviation !== team.abbreviation) {
+      stints.push({ ...team });
+    }
+  }
+  return stints;
+}
+
+export function collapseCareerTeamDisplayIdentities(seasons) {
+  return collapseChronologicalTeamStints(
+    seasons.flatMap((season) => (season.teamIdentities ?? []).map((identity) => ({
+      ...identity, year: season.season,
+    }))),
+  ).map(({ year: _year, ...identity }) => identity);
+}
+
+export function auditTeamDisplayIdentityCoverage({ seasons, index }) {
+  const missing = [];
+  const sourceIds = new Set();
+  const abbreviations = new Set();
+
+  for (const season of seasons) {
+    for (const sourceTeamId of season.teamIds ?? []) {
+      sourceIds.add(sourceTeamId);
+      const identity = index.get(teamIdentityKey(season.season, sourceTeamId));
+      if (!identity) missing.push(`${season.season}:${sourceTeamId}`);
+      else abbreviations.add(identity.abbreviation);
+    }
+  }
+
+  return {
+    sourceTeamIdCount: sourceIds.size,
+    displayAbbreviationCount: abbreviations.size,
+    missing: [...new Set(missing)].sort(),
+  };
+}
+
+function teamIdentityKey(season, sourceTeamId) {
+  return `${season}:${sourceTeamId}`;
+}
+
+function sameIdentity(left, right) {
+  return left.sourceTeamId === right.sourceTeamId
+    && left.abbreviation === right.abbreviation
+    && left.displayName === right.displayName;
+}
+
+export function parseCsv(text) {
+  const rows = [];
+  let row = [];
+  let field = '';
+  let quoted = false;
+
+  for (let index = 0; index < text.length; index += 1) {
+    const char = text[index];
+    if (quoted) {
+      if (char === '"' && text[index + 1] === '"') {
+        field += '"';
+        index += 1;
+      } else if (char === '"') quoted = false;
+      else field += char;
+    } else if (char === '"') quoted = true;
+    else if (char === ',') {
+      row.push(field);
+      field = '';
+    } else if (char === '\n') {
+      row.push(field.replace(/\r$/, ''));
+      rows.push(row);
+      row = [];
+      field = '';
+    } else field += char;
+  }
+
+  if (field.length || row.length) {
+    row.push(field.replace(/\r$/, ''));
+    rows.push(row);
+  }
+
+  const [headers = [], ...records] = rows;
+  return records
+    .filter((record) => record.some((value) => value !== ''))
+    .map((record) => Object.fromEntries(headers.map((header, index) => [header, record[index] ?? ''])));
+}
+
+function clean(value) {
+  return String(value ?? '').trim();
+}
+
+function integer(value) {
+  const parsed = Number.parseInt(value, 10);
+  return Number.isInteger(parsed) ? parsed : null;
+}

@@ -2,7 +2,7 @@
 
 ## October 19 — Team-history hint and reveal (#450)
 
-- [ ] Remove five-team hint cap; show full chronological club stints including returns; align post-reveal chronology and mobile wrapping. Do not modify prior immutable issued hints or the underlying season datasets. Require independent review, exact-head CI, READY Preview. Scope: \`tasks/plans/team-history-hints-450.md\`.
+- [ ] Remove five-team hint cap; show full chronological club stints including returns; align post-reveal chronology and mobile wrapping. Do not modify prior immutable issued hints or the underlying season datasets. Require independent review, exact-head CI, READY Preview. Scope: `tasks/plans/team-history-hints-450.md`.
 
 ## October 18 UTC-day creation-budget safety gate (#443)
 
@@ -14,4 +14,469 @@
 
 ## October 18 no-sign-in Custom creator ownership
 
-- [ ] Stage nullable, private v2-only `owner_capability_digest` on the existing i���q�^
+- [ ] Stage nullable, private v2-only `owner_capability_digest` on the existing immutable issued challenge table. Digests are SHA-256 of a random 32-byte owner capability generated at issuance in a separate Web PR; never derive it from a puzzle ID or preview cookie, and never store plaintext. Old puzzles remain compatible; public creation and publication stay OFF.
+
+## October 18 unlisted Custom v2 title on game page
+
+- [ ] Read only `display_title` server-side for a valid gated Custom v2 link and present the sanitized name in the play heading, with a generic fallback for historical NULL/invalid/unavailable metadata. Keep HTML/OpenGraph noindex and do not query frozen player/clue fields or alter gameplay scoring.
+
+## October 18 public no-account creator screen
+
+- [ ] Stage a default-OFF `/create` page reusing the ordered 1–10 player picker and guarded public issuer POST, requiring a human-entered name and providing private share link/creator preview. Keep v1/admin untouched; do not activate until hosted mobile/abuse/privacy QA.
+
+## October 18 named public Custom issuer contract
+
+- [ ] Require normalized private 3–60-character `title` in the gated ordinary-user Custom POST, reserve quota only after title validation, and store title in the same insert as frozen answer facts. Existing private/admin v1/v2 and historical null titles remain compatible. No public flag/creator UI activation; requires independent code review and browser QA before launch.
+
+## October 18 Custom puzzle name persistence
+
+- [ ] Stage optional, validated `display_title` on private issued v2 challenges. Historical v1/v2 rows remain null-compatible. No browser grants, public flag, published directory, or writer changes. Separate Web issuance PR must require the title before public activation.
+
+## October 18 named community Custom direction (#441)
+
+- [ ] Require a bounded name for every **new** private/public Custom Lineup; portable title validator staged, but no persistence/API/UI enforcement yet. Old v1/v2 games remain readable.
+- [ ] No-account management credential independent of share/play URL, explicit publish/unpublish and moderation controls.
+- [ ] Public title/voluntary creator alias search, This Week/All Time most eligible completions, New Today, stable pagination; private and spoiler data excluded. See `tasks/plans/community-custom-lineups.md` and GitHub #441.
+
+Status: Active ordered implementation plan  
+Last updated: 2026-10-15
+
+## October 18 current Custom creation work
+
+- [x] #439 private budget merged as `6cb676e`, independent local concurrency verified, production applied as hosted migration `20261018193404`; exact grants/RLS and zero rows verified.
+- [ ] Stage and review the default-off public no-sign-in issuer POST with trusted Vercel IP, day-scoped HMAC, private quota, and signed creator marker. UI/release approval remain separate; `tasks/plans/public-custom-lineup-creator-route.md`.
+
+## October 18 hosted Custom acceptance
+
+- [x] Owner chose no required sign-in for public Custom creation; accounts and cross-device ownership/history remain later.
+- [ ] Stage private durable creation-budget RPC, then wire verified-platform-IP/HMAC reservation into a separate public creator implementation. No public activation or production counters in the database-only scope. See `tasks/plans/custom-lineup-creation-budget.md`.
+
+- [x] Real application HTTP→isolated Supabase acceptance passed at every N=1–10 plus third-strike/Give Up; verified 12/12/12/57 QA rows and zero production Custom rows. Runner-only localhost origin fix preserves application security. See `tasks/plans/custom-v2-hosted-origin-alignment.md`.
+- [ ] Next: secure ordinary-user creation and durable abuse/rate controls; actual browser/mobile/v1 acceptance; controlled production activation. Custom gameplay remains OFF.
+- [ ] My Results / previous-game score history: GitHub #437, separately scoped after Custom launch priority.
+
+## Custom share-link implementation
+
+- [x] Add a gated copyable challenge URL and creator preview to the existing admin v2 creator.
+- [ ] Complete ordinary-user authorization, durable abuse/rate controls, QA-only credential provisioning and hosted creator → share → friend acceptance before activation. See `tasks/plans/custom-lineup-creator-share-link.md`.
+
+## Active order — October 17 owner correction
+
+1. Finish unlisted Custom Lineup sharing using the existing immutable 1–10 issuer and signed gameplay; the existing admin creator is staging, not ordinary-user creation.
+2. Verify isolated QA health and securely provision its own server credential; execute real application HTTP-to-QA-Supabase acceptance. Never substitute production credentials.
+3. Implement reviewed creator authorization and durable per-IP/credential abuse controls in separate bounded PRs; complete creator → link → friend gameplay and mobile verification.
+4. Activate only after correctness, security/privacy, exact-head CI/READY Preview and controlled rollout gates pass. Discover, publishing and leaderboards remain deferred.
+5. Then migrate to administrator-configurable **Daily Lineup**, freezing length into each issued puzzle. Preserve historical nine-player/Archive/Classic data. Fixed-five Daily is superseded; draft writes stay OFF.
+
+PR #434 is deferred as a draft; preserve its branch and reassess its minimal calendar reader later. Environment creation succeeded without snapshot deletion. See `tasks/plans/custom-first-variable-daily-direction.md`.
+
+## Current Custom v2 signed-attempt milestone (October 14)
+
+- [x] #407 private exact-challenge 1–10 comparison RPCs merged/hosted as `20261014235929` and rollback-tested; #408 signed v2 opening merged/production READY as `c41ad7df`.
+- [x] Private v2 first-attempt reservation: separate v2/creator cookies, immutable N-backed ledger row, fail-closed resume. Does not add public routes or score admission.
+- [x] Private v2 signed hint revelation with existing attempt ledger CAS (no public route).
+- [x] PR #411 private v2 atomic wrong-guess/terminal CAS (correct, third strike, give-up, N=1–10), merged as `a7533c9`, exact-main CI successful, production READY; no public route.
+- [x] PR #412 private v2 same-browser active/completed attempt restoration, signed ledger and earned-only hints; merged as `70ec78e`, exact-main CI passed and production READY.
+- [x] PR #413 private, server-only noncreator completed first-attempt admission, portable points-v4 exact-N scoring, and installed atomic v2 RPC; merged `6e632f9`, exact-main CI passed and production READY; no public route.
+- [x] PR #414 default-disabled same-origin v2 attempt transport for bootstrap, hint, unified resolve and bodyless submission; merged `a2f0c0d`, exact-main CI passed, Vercel production READY; flag off.
+- [x] PR #415 strict 1–10 v2 client DTO and headless transport against the gated v2 API, merged `0c301b9`, exact-main CI passed and production READY; no public activation.
+- [x] PR #416 merged as `106fa52`, exact-main CI passed and production READY: responsive, server-flag-gated `/custom/{v2-id}` gameplay UI, scorecard, restore, correct/wrong/hint/give-up and bodyless completed admission. Flag remains OFF.
+- [x] PR #417 points-v4 Daily Nine boxed revealed hints merged at `8ebb728c`, production READY and main push CI succeeded on retry following an unrelated 5-second baseball-data test timeout; mobile authenticated QA remains open.
+- [x] PR #418 private schema-v2 1–10 Custom Lineup immutable issuer merged as `d7c855c`; exact-main CI SUCCESS and production READY; no creation route or flag activation at that checkpoint.
+- [x] PR #419 admin-only version-2 challenge POST merged as `5592ff4`: signed scoped creator marker, server-origin/auth checks, opaque ID only. No gameplay activation; exact-head CI and Preview passed. Exact-main push CI SUCCESS, production READY and Supabase healthy; live HTTP route probing remains unverified.
+- [x] PR #420 responsive admin-only `/admin/custom-lineup` v2 1–10 editor merged as `6189206`; exact-head CI, independent review (one corrected import), exact-main push CI and Vercel production READY. No public activation.
+- [x] PR #421 cross-layer v2 browser ↔ HTTP acceptance fixtures N=1/5/9/10 merged as `8f83404`; final review/test/Preview and exact-main push CI SUCCESS, Vercel production READY; no public activation.
+- [x] PR #422 generic noindex/nofollow/nocache and no-referrer metadata on unlisted Custom v2 pages merged as `7b3982e`; exact-head checks and READY Preview passed; main production push checks tracked separately.
+- [x] PR #423 caps trimmed public `/api/players/search` queries at 100 chars before canonical candidate materialization; main CI SUCCESS and Vercel production READY as `7548f2f`. This is not a rate limit. Plan: `tasks/plans/canonical-player-search-query-bound.md`.
+- [x] PR #424 **closed without merge**: independent review showed the proposed resolve-key check was redundant, so no non-behavioral PR was merged.
+- [x] PR #425: required JSON media type for gated v2 Custom hint/resolve mutations. Merged b2d8689; exact-main CI SUCCESS, Vercel production READY. Plan: tasks/plans/custom-lineup-v2-json-media-type.md.
+- [x] Hosted isolated PostgreSQL v2 regression passed on a standalone $0/month QA project (Supabase Free plan cannot branch): Custom migrations and rollback-only SQL fixtures at N=1–10, plus v1 comparison, passed; no Custom rows remain in QA or production. Scope: `tasks/plans/custom-v2-hosted-postgres-all-lengths.md`. This does NOT establish application-to-DB hosted gameplay.
+- [x] Responsive Custom v2 browser QA at 320/375/390/430px and N=1/5/9/10 showed no scorecard horizontal scroll, plus N=10 creator selection at 320px; a terminal restore 503 lost visible error feedback and was corrected in a bounded presentation-only PR. See tasks/plans/custom-v2-terminal-retry-feedback.md. Mocked HTTP, not hosted database QA.
+- [x] Refit Custom v2 real HTTP hosted-QA runner for the no-cost standalone Supabase QA project: exact HTTPS provenance, production-ref rejection, all N=1–10 plus two alternate endings, four no-network guard tests. Runbook corrected; staging-only secret/full hosted HTTP execution remain blocked. Plan: tasks/plans/custom-v2-standalone-hosted-runner.md.
+- [x] Isolated hosted Custom v2 application HTTP-to-database gameplay QA passed October 18 for N=1–10 and both alternate endings. Mobile/v1, public creator, abuse/privacy/rate controls and controlled activation remain separate gates. Never write fixtures to production.
+
+## Current Custom v2 database checkpoint (October 14)
+
+- [x] Installed and transaction-rollback-verified #401/#403/#404/#405 (hosted versions `20261014225941`, `20261014230002`, `20261014230010`, `20261014231406`); all four Custom v2 private tables have zero real records. Reconcile hosted migration-history versions before any `db push`.
+- [x] #407: private v2 exact-challenge 1–10 AB/completed comparison RPCs, hosted and verified. Signed runtime/playable UI and public competition remain separate.
+- [x] PR #406: Daily points-v4 wrong-guess history deployed in production without changing Classic.
+
+## Approved Daily Five / Custom 1–10 migration (October 13)
+
+- [ ] Migrate Universal to **Daily Five** (exactly 5 AB / 20 maximum) and future **Custom Lineup** to a creator-chosen **1–10** ABs (4 × N maximum), with legacy nine-player issued games and Classic unchanged. Current production still runs nine; **no activation in this decision PR**.
+- [x] Stage 1: portable length profiles distinguish legacy nine-player Daily/Classic/Custom v1 from future Daily Five five and future Custom 1–10, without activating new issuance. Existing validators preserve their exact-nine errors and behavior.
+- [x] Stage 2: additive Daily five-player editorial and permanent-issued SQL migration (#396), installed in hosted Supabase as `20261013223640_prepare_daily_five_length_constraints`; rollback fixture and unchanged nine-player counts/privileges verified. No public activation.
+- [x] Staged prospective Daily Five editorial draft constructor in packages/daily (contract 2, exact five, canonical unique slots, reused identity/actor validations); pure/no persistence, no activation. Focused Daily lifecycle + new draft tests passed. Plan: tasks/plans/daily-five-prospective-editorial-draft.md.
+- [x] Added isolated insert/read-only v2 Daily Five draft repository plus explicit contract-1 nine/v2 five row codec boundaries, duplicate-date conflict and optimistic-update contract fence. Focused tests and web typecheck passed. No live route or production write. Scope: tasks/plans/daily-five-draft-storage-adapter.md.
+- [x] Admin-only future Daily Five draft workbench: five-slot canonical search and reorder, date input, Basic-auth page, guarded draft-only POST and default-OFF server storage gate. No production writes or activation. Scope: tasks/plans/daily-five-admin-draft-editor.md.
+- [x] Read-only admin Daily Five date occupancy preview recognizes shared calendar v1 nine/v2 five records without selections; auth-protected no-store GET, explicit fail-closed unknown/error behavior, and editor Save preflight guard. No activation. Scope: tasks/plans/daily-five-calendar-occupancy-preview.md.
+- [ ] Next Daily Five: implement a separately reviewed version-aware mixed-calendar/horizon read strategy and explicit cutover policy, with production draft writes OFF; subsequently stage issued schema-v3 and browser/result compatibility before activation. Classic/Archive history remains nine-player.
+
+## Community Lineups — publish, discover and compare (approved October 13)
+
+- [ ] Allow players to intentionally publish eligible **Custom Lineups** (1–10 AB) while retaining private sharing and creator-controlled unpublishing. Public publishing must have stable authorized creator ownership, moderation/reporting, bounded titles, abuse limits, and separately authorized activation.
+- [ ] Add responsive **Discover Lineups** page: **This Week** (accepted noncreator completed first attempts in rolling past seven days), **All Time** (cumulative eligible completions), **New Today** (UTC publication timestamp). Exact challenge identity, stable pagination, clear lineup-length labels/filters and no answer leakage.
+- [ ] For every published lineup, provide a stable detail/play page, exact-challenge completed result histogram, avg, per-AB distributions, and an opt-in privacy-reviewed leaderboard. Never include creator attempts or unsupported attempts in competitive populations.
+- [ ] Follow `tasks/plans/community-custom-lineups.md` in bounded PRs **after playable Custom and exact-N signed results**, with explicit gated release and abuse/integrity checks; do not enable currently disabled Custom submission/comparison flags yet.
+
+## Results layout refinement (October 11)
+
+- [x] Completed points-v4 results now show Summary, Your Nine, Top 10 (Daily only), Final Score Distribution, then At-Bat Score Distribution. All panels start open and collapse independently; stacked-bar labels show initials and the histogram own-score badge no longer stretches on phones. Custom Nine remains the next bounded stage.
+
+## Custom Nine configurable-hints roadmap (October 12)
+
+- [ ] After the Custom Nine player-facing route is playable, implement creator-configurable ordered four-hint layouts with separate batting and throwing options (subject to source coverage) and explicit career/season hitter/pitcher stats. Do not silently use two-way stats without a separately approved policy. Immutable versioned issue snapshots preserve historical puzzles. No public competition activation. Plan: `tasks/plans/custom-nine-configurable-hints.md`.
+
+## Custom Nine admin creator UI (October 11)
+
+- [x] Stage authorized Custom Nine creation workbench: search canonical players, choose nine distinct ordered players, move/remove, issue with existing private API and copy opaque ID. No public creation, playable-link promise, competition activation or data changes. Next: player-facing route and stateful gameplay.
+
+## Custom Nine competitive comparison transport (October 11)
+
+- [x] Stage the guarded, default-disabled Custom comparison GET over exact accepted points-v4 private results and verified completed attempt cookie. It requires two explicit enable flags, accepts no comparison query inputs, and does not enable public competition. Next: scoped creator/player browser UX, then explicit integrity/abuse review and activation decision.
+
+## Immediate next work
+
+- [x] Add true per-AB 100% stacked distributions and completed-score histogram to Daily Nine and playable Archive end-of-game result views; preserve scores/peer isolation. Scope: `tasks/plans/daily-archive-score-distribution-charts.md`. After release verification resume Custom Nine provider without competitive activation.
+
+- [x] Complete inclusive percentile rollout: #355 at-bat + #356 Your Nine, final and share merged and deployed. This follow-up uses ordinal labels (e.g., 100th Percentile), retaining points-v3 BEAT and unchanged calculations.
+
+- [x] Add an accessible, default-open Your Nine expand/collapse header while retaining running score/progress, reveal settings and row state. Separate from released Top 10 visibility #353; PR #354 must pass its own release checks.
+
+- [ ] Deliver Custom Lineup via bounded PRs. #347 selection, #348 issuance, #349 private hosted table, #351 adapter, #352 canonical hint materializer, #358 protected creation, #359 redacted metadata all merged. Signed opening bootstrap #360 issues Custom Nine-only tokens and the first batter's frozen active bundle. Signed Custom-only hint progression #361 is deployed. Signed Custom guess/Give Up resolution #362 is deployed. Private Custom result storage #363 is hosted and ready. Private result adapters #364 are merged. Creator-browser provenance #365 is deployed; this stage emits server-signed terminal at-bat evidence (still no result submissions). Private nine-at-bat signed-receipt verifier #367 is deployed. ADR 0002 chooses a server-monotonic, challenge-scoped browser-attempt ledger; this stage creates its private Supabase schema only. This stage implements a private first-write-wins + atomic expected-revision/token CAS provider adapter (no public routes or attempts). Opt-in challenge-scoped HttpOnly cookie reservation/resume and creator-preview-only POST is staged separately from legacy stateless Custom routes. This stage adds server-monotonic, cookie-authorized hint reveal CAS and excludes unrevealed hint/checkpoint values from reserved attempt bootstrap; private nonterminal incorrect-guess CAS staged server-only (no public guess oracle); #373 merged and release-verified private wrong-guess composition with signed terminal correct/third-strike/Give-Up CAS and a single scored resolve POST. #374 merged and hosted the service-role-only atomic result transaction (hosted migration 20261011153434; no public submission). #375 merged the server-only creator-excluding, engine-authoritative scorer/RPC adapter. #376 merged the gated completion POST without enabling public scoring. #377 merged the exact-challenge Custom Nine AB/completed score-bucket functions, installed in hosted Supabase as migration 20261011174646 (committed version 20261011171500), and verified rolled-back challenge isolation/own-result exclusion. A tiny follow-up fixes fixture smallint invocation casts. **Current bounded next work:** a separately guarded Custom comparison-read HTTP transport and creator/player UI, after the server-only Custom comparison provider/decoder and trusted own-result exclusion are staged. The admission flag is not activated; creator/abuse safeguards remain required. No competitive creator previews and **not yet publicly playable**. Plan: `tasks/plans/custom-nine-mvp.md`. Specific Lineup paused, H2H later.
+
+- [x] Ship opt-in Universal Daily Nine Top 10 named leaderboard with ties and first-attempt contribution: storage #344, API #345 and UI #346 merged; exact PR/push CI, READY production Vercel, canonical routes, hosted Supabase and runtime logs verified. PR #346 checkpoint records SHA/deployment evidence. Real physical-device completion/name submission remains a manual acceptance check.
+
+- [ ] Verify restored left-aligned at-bat hint content/button and terminal comparison wrapping on common mobile sizes and physical devices. Scope: `tasks/plans/restore-left-at-bat-details.md`; automated and hosted evidence belongs to its PR.
+
+- [x] Implement issue #320 canonical display/search normalization: compact dotted given-name initials, preserve source aliases and identity, and leave gameplay clues unchanged. Scope: `tasks/plans/initial-based-display-names.md`; exact release evidence is recorded on the implementing PR.
+
+- [x] Complete the staged current-Daily AB BEAT / one-other-result rollout: #316 distribution contract, #317 filtered provider reads, #318 durable browser exclusion transport, then final presentation activation. One other submitted result now suffices for AVG/strict-lower BEAT; above AVG is explicit green, equal/below AVG explicit red. Result writes/scoring remain unchanged; archive activation stays separate.
+
+- [ ] Verify the #311 initials-only autocomplete guard on physical phone/tablet: `a r` / `o a` yield no suggestions, while real name fragments remain selectable. Production API and refreshed cloud-browser checks passed; physical-device interaction QA remains open.
+
+- [ ] Verify authenticated admin attempt-grid/CSV access on the owner's device; retain physical/mobile QA separately from automated read/auth/render tests.
+- [x] Activate archive comparison browser reads/presentation over exact issued puzzle/ruleset routing, reusing durable first-result exclusion and one-other-result AVG/BEAT. Scope and implementing PR evidence: `tasks/plans/archive-beta-comparison-browser.md`. Local archive history follows separately.
+
+Completed history belongs in PRs, canonical docs, or `tasks/lessons.md`. Durable resumption context belongs in `docs/START-HERE.md`.
+
+Current order: the routine conversational future-lineup path and completed-result 4A/4B/4C stack are operationally complete, including live production idempotency proof. Daily Nine comparison now has portable validation, repository/service, hosted Supabase provider and an authoritative server submission API. Browser 6A–6D is implemented with successful normal-path production proof and R1–R6 repairs. The portable Daily Nine comparison read contract/service and PR #198 Supabase aggregate provider are implemented and hosted-verified; PR #199 implements the shared versioned comparison HTTP response contract; PR #200 implements server-side comparison read composition. PR #202 implements the thin GET adapters, sanitized HTTP mapping and `private, no-store`. PR #203's representative disposable PostgreSQL 17 benchmark supports the current raw-read design through the 10,000-result checkpoint (AB p95 1.807 ms; completed p95 6.254 ms), so no cache/rollup/index change is justified now. PR #204 is merged and production-verified: the read APIs are default-on behind the server-only fail-closed `DAILY_NINE_COMPARISON_READS_DISABLED` switch, exact production deployment `dpl_F87hcE51cQT6zhoCp8MgGKwCSX38` is READY on merge `178e58cb6fcb8f09ad9ebc3e6ba69cca7a725a01`, both routes returned versioned HTTP 200 live payloads with `private, no-store`, and the comparison-route runtime scan was clean. The read repository remains storage-strategy-neutral for a later provider-only rollup if measured scale requires it. Resolved-AB collection and comparison GET APIs are live. PR #206 adds the browser comparison transport/decoder: schema-1 runtime decoding, exact response-identity checks, caller-owned AbortSignal propagation, and explicit browser `no-store`. PR #207 adds the separate request-lifecycle controller with independent at-bat/completed channels, same-channel replacement, generation/request fencing, abort on replacement/invalidation, whole-session invalidation, and stale success/error/settled suppression. Terminal Daily Nine at-bats and completed games now consume the browser read seam through separate identity-keyed hooks: AB YOU / AVG remains independent from gameplay/Next, while completed comparison starts from the final engine transition, survives View Results on unchanged identity, refreshes on restored completions, and shows strict-lower BEAT once at least one other completed result remains after durable first-result exclusion. R5 bounded pending-delivery recovery and R6 malformed-save decoding are repaired in separate web-persistence follow-ups. The verified runtime baseline is PR #212 merge `4bb66d5bb93051dfb88559cfc58a524e06824f4a`: push CI #782 succeeded and production deployment `dpl_6rCfeRkUngD48ftT1FM8UgzjtCoZ` is READY on that exact SHA. R7 is structurally complete in bounded browser-architecture checkpoints: R7A extracted persistence owner-session mechanics without splitting React persistence authority; R7B extracted saved-game restore plus authorized-hint hydration/stale-response fencing; R7C extracts Daily resolution transport/single-flight/pending-state lifecycle and fixes pending UI cleanup on authority invalidation. `DailyInningGame` remains the gameplay state/render/action coordinator; no generic state-machine rewrite is justified. R8A bounded body admission is implemented and production-verified. R8B architecture is settled as a Vercel WAF rule with no app dependency; log-only publication, traffic review, Preview 429 proof, and production enforcement remain operational steps. R8C adds sanitized low-cardinality diagnostics only for caught internal 503/500 result-write failures; public responses stay unchanged and ordinary 2xx/4xx traffic stays silent. PR #221's comparison `Server-Timing` seam is production-verified. A 20+20 production handler sample shows fast medians (65 ms AB / 58 ms completed) but material long-tail variance (nearest-rank p95 582 / 430 ms; maxima 1,626 / 1,525 ms). Do not optimize storage from this: PR #203 still shows the raw database aggregates are fast. PR #223 stage timing is production-verified. A 15+15 sample localizes the extreme tail to the provider boundary: one completed read was 2,502 ms total / 2,495 ms provider, while puzzle loading was only 7 ms. Hosted `pg_stat_statements` shows the matching PostgREST database statements remain low-millisecond (completed mean 1.921 ms / max 19.696 ms; AB mean 1.594 ms / max 17.332 ms). Do not change SQL/indexes/rollups/puzzle loading from this evidence. PR #225 provider sub-timing is production-evidenced and PR #226 records the 15-per-route decision checkpoint: setup/decode are negligible, while the multi-second provider tail tracks awaited `client.rpc(...)` (at-bat 1,495 ms max; completed 2,125 ms max). Matching hosted PostgreSQL execution remains low-millisecond, so SQL/index/rollup/cache changes are not justified. Hidden active-AB prefetch is now implemented at the web consumer: after saved-game hydration, the exact points-v3 slot read begins during play, stays undisclosed until terminal reveal, and terminal own-point projection does not restart the request. This reduces the live self-inclusion race but does not claim atomic exclusion if a slow read is still in flight when the independent result write lands. Next complete browser/mobile trigger-to-visible and failure/stale-request verification, then shift comparison work to UI/UX presentation. PRs #161/#174 are closed as superseded references. Remaining authenticated-editor slot QA, timed public editorial rollover/fallback checks, and physical iPhone/iPad QA stay open but do not block the results pipeline. Permanent archive/local history remain subsequent concerns. Current beta numbering is disposable; broad launch later restarts at Daily #1 after the owner chooses the surviving game/final rules.
+
+## September 19 review prerequisites
+
+Review: `docs/engineering/resolved-at-bat-review-2026-09-19.md`. R1–R6 are repaired in bounded runtime follow-ups.
+
+- [x] R1: fence outbox sends and acknowledgment mutations to the exact owner lifetime; owner delivery is bound to one disposable attempt/generation session, invalidated before lock release, with takeover/late-response regressions.
+- [x] R2: fence gameplay Guess/Give Up success, error and finally callbacks across Reset/restore, persistence-session teardown and owner loss with a synchronous single-flight request generation; stale cleanup cannot clear a newer pending request, and the shared Daily/Classic request path is preserved.
+- [x] R3: keep shared gameplay writes exclusive when journal/generation handling fails; a held-lock journal failure yields one non-contributing owner, reload/lock-request failure is non-writable, and only explicit missing-capability cases retain compatibility persistence.
+- [x] R4: guard persistence against stale effect-render authority during re-bootstrap with stable semantic session identity, per-session hydration readiness, and live authority checks at save/reset.
+- [ ] A mounted React rerender/StrictMode harness is still absent because the repo has no DOM-capable test dependency and adding one crosses the explicit dependency decomposition trigger. R4 instead has deterministic stale-render/session-authority regressions; reconsider dedicated test infrastructure only as its own bounded concern if future hook work needs it.
+- [x] Repair bounded pending-delivery recovery (R5): each resolved-AB POST has a five-second deadline; owner acquisition retries pending rows; each newly frozen terminal AB also sweeps older pending slots while excluding the just-created slots; no periodic timer, online listener, or old-day drain is added.
+- [x] Repair malformed-save decoding (R6): persisted-state decoding is isolated from storage I/O, malformed nested state degrades to unusable without throwing, and missing/unreadable/unusable/loaded remain distinct.
+- [x] R7A: extract mutable persistence owner-session mechanics into one concrete web controller while keeping `useDailyGameplayPersistence` as the sole React authority for restore → save → freeze → async delivery ordering.
+- [x] R7B: extract saved-game restore plus authorized-hint hydration/stale-response fencing from `DailyInningGame` into a concrete web-only controller with deterministic tests.
+- [x] R7C: extract Daily resolve transport/single-flight/pending-state lifecycle behind a concrete web client/hook; authority invalidation now clears pending UI immediately while late callbacks remain fenced. R7 is structurally complete; do not pursue a generic state-machine rewrite for line-count alone.
+- [x] R8A: bound actual request-body bytes before JSON parsing on both anonymous result-write routes; oversized bodies return terminal HTTP 413 without reaching server composition.
+- [ ] R8B: publish and verify the documented Vercel WAF rate-limit rollout for only the two anonymous result-write POST routes. Design is settled: IP bucket, fixed window, provisional 300 requests/10 minutes, log-only first, then Preview/production 429 only after traffic review; no app dependency.
+- [x] R8C: emit one sanitized JSON diagnostic only for caught internal 503/500 result-write failures, with route/category/status and no raw exception, payload, answers, credentials, IP/UA, or result IDs; ordinary success/validation/409/413 paths remain silent.
+
+## September 15–16 approved product work
+
+- [x] Implement private initials/answer/outcome scorecard with additive local answer retention and separate spoiler-safe Copy share card (PR #140).
+- [x] Define and implement classic-inning-v1 in portable rules, preserving existing policies (PR #141).
+- [x] Merge PR #155: typed new-session bootstrap selection, signed Classic game identity, engine-owned three-out/nine-batter completion, and no successor hint bundle after completion.
+- [x] Merge PR #156: activate `/classic` with navigation, isolated saves, compatible default keys, game-aware refresh/reset/results/sharing, and hidden unplayed answers; exact production deployment is READY and both public routes return the same Daily puzzle with their correct signed ruleset identities.
+- [ ] Verify both games interactively through terminal/complete refresh, clipboard success/failure, answer safety and responsive layouts; retain physical-device QA as distinct.
+- [x] Settle beta/launch direction: Daily Nine and Classic are distinct beta games sharing a lineup today; either may ultimately be removed or separated, and infrastructure must not require both forever.
+- [x] Hide Classic from the normal product UI behind the server-only `CLASSIC_INNING_ENABLED` web availability setting, default OFF: no mode toggle while off and `/classic` redirects to `/`; preserve Classic rules, storage, results, comparison infrastructure, and data for one-setting restoration.
+- [x] Settle permanent-history direction: current numbering is beta; broad launch explicitly restarts at Daily #1 and only post-launch Dailies enter the permanent archive.
+- [x] Settle comparison direction: result populations are stable-puzzle + ruleset/game specific; Daily Nine gets per-AB/whole-game comparison, while Classic gets separate baseball-native comparison.
+- [x] Daily Nine result presentation is points-native: terminal AB result shows `N PTS` rather than baseball outcome; in-app and share scorecards use the same initials / SCORE / AVG scoring rows, with the in-app table additionally showing already-persisted revealed player names while copied share output remains spoiler-safe; withheld AVG renders `—`; completed private/share header is `X PTS • AVG Y.Y` when displayable and `X PTS` otherwise. PR #319 supersedes the original thresholds: one other submitted result suffices for AVG/strict-lower BEAT, and zero-other populations remain withheld; refresh/restore recomputes personal AB points from persisted completed-at-bat facts through the engine rule; Classic remains baseball-native; mobile private rows stay single-line. Scope: `tasks/plans/daily-nine-scorecard-average.md`.
+- [x] Prefetch each per-AB AVG read once the points-v3 AB is hydrated and active, but keep the value undisclosed until terminal reveal; terminal own points project the existing read without restarting it. This usually moves the read before the current result write but does not add an atomic self-exclusion guarantee. A separately restored terminal state may refresh the current aggregate. Comparison remains off gameplay's critical path.
+- [x] Settle initial personal-history direction: archive completion/scores are remembered on the current browser/device; cross-device history waits for accounts.
+
+## 0. Continuity
+
+- [x] Reconcile hosted configuration, scoring, hints, and lineup-content direction in canonical docs.
+- [x] Add tested documentation-impact CI and PR checklist.
+- [ ] Decide/test a safe branch-ruleset configuration before making the check mandatory; issue #123.
+
+## 1. Production and hosted verification
+
+- [x] September 17 verified production code baseline is PR #163 (`0001f51c15b9e7b4e5e9647ce471365a96f19bc7`) with READY production `dpl_APaPW1hwmzghnoRg4fEXhcFnNCCw` on that exact merge SHA and successful Vercel status; 4A/4B are merged. #162 broadens authorized manual selection without changing automatic generation, and #163 makes public scheduled/published resolution use that editorial candidate universe. At that September 17 checkpoint Supabase had an empty `daily_completed_results` table and draft #161 was not live. #161 is now closed as superseded by the later bounded, production-proven stack. This historical checkpoint does not replace the outstanding interactive/physical-device QA.
+- [x] Verify exact merge-SHA production for the public editorial-candidate fix and reconcile hosted handoff: production `dpl_APaPW1hwmzghnoRg4fEXhcFnNCCw` is READY on PR #163 merge SHA `0001f51c15b9e7b4e5e9647ce471365a96f19bc7`.
+- [x] Configure progression, Supabase, and admin secrets for Preview/Production.
+- [x] Apply editorial migration and verify RLS/service-role boundaries.
+- [x] Verify admin challenge and prior successful editor authentication.
+- [x] Merge/verify `points-v1` production with `0/45 PTS`, `0/9 AB`, signed ruleset token, hidden-answer QA, full CI/data/build, and no runtime errors.
+- [x] Merge PR #126 and verify instant-hint production payload/build boundaries.
+- [x] Merge PR #128 and verify production deployment from merge SHA `9ba0a44198799fe71b0520d5245b16b39e056fc2` is READY/canonically aliased.
+- [x] Verify the pre-v3 production bootstrap contract (`0/36 PTS`, `0/9 AB`, signed `points-v2` token, one current-batter hint bundle, no answer/reveal/future-batter bundle); retain this as compatibility evidence.
+- [x] Verify the current points-v3 production bootstrap (`0/63 PTS`, `0/9 AB`, signed `points-v3` token) and Classic bootstrap (`classic-inning-v1`) on the same public Daily puzzle; hidden-answer build QA passes for both initial payloads and no error/fatal runtime logs were present after PR #156 deployment.
+- [x] Merge PR #132 and verify production deployment from merge SHA `a942bab74a68077a1c6ed1aff37b16af45ccc685` is READY/canonically aliased.
+- [x] Merge PR #133 and verify production deployment `dpl_AyXpSu9VyQaVUrmANTqJVNQVFf4k` from exact merge SHA `543adf1038f780313870ed3ff30c163648bd86f3` is READY/canonically aliased with hidden-answer build QA passing.
+
+### Public real-browser gameplay
+
+- [x] Add immediate Give Up and Submit Guess pending feedback plus initial resolve timing instrumentation.
+- [x] Confirm from production device/log evidence that Submit Guess can still take roughly two seconds even when requests succeed, establishing a real hot-path performance defect rather than an error/retry issue.
+- [x] Implement and merge the bounded hot-path optimization: cache the fully materialized server-only puzzle, lazy-load lineup/Supabase composition on cache miss, separate search initialization from resolution, avoid full canonical-index loading for ordinary canonical guesses, and use direct reveal-shard access for terminal resolution.
+- [x] Keep resolve `Server-Timing` as the handler-level diagnostic and use it with phone end-to-end timing to separate remaining platform/network overhead from server work.
+- [x] Merge/deploy the original heritage baseline as PR #135, production `dpl_32hGx8N4TKEGKsCaoqHxVbBfVxtf` at `d2de746664e7d154294f54dc9ae4b1d55f651ad8`; verified September 8.
+- [x] Implement and merge the authorized compact scorebook revision as PR #137: readable typography, compact header/status, single current-strike indicator, history after play, quiet secondary controls, continuation before long reveals, and compact Season/Team tables; scope in `tasks/plans/compact-scorebook.md`.
+- [x] Fix issue #136 in PR #138: use dense canonical recognizability ranks beginning September 2 while preserving earlier v2 lineups, the 90-day repeat window, published/manual puzzles, and hosting settings; regression coverage includes the 173-of-250 reproduction, cutover compatibility, and continuous generation through October 2027.
+- [x] Keep the same deterministic Daily lineup comparator/output while selecting each slot with a linear minimum scan instead of sorting the full eligible band; this preserves the continuity QA horizon without weakening its 30-second timeout.
+- [x] Verify production deployment `dpl_8e7N4n8E34rXCgmYj9rJEKBdsKHu` from merge SHA `7c568f3253d62b8fab11becc3e68d94628fa6b0a` is READY/canonically aliased, serves `/` with HTTP 200 and the compact scorebook UI, and has no error/fatal logs on the new deployment at verification time.
+- [x] Normalize the Daily desktop surface to the 960px reveal/statistics rail and keep scorecard fields in a compact left-aligned group; scope in `tasks/plans/unified-daily-rail.md`.
+- [x] Clarify the points-v3 scorebug with four equal-width metrics ordered At bat, Points possible this AB, Points so far, and Strikeouts; compatibility scorebugs retain their existing metrics.
+- [x] Verify on physical iPhone that Daily Nine/Classic navigation is visible, switches cleanly, and the two games maintain independent active saves/hint state.
+- [ ] Verify physical iPhone Submit Guess and Give Up end-to-end latency against handler timing after PR #133; CI/browser emulation alone cannot establish a phone latency improvement.
+- [ ] Complete compact presentation QA on physical iPhone/iPad: search dropdown/selection, hint and pending states, local reveal-table scrolling, history, terminal completion/share, reset, and no accidental zoom/overflow.
+- [ ] Verify resolved `points-v3` outcome plus hint/wrong-guess deductions, banner total/active-at-bat allowance, and awarded-point presentation.
+- [ ] Verify saved-session `/api/daily/hints` hydration and refresh recovery in both games, including Classic third-out completion with no unplayed answer exposure.
+- [ ] Verify correct guess, wrong guesses, third strike, Give Up responsiveness/reveal, all-nine continuation, final reveal/completion, action responses/logs, and common iPhone/iPad behavior.
+
+### Authenticated editorial workflow
+
+Admin redesign is deferred. The user may supply a future date and nine ordered player names for assisted entry. Resolve ambiguous identities, validate the lineup and use normal revision/lifecycle controls; never bypass published-puzzle immutability. The private conversational bridge is active in production and is the preferred routine entry path; `/admin/daily` remains a supported interface over the same editorial records.
+
+- [x] Merge PR #152: atomic nine-player replacement plus private machine-authenticated server adapter; no direct Supabase editorial writes and no future lineup payloads in public GitHub surfaces.
+- [x] Merge PR #153, connect the Supabase app, apply the private `pg_net` transport, store the matching `DAILY_CHATOPS_TOKEN` only in Vercel server environment and Supabase Vault, and redeploy production.
+- [x] Smoke-test conversational editing on a future draft: verify atomic rejection for an ineligible candidate, exact nine-player readback/order/revision for the corrected lineup, explicit scheduling, and `chatops:assistant` audit attribution.
+- [x] Separate automatic eligibility from manual editorial eligibility: automatic generation remains restricted to ranked `dailyEligiblePlayers`, while authorized manual admin/ChatOps curation may select any canonical, reveal-ready Daily-compatible player and receives `outside-automatic-daily-pool` when the player is outside the automatic pool (PR #162).
+- [x] Exercise routine owner-supplied future-lineup entry through Dailies #149–#151: exact nine-player order persisted, explicit scheduling reached revision 2 with `chatops:assistant` attribution, and a `pg_net` timeout-after-commit case was safely reconciled by authoritative readback before retry.
+- [x] Verify seven-day Supabase horizon and missing-record creation: Dailies #145–#151 are persisted, all seven are public-consumable lifecycle states, and owner-supplied #149–#151 were created/replaced/scheduled through the private ChatOps path.
+- [x] Make public scheduled/published resolution use the existing manual editorial candidate universe without changing the automatic pool; add rejection/fallback/order regression coverage.
+- [ ] Manual pre-launch QA (non-blocking for feature work): preview/search/replace/revalidate one future slot through the authenticated editor workflow. Current connected tooling can verify the Basic-auth challenge but cannot supply the owner credential interactively.
+- [x] Verify public scheduled/published consumption for an editorially scheduled future puzzle. Production Daily #149 consumed the still-`scheduled` revision-2 editorial row; stored canonical IDs recomputed to the exact public fingerprint `83a0294e`. Evidence: `docs/engineering/daily-editorial-public-selection-verification-2026-09-22.md`.
+- [x] Verify deterministic fallback for missing/draft records. Live authoritative reads used `daily-2026-08-01` for a hosted draft row and `daily-2026-09-14` for an absent row. Evidence: `docs/engineering/daily-editorial-public-selection-verification-2026-09-22.md`.
+- [x] Reconcile issues #97, #91, and #86: #91 was already completed; stale deployment/recovery trackers #97 and #86 were closed September 22 after current Preview/Production and progression behavior were reverified.
+
+### Timed production observation
+
+- [x] Verify midnight-Pacific rollover without a coincident redeploy: production advanced from July 31, 2026 / Daily #96 to August 1, 2026 / Daily #97 while deployment `dpl_Bp2gX76FqxQXpjCgAbMY76nUyqwC` remained current.
+
+## 2. Versioned scoring/completion
+
+- [x] `legacy-inning-v1` compatibility contract.
+- [x] `points-v1` compatibility contract: `5/4/3/2/1/0`, 45-point maximum.
+- [x] `points-v2` compatibility contract: `4/3/2/1/0.5/0`, 36-point maximum.
+- [x] Historical `points-v3` Daily Nine beta contract: 7 points per at-bat minus verified hints/wrong guesses; third wrong guess or Give Up is 0; 63-point maximum for nine.
+- [x] `classic-inning-v1` current Classic beta contract: runner advancement/run scoring, three outs or nine at-bats.
+- [x] Native raw at-bat facts independent of final score.
+- [x] Ruleset versioning through signed tokens, local persistence, results, and sharing.
+- [x] Resolved at-bat display derives and shows awarded points beside the baseball outcome for point rulesets only.
+- [x] Add points-v3 engine/web/storage regression coverage and verify production bootstrap.
+- [ ] Before broad launch, explicitly choose the surviving game and final launch rules; do not silently treat current beta policy as immutable launch policy.
+
+## 3. Immediate active-batter hints
+
+- [x] Authorized four-hint current-batter bundle with signed later-depth checkpoints.
+- [x] First bundle in bootstrap; refreshed same-pitch/next-pitch bundles after resolution.
+- [x] Verified-current saved hydration route and local no-network Hint transitions.
+- [x] Legacy one-hint route removed from active client path.
+- [x] Answer-integrity/product/API/architecture docs amended.
+- [x] Focused tests, full CI, preview, P1 review fixes, merge, production payload/build QA, and runtime-error verification.
+- [ ] Manual pre-launch QA (non-blocking for feature work): real-browser saved hydration and interaction verification.
+
+## 4. Completed-game results and comparison
+
+### 4A. Portable result contract
+
+- [x] Define schema-1 transport/result types in shared using stable puzzle identity, exact ruleset/game identity, client idempotency ID, and ordered native at-bat facts; initially accept only `points-v3` and `classic-inning-v1`.
+- [x] Validate exact puzzle/date/number/game, faced pitch order/initials, completion shape, outcome-to-hint consistency, wrong-guess/resolution consistency, and supported schema/ruleset in the engine.
+- [x] Derive Daily Nine points/maximum/strikeouts and Classic baseball summary through existing engine rules; discard submitted totals/extras.
+- [x] Preserve copied normalized raw facts for later recalculation without changing anonymous authority or legacy gameplay compatibility.
+- [x] Cover valid, malformed, spoofed, inconsistent, incomplete, overlong/after-completion, game-isolation, and normalization behavior with focused engine tests.
+
+### 4B. Portable repository/service
+
+- [x] Define `DailyCompletedResultRepository` and `createDailyCompletedResultService` in the portable Daily layer; scope: `tasks/plans/completed-result-repository.md`.
+- [x] Make `insertIfAbsent(result)` the atomic first-write-wins repository primitive keyed by `submissionId`; no read-then-save idempotency sequence.
+- [x] Same ID/same normalized payload returns the existing record; same ID/different normalized payload returns `idempotency_conflict` without overwrite.
+- [x] Compare explicit normalized result fields, including ordered raw facts and derived summary, without JSON-order/object-identity dependence.
+- [x] Preserve the complete normalized result/raw facts and cover insert, retry, conflict, cross-game ID reuse, and Classic shorter-fact-list behavior with focused tests.
+- [x] Keep Supabase, API, browser persistence/retry, aggregates, comparison UI, and archive/history out of 4B.
+
+### 4C-1. Supabase provider
+
+- [x] Reconcile the already-applied `20260917132147_create_daily_completed_results` migration into source control rather than reusing inactive legacy result tables.
+- [x] Add the server-only Supabase row codec/adapter behind `DailyCompletedResultRepository.insertIfAbsent`.
+- [x] Preserve insert-first first-write-wins semantics: only a unique-key conflict reads the existing winner; no update/upsert path.
+- [x] Keep RLS enabled with no browser policies and harden `service_role` to direct `SELECT, INSERT` only via migration `20260918004822_harden_daily_completed_results_privileges`.
+- [x] Pass focused/full CI, preview, advisor verification, merge, and exact production/source reconciliation.
+
+### 4C-2. Completed-result submission API
+
+- [x] Add one public completed-game POST route with private/no-store responses.
+- [x] Parse and reject malformed schema/date/ruleset/future routing before authoritative puzzle construction.
+- [x] Load the authoritative public puzzle through the existing Daily runtime without minting progression tokens/hint bundles and call engine `validateDailyCompletedResult`; never trust submitted totals.
+- [x] Store only the engine-normalized result through 4B/provider and map created/existing/conflict/invalid/provider-unavailable outcomes deliberately.
+- [x] Pass focused/full CI, preview, merge, and exact production verification with no browser submission code in the diff.
+
+### 4C-3a. Browser submission client
+
+- [x] Persist the exact immutable schema-1 submission payload, including one stable client-generated ID, before the first completed-result POST.
+- [x] Retry the same stored payload after network/408/425/429/5xx failure or refresh; never rebuild retry facts from current replay state.
+- [x] Support `allowCreate=false` so an existing pending record may retry without retroactively minting a submission from an old completion.
+- [x] Deduplicate concurrent same-puzzle/same-ruleset requests in one tab.
+- [x] Compare current stored submission ID before applying an async terminal status so stale responses cannot overwrite a replacement record.
+- [x] Keep delivery bookkeeping in its own local namespace, separate from portable gameplay facts and Daily save compatibility.
+- [x] Preserve shorter Classic faced-at-bat lists and reject unsupported compatibility rulesets locally.
+- [x] Pass final CI/preview and merge.
+- [x] Verify browser client + native activation together on exact PR #171 production deployment `dpl_DctrheRJbonPmcszrjAfPuJxvzhy` / merge SHA `ae2fc428b2fad05685b068944acce66b9dddf536`.
+
+### 4C-3b. Native completion activation — complete in production
+
+- [x] Expose hydration-only provenance that distinguishes explicit native completed-at-bat facts from compatibility reconstruction without changing the saved gameplay schema.
+- [x] Make creation eligibility explicit and unit-tested: untouched/native active saves may later create; compatibility-fact or already-completed restored saves may not.
+- [x] Permit new record creation only for a genuine current-session native `points-v3` or `classic-inning-v1` completion.
+- [x] Independently retry an already-persisted pending delivery record after hydration, even when gameplay state itself is not completed.
+- [x] Never retroactively create a submission from a pre-feature/compatibility-restored completed save.
+- [x] Keep result-delivery identity across Reset today/replay; gameplay reset clears only gameplay state, not the independent delivery record.
+- [x] Pass final focused/full CI, documentation-impact, exact-head Vercel preview, merge, and exact production deployment.
+- [x] Verify live result collection end to end in production: real-browser Daily #144 / `points-v3` completion created one row; exact same-ID replay returned `existing`; row count remained one.
+
+### 4D. Daily Nine resolved-AB comparison — backend/read path complete; browser verification then UI/UX
+
+Replacement plan: `tasks/plans/resolved-at-bat-comparison.md`. PR #174 is closed as superseded; its equal-population/read-time-rescoring design is historical only. Complete one owning concern per PR.
+
+- [x] Inspect main/#174 and record separate resolved-AB/completed-game populations, after-each-AB v1 UI, strict-lower tie semantics, freshness and delivery acknowledgment separation.
+- [x] Portable resolved-AB transport and engine validation/derived points; scope: `tasks/plans/resolved-at-bat-contract.md`. No collection activation.
+- [x] Portable immutable repository/service and retry/conflict semantics; scope: `tasks/plans/resolved-at-bat-repository.md`.
+- [x] Supabase row adapter/migration, unique observation identity, population index, server-only privileges and isolated same-key atomicity verification; scope: `tasks/plans/resolved-at-bat-supabase-provider.md`. Collection remains inactive.
+- [x] Web submission API using authoritative puzzle context, engine normalization/derived points, Daily idempotency and provider persistence; scope: `tasks/plans/resolved-at-bat-submission-api.md`. No browser activation.
+- [x] Settle browser lifecycle architecture and decomposition: exclusive Web Lock owner, separate versioned local attempt journal/outbox, owner-only shared save writes, takeover reload, fail-closed contribution fallback, reset/legacy policy; scope: `tasks/plans/resolved-at-bat-browser-lifecycle.md`.
+- [x] Browser 6A: durable versioned attempt journal plus immutable exact-payload AB outbox/retry client with generation fencing data, fail-closed codec, retirement and stale-response protection. No Web Locks, React or activation; scope: `tasks/plans/resolved-at-bat-browser-outbox.md`.
+- [x] Browser 6B: exclusive cross-tab ownership/takeover coordinator with deterministic puzzle/ruleset lock naming, owner/follower/unsupported state, abortable queued cleanup, existing-journal generation fencing, durable reload before owner readiness and storage-event notification only. Missing journals remain untouched for 6C; no gameplay or network activation. Scope: `tasks/plans/resolved-at-bat-browser-ownership.md`.
+- [x] Browser 6C: owner-gated points-v3 gameplay persistence, fresh-run journal-before-save creation, takeover rehydration, durable mismatch retirement without backfill, reset retirement ordering, save-failure fail-closed behavior, passive followers and completed-result creation gating. Classic/older/unsupported compatibility remains intact and resolved-AB POSTs remain off. Scope: `tasks/plans/resolved-at-bat-browser-gameplay-lifecycle.md`.
+- [x] Browser 6D implementation: gameplay-save → immutable AB freeze → asynchronous send, owner-hydration retry, local fail-closed delivery handling, and fresh attempt-ID reuse for new points-v3 completed-result records while preserving existing records. Scope: `tasks/plans/resolved-at-bat-browser-6d.md`.
+- [x] Browser 6D production deployment proof: PR #185 merge `1965258055eecbf501de82d6f0aed395aea33867` is READY as production deployment `dpl_7Ceu1nwPYZQgUrJaPdsiBQqrLmPa`.
+- [x] Browser 6D production AB route/database proof: exact disposable payload returned 201 then 200; one normalized row was read back with one receipt timestamp and then cleaned up.
+- [x] Browser 6D post-proof runtime-error scan for resolved-AB/completed-result routes is clean.
+- [x] Browser 6D physical/current-browser multi-tab proof: Chrome Incognito on a physical iPhone showed one owner plus passive follower; after batter-1 persistence, closing the owner let the follower rehydrate at batter 2 with the same attempt and no duplicate actor. Runbook/evidence: `docs/operations/resolved-at-bat-browser-proof.md`.
+- [x] Browser 6D fresh full-completion identity proof: attempt `6da8d6b7-aedd-457c-82e4-1be0b1e3ac7f` produced exactly nine pitches 1–9 and one completed-result row with the identical `submission_id`; all ten POSTs returned 201 and no route runtime errors were found.
+- [x] Browser 6D final browser/device gate: physical iPhone Safari Private restored the same fresh run at batter 2 after refresh; exact current-browser and Safari QA identities were cleaned from Supabase with zero rows remaining. These normal-path scenarios passed; the September 19 review prerequisites are now repaired in R1–R4 follow-ups.
+- [x] Implement independent-population portable comparison contract/service: one-slot count/point-sum reads, separate completed score buckets/histogram, null empty averages, strict-lower ties.
+- [x] Implement the Supabase aggregate provider (PR #198), hosted and ACL-verified.
+- [x] Define the versioned shared comparison HTTP response/freshness contract (PR #199).
+- [x] Implement server-side comparison read composition (PR #200).
+- [x] Add thin default-off GET adapters with sanitized HTTP mapping (PR #202); keep representative performance/cache and activation work later.
+- [x] Measure the current raw-read provider on disposable PostgreSQL 17 at 100 / 1,000 / 10,000 target populations (PR #203). At 10,000, warmed function p95 is 1.807 ms for AB and 6.254 ms for completed buckets; retain raw reads, no rollup/cache/index change, and preserve the repository seam for a later provider-only change if measured scale demands it.
+- [x] Activate comparison reads on PR #204 with the code-reviewed default-on path and server-only `DAILY_NINE_COMPARISON_READS_DISABLED` fail-closed emergency switch; exact merge `178e58cb6fcb8f09ad9ebc3e6ba69cca7a725a01` is production-verified READY as `dpl_F87hcE51cQT6zhoCp8MgGKwCSX38`, both routes returned versioned HTTP 200 live payloads with `private, no-store`, and the comparison-route runtime scan was clean. Preserve immediate own-result rendering and keep comparison I/O off gameplay's critical path.
+- [x] Add browser comparison transport/decoding on PR #206: separate at-bat/completed GET methods, runtime schema-1 decoding, exact server-response identity checks, caller-owned AbortSignal propagation and explicit browser `no-store`; no React/UI or request-generation lifecycle yet.
+- [x] Add the bounded comparison request-lifecycle controller on PR #207: independent at-bat/completed channels, semantic key + generation/request fencing, replacement/invalidation abort, whole-session invalidation, and stale success/error/settled suppression.
+- [x] Add asynchronous YOU / AVG after every terminal Daily Nine AB with a separate identity-keyed hook, zero-other withholding / one-or-more-other AVG and strict-lower BEAT after #319, quiet outage handling, restored-terminal reads, and advance/reset/restore stale-read fencing; Next At Bat / View Results never waits.
+- [x] Add the separate completed-game comparison: prefetch from the final points-v3 engine transition, keep unchanged requests alive through View Results, refresh current data on restored completions, show whole-game YOU / AVG with settled sample states, and show Daily-owned strict-lower BEAT with one other completed result after durable first-result exclusion (#319).
+- [x] Add handler-level `Server-Timing` to both Daily Nine comparison GET routes so real browser traces can separate route/server/provider time from browser/network/render time; this is an observability seam, not the latency result.
+- [x] Record a 20-sample-per-route production handler distribution from the PR #221 `Server-Timing` seam: AB median 65 ms / nearest-rank p95 582 ms / max 1,626 ms; completed median 58 ms / p95 430 ms / max 1,525 ms. Evidence: `docs/engineering/daily-nine-comparison-server-timing-2026-09-22.md`.
+- [x] Add request-local stage-level `Server-Timing` for server composition, authoritative-puzzle loading and the exact comparison repository/provider call; preserve the existing total metric and emit only attempted stages. Scope: `tasks/plans/daily-nine-comparison-stage-timing.md`.
+- [x] Re-sample production using the stage metrics: 15 successful reads per route show the observed extreme tail inside the provider boundary, including 2,495 ms provider time on a 2,502 ms completed request; production `pg_stat_statements` keeps matching SQL execution in the low-millisecond range. Evidence: `docs/engineering/daily-nine-comparison-server-timing-2026-09-22.md`.
+- [x] Split the provider boundary into request-local `provider-setup`, `provider-rpc`, and `provider-decode` metrics while preserving the parent provider timer and lazy module-level Supabase client reuse. Scope: `tasks/plans/daily-nine-comparison-provider-timing.md`.
+- [x] Re-sample production using provider sub-timing (PR #226 evidence checkpoint): 15 successful reads per route show setup/decode negligible and multi-second tails inside awaited `client.rpc(...)`; matching PostgreSQL execution remains low-millisecond. Stop SQL/index/rollup/cache optimization at this beta checkpoint.
+- [x] Prefetch the exact hydrated active points-v3 AB comparison while keeping it undisclosed until terminal reveal; terminal own-point projection reuses the same read state rather than restarting the GET.
+- [x] Record the #227 post-merge hosted/source checkpoint: exact main/CI/production identity, canonical aliases, live schema-1 comparison HTTP 200 + `private, no-store`, clean exact-deployment error/fatal scan, source/test verification, and an explicit statement of what browser/mobile behavior is still unproven. Evidence: `docs/engineering/daily-nine-comparison-prefetch-verification-2026-09-22.md`.
+- [ ] Manual pre-launch QA (non-blocking for feature work): in an ordinary browser, verify active AB → terminal comparison request behavior, trigger-to-visible latency, controlled delayed/failed reads, and stale-response behavior across Next / Reset / restore.
+- [ ] Manual pre-launch QA (non-blocking for feature work): physical/mobile interaction and answer/spoiler-integrity check; confirm comparison delay never blocks gameplay actions or result delivery.
+- [x] Record the exact PR #209 hosted checkpoint before interactive QA: main/CI/production deployment identity, clean runtime-error scan, successful current-deployment comparison reads, Supabase migration/RPC access posture, exact-main bundle output and hidden-answer QA. This does **not** close either interactive item above. Evidence: `docs/engineering/daily-nine-comparison-hosted-verification-2026-09-20.md`.
+
+### 4E. Classic comparison
+
+- [ ] Add same-Daily/same-ruleset runs, hits, at-bats reached, per-at-bat outcome, strikeout, and reach-rate aggregates.
+- [ ] Keep later-batter reach population distinct from all Classic completions.
+- [ ] Do not invent a single Classic percentile/ordering metric until explicitly settled.
+- [ ] Avoid elaborate Classic-only analytics until beta feedback justifies retaining Classic.
+
+## Feature-development resumption checkpoint
+
+Hosted architecture/storage/comparison/editorial verification is sufficient to resume product work. Do not expand QA scope merely because an interactive/manual check remains open; the explicit manual pre-launch items above stay deferred unless a concrete defect or launch blocker appears. Immediate approved sequence: shared-engine search relevance and the Daily Nine polish sequence through scoreboard AVG preload are complete; the resettable `archive-beta-v1` identity, immutable issue/read contracts, append-only Supabase persistence, portable issuance orchestration, and server authoritative composition are defined; first issue and exact retry are production verified; playable archive beta is production verified; archive result delivery #300 is merged and its production deployment verified; archive comparison server reads #303 are merged and production verified; next activate browser comparisons, then local history. The AVG preload reuses the bounded exact-slot comparison cache for all nine pitches after hydration, keeps gameplay nonblocking, distinguishes loading from unavailable/withheld values, reuses the cached current slot for terminal YOU/AVG, and leaves TOTAL AVG on the authoritative completed-game comparison only. Real lineups may be used as pre-launch archive test data for several weeks without choosing the eventual permanent Daily #1. Scope: `tasks/plans/2026-09-27-near-term-product-sequence.md`.
+
+## 5. Permanent archive and local history
+
+- [x] Fix shared player-search ranking so multi-token visible-name prefix matches such as `pedro ma` rank Pedro Martinez ahead of weaker hidden-name/alias matches; preserve aliases, normalization, canonical identity and deterministic limits.
+- [x] Replace the Daily Nine green status banner with the responsive 1–9 initials / YOU / AVG / TOTAL scoreboard; highlight the active AB and remove the redundant at-bat count, possible-points, points-so-far and strikeout banner metrics. TOTAL AVG remains — during play and uses the authoritative completed-game average after completion; per-AB averages are never summed. Keep the same inning scoreboard visible on the completed-game screen above the detailed at-bat results, with no at-bat marked current.
+- [x] Center the terminal Daily Nine result as canonical baseball outcome plus authoritative resolved points: `HR! 4 PTS`, `3B 3 PTS`, `2B 2 PTS`, `1B 1 PT`, `BB 0.5 PTS`, `K 0 PTS` under current v4. Keep outcome and scoring independent; do not reverse-map points to outcome.
+- [x] Add canonical `OUTCOME` to the personal in-app Daily Nine scorecard without removing SCORE or AVG; use recorded completed-at-bat outcomes, not point-value inference. Keep copied share output spoiler-safe without outcomes.
+- [x] Correct bottom Scoreboard mobile fit: all five columns and TOTAL visible at 320–430px without horizontal scrolling; all metrics fit. Automated layout/independent review evidence: `tasks/plans/mobile-scoreboard-fit.md`; exact-head CI/Preview and post-merge production release evidence retained in PR #330. Physical iPhone acceptance remains separate.
+- [x] Follow owner phone feedback with inline revealed answers (`BH - Bryce Harper`), keeping long-name wrapping inside the answer subcolumn and all five metrics visible. Scope/release evidence: `tasks/plans/inline-scoreboard-answers.md` and its PR.
+- [ ] Implement the separately approved top nine-circle progress tracker after the mobile fix: equal circles, actual completed outcomes with green intensity HR→K, highlighted current number, future outlined numbers, small AT-BAT n OF 9 label, no duplicate metrics; keep the bottom Scoreboard.
+- [ ] Later implement the approved Game Complete surface: large score, supporting statistics, nine result circles and Share Results, without stadium illustration. Share image direction: Classic Scorecard; text sharing on hold.
+- [x] On narrow season-by-season reveal tables, keep only `Season` sticky; let `Team` scroll with the statistical columns while preserving table alignment and overflow behavior. Preserve the existing desktop two-column sticky presentation.
+- [x] Preload all nine exact-slot Daily Nine comparison averages after saved-game hydration through the bounded per-pitch cache and keep successful values visible in the scoreboard throughout play, including before their at-bats are reached. Loading uses `…`; genuinely unavailable/withheld values remain `—`; terminal YOU / AVG reuses the cached slot; completed TOTAL AVG stays on the separate authoritative completed-game comparison rather than per-AB arithmetic. Completion-triggered low-sample/unavailable refresh work remains queued across request-pool saturation.
+- [x] Establish an explicit resettable archive-beta identity boundary before issuing test puzzles: portable `archive-beta-v1` uses an explicit caller-supplied beta epoch and stable `archive-beta-v1-daily-N` identities, remains distinct from `permanent-v1`, and is retired rather than renamed/imported at broad launch. The portable identity checkpoint did not configure an epoch; the separate web activation now selects `2026-10-04` for the disposable series. The separately verified first issue is October 4 beta Daily #1; exactly one beta row and zero permanent rows were confirmed. Scope: `tasks/plans/archive-beta-identity-reset.md`.
+- [x] Extend the portable immutable issued-puzzle domain for schema-v2-only `archive-beta-v1` issue/read semantics while preserving existing permanent APIs and schema-v1 compatibility. No provider/database or editorial issuance wiring changes. Scope: `tasks/plans/archive-beta-issued-puzzle-contract.md`.
+- [x] Widen the append-only Supabase issued-puzzle codec/repository/schema for exact `archive-beta-v1` schema-v2 rows while preserving `permanent-v1` v1/v2 compatibility. Hosted verification must confirm exact series/schema/ID constraints, RLS/grants, and zero rows before merge; no real beta puzzle is issued here. Scope: `tasks/plans/archive-beta-supabase-persistence.md`.
+- [x] Add portable archive-beta schema-v2 issuance orchestration over shared scheduled/published + exact-slot editorial validation, requiring an explicitly supplied beta identity and materialized clue snapshot. Scope: `tasks/plans/archive-beta-portable-issuance.md`.
+- [x] Compose the portable beta issuance service server-side with one service-role Supabase client, authoritative editorial lookup by supplied beta identity date, the current public canonical-player/pitch/hint materialization, and the archive-beta issued-puzzle repository. Missing editorial/player/hint input fails before persistence; there is still no epoch derivation, route, scheduler, or hosted invocation. Scope: `tasks/plans/archive-beta-server-issuance.md`.
+- [x] Complete explicit archive-beta activation/first issue: #293 is merged and production verified. October 4 beta Daily #1 issued at `2026-10-05T01:39:24.760Z`; exact retry preserved the single row, original timestamp and frozen content. Scope: `tasks/plans/archive-beta-activation.md`.
+- [x] Implement automatic archive-beta issuance on authenticated publication: lock editorial content first, then issue and verify by date/number; published retries preserve revision/audit/content. Archiving verifies before leaving the published retry state; immutable conflicts require editorial review. Scheduling remains editable; no cron. Scope: `tasks/plans/archive-beta-publication-issuance.md`; review/deployment evidence is tracked on the associated PR.
+- [ ] Retain authenticated admin mobile layout/interaction as deferred prelaunch QA (#294). First issue and retry do not establish physical-mobile QA.
+- [x] Deliver playable archive beta as one coherent feature (#296): issued catalog/numbered gameplay, frozen clues, current scoring, isolated device progress/reset and exact sharing. Final-head CI #1022, push CI #1023 and exact production/canonical/redaction/log/database checks passed. Archive result submission and comparison reads were deferred to separate scopes. Evidence: `tasks/plans/playable-archive-beta.md`.
+- [x] Cloud Chrome archive QA: Hint/Guess/Give Up/Next through completion, active/completed refresh, exact spoiler-safe clipboard link, second-tab follower lock and archive reset preserving current-Daily progress. Disabled archive scoreboard AVG/TOTAL AVG now use unavailable dashes in production (#298); active/completed/refresh checks passed. Evidence: `tasks/plans/archive-disabled-average-display.md`.
+- [ ] Prelaunch archive physical/mobile QA and reset isolation across two issued archive puzzles remain open; October 7 catch-up now provides three issued puzzles. Cloud browser checks do not establish physical-device interaction or authenticated admin QA (#294).
+- [x] Archive-beta at-bat/completed result delivery is merged and its production deployment verified (#300): exact puzzle + current points-v4 identity, CI #1034 attempt 3, push CI #1035, READY/canonical production and read-only route/log/database checks. Evidence: `tasks/plans/archive-beta-result-delivery.md`.
+- [x] Implement and production-verify authoritative archive comparison GET routing (#303): exact-head CI #1039, clean review/READY Preview, push CI #1040 and exact production route/population/log/Supabase checks passed. Optional explicit puzzleId binds issued-puzzle ID/date and beta points-v4; date-only current Daily remains compatible. Evidence: `tasks/plans/archive-beta-comparison-reads.md`.
+- [ ] Activate archive browser comparison transport/UI in the next separate PR; local archive history follows its explicit replay-policy decision.
+- [ ] Verify a fresh native archive game's hosted at-bat/completed delivery before broad launch; this release check used GETs/read-only queries and created no hosted archive results.
+- [x] Repair canonical hitter OBP/OPS enrichment so pre-1954 sacrifice-fly blanks follow the historical formula and career rates derive from supported aggregate counts. Scope: `tasks/plans/canonical-historical-on-base-rate-aggregation.md`.
+
+September 24 coordinated archive/gameplay decisions and bounded PR order are in `tasks/plans/2026-09-24-archive-and-gameplay-roadmap.md`. Finalized half-point `points-v4` persistence/comparison/browser support and the public cutover are complete; historical `points-v3` remains exact-version compatibility only. Archive browser save/session isolation is complete; the planned stat, initials, scoring, how-to, and archive route work follows the documented dependencies. No launch epoch, fake permanent row, or beta import is authorized by this roadmap.
+
+- [x] Define stable permanent Daily identity/launch-epoch contract without choosing the launch date yet: portable `permanent-v1` date/number mapping lives in `packages/daily`; no launch-date constant is configured and beta numbering is untouched. Scope: `tasks/plans/permanent-daily-identity.md`.
+- [ ] Build archive infrastructure to begin at future permanent Daily #1; do not import current beta history.
+- [x] Define explicit portable issuance orchestration: an already-resolved permanent identity plus a same-date scheduled/published editorial lineup freezes exact slots 1-9 through the existing immutable service, without configuring a launch epoch or importing beta numbering. Scope: `tasks/plans/permanent-daily-issuance.md`.
+- [x] Complete explicit permanent issuance persistence composition: the server-only web service uses one service-role Supabase client to read the authoritative editorial row for the supplied permanent identity date and freeze it through the existing append-only issued-puzzle repository; no launch epoch/date is configured or inferred. Scope: `tasks/plans/permanent-daily-issuance-supabase-composition.md`.
+- [x] Freeze each explicitly issued permanent Daily so later lineup-generation/profile changes cannot change historical answers. Portable snapshot, append-only Supabase provider, portable issuance orchestration, and server composition are complete; no fake permanent rows or beta history are inserted.
+- [x] Add provider-neutral read capability for frozen permanent puzzles by permanent series + Daily number or series + date, with null for not-yet-issued rows and fail-closed identity checks. Scope: `tasks/plans/permanent-daily-issued-puzzle-read.md`.
+- [x] Implement the permanent-puzzle read port in the existing server-only Supabase adapter using the immutable table's unique number/date keys and strict row codec; no migration or privilege change. Scope: `tasks/plans/permanent-daily-issued-puzzle-supabase-read.md`.
+- [x] Compose the permanent-puzzle read service server-side through one service-role Supabase client and the existing provider, preserving portable validation/null semantics and adding no route or launch policy. Scope: `tasks/plans/permanent-daily-issued-puzzle-read-composition.md`.
+- [x] Materialize one already-frozen permanent puzzle into the minimum gameplay-ready `DailyPuzzle` shape without rerunning selection: preserve permanent ID/date/number/order, reuse the current canonical-ID Daily player + pitch/hint path, and fail closed on unavailable frozen players. Scope: `tasks/plans/permanent-daily-puzzle-materialization.md`.
+- [x] Compose the server permanent-puzzle reader with the materializer into one archive puzzle source: number/date lookup returns the existing gameplay-ready `DailyPuzzle` or null, without adding new validation, persistence, launch policy, or route behavior. Scope: `tasks/plans/permanent-daily-archive-puzzle-source.md`.
+- [x] Compose the archive puzzle source with the existing Daily runtime/progression-token machinery: reuse current redaction/hints/tokens/guess/completion behavior, bind archive gameplay to issued `permanent-v1` puzzle ID/date, and fail closed when no frozen puzzle exists. Scope: `tasks/plans/permanent-daily-archive-runtime.md`.
+- [x] Isolate archived-game saves and browser gameplay-session keys from current Daily and retained game modes before exposing archive UI; keep the current beta keys and exact-version archive saves. Scope: `tasks/plans/archive-browser-save-isolation.md`.
+- [x] Reorder supported hitter reveal fields to `AB, R, H, HR, RBI, SB, BA, OBP, SLG, OPS` in career and seasons without inventing unsupported Baseball-Reference fields. Scope: `tasks/plans/hitter-reveal-column-order.md`.
+- [x] Preserve pitcher-save missing-data semantics in the legacy Daily player substrate: sourced zero remains `0`, but an unavailable Lahman save total is absent rather than fabricated as `SV 0`. Scope: `tasks/plans/pitcher-saves-data-contract.md`.
+- [x] Align hint 4's existing compact stat subset with the full reveal order, format from structured career stats rather than legacy `statsLine`, and include pitcher `SV` only when supported. No WAR/bWAR is invented. Scope: `tasks/plans/hint-four-stat-composition.md`.
+- [x] Before archive exposure, make archived clue/hint behavior immutable alongside frozen canonical player IDs; the portable clue contract, schema-v2 envelope, append-only Supabase/codec support, portable v2 issuance, server v2 clue materialization, and archive v2 clue consumption are complete without freezing scoring. Schema-v1 archive rows remain readable. Scope: `tasks/plans/permanent-daily-archive-clue-materialization.md`.
+- [x] Omit one terminal Jr./Sr. token from new initials while preserving player names, aliases, interior tokens, II/III, and original initials for beta dates before September 28, 2026. The date-aware code is deployed before the cutoff; historical beta behavior remains intact. Scope: `tasks/plans/terminal-generational-suffix-initials.md`.
+- [x] Define `points-v4` in shared/engine and finalize it before activation as HR 4 / 3B 3 / 2B 2 / 1B 1 / BB 0.5 / K or Give Up 0, no deduction for wrong guesses one or two, 0..36 nine-AB range in 0.5-point steps, and preserved points-v3 history. The earlier inactive 0/-1 draft was superseded before any v4 production result existed. Scopes: `tasks/plans/points-v4-engine-ruleset.md`, `tasks/plans/points-v4-half-walk-zero-strikeout.md`.
+- [x] Extend portable schema-1 at-bat/completed-result contracts and engine validation to exact-version `points-v4`, preserving v3 scoring, exact-version idempotency keys, and no browser/provider activation. Scope: `tasks/plans/points-v4-result-contracts.md`.
+- [x] Make the portable Daily comparison domain version-aware for v3/v4, now including v4 0..4 half-point AB observations, 0..36 completed totals, a 73-entry step-aware histogram, strict-lower beat calculations, and preserved v3 behavior. Scope: `tasks/plans/points-v4-comparison-domain.md`.
+- [x] G3A: widen only the Supabase completed-result/resolved-AB codecs and table constraints for exact-version `points-v4`, preserving conditional v3 ranges, Classic completed rows, immutable first-write-wins semantics, RLS, service-role-only SELECT/INSERT, and no browser/API/default activation. Scope: `tasks/plans/points-v4-result-supabase-persistence.md`.
+- [x] G3B: widen the comparison RPCs plus Supabase comparison decoder and Daily repository/service read port for v4 aggregates; the September 26 follow-up carries exact half-point numeric values while preserving v3 reads, service-role-only function access, and the then-still-v3 public HTTP/browser boundary. Scope: `tasks/plans/points-v4-comparison-supabase-provider.md`.
+- [x] Redefine inactive `points-v4` before browser activation to BB 0.5 / K-Give Up 0, widen exact numeric result/comparison storage accordingly, and verify zero pre-existing v4 production rows plus rollback-only fractional provider proofs. Scope: `tasks/plans/points-v4-half-walk-zero-strikeout.md`.
+- [x] H1: widen only the server completed-result and resolved-AB write preflights to finalized exact-version `points-v4`, reusing authoritative puzzle loading, engine validation and existing exact numeric storage while leaving browser producers/comparison HTTP/default on v3. Scope: `tasks/plans/points-v4-result-write-api.md`.
+- [x] H2: isolate current-Daily points-v4 gameplay saves from the historical pre-v4 key and fence compatibility across the v3/v4 boundary without deleting/migrating saves; preserve legacy/v1/v2 -> v3 restores and leave journal/outbox/ownership untouched. Scope: `tasks/plans/points-v4-current-daily-save-isolation.md`.
+- [x] H3: widen the version-1 attempt journal/outbox, ownership/takeover contribution gates and completed-result browser delivery to exact-version points-v4 without changing record schemas, weakening fencing/idempotency, backfilling compatibility saves or rewriting old delivery records. Scope: `tasks/plans/points-v4-browser-result-delivery.md`.
+- [x] H4: widen comparison schema-1 HTTP/read-service/browser consumers and all comparison hooks to exact-version points-v4; verify 0.5-point AVG/BEAT, scorecard/share rendering and the Daily Nine v4 share label while preserving asynchronous nonblocking comparison I/O. Scope: `tasks/plans/points-v4-comparison-presentation.md`.
+- [x] H5a: replace the header disclosure with an exact-ruleset v3/v4/Classic How-to dialog that opens for each game identity/page entry, is accessible/reopenable, restores focus, persists no dismissal flag, and remains independent of gameplay hydration. Scope: `tasks/plans/points-v4-how-to-dialog.md`.
+- [x] H5b: switch the public Daily default to finalized points-v4 after re-verifying exact-version save/result/ownership/comparison/archive safeguards. The owner explicitly authorized the September 27 Pacific mid-puzzle cutover; existing v3 state/results remain untouched and separate. Scope: `tasks/plans/points-v4-public-cutover.md`.
+- [x] Show mode-appropriate How to play on every game-page entry/reload, accessible and reopenable without a dismissal flag or interruption of hydration; align copy with active scoring version.
+- [x] Add disposable beta archive routes/navigation for exposed Daily Nine (#296), after exact puzzle/ruleset persistence and ownership isolation. Retained Classic contracts remain intact; permanent launch/exposure is separate future work.
+- [ ] Add browsable browser/device history across stable Daily + game/ruleset. Isolated per-puzzle beta progress and restored completed score/result are implemented in #296; cross-puzzle history remains separate work.
+- [x] Activate archive-specific browser comparisons over implemented result delivery and exact-puzzle read APIs. Shared per-AB/final AVG/BEAT keeps current-Daily and each archive population isolated. Scope: `tasks/plans/archive-beta-comparison-browser.md`; exact release evidence belongs to its PR.
+- [ ] Defer cross-device history until accounts.
+- [ ] Before launch, explicitly choose the surviving game, final launch rules, and launch date; reset permanent numbering to Daily #1.
+
+## 6. Lineup-content system
+
+- [ ] Define gameplay-profile contracts separately from facts.
+- [ ] Define versioned lineup recipes with slot groups, filters, difficulty, repeats, and diversity constraints.
+- [ ] Make Standard Daily one saved recipe.
+- [ ] Establish a conservative “I could have gotten that” pool; only final slot may be deliberate deep challenge.
+- [ ] Add reproducible All-Star/award/bWAR enrichment.
+- [ ] Add provider-neutral profile/recipe persistence/admin editing in bounded PRs.
+- [x] Preserve manual review/replacement of exact generated nine and allow intentional canonical reveal-ready manual choices outside the automatic pool without changing automatic eligibility (PR #162).
+
+## 7. Launch surfaces
+
+- [ ] Remove public Reset today's results before broad launch; any retained admin/test reset must be non-contributing.
+
+- [ ] Analytics/error monitoring.
+- [ ] Finish real-device iPhone/iPad polish and payload measurement after the compact revision is deployed.
+- [x] Refine the heritage baseline into the compact baseball scorebook direction after September 8 screenshot review.
+- [ ] Privacy, terms, canonical domain, social metadata.
+
+## Deferred public products
+
+Accounts/cross-device history; native clients; head-to-head/social; public custom/theme libraries before the core game proves itself; payments before demand. Advanced mode-specific analytics remain deferred until beta selects the launch game.

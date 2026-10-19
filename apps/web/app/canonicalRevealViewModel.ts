@@ -49,4 +49,97 @@ export function createCanonicalRevealViewModel(
       }),
     },
     seasons: reveal.seasons.map((season) => ({
-      season: season.season¶»§q«^
+      season: season.season,
+      teamIds: displayTeamIds(season.teamIdentities, season.teamIds),
+      lines: buildStatLines({
+        playerType: reveal.playerType,
+        batting: season.batting,
+        pitching: season.pitching,
+        advanced: season.advanced,
+      }),
+    })),
+  };
+}
+
+function displayTeamIds(
+  teamIdentities: Array<{ abbreviation: string }> | undefined,
+  sourceTeamIds: string[],
+): string[] {
+  const abbreviations = teamIdentities?.map((team) => team.abbreviation);
+  return abbreviations?.length ? [...abbreviations] : [...sourceTeamIds];
+}
+
+function buildStatLines({
+  playerType,
+  batting,
+  pitching,
+  advanced,
+}: {
+  playerType: CanonicalPlayerReveal['playerType'];
+  batting: CanonicalBattingLine | null;
+  pitching: CanonicalPitchingLine | null;
+  advanced: CanonicalAdvancedLine | null;
+}): CanonicalRevealStatLine[] {
+  if (playerType === 'hitter') {
+    return [{ kind: 'hitter', stats: formatBatting(batting, advanced) }];
+  }
+  if (playerType === 'pitcher') {
+    return [{ kind: 'pitcher', stats: formatPitching(pitching) }];
+  }
+  return [
+    { kind: 'hitter', stats: formatBatting(batting, advanced) },
+    { kind: 'pitcher', stats: formatPitching(pitching) },
+  ];
+}
+
+function formatBatting(
+  batting: CanonicalBattingLine | null,
+  advanced: CanonicalAdvancedLine | null,
+): RevealStatValues {
+  return {
+    AB: value(batting?.atBats),
+    H: value(batting?.hits),
+    HR: value(batting?.homeRuns),
+    BA: rate(batting?.battingAverage),
+    R: value(batting?.runs),
+    RBI: value(batting?.runsBattedIn),
+    SB: value(batting?.stolenBases),
+    OBP: rate(advanced?.onBasePercentage),
+    SLG: rate(advanced?.sluggingPercentage),
+    OPS: rate(advanced?.ops),
+  };
+}
+
+function formatPitching(pitching: CanonicalPitchingLine | null): RevealStatValues {
+  return {
+    W: value(pitching?.wins),
+    L: value(pitching?.losses),
+    SV: value(pitching?.saves),
+    ERA: fixed(pitching?.earnedRunAverage, 2),
+    WHIP: fixed(pitching?.whip, 2),
+    K: value(pitching?.strikeouts),
+    IP: innings(pitching?.outsPitched),
+  };
+}
+
+function value(input: number | null | undefined): number | string {
+  return input ?? 'â€”';
+}
+
+function rate(input: number | null | undefined): string {
+  if (input === null || input === undefined) {
+    return 'â€”';
+  }
+  return input.toFixed(3).replace(/^0/, '');
+}
+
+function fixed(input: number | null | undefined, digits: number): string {
+  return input === null || input === undefined ? 'â€”' : input.toFixed(digits);
+}
+
+function innings(outs: number | null | undefined): string {
+  if (outs === null || outs === undefined) {
+    return 'â€”';
+  }
+  return `${Math.floor(outs / 3)}.${outs % 3}`;
+}

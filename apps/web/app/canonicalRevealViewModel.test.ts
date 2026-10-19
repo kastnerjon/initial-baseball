@@ -48,4 +48,101 @@ function buildTwoWayReveal(): CanonicalPlayerReveal {
       lastSeason: 2026,
       seasonCount: 9,
       teamIds: ['LAA', 'LAD'],
-      pri¶»§q«^
+      primaryPosition: 'P',
+      batting: {
+        atBats: 3500,
+        runs: 650,
+        hits: 980,
+        doubles: 190,
+        triples: 40,
+        homeRuns: 225,
+        runsBattedIn: 610,
+        stolenBases: 150,
+        walks: 450,
+        battingAverage: 0.28,
+        sluggingPercentage: 0.58,
+      },
+      pitching: {
+        wins: 80,
+        losses: 35,
+        saves: 0,
+        outsPitched: 3000,
+        hitsAllowed: 750,
+        earnedRuns: 335,
+        walksAllowed: 300,
+        strikeouts: 1050,
+        earnedRunAverage: 3.01,
+        whip: 1.05,
+      },
+      advanced: {
+        onBasePercentage: 0.376,
+        sluggingPercentage: 0.58,
+        ops: 0.956,
+        war: null,
+        opsPlus: null,
+        eraPlus: null,
+        fip: null,
+      },
+      achievements: null,
+    },
+    seasons: [{
+      season: 2023,
+      teamIds: ['LAA'],
+      positions: { P: 23, DH: 135 },
+      batting: {
+        atBats: 497,
+        runs: 102,
+        hits: 151,
+        doubles: 26,
+        triples: 8,
+        homeRuns: 44,
+        runsBattedIn: 95,
+        stolenBases: 20,
+        walks: 91,
+        battingAverage: 0.304,
+        sluggingPercentage: 0.654,
+      },
+      pitching: {
+        wins: 10,
+        losses: 5,
+        saves: 0,
+        outsPitched: 396,
+        hitsAllowed: 85,
+        earnedRuns: 46,
+        walksAllowed: 55,
+        strikeouts: 167,
+        earnedRunAverage: 3.14,
+        whip: 1.06,
+      },
+      advanced: {
+        onBasePercentage: 0.412,
+        sluggingPercentage: 0.654,
+        ops: 1.066,
+        war: null,
+        opsPlus: null,
+        eraPlus: null,
+        fip: null,
+      },
+      achievements: null,
+    }],
+    provenance: {
+      canonicalUniversePresent: true,
+      careerEnrichmentPresent: true,
+      seasonCardCount: 1,
+      legalNameExcludedFromDisplayPayload: true,
+    },
+  };
+}
+
+describe('chronological career team identity preservation', () => {
+  it('preserves repeated club stints supplied by canonical reveal facts', () => {
+    const source = buildTwoWayReveal();
+    source.career.teamIdentities = [
+      { sourceTeamId: 'TOR', abbreviation: 'TOR', displayName: 'Toronto Blue Jays' },
+      { sourceTeamId: 'BOS', abbreviation: 'BOS', displayName: 'Boston Red Sox' },
+      { sourceTeamId: 'TOR', abbreviation: 'TOR', displayName: 'Toronto Blue Jays' },
+    ];
+    const model = createCanonicalRevealViewModel(source);
+    expect(model.teamIds).toEqual(['TOR', 'BOS', 'TOR']);
+  });
+});

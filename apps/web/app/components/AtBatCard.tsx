@@ -46,4 +46,209 @@ export function AtBatCard({
   giveUpPending,
   requestError,
   comparison,
-  ¶»§q«^
+  terminalAwardedPoints,
+  cumulativePoints,
+  nextActionLabel = 'Next At Bat',
+  onQueryChange,
+  onSelectPlayer,
+  onRevealHint,
+  onSubmit,
+  onGiveUp,
+  onNextPitch,
+}: AtBatCardProps): JSX.Element {
+  const [results, setResults] = useState<PlayerSearchResult[]>([]);
+  const hasRevealedAllHints = state.revealCount >= 4;
+  const guessPending = requestPending && !giveUpPending;
+  const resolvedTerminalResult = state.submittedResult !== null && state.submittedResult.kind !== 'incorrect'
+    ? state.submittedResult
+    : null;
+
+  useEffect(() => {
+    const query = state.query.trim();
+    if (query.length === 0 || state.selectedPlayerId !== null) {
+      setResults([]);
+      return;
+    }
+    const controller = new AbortController();
+    const timer = globalThis.setTimeout(() => {
+      void fetch(`/api/players/search?q=${encodeURIComponent(query)}`, { signal: controller.signal })
+        .then(async (response) => {
+          if (!response.ok) throw new Error(`Search failed with ${response.status}.`);
+          return response.json() as Promise<{ results?: PlayerSearchResult[] }>;
+        })
+        .then((payload) => setResults(Array.isArray(payload.results) ? payload.results.slice(0, 5) : []))
+        .catch((error: unknown) => {
+          if (!(error instanceof DOMException && error.name === 'AbortError')) setResults([]);
+        });
+    }, 120);
+    return () => {
+      globalThis.clearTimeout(timer);
+      controller.abort();
+    };
+  }, [state.query, state.selectedPlayerId]);
+
+  if (resolvedTerminalResult !== null) {
+    const isPointsV4 = rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION;
+    if (isPointsV4 && terminalAwardedPoints === null) {
+      throw new Error('A resolved Daily Nine result requires authoritative awarded points.');
+    }
+    return (
+      <div className={isPointsV4 ? 'at-bat-card at-bat-card-resolved at-bat-card-resolved-tiles' : 'at-bat-card at-bat-card-resolved'}>
+        <div className="pitch-meta">
+          <span className="pitch-number" aria-live={isPointsV4 ? "polite" : undefined} aria-atomic={isPointsV4 ? "true" : undefined}>{isPointsV4 ? `Score: ${cumulativePoints.toLocaleString('en-US')}` : `At Bat ${atBat.pitchNumber}`}</span>
+          <CountIndicator label="Strikes" filledCount={state.strikeCount} total={3} />
+        </div>
+        {state.reveal === null ? null : <PlayerRevealCard reveal={state.reveal} />}
+        <div className="terminal-result-stack">
+          {isPointsV4 ? null : (
+            <ResultDisplay
+              result={resolvedTerminalResult}
+              rulesetVersion={rulesetVersion}
+              {...(terminalAwardedPoints === null ? {} : { awardedPoints: terminalAwardedPoints })}
+            />
+          )}
+          <DailyNineAtBatComparison
+            state={comparison}
+            {...(isPointsV4 && terminalAwardedPoints !== null
+              ? { summaryPoints: terminalAwardedPoints, summaryOutcome: resolvedTerminalResult.outcome }
+              : {})}
+          />
+        </div>
+        <button
+          type="button"
+          className="button-primary button-next-at-bat"
+          onClick={onNextPitch}
+        >
+          {nextActionLabel}
+        </button>
+      </div>
+    );
+  }
+
+  return (
+    <div className="at-bat-card">
+      <div className="pitch-meta">
+        <span className="pitch-number" aria-live={rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION ? "polite" : undefined} aria-atomic={rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION ? "true" : undefined}>{rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION ? `Score: ${cumulativePoints.toLocaleString('en-US')}` : 'Who is the player?'}</span>
+        <CountIndicator label="Strikes" filledCount={state.strikeCount} total={3} />
+      </div>
+
+      <div className="initials-block">
+        <strong className="initials-value">{atBat.initials}</strong>
+      </div>
+
+      <section className={rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION ? 'hint-block hint-block-daily-nine' : 'hint-block'} aria-label="Revealed hints">
+        <div className="hint-heading">
+          <span className="hint-label">Hints</span>
+          <span className="hint-progress">{`${state.revealCount}/4 hints`}</span>
+        </div>
+        <div className="hint-list">
+          {state.revealedHints.length === 0 ? (
+            <p className="hint-empty">Know it already? Make your guess below.</p>
+          ) : (
+            state.revealedHints.map((hint) => (
+              <div key={hint.hintLabel} className={hint.hintLabel === "Teams" ? "revealed-hint hint-teams" : "revealed-hint"}>
+                <span className="hint-label">{hint.hintLabel}</span>
+                <p className="hint-value">{hint.hintValue}</p>
+              </div>
+            ))
+          )}
+        </div>
+      </section>
+
+      <div className={state.selectedPlayerId === null ? 'search-shell' : 'search-shell search-shell-selected'}>
+        <SearchInput
+          value={state.query}
+          onChange={onQueryChange}
+        />
+        <ResultsDropdown
+          results={results}
+          visible={state.query.trim().length > 0 && state.selectedPlayerId === null}
+          selectedPlayerId={state.selectedPlayerId}
+          onSelect={handleSelect}
+        />
+      </div>
+
+      {rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION && (state.wrongGuesses?.length ?? 0) > 0 ? (
+        <section className="wrong-guess-history" aria-label="Wrong guesses for this at-bat" aria-live="polite">
+          <span className="wrong-guess-history-label">Already guessed</span>
+          <ul>
+            {state.wrongGuesses?.map((guess, index) => (
+              <li key={index}>{guess.displayName}</li>
+            ))}
+          </ul>
+        </section>
+      ) : null}
+
+      {state.submittedResult !== null && state.submittedResult.kind === 'incorrect' ? (
+        <ResultDisplay result={state.submittedResult} rulesetVersion={rulesetVersion} />
+      ) : null}
+      {requestError === null ? null : <p className="request-error" role="alert">{requestError}</p>}
+
+      <div className="at-bat-actions">
+        <button
+          type="button"
+          className="button-secondary button-give-up"
+          onClick={onGiveUp}
+          disabled={requestPending}
+          aria-busy={giveUpPending}
+        >
+          {giveUpPending ? 'Revealingâ€¦' : 'Give up'}
+        </button>
+        <div className="at-bat-actions-right">
+          <button
+            type="button"
+            className="button-secondary button-hint"
+            onClick={onRevealHint}
+            disabled={hasRevealedAllHints || requestPending}
+          >
+            {hasRevealedAllHints
+              ? 'All Hints Revealed'
+              : rulesetVersion === POINTS_V3_DAILY_RULESET_VERSION
+                ? 'Reveal Next Hint Â· âˆ’1 point'
+                : 'Reveal Next Hint'}
+          </button>
+          <button
+            type="button"
+            className="button-primary"
+            onClick={onSubmit}
+            disabled={state.selectedPlayerId === null || requestPending}
+            aria-busy={guessPending}
+          >
+            {guessPending ? 'Checkingâ€¦' : 'Submit Guess'}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+
+  function handleSelect(result: PlayerSearchResult): void {
+    onSelectPlayer(result);
+  }
+}
+
+function CountIndicator({
+  label,
+  filledCount,
+  total,
+}: {
+  label: string;
+  filledCount: number;
+  total: number;
+}): JSX.Element {
+  return (
+    <div className="at-bat-count">
+      <span className="at-bat-count-label">{label}</span>
+      <div className="at-bat-count-markers" aria-label={`${filledCount} of ${total} ${label.toLowerCase()}`} role="img">
+        {Array.from({ length: total }, (_, index) => (
+          <span
+            key={`${label}-${index}`}
+            className={index < filledCount ? 'at-bat-count-marker filled' : 'at-bat-count-marker'}
+            aria-hidden="true"
+          >
+            {index < filledCount ? 'â—' : 'â—‹'}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}

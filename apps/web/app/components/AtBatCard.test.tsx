@@ -33,4 +33,438 @@ describe('AtBatCard pending resolution feedback', () => {
       rulesetVersion: 'points-v4', cumulativePoints: 4.5 });
     expect(html).toContain('Score: 4.5');
     expect(html).toContain('aria-live="polite"');
-    expect(html).toContain('aria-atomic="t���q�^
+    expect(html).toContain('aria-atomic="true"');
+    expect(html).not.toContain('Who is the player?');
+    expect(html).toContain('aria-label="0 of 3 strikes"');
+  });
+
+  it('shows the updated cumulative v4 score while an at-bat is resolved', () => {
+    const html = renderCard({ requestPending: false, giveUpPending: false,
+      rulesetVersion: 'points-v4', cumulativePoints: 8.5,
+      submittedResult: { kind: 'strikeout', revealedCount: 0,
+        strikeCount: 3, outcome: 'K', source: 'strikeout' } });
+    expect(html).toContain('Score: 8.5');
+    expect(html).toContain('aria-live="polite"');
+    expect(html).toContain('aria-atomic="true"');
+    expect(html).not.toContain('Who is the player?');
+  });
+
+  it('groups Reveal Next Hint beside Submit Guess without moving Give up', () => {
+    const html = renderCard({
+      requestPending: false, giveUpPending: false,
+      rulesetVersion: 'points-v4', selectedPlayerId: 'player-id',
+    });
+    const hintSection = html.slice(html.indexOf('aria-label="Revealed hints"'), html.indexOf('</section>') + 10);
+    expect(hintSection).not.toContain('button-hint');
+    const actions = html.slice(html.indexOf('class="at-bat-actions"'));
+    expect(actions).toContain('class="at-bat-actions-right"');
+    expect(actions.indexOf('Give up')).toBeLessThan(actions.indexOf('Reveal Next Hint'));
+    expect(actions.indexOf('Reveal Next Hint')).toBeLessThan(actions.indexOf('Submit Guess'));
+    expect(html).toContain('aria-label="0 of 3 strikes"');
+  });
+
+  it('preserves hint limits, v3 cost label and pending disabled states', () => {
+    const exhausted = renderCard({ requestPending: false, giveUpPending: false,
+      rulesetVersion: 'points-v4', revealCount: 4 });
+    expect(exhausted).toMatch(/disabled=""[^>]*>All Hints Revealed<\/button>/);
+    const pending = renderCard({ requestPending: true, giveUpPending: false,
+      rulesetVersion: 'points-v3' });
+    expect(pending).toContain('Reveal Next Hint · −1 point');
+    expect(pending).toMatch(/disabled=""[^>]*>Reveal Next Hint · −1 point<\/button>/);
+  });
+
+  it('places player reveal above the score tiles and score distribution', () => {
+    const html = renderCard({
+      requestPending: false, giveUpPending: false, rulesetVersion: 'points-v4',
+      reveal: sampleReveal,
+      submittedResult: {
+        kind: 'strikeout', revealedCount: 0, strikeCount: 3,
+        outcome: 'K', source: 'strikeout',
+      },
+      comparison: {
+        status: 'success', ownPoints: 0, resolvedAtBatCount: 2,
+        averagePoints: 2, strictLowerAtBatRate: 0,
+        rulesetVersion: 'points-v4',
+        scoreHistogram: [0, 0, 0, 0, 2, 0, 0, 0, 0],
+      },
+    });
+    expect(html).toContain('Miguel Tejada');
+    expect(html.indexOf('Player Reveal')).toBeLessThan(html.indexOf('Your Score'));
+    expect(html.indexOf('Miguel Tejada')).toBeLessThan(html.indexOf('How everyone scored on this at-bat'));
+    expect(html.indexOf('How everyone scored on this at-bat')).toBeLessThan(html.indexOf('Next At Bat'));
+  });
+
+  it('uses spacing instead of decorative dividers and responsive adjacent actions', () => {
+    const game = readFileSync(new URL('../daily-game.css', import.meta.url), 'utf8');
+    const results = readFileSync(new URL('../daily-results.css', import.meta.url), 'utf8');
+    const responsive = readFileSync(new URL('../daily-responsive.css', import.meta.url), 'utf8');
+    const section = (css: string, selector: string) => {
+      const start = css.indexOf(selector + ' {');
+      expect(start).toBeGreaterThanOrEqual(0);
+      return css.slice(start, css.indexOf('}', start) + 1);
+    };
+    for (const [css, selector] of [
+      [game, '.hint-block'],
+      [results, '.at-bat-comparison'],
+      [results, '.player-reveal-card'],
+    ] as const) {
+      expect(section(css, selector)).not.toMatch(/border-(?:top|bottom)\s*:/);
+    }
+    expect(section(game, '.at-bat-actions-right')).toContain('display: flex');
+    expect(responsive).toContain('.at-bat-actions-right > button');
+    expect(responsive).toContain('min-width: 0');
+  });
+
+  it('acknowledges Give Up immediately while the reveal request is pending', () => {
+    const html = renderCard({ requestPending: true, giveUpPending: true });
+
+    expect(html).toContain('Revealing…');
+    expect(html).toContain('aria-busy="true"');
+    expect(html).toContain('Submit Guess');
+    expect(html).not.toContain('Checking…');
+  });
+
+  it('acknowledges Submit Guess immediately while guess resolution is pending', () => {
+    const html = renderCard({
+      requestPending: true,
+      giveUpPending: false,
+      selectedPlayerId: 'player-id',
+    });
+
+    expect(html).toContain('Checking…');
+    expect(html).toContain('aria-busy="true"');
+    expect(html).toContain('Give up');
+    expect(html).not.toContain('Revealing…');
+  });
+
+  it('keeps ordinary action copy when no resolution is pending', () => {
+    const html = renderCard({
+      requestPending: false,
+      giveUpPending: false,
+      selectedPlayerId: 'player-id',
+    });
+
+    expect(html).toContain('Give up');
+    expect(html).toContain('Submit Guess');
+    expect(html).toContain('Reveal Next Hint · −1 point');
+    expect(html).not.toContain('Revealing…');
+    expect(html).not.toContain('Checking…');
+  });
+
+  it('replaces the points-v4 terminal pill with three end-of-game-style tiles, chart and next action', () => {
+    const html = renderCard({
+      requestPending: false,
+      giveUpPending: false,
+      rulesetVersion: 'points-v4',
+      submittedResult: {
+        kind: 'strikeout', revealedCount: 0, strikeCount: 3, outcome: 'K', source: 'strikeout',
+      },
+      comparison: {
+        status: 'success', ownPoints: 0, resolvedAtBatCount: 2,
+        averagePoints: 2, strictLowerAtBatRate: 0,
+        rulesetVersion: 'points-v4',
+        scoreHistogram: [0, 0, 0, 0, 2, 0, 0, 0, 0],
+      },
+    });
+    expect(html).toContain('at-bat-card-resolved-tiles');
+    expect(html).toContain('completed-comparison-metrics at-bat-summary-metrics');
+    expect(html).toContain('Your Score');
+    expect(html).toContain('>AVG<');
+    expect(html).toContain('Percentile');
+    expect(html).toContain('>2.0</strong>');
+    expect(html).toContain('>0th</strong>');
+    expect(html).toContain('How everyone scored on this at-bat');
+    expect(html).toContain('0 points (K): 0 results, 0%, your score');
+    expect(html).toContain('Next At Bat');
+    expect(html).toContain('Outcome: K');
+    expect(html).not.toContain('result-card-points');
+    expect(html).not.toContain('K 0 PTS');
+    expect(html).not.toContain('at-bat-comparison-values');
+  });
+
+  it('keeps your points tile while comparison data is unavailable or loading', () => {
+    for (const comparison of [
+      { status: 'loading', ownPoints: 0 } as const,
+      { status: 'unavailable', ownPoints: 0 } as const,
+    ]) {
+      const html = renderCard({
+        requestPending: false, giveUpPending: false,
+        rulesetVersion: 'points-v4',
+        submittedResult: {
+          kind: 'strikeout', revealedCount: 0, strikeCount: 3, outcome: 'K', source: 'strikeout',
+        },
+        comparison,
+      });
+      expect(html).toContain('completed-comparison-metrics at-bat-summary-metrics');
+      expect(html).toContain('Your Score');
+      expect(html).toContain('>0</strong>');
+      expect(html).toContain('Percentile');
+      expect(html).toContain('Next At Bat');
+      expect(html).not.toContain('at-bat-comparison-values');
+      expect(html).not.toContain('result-card-points');
+      expect(html).not.toContain('at-bat-distribution-bars');
+    }
+  });
+
+  it('preserves historical v3 terminal callouts and comparison layout', () => {
+    const html = renderCard({
+      requestPending: false, giveUpPending: false, rulesetVersion: 'points-v3',
+      submittedResult: { kind: 'strikeout', revealedCount: 0, strikeCount: 3, outcome: 'K', source: 'strikeout' },
+      comparison: { status: 'loading', ownPoints: 0 },
+    });
+    expect(html).toContain('result-card-points');
+    expect(html).toContain('K 0 PTS');
+    expect(html).toContain('at-bat-comparison-values');
+    expect(html).not.toContain('at-bat-summary-metrics');
+  });
+
+  it('uses the supplied terminal action label after a resolved at-bat', () => {
+    const html = renderCard({
+      requestPending: false,
+      giveUpPending: false,
+      submittedResult: {
+        kind: 'strikeout',
+        revealedCount: 0,
+        strikeCount: 3,
+        outcome: 'K',
+        source: 'strikeout',
+      },
+      nextActionLabel: 'View Results',
+    });
+
+    expect(html).toContain('View Results');
+    expect(html).not.toContain('Next At Bat');
+  });
+
+  it('never reveals a prefetched comparison while the at-bat is active', () => {
+    const html = renderCard({
+      requestPending: false,
+      giveUpPending: false,
+      comparison: {
+        status: 'success',
+        ownPoints: 7,
+        resolvedAtBatCount: 12,
+        averagePoints: 4.5,
+        strictLowerAtBatRate: null,
+      },
+    });
+
+    expect(html).not.toContain('At-bat comparison');
+    expect(html).not.toContain('>AVG<');
+    expect(html).not.toContain('12 results');
+    expect(html).not.toContain('4.5');
+  });
+
+  it('keeps prefetched histogram bars hidden before an at-bat is resolved', () => {
+    const html = renderCard({
+      requestPending: false, giveUpPending: false,
+      comparison: {
+        status: 'success', ownPoints: 2, resolvedAtBatCount: 1,
+        averagePoints: 2, strictLowerAtBatRate: 0,
+        rulesetVersion: 'points-v4',
+        scoreHistogram: [0, 0, 0, 0, 1, 0, 0, 0, 0],
+      },
+    });
+    expect(html).not.toContain('at-bat-distribution');
+    expect(html).not.toContain('How everyone scored');
+  });
+
+  it('renders terminal YOU / AVG loading without changing the next action', () => {
+    const html = renderCard({
+      requestPending: false,
+      giveUpPending: false,
+      submittedResult: {
+        kind: 'strikeout',
+        revealedCount: 0,
+        strikeCount: 3,
+        outcome: 'K',
+        source: 'strikeout',
+      },
+      comparison: { status: 'loading', ownPoints: 0 },
+    });
+
+    expect(html).toContain('YOU');
+    expect(html).toContain('AVG');
+    expect(html).toContain('Loading comparison…');
+    expect(html).toContain('Next At Bat');
+  });
+
+  it('shows one-other-result AVG/BEAT and does not add a separate early-sample threshold', () => {
+    const oneOther = renderTerminalComparison({
+      status: 'success',
+      ownPoints: 5,
+      resolvedAtBatCount: 1,
+      averagePoints: 4,
+      strictLowerAtBatRate: 1,
+    });
+    const severalOthers = renderTerminalComparison({
+      status: 'success',
+      ownPoints: 5,
+      resolvedAtBatCount: 7,
+      averagePoints: 3.428,
+      strictLowerAtBatRate: 0.5,
+    });
+
+    expect(oneOther).toContain('4.0');
+    expect(oneOther).toContain('BEAT 100%');
+    expect(oneOther).toContain('Above AVG');
+    expect(oneOther).toContain('1 other result');
+    expect(severalOthers).toContain('3.4');
+    expect(severalOthers).toContain('BEAT 50%');
+    expect(severalOthers).toContain('7 other results');
+    expect(severalOthers).not.toContain('Early average');
+  });
+
+  it('renders normal and quiet unavailable comparison states', () => {
+    const normal = renderTerminalComparison({
+      status: 'success',
+      ownPoints: 6,
+      resolvedAtBatCount: 10,
+      averagePoints: 4.25,
+      strictLowerAtBatRate: 0.6,
+    });
+    const unavailable = renderTerminalComparison({
+      status: 'unavailable',
+      ownPoints: 6,
+    });
+
+    expect(normal).toContain('4.3');
+    expect(normal).toContain('10 other results');
+    expect(normal).toContain('BEAT 60%');
+    expect(normal).not.toContain('Early average');
+    expect(unavailable).toContain('Comparison unavailable');
+    expect(unavailable).toContain('Next At Bat');
+  });
+
+  it('announces the current strike count and does not render a hidden reveal while active', () => {
+    const html = renderCard({ requestPending: false, giveUpPending: false });
+    expect(html).toContain('aria-label="0 of 3 strikes"');
+    expect(html).not.toContain('Player Reveal');
+    expect(html).not.toContain('player-reveal-stat-strip');
+  });
+
+  it('shows confirmed wrong guesses below search during the current at-bat', () => {
+    const html = renderCard({
+      requestPending: false,
+      giveUpPending: false,
+      rulesetVersion: 'points-v4',
+      wrongGuesses: [
+        { playerId: 'griffey', displayName: 'Ken Griffey Jr.' },
+        { playerId: 'puckett', displayName: 'Kirby Puckett' },
+      ],
+    });
+    expect(html).toContain('Wrong guesses for this at-bat');
+    expect(html.indexOf('search-shell')).toBeLessThan(html.indexOf('Already guessed'));
+    expect(html).toContain('Ken Griffey Jr.');
+    expect(html).toContain('Kirby Puckett');
+    const cleanCard = renderCard({ requestPending: false, giveUpPending: false });
+    expect(cleanCard).not.toContain('Already guessed');
+    const classic = renderCard({ requestPending: false, giveUpPending: false,
+      rulesetVersion: 'points-v3', wrongGuesses: [
+        { playerId: 'griffey', displayName: 'Ken Griffey Jr.' },
+      ] });
+    expect(classic).not.toContain('Already guessed');
+    expect(classic).not.toContain('Ken Griffey Jr.');
+    expect(cleanCard).not.toContain('Ken Griffey Jr.');
+  });
+
+  it('does not show an empty search-results state after a player is selected', () => {
+    const html = renderCard({
+      requestPending: false,
+      giveUpPending: false,
+      selectedPlayerId: 'player-id',
+      query: 'Ken Griffey Jr.',
+    });
+
+    expect(html).toContain('search-shell-selected');
+    expect(html).not.toContain('No matching players');
+  });
+});
+
+describe('Many-team earned hint rendering', () => {
+  const history = 'OAK, NYY, OAK, TOR, OAK, SDP, ANA, SDP, OAK, NYN, SEA, SDP, BOS, LAD';
+
+  it('shows complete earned chronology without silent omission', () => {
+    const html = renderCard({ requestPending: false, giveUpPending: false,
+      revealCount: 2, revealedHints: [{ hintType: 'teams', hintLabel: 'Teams', hintValue: history }] });
+    expect(html).toContain(history);
+    expect(html).toContain('class="revealed-hint hint-teams"');
+    const css = readFileSync(new URL('../daily-game.css', import.meta.url), 'utf8');
+    expect(css).toContain('.hint-teams .hint-value');
+    expect(css).toContain('white-space: normal;');
+  });
+
+  it('does not expose a Teams hint that the server has not provided', () => {
+    const html = renderCard({ requestPending: false, giveUpPending: false });
+    expect(html).not.toContain(history);
+    expect(html).not.toContain('hint-teams');
+  });
+});
+
+function renderCard(input: {
+  requestPending: boolean;
+  giveUpPending: boolean;
+  selectedPlayerId?: string | null;
+  query?: string;
+  rulesetVersion?: 'points-v2' | 'points-v3' | 'points-v4';
+  submittedResult?: {
+    kind: 'strikeout';
+    revealedCount: 0;
+    strikeCount: number;
+    outcome: 'K';
+    source: 'strikeout';
+  };
+  nextActionLabel?: string;
+  cumulativePoints?: number;
+  revealCount?: 0 | 1 | 2 | 3 | 4;
+  reveal?: CanonicalRevealViewModel | null;
+  wrongGuesses?: { playerId: string; displayName: string }[];
+  comparison?: DailyNineAtBatComparisonState;
+  revealedHints?: Array<{ hintType: 'teams'; hintLabel: 'Teams'; hintValue: string }>;
+}): string {
+  return renderToStaticMarkup(
+    <AtBatCard
+      atBat={{ pitchNumber: 1, initials: 'JR' }}
+      rulesetVersion={input.rulesetVersion ?? 'points-v3'}
+      state={{
+        query: input.query ?? '',
+        selectedPlayerId: input.selectedPlayerId ?? null,
+        revealCount: input.revealCount ?? 0,
+        revealedHints: input.revealedHints ?? [],
+        strikeCount: 0,
+        wrongGuesses: input.wrongGuesses ?? [],
+        submittedResult: input.submittedResult ?? null,
+        reveal: input.reveal ?? null,
+      }}
+      requestPending={input.requestPending}
+      giveUpPending={input.giveUpPending}
+      requestError={null}
+      comparison={input.comparison ?? { status: 'idle' }}
+      terminalAwardedPoints={input.submittedResult === undefined ? null : 0}
+      cumulativePoints={input.cumulativePoints ?? 0}
+      {...(input.nextActionLabel === undefined ? {} : { nextActionLabel: input.nextActionLabel })}
+      onQueryChange={() => undefined}
+      onSelectPlayer={() => undefined}
+      onRevealHint={() => undefined}
+      onSubmit={() => undefined}
+      onGiveUp={() => undefined}
+      onNextPitch={() => undefined}
+    />,
+  );
+}
+
+
+function renderTerminalComparison(comparison: DailyNineAtBatComparisonState): string {
+  return renderCard({
+    requestPending: false,
+    giveUpPending: false,
+    submittedResult: {
+      kind: 'strikeout',
+      revealedCount: 0,
+      strikeCount: 3,
+      outcome: 'K',
+      source: 'strikeout',
+    },
+    comparison,
+  });
+}
