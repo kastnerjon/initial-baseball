@@ -1,5 +1,9 @@
 # Initial Baseball Current Work
 
+## October 19 — No-sign-in creator end-to-end QA harness (#454)
+
+- [ ] Run the opt-in isolated-hosted anonymous creator → owner-code → share → friend 1–10 acceptance harness with QA-only secrets; do not confuse locally simulated Vercel forwarded headers with genuine platform trust. Default admin suite remains unchanged. Actual Vercel ingress/WAF, mobile, v1 regression, rollback and activation checks are still required before public launch. Scope: `tasks/plans/custom-v2-public-creator-hosted-qa.md`.
+
 ## October 19 — Post-reveal single-season highs (#453)
 
 - [ ] Display sourced highest regular-season home runs (hitters), pitching strikeouts (pitchers), or both (two-way) on the **resolved player reveal** only; omit unavailable values and maintain historical saved reveals. Reuse #452 canonical data and existing reveal authorization, preserve answer secrecy, four hints and scoring. Require targeted tests, exact-head CI, READY Preview, independent review, and post-merge production verification. Scope: `tasks/plans/reveal-single-season-highs.md`.

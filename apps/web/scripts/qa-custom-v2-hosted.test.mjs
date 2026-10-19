@@ -53,6 +53,32 @@ describe('Custom v2 isolated hosted QA startup guard (never connects to a databa
       /Only local staging gameplay may be enabled/);
   });
 
+  it('requires explicit nonproduction settings before simulated public creator QA', () => {
+    const approved = {
+      CUSTOM_V2_QA_PUBLIC_CREATION: 'true',
+      CUSTOM_LINEUP_PUBLIC_CREATION_ENABLED: 'true',
+      CUSTOM_LINEUP_CREATION_BUDGET_SECRET: 'isolated-budget-test-key-of-at-least-thirty-two',
+      CUSTOM_V2_QA_SIMULATED_VERCEL_INGRESS: 'true',
+    };
+    expectGuard({ ...approved, CUSTOM_LINEUP_PUBLIC_CREATION_ENABLED: '' },
+      /CUSTOM_LINEUP_PUBLIC_CREATION_ENABLED/);
+    expectGuard({ ...approved, CUSTOM_LINEUP_CREATION_BUDGET_SECRET: 'short' },
+      /isolated QA creation budget secret/);
+    expectGuard({ ...approved, CUSTOM_V2_QA_SIMULATED_VERCEL_INGRESS: '' },
+      /Explicit acknowledgement of locally simulated Vercel ingress/);
+    expectGuard({ ...approved, DAILY_ADMIN_USERNAME: '', DAILY_ADMIN_PASSWORD: '' },
+      /Exactly ten fixture IDs are required/);
+  });
+
+  it('rejects public QA with missing creation budget even when gameplay is enabled', () => {
+    expectGuard({
+      CUSTOM_V2_QA_PUBLIC_CREATION: 'true',
+      CUSTOM_LINEUP_PUBLIC_CREATION_ENABLED: 'true',
+      CUSTOM_LINEUP_CREATION_BUDGET_SECRET: '',
+      CUSTOM_V2_QA_SIMULATED_VERCEL_INGRESS: 'true',
+    }, /CUSTOM_LINEUP_CREATION_BUDGET_SECRET/);
+  });
+
   it('accepts the standalone project URL through provenance checks before fixtures', () => {
     // Intentionally invalid fixtures guarantee the runner cannot launch an HTTP server.
     expectGuard({}, /Exactly ten fixture IDs are required/);

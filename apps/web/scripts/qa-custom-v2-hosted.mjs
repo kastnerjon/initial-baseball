@@ -27,13 +27,24 @@ assert.ok(required('DAILY_PROGRESSION_SECRET').length >= 32,
   'An isolated staging signing secret is required');
 assert.equal(required('CUSTOM_LINEUP_V2_GAMEPLAY_TRANSPORT_ENABLED'), 'true',
   'Only local staging gameplay may be enabled');
-const username = required('DAILY_ADMIN_USERNAME');
-const password = required('DAILY_ADMIN_PASSWORD');
+// Optional QA-only public issuance path: simulated Vercel ingress over loopback.
+// This cannot prove real Vercel header trust, mobile behavior, WAF or public rollout.
+const publicCreatorQa = env.CUSTOM_V2_QA_PUBLIC_CREATION === 'true';
+if (publicCreatorQa) {
+  assert.equal(required('CUSTOM_LINEUP_PUBLIC_CREATION_ENABLED'), 'true',
+    'Public creation must be enabled only in the isolated QA child server');
+  assert.ok(required('CUSTOM_LINEUP_CREATION_BUDGET_SECRET').trim().length >= 32,
+    'A distinct isolated QA creation budget secret is required');
+  assert.equal(env.CUSTOM_V2_QA_SIMULATED_VERCEL_INGRESS, 'true',
+    'Explicit acknowledgement of locally simulated Vercel ingress is required');
+}
+const username = publicCreatorQa ? null : required('DAILY_ADMIN_USERNAME');
+const password = publicCreatorQa ? null : required('DAILY_ADMIN_PASSWORD');
 const players = required('CUSTOM_V2_QA_PLAYER_IDS').split(',').map(s => s.trim());
 assert.equal(players.length, 10, 'Exactly ten fixture IDs are required');
 assert.equal(new Set(players).size, 10, 'Fixtures must have distinct canonical IDs');
 for (const id of players) assert.match(id, /^ibp_[0-9a-f]{20}$/);
-const admin = 'Basic ' + Buffer.from(username + ':' + password).toString('base64');
+const admin = publicCreatorQa ? null : 'Basic ' + Buffer.from(username + ':' + password).toString('base64');
 
 // The runner owns the tested Next.js process, avoiding mismatched local server
 // environments and refusing to reuse an unrelated process on a fixed port.
@@ -56,7 +67,10 @@ async function startValidatedWebServer() {
   base = createCustomV2QaBaseUrl(port);
   const child = spawn(process.execPath,
     [nextBinary, 'start', '-H', '127.0.0.1', '-p', String(port)], {
-      cwd: webRoot, env: { ...env, PORT: String(port), HOSTNAME: '127.0.0.1' },
+      cwd: webRoot, env: {
+        ...env, PORT: String(port), HOSTNAME: '127.0.0.1',
+        ...(publicCreatorQa ? { VERCEL: '1', VERCEL_ENV: 'preview' } : {}),
+      },
       stdio: ['ignore', 'pipe', 'pipe'],
     });
   child.stdout.resume();
@@ -77,9 +91,16 @@ async function startValidatedWebServer() {
 function browser() {
   const cookies = new Map();
   return {
-    async send(path, { method = 'POST', body, authorization, origin = base.origin } = {}) {
+    async send(path, { method = 'POST', body, authorization, origin = base.origin,
+      qaForwardedIp } = {}) {
       const headers = { origin };
       if (authorization) headers.authorization = authorization;
+      // Only an explicit QA-only caller may simulate edge-controlled headers.
+      if (qaForwardedIp !== undefined) {
+        assert.ok(publicCreatorQa, 'Synthetic ingress cannot be used in normal hosted QA');
+        headers['x-forwarded-for'] = qaForwardedIp;
+        headers['x-vercel-forwarded-for'] = qaForwardedIp;
+      }
       if (cookies.size) headers.cookie = [...cookies].map(([k, v]) => k + '=' + v).join('; ');
       if (body !== undefined) headers['content-type'] = 'application/json';
       const res = await fetch(new URL(path, base), {
@@ -106,14 +127,30 @@ const acceptedLengths = Array.from({ length: 10 }, (_, i) => i + 1);
 function attemptPath(id, action) {
   return '/api/custom-lineup/challenges/' + id + '/attempt/' + action;
 }
+let simulatedIpSequence = 10;
 async function createChallenge(n) {
   const creator = browser();
-  const issued = await creator.send('/api/custom-lineup/challenges', {
-    authorization: admin, body: { canonicalPlayerIds: players.slice(0, n) },
+  // Unique TEST-NET IP per fixture avoids spending the same ten-in-ten-minutes
+  // budget across twelve scenarios. It is NOT a WAF or IP-identity test.
+  const qaForwardedIp = publicCreatorQa ? '192.0.2.' + (++simulatedIpSequence) : undefined;
+  const issued = await creator.send(publicCreatorQa
+    ? '/api/custom-lineup/create' : '/api/custom-lineup/challenges', {
+    ...(publicCreatorQa ? { qaForwardedIp } : { authorization: admin }),
+    body: { canonicalPlayerIds: players.slice(0, n),
+      ...(publicCreatorQa ? { title: 'QA Private Lineup ' + n } : {}) },
   });
-  assert.equal(issued.status, 201, 'Admin issuance must succeed');
-  assert.deepEqual(Object.keys(issued.data ?? {}), ['puzzleId'],
-    'Creation must reveal only opaque challenge ID');
+  assert.equal(issued.status, 201, 'Staged issuance must succeed');
+  if (publicCreatorQa) {
+    assert.deepEqual(Object.keys(issued.data ?? {}).sort(), ['ownerCapability', 'puzzleId'],
+      'Anonymous issue response must contain only the puzzle ID and separate owner code');
+    assert.match(issued.data.ownerCapability, /^[A-Za-z0-9_-]{43}$/,
+      'Owner management code must be 32 bytes of base64url');
+    assert.ok(!JSON.stringify([...issued.headers]).includes(issued.data.ownerCapability),
+      'Owner management code must not enter response headers');
+  } else {
+    assert.deepEqual(Object.keys(issued.data ?? {}), ['puzzleId'],
+      'Admin issuance must reveal only opaque challenge ID');
+  }
   const id = issued.data.puzzleId;
   assert.match(id, /^custom-lineup-v2-[0-9a-f-]{36}$/);
   assert.ok(issued.headers.get('set-cookie')?.includes('HttpOnly'),
@@ -124,6 +161,25 @@ async function createChallenge(n) {
     'Page HTML must not serialize answer IDs');
   for (const playerId of players.slice(0, n)) {
     assert.ok(!page.raw.includes(playerId), 'Page HTML must not contain selected answer IDs');
+  }
+  if (publicCreatorQa && n === 1) {
+    const createPage = await creator.send('/create', { method: 'GET' });
+    assert.equal(createPage.status, 200, 'Public creator page must render in isolated QA');
+    assert.ok(createPage.raw.includes('Name your puzzle'),
+      'Public creator page must present the required name');
+    assert.ok(!createPage.raw.includes(issued.data.ownerCapability),
+      'Owner capability must not be embedded in creator page HTML');
+    const forbidden = await creator.send('/api/custom-lineup/create', {
+      origin: 'https://untrusted.invalid',
+      qaForwardedIp,
+      body: { canonicalPlayerIds: players.slice(0, n), title: 'Rejected cross-origin issue' },
+    });
+    assert.equal(forbidden.status, 403, 'Cross-origin anonymous issuance must fail');
+    const missingEdge = await creator.send('/api/custom-lineup/create', {
+      body: { canonicalPlayerIds: players.slice(0, n), title: 'Rejected no-edge issue' },
+    });
+    assert.equal(missingEdge.status, 503,
+      'Anonymous issuance without trusted Vercel ingress must fail closed');
   }
   const preview = await creator.send(attemptPath(id, 'bootstrap'));
   assert.equal(preview.status, 200);
@@ -207,7 +263,8 @@ async function play(n) {
   const duplicate = await player.send(attemptPath(id, 'submit'));
   assert.equal(duplicate.status, 200);
   assert.deepEqual(duplicate.data, { status: 'existing' });
-  console.log('PASS Custom v2 hosted DB first-attempt N=' + n + ' maximum=' + (4 * n));
+  console.log('PASS ' + (publicCreatorQa ? 'no-sign-in creator + friend ' : '')
+    + 'Custom v2 hosted DB first-attempt N=' + n + ' maximum=' + (4 * n));
 }
 async function alternativeFinish(mode) {
   const id = await createChallenge(1);
@@ -244,7 +301,11 @@ try {
   for (const n of acceptedLengths) await play(n);
   await alternativeFinish('third-strike');
   await alternativeFinish('give-up');
-  console.log('Hosted Custom v2 staged acceptance passed on isolated nonproduction project.');
+  console.log('Hosted Custom v2 ' + (publicCreatorQa
+    ? 'QA-only simulated-ingress anonymous creator + friend'
+    : 'admin creator + friend') + ' acceptance passed on isolated nonproduction project.');
+  if (publicCreatorQa) console.log(
+    'NOT VERIFIED: genuine Vercel ingress, mobile browser, live WAF, public activation.');
 } finally {
   server.kill('SIGTERM');
 }
