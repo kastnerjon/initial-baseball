@@ -7,6 +7,7 @@ describe('Daily footer public creator navigation', () => {
   it('preserves the archive footer and hides creation by default', () => {
     const html = renderToStaticMarkup(<DailyFooter createLineupAvailable={false} />);
     expect(html).toContain('href="/archive"');
+    expect(html).toContain('href="/results"');
     expect(html).toContain('New puzzle · Midnight Pacific');
     expect(html).not.toContain('href="/create"');
   });
