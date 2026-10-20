@@ -43,3 +43,34 @@
 .custom-lineup-share-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 .custom-lineup-share-actions a { overflow-wrap: anywhere; padding: 10px 0; }
 .custom-lineup-share-actions a:focus-visible { outline: 2px solid var(--clubhouse); outline-offset: 2px; }
+
+/* Custom v2: mobile-friendly, fixed numbered batting order. */
+.custom-lineup-slot-picker { display: grid; gap: 10px; min-width: 0; }
+.custom-lineup-length { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.custom-lineup-length label { font-weight: 700; font-size: 14px; }
+.custom-lineup-length select { min-height: 44px; min-width: 88px; border: 1px solid var(--line); border-radius: 6px; background: white; font: inherit; padding: 8px; }
+.custom-lineup-slot-help { margin: 0; font-size: 13px; }
+.custom-lineup-slots { display: grid; gap: 8px; list-style: none; padding: 0; margin: 0; }
+.custom-lineup-slots > li { display: grid; grid-template-columns: 24px minmax(0,1fr) auto; align-items: start; gap: 8px; padding: 7px; border: 1px solid var(--line-soft); border-radius: 7px; min-width: 0; }
+.custom-lineup-slots > li > .custom-nine-slot-number { padding-top: 12px; }
+.custom-lineup-slot-main { min-width: 0; }
+.custom-lineup-select-slot { display: block; text-align: left; min-height: 44px; width: 100%; min-width: 0; padding: 10px 6px; border: 0; background: transparent; color: var(--ink); font: inherit; cursor: pointer; overflow-wrap: anywhere; }
+.custom-lineup-select-slot:disabled { cursor: default; }
+.custom-lineup-select-slot small { display: block; color: var(--clubhouse-deep); }
+.custom-lineup-swap-source { border-color: var(--clubhouse) !important; background: var(--paper); }
+.custom-lineup-swap { min-height: 44px; padding: 8px 10px; background: white; border: 1px solid var(--line); border-radius: 5px; font: inherit; font-size: 13px; color: var(--clubhouse-deep); cursor: pointer; }
+.custom-lineup-swap-notice { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; border-radius: 5px; background: var(--paper); padding: 10px; }
+.custom-lineup-swap-notice button { min-height: 40px; background: white; color: var(--clubhouse-deep); border: 1px solid var(--line); border-radius: 5px; padding: 8px; cursor: pointer; }
+.custom-lineup-slot-search { display: grid; gap: 6px; }
+.custom-lineup-slot-search > input { min-height: 44px; width: 100%; min-width: 0; background: white; border: 1px solid var(--clubhouse); border-radius: 5px; padding: 9px; font: inherit; }
+.custom-lineup-slot-search ul { display: grid; gap: 4px; list-style: none; padding: 0; margin: 0; }
+.custom-lineup-slot-search li button { display: grid; gap: 3px; width: 100%; min-height: 44px; padding: 9px; text-align: left; border: 1px solid var(--line-soft); border-radius: 5px; color: var(--ink); background: white; font: inherit; cursor: pointer; overflow-wrap: anywhere; }
+.custom-lineup-slot-search li span, .custom-lineup-slot-search li small { color: var(--ink-soft); font-size: 12px; }
+.custom-lineup-slot-search li button:disabled { opacity: .5; cursor: not-allowed; }
+.custom-lineup-cancel { justify-self: start; min-height: 40px; padding: 6px 0; border: 0; background: transparent; color: var(--clubhouse-deep); text-decoration: underline; cursor: pointer; }
+.custom-lineup-slot-picker button:focus-visible, .custom-lineup-slot-picker select:focus-visible { outline: 2px solid var(--clubhouse); outline-offset: 2px; }
+@media (max-width: 540px) {
+  .custom-lineup-slots > li { grid-template-columns: 20px minmax(0,1fr) auto; padding: 5px; gap: 5px; }
+  .custom-lineup-swap { padding: 7px 6px; }
+  .custom-lineup-swap span { display: none; }
+}

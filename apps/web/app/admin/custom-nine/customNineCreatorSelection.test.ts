@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   appendCustomNinePlayer, isCompleteCustomNineSelection, isCompleteCustomLineupSelection, isCustomNineDraftEditable,
   moveCustomNinePlayer, removeCustomNinePlayer,
+  chooseCustomLineupSlot, resizeCustomLineupSlots, swapCustomLineupSlots, isCompleteCustomLineupSlots,
 } from './customNineCreatorSelection';
 
 const player = (i: number) => ({ playerId: 'canonical-' + i, displayName: 'Player ' + i, label: 'Player ' + i });
@@ -56,5 +57,50 @@ describe('Custom Nine ordered creator selection', () => {
     const chosen = [player(0), player(1), player(2)];
     expect(removeCustomNinePlayer(chosen, 'canonical-1').map(p => p.playerId))
       .toEqual(['canonical-0', 'canonical-2']);
+  });
+});
+
+describe('fixed Custom v2 lineup slots', () => {
+  it('starts with nine empty spots and supports only lengths one to ten', () => {
+    const nine = resizeCustomLineupSlots([], 9);
+    expect(nine).toHaveLength(9);
+    expect(nine.every(p => p === null)).toBe(true);
+    expect(resizeCustomLineupSlots(nine, 0)).toBe(nine);
+    expect(resizeCustomLineupSlots(nine, 11)).toBe(nine);
+    expect(resizeCustomLineupSlots(nine, 1)).toEqual([null]);
+  });
+
+  it('chooses any spot, replaces a player, and refuses duplicate identities', () => {
+    const empty = resizeCustomLineupSlots([], 3);
+    const a = chooseCustomLineupSlot(empty, 2, player(1));
+    const b = chooseCustomLineupSlot(a, 0, player(2));
+    expect(b.map(p => p?.playerId)).toEqual(['canonical-2', undefined, 'canonical-1']);
+    expect(chooseCustomLineupSlot(b, 1, player(1))).toBe(b);
+    expect(chooseCustomLineupSlot(b, 4, player(3))).toBe(b);
+    const c = chooseCustomLineupSlot(b, 2, player(3));
+    expect(c[2]?.playerId).toBe('canonical-3');
+    expect(b[2]?.playerId).toBe('canonical-1');
+    expect(isCompleteCustomLineupSlots(c)).toBe(false);
+    expect(isCompleteCustomLineupSlots(chooseCustomLineupSlot(c, 1, player(1)))).toBe(true);
+  });
+
+  it('swaps full selections including distant slots and empty spots without mutation', () => {
+    const original = [player(1), player(2), player(3)];
+    const swapped = swapCustomLineupSlots(original, 0, 2);
+    expect(swapped.map(p => p?.playerId)).toEqual(['canonical-3','canonical-2','canonical-1']);
+    expect(original.map(p => p.playerId)).toEqual(['canonical-1','canonical-2','canonical-3']);
+    expect(swapCustomLineupSlots(swapped, 1, 1)).toBe(swapped);
+    expect(swapCustomLineupSlots(swapped, 0, 3)).toBe(swapped);
+    expect(swapCustomLineupSlots([player(1), null], 0, 1)).toEqual([null, player(1)]);
+  });
+
+  it('requires all active slots and cuts trailing selections when shrinking', () => {
+    const chosen = [player(1), player(2), player(3)];
+    expect(isCompleteCustomLineupSlots(chosen)).toBe(true);
+    expect(isCompleteCustomLineupSlots([player(1), null, player(3)])).toBe(false);
+    expect(isCompleteCustomLineupSlots([player(1), player(1)])).toBe(false);
+    expect(resizeCustomLineupSlots(chosen, 2).map(p => p?.playerId))
+      .toEqual(['canonical-1', 'canonical-2']);
+    expect(isCompleteCustomLineupSlots(resizeCustomLineupSlots([], 10))).toBe(false);
   });
 });
