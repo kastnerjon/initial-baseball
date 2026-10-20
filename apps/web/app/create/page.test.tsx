@@ -28,8 +28,10 @@ describe('default-off no-sign-in Custom creation screen', () => {
     expect(html).toContain('Back to Daily Nine');
     expect(html).toContain('Name your puzzle');
     expect(html).toContain('Puzzle name (3–60 characters)');
-    expect(html).toContain('0 / 10 chosen');
-    expect(html).toContain('Find a player');
+    expect(html).toContain('0 / 9 chosen');
+    expect((html.match(/type="search"/g) ?? []).length).toBe(9);
+    expect(html).toContain('Number of players');
+    expect(html).toContain('Search for a player');
     expect(html).toContain('Create challenge');
     expect(html).toContain('disabled=""');
     expect(html).toContain('No account required');
