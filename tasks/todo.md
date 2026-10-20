@@ -1,5 +1,9 @@
 # Initial Baseball Current Work
 
+## October 20 — Explicit Supabase grants safeguard
+
+- [ ] Enforce least-privilege `GRANT`, `REVOKE` and RLS in **new public table migration files** during CI, ahead of Supabase's October 30 default-grant policy change. Existing production and QA Custom tables have explicitly verified service-role grants and browser SELECT denial. No live grant mutations; scope: `tasks/plans/supabase-explicit-table-grants.md`.
+
 ## October 20 — Live QA Custom creation budget threshold
 
 - [ ] In the guarded no-sign-in hosted QA runner, prove malformed requests are zero quota cost, ten same-IP valid creations succeed, the eleventh returns 429/Retry-After without a cookie, and a different IP remains admissible. Never treat synthetic Vercel headers as a real ingress/WAF check. Requires QA-only credentials and no production feature activation. Scope: `tasks/plans/custom-v2-creation-quota-hosted-qa.md`.
