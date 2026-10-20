@@ -105,6 +105,24 @@ describe('default-disabled, anonymous Custom v2 creation', () => {
     expect(issue).not.toHaveBeenCalled();
   });
 
+  it('rejects malformed, duplicate and out-of-range selections without reserving quota', async () => {
+    const id = 'ibp_00000000000000000001';
+    const cases: unknown[] = [
+      [], Array(11).fill(id), [id, id], [''], [' '], ['leading '],
+      [4], [null], [id, 4], 'not-an-array', null, {}, [id.repeat(15)],
+    ];
+    for (const canonicalPlayerIds of cases) {
+      const response = await POST(new Request(request(), {
+        body: JSON.stringify({ canonicalPlayerIds, title: 'A valid lineup title' }),
+      }));
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({ error: 'invalid_selection' });
+      expect(response.headers.has('set-cookie')).toBe(false);
+    }
+    expect(reserve).not.toHaveBeenCalled();
+    expect(issue).not.toHaveBeenCalled();
+  });
+
   it('normalizes a whitespace-heavy name and submits only the title to private issuer', async () => {
     const original = request();
     const response = await POST(new Request(original, {

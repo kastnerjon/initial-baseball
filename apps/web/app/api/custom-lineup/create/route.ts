@@ -1,4 +1,5 @@
 import { parseCustomLineupTitle } from '@initial-baseball/shared';
+import { createCustomLineupSelection } from '@initial-baseball/daily';
 import { createCustomLineupV2CreatorBrowserMarker } from '../../../customNineCreatorBrowser';
 import { getDailyProgressionSecret } from '../../../dailyProgressionSecret';
 import { readDailyResultJsonBody } from '../../../dailyResultRequestBody';
@@ -51,6 +52,14 @@ export async function POST(request: Request): Promise<Response> {
   const selected = payload as { canonicalPlayerIds: unknown; title: unknown };
   const title = parseCustomLineupTitle(selected.title);
   if (!title.ok) return fail('invalid_selection', 400);
+  let canonicalPlayerIds: readonly string[];
+  try {
+    canonicalPlayerIds = createCustomLineupSelection(
+      selected.canonicalPlayerIds as readonly string[],
+    ).canonicalPlayerIds;
+  } catch {
+    return fail('invalid_selection', 400);
+  }
 
   try {
     // Check signing configuration before reserving quota, and reserve before
@@ -64,7 +73,7 @@ export async function POST(request: Request): Promise<Response> {
     }
 
     const issued = await createServerCustomLineupV2CreationService()
-      .issueAnonymous({ canonicalPlayerIds: selected.canonicalPlayerIds }, title.title);
+      .issueAnonymous({ canonicalPlayerIds }, title.title);
     const response = Response.json({ puzzleId: issued.puzzleId, ownerCapability: issued.ownerCapability }, {
       status: 201, headers: HEADERS,
     });

@@ -1,5 +1,9 @@
 # Initial Baseball Current Work
 
+## October 20 — Pre-quota Custom selection validation
+
+- [ ] Reuse the portable 1–10 player-selection validator before spending the no-login Custom creation budget; malformed, duplicate and out-of-range requests return a sanitized 400 without quota cost. Canonical player existence and hint availability remain authoritative in issuance. No activation changes. Scope: `tasks/plans/custom-prequota-validation.md`.
+
 ## October 20 — Native Custom share action
 
 - [ ] Add capability-detected native Share action for issued unlisted Custom Lineups, preserving the original Copy link and selectable URL fallback. No owner capability in share data; no production flag changes. Scope: `tasks/plans/custom-native-share.md`.
