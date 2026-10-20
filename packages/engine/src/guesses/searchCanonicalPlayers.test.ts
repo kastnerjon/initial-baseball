@@ -198,6 +198,17 @@ it('prefers natural displayed matches while preserving alternate names', () => {
   ] as const) expect(searchCanonicalPlayers(query, candidates)[0]?.playerId).toBe(id);
 });
 
+it('preserves established nickname phrases with an optional leading article', () => {
+  const candidates = [
+    { id: 'lou', displayName: 'Lou Gehrig', aliases: ['The Iron Horse'] },
+    { id: 'babe', displayName: 'Babe Ruth', aliases: ['The Sultan of Swat'] },
+  ];
+  for (const [query, id] of [
+    ['iron horse', 'lou'], ['ir ho', 'lou'], ['the ir ho', 'lou'],
+    ['sultan of swat', 'babe'], ['sul sw', 'babe'], ['the sultan', 'babe'],
+  ] as const) expect(searchCanonicalPlayers(query, candidates)[0]?.playerId).toBe(id);
+});
+
 function buildPlayer(
   id: string,
   displayName: string,

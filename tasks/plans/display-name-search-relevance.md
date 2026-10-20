@@ -11,6 +11,9 @@
 ## Reproduction and policy
 Live #460 Preview search for Cam u returned only Chase Utley. The actual canonical index has displayName Chase Utley and alias Chase Cameron Utley. Ordered-token matching skipped Chase and matched Cam to Cameron, u to Utley.
 
-Displayed names retain ordinary matching and rank ahead of alternate fields. A multiword query against fullName/aliases must prefix the alternate field's first token; it may then use existing ordered token prefixes. This keeps legal names available when searched from their beginning, while avoiding middle-name-plus-surname fragments. Single-word alternate-name searches retain existing matching (including Papi inside Big Papi). No edit distance or arbitrary character threshold is added. Initials-only rejection still happens before all matching; distinct same-name players remain distinct.
+Displayed names retain ordinary matching and rank ahead of alternate fields. A multiword query against fullName/aliases must prefix the alternate field's first token (ignoring an optional leading The in aliases); it may then use existing ordered token prefixes. This keeps legal names available when searched from their beginning, while avoiding middle-name-plus-surname fragments. Single-word alternate-name searches retain existing matching (including Papi inside Big Papi). No edit distance or arbitrary character threshold is added. Initials-only rejection still happens before all matching; distinct same-name players remain distinct.
 
 Daily AtBatCard and both Custom gameplay/creator use /api/players/search, which delegates to this engine. The API regression uses real engine behavior and a source-faithful canonical candidate; it does not mock search output.
+
+## Independent review disposition
+Preserved aliases with an optional leading The after review found that iron horse and sultan of swat must still match Lou Gehrig and Babe Ruth. Added full/partial/article-prefixed regression queries using the actual runtime aliases. No scoring, identity or contract changes.
