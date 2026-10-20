@@ -102,5 +102,10 @@ describe('fixed Custom v2 lineup slots', () => {
     expect(resizeCustomLineupSlots(chosen, 2).map(p => p?.playerId))
       .toEqual(['canonical-1', 'canonical-2']);
     expect(isCompleteCustomLineupSlots(resizeCustomLineupSlots([], 10))).toBe(false);
+    const extended = resizeCustomLineupSlots(chosen, 4);
+    expect(extended.map(p => p?.playerId)).toEqual([
+      'canonical-1', 'canonical-2', 'canonical-3', undefined,
+    ]);
+    expect(isCompleteCustomLineupSlots(extended)).toBe(false);
   });
 });
