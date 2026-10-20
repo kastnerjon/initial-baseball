@@ -3,14 +3,16 @@
 import React, { useEffect, useState, type JSX } from 'react';
 import { parseCustomLineupTitle } from '@initial-baseball/shared';
 import { CustomLineupShareLink } from '../custom-lineup/CustomLineupShareLink';
+import { CustomLineupSlotPicker } from './CustomLineupSlotPicker';
 import {
   appendCustomNinePlayer,
   isCompleteCustomNineSelection,
-  isCompleteCustomLineupSelection,
+  isCompleteCustomLineupSlots,
   isCustomNineDraftEditable,
   moveCustomNinePlayer,
   removeCustomNinePlayer,
   type ChosenCustomNinePlayer,
+  type CustomLineupSlots,
 } from './customNineCreatorSelection';
 
 type SearchCandidate = {
@@ -49,6 +51,7 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
   const [title, setTitle] = useState('');
   const [suggestions, setSuggestions] = useState<SearchCandidate[]>([]);
   const [players, setPlayers] = useState<readonly ChosenCustomNinePlayer[]>([]);
+  const [slots, setSlots] = useState<CustomLineupSlots>(() => Array.from({ length: 9 }, () => null));
   const [searchBusy, setSearchBusy] = useState(false);
   const [searchError, setSearchError] = useState(false);
   const [issuing, setIssuing] = useState(false);
@@ -59,16 +62,14 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
   const draftEditable = isCustomNineDraftEditable(createdId, issuing);
   const titleValid = parseCustomLineupTitle(title).ok;
   const validSelection = isV2
-    ? isCompleteCustomLineupSelection(players)
+    ? isCompleteCustomLineupSlots(slots)
     : isCompleteCustomNineSelection(players);
-  const displayedSlots = isV2
-    ? Math.min(maximumPlayers, players.length + 1)
-    : maximumPlayers;
+  const displayedSlots = maximumPlayers;
 
   useEffect(() => {
     const trimmed = query.trim();
     setSearchError(false);
-    if (trimmed.length < 2 || players.length === maximumPlayers || !draftEditable) {
+    if (trimmed.length < 2 || isV2 || players.length === maximumPlayers || !draftEditable) {
       setSuggestions([]);
       setSearchBusy(false);
       return;
@@ -118,7 +119,7 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
         credentials: 'same-origin',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          canonicalPlayerIds: players.map(player => player.playerId),
+          canonicalPlayerIds: isV2 ? slots.map(player => player!.playerId) : players.map(player => player.playerId),
           ...(isPublic ? { title: parseCustomLineupTitle(title).ok ? title : '' } : {}),
         }),
       });
@@ -224,8 +225,9 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
       <section className="custom-nine-creator-card" aria-labelledby="custom-nine-lineup-heading">
         <div className="custom-nine-creator-heading">
           <h2 id="custom-nine-lineup-heading">Your lineup</h2>
-          <span>{players.length} / {maximumPlayers} chosen</span>
+          <span>{isV2 ? slots.filter(Boolean).length : players.length} / {isV2 ? slots.length : maximumPlayers} chosen</span>
         </div>
+        {isV2 ? <CustomLineupSlotPicker slots={slots} setSlots={setSlots} editable={draftEditable} /> : <>
         <ol className="custom-nine-creator-players">
           {Array.from({ length: displayedSlots }, (_, index) => {
             const player = players[index];
@@ -281,6 +283,7 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
             </ul>
           ) : null}
         </div>
+        </>}
         <div className="custom-nine-create-action">
           <button type="button" disabled={!validSelection || !draftEditable || (isPublic && !titleValid)}
             onClick={() => { void issue(); }}>
@@ -313,6 +316,7 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
               </>}
               <button type="button" onClick={() => {
                 setPlayers([]);
+                setSlots(Array.from({ length: 9 }, () => null));
                 setQuery('');
                 setTitle('');
                 setSuggestions([]);

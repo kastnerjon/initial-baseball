@@ -1,7 +1,18 @@
 # Daily Inning end-to-end blueprint
 
 Status: Living product source of truth  
-Last updated: 2026-09-23
+Last updated: 2026-10-20
+
+**Custom creator UX (October 20, agreed; implementation staged, public flags OFF):**
+The ordinary-user Custom v2 creator starts with **nine vertically numbered empty slots**,
+and a selector can set the exact length to any **1–10**. Each spot uses the existing
+canonical player name-search API and shows display name, MLB first/last playing years,
+and career teams to disambiguate identities. A selected player can be replaced directly.
+Creators can **Swap** a chosen spot then tap another spot to exchange their complete
+canonical selections, rather than drag and drop. No duplicate canonical identities;
+only a completely filled active lineup can be issued. Shortening the length discards
+trailing slot selections. Original issued puzzles, score rules, owner codes, and server
+security gates do not change. Scope: tasks/plans/custom-lineup-slot-creator.md.
 
 ## Product decision
 

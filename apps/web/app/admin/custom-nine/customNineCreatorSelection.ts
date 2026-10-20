@@ -47,3 +47,33 @@ function isValidUniqueSelection(players: readonly ChosenCustomNinePlayer[]): boo
 export function isCustomNineDraftEditable(issuedId: string | null, issuing: boolean): boolean {
   return issuedId === null && !issuing;
 }
+
+/** Each Custom v2 array entry corresponds to one visible numbered batting spot. */
+export type CustomLineupSlots = readonly (ChosenCustomNinePlayer | null)[];
+
+export function resizeCustomLineupSlots(slots: CustomLineupSlots, length: number): CustomLineupSlots {
+  if (!Number.isInteger(length) || length < 1 || length > 10) return slots;
+  return Array.from({ length }, (_, i) => slots[i] ?? null);
+}
+
+export function chooseCustomLineupSlot(slots: CustomLineupSlots, index: number, player: ChosenCustomNinePlayer): CustomLineupSlots {
+  if (!Number.isInteger(index) || index < 0 || index >= slots.length || !player.playerId.trim()
+    || slots.some((existing, i) => i !== index && existing?.playerId === player.playerId)) return slots;
+  const next = [...slots];
+  next[index] = player;
+  return next;
+}
+
+export function swapCustomLineupSlots(slots: CustomLineupSlots, first: number, second: number): CustomLineupSlots {
+  if (!Number.isInteger(first) || !Number.isInteger(second) || first < 0 || second < 0
+    || first >= slots.length || second >= slots.length || first === second) return slots;
+  const next = [...slots];
+  [next[first], next[second]] = [next[second]!, next[first]!];
+  return next;
+}
+
+export function isCompleteCustomLineupSlots(slots: CustomLineupSlots): boolean {
+  return slots.length >= 1 && slots.length <= 10
+    && slots.every(player => player !== null && player.playerId.trim().length > 0)
+    && new Set(slots.map(player => player?.playerId)).size === slots.length;
+}
