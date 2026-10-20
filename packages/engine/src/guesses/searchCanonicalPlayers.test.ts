@@ -161,6 +161,54 @@ it('uses the complete candidate universe when the other duplicate falls outside 
   expect(visibleBenTaylorResults[0]?.requiresYearDisambiguation).toBe(true);
 });
 
+
+const chaseUtley: PlayerSearchCandidate = {
+  id: 'ibp_9ca187df8e6aa4162534',
+  displayName: 'Chase Utley',
+  // The real runtime index's alias; legal fullName also covers legacy candidates.
+  fullName: 'Chase Cameron Utley',
+  aliases: ['Chase Cameron Utley'],
+};
+
+it.each(['Cam u', 'cameron u', 'cameron utley', 'ron u'])(
+  'does not surface an undisplayed middle-name query: %s', query => {
+    expect(searchCanonicalPlayers(query, [chaseUtley])).toEqual([]);
+  },
+);
+
+it.each(['chase u', 'chas ut', 'utley', 'chase cam u', 'chase cameron utley'])(
+  'retains displayed names and legal-name searches from their beginning: %s', query => {
+    expect(searchCanonicalPlayers(query, [chaseUtley])[0]?.playerId).toBe(chaseUtley.id);
+  },
+);
+
+it('prefers natural displayed matches while preserving alternate names', () => {
+  const candidates = [
+    chaseUtley,
+    { id: 'cam', displayName: 'Cam Unsworth', aliases: [] },
+    { id: 'mike', displayName: 'Mike Trout', aliases: ['Michael Nelson Trout'] },
+    { id: 'jose', displayName: 'José Ramírez', aliases: [] },
+    { id: 'aj', displayName: 'A. J. Burnett', aliases: ['AJ Burnett'] },
+    { id: 'papi', displayName: 'David Ortiz', aliases: ['Big Papi'] },
+  ];
+  expect(searchCanonicalPlayers('Cam u', candidates).map(p => p.playerId)).toEqual(['cam']);
+  for (const [query, id] of [
+    ['mike tr', 'mike'], ['michael tr', 'mike'], ['jose ram', 'jose'],
+    ['a j burn', 'aj'], ['AJ Burn', 'aj'], ['papi', 'papi'], ['big p', 'papi'],
+  ] as const) expect(searchCanonicalPlayers(query, candidates)[0]?.playerId).toBe(id);
+});
+
+it('preserves established nickname phrases with an optional leading article', () => {
+  const candidates = [
+    { id: 'lou', displayName: 'Lou Gehrig', aliases: ['The Iron Horse'] },
+    { id: 'babe', displayName: 'Babe Ruth', aliases: ['The Sultan of Swat'] },
+  ];
+  for (const [query, id] of [
+    ['iron horse', 'lou'], ['ir ho', 'lou'], ['the ir ho', 'lou'],
+    ['sultan of swat', 'babe'], ['sul sw', 'babe'], ['the sultan', 'babe'],
+  ] as const) expect(searchCanonicalPlayers(query, candidates)[0]?.playerId).toBe(id);
+});
+
 function buildPlayer(
   id: string,
   displayName: string,

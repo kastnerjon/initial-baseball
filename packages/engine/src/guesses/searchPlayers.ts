@@ -143,7 +143,16 @@ function getBestSearchMatch(
   let bestMatch: PlayerSearchMatch | null = null;
 
   for (const { field, matchSourcePriority } of searchableFields) {
-    const bestIndex = getSearchMatchIndex(query, normalizeGuess(field));
+    const normalizedField = normalizeGuess(field);
+    // Alternate names must not make a hidden middle name look like a given name.
+    // Keep one-word nicknames searchable; displayed names retain normal matching.
+    if (matchSourcePriority > 0 && query.includes(' ')) {
+      const firstToken = query.split(' ')[0] ?? '';
+      const startsWithQuery = normalizedField.startsWith(firstToken)
+        || (matchSourcePriority === 2 && normalizedField.startsWith('the ' + firstToken));
+      if (!startsWithQuery) continue;
+    }
+    const bestIndex = getSearchMatchIndex(query, normalizedField);
 
     if (bestIndex === null) {
       continue;
