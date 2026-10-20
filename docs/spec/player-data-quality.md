@@ -51,6 +51,8 @@ Requirements:
 
 Example: the game displays `David Ortiz`; longer names remain searchable aliases.
 
+Autocomplete relevance is owned by the shared engine. Displayed-name matches rank ahead of alternate names. Multiword queries against full/legal names or aliases must begin at that alternate field's first token, so `Cam u` cannot match the hidden `Cameron` in `Chase Cameron Utley`. Partial displayed first/last names, surname-only queries, accent normalization, initial-based baseball names and distinct historical identities retain their existing behavior. Single-word aliases (including `Papi` within `Big Papi`) remain searchable. Initials-only queries never enumerate candidates; guess acceptance and scoring are separate and unchanged.
+
 ## Genuine same-name players
 
 Possible duplicates must never be merged by name alone. Resolution uses source identifiers and evidence such as birth date, debut/final year, teams, position, and source lineage.

@@ -143,7 +143,14 @@ function getBestSearchMatch(
   let bestMatch: PlayerSearchMatch | null = null;
 
   for (const { field, matchSourcePriority } of searchableFields) {
-    const bestIndex = getSearchMatchIndex(query, normalizeGuess(field));
+    const normalizedField = normalizeGuess(field);
+    // Alternate names must not make a hidden middle name look like a given name.
+    // Keep one-word nicknames searchable; displayed names retain normal matching.
+    if (matchSourcePriority > 0 && query.includes(' ')
+      && !normalizedField.startsWith(query.split(' ')[0] ?? '')) {
+      continue;
+    }
+    const bestIndex = getSearchMatchIndex(query, normalizedField);
 
     if (bestIndex === null) {
       continue;

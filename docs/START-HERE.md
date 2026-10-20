@@ -1,5 +1,10 @@
 # Initial Baseball — Start Here
 
+## October 20 — Display-name autocomplete relevance
+
+PR #460 is merged and production-verified at `7c4584e` (main CI #39488294439 SUCCESS; production `dpl_823ZbayzX9jnNdigEBsGXaW1iivL` READY; canonical routes and recent error/fatal scan clear). Sourced team chronology preserves frozen hints. Current bounded work rejects hidden middle-name-plus-surname fragments such as Cam u while preserving useful display-name and alias search. Scope: `tasks/plans/display-name-search-relevance.md`. Custom creation remains gated; #434 stays deferred.
+
+
 ## October 20 — Sourced intra-season team chronology
 
 Bobby Abreu exposed #451's invalid alphabetical same-year fallback. The bounded correction restores pinned Lahman stint evidence for all represented multi-team seasons, shares ordering between canonical reveals and prospective Teams hints, and preserves genuine returns. Existing issued hints remain immutable. Scope and release evidence: `tasks/plans/team-stint-chronology.md`. Public Custom activation remains OFF; #434 remains deferred.
