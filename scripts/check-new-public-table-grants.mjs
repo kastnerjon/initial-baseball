@@ -9,10 +9,10 @@ function withoutComments(sql) {
   return sql.replace(/\/\*[\s\S]*?\*\//g, '').replace(/--[^\n]*/g, '');
 }
 
-function statementFor(sql, operation, table) {
+function statementsFor(sql, operation, table) {
   const escaped = table.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  const regex = new RegExp(`\\b${operation}\\s+[^;]+?\\s+on\\s+(?:table\\s+)?public\\.${escaped}\\s+(?:from|to)\\s+([^;]+)`, 'i');
-  return sql.match(regex)?.[0] ?? null;
+  const regex = new RegExp(`\\b${operation}\\s+[^;]+?\\s+on\\s+(?:table\\s+)?public\\.${escaped}\\s+(?:from|to)\\s+([^;]+)`, 'gi');
+  return [...sql.matchAll(regex)].map(match => match[0]);
 }
 
 export function validateNewPublicTableGrants(sql, path = 'migration.sql') {
@@ -29,18 +29,30 @@ export function validateNewPublicTableGrants(sql, path = 'migration.sql') {
     if (!new RegExp(`\\balter\\s+table\\s+(?:only\\s+)?public\\.${quoted}\\s+enable\\s+row\\s+level\\s+security\\s*;`, 'i').test(source)) {
       errors.push(`${path}: ${id} requires explicit ENABLE ROW LEVEL SECURITY.`);
     }
-    const revocation = statementFor(source, 'revoke', table);
-    const revokedRoles = revocation?.match(/\bfrom\s+([^;]+)/i)?.[1] ?? '';
-    if (!revocation || !/\brevoke\s+all\s+on\b/i.test(revocation)
-      || !['public', 'anon', 'authenticated'].every(role => new RegExp(`\\b${role}\\b`, 'i').test(revokedRoles))) {
+    if (new RegExp(`\\balter\\s+table\\s+(?:only\\s+)?public\\.${quoted}\\s+disable\\s+row\\s+level\\s+security\\s*;`, 'i').test(source)) {
+      errors.push(`${path}: ${id} must not DISABLE ROW LEVEL SECURITY.`);
+    }
+    const revocations = statementsFor(source, 'revoke', table);
+    const revoked = revocations.some(statement => {
+      const roles = statement.match(/\bfrom\s+([^;]+)/i)?.[1] ?? '';
+      return /\brevoke\s+all\s+on\b/i.test(statement)
+        && ['public', 'anon', 'authenticated'].every(role => new RegExp(`\\b${role}\\b`, 'i').test(roles));
+    });
+    if (!revoked) {
       errors.push(`${path}: ${id} must explicitly REVOKE ALL FROM public, anon, authenticated.`);
     }
-    const grant = statementFor(source, 'grant', table);
-    const grantedRoles = grant?.match(/\bto\s+([^;]+)/i)?.[1] ?? '';
-    if (!grant || !/\bservice_role\b/i.test(grantedRoles)) {
+    const grants = statementsFor(source, 'grant', table);
+    if (!grants.some(statement => /\bservice_role\b/i.test(statement.match(/\bto\s+([^;]+)/i)?.[1] ?? ''))) {
       errors.push(`${path}: ${id} needs an explicit least-privilege GRANT TO service_role.`);
-    } else if (/\bgrant\s+all\s+on\b/i.test(grant)) {
+    }
+    if (grants.some(statement => /\bgrant\s+all(?:\s+privileges)?\s+on\b/i.test(statement))) {
       errors.push(`${path}: ${id} must specify intended privileges, not GRANT ALL.`);
+    }
+    if (grants.some(statement => {
+      const roles = statement.match(/\bto\s+([^;]+)/i)?.[1] ?? '';
+      return ['public', 'anon', 'authenticated'].some(role => new RegExp(`\\b${role}\\b`, 'i').test(roles));
+    })) {
+      errors.push(`${path}: ${id} must not grant direct access to PUBLIC, anon, or authenticated.`);
     }
   }
   return errors;

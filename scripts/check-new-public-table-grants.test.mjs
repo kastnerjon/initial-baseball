@@ -70,3 +70,27 @@ test('supports direct service-role grants without optional TABLE keyword', () =>
     good.replaceAll('ON TABLE public.example_results', 'ON public.example_results'),
   ), []);
 });
+
+test('rejects browser grants even after revocation and server grant', () => {
+  const cases = [
+    good + 'GRANT SELECT ON public.example_results TO anon;',
+    good + 'GRANT SELECT ON public.example_results TO authenticated;',
+    good + 'GRANT SELECT ON public.example_results TO PUBLIC;',
+    good.replace('TO service_role', 'TO service_role, anon'),
+  ];
+  for (const sql of cases) {
+    assert.ok(validateNewPublicTableGrants(sql).some(x => x.includes('must not grant direct access')));
+  }
+});
+
+test('rejects GRANT ALL PRIVILEGES and later overbroad grants', () => {
+  const sql = good.replace('GRANT SELECT, INSERT', 'GRANT ALL PRIVILEGES');
+  assert.ok(validateNewPublicTableGrants(sql).some(x => x.includes('not GRANT ALL')));
+  assert.ok(validateNewPublicTableGrants(good + 'GRANT ALL ON public.example_results TO service_role;')
+    .some(x => x.includes('not GRANT ALL')));
+});
+
+test('rejects a later RLS disable even after ENABLE', () => {
+  const sql = good + 'ALTER TABLE public.example_results DISABLE ROW LEVEL SECURITY;';
+  assert.ok(validateNewPublicTableGrants(sql).some(x => x.includes('must not DISABLE')));
+});
