@@ -4,6 +4,25 @@ Supabase is the operational persistence layer for Initial Baseball. Portable gam
 
 Use migrations for durable schema/extension changes and keep the repository migration files aligned with hosted state. Apply hosted changes deliberately and verify them after deployment.
 
+## Explicit Data API grants for new public tables (October 30, 2026)
+
+Supabase has announced that, beginning October 30, existing projects will no longer automatically grant Data API access to **newly created** tables in the `public` schema. Existing table grants are unchanged. Schema replays in fresh projects, preview branches, and local `supabase db reset` also require explicit grants.
+
+For every **new** `CREATE TABLE public.<name>` migration, include RLS, explicit browser-role revocations and the narrow `service_role` privileges needed by the server **in the same migration**. Example:
+
+```sql
+create table public.example_results (id text primary key);
+alter table public.example_results enable row level security;
+revoke all on table public.example_results from public, anon, authenticated, service_role;
+grant select, insert on table public.example_results to service_role;
+```
+
+Do not grant `anon` or `authenticated` access as a workaround for a permission-denied error: our answer, hint, scoring, Custom creator and result tables must remain behind server-authoritative access. Any genuine browser-readable table requires a separate security review, explicit RLS policies and narrowly scoped table privileges. **RLS does not replace GRANT, and GRANT does not replace RLS.** Table grants are separate from function EXECUTE grants and schema USAGE privileges.
+
+The pull-request CI check `scripts/check-new-public-table-grants.mjs` inspects newly **added** SQL migration files and requires explicit schema names, RLS, browser-role revocation and least-privilege service-role grants for conventional unquoted public-table definitions. The gate also rejects `GRANT ALL` / `GRANT ALL PRIVILEGES`, subsequent RLS disable commands, and any direct `GRANT` to `PUBLIC`, `anon` or `authenticated` for the new table. Browser-readable tables require a separate security design and explicit modification of this default-private policy. Its regex-based check is a guardrail, **not a full SQL parser, security audit or live role test**. Manually review unusual SQL, existing migrations, grants on functions, and actual hosted role privileges.
+
+Current verified production and isolated QA Custom tables (`custom_nine_issued_challenges`, `custom_nine_completed_results`, `custom_lineup_creation_budgets`) already have RLS and server-role SELECT/INSERT grants, with browser SELECT denied. This change requires no blanket production GRANT or migration rewrite.
+
 For Daily editorial mutations, the authoritative path is the server-side Daily workflow and `packages/daily` lifecycle over the Supabase repository adapter. Do not write `daily_editorial_puzzles` directly from browser code, assistant tooling, SQL transport helpers, or Edge Functions.
 
 The conversational lineup transport is intentionally narrow: `private.dispatch_daily_lineup_chatops(...)` uses `pg_net` plus a token stored in Supabase Vault only to forward one JSON request to the authenticated application route. It contains no lineup or lifecycle rules and is not exposed through the Data API.

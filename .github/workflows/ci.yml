@@ -16,6 +16,13 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: 22
+      - name: Test new public table grants gate
+        run: node --test scripts/check-new-public-table-grants.test.mjs
+      - name: Verify new public table grants
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: node scripts/check-new-public-table-grants.mjs
       - name: Test documentation-impact gate
         run: node --test scripts/check-docs-impact.test.mjs
       - name: Verify documentation impact
