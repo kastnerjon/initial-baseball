@@ -43,3 +43,37 @@
 .custom-lineup-share-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 .custom-lineup-share-actions a { overflow-wrap: anywhere; padding: 10px 0; }
 .custom-lineup-share-actions a:focus-visible { outline: 2px solid var(--clubhouse); outline-offset: 2px; }
+
+/* V2 creator: fixed numbered slots, per-slot canonical search, two-tap swapping. */
+.custom-lineup-slot-picker { min-width: 0; display: grid; gap: 14px; }
+.custom-lineup-count-control { display: flex; flex-wrap: wrap; gap: 12px; align-items: center; justify-content: space-between; }
+.custom-lineup-count-control label { font-weight: 700; }
+.custom-lineup-count-control select { font: inherit; min-height: 44px; min-width: 76px; padding: 8px; border: 1px solid var(--line); border-radius: 6px; background: white; color: var(--ink); }
+.custom-lineup-slot-instructions { font-size: 13px; margin: 0; }
+.custom-lineup-slots { padding: 0; margin: 0; list-style: none; display: grid; gap: 8px; }
+.custom-lineup-slot { min-width: 0; display: grid; grid-template-columns: 24px minmax(0,1fr); gap: 10px; align-items: start; border: 1px solid var(--line-soft); border-radius: 8px; padding: 11px; background: white; }
+.custom-lineup-slot .custom-nine-slot-number { padding-top: 12px; }
+.custom-lineup-slot.swap-source { border-color: var(--clubhouse); background: var(--paper-light); }
+.custom-lineup-slot-content { min-width: 0; }
+.custom-lineup-chosen { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; justify-content: space-between; min-height: 44px; }
+.custom-lineup-chosen .custom-nine-player-name { flex: 1 1 150px; }
+.custom-lineup-slot-actions { display: flex; gap: 6px; flex-wrap: wrap; }
+.custom-lineup-slot-actions button, .custom-lineup-search-input-row button, .custom-lineup-swap-target,
+.custom-lineup-swap-status button { font: inherit; font-size: 13px; min-height: 44px; border: 1px solid var(--line); border-radius: 6px; padding: 8px 12px; background: white; color: var(--clubhouse-deep); cursor: pointer; }
+.custom-lineup-slot-search { display: grid; gap: 6px; min-width: 0; }
+.custom-lineup-search-input-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.custom-lineup-search-input-row input { flex: 1 1 150px; width: 100%; min-width: 0; min-height: 44px; font: inherit; border: 1px solid var(--line); border-radius: 6px; padding: 10px; background: white; color: var(--ink); }
+.custom-lineup-slot-search p { margin: 0; font-size: 12px; }
+.custom-lineup-slot-search ul { list-style: none; padding: 0; margin: 0; display: grid; gap: 4px; }
+.custom-lineup-slot-search li button { width: 100%; display: grid; gap: 3px; text-align: left; border: 1px solid var(--line-soft); border-radius: 6px; padding: 10px; min-height: 44px; background: var(--paper-light); color: var(--ink); cursor: pointer; }
+.custom-lineup-slot-search li button:disabled { opacity: .45; cursor: not-allowed; }
+.custom-lineup-slot-search li small { overflow-wrap: anywhere; color: var(--ink-soft); font-size: 12px; }
+.custom-lineup-swap-status { margin: 0; font-size: 13px; }
+.custom-lineup-swap-status button { margin-left: 6px; }
+.custom-lineup-visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; }
+.custom-lineup-slot-picker button:focus-visible, .custom-lineup-slot-picker select:focus-visible,
+.custom-lineup-slot-picker input:focus-visible { outline: 2px solid var(--clubhouse); outline-offset: 2px; }
+@media (max-width: 540px) {
+  .custom-lineup-slot { grid-template-columns: 18px minmax(0,1fr); gap: 8px; padding: 9px; }
+  .custom-lineup-chosen { align-items: start; }
+}

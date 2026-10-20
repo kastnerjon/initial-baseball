@@ -7,10 +7,12 @@ describe('Custom Nine creator initial view', () => {
   it('stages an accessible 1–10 v2 creator without a public play link or hidden hints', () => {
     const html = renderToStaticMarkup(<CustomNineCreatorView mode="v2" />);
     expect(html).toContain('Create a Custom Lineup');
-    expect(html).toContain('0 / 10 chosen');
-    expect((html.match(/Choose a player/g) ?? []).length).toBe(1);
+    expect(html).toContain('0 / 9 chosen');
+    expect((html.match(/Search player for slot/g) ?? []).length).toBe(9);
+    expect(html).toContain('Number of players');
+    expect(html).toContain('Swap');
     expect(html).toContain('Choose 1–10 different canonical players');
-    expect(html).toContain('Find a player');
+    expect(html).toContain('Search for a player');
     expect(html).toContain('disabled=""');
     expect(html).toContain('Admin-only staging');
     expect(html).toContain('Legacy Custom Nine creator');
@@ -30,5 +32,19 @@ describe('Custom Nine creator initial view', () => {
     expect(html).toContain('Admin-only staging');
     expect(html).not.toContain('canonicalPlayerIds');
     expect(html).not.toContain('SECRET_SIGNED_TOKEN');
+  });
+});
+
+describe('no-sign-in Custom creator draft', () => {
+  it('starts with nine individually searchable numbered positions', () => {
+    const html = renderToStaticMarkup(
+      <CustomNineCreatorView mode="v2" audience="public" gameplayAvailable />,
+    );
+    expect(html).toContain('Name your puzzle');
+    expect(html).toContain('0 / 9 chosen');
+    expect((html.match(/type="search"/g) ?? []).length).toBe(9);
+    expect(html).toContain('Number of players');
+    expect(html).toContain('Create challenge');
+    expect(html).not.toContain('href="/custom/');
   });
 });

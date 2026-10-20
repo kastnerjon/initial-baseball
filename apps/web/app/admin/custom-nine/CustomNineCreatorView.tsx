@@ -3,10 +3,11 @@
 import React, { useEffect, useState, type JSX } from 'react';
 import { parseCustomLineupTitle } from '@initial-baseball/shared';
 import { CustomLineupShareLink } from '../custom-lineup/CustomLineupShareLink';
+import { CustomLineupSlotPicker } from './CustomLineupSlotPicker';
+import { isCompleteCustomLineupSlots, type CustomLineupSlot } from './customLineupSlots';
 import {
   appendCustomNinePlayer,
   isCompleteCustomNineSelection,
-  isCompleteCustomLineupSelection,
   isCustomNineDraftEditable,
   moveCustomNinePlayer,
   removeCustomNinePlayer,
@@ -49,6 +50,7 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
   const [title, setTitle] = useState('');
   const [suggestions, setSuggestions] = useState<SearchCandidate[]>([]);
   const [players, setPlayers] = useState<readonly ChosenCustomNinePlayer[]>([]);
+  const [v2Slots, setV2Slots] = useState<readonly CustomLineupSlot[]>(Array(9).fill(null));
   const [searchBusy, setSearchBusy] = useState(false);
   const [searchError, setSearchError] = useState(false);
   const [issuing, setIssuing] = useState(false);
@@ -59,7 +61,7 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
   const draftEditable = isCustomNineDraftEditable(createdId, issuing);
   const titleValid = parseCustomLineupTitle(title).ok;
   const validSelection = isV2
-    ? isCompleteCustomLineupSelection(players)
+    ? isCompleteCustomLineupSlots(v2Slots)
     : isCompleteCustomNineSelection(players);
   const displayedSlots = isV2
     ? Math.min(maximumPlayers, players.length + 1)
@@ -68,7 +70,7 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
   useEffect(() => {
     const trimmed = query.trim();
     setSearchError(false);
-    if (trimmed.length < 2 || players.length === maximumPlayers || !draftEditable) {
+    if (isV2 || trimmed.length < 2 || players.length === maximumPlayers || !draftEditable) {
       setSuggestions([]);
       setSearchBusy(false);
       return;
@@ -93,7 +95,7 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
       });
     }, 180);
     return () => { clearTimeout(timer); controller.abort(); };
-  }, [query, players.length, draftEditable, maximumPlayers]);
+  }, [query, players.length, draftEditable, maximumPlayers, isV2]);
 
   function add(candidate: SearchCandidate): void {
     if (!draftEditable) return;
@@ -118,7 +120,8 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
         credentials: 'same-origin',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          canonicalPlayerIds: players.map(player => player.playerId),
+          canonicalPlayerIds: isV2 ? v2Slots.map(player => player!.playerId)
+            : players.map(player => player.playerId),
           ...(isPublic ? { title: parseCustomLineupTitle(title).ok ? title : '' } : {}),
         }),
       });
@@ -224,8 +227,9 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
       <section className="custom-nine-creator-card" aria-labelledby="custom-nine-lineup-heading">
         <div className="custom-nine-creator-heading">
           <h2 id="custom-nine-lineup-heading">Your lineup</h2>
-          <span>{players.length} / {maximumPlayers} chosen</span>
+          <span>{isV2 ? v2Slots.filter(Boolean).length : players.length} / {isV2 ? v2Slots.length : maximumPlayers} chosen</span>
         </div>
+        {isV2 ? <CustomLineupSlotPicker slots={v2Slots} onChange={setV2Slots} editable={draftEditable} /> : <>
         <ol className="custom-nine-creator-players">
           {Array.from({ length: displayedSlots }, (_, index) => {
             const player = players[index];
@@ -281,6 +285,7 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
             </ul>
           ) : null}
         </div>
+        </>}
         <div className="custom-nine-create-action">
           <button type="button" disabled={!validSelection || !draftEditable || (isPublic && !titleValid)}
             onClick={() => { void issue(); }}>
@@ -313,6 +318,7 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
               </>}
               <button type="button" onClick={() => {
                 setPlayers([]);
+                setV2Slots(Array(9).fill(null));
                 setQuery('');
                 setTitle('');
                 setSuggestions([]);
