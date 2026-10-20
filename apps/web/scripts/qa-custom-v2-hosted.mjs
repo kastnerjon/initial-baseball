@@ -2,6 +2,7 @@
 // Explicit, destructive-to-fixture HTTP acceptance. NEVER point at production.
 // Starts its own localhost Next server with validated isolated project credentials.
 import assert from 'node:assert/strict';
+import { randomBytes } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { createServer } from 'node:net';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -296,11 +297,81 @@ async function alternativeFinish(mode) {
   console.log('PASS Custom v2 hosted DB ' + mode);
 }
 
+/** QA-only quota exercise; synthetic local ingress is not a Vercel WAF proof. */
+// Database rate windows are fixed epoch-aligned ten-minute buckets. Run every
+// observation inside one stable window; otherwise start again with a fresh IP.
+async function verifyAnonymousCreationBudget() {
+  assert.ok(publicCreatorQa, 'Quota QA requires anonymous mode');
+  const body = { canonicalPlayerIds: players.slice(0, 1), title: 'QA private quota fixture' };
+  const windowMs = 10 * 60 * 1000;
+  const guardMs = 30 * 1000;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const now = Date.now();
+    const offset = now % windowMs;
+    if (offset < guardMs || offset > windowMs - 90 * 1000) {
+      // Avoid a false pass/failure at DB bucket rollover, without emitting
+      // any quota evidence from the ambiguous portion of the window.
+      const waitMs = offset < guardMs
+        ? guardMs - offset
+        : windowMs - offset + guardMs;
+      await new Promise(resolve => setTimeout(resolve, waitMs));
+    }
+    const begin = Date.now();
+    const window = Math.floor(begin / windowMs);
+    const randomTestIp = () => {
+      const groups = randomBytes(12).toString('hex').match(/.{4}/g);
+      assert.ok(groups && groups.length === 6);
+      return '2001:db8:' + groups.join(':');
+    };
+    const ip = randomTestIp();
+    const creator = browser();
+    const malformed = await creator.send('/api/custom-lineup/create', {
+      qaForwardedIp: ip, body: { ...body, canonicalPlayerIds: [] },
+    });
+    const accepted = [];
+    for (let i = 0; i < 10; i++) {
+      accepted.push(await creator.send('/api/custom-lineup/create', {
+        qaForwardedIp: ip, body,
+      }));
+    }
+    const denied = await creator.send('/api/custom-lineup/create', {
+      qaForwardedIp: ip, body,
+    });
+    const independent = await browser().send('/api/custom-lineup/create', {
+      qaForwardedIp: randomTestIp(), body,
+    });
+    const finish = Date.now();
+    if (Math.floor(finish / windowMs) !== window
+      || finish % windowMs > windowMs - guardMs) {
+      console.log('QA budget test crossed a ten-minute bucket; retrying with fresh IP');
+      continue;
+    }
+    assert.equal(malformed.status, 400, 'Malformed selection must fail before quota');
+    assert.deepEqual(malformed.data, { error: 'invalid_selection' });
+    for (const response of accepted) {
+      assert.equal(response.status, 201, 'First ten same-IP requests must be admitted');
+      assert.match(response.data?.puzzleId ?? '', /^custom-lineup-v2-[0-9a-f-]{36}$/);
+    }
+    assert.equal(denied.status, 429, 'Eleventh same-IP request must be denied');
+    assert.deepEqual(denied.data, { error: 'creation_limit_reached' });
+    const retry = Number(denied.headers.get('retry-after'));
+    assert.ok(Number.isInteger(retry) && retry >= 1 && retry <= 600,
+      'Ten-minute fixed window must provide a positive Retry-After');
+    assert.equal(denied.headers.get('set-cookie'), null,
+      'Denied request must not issue an owner-preview cookie');
+    assert.equal(independent.status, 201, 'Unrelated IP budget must be independent');
+    console.log('PASS QA creation budget: ten accepted, eleventh denied, other IP admitted');
+    return;
+  }
+  throw new Error('Could not verify quota within one stable ten-minute database window');
+}
+
 const server = await startValidatedWebServer();
 try {
   for (const n of acceptedLengths) await play(n);
   await alternativeFinish('third-strike');
   await alternativeFinish('give-up');
+  if (publicCreatorQa) await verifyAnonymousCreationBudget();
   console.log('Hosted Custom v2 ' + (publicCreatorQa
     ? 'QA-only simulated-ingress anonymous creator + friend'
     : 'admin creator + friend') + ' acceptance passed on isolated nonproduction project.');
