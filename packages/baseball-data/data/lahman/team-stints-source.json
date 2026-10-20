@@ -1,0 +1,20 @@
+{
+  "source": "SABR Lahman 1871\u20132025 CSV release, unedited mirror",
+  "publisher": "https://sabr.org/lahman-database/",
+  "documentation": "https://sabr.box.com/shared/static/qtgh1olzcaauz5x234wqx8huixizff8l.txt",
+  "license": "CC BY-SA 3.0; see publisher documentation",
+  "revision": "0377e0b8d3f1b8f6710cc4faee7d842d0e81f344",
+  "projection": "Only playerID/yearID/stint/teamID for multi-team player-seasons already in committed Appearances; no stats/player refresh.",
+  "sources": [
+    {
+      "table": "Batting",
+      "url": "https://raw.githubusercontent.com/cbwinslow/lahman-database-csv/0377e0b8d3f1b8f6710cc4faee7d842d0e81f344/data/Batting.csv",
+      "sha256": "007551e2fe3072aff396a8573de61dceabe14dbf8de20038c8b60e2abe16978f"
+    },
+    {
+      "table": "Pitching",
+      "url": "https://raw.githubusercontent.com/cbwinslow/lahman-database-csv/0377e0b8d3f1b8f6710cc4faee7d842d0e81f344/data/Pitching.csv",
+      "sha256": "dbbe1baeb0a0fd81c1843a19eb4967e3d86c073fbe51bf96581bfd9faae35951"
+    }
+  ]
+}

@@ -90,6 +90,21 @@ if (banks) {
   check(reveal.seasons.find(season => season.season === 1953)?.advanced?.onBasePercentage?.toFixed(3) === '0.385', 'Ernie Banks 1953 OBP regression failed.');
 }
 
+for (const [id, year, expected] of [
+  ['abreubo01', 2006, 'PHI,NYY'],
+  ['piazzmi01', 1998, 'LAD,FLA,NYM'],
+  ['alyeabr01', 1972, 'OAK,STL,OAK'],
+]) {
+  const player = byLahman.get(id);
+  check(Boolean(player), 'Missing chronology regression: ' + id);
+  if (!player) continue;
+  const reveal = accessor.getReveal(player.playerId);
+  check(reveal.seasons.find(row => row.season === year)?.teamIdentities?.map(team => team.abbreviation).join(',') === expected,
+    'Sourced season chronology mismatch: ' + id);
+  if (id === 'abreubo01') check(reveal.career.teamIdentities?.map(team => team.abbreviation).join(',') === 'HOU,PHI,NYY,LAA,LAD,NYM',
+    'Abreu fabricated career return regression.');
+}
+
 const redirectPayload = JSON.parse(readFileSync(resolve(
   runtimeDirectory,
   'legacy-redirects.json',

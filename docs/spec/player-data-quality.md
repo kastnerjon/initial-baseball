@@ -82,6 +82,10 @@ Multiple team rows for the same player-season are aggregated into one season car
 
 Season enrichment owns season-level advanced or separately sourced facts such as OPS and future WAR, OPS+, ERA+, awards, All-Star selections, voting finishes, and league-leading status.
 
+### Sourced team chronology
+
+Runtime season display identities and prospective Teams hints use committed Lahman `TeamStints.csv` for within-season club order. The compact projection preserves source `stint` numbers from pinned full batting/pitching tables, scoped to existing multi-team appearance seasons; its provenance/checksums are in `team-stints-source.json`. Reproduce it with `node packages/baseball-data/scripts/project-team-stints.mjs <pinned-Batting.csv> <pinned-Pitching.csv>`. Normal builds do not fetch those sources. Conflicting or incomplete sequences fail generation; alphabetical order is never used as historical evidence. Repeated adjacent clubs collapse in career display; later returns, including sourced within-season returns, survive. This represents Lahman appearance stints, not a complete transaction ledger. Issued hint snapshots and historical saved results are unchanged.
+
 ## Career ownership
 
 Career aggregates are exact rollups of accepted canonical seasons. Career cards own the career range, teams, primary position, player classification, direct career summaries, and references to every canonical season.

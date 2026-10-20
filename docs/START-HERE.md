@@ -1,5 +1,10 @@
 # Initial Baseball — Start Here
 
+## October 20 — Sourced intra-season team chronology
+
+Bobby Abreu exposed #451's invalid alphabetical same-year fallback. The bounded correction restores pinned Lahman stint evidence for all represented multi-team seasons, shares ordering between canonical reveals and prospective Teams hints, and preserves genuine returns. Existing issued hints remain immutable. Scope and release evidence: `tasks/plans/team-stint-chronology.md`. Public Custom activation remains OFF; #434 remains deferred.
+
+
 ## October 18 named Custom publishing/search direction (#441)
 
 The owner confirmed **every newly created Custom Lineup must have a name**, private by default, eligible for deliberate public publishing/unpublishing through a separate anonymous-owner management capability (not the playable URL or creator-preview cookie). Public Discover searches titles and voluntary creator display aliases; most-played weekly/all-time rankings count only accepted noncreator completed first attempts, not views/replays. This is sequenced after unlisted 1–10 creator release and review gates. The portable 3–60-code-point title validator is staging only: no current API, database, or UI enforcement. Plan: `tasks/plans/community-custom-lineups.md`; issue #441.

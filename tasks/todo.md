@@ -1,5 +1,10 @@
 # Initial Baseball Current Work
 
+## October 20 — Sourced intra-season team chronology
+
+Bobby Abreu exposed #451's invalid alphabetical same-year fallback. The bounded correction restores pinned Lahman stint evidence for all represented multi-team seasons, shares ordering between canonical reveals and prospective Teams hints, and preserves genuine returns. Existing issued hints remain immutable. Scope and release evidence: `tasks/plans/team-stint-chronology.md`. Public Custom activation remains OFF; #434 remains deferred.
+
+
 ## October 20 — Explicit Supabase grants safeguard
 
 - [ ] Enforce least-privilege `GRANT`, `REVOKE` and RLS in **new public table migration files** during CI, ahead of Supabase's October 30 default-grant policy change. Existing production and QA Custom tables have explicitly verified service-role grants and browser SELECT denial. No live grant mutations; scope: `tasks/plans/supabase-explicit-table-grants.md`.

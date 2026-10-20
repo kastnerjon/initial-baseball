@@ -2,7 +2,7 @@ import { readdirSync, readFileSync, renameSync, writeFileSync } from 'node:fs';
 import { randomUUID } from 'node:crypto';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
-import { buildTeamDisplayIdentityIndex, collapseChronologicalTeamStints, parseCsv } from './team-display-identities.mjs';
+import { buildTeamDisplayIdentityIndex, collapseChronologicalTeamStints, buildTeamStintIndex, resolveTeamDisplayIdentities, parseCsv } from './team-display-identities.mjs';
 
 const packageRoot = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const readJson = (path) => JSON.parse(readFileSync(resolve(packageRoot, path), 'utf8'));
@@ -27,15 +27,23 @@ const teamDisplayIndex = buildTeamDisplayIdentityIndex(
   readFileSync(resolve(packageRoot, 'data/lahman/Teams.csv'), 'utf8'),
 );
 
+const stintIndex = buildTeamStintIndex(readFileSync(resolve(packageRoot, 'data/lahman/TeamStints.csv'), 'utf8'));
 const historyByLahmanId = new Map();
+const appearances = new Map();
 for (const row of readRows('data/lahman/Appearances.csv')) {
   const year = Number.parseInt(row.yearID, 10);
   if (!row.playerID || !row.teamID || !Number.isInteger(year)) continue;
-  const history = historyByLahmanId.get(row.playerID) ?? [];
-  const identity = teamDisplayIndex.get(`${year}:${row.teamID}`);
-  if (!identity) throw new Error(`Missing team display identity for ${year}:${row.teamID}`);
-  history.push({ year, abbreviation: identity.abbreviation });
-  historyByLahmanId.set(row.playerID, history);
+  const key = row.playerID + ':' + year;
+  const season = appearances.get(key) ?? { playerId: row.playerID, year, teamIds: [] };
+  season.teamIds.push(row.teamID);
+  appearances.set(key, season);
+}
+for (const { playerId, year, teamIds } of appearances.values()) {
+  const history = historyByLahmanId.get(playerId) ?? [];
+  for (const identity of resolveTeamDisplayIdentities({
+    season: year, teamIds, index: teamDisplayIndex, lahmanPlayerId: playerId, stintIndex,
+  })) history.push({ year, abbreviation: identity.abbreviation });
+  historyByLahmanId.set(playerId, history);
 }
 
 const lahmanByName = new Map();

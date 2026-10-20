@@ -5,6 +5,7 @@ import { fileURLToPath } from 'node:url';
 import {
   auditTeamDisplayIdentityCoverage,
   buildTeamDisplayIdentityIndex,
+  buildTeamStintIndex,
   collapseCareerTeamDisplayIdentities,
   resolveTeamDisplayIdentities,
 } from './team-display-identities.mjs';
@@ -24,6 +25,8 @@ const inputs = {
 };
 const teamDisplaySource = readText(resolve(packageDir, 'data/lahman/Teams.csv'));
 const teamDisplayIndex = buildTeamDisplayIdentityIndex(teamDisplaySource.text);
+const teamStintSource = readText(resolve(packageDir, 'data/lahman/TeamStints.csv'));
+const teamStintIndex = buildTeamStintIndex(teamStintSource.text);
 const seasonCards = inputs.seasonCards.value.cards ?? [];
 const teamDisplayAudit = auditTeamDisplayIdentityCoverage({ seasons: seasonCards, index: teamDisplayIndex });
 
@@ -59,6 +62,7 @@ regression({ reveals, playerIndex, issues });
 const sourceManifest = {
   ...Object.fromEntries(Object.entries(inputs).map(([name, input]) => [name, manifestJson(input)])),
   teams: manifestText(teamDisplaySource),
+  teamStints: manifestText(teamStintSource),
 };
 const shards = buildShards(reveals);
 const shardManifest = [];
@@ -119,6 +123,8 @@ function buildReveal(card) {
         teamIds: [...(seasonCard.teamIds ?? [])],
         teamIdentities: resolveTeamDisplayIdentities({
           season: seasonCard.season,
+          lahmanPlayerId: card.lahmanPlayerId,
+          stintIndex: teamStintIndex,
           teamIds: seasonCard.teamIds,
           index: teamDisplayIndex,
         }),
@@ -202,7 +208,7 @@ function validate({ reveals, playerIndex, runtimeRedirects, excludedRedirects, i
       seenSeasonKeys.add(key);
       const enrichmentRow = seasonEnrichmentByKey.get(key);
       if (!enrichmentRow || enrichmentRow.lahmanPlayerId !== reveal.lahmanPlayerId) out.push(`Missing runtime season enrichment: ${key}`);
-      if (season.teamIds.length !== season.teamIdentities.length) out.push(`Team display identity count mismatch: ${key}`);
+      if (season.teamIds.length !== new Set(season.teamIdentities.map(team => team.sourceTeamId)).size) out.push(`Team display identity count mismatch: ${key}`);
       for (const identity of season.teamIdentities) {
         if (!season.teamIds.includes(identity.sourceTeamId)) out.push(`Team display source ID mismatch: ${key}:${identity.sourceTeamId}`);
       }
