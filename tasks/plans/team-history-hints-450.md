@@ -9,7 +9,7 @@
 - Stop conditions: Any proposed change to frozen issued hints, canonical identity, data coverage or security boundary must go to a separate decision.
 
 ## Findings and compatibility
-Legacy generated player `teamsDisplay` was sorted by first year, globally deduplicated and sliced to five. Canonical career display identities were globally deduplicated and sorted alphabetically, and the Web reveal view model performed another global dedup. Source data supports season-level club appearances; intra-year transaction order is unavailable and uses a stable club-code fallback. Adjacent chronological club rows collapse into one stint; a later return is preserved.
+Legacy generated player `teamsDisplay` was sorted by first year, globally deduplicated and sliced to five. Canonical career display identities were globally deduplicated and sorted alphabetically, and the Web reveal view model performed another global dedup. The #451 implementation used an alphabetical same-year fallback because the slim committed tables omitted stint. This was incorrect as chronology and is superseded by the sourced stint correction in `team-stint-chronology.md`. Adjacent chronological club rows collapse into one stint; a later return is preserved.
 
 A lightweight offline derivation from committed Lahman appearance/team facts and reviewed player identities corrects existing legacy team lists during build/test without changing the committed player population or season coverage. Historical issued Daily/Archive/Custom hint snapshots remain frozen and may retain original five-club values.
 

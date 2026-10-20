@@ -37,9 +37,37 @@ export function buildTeamDisplayIdentityIndex(csvText) {
   return index;
 }
 
-export function resolveTeamDisplayIdentities({ season, teamIds, index }) {
-  return [...new Set(teamIds ?? [])]
-    .sort()
+export function buildTeamStintIndex(csvText) {
+  const index = new Map();
+  for (const row of parseCsv(csvText)) {
+    const key = row.playerID + ':' + row.yearID;
+    const stint = Number(row.stint);
+    if (!row.playerID || !row.teamID || !Number.isInteger(stint) || stint < 1) {
+      throw new Error('Invalid sourced team stint: ' + key);
+    }
+    const sequence = index.get(key) ?? new Map();
+    if (sequence.has(stint) && sequence.get(stint) !== row.teamID) {
+      throw new Error('Conflicting sourced team stint: ' + key);
+    }
+    sequence.set(stint, row.teamID);
+    index.set(key, sequence);
+  }
+  return index;
+}
+
+export function resolveTeamDisplayIdentities({ season, teamIds, index, lahmanPlayerId, stintIndex }) {
+  const teams = [...new Set(teamIds ?? [])];
+  let ordered = teams;
+  if (teams.length > 1) {
+    const sequence = stintIndex?.get(lahmanPlayerId + ':' + season);
+    const sourced = sequence ? [...sequence].sort(([a], [b]) => a - b).map(([, team]) => team) : [];
+    const represented = new Set(sourced);
+    if (represented.size !== teams.length || teams.some(team => !represented.has(team))) {
+      throw new Error('Missing or incomplete team sequence: ' + lahmanPlayerId + ':' + season);
+    }
+    ordered = sourced;
+  }
+  return ordered
     .map((sourceTeamId) => {
       const identity = index.get(teamIdentityKey(season, sourceTeamId));
       if (!identity) {
@@ -53,8 +81,7 @@ export function resolveTeamDisplayIdentities({ season, teamIds, index }) {
 // Adjacent seasons collapse, but later returns remain visible.
 export function collapseChronologicalTeamStints(history) {
   const ordered = [...history].filter((team) => team.abbreviation)
-    .sort((left, right) => left.year - right.year
-      || left.abbreviation.localeCompare(right.abbreviation));
+    .sort((left, right) => left.year - right.year);
   const stints = [];
   for (const team of ordered) {
     if (stints.at(-1)?.abbreviation !== team.abbreviation) {
