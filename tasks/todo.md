@@ -1,5 +1,9 @@
 # Initial Baseball Current Work
 
+## October 20 — Native Custom share action
+
+- [ ] Add capability-detected native Share action for issued unlisted Custom Lineups, preserving the original Copy link and selectable URL fallback. No owner capability in share data; no production flag changes. Scope: `tasks/plans/custom-native-share.md`.
+
 ## October 20 — Gated Custom creator navigation
 
 - [ ] Stage a `Create a Lineup` entry on the normal Daily footer only when **both** Custom v2 gameplay and public creation are server-enabled, with a return-to-Daily link, mobile wrapping and no changed production flags. Scope: `tasks/plans/custom-creator-navigation.md`.
