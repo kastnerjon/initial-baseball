@@ -2,6 +2,7 @@
 // Explicit, destructive-to-fixture HTTP acceptance. NEVER point at production.
 // Starts its own localhost Next server with validated isolated project credentials.
 import assert from 'node:assert/strict';
+import { randomBytes } from 'node:crypto';
 import { spawn } from 'node:child_process';
 import { createServer } from 'node:net';
 import { setTimeout as delay } from 'node:timers/promises';
@@ -296,11 +297,54 @@ async function alternativeFinish(mode) {
   console.log('PASS Custom v2 hosted DB ' + mode);
 }
 
+/** QA-only quota exercise; synthetic local ingress is not a Vercel WAF proof. */
+async function verifyAnonymousCreationBudget() {
+  assert.ok(publicCreatorQa, 'Quota QA requires anonymous mode');
+  const groups = randomBytes(12).toString('hex').match(/.{4}/g);
+  assert.ok(groups && groups.length === 6);
+  const ip = '2001:db8:' + groups.join(':');
+  const creator = browser();
+  const body = { canonicalPlayerIds: players.slice(0, 1), title: 'QA private quota fixture' };
+
+  const malformed = await creator.send('/api/custom-lineup/create', {
+    qaForwardedIp: ip, body: { ...body, canonicalPlayerIds: [] },
+  });
+  assert.equal(malformed.status, 400, 'Malformed selection must fail before quota');
+  assert.deepEqual(malformed.data, { error: 'invalid_selection' });
+  for (let i = 0; i < 10; i++) {
+    const response = await creator.send('/api/custom-lineup/create', {
+      qaForwardedIp: ip, body,
+    });
+    assert.equal(response.status, 201, 'First ten same-IP requests must be admitted');
+    assert.match(response.data?.puzzleId ?? '', /^custom-lineup-v2-[0-9a-f-]{36}$/);
+  }
+
+  const denied = await creator.send('/api/custom-lineup/create', {
+    qaForwardedIp: ip, body,
+  });
+  assert.equal(denied.status, 429, 'Eleventh same-IP request must be denied');
+  assert.deepEqual(denied.data, { error: 'creation_limit_reached' });
+  const retry = Number(denied.headers.get('retry-after'));
+  assert.ok(Number.isInteger(retry) && retry >= 1 && retry <= 600,
+    'Ten-minute sliding window must provide a positive Retry-After');
+  assert.equal(denied.headers.get('set-cookie'), null,
+    'Denied request must not issue an owner-preview cookie');
+
+  const second = randomBytes(12).toString('hex').match(/.{4}/g);
+  assert.ok(second && second.length === 6);
+  const independent = await browser().send('/api/custom-lineup/create', {
+    qaForwardedIp: '2001:db8:' + second.join(':'), body,
+  });
+  assert.equal(independent.status, 201, 'Unrelated IP budget must be independent');
+  console.log('PASS QA creation budget: ten accepted, eleventh denied, other IP admitted');
+}
+
 const server = await startValidatedWebServer();
 try {
   for (const n of acceptedLengths) await play(n);
   await alternativeFinish('third-strike');
   await alternativeFinish('give-up');
+  if (publicCreatorQa) await verifyAnonymousCreationBudget();
   console.log('Hosted Custom v2 ' + (publicCreatorQa
     ? 'QA-only simulated-ingress anonymous creator + friend'
     : 'admin creator + friend') + ' acceptance passed on isolated nonproduction project.');

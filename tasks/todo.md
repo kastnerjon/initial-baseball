@@ -1,5 +1,9 @@
 # Initial Baseball Current Work
 
+## October 20 — Live QA Custom creation budget threshold
+
+- [ ] In the guarded no-sign-in hosted QA runner, prove malformed requests are zero quota cost, ten same-IP valid creations succeed, the eleventh returns 429/Retry-After without a cookie, and a different IP remains admissible. Never treat synthetic Vercel headers as a real ingress/WAF check. Requires QA-only credentials and no production feature activation. Scope: `tasks/plans/custom-v2-creation-quota-hosted-qa.md`.
+
 ## October 20 — Pre-quota Custom selection validation
 
 - [ ] Reuse the portable 1–10 player-selection validator before spending the no-login Custom creation budget; malformed, duplicate and out-of-range requests return a sanitized 400 without quota cost. Canonical player existence and hint availability remain authoritative in issuance. No activation changes. Scope: `tasks/plans/custom-prequota-validation.md`.

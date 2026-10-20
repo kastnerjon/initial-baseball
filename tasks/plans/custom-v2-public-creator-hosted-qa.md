@@ -18,6 +18,10 @@ Also supply an independent (at least 32-character) **QA-only** `CUSTOM_LINEUP_CR
 
 Only the Next child process is set to simulated `VERCEL=1, VERCEL_ENV=preview`. Twelve fixture issuances each use a distinct reserved TEST-NET IPv4 address (`192.0.2.0/24`) to avoid exhausting the same ten/ten-minute per-IP budget. This simulation tests our *application* boundary on local HTTP. **It does not prove that Vercel actually overwrites the ingress header**, that firewall thresholds work, or that the application behaves on iOS/Android.
 
+## Additional QA-only quota evidence
+
+When public-creator QA is opted in, the runner now also uses one fresh reserved-documentation IPv6 address for 11 consecutive valid create calls (10 accepted, 11th 429 with Retry-After) and checks that a malformed selection does not spend quota. A separate randomized address remains independently admissible. The acceptance run creates 11 additional disposable challenge rows; it does not alter the API's quota semantics or prove real Vercel ingress/WAF behavior. This live QA scenario **still requires separately provisioned QA-only credentials** and is not run by the default CI startup-guard tests. Details: `tasks/plans/custom-v2-creation-quota-hosted-qa.md`.
+
 ## Assertions and release boundaries
 The opt-in variant:
 1. Loads the guarded `/create` page; creates named N=1–10 unlisted challenges using `POST /api/custom-lineup/create` without Basic auth.
