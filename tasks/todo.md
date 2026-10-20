@@ -1,5 +1,9 @@
 # Initial Baseball Current Work
 
+## October 20 — Gated Custom creator navigation
+
+- [ ] Stage a `Create a Lineup` entry on the normal Daily footer only when **both** Custom v2 gameplay and public creation are server-enabled, with a return-to-Daily link, mobile wrapping and no changed production flags. Scope: `tasks/plans/custom-creator-navigation.md`.
+
 ## October 19 — No-sign-in creator end-to-end QA harness (#454)
 
 - [ ] Run the opt-in isolated-hosted anonymous creator → owner-code → share → friend 1–10 acceptance harness with QA-only secrets; do not confuse locally simulated Vercel forwarded headers with genuine platform trust. Default admin suite remains unchanged. Actual Vercel ingress/WAF, mobile, v1 regression, rollback and activation checks are still required before public launch. Scope: `tasks/plans/custom-v2-public-creator-hosted-qa.md`.

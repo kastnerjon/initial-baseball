@@ -24,6 +24,8 @@ describe('default-off no-sign-in Custom creation screen', () => {
     vi.stubEnv('CUSTOM_LINEUP_V2_GAMEPLAY_TRANSPORT_ENABLED', 'true');
     const html = renderToStaticMarkup(<CreateLineupPage />);
     expect(html).toContain('Create a Lineup');
+    expect(html).toContain('href="/"');
+    expect(html).toContain('Back to Daily Nine');
     expect(html).toContain('Name your puzzle');
     expect(html).toContain('Puzzle name (3–60 characters)');
     expect(html).toContain('0 / 10 chosen');
