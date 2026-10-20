@@ -2,12 +2,14 @@ import type { JSX } from 'react';
 import { CLASSIC_DAILY_RULESET_VERSION } from '@initial-baseball/shared';
 import type { DailyBootstrapRulesetVersion } from '../dailyRuntimeContracts';
 import { isClassicInningEnabled } from '../gameAvailability';
+import { isCustomLineupV2GameplayTransportEnabled } from '../serverCustomLineupV2GameplayHttp';
 import { getPacificDailyDateString } from '../getPacificDailyDateString';
 import { dailyRuntime } from '../serverCanonicalRuntime';
 import { getDailyHowToContent } from '../dailyHowTo';
 import { DailyHowToDialog } from './DailyHowToDialog';
 import { DailyInningGame } from './DailyInningGame';
 import { DailyModeNavigation } from './DailyModeNavigation';
+import { DailyFooter } from './DailyFooter';
 
 type DailyModePageProps = {
   rulesetVersion: DailyBootstrapRulesetVersion;
@@ -59,11 +61,10 @@ export async function DailyModePage({ rulesetVersion }: DailyModePageProps): Pro
           initialHintBundle={bootstrap.hintBundle}
         />
 
-        <footer className="daily-footer">
-          <a href="/archive">Play the archive</a>
-          <span>One lineup every day.</span>
-          <span>New puzzle · Midnight Pacific</span>
-        </footer>
+        <DailyFooter createLineupAvailable={
+          process.env.CUSTOM_LINEUP_PUBLIC_CREATION_ENABLED === 'true'
+            && isCustomLineupV2GameplayTransportEnabled()
+        } />
       </section>
     </main>
   );

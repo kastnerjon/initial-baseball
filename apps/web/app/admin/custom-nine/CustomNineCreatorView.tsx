@@ -195,7 +195,10 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
           : isV2
           ? 'Choose 1–10 different canonical players in batting order. Players and clues are frozen when issued.'
           : 'Select exactly nine different canonical players in batting order. Players and their clues are frozen when you issue the challenge.'}</p>
-        {isPublic ? <p>Your lineup is unlisted: only friends with your link can play it.</p> : <>
+        {isPublic ? <>
+          <p>Your lineup is unlisted: only friends with your link can play it.</p>
+          <p><a href="/">Back to Daily Nine</a></p>
+        </> : <>
           <p><a href="/admin/daily">Back to Daily administration</a></p>
           <p><a href={isV2 ? '/admin/custom-nine' : '/admin/custom-lineup'}>
             {isV2 ? 'Legacy Custom Nine creator' : 'Custom Lineup 1–10 creator'}
