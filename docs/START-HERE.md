@@ -1,5 +1,10 @@
 # Initial Baseball — Start Here
 
+## October 20 — My Results from retained browser completions
+
+#460 chronology and #461 autocomplete are merged and production-verified at `272322e`; main CI #39490352765 SUCCESS and production `dpl_6pF8CxiRV7Mzrp7NHEBAHcboWktn` READY. Live search/routes and recent runtime scan passed. Custom live release remains blocked by the absent QA-only service credential and unverified actual ingress/WAF/physical mobile checks; production gates remain OFF and no DB/config was changed. Current bounded fallback priority is #437: read-only My Results over exact-identity first-completion records retained in this browser, without re-admission, practice substitution or inferred history. Scope: `tasks/plans/browser-completed-game-history.md`.
+
+
 ## October 20 — Numbered Custom creator staging
 
 Owner-approved Custom v2 creator UX defaults to nine numbered vertical slots (selectable

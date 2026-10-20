@@ -12,7 +12,7 @@ import {
   type DailyRulesetVersion,
 } from '@initial-baseball/shared';
 
-const STORAGE_PREFIX = 'initial-baseball:daily-result-submission:v1';
+export const DAILY_COMPLETED_RESULT_STORAGE_PREFIX = 'initial-baseball:daily-result-submission:v1';
 const RECORD_VERSION = 1 as const;
 
 type StoragePort = Pick<Storage, 'getItem' | 'setItem'>;
@@ -77,7 +77,7 @@ export function createDailyCompletedResultClient({
         puzzleNumber: input.puzzle.puzzleNumber,
         rulesetVersion: input.rulesetVersion,
       };
-      const key = storageKey(identity);
+      const key = getDailyCompletedResultStorageKey(identity);
       const existing = readRecord(storage, key, identity);
       if (existing.kind === 'invalid') return 'unavailable';
 
@@ -146,7 +146,7 @@ async function deliver(
   const status = responseStatus(response);
   if (status === 'pending') return status;
 
-  const current = readRawRecord(storage, key);
+  const current = readStoredDailyCompletedResult(storage, key);
   if (current.kind !== 'valid') return 'pending';
   if (current.record.submission.submissionId !== record.submission.submissionId) {
     return current.record.status;
@@ -163,7 +163,7 @@ function responseStatus(response: { ok: boolean; status: number }): RecordStatus
 }
 
 function readRecord(storage: StoragePort, key: string, identity: Identity): RecordRead {
-  const result = readRawRecord(storage, key);
+  const result = readStoredDailyCompletedResult(storage, key);
   if (result.kind !== 'valid') return result;
   const value = result.record.submission;
   return value.puzzleId === identity.puzzleId
@@ -174,7 +174,7 @@ function readRecord(storage: StoragePort, key: string, identity: Identity): Reco
     : { kind: 'invalid' };
 }
 
-function readRawRecord(storage: StoragePort, key: string): RecordRead {
+export function readStoredDailyCompletedResult(storage: Pick<Storage, 'getItem'>, key: string): RecordRead {
   let raw: string | null;
   try {
     raw = storage.getItem(key);
@@ -219,9 +219,9 @@ function writeRecord(storage: StoragePort, key: string, record: SubmissionRecord
   }
 }
 
-function storageKey(identity: Pick<Identity, 'puzzleId' | 'puzzleDate' | 'rulesetVersion'>): string {
+export function getDailyCompletedResultStorageKey(identity: Pick<Identity, 'puzzleId' | 'puzzleDate' | 'rulesetVersion'>): string {
   return [
-    STORAGE_PREFIX,
+    DAILY_COMPLETED_RESULT_STORAGE_PREFIX,
     identity.rulesetVersion,
     identity.puzzleDate,
     encodeURIComponent(identity.puzzleId),
