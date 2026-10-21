@@ -4,7 +4,7 @@
 
 - **Goal:** Make the agreed nine-default, 1–10-player Custom creator repeatably testable at mobile and desktop widths before public activation.
 - **Owning layer:** `apps/web/scripts`, QA harness only.
-- **In scope:** Disposable localhost Next.js server, browser-mocked player search and create POST, default nine slots, all lengths 1–10, canonical ID ordering, playing years and teams, duplicate prevention, two-tap swaps, keyboard Escape, issued lock, separate owner credential, and no horizontal overflow from 320–1280px.
+- **In scope:** Disposable localhost Next.js server, browser-mocked player search and create POST, default nine slots, all lengths 1–10, canonical ID ordering, playing years and teams, duplicate prevention, two-tap swaps, keyboard Escape, issued lock, separate owner credential, and no horizontal overflow from 320–1280px before or after issuance (including the private owner code/share URL); a mocked HTTP 429 followed by retry preserves the same draft.
 - **Out of scope:** Production code paths, live issuance, Supabase, genuine Vercel trusted ingress, WAF, physical mobile/Safari, real creator-to-friend gameplay, feature flag activation, new runtime packages or product rules.
 - **Acceptance:** Standalone browser script passes all ten lengths and six widths with no browser errors; existing focused web tests, startup guards, typecheck, size checks, exact-head CI and READY Preview; independent review.
 - **Stop:** Fail closed on missing browser binaries. If genuine backend or security changes are needed, open a separate bounded task rather than changing the production runtime in this PR.
@@ -27,7 +27,7 @@ The test starts a short-lived Next.js server bound to `127.0.0.1`. It enables th
 
 ## Evidence and release boundaries
 
-The browser test proves local interaction and responsive rendering. Mocked issuance is **not** proof of real Supabase persistence, signed friend gameplay, quota enforcement, actual Vercel forwarding-header authentication, WAF effectiveness, or physical Safari/Chrome acceptance. Hosted QA remains in `tasks/plans/custom-v2-public-creator-hosted-qa.md` and requires isolated QA service credentials and explicit later approval. Keep production public creation **OFF**.
+October 21, 2026: in a disposable Chromium sandbox (Playwright 1.58.2, Ubuntu 24.04 platform override for browser installation), the full 1–10 flow passed at six widths both before and after issuance. A first-request mocked HTTP 429 kept the creator selection intact and a retry succeeded with HTTP 201; all 10 successes kept the separate owner code out of the friend share URL. These are simulated HTTP responses, not proof of live quota enforcement. The browser test proves local interaction and responsive rendering. Mocked issuance is **not** proof of real Supabase persistence, signed friend gameplay, quota enforcement, actual Vercel forwarding-header authentication, WAF effectiveness, or physical Safari/Chrome acceptance. Hosted QA remains in `tasks/plans/custom-v2-public-creator-hosted-qa.md` and requires isolated QA service credentials and explicit later approval. Keep production public creation **OFF**.
 
 ## Documentation impact
 
