@@ -1,7 +1,7 @@
 # Daily Inning end-to-end blueprint
 
 Status: Living product source of truth  
-Last updated: 2026-10-20
+Last updated: 2026-10-21
 
 **Custom creator UX (October 20, agreed; implementation staged, public flags OFF):**
 The ordinary-user Custom v2 creator starts with **nine vertically numbered empty slots**,
@@ -11,8 +11,11 @@ and career teams to disambiguate identities. A selected player can be replaced d
 Creators can **Swap** a chosen spot then tap another spot to exchange their complete
 canonical selections, rather than drag and drop. No duplicate canonical identities;
 only a completely filled active lineup can be issued. Shortening the length discards
-trailing slot selections. Original issued puzzles, score rules, owner codes, and server
-security gates do not change. Scope: tasks/plans/custom-lineup-slot-creator.md.
+trailing slot selections. Each new public challenge requires a name and has a separate
+one-time private owner capability. The public `/create` page and no-sign-in issuer are
+staged behind default-off server flags; hosted public creator QA, WAF verification,
+physical-device acceptance and rollback remain release gates. Scope:
+tasks/plans/custom-lineup-slot-creator.md.
 
 ## Product decision
 
@@ -20,11 +23,11 @@ Initial Baseball currently exposes **Daily Nine** as the normal/default browser 
 
 Current Daily numbering is beta and is not the permanent historical sequence. At a later explicit launch decision, permanent numbering restarts at **Daily #1** and prior beta history is not imported into the public archive. Detailed settled direction: `docs/product/beta-launch-results-archive.md`.
 
-October 8 owner decision commits **Daily Nine — Custom Lineup** as the next planned mode after the now-live opt-in leaderboard. It will be a creator-selected immutable, shareable nine-player challenge using the same current Daily Nine gameplay; creators do not contribute competitive scores. **Specific Lineup** (team/era configuration with one shared puzzle per daily configuration) is paused, and head-to-head remains future Classic-engine work. The scoped Custom MVP contract is `tasks/plans/custom-nine-mvp.md`; no custom route or UI is live yet.
+The approved **Custom Lineups** phase follows the existing Daily game: ordinary users create an immutable, unlisted lineup of 1–10 canonical players without signing in, then share a separate friend-play link. Signed server-authoritative gameplay, exact-length scoring and creator-preview exclusion are staged. The public `/create` page and issuer are implemented but remain default-off pending hosted QA, security, physical-mobile and rollback gates. Creators do not contribute to competitive results. **Specific Lineup** (team/era configuration with one shared puzzle per daily configuration) is paused, and head-to-head remains future Classic-engine work.
 
 **Approved Custom Nine future hint customization (not yet implemented):** A creator may optionally choose one ordered four-hint sequence shared by all nine batters, with existing defaults preserved. The candidate catalog includes independent **batting side** and **throwing arm** clues (not an inferred combined handedness hint), and configurable career or explicit-season statistics with separate hitter/pitcher field choices. Only backed, sufficiently covered facts may be issued: missing stats and ambiguous two-way player stats must produce a private creator validation error rather than an invented or silent fallback. Preview all 36 actual clues before issuing a challenge. Once issued, ordered labels and all clues must be immutable and backward-compatible with legacy Custom puzzles; points-v4 scoring and Daily/Archive clues stay unchanged. Neither this direction nor the roadmap authorizes public creation or competitive result activation. Implementation gates: `tasks/plans/custom-nine-configurable-hints.md`. Native and other themed modes remain deferred.
 
-**October 17 corrected owner direction (supersedes the fixed-five roadmap):** Prioritize usable, unlisted **Custom Lineups**: ordinary users choose and order 1–10 real players, issue an immutable challenge, copy a shareable link, and friends play the existing signed hints/scoring/reveal flow. The shipped creator is still admin-only; public creator authorization, abuse controls and hosted acceptance remain release blockers. Private-link sharing is the launch target; public Discover, publishing and leaderboards are separate future features.
+**October 17 corrected owner direction (supersedes the fixed-five roadmap):** Prioritize usable, unlisted **Custom Lineups**: ordinary users choose and order 1–10 real players, issue an immutable named challenge, retain a separate private owner capability, and share a friend-play link for the existing signed hints/scoring/reveal flow. The public creator UI and issuer are staged behind default-off flags. Hosted creator/friend acceptance, route-scoped abuse protection, physical-device acceptance and rollback remain release blockers. Private-link sharing is the launch target; public Discover, publishing and leaderboards are separate future features.
 
 The future daily product is **Daily Lineup**, with an administrator-selected supported length stored in each immutable issued puzzle contract. It is not a separate Daily Five or Daily Nine product. Reuse portable variable-length rules while preserving every historical nine-player puzzle, Archive result, attempt, scoring record and Classic behavior. Do not change a global nine-player constant or infer historical length from a new default. Existing five-only draft code and contract-2 calendar staging are not an approved variable-length implementation; keep `DAILY_FIVE_DRAFT_WRITES_ENABLED` OFF pending reassessment. See `tasks/plans/custom-first-variable-daily-direction.md`. Current public gameplay remains unchanged until its own verified migration.
 
@@ -32,7 +35,7 @@ The admin-only v2 creator presents a copyable same-origin link and creator previ
 
 ### Community Lineups — approved future publishing and discovery (October 13, not live)
 
-Creators will be able to intentionally publish eligible Custom Lineups (1–10 players) into a public **Discover Lineups** directory while retaining private-link-only sharing when unpublished. Discovery will show **This Week**, **All Time** and **New Today**; ranking is based on eligible noncreator accepted completed attempts, not raw page views, and new listings sort by publication time. Every public lineup gets a spoiler-safe detail/play page and exact-challenge results, distribution and optional privacy-reviewed leaderboard. Ranking/card data must not disclose selected player identities or unrevealed clues; zero-result lineups show honest empty states. Public creation, creator ownership recovery, moderation/rate limits and competitive flags require separate rollout gates. The complete sequenced product contract is `tasks/plans/community-custom-lineups.md`, which supersedes prior assumptions that Custom Lineup will remain admin-only or cannot have user-supplied public titles. No public Custom lineup gallery or playable creator route is shipped yet.
+Creators will be able to intentionally publish eligible Custom Lineups (1–10 players) into a public **Discover Lineups** directory while retaining private-link-only sharing when unpublished. Discovery will show **This Week**, **All Time** and **New Today**; ranking is based on eligible noncreator accepted completed attempts, not raw page views, and new listings sort by publication time. Every public lineup gets a spoiler-safe detail/play page and exact-challenge results, distribution and optional privacy-reviewed leaderboard. Ranking/card data must not disclose selected player identities or unrevealed clues; zero-result lineups show honest empty states. The default-off public creator and unlisted share flow are staged; creation flags remain OFF until separate launch gates pass. Public publishing, creator ownership management, moderation, discovery, rate limits and competitive flags require later rollout decisions. The complete sequenced product contract is `tasks/plans/community-custom-lineups.md`, which supersedes prior assumptions that Custom Lineup will remain admin-only or cannot have user-supplied titles. No public Custom gallery, publishing flow or leaderboard is shipped.
 
 ## Core promise
 
