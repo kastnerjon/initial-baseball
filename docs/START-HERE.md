@@ -852,7 +852,9 @@ Remaining hosted editorial checks:
 
 The routine conversational future-lineup workflow itself is no longer a blocker for completed-result work.
 
-## Exact next work order
+## Historical September work order — superseded
+
+This section preserves implementation history, not current instructions. Browser comparison transport, hooks and presentation shipped through PR #319. Follow `tasks/todo.md` and the October checkpoint above for current Custom Lineups launch priorities; do not repeat the completed comparison work below.
 
 1. Read `docs/engineering/resolved-at-bat-review-2026-09-19.md`. Preserve the successful normal-path production proof and R1–R4 repairs. PRs #161/#174 are closed as superseded references.
 2. R1 outbox owner-lifetime fencing is implemented: delivery is bound to a disposable exact attempt/generation session and cleanup invalidates it before lock release. R2 gameplay request fencing is also implemented: Reset, durable restore, persistence-session teardown and owner loss invalidate old Guess/Give Up authority, and stale success/error/finally work cannot affect a replacement request. R3 shared-save authority on journal failure is repaired: lock ownership remains exclusive while contribution is disabled, and unsafe reload/lock-request failures are non-writable. R4 re-bootstrap/current-authority fencing is implemented: equivalent puzzle objects do not restart ownership, true session changes are non-writable until the new session is hydrated, and stale rendered owner state cannot pass the live write boundary. The repo has no mounted React DOM test environment; adding one would cross the explicit dependency decomposition trigger, so the PR uses deterministic authority/session regressions plus preview/production browser verification and records that limitation rather than silently adding test infrastructure.
