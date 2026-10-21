@@ -1,5 +1,20 @@
 # Initial Baseball Current Work
 
+## October 20 — Custom release boundary after real ingress QA
+
+- [x] On an ephemeral Vercel Preview, run seven normal/forged forwarded-header
+  cases against the **existing** creation IP validator. All seven rejected
+  test sentinels; diagnostic PR #466 closed **unmerged**. Evidence:
+  `tasks/plans/custom-v2-live-vercel-ingress-evidence.md`.
+- [x] Run seven existing rollback-only Custom Supabase regression suites on
+  isolated QA; no persistent new fixtures or production DB changes.
+- [ ] Run credential-backed creator → owner → friend signed gameplay against
+  **isolated QA only**, preserving no-login and first-attempt rules.
+- [ ] Configure and prove appropriate reversible route-scoped Vercel WAF/rate
+  protection; active custom config currently returns `404 not_found`.
+- [ ] Real iOS Safari/Android Chrome acceptance and rollback drill; do not
+  enable public Custom creation until all remaining launch gates pass.
+
 ## October 20 — My Results from retained browser completions
 
 #460 chronology and #461 autocomplete are merged and production-verified at `272322e`; main CI #39490352765 SUCCESS and production `dpl_6pF8CxiRV7Mzrp7NHEBAHcboWktn` READY. Live search/routes and recent runtime scan passed. Custom live release remains blocked by the absent QA-only service credential and unverified actual ingress/WAF/physical mobile checks; production gates remain OFF and no DB/config was changed. Current bounded fallback priority is #437: read-only My Results over exact-identity first-completion records retained in this browser, without re-admission, practice substitution or inferred history. Scope: `tasks/plans/browser-completed-game-history.md`.
