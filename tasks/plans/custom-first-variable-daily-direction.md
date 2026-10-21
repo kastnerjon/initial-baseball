@@ -11,10 +11,10 @@
 
 ## Approved direction and implementation sequence
 
-Custom Lineup creation must support 1–10 distinct ordered canonical players. Immutable issuance, signed server-authoritative transitions, first-attempt continuity and exact-length results already exist. Reuse them. The current admin-only creator does not provide ordinary-user creation. Next bounded UI work supplies copyable same-origin challenge URLs only when gameplay is enabled; then secure public creation needs its own reviewed authorization and durable abuse-control boundary. A creator-browser marker is provenance, not unique-human identity or account ownership recovery.
+Custom Lineup creation supports 1–10 distinct ordered canonical players. Immutable issuance, named challenges, a separate one-time owner capability, signed server-authoritative transitions, first-attempt continuity, exact-length results and the default-off public `/create` UI/issuer are implemented. Reuse these paths. Ordinary-user public creation is not activated. Creator-browser markers establish preview provenance only; they do not prove unique-human identity or provide account-grade recovery.
 
 Unlisted URLs are bearer sharing links, not access-controlled secrets. Do not index, publish or list them; retain generic metadata and avoid answer leakage. No public titles, discovery, ranking or leaderboard is needed to launch private sharing.
 
-Execute the existing hosted HTTP runner only against the verified isolated QA project with its own private server credential. Complete real creator/share/friend and mobile acceptance, abuse/privacy checks and controlled rollback/activation before opening public routes.
+Execute the existing public-mode hosted HTTP runner only against the verified isolated QA project with its own private server credentials. Complete real creator/share/friend and mobile acceptance, route-scoped abuse/privacy checks and a controlled rollback drill before any public activation.
 
 Daily Lineup follows Custom. The administrator selects a supported length per day (for example 5, 6, 7 or 9); the precise supported range and migration encoding require an implementation scope, rather than assuming the Custom 1–10 range or contract-2=five draft is already suitable. Store issued length immutably and derive progress, completion and totals from that contract. Never reinterpret issued nine-player puzzles or alter Classic implicitly. PR #434 remains a preserved draft; metadata-only calendar inspection can be reused after reviewing its version assumptions.
