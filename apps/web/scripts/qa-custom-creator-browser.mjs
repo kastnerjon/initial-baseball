@@ -104,6 +104,8 @@ async function run() {
   let server;
   let browser;
   let issued = 0;
+  let attempted = 0;
+  let rateLimitedOnce = false;
   const browserErrors = [];
   try {
     server = await serveLocally(await reservePort());
@@ -117,7 +119,7 @@ async function run() {
       return respond(route, { results: candidates.filter(p => p.displayName.toLowerCase().includes(q)) });
     });
     await page.route('**/api/custom-lineup/create', route => {
-      issued++;
+      attempted++;
       const body = route.request().postDataJSON();
       assert.deepEqual(Object.keys(body).sort(), ['canonicalPlayerIds', 'title']);
       assert.equal(body.title, 'Browser QA ' + body.canonicalPlayerIds.length);
@@ -127,7 +129,20 @@ async function run() {
         [expected[0], expected[expected.length - 1]] = [expected[expected.length - 1], expected[0]];
       }
       assert.deepEqual(body.canonicalPlayerIds, expected, 'Incorrect issued batting order');
-      return respond(route, { puzzleId, ownerCapability: ownerCode });
+      if (body.canonicalPlayerIds.length === 1 && !rateLimitedOnce) {
+        rateLimitedOnce = true;
+        return route.fulfill({
+          status: 429, contentType: 'application/json',
+          headers: { 'retry-after': '60', 'cache-control': 'private, no-store' },
+          body: JSON.stringify({ error: 'creation_limit_reached' }),
+        });
+      }
+      issued++;
+      return route.fulfill({
+        status: 201, contentType: 'application/json',
+        headers: { 'cache-control': 'private, no-store' },
+        body: JSON.stringify({ puzzleId, ownerCapability: ownerCode }),
+      });
     });
 
     for (let n = 1; n <= 10; n++) {
@@ -177,6 +192,17 @@ async function run() {
         assert.ok(size.scroll <= size.client + 1,
           'Overflow at N=' + n + ', width=' + width + ': ' + JSON.stringify(size));
       }
+      if (n === 1) {
+        await page.getByRole('button', { name: 'Create challenge' }).click();
+        const limitError = page.locator('.custom-nine-create-action [role="alert"]');
+        await limitError.waitFor();
+        assert.match(await limitError.innerText(), /creation limit/i);
+        assert.equal(await page.getByRole('button', { name: 'Create challenge' }).isEnabled(), true);
+        assert.equal(await page.getByText('Challenge issued.').count(), 0);
+        assert.equal(await page.getByText(ownerCode, { exact: true }).count(), 0);
+        assert.ok((await page.locator('.custom-lineup-slots > li').first().innerText())
+          .includes(candidates[0].displayName), 'Rate limit erased the creator draft');
+      }
       await page.getByRole('button', { name: 'Create challenge' }).click();
       await page.getByText('Challenge issued.').waitFor();
       assert.equal(await page.getByRole('button', { name: 'Create challenge' }).isDisabled(), true);
@@ -184,11 +210,25 @@ async function run() {
       assert.ok(links.some(h => h?.includes('/custom/' + puzzleId)), 'Friend URL missing');
       assert.ok(links.every(h => !h?.includes(ownerCode)), 'Owner code leaked in friend URL');
       assert.ok(await page.getByText(ownerCode, { exact: true }).count(), 'Owner code not displayed separately');
-      console.log('PASS ' + n + ' slots across six widths, player search, swap, duplicate guard and owner link isolation');
+      const shareUrl = await page.locator('#custom-lineup-share-url').inputValue();
+      assert.equal(new URL(shareUrl).pathname, '/custom/' + puzzleId);
+      assert.ok(!shareUrl.includes(ownerCode), 'Private owner code leaked into friend share input');
+      for (const width of widths) {
+        await page.setViewportSize({ width, height: 844 });
+        const size = await page.evaluate(() => ({
+          client: document.documentElement.clientWidth,
+          scroll: document.documentElement.scrollWidth,
+        }));
+        assert.ok(size.scroll <= size.client + 1,
+          'Post-issuance overflow at N=' + n + ', width=' + width + ': ' + JSON.stringify(size));
+      }
+      console.log('PASS ' + n + ' slots: pre/post-issue six-width layout, search, swap and owner isolation');
     }
     assert.equal(issued, 10);
+    assert.equal(attempted, 11, '429 should permit an exact retry without losing the draft');
+    assert.equal(rateLimitedOnce, true);
     assert.deepEqual(browserErrors, []);
-    console.log('PASS all 1–10: local browser-only acceptance (not a hosted release gate)');
+    console.log('PASS all 1–10 with 429 recovery and post-issuance layout: local mocked browser acceptance only');
   } finally {
     if (browser) await browser.close();
     if (server) stop(server.child);
