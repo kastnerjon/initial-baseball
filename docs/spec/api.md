@@ -31,6 +31,12 @@ server-derived rehash/retry is allowed for clock skew/midnight. Absent or
 untrusted ingress, key, database, or inconsistent response fails closed
 with sanitized 503. Quota denials are 429 with Retry-After; the 10/10-minute
 client budget and 1,000/day global cap remain database-authoritative.
+Caught unexpected 503 creation failures emit a sanitized server-side JSON diagnostic
+(`event: custom_lineup_creation_unavailable`, `stage: signing|budget|issuance`,
+`status: 503`) for launch triage. The event never contains an IP address,
+request body, owner capability, player IDs, error message/stack or hidden clues.
+Expected 4xx responses, valid quota denial and disabled-route requests stay silent.
+The public 503 body and no-store headers do not change.
 
 This is staging, not permission to activate anonymous creation. Newly issued anonymous Custom Lineups now require the bounded name under the shared contract (#442) and store it in the private issued table (#444). The actual creator UI (#441), safe title read/view, browser/mobile QA, and creator management/public publishing remain separate.
 Do not enable this route without naming, WAF/privacy review, hosted browser

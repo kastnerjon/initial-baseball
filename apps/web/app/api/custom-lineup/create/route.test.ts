@@ -155,6 +155,38 @@ describe('default-disabled, anonymous Custom v2 creation', () => {
     expect(reserve).toHaveBeenCalledOnce();
   });
 
+  it('logs only sanitized stage/status for unexpected create failures, never secrets', async () => {
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      vi.stubEnv('DAILY_PROGRESSION_SECRET', 'short');
+      const missingSigning = await POST(request());
+      expect(missingSigning.status).toBe(503);
+      expect(reserve).not.toHaveBeenCalled();
+
+      vi.stubEnv('DAILY_PROGRESSION_SECRET', 'private-test-progression-secret-long-enough');
+      reserve.mockRejectedValueOnce(new Error('private budget HMAC, stack, IP, key'));
+      const unavailableBudget = await POST(request());
+      expect(unavailableBudget.status).toBe(503);
+      expect(issue).not.toHaveBeenCalled();
+
+      issue.mockRejectedValueOnce(new Error('private owner capability and secret player clue'));
+      const unavailableIssuance = await POST(request());
+      expect(unavailableIssuance.status).toBe(503);
+
+      expect(log).toHaveBeenCalledTimes(3);
+      expect(log.mock.calls.map(([entry]) => JSON.parse(String(entry)))).toEqual([
+        { event: 'custom_lineup_creation_unavailable', stage: 'signing', status: 503 },
+        { event: 'custom_lineup_creation_unavailable', stage: 'budget', status: 503 },
+        { event: 'custom_lineup_creation_unavailable', stage: 'issuance', status: 503 },
+      ]);
+      const observed = JSON.stringify(log.mock.calls);
+      expect(observed).not.toMatch(/private budget|private owner|secret player|HMAC|stack|clue|ip|key/i);
+      expect(await unavailableIssuance.json()).toEqual({ error: 'creation_unavailable' });
+    } finally {
+      log.mockRestore();
+    }
+  });
+
   it('maps only approved issuance error codes without revealing hints', async () => {
     for (const [kind, status] of [
       ['invalid_selection', 400], ['unsupported_players', 422], ['immutable_conflict', 409],
