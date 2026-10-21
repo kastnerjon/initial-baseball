@@ -1,7 +1,11 @@
 # Daily web API specification
 
 Status: Living source of truth  
-Last updated: 2026-10-15
+Last updated: 2026-10-21
+
+## Custom creator autocomplete eligibility (October 21)
+
+`GET /api/players/search?q=<name>` retains its existing canonical search index for Daily, Classic and guesses. The staged ordered Custom Lineup slot picker now requests `GET /api/players/search?scope=custom-creator&q=<name>` instead. Only the scoped response is restricted to player identities resolvable by the existing authoritative gameplay-ready `getCanonicalDailyPlayer` lookup; it reuses the same search ranking/result schema and does not enumerate hidden lineup answers. The cached creator slice avoids re-filtering the full search index for each keystroke. This narrows false creator selections without creating another player catalog, altering Daily search, changing the immutable issuer, relaxing the 10-per-IP quota, or promising that *every* resolver-backed player has valid frozen clue values; final issuer validation remains authoritative. No production feature flag is changed.
 
 Daily routes are thin Next.js adapters over canonical baseball data, engine rules, and portable Daily logic. Answer-integrity rationale is in `docs/decisions/0001-daily-answer-integrity.md`.
 

@@ -11,6 +11,11 @@ vi.mock('../../../serverCanonicalData', () => ({
     primaryPosition: '2B',
   }],
 }));
+// Keep the real relevance test on the default search route, without
+// materializing a server-only creator eligibility index.
+vi.mock('../../../canonicalDailyPlayerLookup', () => ({
+  getCanonicalDailyPlayer: vi.fn(),
+}));
 import { GET } from './route';
 
 describe.each(['/', '/create'])('shared autocomplete for %s', caller => {

@@ -49,7 +49,7 @@ export function CustomLineupSlotPicker({ slots, setSlots, editable }: {
     const controller = new AbortController();
     const timer = setTimeout(() => {
       setBusy(true);
-      void fetch('/api/players/search?q=' + encodeURIComponent(trimmed), {
+      void fetch('/api/players/search?scope=custom-creator&q=' + encodeURIComponent(trimmed), {
         credentials: 'same-origin', signal: controller.signal,
       }).then(async response => {
         if (!response.ok) throw new Error('search unavailable');

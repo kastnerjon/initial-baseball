@@ -6,9 +6,13 @@ vi.mock('@initial-baseball/engine', () => ({
 vi.mock('../../../serverCanonicalData', () => ({
   getCanonicalSearchCandidates: vi.fn(),
 }));
+vi.mock('../../../canonicalDailyPlayerLookup', () => ({
+  getCanonicalDailyPlayer: vi.fn(),
+}));
 
 import { searchCanonicalPlayers } from '@initial-baseball/engine';
 import { getCanonicalSearchCandidates } from '../../../serverCanonicalData';
+import { getCanonicalDailyPlayer } from '../../../canonicalDailyPlayerLookup';
 import { GET } from './route';
 
 function search(query: string): ReturnType<typeof GET> {
@@ -19,6 +23,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   vi.mocked(getCanonicalSearchCandidates).mockReturnValue([]);
   vi.mocked(searchCanonicalPlayers).mockReturnValue([]);
+  vi.mocked(getCanonicalDailyPlayer).mockReturnValue(null);
 });
 
 describe('public canonical player search request bound', () => {
@@ -37,6 +42,27 @@ describe('public canonical player search request bound', () => {
     expect(getCanonicalSearchCandidates).toHaveBeenCalledOnce();
     expect(searchCanonicalPlayers).toHaveBeenCalledWith('Aaron Judge', []);
   });
+
+
+  it('filters creator suggestions to players found by the immutable clue issuer resolver', async () => {
+    const all = [
+      { id: 'playable', displayName: 'Playable Player', aliases: [], playerType: 'hitter', primaryPosition: 'SS', firstYear: 2000, lastYear: 2020, teamsDisplay: 'NYM' },
+      { id: 'unplayable', displayName: 'Unplayable Player', aliases: [], playerType: 'hitter', primaryPosition: 'SS', firstYear: 2000, lastYear: 2020, teamsDisplay: 'NYM' },
+    ] as ReturnType<typeof getCanonicalSearchCandidates>;
+    vi.mocked(getCanonicalSearchCandidates).mockReturnValue(all);
+    vi.mocked(getCanonicalDailyPlayer).mockImplementation(id => id === 'playable' ? {} as never : null);
+
+    const creator = GET(new Request('https://example.test/api/players/search?q=Player&scope=custom-creator'));
+    expect(creator.status).toBe(200);
+    expect(searchCanonicalPlayers).toHaveBeenLastCalledWith('Player', [all[0]]);
+    expect(getCanonicalDailyPlayer).toHaveBeenCalledWith('playable');
+    expect(getCanonicalDailyPlayer).toHaveBeenCalledWith('unplayable');
+
+    const ordinary = search('Player');
+    expect(ordinary.status).toBe(200);
+    expect(searchCanonicalPlayers).toHaveBeenLastCalledWith('Player', all);
+  });
+
 
   it('allows the existing 100-character client ceiling', async () => {
     const query = 'a'.repeat(100);
