@@ -1,17 +1,17 @@
 # Architecture and launch-scale plan
 
 Status: Living architecture source of truth  
-Last updated: 2026-09-23
+Last updated: 2026-10-21
 
 ## Public creation boundary staged (October 18)
 
-Web route `/api/custom-lineup/create` is a default-disabled, no-sign-in POST using Vercel-verified singular client IP, a separate server-only HMAC key, and service-role-only atomic quota before the existing immutable v2 issuer. It requires both the public creation flag and the v2 gameplay gate. Existing admin authentication, signed attempts, preview exclusion and game scoring are unchanged. The route provides only opaque ID and creator cookie on success; failures are sanitized. No public page, WAF activation or account identity is introduced. See `tasks/plans/public-custom-lineup-creator-route.md`.
+Web route `/api/custom-lineup/create` is a default-disabled, no-sign-in POST using Vercel-verified singular client IP, a separate server-only HMAC key, and service-role-only atomic quota before the existing immutable v2 issuer. It requires both the public creation flag and the v2 gameplay gate. Existing admin authentication, signed attempts, preview exclusion and game scoring are unchanged. The issuer accepts only a bounded title and exact ordered canonical IDs; success returns an opaque challenge ID and a separate one-time owner capability, plus the creator-exclusion cookie. The default-off `/create` page uses the same two server gates. Failures are sanitized. This adds neither WAF configuration nor account identity. See `tasks/plans/public-custom-lineup-creator-route.md` and `tasks/plans/custom-v2-public-creator-hosted-qa.md`.
 
 ## Staged no-sign-in Custom creation budget (October 18)
 
 The owner chose no required account for Custom creation. Before opening that Web boundary, `reserve_custom_lineup_creation_budget(text,text)` provides a private Supabase reservation: 10 admitted creation attempts per server-derived day-scoped HMAC/IP digest per 10-minute fixed window, plus 1,000 globally per UTC day. One stable transaction lock serializes all workers and expiry across date boundaries; database time is chosen after lock acquisition. The second argument is the server-HMAC digest's claimed UTC calendar day; after the lock the database compares it with its own authoritative UTC day. A mismatch consumes no quota and returns the DB day for at most one Web rehash/retry; impossible dates are invalid inputs. All responses return the authoritative day. RLS and service-role-only table/RPC grants deny browser access. Only bounded counters/digests/windows are stored; lazy expiry deletes them on the next request. No raw IP, selected player, challenge relationship or account identity is stored here.
 
-This primitive is not wired to a public route and does not authorize activation. Its next Web consumer must derive the HMAC from a verified platform IP, fail closed on missing provenance/configuration/provider, reserve before expensive materialization, and never trust a browser digest. Existing immutable issuance, creator-preview exclusion and first-attempt ledger remain unchanged. Gameplay edge limits and release/privacy/browser gates remain separate. Scope: `tasks/plans/custom-lineup-creation-budget.md`.
+The default-off public issuer uses this primitive after validating the title and portable 1–10 selection shape, deriving an HMAC from Vercel-verified client IP, and before expensive materialization. It fails closed on missing provenance/configuration/provider and never trusts a browser digest. Existing immutable issuance, creator-preview exclusion and first-attempt ledger remain unchanged. WAF enforcement and hosted public-route acceptance are separate release gates. Scope: `tasks/plans/custom-lineup-creation-budget.md`.
 
 ## Product goal
 

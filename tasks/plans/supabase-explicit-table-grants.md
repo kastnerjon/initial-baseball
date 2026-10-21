@@ -1,5 +1,7 @@
 # Explicit table-grants guard for new Supabase public migrations
 
+**Status: Complete.** PR #459 merged as `c8ae1260569892688b3e422d0c35d514003b959c`. Its 13 focused tests, exact-head CI, Preview and independent review passed. The guard is active for newly added public-table migrations; no live permissions were changed.
+
 ## Scope contract
 - **Goal:** Prevent newly added public-table migrations from depending on automatic Data API grants after October 30, 2026.
 - **Owning layer:** Repository CI and Supabase migration workflow.
