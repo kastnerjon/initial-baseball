@@ -33,10 +33,14 @@ On the isolated QA Supabase project, seven existing rollback-only regression scr
 ## Remaining release gates — do not enable public creation
 
 1. **Real HTTP creator → owner code → friend play → signed completion** against isolated QA Supabase: the hosted harness exists, but still needs securely provisioned **QA-only** service-role credentials in a disposable environment; do not paste secrets in chat or point the harness at production.
-2. **WAF / rate protection**: the project active custom firewall-config endpoint returned `404 Seawall Config not found`, so no active Custom WAF/rate-limit policy has been verified. Do not confuse the server-side SQL quota tests or the forged-header probe with WAF effectiveness. A reviewed, reversible route-scoped policy and real ingress acceptance are still needed.
+2. **WAF / rate protection**: October 21 Vercel project API metadata showed SSO protection enabled for non-custom domains, with password protection and Trusted IP protection disabled. No project setting was changed. The active custom firewall-config endpoint returned `404 Seawall Config not found`, so no WAF policy has been verified. The connected team metadata does not report its plan, and the authorized browser reaches a Vercel sign-in page. Vercel's current documentation says custom firewall rules are available on all plans, while WAF rate limiting is Enterprise-only ([custom rules](https://vercel.com/docs/vercel-firewall/vercel-waf/custom-rules), [usage and pricing](https://vercel.com/docs/vercel-firewall/vercel-waf/usage-and-pricing)). Confirm the team's entitlement in the authenticated dashboard. If rate limiting is available, stage a route-scoped rule only for `POST /api/custom-lineup/create`, first in log-only mode if supported; verify controlled real-edge behavior before enforcement. Roll back by disabling the rule and publishing the staged firewall configuration, then verify requests no longer match. Do not weaken deployment protection. If the plan does not include rate limiting, the tested server-side creation quota remains a separate defense; it does not prove WAF enforcement.
 3. **Physical mobile and rollback checks**: iOS Safari and Android Chrome, complete creator → share → friend exercise, cookie/owner behavior and rollback drill. The localhost Chromium UI acceptance for N=1–10 and six widths passed separately; it does not replace physical devices.
 
 No production flags, WAF rules, Supabase schema or gameplay behavior were changed during this ingress study.
+
+## October 21 follow-up
+
+Connected Vercel project metadata confirmed the existing deployment-protection settings above. The authenticated dashboard was not available in the browser session, so the account plan, rule editor and traffic analytics could not be inspected. An active firewall-config read still returned `404 Seawall Config not found`. The official documentation identifies rate limiting as an Enterprise-only feature; therefore no WAF rule was staged, and no claim of enforcement is made. This is an access/entitlement verification blocker, not evidence that the production firewall is disabled.
 
 ## Review and documentation impact
 
