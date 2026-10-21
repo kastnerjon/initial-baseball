@@ -42,6 +42,13 @@ No production flags, WAF rules, Supabase schema or gameplay behavior were change
 
 Connected Vercel project metadata confirmed the existing deployment-protection settings above. The authenticated dashboard was not available in the browser session, so the account plan, rule editor and traffic analytics could not be inspected. An active firewall-config read still returned `404 Seawall Config not found`. The official documentation identifies rate limiting as an Enterprise-only feature; therefore no WAF rule was staged, and no claim of enforcement is made. This is an access/entitlement verification blocker, not evidence that the production firewall is disabled.
 
+
+## October 21 — corrected WAF plan entitlement
+
+A later connected Vercel Git deployment-context response identifies the team as **Hobby**. Current official [WAF rate-limiting documentation](https://vercel.com/docs/vercel-firewall/vercel-waf/rate-limiting) (verified October 21) explicitly permits **fixed-window rate limiting on all plans**; token-bucket is Enterprise-only. Vercel [pricing](https://vercel.com/pricing) lists one WAF rate-limit rule and three custom rules for Hobby. The older Enterprise-only assertion in the October 20 checkpoint and initial October 21 follow-up above was incorrect and is superseded by this finding.
+
+The project's active, staging and draft firewall configuration reads return **404 Seawall Config not found**, which does not establish whether any protection is currently deployed. No WAF configuration was created, replaced, disabled or published; no enforcement claim is made. Next: inspect the authenticated Firewall dashboard/configuration, safely stage a rule confined to `POST /api/custom-lineup/create` using a fixed window and IP key, observe log-only matches, then explicitly verify 429 enforcement and a reversible disable/publish rollback. Keep the independent server-side 10/10-minute creation quota, both production Custom flags OFF and existing deployment protection unchanged until the other release gates also pass.
+
 ## Review and documentation impact
 
 This permanent note replaces ephemeral probe code; the probe was intentionally **closed unmerged**. Evidence is limited to the exact preview, timestamp and cases above. Update `docs/START-HERE.md` and `tasks/todo.md` accordingly. No new product or architecture contract, package dependency, runtime behavior, or migration is introduced by the documentation PR.
