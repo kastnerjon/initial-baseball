@@ -25,3 +25,15 @@ The two-flag-gated `/create` entry in the Daily footer, the creator return link,
 ## Deferred polish
 
 - Native share-sheet support for the existing unlisted friend link is optional; preserve the tested Copy link/selectable URL fallback. Scope: `tasks/plans/custom-native-share.md`.
+
+## 4. Required before broad launch
+
+These are separate from the Custom Lineups Phase 1 gates above. Keep them active until each has production evidence; the canonical source of truth is `docs/product/daily-inning-blueprint.md`, under “Required before broad launch.”
+
+- [ ] Complete full authenticated admin and public-runtime production QA.
+- [ ] Complete real-browser gameplay and refresh QA on common iPhone/iPad sizes.
+- [ ] Verify compact completed-result persistence and same-Daily/same-ruleset comparison.
+- [ ] Decide the launch game, final launch rules, and launch date/numbering epoch before beginning permanent archive/history from Daily #1.
+- [ ] Confirm calibrated recognizable lineups.
+- [ ] Verify analytics and error monitoring.
+- [ ] Complete privacy/terms, canonical domain, and social metadata.
