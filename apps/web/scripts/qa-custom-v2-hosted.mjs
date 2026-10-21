@@ -398,6 +398,8 @@ async function verifyConcurrentAnonymousCreationBudget() {
     assert.equal(denied.length, 2, 'Concurrent overflow must deny exactly two');
     assert.equal(new Set(accepted.map(response => response.data?.puzzleId)).size, 10,
       'Successful concurrent issuance must yield ten distinct immutable challenges');
+    assert.equal(new Set(accepted.map(response => response.data?.ownerCapability)).size, 10,
+      'Successful concurrent issuance must yield ten distinct private owner credentials');
     for (const response of accepted) {
       assert.match(response.data?.puzzleId ?? '', /^custom-lineup-v2-[0-9a-f-]{36}$/);
       assert.match(response.data?.ownerCapability ?? '', /^[A-Za-z0-9_-]{43}$/);
