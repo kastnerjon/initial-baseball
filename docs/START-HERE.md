@@ -1,5 +1,17 @@
 # Initial Baseball — Start Here
 
+## October 20 — Real Vercel ingress probe completed; launch still gated
+
+Temporary **unmerged** PR #466 tested seven ordinary and forged forwarded-IP
+requests through a READY Vercel Preview. All returned matching edge-provided
+headers, rejected injected test sentinels and passed the existing Custom quota
+IP parser. The diagnostic PR was closed unmerged; no IPs were logged. Full
+record: `tasks/plans/custom-v2-live-vercel-ingress-evidence.md`. Isolated QA
+also passed seven rollback-only Custom DB tests with no fixture persistence.
+**Still blocked:** real credential-backed creator/friend HTTP QA, active
+route-scoped Vercel WAF validation (current config endpoint 404), and physical
+mobile/rollback acceptance. Production Custom flags remain **OFF**.
+
 ## October 20 — Repeatable Custom creator browser QA (PR #465)
 
 Staged default-OFF Custom creator UI has a repeatable localhost-only Chromium
