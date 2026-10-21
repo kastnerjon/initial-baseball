@@ -26,10 +26,11 @@ function yearLabel(candidate: Candidate): string {
 }
 
 /** Canonical search is provided by the existing game endpoint/engine, not the creator UI. */
-export function CustomLineupSlotPicker({ slots, setSlots, editable }: {
+export function CustomLineupSlotPicker({ slots, setSlots, editable, creatorEligibleSearch = false }: {
   slots: CustomLineupSlots;
   setSlots: Dispatch<SetStateAction<CustomLineupSlots>>;
   editable: boolean;
+  creatorEligibleSearch?: boolean;
 }): JSX.Element {
   const [editing, setEditing] = useState<number | null>(null);
   const [swapFrom, setSwapFrom] = useState<number | null>(null);
@@ -49,7 +50,9 @@ export function CustomLineupSlotPicker({ slots, setSlots, editable }: {
     const controller = new AbortController();
     const timer = setTimeout(() => {
       setBusy(true);
-      void fetch('/api/players/search?scope=custom-creator&q=' + encodeURIComponent(trimmed), {
+      const endpoint = creatorEligibleSearch
+        ? '/api/players/creator-search?q=' : '/api/players/search?q=';
+      void fetch(endpoint + encodeURIComponent(trimmed), {
         credentials: 'same-origin', signal: controller.signal,
       }).then(async response => {
         if (!response.ok) throw new Error('search unavailable');

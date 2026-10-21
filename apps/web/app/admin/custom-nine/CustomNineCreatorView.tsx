@@ -227,7 +227,7 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
           <h2 id="custom-nine-lineup-heading">Your lineup</h2>
           <span>{isV2 ? slots.filter(Boolean).length : players.length} / {isV2 ? slots.length : maximumPlayers} chosen</span>
         </div>
-        {isV2 ? <CustomLineupSlotPicker slots={slots} setSlots={setSlots} editable={draftEditable} /> : <>
+        {isV2 ? <CustomLineupSlotPicker slots={slots} setSlots={setSlots} editable={draftEditable} creatorEligibleSearch={isPublic} /> : <>
         <ol className="custom-nine-creator-players">
           {Array.from({ length: displayedSlots }, (_, index) => {
             const player = players[index];
