@@ -61,10 +61,12 @@ export async function POST(request: Request): Promise<Response> {
     return fail('invalid_selection', 400);
   }
 
+  let stage: 'signing' | 'budget' | 'issuance' = 'signing';
   try {
     // Check signing configuration before reserving quota, and reserve before
     // expensive player snapshot materialization or immutable DB issuance.
     const creatorMarker = createCustomLineupV2CreatorBrowserMarker(getDailyProgressionSecret());
+    stage = 'budget';
     const budget = await reservePublicCustomLineupCreation(request);
     if (!budget.allowed) {
       const response = fail('creation_limit_reached', 429);
@@ -72,6 +74,7 @@ export async function POST(request: Request): Promise<Response> {
       return response;
     }
 
+    stage = 'issuance';
     const issued = await createServerCustomLineupV2CreationService()
       .issueAnonymous({ canonicalPlayerIds }, title.title);
     const response = Response.json({ puzzleId: issued.puzzleId, ownerCapability: issued.ownerCapability }, {
@@ -85,6 +88,12 @@ export async function POST(request: Request): Promise<Response> {
         : error.kind === 'unsupported_players' ? 422 : 409;
       return fail(error.kind, status);
     }
+    // Never log originating addresses, capabilities, inputs, provider errors or clues.
+    console.error(JSON.stringify({
+      event: 'custom_lineup_creation_unavailable',
+      stage,
+      status: 503,
+    }));
     return fail('creation_unavailable', 503);
   }
 }
