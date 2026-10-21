@@ -50,13 +50,17 @@ async function serveLocally(port) {
     '--hostname', '127.0.0.1', '--port', String(port),
   ], {
     cwd: root, detached: true, stdio: ['ignore', 'pipe', 'pipe'],
+    // Minimal allowlist: do not inherit parent production tokens, database URLs,
+    // signing keys, or provider identity just because QA runs in a configured shell.
     env: {
-      ...process.env,
+      PATH: process.env.PATH,
+      HOME: process.env.HOME,
+      LANG: process.env.LANG,
+      TMPDIR: process.env.TMPDIR,
+      NEXT_TELEMETRY_DISABLED: '1',
       CUSTOM_LINEUP_PUBLIC_CREATION_ENABLED: 'true',
       CUSTOM_LINEUP_V2_GAMEPLAY_TRANSPORT_ENABLED: 'true',
-      // This test deliberately cannot call a live database or impersonate Vercel ingress.
-      VERCEL: '', VERCEL_ENV: '', SUPABASE_URL: '', SUPABASE_SERVICE_ROLE_KEY: '',
-      CUSTOM_LINEUP_CREATION_BUDGET_SECRET: '',
+      VERCEL: '', VERCEL_ENV: '',
     },
   });
   let log = '';
