@@ -12,9 +12,9 @@ Public creation, unlisted sharing and signed 1–10 gameplay are staged behind s
 - [ ] Complete creator and friend gameplay acceptance on real iOS Safari and Android Chrome, including keyboard/autocomplete, two-tap swap, sharing, owner-code separation, results and navigation. Chromium viewport coverage is simulated mobile testing, not physical-device acceptance.
 - [ ] Run a reversible production rollback drill without enabling public creation. After all previous gates pass, perform a controlled flag rollout and verify production routes, issuance, scoring, logs and database state before calling launch complete.
 
-## 2. Finish launch-adjacent creator navigation
+## 2. Gated creator navigation: implemented on main
 
-- [ ] Add the default-off, two-flag-gated Daily footer entry and a return-to-Daily link on `/create`, with narrow-screen wrapping. Do not change either production flag. Scope: `tasks/plans/custom-creator-navigation.md`.
+The two-flag-gated `/create` entry in the Daily footer, the creator return link, narrow-screen wrapping, and focused static-render tests are already present on main (`54e559f`). Both production flags remain OFF. No additional navigation change is needed; the `tasks/plans/custom-creator-navigation.md` scope is satisfied by the shipped code.
 
 ## 3. After Custom Lineups launch
 
