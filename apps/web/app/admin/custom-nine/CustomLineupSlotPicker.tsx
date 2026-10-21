@@ -69,7 +69,7 @@ export function CustomLineupSlotPicker({ slots, setSlots, editable, creatorEligi
       });
     }, 180);
     return () => { clearTimeout(timer); controller.abort(); };
-  }, [query, editing, editable]);
+  }, [query, editing, editable, creatorEligibleSearch]);
 
   function cancelSearch(): void {
     setEditing(null);
