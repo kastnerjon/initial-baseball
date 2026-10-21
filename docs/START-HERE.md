@@ -1,5 +1,18 @@
 # Initial Baseball — Start Here
 
+## October 20 — Repeatable Custom creator browser QA (PR #465)
+
+Staged default-OFF Custom creator UI has a repeatable localhost-only Chromium
+acceptance harness in `apps/web/scripts/qa-custom-creator-browser.mjs` and scope
+in `tasks/plans/custom-v2-local-browser-acceptance.md`. It checks creator
+lengths 1–10, nine initial slots, canonical player search with career metadata,
+two-tap swaps, duplicates, issued batting order, separate owner credential,
+keyboard access, and 320–1280px responsive layout. Search/issue are simulated;
+this does NOT establish hosted Supabase issuance, actual Vercel ingress/WAF,
+signed friend play, Safari/iOS device acceptance, or permission to enable
+production Custom flags. Keep real hosted QA and rollback/security checks open.
+
+
 ## October 20 — My Results from retained browser completions
 
 #460 chronology and #461 autocomplete are merged and production-verified at `272322e`; main CI #39490352765 SUCCESS and production `dpl_6pF8CxiRV7Mzrp7NHEBAHcboWktn` READY. Live search/routes and recent runtime scan passed. Custom live release remains blocked by the absent QA-only service credential and unverified actual ingress/WAF/physical mobile checks; production gates remain OFF and no DB/config was changed. Current bounded fallback priority is #437: read-only My Results over exact-identity first-completion records retained in this browser, without re-admission, practice substitution or inferred history. Scope: `tasks/plans/browser-completed-game-history.md`.
