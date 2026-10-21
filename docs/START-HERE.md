@@ -1,5 +1,13 @@
 # Initial Baseball — Start Here
 
+ 
+## October 21 — Post-review merges and owner-approved three-game roadmap
+
+The October 21 post-review `main` commit `4033af550d9301e78b3cee6749ddb257757c39cc` merged creator-browser QA PR #473 and corrected WAF-entitlement documentation PR #474 after diagnostics PR #475; #476 was closed as a duplicate. Exact-commit production deployment `dpl_7ZdkwNg2sf6tCAHpQJZevNqNuK52` is **READY**. PR #434 remains intentionally deferred. The release flags for no-sign-in public Custom creation/gameplay remain **OFF** and the private launch is **not complete**. Remaining gates are real credential-backed hosted creator/friend QA, verified route-scoped WAF enforcement and reversal, physical iOS/Android device testing and rollback/controlled activation. Firewall active/staging API reads still return `404 Seawall Config not found`; that is **not** proof a rule is present or absent. No WAF rule or production flag was modified.
+
+Owner-approved long-term direction, distinct from shipped scope, is captured in GitHub issues [#478](https://github.com/kastnerjon/initial-baseball/issues/478) (Daily-first three-game north star), [#477](https://github.com/kastnerjon/initial-baseball/issues/477) (optional Google/Apple/email accounts, immutable unified result history and privacy) and [#441](https://github.com/kastnerjon/initial-baseball/issues/441) (public Custom publishing/Discover). Head-to-Head is **asynchronous Classic-style player-identity guessing**: the pitcher privately selects real player identities for the opposing batter's at-bats. Reuse the existing Classic outcomes and baserunner engine; defer multiplayer match authority, versioned player-pool eligibility and native app transports until their phase. See the current assessment in `docs/architecture-and-scale-plan.md`. No prior browser-local beta history is automatically imported into new accounts. These approved *future* features must not distract from Custom private launch.
+
+
 ## October 21 — Live project state reconciled
 
 - GitHub `main` is `54e559fcd48dd74dd90110d98a0d4cb5716999f7`; exact-main CI run `39530643699` passed its test job. The documentation-only job was skipped on the push, as configured.
