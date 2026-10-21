@@ -798,4 +798,97 @@ One authoritative canonical player system is enriched from reproducible sources.
 
 ### Recipe-driven lineups
 
-Standard Daily is one versioned recipe, not the only selector. Recipes may define slot groups, sourced factual f
+Standard Daily is one versioned recipe, not the only selector. Recipes may define slot groups, sourced factual filters, gameplay-profile filters, repeat protection, duplicate prevention, reveal readiness, and diversity constraints. The generator proposes; the editor reviews, replaces, validates, and schedules the exact nine.
+
+Authorized manual curation is intentionally broader than automatic generation: automatic proposals remain restricted to ranked `dailyEligiblePlayers`, while an editor may intentionally select any canonical, reveal-ready Daily-compatible player. An outside-pool manual choice remains unranked for generation and surfaces `outside-automatic-daily-pool`; it does not change future automatic lineups or canonical baseball facts.
+
+### Completed results and comparison
+
+Completed-result collection is implemented and has prior production proof as recorded above. Preserve its engine validation, immutable repository, server adapter and exact-payload browser retries.
+
+Approved September 18 replacement for 4D: collect one immutable observation per resolved Daily Nine AB, including partial games; show YOU / AVG after each terminal reveal. Final scores compare completed games only. Saving and comparison read success are independent; briefly stale comparisons are acceptable. Strictly lower scores define "You beat X% of finishers". Public Reset is beta-only and must be removed before launch; any retained admin/test flow is non-contributing.
+
+PR #174 was inspected at `38f3bc9` and is now closed as superseded. Do not revive unchanged: its every-AB-count-equals-completion-count rule and read-time-rescoring direction are invalid for this product. Resolved-AB validation, immutable provider storage, the server POST boundary, and the 6A–6D browser collection lifecycle are now implemented and production-proven. Fresh contributing runs establish attempt identity before the first terminal AB and reuse that identity for a newly created points-v3 completion. Comparison GET reads are now live in production after PR #204; browser/UI comparison consumption is still not implemented. Full comparison scope: `tasks/plans/resolved-at-bat-comparison.md`; browser sequence/evidence: `tasks/plans/resolved-at-bat-browser-lifecycle.md` and `docs/operations/resolved-at-bat-browser-proof.md`.
+
+### Permanent archive and personal history
+
+Current beta numbering/history is disposable. At a later explicit broad-launch decision, the permanent sequence restarts at Daily #1. From that point, every issued Daily is frozen and remains playable/shareable in the archive. The initial no-account product remembers completed archived games and recorded results on the current browser/device, keyed by stable Daily identity plus game/ruleset. Cross-device history waits for accounts.
+
+## Remaining verification
+
+### Public real-browser gameplay
+
+These require an actual browser lifecycle but no editor credentials:
+
+- complete interactive Daily Nine/Classic switching, isolated saves/reset, active and pending refresh, terminal completion, share destinations, and hidden unplayed Classic answers on physical/common browser widths; basic iPhone switching/save isolation is already verified;
+- re-test Submit Guess and Give Up latency on production after PR #133, inspecting handler-level server timing against end-to-end phone timing;
+- verify the compact presentation and touch behavior on physical iPhone/iPad, including hints, search dropdown, selected-player state, result/reveal tables, history, and completion/share;
+- resolved `points-v3` outcome/point presentation, including hint/wrong-guess deductions;
+- saved-session `/api/daily/hints` hydration and refresh recovery;
+- correct guess, wrong guesses, third strike, Give Up responsiveness/reveal, all-nine continuation, final reveal/completion, and mobile interaction;
+- action-level network/log inspection during those flows.
+
+### Authenticated editorial workflow
+
+Admin redesign is deferred. The existing authenticated editor remains available. The preferred routine workflow is conversational future-lineup entry through the now-active private ChatOps adapter. It and `/admin/daily` operate on the same editorial lifecycle and records; the assistant path is not a parallel schedule.
+
+Verified September 16–17:
+
+- PRs #152 and #153 are merged and active in production;
+- the Supabase connection targets `initial-baseball-db` / `dwreeiydvwikpamlokji`;
+- `private.dispatch_daily_lineup_chatops(...)` forwards through `pg_net` to the authenticated server adapter and does not write editorial tables directly;
+- the matching bearer credential is stored only in Vercel server environment and Supabase Vault;
+- an invalid automatic-pool candidate failed atomically before the manual-candidate policy change;
+- a corrected future nine was persisted in exact order, explicitly scheduled, and read back with `chatops:assistant` attribution;
+- routine owner-supplied Dailies #149–#151 were then persisted in exact order and scheduled through the same private path, yielding a complete persisted seven-day horizon through Daily #151;
+- a transport timeout after one successful server mutation was safely reconciled by authoritative row readback before any retry;
+- PR #162 broadens only authorized manual selection to canonical, reveal-ready Daily-compatible players outside the automatic pool; automatic generation remains unchanged.
+
+Remaining hosted editorial checks:
+
+- player preview/search/replacement and validation through the authenticated editor workflow;
+- timed public consumption when a newly scheduled future editorial puzzle reaches its live date;
+- deterministic fallback observation for a missing/draft record.
+
+The routine conversational future-lineup workflow itself is no longer a blocker for completed-result work.
+
+## Exact next work order
+
+1. Read `docs/engineering/resolved-at-bat-review-2026-09-19.md`. Preserve the successful normal-path production proof and R1–R4 repairs. PRs #161/#174 are closed as superseded references.
+2. R1 outbox owner-lifetime fencing is implemented: delivery is bound to a disposable exact attempt/generation session and cleanup invalidates it before lock release. R2 gameplay request fencing is also implemented: Reset, durable restore, persistence-session teardown and owner loss invalidate old Guess/Give Up authority, and stale success/error/finally work cannot affect a replacement request. R3 shared-save authority on journal failure is repaired: lock ownership remains exclusive while contribution is disabled, and unsafe reload/lock-request failures are non-writable. R4 re-bootstrap/current-authority fencing is implemented: equivalent puzzle objects do not restart ownership, true session changes are non-writable until the new session is hydrated, and stale rendered owner state cannot pass the live write boundary. The repo has no mounted React DOM test environment; adding one would cross the explicit dependency decomposition trigger, so the PR uses deterministic authority/session regressions plus preview/production browser verification and records that limitation rather than silently adding test infrastructure.
+3. The portable independent-population comparison contract/service is implemented in `packages/daily`, and the server-only Supabase aggregate provider is implemented and hosted-verified on PR #198. PR #199 defines the portable versioned HTTP response contract in `packages/shared`. PR #200 implements server-side comparison read composition in `apps/web`: date/ruleset/pitch validation, authoritative public-puzzle binding, server-derived puzzle ID/number, existing Daily/Supabase composition, and conservative live `sourceReadAt`. PR #202 implements the thin GET adapters, sanitized HTTP mapping and `private, no-store`. PR #203 provides representative disposable PostgreSQL 17 evidence for the current raw-read design: at 10,000 target observations the actual functions measured 1.807 ms p95 for one AB aggregate and 6.254 ms p95 for completed score buckets. No cache/rollup/index change is justified at this beta checkpoint. PR #204 then made those reads default-on with fail-closed server-only `DAILY_NINE_COMPARISON_READS_DISABLED`; merge `178e58cb6fcb8f09ad9ebc3e6ba69cca7a725a01` is production-verified READY as `dpl_F87hcE51cQT6zhoCp8MgGKwCSX38`, both routes returned versioned HTTP 200 live payloads with `private, no-store`, and the comparison-route runtime scan was clean. The repository port remains deliberately storage-strategy-neutral so a later rollup can replace the provider without UI/domain rewrites. Browser/UI work remains separate and next.
+4. PR #206 adds the browser comparison transport/decoder and PR #207 adds the separate request-lifecycle controller. Terminal Daily Nine at-bats and completed games now consume those seams through separate hooks/presentation paths: own results remain immediate, comparison is asynchronous, sample/outage states are explicit, completed BEAT uses Daily-owned strict-lower semantics, and reset/restore fence obsolete reads. Next measure real end-to-end comparison latency and complete mobile/answer-integrity/failure-recovery verification. Preserve independent populations, keep read recovery separate from write retries, and keep all comparison I/O off gameplay's critical path.
+5. R5 bounded pending-delivery recovery and R6 malformed-save decoding are repaired. R7 is structurally complete across three bounded browser checkpoints: R7A extracted mutable persistence owner-session mechanics while preserving one React persistence-ordering authority; R7B extracted saved-game restore plus authorized-hint hydration/stale-response fencing; R7C extracts `/api/daily/resolve` transport/single-flight/pending-state lifecycle behind a concrete Daily-specific web client/hook and clears pending UI immediately when authority is invalidated. `DailyInningGame` remains the gameplay state/render/action coordinator rather than being replaced by a generic state machine. R8A now bounds actual request-body bytes before JSON parsing on both anonymous result-write routes with a 16 KiB ceiling and terminal HTTP 413 handling; R8B is now architecturally settled as a Vercel WAF custom rate-limit rule rather than app code: only the two result-write POST paths, IP-bucketed fixed window, provisional 300 requests/10 minutes, log-only before any 429 enforcement. External publication/observation remains pending. R8C now emits sanitized JSON diagnostics only for caught internal 503/500 result-write failures using route/category/status; ordinary success and expected 4xx paths stay silent, raw errors are never logged, and public responses are unchanged. Comparison presentation remains intentionally flexible: issue #216 tracks AVG on normal/shareable scorecards, and per-AB AVG may later be prefetched/shown at AB onset without storage/scoring changes. Continue physical-device/editorial QA. Archive/local history follows the explicit future launch epoch. Remove public Reset before launch.
+
+## Open decisions
+
+- Which beta game becomes the permanent broad-launch product.
+- Whether Daily Nine and Classic ever receive separate lineups before that decision.
+- Final launch ruleset/scoring contract and launch date / permanent Daily #1 epoch.
+- Whether real-device/browser verification disproves the approved Web Lock + local journal mechanism and requires a separately reviewed fallback.
+- Classic overall comparison/percentile metric, if any.
+- Replay policy for an already-completed archived game beyond preserving the recorded first result.
+- Exact Standard Daily recipe thresholds after playtesting.
+- Approved All-Star/award/bWAR source workflows.
+- Persistence/admin UX for profiles and recipes.
+- Automatic publication and emergency correction/versioning.
+
+## Continuity control
+
+Repository docs are the system of record. Every PR has Documentation impact; CI checks material diffs; hosted work is incomplete until START-HERE/todo are reconciled. The documentation-impact check is not yet mandatory branch protection; issue #123 remains open after the owner declined an uncertain ruleset configuration.
+
+### Active: AB BEAT and small samples
+
+The owner approved per-AB and final BEAT with one other result and colors based on arithmetic AVG (strictly higher green, equal/lower red). #316 completed and production-verified the portable distribution contract; #317 did the additive service-only filtered Supabase reads; #318 carried the durable first-attempt ID through current-Daily comparison reads, including after Reset. The final current-Daily presentation stage now preserves the served AB histogram through browser state, displays strict-lower BEAT plus AVG with one other result, and uses explicit "Above AVG" / "At or below AVG" text alongside green/red so color is not the only signal. Zero-other populations remain withheld; archive browser activation, scoring and result-write semantics are unchanged. Scope/status: `tasks/plans/ab-beat-and-small-samples.md`.
+
+### Comparison presentation release checkpoint — PR #319
+
+Current-Daily presentation is merged and production-verified at `c2543f9085714e5e27cc2676ea77b2ebf9792382`: exact-head CI #1082, READY Preview `dpl_AwGsMBdRdnKKdUkYXEi2F7MEfzbj`, main push CI #1083, and READY canonical production `dpl_EP7P74RHD4PxKw9EZLG7LHgcVK3g`. Read-only recheck confirmed canonical root/both private-no-store comparison routes, clean release-window error/fatal logs, and unchanged service-role-only v2 Supabase function posture. Original threshold plans are historical; current policy and detailed evidence live in `tasks/plans/ab-beat-and-small-samples.md`. Archive comparison activation and issue #320 remain separate.
+
+### Initial-based canonical display names — issue #320
+
+The bounded data-layer implementation compacts leading dotted uppercase given-name initials in canonical universe generation, preserving the source spelling as a search alias. Search/index and reveal artifacts consume the same canonical display name; identity snapshots, redirects, gameplay-name inputs, puzzle initials, scoring and persistence remain unchanged. Scope and verification: `tasks/plans/initial-based-display-names.md`. Exact release evidence belongs in the implementing PR; physical-device QA remains separate.
+
+## Custom Nine signed terminal evidence checkpoint (October 10)
+
+Custom Nine terminal guess/Give Up resolution emits a domain-separated HMAC receipt for the server-derived terminal observation and pre/post progression token digests. Incorrect nonterminal guesses receive `terminalReceipt: null`. This adds no competitive writes. Existing Daily validation establishes internal consistency, not honest play. **Next:** whole-attempt/replay/branch eligibility architecture followed by server-only admission, verified creator-browser noncontribution, and exact-challenge result isolation. The current stateless Custom session can replay; do not present receipts alone as anti-cheat proof. See `docs/spec/api.md`.
