@@ -1,6 +1,5 @@
 # Initial Baseball — Start Here
 
- 
 ## October 21 — Post-review merges and owner-approved three-game roadmap
 
 The October 21 post-review `main` commit `4033af550d9301e78b3cee6749ddb257757c39cc` merged creator-browser QA PR #473 and corrected WAF-entitlement documentation PR #474 after diagnostics PR #475; #476 was closed as a duplicate. Exact-commit production deployment `dpl_7ZdkwNg2sf6tCAHpQJZevNqNuK52` is **READY**. PR #434 remains intentionally deferred. The release flags for no-sign-in public Custom creation/gameplay remain **OFF** and the private launch is **not complete**. Remaining gates are real credential-backed hosted creator/friend QA, verified route-scoped WAF enforcement and reversal, physical iOS/Android device testing and rollback/controlled activation. Firewall active/staging API reads still return `404 Seawall Config not found`; that is **not** proof a rule is present or absent. No WAF rule or production flag was modified.
