@@ -121,7 +121,7 @@ A material PR is complete only when:
 
 For large changes:
 
-- begin in analysis/Ask mode with an implementation plan;
+- begin with a concise architecture and risk plan, then implement within existing authorization without pausing for routine confirmation; seek owner input only for genuine product, security or architectural decisions;
 - structure the task like a GitHub issue with goal, owner, paths, constraints, acceptance checks, and stop conditions;
 - organize an open-ended engineering mission into successive bounded, independently reviewable PRs; finishing one PR does not automatically end the working session;
 - provide a configured environment and deterministic tests;
