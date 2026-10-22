@@ -106,10 +106,15 @@ async function run() {
   let issued = 0;
   let attempted = 0;
   let rateLimitedOnce = false;
+  let unavailableOnce = false;
+  let malformedSuccessOnce = false;
   const browserErrors = [];
   try {
     server = await serveLocally(await reservePort());
-    browser = await chromium.launch({ headless: true, args: ['--no-sandbox'] });
+    browser = await chromium.launch({ headless: true, args: ['--no-sandbox'],
+      ...(process.env.CUSTOM_CREATOR_BROWSER_QA_CHROMIUM_EXE
+        ? { executablePath: process.env.CUSTOM_CREATOR_BROWSER_QA_CHROMIUM_EXE } : {}),
+    });
     const page = await browser.newPage({
       viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true,
     });
@@ -135,6 +140,23 @@ async function run() {
           status: 429, contentType: 'application/json',
           headers: { 'retry-after': '60', 'cache-control': 'private, no-store' },
           body: JSON.stringify({ error: 'creation_limit_reached' }),
+        });
+      }
+      if (body.canonicalPlayerIds.length === 2 && !unavailableOnce) {
+        unavailableOnce = true;
+        return route.fulfill({
+          status: 503, contentType: 'application/json',
+          headers: { 'cache-control': 'private, no-store' },
+          body: JSON.stringify({ error: 'creation_unavailable' }),
+        });
+      }
+      if (body.canonicalPlayerIds.length === 3 && !malformedSuccessOnce) {
+        malformedSuccessOnce = true;
+        // A successful-looking response whose body cannot be read is ambiguous.
+        return route.fulfill({
+          status: 201, contentType: 'application/json',
+          headers: { 'cache-control': 'private, no-store' },
+          body: '{"puzzleId":',
         });
       }
       issued++;
@@ -203,6 +225,23 @@ async function run() {
         assert.ok((await page.locator('.custom-lineup-slots > li').first().innerText())
           .includes(candidates[0].displayName), 'Rate limit erased the creator draft');
       }
+      if (n === 2 || n === 3) {
+        const attemptsBefore = attempted;
+        await page.getByRole('button', { name: 'Create challenge' }).click();
+        const warning = page.locator('.custom-nine-create-action [role="alert"]');
+        await warning.waitFor();
+        assert.match(await warning.innerText(), /could not confirm whether your lineup was created/i);
+        assert.match(await warning.innerText(), /retrying creates a separate challenge/i);
+        assert.equal(attempted, attemptsBefore + 1,
+          'Ambiguous issuance must not trigger an automatic duplicate request');
+        assert.equal(await page.getByRole('button', { name: 'Create challenge' }).isEnabled(), true);
+        assert.equal(await page.getByText('Challenge issued.').count(), 0);
+        assert.ok((await page.locator('.custom-lineup-slots > li').first().innerText())
+          .includes(candidates[n - 1].displayName),
+          'Ambiguous issuance must preserve ordered editable selections');
+        assert.equal(await page.getByText(ownerCode, { exact: true }).count(), 0,
+          'Ambiguous issuance must not pretend to have recovered the owner code');
+      }
       await page.getByRole('button', { name: 'Create challenge' }).click();
       await page.getByText('Challenge issued.').waitFor();
       assert.equal(await page.getByRole('button', { name: 'Create challenge' }).isDisabled(), true);
@@ -225,10 +264,13 @@ async function run() {
       console.log('PASS ' + n + ' slots: pre/post-issue six-width layout, search, swap and owner isolation');
     }
     assert.equal(issued, 10);
-    assert.equal(attempted, 11, '429 should permit an exact retry without losing the draft');
+    assert.equal(attempted, 13,
+      '429, ambiguous 503 and unreadable 201 must permit manual retries without erasing drafts');
+    assert.equal(unavailableOnce, true);
+    assert.equal(malformedSuccessOnce, true);
     assert.equal(rateLimitedOnce, true);
     assert.deepEqual(browserErrors, []);
-    console.log('PASS all 1–10 with 429 recovery and post-issuance layout: local mocked browser acceptance only');
+    console.log('PASS all 1–10, 429 retry and ambiguous 503/unreadable-201 manual retry: local mocked browser acceptance only');
   } finally {
     if (browser) await browser.close();
     if (server) stop(server.child);
