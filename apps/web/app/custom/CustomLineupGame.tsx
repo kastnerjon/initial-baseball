@@ -5,6 +5,7 @@ import {
   createCustomLineupV2BrowserTransport, CustomLineupV2TransportError,
   type CustomLineupV2BrowserState, type CustomLineupV2BrowserResolution,
 } from '../customLineupV2BrowserTransport';
+import { createDailyGameplayRequestController } from '../dailyGameplayRequestController';
 import { CustomLineupScorecard } from './CustomLineupScorecard';
 import { CustomLineupTerminalPanel } from './CustomLineupTerminalPanel';
 
@@ -31,7 +32,16 @@ type Terminal = Extract<CustomLineupV2BrowserResolution, { kind: 'terminal' }>;
 export function CustomLineupGame({ puzzleId, displayTitle = null }: {
   puzzleId: string; displayTitle?: string | null;
 }): JSX.Element {
+  // A different puzzle is a different browser request/state lifetime.
+  return <CustomLineupGameSession key={puzzleId} puzzleId={puzzleId} displayTitle={displayTitle} />;
+}
+
+function CustomLineupGameSession({ puzzleId, displayTitle }: {
+  puzzleId: string; displayTitle: string | null;
+}): JSX.Element {
   const client = useMemo(() => createCustomLineupV2BrowserTransport(), []);
+  // Reuse Daily's synchronous single-flight/generation fence, not React's async busy flag.
+  const requests = useMemo(() => createDailyGameplayRequestController(), []);
   const [game, setGame] = useState<CustomLineupV2BrowserState | null>(null);
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
@@ -43,39 +53,47 @@ export function CustomLineupGame({ puzzleId, displayTitle = null }: {
   const [terminal, setTerminal] = useState<Terminal | null>(null);
   const [admission, setAdmission] = useState<'idle'|'saving'|'saved'|'error'>('idle');
 
-  const restore = useCallback(async () => {
+  const restore = useCallback(() => {
+    // Refresh and terminal continuation supersede all older callbacks, including
+    // their errors and finally handlers. Server commits remain authoritative.
+    requests.invalidate();
     setLoading(true);
+    setBusy(false);
     setError(null);
-    try {
-      const snapshot = await client.bootstrap(puzzleId);
-      setGame(snapshot);
-      setTerminal(null);
-      setSelected(null);
-      setQuery('');
-      setSuggestions([]);
-    } catch (err) {
-      setError(errorMessage(err));
-    } finally {
-      setLoading(false);
-    }
-  }, [client, puzzleId]);
+    setGame(null);
+    setTerminal(null);
+    setAdmission('idle');
+    setSelected(null);
+    setQuery('');
+    setSuggestions([]);
+    void requests.request({
+      execute: () => client.bootstrap(puzzleId),
+      onStart: () => {},
+      onSuccess: snapshot => { setGame(snapshot); },
+      onError: err => { setError(errorMessage(err)); },
+      onSettled: () => { setLoading(false); },
+    });
+  }, [client, puzzleId, requests]);
 
-  useEffect(() => { void restore(); }, [restore]);
-
-  const submitCompletion = useCallback(async () => {
-    setAdmission('saving');
-    try {
-      await client.submit(puzzleId);
-      setAdmission('saved');
-    } catch {
-      setAdmission('error');
-    }
-  }, [client, puzzleId]);
   useEffect(() => {
-    if (game?.attemptMode === 'completed') void submitCompletion();
+    restore();
+    return () => { requests.invalidate(); };
+  }, [requests, restore]);
+
+  const submitCompletion = useCallback(() => {
+    void requests.request({
+      execute: () => client.submit(puzzleId),
+      onStart: () => { setAdmission('saving'); },
+      onSuccess: () => { setAdmission('saved'); },
+      onError: () => { setAdmission('error'); },
+      onSettled: () => {},
+    });
+  }, [client, puzzleId, requests]);
+  useEffect(() => {
+    if (game?.attemptMode === 'completed') submitCompletion();
   }, [game?.attemptMode, submitCompletion]);
 
-  const canSearch = game?.attemptMode === 'reserved' && terminal === null && !busy;
+  const canSearch = !loading && game?.attemptMode === 'reserved' && terminal === null && !busy;
   useEffect(() => {
     const search = query.trim();
     if (!canSearch || selected !== null || !/[a-z]{2}/i.test(search) || search.length > 100) {
@@ -105,55 +123,61 @@ export function CustomLineupGame({ puzzleId, displayTitle = null }: {
     return () => { clearTimeout(timer); controller.abort(); };
   }, [canSearch, query, selected]);
 
-  async function onFailure(err: unknown): Promise<void> {
+  function onFailure(err: unknown): void {
     if (err instanceof CustomLineupV2TransportError
       && (err.kind === 'conflict' || err.kind === 'completed')) {
-      await restore(); // Server may have committed another tab's action.
+      restore(); // A different tab may have committed an action.
     } else {
       setError(errorMessage(err));
     }
   }
-  async function revealHint(): Promise<void> {
+  function revealHint(): void {
     if (game?.attemptMode !== 'reserved' || game.hintBundle.revealedCount >= 4 || busy) return;
     const token = game.progressionToken;
-    setBusy(true); setError(null);
-    try {
-      const revealed = await client.revealHint(puzzleId, token);
-      setGame(current => {
-        if (current?.attemptMode !== 'reserved' || current.progressionToken !== token) return current;
-        const slot = current.hintBundle.revealedCount + 1;
-        return {
-          ...current, progressionToken: revealed.progressionToken,
-          hintBundle: { ...current.hintBundle, revealedCount: slot as 1|2|3|4,
-            hints: [...current.hintBundle.hints, {
-              slot: slot as 1|2|3|4, ...revealed.hint,
-            }] },
-        };
-      });
-    } catch (err) { await onFailure(err); }
-    finally { setBusy(false); }
+    void requests.request({
+      execute: () => client.revealHint(puzzleId, token),
+      onStart: () => { setBusy(true); setError(null); },
+      onSuccess: revealed => {
+        setGame(current => {
+          if (current?.attemptMode !== 'reserved' || current.progressionToken !== token) return current;
+          const slot = current.hintBundle.revealedCount + 1;
+          return {
+            ...current, progressionToken: revealed.progressionToken,
+            hintBundle: { ...current.hintBundle, revealedCount: slot as 1|2|3|4,
+              hints: [...current.hintBundle.hints, {
+                slot: slot as 1|2|3|4, ...revealed.hint,
+              }] },
+          };
+        });
+      },
+      onError: onFailure,
+      onSettled: () => { setBusy(false); },
+    });
   }
-  async function resolve(action: { submittedPlayerId: string } | { giveUp: true }): Promise<void> {
+  function resolve(action: { submittedPlayerId: string } | { giveUp: true }): void {
     if (game?.attemptMode !== 'reserved' || busy || terminal !== null) return;
     const token = game.progressionToken;
     const currentPitch = game.attemptProgress.completedAtBats.length + 1;
-    setBusy(true); setError(null);
-    try {
-      const outcome = await client.resolve(puzzleId, token, currentPitch, game.atBats.length, action);
-      if (outcome.kind === 'incorrect') {
-        setGame(current => current?.attemptMode === 'reserved'
-          && current.progressionToken === token
-          ? { ...current, progressionToken: outcome.progressionToken,
-            attemptProgress: { ...current.attemptProgress, strikeCount: outcome.strikeCount } }
-          : current);
-        setSelected(null); setQuery(''); setSuggestions([]);
-        setError('Incorrect. Try another player or reveal a clue.');
-      } else {
-        setTerminal(outcome);
-        setSelected(null); setQuery(''); setSuggestions([]);
-      }
-    } catch (err) { await onFailure(err); }
-    finally { setBusy(false); }
+    void requests.request({
+      execute: () => client.resolve(puzzleId, token, currentPitch, game.atBats.length, action),
+      onStart: () => { setBusy(true); setError(null); },
+      onSuccess: outcome => {
+        if (outcome.kind === 'incorrect') {
+          setGame(current => current?.attemptMode === 'reserved'
+            && current.progressionToken === token
+            ? { ...current, progressionToken: outcome.progressionToken,
+              attemptProgress: { ...current.attemptProgress, strikeCount: outcome.strikeCount } }
+            : current);
+          setSelected(null); setQuery(''); setSuggestions([]);
+          setError('Incorrect. Try another player or reveal a clue.');
+        } else {
+          setTerminal(outcome);
+          setSelected(null); setQuery(''); setSuggestions([]);
+        }
+      },
+      onError: onFailure,
+      onSettled: () => { setBusy(false); },
+    });
   }
 
   const facts = game?.attemptMode === 'reserved' ? game.attemptProgress.completedAtBats

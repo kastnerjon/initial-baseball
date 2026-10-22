@@ -120,6 +120,68 @@ describe('daily gameplay request controller', () => {
     await freshRun;
     expect(pending).toBeNull();
   });
+
+  it('serializes Custom hint/resolve even before React can paint busy', async () => {
+    const requests = createDailyGameplayRequestController();
+    const hint = deferred<string>();
+    const hintStart = vi.fn();
+    const guessStart = vi.fn();
+    const first = requests.request({
+      execute: () => hint.promise, onStart: hintStart,
+      onSuccess: vi.fn(), onError: vi.fn(), onSettled: vi.fn(),
+    });
+    const duplicate = await requests.request({
+      execute: async () => 'competing guess', onStart: guessStart,
+      onSuccess: vi.fn(), onError: vi.fn(), onSettled: vi.fn(),
+    });
+    expect(duplicate).toBe(false);
+    expect(hintStart).toHaveBeenCalledOnce();
+    expect(guessStart).not.toHaveBeenCalled();
+    hint.resolve('authorized hint');
+    await first;
+  });
+
+  it('keeps a newer Custom restoration intact after obsolete action and completion callbacks', async () => {
+    const requests = createDailyGameplayRequestController();
+    const staleAction = deferred<string>();
+    const restored = deferred<string>();
+    const oldCompletion = deferred<string>();
+    const oldSuccess = vi.fn();
+    const oldError = vi.fn();
+    const oldSettled = vi.fn();
+    let screen = 'first attempt';
+
+    const action = requests.request({
+      execute: () => staleAction.promise, onStart: () => { screen = 'checking'; },
+      onSuccess: oldSuccess, onError: oldError, onSettled: oldSettled,
+    });
+    requests.invalidate();
+    const replacement = requests.request({
+      execute: () => restored.promise, onStart: () => { screen = 'opening'; },
+      onSuccess: value => { screen = value; }, onError: vi.fn(),
+      onSettled: () => { screen += ' ready'; },
+    });
+
+    staleAction.reject(new Error('obsolete transport error'));
+    await action;
+    expect(oldError).not.toHaveBeenCalled();
+    expect(oldSettled).not.toHaveBeenCalled();
+    expect(screen).toBe('opening');
+    restored.resolve('server-authoritative continuation');
+    await replacement;
+    expect(screen).toBe('server-authoritative continuation ready');
+
+    const completion = requests.request({
+      execute: () => oldCompletion.promise, onStart: vi.fn(),
+      onSuccess: oldSuccess, onError: oldError, onSettled: oldSettled,
+    });
+    requests.invalidate();
+    oldCompletion.resolve('saved');
+    await completion;
+    expect(oldSuccess).not.toHaveBeenCalled();
+    expect(oldSettled).not.toHaveBeenCalled();
+  });
+
 });
 
 function deferred<T>() {
