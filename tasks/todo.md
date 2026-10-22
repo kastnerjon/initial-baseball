@@ -4,7 +4,7 @@ Last reconciled against GitHub, Vercel and both Supabase projects on October 21,
 
 ## 1. Complete Custom Lineups Phase 1 launch gates
 
-The post-generation canonical-to-Custom issuance regression guard **merged in PR #483**; the exhaustive test covered 13,620/13,620 canonical searchable identities. This is data/issuer compatibility evidence, **not** creator-to-friend HTTP, WAF, mobile or rollback acceptance. The Custom gameplay 503 observability fix is staged in PR #485 pending independent review. Issue #472's browser request-lifetime repair is staged separately; tasks/plans/custom-v2-browser-request-lifetime.md records its contract. Issue #470's cookie-less concurrent initialization risk remains independent and unverified.
+The post-generation canonical-to-Custom issuance regression guard **merged in PR #483**; exhaustive real-data QA covered 13,620/13,620 canonical searchable identities (main CI 39715714165, production READY at `7c3b031b`). This is **data/issuer compatibility evidence only**, not creator-to-friend HTTP, WAF, physical-mobile or rollback acceptance. PR #485's secret-safe action/status diagnostics for unexpected gameplay HTTP 503s merged after independent review as `81f896c`. Issue #472's browser request-lifetime repair is staged in PR #486; `tasks/plans/custom-v2-browser-request-lifetime.md` records its contract. Issue #470's cookie-less concurrent initialization risk remains separate: mock-backed service calls reproduce distinct credentials, but genuine browser/QA ordering remains unverified.
 
 Public creation, unlisted sharing and signed 1–10 gameplay are staged behind server-side flags. Production `/create` currently returns 404; leave both Custom flags OFF until every launch gate below passes.
 
