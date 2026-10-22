@@ -14,8 +14,8 @@ produce a valid immutable one-player Custom Lineup clue snapshot using the
 existing server-only resolver and the exact issuer constructor. CI checks that
 invariant after generating the canonical runtime payload (the ordinary Vitest
 suite runs earlier, when that payload is not yet present). The dedicated check
-is in apps/web/app/customLineupCanonicalIssuability.qa.ts with the opt-in
-Vitest config apps/web/scripts/vitest.custom-issuability.config.ts.
+is in `apps/web/app/customLineupCanonicalIssuability.qa.ts` with the opt-in
+Vitest config `apps/web/scripts/vitest.custom-issuability.config.ts`.
 
 This is exhaustive data/issuer compatibility QA, not public anonymous
 creation, database persistence, trusted Vercel ingress, WAF, mobile-device
