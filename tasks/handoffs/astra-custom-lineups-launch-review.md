@@ -67,3 +67,8 @@ Keep shared schemas/types, pure engine, canonical baseball-data and immutable Da
 
 ## Planned bounded release-safety drill
 After #483 main CI/production are green, attempt provider-supported rollback from latest reviewed production to immediately preceding reviewed READY production (only docs/QA differ), verify alias routing and disabled Custom routes, then promote latest deployment back and verify. No database/schema/secret/feature-flag/protection change; no enabled-user Custom rollback is implied. If provider refuses or latest promotion cannot be guaranteed, record exact refusal and retain known-good deployment. Both baseline and candidate must be healthy before starting.
+
+## Phase 3 all requested PRs merged
+- #480 main CI 39715365169 SUCCESS; production dpl_GKWwnACyi6BzMpfS87e76Tg6b2Ho READY on 814fee122e2f519a7bd53fa4cf9e7f444751a618. Exact deployment /, Archive, Classic, Results 200; /create and valid-shaped Custom v2 page 404. Deployment error/fatal scan empty.
+- #483 merged through normal expected-head GitHub API as 7c3b031ba27b3517d36a557335c9ff7e4aad80fe; final main CI/production pending.
+- No production runtime implementation, schema, credential, feature flag or firewall modification was made. All three reviewed changes are documentation/QA/CI. #434 remains deferred, #482 remains closed. #484 is a scoped follow-up issue, not an implemented fix.
