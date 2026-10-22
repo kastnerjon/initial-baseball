@@ -266,3 +266,16 @@ Astra Medium should read this phase and only the relevant source/PR/QA contracts
 - Final main read remains **`411d5ac4786d8039254664c189348fdba014c8c4`**.
 - Initial exact-head Actions run **`39835204374` IN_PROGRESS**; Preview **`dpl_8LyiV5cMGR18kJxNTKgCuN8PxFCw` BUILDING**, `githubCommitSha` verified against remote head. Preview URL: https://initial-baseball-lhf8zsmwu-kastnerjons-projects.vercel.app . These are observations, not successful final gates; no polling or merge in this bounded pass.
 - Production was not changed or independently rescanned by Astra. Prior Sol checkpoint's production READY/main CI/canonical-route evidence remains the last production observation.
+
+
+## Phase 11 — architecture and player-flow review (October 22, 2026; latest)
+
+Owner requested a bounded architecture review and longer-term UX/build sequence before GPT-6 resumes. Completed source/package-boundary review and read-only public Daily first-open/active-screen inspection; no production guesses, results, flags or configuration changed. Main baseline remains `411d5ac4786d8039254664c189348fdba014c8c4`; #489 observed OPEN at `e1a9ab1c283a2aa984f6ba23c51e874756f20647`. CI/deployments not recertified during this planning pass.
+
+- Review and proposed sequence: `tasks/plans/architecture-ux-sequence-20261022.md`.
+- Six-screen self-contained clickable concept: `docs/design/initial-baseball-flow-concept.html`. Illustrative data only; no server calls/storage/credential handling. HTML/navigation-target checks, JavaScript syntax, sample-score arithmetic and whitespace passed. Not browser-rendered or physical-device validated; no claim of production/mobile acceptance.
+- Assessment: preserve pure rules/data and server authority; no rewrite/infrastructure needed. Share web presentation selectively while retaining distinct Daily persistence and Custom server-transport lifecycles. Do not consolidate them into a generic controller.
+- Highest-value UX: rules currently auto-open on mount; move to first-use/per-ruleset help. Bring completion score/share above deep analysis. Keep active-at-bat focus and align Custom's visual system with Daily. Preserve exact scoring, answer protection and tested scoreboard columns.
+- Recommended order: finish Custom gates → coherent play/results/share UX → permanent Daily/editorial/archive and measurement → optional accounts/history → curated Discover → asynchronous Head-to-Head → native. Detailed recommendations are **proposals**, not shipped behavior or blanket approval to implement later phases; scoped PRs must update canonical documents when adopted.
+- **GPT-6's immediate bounded task remains Phase 10's #489 exact-head CI/Preview/merge/postmerge verification.** This review adds no release waiver. Continue outstanding launch evidence next. Once the release checkpoint permits UX work, first implementation slice is returning-player help in `DailyHowToDialog.tsx` and its existing owning tests/copy; no attempt/persistence redesign.
+- QA credential provisioning, authenticated WAF enforcement/reversal, hosted creator/friend, physical mobile and rollback remain unverified. Public flags OFF; #470 open; #434 untouched.
