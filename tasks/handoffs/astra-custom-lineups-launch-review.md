@@ -72,3 +72,37 @@ After #483 main CI/production are green, attempt provider-supported rollback fro
 - #480 main CI 39715365169 SUCCESS; production dpl_GKWwnACyi6BzMpfS87e76Tg6b2Ho READY on 814fee122e2f519a7bd53fa4cf9e7f444751a618. Exact deployment /, Archive, Classic, Results 200; /create and valid-shaped Custom v2 page 404. Deployment error/fatal scan empty.
 - #483 merged through normal expected-head GitHub API as 7c3b031ba27b3517d36a557335c9ff7e4aad80fe; final main CI/production pending.
 - No production runtime implementation, schema, credential, feature flag or firewall modification was made. All three reviewed changes are documentation/QA/CI. #434 remains deferred, #482 remains closed. #484 is a scoped follow-up issue, not an implemented fix.
+
+
+## Phase 4 continuation — October 21, 2026, approximately 23:33 ET
+
+### Definitive merge/production verification
+- #479 merged `5a45d16c2771e21462edbd18d5571bff60362a10`, after independent bounded review on the prior handoff.
+- #480 merged `814fee122e2f519a7bd53fa4cf9e7f444751a618`; exact main CI `39715365169` SUCCESS and production deployment `dpl_GKWwnACyi6BzMpfS87e76Tg6b2Ho` READY.
+- #483 merged `7c3b031ba27b3517d36a557335c9ff7e4aad80fe`. Main CI `39715714165` **SUCCESS**, current production `dpl_vccFJFNeYyEJgtLsHfqyhgL5GGkJ` **READY**, exact commit and alias. Earlier #483 postmerge pending checks are resolved.
+- Only deferred #434 and newly opened diagnostics #485 remain open. #482 remains closed without merging. No public Custom activation.
+- Vercel production error/fatal logs in the 30 minutes ending approximately 2026-10-22T03:20:49Z returned **no entries**, not a comprehensive guarantee of gameplay health.
+- Exact read-only database counts (not pg_stat estimates): production `dwreeiydvwikpamlokji` 0 issued, 0 attempts, 0 completed, 0 at-bats, 0 creation budgets; isolated QA `iklbnlicgsxxhaoiscor` 12 issued, 12 attempts, 12 completed, 57 at-bats, 0 budgets. Both ACTIVE_HEALTHY at inspection. No DB mutation.
+- Vercel active firewall read still returned 404 `Seawall Config not found`; cannot verify an active rule or actual enforcement. Project route-rules API returned zero routes, which is **not** a substitute for WAF. Do not infer that IP rate limiting is present or absent.
+
+### Isolated corrective PR #485 — diagnostics for unexpected gameplay 503s
+- Existing issue #484 was confirmed against `apps/web/app/serverCustomLineupV2GameplayHttp.ts`: unexpected failure returns sanitized `session_unavailable`/503 with no structured application event. Normal, expected 400s are already handled.
+- Branch `fix/custom-gameplay-safe-503-diagnostics-20261021` from exact main `7c3b031ba27b3517d36a557335c9ff7e4aad80fe`; open [PR #485](https://github.com/kastnerjon/initial-baseball/pull/485), exact head `3901697d845f1b1ff87cdd4d976b7b85ffcf2517`.
+- Only web HTTP adapter and its colocated test changed: add one JSON log containing exactly `event`, allowlisted `action`, and `status:503`, without secret-bearing error/request/credential/answer material. Preserve existing status, sanitized response, cookie semantics, no logging for expected 400s.
+- Local sandbox `sbx_Ph9hP6cjGFogGZPo1Xk2ST0cJDGz` (ephemeral, no persistent snapshots), git checkout exact base. Built four prerequisite domain packages. Focused Vitest 11/11 PASS; web typecheck PASS; full workspace `pnpm test`, `pnpm lint`, documentation-impact tests, and file-size checks all completed successfully (combined command exit 0). `git diff --check` PASS.
+- Exact uploaded Git blob hashes match locally tested `git hash-object`: HTTP `ac712d57e082b1816d1b662b3577291ec509bc40`, test `a07eae574e011dd978d1cfdf67d64bfc78c7a4fe`. Unrelated generated baseball-data files changed locally during prerequisite builds and **were not pushed**.
+- #485 is **not merged**. Requires exact-head GitHub CI, READY Preview and a genuinely independent review. Do not self-approve or bypass protections. No production configuration or runtime mutation made.
+
+### Architecture and release verdict
+- No confirmed P0/P1 vulnerability in the bounded review. Current shared/engine/data and server-authoritative immutable Custom boundaries remain structurally sound for staged private launch, but not a general security certification. Do not replace with speculative service/framework abstractions.
+- Keep P2 first-bootstrap concurrent cookie race #470, client async stale response #472, potential historical ID removal, and P3 lost creation-response recovery #471 as distinct unverified/known concerns. #485 only improves telemetry.
+- Production remains **NOT LAUNCH READY** until real isolated-QA creator-to-friend credential-backed HTTP acceptance, provider-level WAF configuration/enforcement with reversal, physical iOS Safari/Android Chrome acceptance, and reversible production rollback/controlled feature activation. Never mistake synthetic headers, SQL RPC, unit tests or viewport simulation for these gates.
+- No new QA keys, WAF changes, feature flags, schema changes or release were performed during this phase.
+
+### Next three actions
+1. Verify PR #485 exact-head GitHub Actions CI and exact-commit Vercel Preview READY, request truly independent fresh-eyes review and fix in-scope findings. Merge only after requirements satisfied; then verify main, production, routes and runtime errors.
+2. Progress hosted launch evidence with **QA-only** credentials (currently inaccessible via connector/browser session) and real route-scoped Hobby fixed-window WAF dashboard/enforcement test (the API still returns 404). Do not enable production flags or weaken SSO protection.
+3. Complete guarded real-device acceptance and a reversible production rollback drill only after verifying both deploy targets/aliases, read-only smoke and promotion recovery; preserve both flags OFF until all gates pass.
+
+### Immediate resume
+Read this file on `docs/astra-custom-launch-review-20261021`, read `AGENTS.md`, fetch latest main and PR #485, then inspect exact-head CI and Vercel Preview. Leave deferred PR #434 untouched. Use git connector if local CLI has no authenticated push. Do not confuse the code-review allowance restriction with test/preview success.
