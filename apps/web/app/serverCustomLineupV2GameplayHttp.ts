@@ -133,6 +133,10 @@ export async function handleCustomLineupV2GameplayPost(
     }, { headers: HEADERS });
   } catch (error) {
     if (error instanceof CustomNineHintRequestError) return response('invalid_request', 400);
+    // Action/status only: never log the exception, request, credentials, or clues.
+    console.error(JSON.stringify({
+      event: 'custom_lineup_gameplay_unavailable', action, status: 503,
+    }));
     return response('session_unavailable', 503);
   }
 }
