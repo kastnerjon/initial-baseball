@@ -106,3 +106,8 @@ After #483 main CI/production are green, attempt provider-supported rollback fro
 
 ### Immediate resume
 Read this file on `docs/astra-custom-launch-review-20261021`, read `AGENTS.md`, fetch latest main and PR #485, then inspect exact-head CI and Vercel Preview. Leave deferred PR #434 untouched. Use git connector if local CLI has no authenticated push. Do not confuse the code-review allowance restriction with test/preview success.
+
+
+### Phase 4 post-PR smoke and exact-head Preview
+- Current production alias `https://initial-baseball-web.vercel.app`: GET routes `/`, `/archive`, `/classic`, `/results` returned HTTP 200; `/create` returned 404 as intended with public Custom off. This was a real HTTP smoke through the public Vercel alias using an ephemeral isolated sandbox, not authenticated creator/friend acceptance.
+- #485 exact head `3901697d845f1b1ff87cdd4d976b7b85ffcf2517`: Vercel Preview `dpl_zPPLdVQVhL2NerFaaLaRLHVZa2qT` **READY** on that SHA, verified from deployment list. GitHub Actions run [39717483332](https://github.com/kastnerjon/initial-baseball/actions/runs/39717483332) was still **in_progress** at last poll; do not claim CI success before a fresh read. No independent review yet and no merge.
