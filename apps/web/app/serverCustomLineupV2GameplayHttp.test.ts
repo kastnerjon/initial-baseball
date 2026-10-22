@@ -235,6 +235,39 @@ describe('off-by-default Custom v2 gameplay HTTP transport', () => {
     expect(await retry.json()).toEqual({status:'existing'});
   });
 
+  it('logs only safe action/status diagnostics on unexpected provider failures', async () => {
+    const diagnostic = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      for (const action of actions) {
+        const failing = action === 'bootstrap' ? bootstrap
+          : action === 'hint' ? hint : action === 'resolve' ? attempt : submit;
+        failing.mockRejectedValueOnce(new Error('PRIVATE_COOKIE_TOKEN_OWNER_ANSWER_STACK'));
+        const options = action === 'hint' ? {
+          body: JSON.stringify({ progressionToken: 'signed-secret' }),
+        } : action === 'resolve' ? {
+          body: JSON.stringify({ progressionToken: 'signed-secret', submittedPlayerId: player }),
+        } : {};
+        const result = await send(action, options);
+        expect(result.status).toBe(503);
+        expect(result.headers.get('set-cookie')).toBeNull();
+        expect(await result.json()).toEqual({ error: 'session_unavailable' });
+        expect(diagnostic).toHaveBeenCalledTimes(1);
+        const payload = String(diagnostic.mock.calls[0]?.[0]);
+        expect(JSON.parse(payload)).toEqual({
+          event: 'custom_lineup_gameplay_unavailable', action, status: 503,
+        });
+        expect(payload).not.toContain('PRIVATE_COOKIE_TOKEN_OWNER_ANSWER_STACK');
+        expect(payload).not.toContain('signed-secret');
+        expect(payload).not.toContain(player);
+        diagnostic.mockClear();
+      }
+      expect((await send('hint', { body: 'invalid-json' })).status).toBe(400);
+      expect(diagnostic).not.toHaveBeenCalled();
+    } finally {
+      diagnostic.mockRestore();
+    }
+  });
+
   it('uses consistent sanitized errors and never sets an accidental cookie', async () => {
     for (const [kind,status] of [['not_found',404],['invalid_credential',403],
       ['invalid_progression',400],['conflict',409],['completed',409]] as const) {
