@@ -83,12 +83,13 @@ successful responses show the same conservative uncertainty warning. The admin
 creator's behavior is unchanged. This is a communication safeguard, **not
 recovery**; #471 remains open for a separate idempotency/product decision.
 
-The optional local native Chromium suite simulates an HTTP 503 and an HTTP 201
-with invalid JSON at N=2 and N=3. It verifies the warning, absence of falsely
+The optional local native Chromium suite simulates an HTTP 503, an HTTP 201 with invalid JSON, and a failed browser
+fetch at N=2, N=3 and N=4. It verifies the warning, absence of falsely
 issued links/owner codes, original ordered editable draft, no automatic second
 request, and successful manual retry. The existing 429 retry and lengths 1–10
 also remain covered. Tests use mocked creation HTTP and real browser/React;
-they do not demonstrate a severed TCP response, live QA commits or WAF.
+they do not demonstrate a committed request with a severed TCP response,
+live QA commits or WAF.
 
 The browser QA runner can optionally take a sandbox-local Chromium executable
 path through `CUSTOM_CREATOR_BROWSER_QA_CHROMIUM_EXE`. Its existing explicit
