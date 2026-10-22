@@ -2,6 +2,30 @@
 
 Date: October 22, 2026. Status: **review and recommended direction**, not shipped behavior or permission to activate features. Requested by the owner after Astra's interruption-QA pass. Canonical product rules remain authoritative until a scoped implementation PR adopts the relevant recommendation.
 
+
+## Owner clarification — Discover and friends (October 22; supersedes earlier visual direction)
+
+**Accepted direction:** retain the play → reveal → result/share → return/invite loop. The owner does **not** approve the HTML's specific screens or visual design. Do not implement or treat that artifact as a design specification. The supplied exploratory brand tokens introduce navy `#041E42`, crimson `#BF0D3E`, white, Barlow Condensed display and Inter UI typography; use these as input to the next visual exploration, subject to accessibility checks, rather than assuming the earlier green/cream recommendation is approved. Files remain unchanged.
+
+**Explicit product requests:** Discover public Custom Lineups sorted by newest or popularity; per-challenge scoreboards; easy comparison with friends, preferably a selector at the top of today's result. Friends who have completed should appear first; other friends can appear separately. The friendship mechanism below is a recommendation, not a settled authorization/privacy contract.
+
+### Concrete interaction recommendation
+- Discover is a first-class destination once publishing is released, alongside Daily, Create and My Results. Keep Daily as the default arrival. Only intentionally published challenges appear; unlisted friend links stay unindexed.
+- Two clear sorting choices: **Popular** and **Newest**. Recommend Popular defaulting to this week, with an all-time option. Newest sorts by publication time. Popularity uses eligible accepted first noncreator completions in the stated window, never raw views, creator previews or repeated submission calls. Anonymous attempts are not unique humans. Freeze the precise ranking/tie policy in its owning PR.
+- Cards show title, length and permitted creator display identity plus completion count; no roster/answers. Each challenge has its own scorecard/scoreboard. Public names/results require explicit visibility rules; anonymous participants need not publish a name. Do not compare raw totals between different lengths or challenges.
+- At the top of the completed Daily result: **Compare with [Everyone / friend]**. Everyone shows the existing eligible aggregate; it is not a ranked list of all anonymous users.
+- Friend selector groups **Finished this lineup** first, then **No shared result yet**. Before a privacy/availability contract exists, absence of a visible result must not be labeled as proof that someone has not played. Names with no shared completion offer a normal challenge/share action, not a fake comparison.
+- Selecting an eligible friend shows You / Friend / Difference for the total and each batter, using the same immutable puzzle, mode, ruleset and original eligible results. Answer-bearing detail appears only when both have completed. Never show another player's unfinished guesses or clues. Preserve unavailable/restricted results and tied-score states honestly.
+- Same pattern applies to an exact Custom challenge. A Friends scoreboard is the group view; the selector is the one-to-one drill-down. Head-to-Head remains a separate future gameplay mode, not a prerequisite for comparing already-completed games.
+
+### Minimum viable friends recommendation
+Optional accounts plus an invite link and accepted friendship are enough; no contact upload, chat, activity feed or follower system needed. Friends are not inferred from nicknames, a shared IP, or possession of a challenge URL. Let users remove a connection and control shared results; revoked visibility must be enforced by the server. Sharing and anonymous play remain available without accounts. A temporary explicit result-comparison invitation could be a separate pre-account slice, but it is not assumed to exist and must not expose attempt/owner credentials.
+
+### Revised priority
+Finish Custom launch evidence → improve the core daily/result experience → permanent Daily/history prerequisites → **optional accounts, result association and a minimal friends-comparison slice** → Discover publishing/sorting/scoreboards → Head-to-Head → native. Friends comparison is now an explicit engagement priority, not an incidental benefit of accounts. Discover remains committed future direction; its publishing/moderation/privacy requirements still apply. Validate small comparison/history slices before building a broad social system.
+
+The recommendation is to place friend comparison ahead of a sophisticated public discovery feed because it directly serves the owner's stated daily use case. A simple Discover directory can follow its safety/ownership prerequisites without waiting for advanced rankings. This is planning; no feature flags, production code or release gates changed.
+
 ## Scope and evidence
 
 Goal: make the next engineering decisions support one coherent daily baseball habit. Owning concern: product/architecture planning. In scope: current architecture assessment, screen flow, implementation order, measurement and a disposable visual concept. Out of scope: product code, migrations, flags, accounts implementation, operational changes and another review of #488/#489.

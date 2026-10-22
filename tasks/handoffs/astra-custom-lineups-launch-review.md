@@ -279,3 +279,12 @@ Owner requested a bounded architecture review and longer-term UX/build sequence 
 - Recommended order: finish Custom gates → coherent play/results/share UX → permanent Daily/editorial/archive and measurement → optional accounts/history → curated Discover → asynchronous Head-to-Head → native. Detailed recommendations are **proposals**, not shipped behavior or blanket approval to implement later phases; scoped PRs must update canonical documents when adopted.
 - **GPT-6's immediate bounded task remains Phase 10's #489 exact-head CI/Preview/merge/postmerge verification.** This review adds no release waiver. Continue outstanding launch evidence next. Once the release checkpoint permits UX work, first implementation slice is returning-player help in `DailyHowToDialog.tsx` and its existing owning tests/copy; no attempt/persistence redesign.
 - QA credential provisioning, authenticated WAF enforcement/reversal, hosted creator/friend, physical mobile and rollback remain unverified. Public flags OFF; #470 open; #434 untouched.
+
+
+## Phase 12 — owner correction: visual design rejected; Discover and friends prioritized
+
+The owner likes the UX loop but does not approve the HTML's specific screens. Treat `docs/design/initial-baseball-flow-concept.html` as a rejected visual exploration, not an implementation spec. Supplied navy/crimson/white brand tokens were read and are inputs to the next design pass, not applied to production.
+
+Updated `tasks/plans/architecture-ux-sequence-20261022.md` with explicit Discover newest/popularity sorting, per-challenge scoreboards and top-of-result friend comparison. Recommended minimal friends: optional accounts, accepted invite links, result-sharing permissions and removal; no chat/feed/contact sync. Finished friends first, then honest no-shared-result states; compare only matching puzzle/mode/ruleset first eligible results, without unfinished-answer leakage. Persistent friends need account/result association; anonymous play remains available.
+
+Owner requests are distinguished from recommended implementation details. Friend comparison should receive a focused engagement slice before a sophisticated Discover feed; Head-to-Head is separate. #489/launch-gate continuation remains unchanged. No new CI/deployment or hosted QA evidence, code changes, flag changes or automatic activation.
