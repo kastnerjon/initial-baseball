@@ -108,6 +108,7 @@ async function run() {
   let rateLimitedOnce = false;
   let unavailableOnce = false;
   let malformedSuccessOnce = false;
+  let disconnectedOnce = false;
   const browserErrors = [];
   try {
     server = await serveLocally(await reservePort());
@@ -158,6 +159,11 @@ async function run() {
           headers: { 'cache-control': 'private, no-store' },
           body: '{"puzzleId":',
         });
+      }
+      if (body.canonicalPlayerIds.length === 4 && !disconnectedOnce) {
+        disconnectedOnce = true;
+        // Browser sees an unavailable transport; no server response is delivered.
+        return route.abort('failed');
       }
       issued++;
       return route.fulfill({
@@ -225,7 +231,7 @@ async function run() {
         assert.ok((await page.locator('.custom-lineup-slots > li').first().innerText())
           .includes(candidates[0].displayName), 'Rate limit erased the creator draft');
       }
-      if (n === 2 || n === 3) {
+      if (n === 2 || n === 3 || n === 4) {
         const attemptsBefore = attempted;
         await page.getByRole('button', { name: 'Create challenge' }).click();
         const warning = page.locator('.custom-nine-create-action [role="alert"]');
@@ -264,13 +270,14 @@ async function run() {
       console.log('PASS ' + n + ' slots: pre/post-issue six-width layout, search, swap and owner isolation');
     }
     assert.equal(issued, 10);
-    assert.equal(attempted, 13,
-      '429, ambiguous 503 and unreadable 201 must permit manual retries without erasing drafts');
+    assert.equal(attempted, 14,
+      '429, 503, unreadable 201 and failed fetch must allow deliberate retries without draft loss');
     assert.equal(unavailableOnce, true);
     assert.equal(malformedSuccessOnce, true);
+    assert.equal(disconnectedOnce, true);
     assert.equal(rateLimitedOnce, true);
     assert.deepEqual(browserErrors, []);
-    console.log('PASS all 1–10, 429 retry and ambiguous 503/unreadable-201 manual retry: local mocked browser acceptance only');
+    console.log('PASS all 1–10, 429 retry and ambiguous 503/unreadable-201/failed-fetch manual retry: local mocked browser acceptance only');
   } finally {
     if (browser) await browser.close();
     if (server) stop(server.child);
