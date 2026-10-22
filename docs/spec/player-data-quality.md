@@ -7,6 +7,25 @@ Last updated: 2026-07-20
 
 Daily Inning must present one understandable, trustworthy representation of each real player. Source datasets contain duplicate identifiers, formal legal names, middle names, spelling variants, accents, same-name people, incomplete historical fields, multi-team seasons, and conflicting records. Those source irregularities must not leak directly into lineup selection, search, hints, or reveal cards.
 
+## Canonical-to-Custom issuance compatibility gate (October 21, 2026)
+
+Every identity returned by the current public canonical player-search index must
+produce a valid immutable one-player Custom Lineup clue snapshot using the
+existing server-only resolver and the exact issuer constructor. CI checks that
+invariant after generating the canonical runtime payload (the ordinary Vitest
+suite runs earlier, when that payload is not yet present). The dedicated check
+is in apps/web/app/customLineupCanonicalIssuability.qa.ts with the opt-in
+Vitest config apps/web/scripts/vitest.custom-issuability.config.ts.
+
+This is exhaustive data/issuer compatibility QA, not public anonymous
+creation, database persistence, trusted Vercel ingress, WAF, mobile-device
+acceptance, or permission to enable production Custom flags. It prevents a
+future data refresh from silently introducing a searchable but nonissuable
+player without adding a competing creator-search catalog or player eligibility
+rule. The closed, unmerged PR #482 was unnecessary: all 13,620 currently
+indexed players successfully materialized the actual immutable v2 clue
+snapshot in isolated local QA.
+
 ## Canonical identity model
 
 Each accepted player has:
