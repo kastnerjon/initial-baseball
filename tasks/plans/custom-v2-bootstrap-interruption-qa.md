@@ -1,0 +1,63 @@
+# Custom bootstrap document-interruption QA — #470
+
+## Scope contract
+- Goal: determine whether terminating a document holding the native bootstrap lock can let its delayed HTTP Set-Cookie replace the credential used by a surviving tab.
+- Owner: apps/web QA harness; browser transport is the existing product code under test.
+- In scope: a repeatable loopback-only HTTP fixture, actual browser transport bundle, native Web Locks and HttpOnly cookies, delayed headers/body, close/navigation/React-generation-style invalidation, progress/completed resume, and a no-lock positive control.
+- Out of scope: no product identity/protocol, server/database schema, scoring, public flags, credentials, WAF or production operations. Fixture state is explicitly simulated, not hosted acceptance.
+- Acceptance: bounded Chromium run for representative N=1 and N=10; control must demonstrate competing credentials; locked scenarios must resume the surviving attempt; focused existing transport/controller checks; file-size/doc checks and normal PR CI.
+- Stop: if an interruption causes competing usable credentials or silent reset, record precise evidence before choosing any fix. Changes to identity, persistence, authority or compatibility require a separate decision.
+
+## Architecture
+Browser coordination belongs in apps/web. Reuse the actual Custom browser transport and existing Daily request controller; do not duplicate the locking implementation. QA may use existing TypeScript/Vite test tooling and an externally provided Playwright installation, following the existing creator-browser QA pattern. Domain packages remain unchanged. This adds acceptance evidence, not a product or API contract.
+
+## Evidence
+Execution results are recorded below. Native-browser cookie scheduling is distinct from server-service mocks. A local simulated endpoint cannot prove signed database CAS, creator exclusion, deployed Vercel behavior, physical Safari/Android or hosted completion admission.
+
+## Executed October 22 — actual browser, simulated endpoint
+
+Product source baseline: `411d5ac4786d8039254664c189348fdba014c8c4` (#488 merged). The harness bundles **unaltered** `customLineupV2BrowserTransport.ts`, its real payload codecs/engine normalization, and `dailyGameplayRequestController.ts`. It uses Playwright with Chromium **153.0.8010.0**, native `navigator.locks`, real loopback HTTP responses and path-scoped HttpOnly/SameSite=Strict cookies. Playwright permits requests only to the ephemeral loopback origin; it never fulfills a simulated fetch response in the browser. The server-side ledger and progression strings are synthetic, not signed application state.
+
+Final harness run: **14/14 PASS**, seven scenarios for each N=1 and N=10:
+
+| Scenario | Observed result |
+| --- | --- |
+| Unlocked positive control | Two distinct cookies/ledger entries; delayed first response replaces the cookie used by progressed second tab; reopening appears reset. Required control reproduces the fault. |
+| Two live tabs, exclusive lock | Only one request reaches the server while first response is held; waiting request carries first cookie; one ledger entry. |
+| Close lock-holder before headers | Browser closes first response connection; survivor gets second credential. Two fixture entries exist, first is orphaned. Late attempted response does not replace survivor cookie. |
+| Navigate lock-holder before headers | Same connection cancellation and survivor continuity as close. |
+| Close after headers, before body | First cookie is already applied; survivor resumes it after lock release; one entry. |
+| Malformed first response body | First transport rejects `invalid_response`; lock releases; waiting request reuses already-applied cookie. |
+| Invalidate request generation while bootstrap held | Actual request controller suppresses obsolete callback; native lock holds until first request settles; only new generation paints, with one entry. This is controller integration, not a mounted React test. |
+
+All locked scenarios then reload the surviving document, reopen fixture progress (one strike), mark the fixture completed, reload again and recover exactly N terminal facts without a live progression token. The interrupted-document tests explicitly await the first server response's `close` event **before** releasing its delayed output, so connection cancellation is observed rather than inferred from the final cookie alone.
+
+**Conclusion:** no late-cookie overwrite or progress reset was reproduced with the merged lock under these controlled Chromium schedules. No product fix is justified by this evidence. Two server reservations after a pre-header cancellation are possible; the test proves only one credential remains in the tested cookie jar. It does not prove one attempt per human or absence of every timing race.
+
+## Reproduce
+
+Use an installed workspace and a separate QA-only Playwright installation with Chromium:
+
+```sh
+CUSTOM_BOOTSTRAP_QA_PLAYWRIGHT_MODULE=/absolute/path/to/playwright/index.mjs \
+  node apps/web/scripts/qa-custom-bootstrap-browser.mjs
+```
+
+Optional `CUSTOM_BOOTSTRAP_QA_CHROMIUM_EXECUTABLE` selects an absolute local browser binary. Optional `CUSTOM_BOOTSTRAP_QA_ESBUILD_MODULE` selects an absolute existing esbuild module; normally esbuild is resolved from the installed Vitest/Vite toolchain. No dependency or lockfile is added to the product. No server URL, database ref or secret is accepted by the harness.
+
+This Work environment's ordinary Playwright browser download returned a truncated archive. The successful run used Chromium bundled in the QA-only `@sparticuz/chromium@153.0.0` package, outside the repository, with its binary extracted locally. Workspace install with pnpm 9.15.0 stopped on a registry 403 for `cacache-18.0.4`; this is not a source/test failure. The native run used the already-fetched esbuild 0.21.5 and actual source aliases without a full dependency pipeline. Full CI remains a reviewer gate.
+
+## Still unverified
+
+The fixture does not exercise the actual Next HTTP handler, signed-cookie codec, creator marker, immutable issued DB rows, SQL CAS/completion admission, real creator/friend separation or hosted quota. A simulated progress/completion update is not evidence those services work. Physical iOS Safari/Android, alternate browser versions, Vercel WAF enforcement/reversal and production rollback remain release gates. QA dashboard authentication is available in Sol's handoff, but its server key was not provisioned in this session. Both public flags remain OFF, and #470 stays open.
+
+## Focused validation
+
+- Final native harness: 14/14 scenarios PASS after adding explicit canceled-connection observation.
+- Existing transport/controller Vitest tests: **26/26 PASS** using Vitest 2.1.9, the two unchanged source test files and source aliases for engine/shared. Temporary tooling/config stayed outside the repository.
+- Both new scripts pass `node --check`; documentation-impact unit tests 4/4 PASS; file-size and whitespace checks PASS.
+- No product source, dependency manifest, lockfile, production setting or database changed. Independent review and complete PR CI remain pending.
+
+## Exact-head CI gate follow-up — October 22
+
+At original PR head `e1a9ab1c283a2aa984f6ba23c51e874756f20647`, GitHub Actions CI run `39835204374` completed: full `test` job SUCCESS; `documentation-impact` job FAILURE solely because the PR body used `## Architecture and documentation impact` rather than the exact CI-required `## Documentation impact` section. All documentation-impact unit tests passed; failure was in the PR-body heading assertion. The separate exact-head Vercel Preview `dpl_8LyiV5cMGR18kJxNTKgCuN8PxFCw` was READY. The PR body was corrected with the exact heading. This documentation-only commit is intended to trigger a fresh pull-request CI event; do not merge before the replacement head has successful required CI and READY Preview. The independent agent's reviewed product/QA code has not changed.
