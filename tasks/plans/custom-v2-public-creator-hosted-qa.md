@@ -66,3 +66,4 @@ disclose irrecoverability after an ambiguous creation failure, or design
 server-authoritative idempotent issuance with secret-safe recovery and
 concurrent retry semantics as a separate persistence-contract change.
 Do not silently interpret a retry as recovery.
+The current public creator client does not automatically retry a failed create request; after an ambiguous response failure, a manual retry is a separate creation under the present API. A challenge-specific creator-preview cookie is not a recoverable management capability. These constraints require explicit product acceptance or a separately reviewed contract change before claims of response-loss recovery.
