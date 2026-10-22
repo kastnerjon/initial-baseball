@@ -297,6 +297,13 @@ async function alternativeFinish(mode) {
   console.log('PASS Custom v2 hosted DB ' + mode);
 }
 
+// Reserved documentation IPv6 addresses, never real clients or production traffic.
+function randomQaIp() {
+  const groups = randomBytes(12).toString('hex').match(/.{4}/g);
+  assert.ok(groups && groups.length === 6);
+  return '2001:db8:' + groups.join(':');
+}
+
 /** QA-only quota exercise; synthetic local ingress is not a Vercel WAF proof. */
 // Database rate windows are fixed epoch-aligned ten-minute buckets. Run every
 // observation inside one stable window; otherwise start again with a fresh IP.
@@ -318,12 +325,7 @@ async function verifyAnonymousCreationBudget() {
     }
     const begin = Date.now();
     const window = Math.floor(begin / windowMs);
-    const randomTestIp = () => {
-      const groups = randomBytes(12).toString('hex').match(/.{4}/g);
-      assert.ok(groups && groups.length === 6);
-      return '2001:db8:' + groups.join(':');
-    };
-    const ip = randomTestIp();
+    const ip = randomQaIp();
     const creator = browser();
     const malformed = await creator.send('/api/custom-lineup/create', {
       qaForwardedIp: ip, body: { ...body, canonicalPlayerIds: [] },
@@ -338,7 +340,7 @@ async function verifyAnonymousCreationBudget() {
       qaForwardedIp: ip, body,
     });
     const independent = await browser().send('/api/custom-lineup/create', {
-      qaForwardedIp: randomTestIp(), body,
+      qaForwardedIp: randomQaIp(), body,
     });
     const finish = Date.now();
     if (Math.floor(finish / windowMs) !== window
@@ -366,12 +368,64 @@ async function verifyAnonymousCreationBudget() {
   throw new Error('Could not verify quota within one stable ten-minute database window');
 }
 
+
+// A concurrent burst must never admit more than the database's fixed-window
+// allowance. Each simulated client has a separate cookie jar; all share one
+// synthetic edge-derived IP. Not a proof of real Vercel edge enforcement.
+async function verifyConcurrentAnonymousCreationBudget() {
+  assert.ok(publicCreatorQa, 'Concurrent quota QA requires anonymous mode');
+  const body = { canonicalPlayerIds: players.slice(0, 1), title: 'QA concurrent quota fixture' };
+  const windowMs = 10 * 60 * 1000;
+  const guardMs = 30 * 1000;
+  for (let attempt = 0; attempt < 3; attempt++) {
+    const offset = Date.now() % windowMs;
+    if (offset < guardMs || offset > windowMs - 90 * 1000) {
+      const waitMs = offset < guardMs ? guardMs - offset : windowMs - offset + guardMs;
+      await delay(waitMs);
+    }
+    const window = Math.floor(Date.now() / windowMs);
+    const ip = randomQaIp();
+    const responses = await Promise.all(Array.from({ length: 12 }, () =>
+      browser().send('/api/custom-lineup/create', { qaForwardedIp: ip, body })));
+    const finish = Date.now();
+    if (Math.floor(finish / windowMs) !== window || finish % windowMs > windowMs - guardMs) {
+      console.log('Concurrent QA budget crossed a fixed window; retrying with fresh IP');
+      continue;
+    }
+    const accepted = responses.filter(response => response.status === 201);
+    const denied = responses.filter(response => response.status === 429);
+    assert.equal(accepted.length, 10, 'Concurrent admission must commit exactly ten');
+    assert.equal(denied.length, 2, 'Concurrent overflow must deny exactly two');
+    assert.equal(new Set(accepted.map(response => response.data?.puzzleId)).size, 10,
+      'Successful concurrent issuance must yield ten distinct immutable challenges');
+    assert.equal(new Set(accepted.map(response => response.data?.ownerCapability)).size, 10,
+      'Successful concurrent issuance must yield ten distinct private owner credentials');
+    for (const response of accepted) {
+      assert.match(response.data?.puzzleId ?? '', /^custom-lineup-v2-[0-9a-f-]{36}$/);
+      assert.match(response.data?.ownerCapability ?? '', /^[A-Za-z0-9_-]{43}$/);
+      assert.match(response.headers.get('set-cookie') ?? '', /HttpOnly/);
+    }
+    for (const response of denied) {
+      assert.deepEqual(response.data, { error: 'creation_limit_reached' });
+      const retry = Number(response.headers.get('retry-after'));
+      assert.ok(Number.isInteger(retry) && retry >= 1 && retry <= 600,
+        'Concurrent denial must have bounded Retry-After');
+      assert.equal(response.headers.get('set-cookie'), null,
+        'Concurrent denial must not issue a creator credential cookie');
+    }
+    console.log('PASS QA concurrent creation quota: ten admitted, two denied, distinct owner credentials');
+    return;
+  }
+  throw new Error('Could not verify concurrent quota within one stable ten-minute window');
+}
+
 const server = await startValidatedWebServer();
 try {
   for (const n of acceptedLengths) await play(n);
   await alternativeFinish('third-strike');
   await alternativeFinish('give-up');
   if (publicCreatorQa) await verifyAnonymousCreationBudget();
+  if (publicCreatorQa) await verifyConcurrentAnonymousCreationBudget();
   console.log('Hosted Custom v2 ' + (publicCreatorQa
     ? 'QA-only simulated-ingress anonymous creator + friend'
     : 'admin creator + friend') + ' acceptance passed on isolated nonproduction project.');
