@@ -92,6 +92,42 @@ describe('private Custom Lineup v2 issuance', () => {
     expect(dependencies.mintOwnerCapability).toHaveBeenCalledOnce();
   });
 
+  it('documents retry after a committed but lost anonymous response without capability recovery', async () => {
+    const { service, insertIfAbsent, dependencies } = setup();
+    const secondUuid = '123e4567-e89b-42d3-a456-426614174001';
+    dependencies.mintUuid.mockReturnValueOnce('123e4567-e89b-42d3-a456-426614174000')
+      .mockReturnValueOnce(secondUuid);
+    dependencies.mintOwnerCapability.mockReturnValueOnce('A'.repeat(43))
+      .mockReturnValueOnce('B'.repeat(43));
+    const payload = { canonicalPlayerIds: players(2) };
+
+    // The first issuance commits; its response is deliberately not delivered
+    // to the simulated client. This does not simulate a real network cut.
+    const undelivered = await service.issueAnonymous(payload, 'Lost response fixture');
+    expect(insertIfAbsent).toHaveBeenCalledTimes(1);
+    const retried = await service.issueAnonymous(payload, 'Lost response fixture');
+
+    // Current Phase 1 contract has no idempotency key or owner-code readback:
+    // the retry creates a distinct immutable record and consumes another
+    // creation. The first plaintext owner credential is not recoverable.
+    expect(retried).toEqual({
+      puzzleId: 'custom-lineup-v2-' + secondUuid, ownerCapability: 'B'.repeat(43),
+    });
+    expect(retried.puzzleId).not.toBe(undelivered.puzzleId);
+    expect(retried.ownerCapability).not.toBe(undelivered.ownerCapability);
+    expect(insertIfAbsent).toHaveBeenCalledTimes(2);
+    for (const [callIndex, response] of [undelivered, retried].entries()) {
+      expect(insertIfAbsent).toHaveBeenNthCalledWith(callIndex + 1,
+        expect.objectContaining({
+          puzzleId: response.puzzleId, canonicalPlayerIds: players(2),
+        }),
+        'Lost response fixture',
+        createHash('sha256').update(response.ownerCapability).digest('hex'));
+    }
+    expect(JSON.stringify(insertIfAbsent.mock.calls)).not.toContain('A'.repeat(43));
+    expect(JSON.stringify(insertIfAbsent.mock.calls)).not.toContain('B'.repeat(43));
+  });
+
   it('fails closed when owner code generation is malformed or insert collides', async () => {
     const { service, insertIfAbsent, dependencies } = setup();
     dependencies.mintOwnerCapability.mockReturnValueOnce('short');

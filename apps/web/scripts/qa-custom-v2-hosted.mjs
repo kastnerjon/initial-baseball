@@ -419,11 +419,46 @@ async function verifyConcurrentAnonymousCreationBudget() {
   throw new Error('Could not verify concurrent quota within one stable ten-minute window');
 }
 
+// A response discarded by the test client AFTER receiving HTTP 201 models
+// application-level lost delivery, not a real TCP disconnect. No recovery
+// contract is currently offered for anonymous creator capabilities.
+async function verifyCommittedCreationResponseLoss() {
+  assert.ok(publicCreatorQa, 'Response-loss QA requires anonymous mode');
+  const client = browser();
+  const ip = randomQaIp();
+  const body = { canonicalPlayerIds: players.slice(0, 2), title: 'QA lost response fixture' };
+  const first = await client.send('/api/custom-lineup/create', {
+    qaForwardedIp: ip, body,
+  });
+  assert.equal(first.status, 201, 'First creation must commit before simulated response loss');
+  assert.match(first.data?.puzzleId ?? '', /^custom-lineup-v2-[0-9a-f-]{36}$/);
+  assert.match(first.data?.ownerCapability ?? '', /^[A-Za-z0-9_-]{43}$/);
+  assert.match(first.headers.get('set-cookie') ?? '', /HttpOnly/);
+
+  // Deliberately do not use the first returned ID/capability to make the
+  // subsequent request. The caller retries the same selection and title.
+  const retry = await client.send('/api/custom-lineup/create', {
+    qaForwardedIp: ip, body,
+  });
+  assert.equal(retry.status, 201, 'Retry currently issues independently');
+  assert.match(retry.data?.puzzleId ?? '', /^custom-lineup-v2-[0-9a-f-]{36}$/);
+  assert.match(retry.data?.ownerCapability ?? '', /^[A-Za-z0-9_-]{43}$/);
+  assert.notEqual(retry.data.puzzleId, first.data.puzzleId,
+    'Current retry must not masquerade as recovered issuance');
+  assert.notEqual(retry.data.ownerCapability, first.data.ownerCapability,
+    'Distinct issuance must mint a distinct private owner capability');
+  assert.match(retry.headers.get('set-cookie') ?? '', /HttpOnly/);
+  assert.ok(!JSON.stringify([...retry.headers]).includes(first.data.ownerCapability),
+    'Prior owner capability must not leak on retry');
+  console.log('PASS QA simulated committed-response loss: retry creates another immutable challenge');
+}
+
 const server = await startValidatedWebServer();
 try {
   for (const n of acceptedLengths) await play(n);
   await alternativeFinish('third-strike');
   await alternativeFinish('give-up');
+  if (publicCreatorQa) await verifyCommittedCreationResponseLoss();
   if (publicCreatorQa) await verifyAnonymousCreationBudget();
   if (publicCreatorQa) await verifyConcurrentAnonymousCreationBudget();
   console.log('Hosted Custom v2 ' + (publicCreatorQa

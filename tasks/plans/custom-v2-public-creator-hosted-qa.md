@@ -34,3 +34,35 @@ No command is executed against production and **no public rollout is authorized 
 
 ## Documentation impact
 This plan and `tasks/todo.md` document the staged no-sign-in acceptance coverage and remain explicit that actual hosted QA execution, provider authenticity, mobile/WAF and activation have not passed.
+
+## October 22 — committed response-loss diagnostic (#471)
+
+**Scope contract:** Test-only documentation of the existing anonymous issuance
+retry behavior, owned by `apps/web` creator-service tests and the opt-in QA
+HTTP runner. This does not choose or implement an idempotency/persistence
+contract, recover an owner secret, alter quota or enable public creation.
+Production flags remain OFF. Any attempt at server-side replay recovery or
+reuse of owner credentials is a distinct design/architecture decision.
+
+A focused mocked-repository unit test now exercises a successful private
+creation-service insert followed by an intentionally undelivered response and
+the same anonymous creation again. It expects a second distinct puzzle ID and
+owner capability, with only digests in the repository calls. This is an
+executable check of current service behavior, not a true network interruption.
+
+In the **opt-in isolated QA** runner, one 201 response is deliberately
+ignored by a simulated creator before retrying an identical name and ordered
+two-player selection from the same QA-only synthetic ingress address. The
+expected results are two successful, distinct challenges and owner codes;
+both consume their own issuance and quota reservation. The test does **not**
+cut a live TCP stream, prove any real hosted Vercel ingress/WAF behavior, or
+allow reconstruction of the first lost owner capability. It creates two
+additional disposable QA challenges (35 total on the full successful public
+QA path, versus 33 previously). No credential-backed run is claimed until
+that guarded mode actually executes against isolated QA.
+
+**Pending product decision (#471):** For Phase 1, either accept and clearly
+disclose irrecoverability after an ambiguous creation failure, or design
+server-authoritative idempotent issuance with secret-safe recovery and
+concurrent retry semantics as a separate persistence-contract change.
+Do not silently interpret a retry as recovery.
