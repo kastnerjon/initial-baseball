@@ -24,13 +24,18 @@ const reveal = {
 const correct = {kind:'correct',outcome:'HR',revealedCount:0,source:'initials'};
 const ok = (x:unknown) => Response.json(x);
 const err = (status:number,error:string) => Response.json({error},{status});
+// The ordinary transport contract tests use an immediately granted lock.
+type BootstrapLocks = NonNullable<Parameters<typeof createCustomLineupV2BrowserTransport>[1]>;
+const immediateLocks = {
+  request: async (_name: string, _options: {mode:'exclusive'}, task: () => Promise<unknown>) => task(),
+} as unknown as BootstrapLocks;
 function setup(replies:Response[]) {
   const request=vi.fn(async (_url:string,_init:RequestInit)=>{
     const response=replies.shift();
     if(!response)throw Error('No reply');
     return response;
   });
-  return {request,client:createCustomLineupV2BrowserTransport(request)};
+  return {request,client:createCustomLineupV2BrowserTransport(request, immediateLocks)};
 }
 const URL='/api/custom-lineup/challenges/'+ID+'/attempt/';
 
@@ -169,5 +174,82 @@ describe('Custom Lineup v2 strict browser transport, 1–10',()=>{
     await expect(setup([ok({status:'unknown'})]).client.submit(ID))
       .rejects.toMatchObject({kind:'invalid_response'});
     await expect(setup([]).client.submit(ID)).rejects.toMatchObject({kind:'unavailable'});
+  });
+});
+
+
+describe('Custom Lineup v2 cross-tab first-bootstrap coordination (#470)', () => {
+  function locks() {
+    const tails = new Map<string, Promise<void>>();
+    const request = vi.fn(async (name: string, _options: {mode:'exclusive'},
+      action: () => Promise<unknown>) => {
+      const previous = tails.get(name) ?? Promise.resolve();
+      let unlock!: () => void;
+      const current = new Promise<void>(resolve => { unlock = resolve; });
+      tails.set(name, current);
+      await previous;
+      try { return await action(); }
+      finally {
+        unlock();
+        if (tails.get(name) === current) tails.delete(name);
+      }
+    });
+    return { request } as unknown as BootstrapLocks;
+  }
+
+  it('serializes two tabs until the first Set-Cookie is applied, preserving saved progress', async () => {
+    const browserLocks = locks();
+    let releaseFirst!: () => void;
+    const firstResponse = new Promise<void>(resolve => { releaseFirst = resolve; });
+    let cookie: string | null = null;
+    let issuedCount = 0;
+    const request = vi.fn(async () => {
+      const observed = cookie;
+      if (observed === null) {
+        issuedCount += 1;
+        await firstResponse; // An intentionally delayed first HTTP response.
+        cookie = 'signed-browser-credential-1';
+        return ok(opening(1));
+      }
+      return ok({ ...opening(1), progressionToken: 'saved-progress',
+        hintBundle: bundle(1, [hint]),
+        attemptProgress: { strikeCount: 1, completedAtBats: [] } });
+    });
+    const tabA = createCustomLineupV2BrowserTransport(request, browserLocks);
+    const tabB = createCustomLineupV2BrowserTransport(request, browserLocks);
+    const pendingA = tabA.bootstrap(ID);
+    const pendingB = tabB.bootstrap(ID);
+    await vi.waitFor(() => expect(request).toHaveBeenCalledTimes(1));
+    releaseFirst();
+    const [a, b] = await Promise.all([pendingA, pendingB]);
+    expect(a).toEqual(opening(1));
+    expect(b).toMatchObject({progressionToken: 'saved-progress',
+      attemptProgress: { strikeCount: 1 }});
+    expect(request).toHaveBeenCalledTimes(2);
+    expect(issuedCount).toBe(1);
+    expect(browserLocks.request).toHaveBeenCalledWith(
+      'initial-baseball:custom-lineup-v2:bootstrap:' + ID,
+      {mode:'exclusive'}, expect.any(Function),
+    );
+  });
+
+  it('fails closed without cross-tab coordination, rather than silently racing', async () => {
+    const network = vi.fn(async () => ok(opening(1)));
+    const client = createCustomLineupV2BrowserTransport(network, null);
+    await expect(client.bootstrap(ID)).rejects.toMatchObject({kind:'unsupported_browser'});
+    expect(network).not.toHaveBeenCalled();
+  });
+
+  it('releases the cross-tab lock after a malformed response so a retry can recover', async () => {
+    const browserLocks = locks();
+    const request = vi.fn()
+      .mockResolvedValueOnce(ok({...opening(1), hintBundle:{...bundle(1), checkpoints:['unsafe']}}))
+      .mockResolvedValueOnce(ok(opening(1)));
+    const a = createCustomLineupV2BrowserTransport(request, browserLocks);
+    const b = createCustomLineupV2BrowserTransport(request, browserLocks);
+    const results = await Promise.allSettled([a.bootstrap(ID), b.bootstrap(ID)]);
+    expect(results[0]).toMatchObject({status:'rejected',reason:{kind:'invalid_response'}});
+    expect(results[1]).toMatchObject({status:'fulfilled',value:opening(1)});
+    expect(request).toHaveBeenCalledTimes(2);
   });
 });

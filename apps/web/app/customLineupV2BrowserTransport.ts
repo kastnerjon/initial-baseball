@@ -24,7 +24,7 @@ export type CustomLineupV2BrowserResolution =
 
 export type CustomLineupV2TransportErrorKind =
   | 'not_found' | 'invalid_credential' | 'invalid_request' | 'conflict'
-  | 'completed' | 'unavailable' | 'invalid_response';
+  | 'completed' | 'unavailable' | 'invalid_response' | 'unsupported_browser';
 export class CustomLineupV2TransportError extends Error {
   constructor(readonly kind: CustomLineupV2TransportErrorKind) {
     super('Custom Lineup ' + kind.replaceAll('_', ' ') + '.');
@@ -32,10 +32,24 @@ export class CustomLineupV2TransportError extends Error {
   }
 }
 type FetchPort = (url: string, init: RequestInit) => Promise<Response>;
+// The current TypeScript DOM lib omits Web Locks declarations. Keep only the
+// narrow standard request overload this transport actually needs.
+type BootstrapLockPort = {
+  request<T>(name: string, options: { mode: 'exclusive' },
+    task: () => Promise<T>): Promise<T>;
+};
 type Action = 'bootstrap' | 'hint' | 'resolve' | 'submit';
 type Guess = { submittedPlayerId: string } | { giveUp: true };
 
-export function createCustomLineupV2BrowserTransport(fetchPort: FetchPort = fetch) {
+// The lock covers the whole HTTP bootstrap, including response consumption:
+// a second same-origin tab cannot issue a cookie-less request until the first
+// response's Set-Cookie has been processed by the browser.
+export function createCustomLineupV2BrowserTransport(
+  fetchPort: FetchPort = fetch,
+  bootstrapLocks: BootstrapLockPort | null =
+    typeof navigator === 'undefined' ? null
+      : (navigator as Navigator & { locks?: BootstrapLockPort }).locks ?? null,
+) {
   async function post(id: string, action: Action, body?: Record<string, unknown>): Promise<unknown> {
     if (!V2_ID.test(id)) invalid('invalid_request');
     let reply: Response;
@@ -60,8 +74,22 @@ export function createCustomLineupV2BrowserTransport(fetchPort: FetchPort = fetc
     return data;
   }
   return {
-    bootstrap: async (id: string): Promise<CustomLineupV2BrowserState> =>
-      decodeBootstrap(await post(id, 'bootstrap'), id),
+    bootstrap: async (id: string): Promise<CustomLineupV2BrowserState> => {
+      if (!V2_ID.test(id)) invalid('invalid_request');
+      // Never silently fall back to racing credential issuance. A browser with
+      // no cross-tab lock support must not create an unreliable first attempt.
+      if (!bootstrapLocks) invalid('unsupported_browser');
+      try {
+        return await bootstrapLocks.request(
+          'initial-baseball:custom-lineup-v2:bootstrap:' + id,
+          { mode: 'exclusive' },
+          async () => decodeBootstrap(await post(id, 'bootstrap'), id),
+        );
+      } catch (error) {
+        if (error instanceof CustomLineupV2TransportError) throw error;
+        invalid('unavailable');
+      }
+    },
     revealHint: async (id: string, token: string): Promise<{
       hint: DailyHintResponse['hint']; progressionToken: string; revision: number;
     }> => decodeHint(await post(id, 'hint', { progressionToken: token })),

@@ -175,7 +175,9 @@ function controlledSession(n: number, creator = false) {
     return reply;
   });
   return {
-    client: createCustomLineupV2BrowserTransport(network),
+    client: createCustomLineupV2BrowserTransport(network, {
+      request: async (_name, _options, task) => task(),
+    }),
     network, bootstrap, reveal, attempt, submit, facts, wire,
   };
 }
