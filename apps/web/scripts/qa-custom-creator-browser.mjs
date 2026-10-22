@@ -106,6 +106,8 @@ async function run() {
   let issued = 0;
   let attempted = 0;
   let rateLimitedOnce = false;
+  let scopedSearchRequests = 0;
+  let legacySearchRequests = 0;
   const browserErrors = [];
   try {
     server = await serveLocally(await reservePort());
@@ -114,9 +116,14 @@ async function run() {
       viewport: { width: 390, height: 844 }, isMobile: true, hasTouch: true,
     });
     page.on('pageerror', error => browserErrors.push(error.message));
-    await page.route('**/api/players/search?*', route => {
+    await page.route('**/api/players/creator-search?*', route => {
+      scopedSearchRequests++;
       const q = new URL(route.request().url()).searchParams.get('q')?.toLowerCase() ?? '';
       return respond(route, { results: candidates.filter(p => p.displayName.toLowerCase().includes(q)) });
+    });
+    await page.route('**/api/players/search?*', route => {
+      legacySearchRequests++;
+      return route.fulfill({ status: 500, body: 'Unexpected unscoped creator autocomplete' });
     });
     await page.route('**/api/custom-lineup/create', route => {
       attempted++;
@@ -227,6 +234,10 @@ async function run() {
     assert.equal(issued, 10);
     assert.equal(attempted, 11, '429 should permit an exact retry without losing the draft');
     assert.equal(rateLimitedOnce, true);
+    assert.ok(scopedSearchRequests >= 10,
+      'The public creator must issue canonical creator-specific searches for all ten lineups');
+    assert.equal(legacySearchRequests, 0,
+      'Public creator requests must not use the unfiltered Daily/Classic search endpoint');
     assert.deepEqual(browserErrors, []);
     console.log('PASS all 1–10 with 429 recovery and post-issuance layout: local mocked browser acceptance only');
   } finally {
