@@ -121,14 +121,15 @@ A material PR is complete only when:
 
 For large changes:
 
-- begin in analysis/Ask mode with an implementation plan;
+- begin with a concise architecture and risk plan, then implement within existing authorization without pausing for routine confirmation; seek owner input only for genuine product, security or architectural decisions;
 - structure the task like a GitHub issue with goal, owner, paths, constraints, acceptance checks, and stop conditions;
-- keep work to a small reviewable PR rather than an open-ended mission;
+- organize an open-ended engineering mission into successive bounded, independently reviewable PRs; finishing one PR does not automatically end the working session;
 - provide a configured environment and deterministic tests;
 - use `AGENTS.md` as a map to deeper docs;
 - let Codex inspect the app, screenshots, logs, and test evidence where possible;
 - use Codex review as an additional reviewer, not as the sole product approver;
 - capture repeated review feedback as a doc rule, test, lint, or script.
+- after verifying a merge or deployment, advance the next prioritized, authorized task; if one task is blocked, document the blocker and continue independent work without weakening review, security or release gates.
 
 ## Documentation gardening
 

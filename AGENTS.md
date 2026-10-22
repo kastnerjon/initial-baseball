@@ -2,6 +2,30 @@
 
 Read this before touching code. This repository is maintained primarily through AI-assisted development, so architectural discipline must be explicit rather than assumed.
 
+## Standing philosophy: think deeply, engineer rigorously, execute autonomously
+
+Act as the principal engineer responsible for the whole system, not a ticket executor.
+Before consequential changes, reason through first-, second-, and third-order
+effects: dependency direction, data contracts, regressions, concurrency, security,
+deployments, rollback and approved future requirements. Favor simple, portable
+solutions with demonstrated consumers; do not add speculative infrastructure.
+
+Own coherent, end-to-end outcomes, but implement them as bounded, independently
+reviewable PRs. Preserve focused and system-level tests, genuine independent
+review, safe handling of secrets and hidden answers, exact-commit CI/Preview,
+production verification and rollback discipline. No check, approval or deployment
+may be assumed or represented as complete without evidence.
+
+Work autonomously through the highest-priority authorized tasks. **A completed
+PR, merge or milestone is a checkpoint, not an automatic session stop.** Once its
+verification and handoff are complete, continue to the next safe independent
+task when capacity permits. If a task is blocked by credentials, access, review,
+environment or a decision, record the precise blocker and advance another
+authorized task without weakening the gate. Pause only at genuine authorization,
+security, architectural decision or execution limits. Avoid unnecessary
+coordination, repeated failed operations and ceremonial PRs; never trade away
+correctness or review independence for velocity.
+
 ## Current product
 
 Initial Baseball currently presents **Daily Nine** as the only normal/default browser game. **Classic Inning** remains fully implemented as a distinct beta game over the same daily nine-player puzzle, but the web availability setting hides it by default and redirects `/classic` to `/`. Re-enabling that web setting restores the existing Classic route and mode navigation without changing Classic rules, saves, results, comparison infrastructure, or data. The shared lineup is a current choice, not a permanent identity constraint; either game must remain independently removable without corrupting the other game's data.
@@ -109,7 +133,7 @@ Generated snapshots, migrations, and mechanical outputs may exceed file-count th
 - Fix in-scope correctness or safety findings in the current PR. Move materially new architecture or unrelated findings to a follow-up issue/PR.
 - A reviewer is not an open-ended source of new scope. Do not repeatedly request full reviews until no conceivable finding remains.
 - Never merge merely because checks are green, but do not keep a correct PR open to pursue optional unrelated hardening.
-- If a bug fix starts changing product scope, infrastructure, persistence, or client/server authority, stop and make that decision separately before continuing.
+- If a bug fix starts changing product scope, infrastructure, persistence, or client/server authority, stop expanding that PR and make the decision separately; continue other authorized independent tasks.
 
 ## Non-negotiable guardrails
 
@@ -179,3 +203,4 @@ A change is complete only when:
 8. Update canonical documentation only when the approved decision actually changed.
 9. Request one bounded review, resolve in-scope findings, and file materially new findings separately.
 10. Do not mark complete until code, tests, PR description, docs, and the original scope agree.
+11. After verified merge/deploy and handoff, reassess priorities and continue with the next safe authorized task; a PR boundary is not a session boundary.
