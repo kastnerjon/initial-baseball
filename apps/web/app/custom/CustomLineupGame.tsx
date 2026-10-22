@@ -19,6 +19,7 @@ function isCandidate(value: unknown): value is Candidate {
 function errorMessage(error: unknown): string {
   if (error instanceof CustomLineupV2TransportError) {
     if (error.kind === 'not_found') return 'This lineup is not available.';
+    if (error.kind === 'unsupported_browser') return 'Update your browser to play this lineup.';
     if (error.kind === 'invalid_credential') return 'This browser cannot access that attempt.';
     if (error.kind === 'completed') return 'This lineup is already finished in this browser.';
   }

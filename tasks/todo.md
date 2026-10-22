@@ -1,10 +1,10 @@
 # Initial Baseball — Current Work
 
-Last reconciled against GitHub, Vercel and both Supabase projects on October 21, 2026. `docs/START-HERE.md` records verified release evidence; completed work belongs in PRs and plans, not this active list.
+Last reconciled against GitHub and the latest verified launch checkpoint on October 22, 2026. `docs/START-HERE.md` records verified release evidence; completed work belongs in PRs and plans, not this active list.
 
 ## 1. Complete Custom Lineups Phase 1 launch gates
 
-The post-generation canonical-to-Custom issuance regression guard **merged in PR #483**; exhaustive real-data QA covered 13,620/13,620 canonical searchable identities (main CI 39715714165, production READY at `7c3b031b`). This is **data/issuer compatibility evidence only**, not creator-to-friend HTTP, WAF, physical-mobile or rollback acceptance. PR #485's secret-safe action/status diagnostics for unexpected gameplay HTTP 503s merged after independent review as `81f896c`. Issue #472's browser request-lifetime repair is staged in PR #486; `tasks/plans/custom-v2-browser-request-lifetime.md` records its contract. Issue #470's cookie-less concurrent initialization risk remains separate: mock-backed service calls reproduce distinct credentials, but genuine browser/QA ordering remains unverified.
+The post-generation canonical-to-Custom issuance regression guard **merged in PR #483**; exhaustive real-data QA covered 13,620/13,620 canonical searchable identities (main CI 39715714165, production READY at `7c3b031b`). This is **data/issuer compatibility evidence only**, not creator-to-friend HTTP, WAF, physical-mobile or rollback acceptance. PR #485's secret-safe action/status diagnostics for unexpected gameplay HTTP 503s merged after independent review as `81f896c`. Issue #472's browser request-lifetime repair merged in PR #486 (984006f). Issue #470's cookie-less race was also reproduced in a local Chromium dual-tab/delayed-cookie diagnostic: late cookie replacement hid progressed attempt state. The scoped browser-lock repair is proposed in PR #488 (scope/evidence: tasks/plans/custom-v2-cross-tab-bootstrap-lock.md); independent review, exact-head CI, isolated-QA and physical-device acceptance are still required.
 
 Public creation, unlisted sharing and signed 1–10 gameplay are staged behind server-side flags. Production `/create` currently returns 404; leave both Custom flags OFF until every launch gate below passes.
 
