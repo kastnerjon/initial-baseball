@@ -4,7 +4,7 @@ Last reconciled against GitHub, Vercel and both Supabase projects on October 21,
 
 ## 1. Complete Custom Lineups Phase 1 launch gates
 
-The post-generation canonical-to-Custom issuance regression guard is staged in PR #483: it exhaustively checks that every canonical search identity can materialize the exact immutable Custom Lineup clue snapshot. Local QA passed 13,620/13,620. This is **data/issuer compatibility evidence only**; it does not satisfy the credential-backed creator-to-friend HTTP, WAF, physical-device, or rollback gates below. PR #483 itself remains unmerged pending CI, Preview and independent review.
+The post-generation canonical-to-Custom issuance regression guard **merged in PR #483**; it checks that every canonical search identity can materialize the immutable Custom clue snapshot. Real-data QA covered 13,620/13,620 canonical players; exact-main CI run 39715714165 passed and Vercel production is READY on `7c3b031b`. This is **data/issuer compatibility evidence only**; it does not satisfy the credential-backed creator-to-friend HTTP, WAF, physical-device, or rollback gates below. A separate P2 observability follow-up, PR #485, stages secret-safe action/status diagnostics for unexpected gameplay HTTP 503s; it is not merged or a substitute for hosted launch acceptance.
 
 Public creation, unlisted sharing and signed 1–10 gameplay are staged behind server-side flags. Production `/create` currently returns 404; leave both Custom flags OFF until every launch gate below passes.
 
