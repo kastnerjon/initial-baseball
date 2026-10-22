@@ -38,6 +38,16 @@ request body, owner capability, player IDs, error message/stack or hidden clues.
 Expected 4xx responses, valid quota denial and disabled-route requests stay silent.
 The public 503 body and no-store headers do not change.
 
+The staged no-sign-in creator UI treats an unexpected HTTP 409/5xx, transport
+failure, or unreadable successful response as **ambiguous issuance**: the
+request may have committed even though the creator did not receive the owner
+code. The client preserves its draft, makes no automatic replay, and explains
+that a manual retry is a new immutable issuance consuming another creation
+attempt; it does not recover the prior owner code. Explicit known validation
+and quota failures (400, 422, 429) retain their specific messages. This is
+client feedback only, not an idempotency guarantee or a new server response.
+Issue #471 tracks the separate unresolved recovery/product decision.
+
 This is staging, not permission to activate anonymous creation. Newly issued anonymous Custom Lineups now require the bounded name under the shared contract (#442) and store it in the private issued table (#444). The actual creator UI (#441), safe title read/view, browser/mobile QA, and creator management/public publishing remain separate.
 Do not enable this route without naming, WAF/privacy review, hosted browser
 and mobile QA and controlled release approval. The legacy admin creator is
