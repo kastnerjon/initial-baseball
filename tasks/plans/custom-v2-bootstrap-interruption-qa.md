@@ -57,3 +57,7 @@ The fixture does not exercise the actual Next HTTP handler, signed-cookie codec,
 - Existing transport/controller Vitest tests: **26/26 PASS** using Vitest 2.1.9, the two unchanged source test files and source aliases for engine/shared. Temporary tooling/config stayed outside the repository.
 - Both new scripts pass `node --check`; documentation-impact unit tests 4/4 PASS; file-size and whitespace checks PASS.
 - No product source, dependency manifest, lockfile, production setting or database changed. Independent review and complete PR CI remain pending.
+
+## Exact-head CI gate follow-up — October 22
+
+At original PR head `e1a9ab1c283a2aa984f6ba23c51e874756f20647`, GitHub Actions CI run `39835204374` completed: full `test` job SUCCESS; `documentation-impact` job FAILURE solely because the PR body used `## Architecture and documentation impact` rather than the exact CI-required `## Documentation impact` section. All documentation-impact unit tests passed; failure was in the PR-body heading assertion. The separate exact-head Vercel Preview `dpl_8LyiV5cMGR18kJxNTKgCuN8PxFCw` was READY. The PR body was corrected with the exact heading. This documentation-only commit is intended to trigger a fresh pull-request CI event; do not merge before the replacement head has successful required CI and READY Preview. The independent agent's reviewed product/QA code has not changed.
