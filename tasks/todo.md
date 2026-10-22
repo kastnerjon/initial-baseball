@@ -4,6 +4,8 @@ Last reconciled against GitHub, Vercel and both Supabase projects on October 21,
 
 ## 1. Complete Custom Lineups Phase 1 launch gates
 
+The post-generation canonical-to-Custom issuance regression guard is staged in PR #483: it exhaustively checks that every canonical search identity can materialize the exact immutable Custom Lineup clue snapshot. Local QA passed 13,620/13,620. This is **data/issuer compatibility evidence only**; it does not satisfy the credential-backed creator-to-friend HTTP, WAF, physical-device, or rollback gates below. PR #483 itself remains unmerged pending CI, Preview and independent review.
+
 Public creation, unlisted sharing and signed 1–10 gameplay are staged behind server-side flags. Production `/create` currently returns 404; leave both Custom flags OFF until every launch gate below passes.
 
 - [ ] Run the real public creator → separate owner capability → friend share-link acceptance suite against isolated QA only. Cover canonical ordered identities, immutable issued lineup/title, friend gameplay, signed completion/scoring, first-attempt continuity, duplicate/idempotent submissions, concurrency, failure recovery, and cleanup. Include the real HTTP quota boundary: malformed requests do not spend quota; ten same-IP creations pass; the eleventh is limited with `Retry-After`; another IP remains admissible. See `tasks/plans/custom-v2-public-creator-hosted-qa.md` and `tasks/plans/custom-v2-creation-quota-hosted-qa.md`.
