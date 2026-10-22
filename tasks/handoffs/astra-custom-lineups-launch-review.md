@@ -149,3 +149,10 @@ Read this file on `docs/astra-custom-launch-review-20261021`, read `AGENTS.md`, 
 
 ### Context budget rule
 Astra Medium should read this phase and only the relevant source/PR/QA contracts; Sol should have already done GitHub status, CI, deployment, secrets/auth setup and trivial #485 review. Save findings as a new GitHub commit before any long test or uncertain browser operation. Work is incomplete unless objective evidence has been recorded.
+
+
+### Phase 5 final live read-only evidence (2026-10-22 00:43 ET)
+- Production deployment `dpl_vccFJFNeYyEJgtLsHfqyhgL5GGkJ` still READY on `7c3b031ba27b3517d36a557335c9ff7e4aad80fe`, with all three expected Vercel aliases attached.
+- Bounded production error/fatal runtime logs for approximately 04:23–04:43 UTC returned no entries. This does not prove absence of HTTP 5xx events (see #484/#485).
+- Exact read-only five-table Custom counts: production `0/0/0/0/0` (issued/attempts/completions/at-bats/budgets), isolated QA `12/12/12/57/0`. No DB changes.
+- #485 CI run `39718198236` verified **SUCCESS** on exact head `07bc62f8`; its Preview READY; GitHub review list empty, remains unmerged.
