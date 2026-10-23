@@ -130,6 +130,7 @@ Generated snapshots, migrations, and mechanical outputs may exceed file-count th
 - Develop and test a coherent change before pushing. Do not use remote commits as an interactive editor.
 - Run focused tests while developing. Run the full expensive data pipeline and production build once near completion, then again only when a relevant code change invalidates that result.
 - Use one bounded automated-review pass after the intended implementation is complete.
+- CodeRabbit is an available independent PR reviewer. For each ready PR, verify that an actual external review starts (if not, comment `@coderabbitai full review` once). After review findings are corrected, allow incremental review of the changed HEAD. Confirm the reviewer covered the final commit, any actionable findings are resolved, and exact-head CI/Preview passes before merging. Do not equate the author's own reply with independent approval or repeatedly request full reviews.
 - Fix in-scope correctness or safety findings in the current PR. Move materially new architecture or unrelated findings to a follow-up issue/PR.
 - A reviewer is not an open-ended source of new scope. Do not repeatedly request full reviews until no conceivable finding remains.
 - Never merge merely because checks are green, but do not keep a correct PR open to pursue optional unrelated hardening.
