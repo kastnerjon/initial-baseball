@@ -4,7 +4,8 @@ import { verifyNativeBrowserContinuity } from './qa-custom-v2-native-browser.mjs
 
 const noFixtures = () => { throw new Error('Preflight must precede fixtures'); };
 for (const url of ['https://initial-baseball-web.vercel.app/',
-  'https://iklbnlicgsxxhaoiscor.supabase.co/', 'http://localhost:3000/']) {
+  'https://iklbnlicgsxxhaoiscor.supabase.co/',
+  'http://localhost.evil.invalid:3000/', 'http://127.0.0.2:3000/']) {
   test('refuse non-loopback browser integration origin: ' + url, async () => {
     await assert.rejects(verifyNativeBrowserContinuity({
       base: new URL(url), createChallenge: noFixtures, players: [],
@@ -15,6 +16,13 @@ for (const url of ['https://initial-baseball-web.vercel.app/',
 test('refuse non-absolute Playwright path before fixture access', async () => {
   await assert.rejects(verifyNativeBrowserContinuity({
     base: new URL('http://127.0.0.1:3000/'), createChallenge: noFixtures,
+    players: [], modulePath: 'playwright/index.mjs',
+  }), /QA-only Playwright module/);
+});
+
+test('accept localhost loopback before module preflight', async () => {
+  await assert.rejects(verifyNativeBrowserContinuity({
+    base: new URL('http://localhost:3000/'), createChallenge: noFixtures,
     players: [], modulePath: 'playwright/index.mjs',
   }), /QA-only Playwright module/);
 });

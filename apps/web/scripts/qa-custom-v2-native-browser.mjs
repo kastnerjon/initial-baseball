@@ -15,7 +15,8 @@ const repoRoot = fileURLToPath(new URL('../../../', import.meta.url));
 const puzzleIdPattern = /^custom-lineup-v2-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
 export async function verifyNativeBrowserContinuity({ base, createChallenge, players, modulePath }) {
-  assert.equal(base.hostname, '127.0.0.1', 'Native QA must stay on loopback');
+  assert.ok(base.hostname === '127.0.0.1' || base.hostname === 'localhost',
+    'Native QA must stay on loopback');
   assert.equal(base.protocol, 'http:', 'Native QA must use the local Next server');
   assert.ok(isAbsolute(modulePath) && modulePath.endsWith('/playwright/index.mjs'),
     'Use an explicitly installed, QA-only Playwright module');
