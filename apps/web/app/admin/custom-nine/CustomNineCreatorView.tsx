@@ -133,7 +133,7 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
         });
         if (!isPublic && response.status === 401) {
           setIssueError('Administrator authorization is required. Sign in to the admin dashboard again.');
-          return;
+          return false;
         }
         if (!response.ok) {
           setIssueError(response.status === 429 && isPublic
@@ -145,7 +145,7 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
               : isPublic && response.status >= 500
                 ? AMBIGUOUS_PUBLIC_CREATION
                 : 'Challenge could not be issued. Try again later.');
-          return;
+          return false;
         }
         const value: unknown = await response.json();
         if (value === null || typeof value !== 'object'
@@ -163,10 +163,12 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
           setCreatedOwnerCapability(owner);
         }
         setCreatedId(value.puzzleId);
+        return true;
       } catch {
         setIssueError(isPublic
           ? AMBIGUOUS_PUBLIC_CREATION
           : 'Challenge could not be issued. Try again later.');
+        return false;
       } finally {
         setIssuing(false);
       }
@@ -328,6 +330,7 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
                 <p>Save or copy this ID before starting another challenge. Your issued lineup is locked.</p>
               </>}
               <button type="button" onClick={() => {
+                issueGate.current.reset();
                 setPlayers([]);
                 setSlots(Array.from({ length: 9 }, () => null));
                 setQuery('');
