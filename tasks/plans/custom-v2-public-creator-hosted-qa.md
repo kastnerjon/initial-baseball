@@ -78,7 +78,9 @@ any lost owner code. No new server idempotency, owner capability readback,
 schema, auth, WAF or activation is in scope.
 
 Known rejection statuses (400, 422, 429) retain their specific responses.
-For public creation only, unexpected 409/5xx, network exceptions and malformed
+The 409 immutable-conflict rejection means the current issuance did not commit
+and stays on the existing generic failure response.
+For public creation only, unexpected 5xx, network exceptions and malformed
 successful responses show the same conservative uncertainty warning. The admin
 creator's behavior is unchanged. This is a communication safeguard, **not
 recovery**; #471 remains open for a separate idempotency/product decision.

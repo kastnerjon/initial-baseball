@@ -139,7 +139,7 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
           ? 'At least one player does not have the required four-hint game data. Replace that player.'
           : response.status === 400
             ? isV2 ? isPublic ? 'Enter a name and select 1–10 distinct players.' : 'Choose 1–10 distinct players and try again.' : 'The nine-player selection is invalid. Verify all slots and try again.'
-            : isPublic && (response.status === 409 || response.status >= 500)
+            : isPublic && response.status >= 500
               ? AMBIGUOUS_PUBLIC_CREATION
               : 'Challenge could not be issued. Try again later.');
         return;

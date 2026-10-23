@@ -38,13 +38,15 @@ request body, owner capability, player IDs, error message/stack or hidden clues.
 Expected 4xx responses, valid quota denial and disabled-route requests stay silent.
 The public 503 body and no-store headers do not change.
 
-The staged no-sign-in creator UI treats an unexpected HTTP 409/5xx, transport
+The staged no-sign-in creator UI treats an unexpected HTTP 5xx, transport
 failure, or unreadable successful response as **ambiguous issuance**: the
 request may have committed even though the creator did not receive the owner
 code. The client preserves its draft, makes no automatic replay, and explains
 that a manual retry is a new immutable issuance consuming another creation
 attempt; it does not recover the prior owner code. Explicit known validation
-and quota failures (400, 422, 429) retain their specific messages. This is
+and quota failures (400, 422, 429) retain their specific messages. The
+server's immutable-conflict 409 is a definitive non-issuance and retains
+the existing generic failure message. This is
 client feedback only, not an idempotency guarantee or a new server response.
 Issue #471 tracks the separate unresolved recovery/product decision.
 
