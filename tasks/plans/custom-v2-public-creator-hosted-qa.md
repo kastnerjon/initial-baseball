@@ -67,3 +67,33 @@ server-authoritative idempotent issuance with secret-safe recovery and
 concurrent retry semantics as a separate persistence-contract change.
 Do not silently interpret a retry as recovery.
 The current public creator client does not automatically retry a failed create request; after an ambiguous response failure, a manual retry is a separate creation under the present API. A challenge-specific creator-preview cookie is not a recoverable management capability. These constraints require explicit product acceptance or a separately reviewed contract change before claims of response-loss recovery.
+
+## October 22 — ambiguous creation outcome feedback (issue #471)
+
+**Scope:** In the existing `apps/web` anonymous creator, distinguish uncertain
+issuance outcomes without claiming a failed response means no database commit.
+Preserve the draft, do not automatically retry, and explain that retrying creates
+another immutable challenge (and spends a creation attempt) without recovering
+any lost owner code. No new server idempotency, owner capability readback,
+schema, auth, WAF or activation is in scope.
+
+Known rejection statuses (400, 422, 429) retain their specific responses.
+The 409 immutable-conflict rejection means the current issuance did not commit
+and stays on the existing generic failure response.
+For public creation only, unexpected 5xx, network exceptions and malformed
+successful responses show the same conservative uncertainty warning. The admin
+creator's behavior is unchanged. This is a communication safeguard, **not
+recovery**; #471 remains open for a separate idempotency/product decision.
+
+The optional local native Chromium suite simulates an HTTP 503, an HTTP 201 with invalid JSON, and a failed browser
+fetch at N=2, N=3 and N=4. It verifies the warning, absence of falsely
+issued links/owner codes, original ordered editable draft, no automatic second
+request, and successful manual retry. The existing 429 retry and lengths 1–10
+also remain covered. Tests use mocked creation HTTP and real browser/React;
+they do not demonstrate a committed request with a severed TCP response,
+live QA commits or WAF.
+
+The browser QA runner can optionally take a sandbox-local Chromium executable
+path through `CUSTOM_CREATOR_BROWSER_QA_CHROMIUM_EXE`. Its existing explicit
+Playwright module requirement and loopback-only isolated process remain.
+No new application/package dependency is introduced.

@@ -28,6 +28,11 @@ function isCandidate(value: unknown): value is SearchCandidate {
     && typeof candidate.displayName === 'string' && candidate.displayName.trim().length > 0;
 }
 
+// Anonymous creation has no replay/idempotency key or owner-code readback.
+const AMBIGUOUS_PUBLIC_CREATION = 'Could not confirm whether your lineup was created. '
+  + 'If it was, its owner code cannot be recovered here. Retrying creates a separate '
+  + 'challenge and uses another creation attempt.';
+
 function playerLabel(player: SearchCandidate): string {
   const first = player.metadata?.firstYear;
   const last = player.metadata?.lastYear;
@@ -134,7 +139,9 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
           ? 'At least one player does not have the required four-hint game data. Replace that player.'
           : response.status === 400
             ? isV2 ? isPublic ? 'Enter a name and select 1–10 distinct players.' : 'Choose 1–10 distinct players and try again.' : 'The nine-player selection is invalid. Verify all slots and try again.'
-            : 'Challenge could not be issued. Try again later.');
+            : isPublic && response.status >= 500
+              ? AMBIGUOUS_PUBLIC_CREATION
+              : 'Challenge could not be issued. Try again later.');
         return;
       }
       const value: unknown = await response.json();
@@ -154,7 +161,9 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
       }
       setCreatedId(value.puzzleId);
     } catch {
-      setIssueError('Challenge could not be issued. Try again later.');
+      setIssueError(isPublic
+        ? AMBIGUOUS_PUBLIC_CREATION
+        : 'Challenge could not be issued. Try again later.');
     } finally {
       setIssuing(false);
     }
