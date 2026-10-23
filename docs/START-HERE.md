@@ -1,5 +1,12 @@
 # Initial Baseball — Start Here
 
+## October 23 — Native signed-browser QA staged; release remains gated
+
+- Current verified main is `3dc1e0a1c883a73f99ce6920c714256efd8fa2ae` (PR #498 merged), with matching Vercel production READY. The normal homepage, Classic, Archive and Results return HTTP 200; `/create` is HTTP 404. Both public Custom flags remain OFF.
+- Draft PR #499 adds an optional isolated QA native Chromium/browser Web Locks integration against the real local Next + signed Supabase API. The helper and four fail-closed preflight cases were locally checked (4/4); the PR's original full test job passed, and Preview is READY with root/Archive 200 and `/create` 404. **Actual signed browser/database execution is not claimed.** Sandbox creation returned Hobby usage-limit HTTP 402 (reset reported for November 1, 2026); temporary QA-only credentials from the previous session are not available now. CodeRabbit independent review and fresh exact-head CI remain required.
+- Read-only Supabase verification in both projects: five Custom tables have RLS enabled and deny `anon` and `authenticated` SELECT/INSERT. All eleven Custom functions are SECURITY INVOKER, deny those browser roles EXECUTE and permit service-role EXECUTE. QA fixture counts remain 49 issued / 24 attempts / 24 completed / 114 at-bats / 4 budget rows; production 1 issued / 0 attempts / 0 results / 0 budget rows. No schema, application, WAF or secret change.
+- The standalone public creator/friend acceptance against isolated QA was completed by #498; `tasks/todo.md` now distinguishes that passing loopback HTTP suite from the remaining genuine browser/WAF/device/rollback gates. #470 stays open, #471 still needs a product/security recovery decision, #494 remains gated, and Custom launch is NOT authorized.
+
 ## October 23 — Real public creator/friend isolated-QA acceptance
 
 - Baseline main remains `b20cd07620ab757f18bc044e3b7ac9dc8546d6c8` (#496 creator single-flight, #497 exact isolated-QA provenance guard). Main CI `39980483516` SUCCESS; production `dpl_BPu4DvhXDvdfJ2M46XBN4rtd5ojx` READY on that SHA. Open #494 and #434 remain gated drafts.
