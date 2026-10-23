@@ -61,3 +61,31 @@ The fixture does not exercise the actual Next HTTP handler, signed-cookie codec,
 ## Exact-head CI gate follow-up — October 22
 
 At original PR head `e1a9ab1c283a2aa984f6ba23c51e874756f20647`, GitHub Actions CI run `39835204374` completed: full `test` job SUCCESS; `documentation-impact` job FAILURE solely because the PR body used `## Architecture and documentation impact` rather than the exact CI-required `## Documentation impact` section. All documentation-impact unit tests passed; failure was in the PR-body heading assertion. The separate exact-head Vercel Preview `dpl_8LyiV5cMGR18kJxNTKgCuN8PxFCw` was READY. The PR body was corrected with the exact heading. This documentation-only commit is intended to trigger a fresh pull-request CI event; do not merge before the replacement head has successful required CI and READY Preview. The independent agent's reviewed product/QA code has not changed.
+
+
+## October 23 — staged native browser + signed QA database continuity (not executed)
+
+An optional, **unexecuted** cross-tab integration path now bridges native Chromium
+Web Locks/HttpOnly cookies to the actual local Next production server and the
+hard-pinned isolated QA Supabase database. It reuses the existing public creator
+and server-owned signed gameplay behavior without mocking HTTP responses.
+
+With the existing `CUSTOM_V2_QA_PUBLIC_CREATION=true` QA-only preflight, built
+Next server and designated isolated project credentials, set
+`CUSTOM_V2_QA_PLAYWRIGHT_MODULE=/absolute/path/to/playwright/index.mjs`.
+The external QA-only Chromium binary may be set through
+`CUSTOM_V2_QA_CHROMIUM_EXECUTABLE`. The optional mode creates one additional
+challenge for N=1 and N=10, concurrently bootstraps two same-context tabs,
+checks identical signed tokens, progresses one hint, resumes from the other
+tab, completes and submits, and reopens the completed attempt. If passed, it
+adds two issued challenges, two attempts, two completions and eleven at-bats.
+Fixture retention must be accounted for after the run.
+
+Four fail-closed origin/module preflight tests pass locally, and the helper
+passes `node --check`. **No signed browser/database acceptance result is
+claimed**: QA-only credentials and the development sandbox are unavailable
+in this conversation (Vercel Hobby Sandbox limit resets November 1). This
+does not control deliberately delayed responses or prove physical Safari/
+Android, actual Vercel WAF, production compatibility or cookie uniqueness
+across profiles. Preserve issue #470 and the launch gates until the signed
+browser run and distinct physical-device checks are documented.

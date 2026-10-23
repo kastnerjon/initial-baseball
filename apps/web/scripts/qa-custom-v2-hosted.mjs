@@ -468,6 +468,14 @@ try {
   for (const n of acceptedLengths) await play(n);
   await alternativeFinish('third-strike');
   await alternativeFinish('give-up');
+  // Optional: native Web Locks + signed Next/Supabase continuity on two real tabs.
+  // Only after hard-pinned isolated QA credentials and local server validation.
+  if (publicCreatorQa && env.CUSTOM_V2_QA_PLAYWRIGHT_MODULE) {
+    const { verifyNativeBrowserContinuity } = await import('./qa-custom-v2-native-browser.mjs');
+    await verifyNativeBrowserContinuity({
+      base, createChallenge, players, modulePath: env.CUSTOM_V2_QA_PLAYWRIGHT_MODULE,
+    });
+  }
   if (publicCreatorQa) await verifyCommittedCreationResponseLoss();
   if (publicCreatorQa) await verifyAnonymousCreationBudget();
   if (publicCreatorQa) await verifyConcurrentAnonymousCreationBudget();
