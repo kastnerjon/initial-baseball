@@ -22,11 +22,14 @@ describe('Custom creator issue single-flight guard', () => {
     expect(await gate.run(async () => true)).toBe(true);
   });
 
-  it('releases the gate after an explicit rejection or a thrown failure', async () => {
+  it('releases the gate after rejection or throw, but latches a successful retry', async () => {
     const gate = createCustomNineCreatorIssueGate();
     expect(await gate.run(async () => false)).toBe(true);
     await expect(gate.run(async () => { throw new Error('provider rejected'); }))
       .rejects.toThrow('provider rejected');
+    expect(await gate.run(async () => true)).toBe(true);
+    expect(await gate.run(async () => true)).toBe(false);
+    gate.reset();
     expect(await gate.run(async () => true)).toBe(true);
   });
 });
