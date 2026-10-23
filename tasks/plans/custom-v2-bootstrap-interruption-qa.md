@@ -94,3 +94,9 @@ does not control deliberately delayed responses or prove physical Safari/
 Android, actual Vercel WAF, production compatibility or cookie uniqueness
 across profiles. Preserve issue #470 and the launch gates until the signed
 browser run and distinct physical-device checks are documented.
+
+## Fail-closed native QA mode configuration
+
+A configured but empty Playwright module path or a requested native run without `CUSTOM_V2_QA_PUBLIC_CREATION=true` is rejected at the runner's initial, side-effect-free preflight rather than silently passing the HTTP-only suite. Two dummy-credential child-process tests check this refusal before any fixture is created or contacted.
+
+This protects the evidentiary distinction between HTTP-only acceptance and actual signed native-browser execution; the latter is still **not performed**.

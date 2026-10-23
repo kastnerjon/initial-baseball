@@ -1,5 +1,7 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { verifyNativeBrowserContinuity } from './qa-custom-v2-native-browser.mjs';
 
 const noFixtures = () => { throw new Error('Preflight must precede fixtures'); };
@@ -26,3 +28,32 @@ test('accept localhost loopback before module preflight', async () => {
     players: [], modulePath: 'playwright/index.mjs',
   }), /QA-only Playwright module/);
 });
+
+// Preflight child processes use fictitious credentials and cannot reach a server.
+// The absence of a configured public-creator mode must never silently skip the
+// requested real-browser acceptance run and report only HTTP suite success.
+const qaScript = fileURLToPath(new URL('./qa-custom-v2-hosted.mjs', import.meta.url));
+for (const [mode, modulePath, expected] of [
+  ['false', '/qa/playwright/index.mjs', /requires CUSTOM_V2_QA_PUBLIC_CREATION=true/],
+  ['true', '', /requires a nonempty Playwright module path/],
+]) {
+  test('requested native QA fails before fixtures with invalid flags: ' + mode,
+    () => {
+      const child = spawnSync(process.execPath, [qaScript], {
+        encoding: 'utf8', timeout: 5000,
+        env: {
+          CUSTOM_V2_QA_PROJECT_REF: 'iklbnlicgsxxhaoiscor',
+          SUPABASE_URL: 'https://iklbnlicgsxxhaoiscor.supabase.co/',
+          SUPABASE_SERVICE_ROLE_KEY: 'qa-fictitious-never-contact-server',
+          DAILY_PROGRESSION_SECRET: 'x'.repeat(32),
+          CUSTOM_LINEUP_V2_GAMEPLAY_TRANSPORT_ENABLED: 'true',
+          CUSTOM_V2_QA_PUBLIC_CREATION: mode,
+          CUSTOM_V2_QA_PLAYWRIGHT_MODULE: modulePath,
+        },
+      });
+      assert.equal(child.error, undefined);
+      assert.equal(child.signal, null);
+      assert.notEqual(child.status, 0);
+      assert.match(child.stderr, expected);
+    });
+}

@@ -37,6 +37,13 @@ assert.equal(required('CUSTOM_LINEUP_V2_GAMEPLAY_TRANSPORT_ENABLED'), 'true',
 // Optional QA-only public issuance path: simulated Vercel ingress over loopback.
 // This cannot prove real Vercel header trust, mobile behavior, WAF or public rollout.
 const publicCreatorQa = env.CUSTOM_V2_QA_PUBLIC_CREATION === 'true';
+// A requested native-browser gate must never silently downgrade to HTTP-only QA.
+if (env.CUSTOM_V2_QA_PLAYWRIGHT_MODULE !== undefined) {
+  assert.ok(env.CUSTOM_V2_QA_PLAYWRIGHT_MODULE.trim(),
+    'Native browser QA requires a nonempty Playwright module path');
+  assert.ok(publicCreatorQa,
+    'Native browser QA requires CUSTOM_V2_QA_PUBLIC_CREATION=true');
+}
 if (publicCreatorQa) {
   assert.equal(required('CUSTOM_LINEUP_PUBLIC_CREATION_ENABLED'), 'true',
     'Public creation must be enabled only in the isolated QA child server');
