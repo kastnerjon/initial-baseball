@@ -35,6 +35,14 @@ describe('Custom v2 isolated hosted QA startup guard (never connects to a databa
       /Production Supabase is prohibited/);
   });
 
+  it('rejects an arbitrary nonproduction project even when its HTTPS URL matches', () => {
+    const otherRef = 'abcdefghijklmnopqrst';
+    expectGuard({
+      CUSTOM_V2_QA_PROJECT_REF: otherRef,
+      SUPABASE_URL: 'https://' + otherRef + '.supabase.co',
+    }, /Only the designated isolated Custom v2 QA Supabase project is allowed/);
+  });
+
   it('requires the exact nonproduction HTTPS project origin', () => {
     expectGuard({ SUPABASE_URL: 'http://' + qaRef + '.supabase.co' },
       /exact HTTPS URL/);
