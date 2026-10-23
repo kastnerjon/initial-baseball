@@ -76,8 +76,13 @@ Next server and designated isolated project credentials, set
 The external QA-only Chromium binary may be set through
 `CUSTOM_V2_QA_CHROMIUM_EXECUTABLE`. The optional mode creates one additional
 challenge for N=1 and N=10, concurrently bootstraps two same-context tabs,
-checks identical signed tokens, progresses one hint, resumes from the other
-tab, completes and submits, and reopens the completed attempt. If passed, it
+checks exactly two real bootstrap requests (one cookie-less and one carrying
+the challenge-specific HttpOnly cookie), checks identical signed tokens,
+progresses one hint, resumes from the other tab, completes and submits, and
+reopens the completed attempt. Token equality alone is not proof of one
+reservation: independent first opens can share an identical initial signed
+progression token. The browser request-cookie assertion guards that false positive
+without logging secret cookie values. If passed, it
 adds two issued challenges, two attempts, two completions and eleven at-bats.
 Fixture retention must be accounted for after the run.
 

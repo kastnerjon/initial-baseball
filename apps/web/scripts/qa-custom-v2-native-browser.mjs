@@ -49,6 +49,17 @@ export async function verifyNativeBrowserContinuity({ base, createChallenge, pla
         await Promise.all([a.goto(base.href), b.goto(base.href)]);
         await Promise.all([a.addScriptTag({ content: output.outputFiles[0].text }),
           b.addScriptTag({ content: output.outputFiles[0].text })]);
+        const expectedCookie = 'ib-custom-lineup-v2-attempt-' + id + '=';
+        const bootstrapCookiePresence = [];
+        for (const tab of [a, b]) tab.on('request', request => {
+          if (request.method() !== 'POST'
+            || new URL(request.url()).pathname !== '/api/custom-lineup/challenges/'
+              + id + '/attempt/bootstrap') return;
+          // Keep only a boolean, never a credential value, in test evidence.
+          bootstrapCookiePresence.push(request.allHeaders().then(headers =>
+            (headers.cookie ?? '').split(';').some(pair =>
+              pair.trim().startsWith(expectedCookie))));
+        });
         // Two real browser tabs share native Web Locks and HttpOnly cookies.
         // Both POSTs reach the real Next handler and isolated Supabase ledger.
         const [first, second] = await Promise.all([a, b].map(page => page.evaluate(async puzzleId =>
@@ -59,6 +70,9 @@ export async function verifyNativeBrowserContinuity({ base, createChallenge, pla
         assert.deepEqual(second.atBats, first.atBats);
         assert.equal(second.progressionToken, first.progressionToken,
           'Concurrent same-browser first opens must resume one signed attempt');
+        assert.equal(bootstrapCookiePresence.length, 2, 'Exactly two browser bootstrap POSTs');
+        assert.deepEqual((await Promise.all(bootstrapCookiePresence)).sort(), [false, true],
+          'One first request must lack this challenge cookie; the second must reuse it');
         // Advance one actual signed attempt through the same transported browser API.
         const hinted = await b.evaluate(async ({ puzzleId, token }) =>
           window.IBNativeCustomQA.createCustomLineupV2BrowserTransport().revealHint(puzzleId, token),
