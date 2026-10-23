@@ -26,7 +26,7 @@ When public-creator QA is opted in, the runner now also uses one fresh reserved-
 The opt-in variant:
 1. Loads the guarded `/create` page; creates named N=1–10 unlisted challenges using `POST /api/custom-lineup/create` without Basic auth.
 2. Verifies one-time, 43-character base64url owner code is returned separately from the challenge URL and not in response headers/creator-page HTML; requires an HttpOnly creator-exclusion cookie.
-3. Refuses cross-origin creation (403) and missing trusted-ingress creation (503) without successful issuing.
+3. Refuses cross-origin creation (403) and explicitly unusable simulated ingress (503) without successful issuing. The negative request sends empty forwarding headers because Next.js synthesizes an omitted `x-forwarded-for` from its local socket; omission alone does not model missing ingress in this harness.
 4. Reuses the tested private link, zero-answer HTML/bootstrap, creator preview exclusion, friend first-play continuity, earned hints, signed CAS resolve, all lengths, alternate terminal paths and accepted first-only completion results.
 5. Preserves default admin QA behavior with no public flag or simulated trusted headers.
 

@@ -1,6 +1,14 @@
 # Initial Baseball — Start Here
 
-## October 22 — Current Custom Lineups engineering checkpoint
+## October 23 — Real public creator/friend isolated-QA acceptance
+
+- Baseline main remains `b20cd07620ab757f18bc044e3b7ac9dc8546d6c8` (#496 creator single-flight, #497 exact isolated-QA provenance guard). Main CI `39980483516` SUCCESS; production `dpl_BPu4DvhXDvdfJ2M46XBN4rtd5ojx` READY on that SHA. Open #494 and #434 remain gated drafts.
+- Actual QA-only public creator/friend acceptance now passed using a local Next production server and the real isolated Supabase project. Covers all lengths 1–10, signed gameplay/scoring, creator exclusion, first-only completion, replay rejection, serial quotas and twelve-request quota concurrency (10 admitted / 2 denied). Ingress headers are simulated over loopback; this is not Vercel WAF or physical-browser proof.
+- A real harness defect was found: Next synthesizes omitted `x-forwarded-for`, so the negative fixture incorrectly expected 503 and created a QA challenge. The scoped repair sends explicitly empty forwarding headers; no application trust check changed. Scope and exact QA accounting: `tasks/plans/custom-v2-qa-next-ingress-negative.md`.
+- Final read-only counts: isolated QA 49 issued / 24 attempts / 24 completed / 114 at-bats; four budget rows (daily global 37 admissions). Production unchanged at 1 issued / 0 attempts/results/budget rows. Fixtures retained; no manual reset or production mutation. Temporary QA-only credentials were securely provisioned for this session; durable provisioning is not claimed.
+- Still required: actual browser/cookie concurrency against hosted QA (#470), genuine Vercel WAF enforcement and reversal, physical iOS Safari/Android Chrome, production rollback drill, and response-loss product/security decision (#471). Vercel browser sign-in did not complete after second-factor/passkey selection; API active config remains 404. **Both production Custom flags remain OFF.**
+
+## October 22 — Historical Custom checkpoint (superseded by October 23)
 
 - **Verified main:** `177111d142db5c6dfde62f7b57fc6aec5f18279d`. PR #491 (principal-engineering operating guidance) merged as `45afedca`, with completed independent CodeRabbit review, exact-head CI and READY Preview; subsequent main CI `39874810208` SUCCESS and production READY. PR #492 (anonymous creator response-loss messaging) merged as `177111d`, after independent CodeRabbit review identified a real 409-classification error, corrected at head `104b73b` with native Chromium regression, then completed CodeRabbit incremental review. Exact-head CI `39875773174` SUCCESS and Preview READY; main push CI `39876909433` SUCCESS; production Vercel `dpl_3fB6xD7f76NcNS2HTqXLxg8Jmh34` READY at matching commit.
 - **Production smoke:** authenticated Vercel deployment fetch returned HTTP 200 for `/`, `/archive`, `/classic`, and `/results`; `/create` returned HTTP 404. Both Custom Lineups server-only public flags remain OFF. No Custom activation, QA/prod persistence writes, database migrations, or firewall changes were made during these two PRs.
