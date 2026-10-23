@@ -1,12 +1,19 @@
 # Initial Baseball — Start Here
 
+## October 23 — Reversible disabled-feature production rollback verified
+
+- A controlled Vercel production rollback drill succeeded between two previously reviewed READY deployments that differ only in QA harness and documentation: #498 `3dc1e0a1c883a73f99ce6920c714256efd8fa2ae` (`dpl_6bG4qx8ZFFsZaoCiwU6HCuR8fTAY`) and #497 `b20cd07620ab757f18bc044e3b7ac9dc8546d6c8` (`dpl_BPu4DvhXDvdfJ2M46XBN4rtd5ojx`).
+- Vercel rollback changed the canonical production alias to #497. With the rollback active, `/`, `/archive`, `/classic`, and `/results` each returned HTTP 200; `/create` remained 404. Promotion restored #498. Alias mapping was then verified for all three production aliases, and the same five path checks passed; Vercel reported the alias promotion completed.
+- Read-only production counts after restoration remained 1 issued / 0 attempts / 0 completions / 0 at-bats / 0 creation-budget rows. Vercel reported no runtime-error clusters in the checked one-hour window. No production schema, data, feature flags, WAF or deployment protection was changed.
+- **Evidence limit:** this proves reversible routing among disabled-flag releases, not rollback safety after enabling Custom issuance/gameplay, nor any future migration/data recovery. Browser QA (#470), real WAF enforcement/reversal, physical mobile, #471 response-loss decision and a controlled enabled-feature rollout remain open. Exact record: `tasks/plans/custom-v2-production-rollback-drill.md`.
+
 ## October 23 — Real public creator/friend isolated-QA acceptance
 
 - Baseline main remains `b20cd07620ab757f18bc044e3b7ac9dc8546d6c8` (#496 creator single-flight, #497 exact isolated-QA provenance guard). Main CI `39980483516` SUCCESS; production `dpl_BPu4DvhXDvdfJ2M46XBN4rtd5ojx` READY on that SHA. Open #494 and #434 remain gated drafts.
 - Actual QA-only public creator/friend acceptance now passed using a local Next production server and the real isolated Supabase project. Covers all lengths 1–10, signed gameplay/scoring, creator exclusion, first-only completion, replay rejection, serial quotas and twelve-request quota concurrency (10 admitted / 2 denied). Ingress headers are simulated over loopback; this is not Vercel WAF or physical-browser proof.
 - A real harness defect was found: Next synthesizes omitted `x-forwarded-for`, so the negative fixture incorrectly expected 503 and created a QA challenge. The scoped repair sends explicitly empty forwarding headers; no application trust check changed. Scope and exact QA accounting: `tasks/plans/custom-v2-qa-next-ingress-negative.md`.
 - Final read-only counts: isolated QA 49 issued / 24 attempts / 24 completed / 114 at-bats; four budget rows (daily global 37 admissions). Production unchanged at 1 issued / 0 attempts/results/budget rows. Fixtures retained; no manual reset or production mutation. Temporary QA-only credentials were securely provisioned for this session; durable provisioning is not claimed.
-- Still required: actual browser/cookie concurrency against hosted QA (#470), genuine Vercel WAF enforcement and reversal, physical iOS Safari/Android Chrome, production rollback drill, and response-loss product/security decision (#471). Vercel browser sign-in did not complete after second-factor/passkey selection; API active config remains 404. **Both production Custom flags remain OFF.**
+- Following this isolated-QA acceptance, browser/cookie continuity against hosted QA (#470), genuine Vercel WAF enforcement/reversal, physical iOS Safari/Android Chrome and the response-loss product/security decision (#471) remained unresolved. The disabled-feature rollback drill listed at that point was **completed later on October 23** (verified above); rollback of enabled Custom issuance/gameplay remains a separate controlled-rollout gate. Vercel browser sign-in had not completed and firewall configuration remained unverified. **Both production Custom flags remain OFF.**
 
 ## October 22 — Historical Custom checkpoint (superseded by October 23)
 
