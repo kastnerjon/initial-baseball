@@ -17,9 +17,15 @@ function required(name) {
 }
 // Never let the operator supply the production ref as an arbitrary comparison value.
 const PRODUCTION_REF = 'dwreeiydvwikpamlokji';
+// This runner creates and mutates real challenge/attempt/result fixtures. Never
+// allow an arbitrary "nonproduction" ref: use only the registered, disposable QA
+// project. A QA-project rotation must be a deliberate reviewed code change.
+const APPROVED_QA_REF = 'iklbnlicgsxxhaoiscor';
 const projectRef = required('CUSTOM_V2_QA_PROJECT_REF');
 assert.notEqual(projectRef, PRODUCTION_REF, 'Production Supabase is prohibited');
 assert.match(projectRef, /^[a-z0-9]{20}$/);
+assert.equal(projectRef, APPROVED_QA_REF,
+  'Only the designated isolated Custom v2 QA Supabase project is allowed');
 const projectUrl = new URL(required('SUPABASE_URL'));
 assert.equal(projectUrl.href, 'https://' + projectRef + '.supabase.co/',
   'Staging API must use exact HTTPS URL of the specified nonproduction project');

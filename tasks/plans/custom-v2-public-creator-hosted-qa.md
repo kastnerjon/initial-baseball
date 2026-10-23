@@ -8,7 +8,7 @@
 - **Stop:** Any need to weaken Vercel production trust checking, substitute production DB/secrets, or claim synthetic header tests establish real ingress authenticity requires a separate security decision.
 
 ## How to run only in isolated QA
-The existing `qa-custom-v2-hosted.mjs` remains **admin mode by default**. Its normal environment validation and nine-player v1 compatibility are unchanged. To exercise anonymous issuance, opt in to ALL three staging-only controls:
+The existing `qa-custom-v2-hosted.mjs` remains **admin mode by default**. Its normal environment validation and nine-player v1 compatibility are unchanged. The runner now hard-pins `CUSTOM_V2_QA_PROJECT_REF=iklbnlicgsxxhaoiscor`, the verified isolated `initial-baseball-v2-qa-20261016` project. It rejects every other project ref (including other nonproduction projects) **before starting Next or accessing a database**. `SUPABASE_URL` must match that exact project's HTTPS origin. Rotating QA projects requires a deliberate reviewed code and test update, not changing an environment variable alone. To exercise anonymous issuance, opt in to ALL three staging-only controls:
 
 - `CUSTOM_V2_QA_PUBLIC_CREATION=true`
 - `CUSTOM_LINEUP_PUBLIC_CREATION_ENABLED=true`
