@@ -2,6 +2,8 @@
 
 Last reconciled against GitHub and the latest verified launch checkpoint on October 22, 2026. `docs/START-HERE.md` records verified release evidence; completed work belongs in PRs and plans, not this active list.
 
+October 22 release checkpoint: PR #491's engineering operating guidance and PR #492's anonymous creator uncertainty UI merged after independent CodeRabbit review, with clean main CI and READY production at `177111d`. PR #492 distinguishes definitive HTTP 409 rejection from ambiguous 5xx/response loss and preserves explicit manual retry, but does **not** implement idempotency or owner-code recovery (#471). The four hosted/WAF/mobile/rollback launch gates below remain incomplete; no public Custom flags were enabled.
+
 ## 1. Complete Custom Lineups Phase 1 launch gates
 
 The post-generation canonical-to-Custom issuance regression guard **merged in PR #483**; exhaustive real-data QA covered 13,620/13,620 canonical searchable identities (main CI 39715714165, production READY at `7c3b031b`). This is **data/issuer compatibility evidence only**, not creator-to-friend HTTP, WAF, physical-mobile or rollback acceptance. PR #485's secret-safe action/status diagnostics for unexpected gameplay HTTP 503s merged after independent review as `81f896c`. Issue #472's browser request-lifetime repair merged in PR #486 (984006f). Issue #470's cookie-less race was also reproduced in a local Chromium dual-tab/delayed-cookie diagnostic: late cookie replacement hid progressed attempt state. The scoped browser-lock repair merged in PR #488 (scope/evidence: tasks/plans/custom-v2-cross-tab-bootstrap-lock.md); isolated-QA and physical-device acceptance remain required.
