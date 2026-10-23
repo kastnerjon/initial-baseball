@@ -183,10 +183,14 @@ async function createChallenge(n) {
     });
     assert.equal(forbidden.status, 403, 'Cross-origin anonymous issuance must fail');
     const missingEdge = await creator.send('/api/custom-lineup/create', {
+      // Next synthesizes an omitted x-forwarded-for from the local socket.
+      // Empty values survive that nullish default and exercise fail-closed
+      // unusable ingress without changing the application's trust checks.
+      qaForwardedIp: '',
       body: { canonicalPlayerIds: players.slice(0, n), title: 'Rejected no-edge issue' },
     });
     assert.equal(missingEdge.status, 503,
-      'Anonymous issuance without trusted Vercel ingress must fail closed');
+      'Anonymous issuance with unusable Vercel ingress must fail closed');
   }
   const preview = await creator.send(attemptPath(id, 'bootstrap'));
   assert.equal(preview.status, 200);
