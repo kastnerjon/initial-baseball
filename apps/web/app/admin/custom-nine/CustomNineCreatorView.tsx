@@ -1,9 +1,10 @@
 'use client';
 
-import React, { useEffect, useState, type JSX } from 'react';
+import React, { useEffect, useRef, useState, type JSX } from 'react';
 import { parseCustomLineupTitle } from '@initial-baseball/shared';
 import { CustomLineupShareLink } from '../custom-lineup/CustomLineupShareLink';
 import { CustomLineupSlotPicker } from './CustomLineupSlotPicker';
+import { createCustomNineCreatorIssueGate } from './customNineCreatorIssueGate';
 import {
   appendCustomNinePlayer,
   isCompleteCustomNineSelection,
@@ -49,6 +50,7 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
 } = {}): JSX.Element {
   const isV2 = mode === 'v2';
   const isPublic = audience === 'public' && isV2;
+  const issueGate = useRef(createCustomNineCreatorIssueGate());
   const maximumPlayers = isV2 ? 10 : 9;
   const creationEndpoint = isPublic ? '/api/custom-lineup/create'
     : isV2 ? '/api/custom-lineup/challenges' : '/api/custom-nine/challenges';
@@ -115,58 +117,60 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
 
   async function issue(): Promise<void> {
     if (!draftEditable || !validSelection || (isPublic && !titleValid)) return;
-    setIssuing(true);
-    setIssueError(null);
-    setCopyMessage(null);
-    try {
-      const response = await fetch(creationEndpoint, {
-        method: 'POST',
-        credentials: 'same-origin',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          canonicalPlayerIds: isV2 ? slots.map(player => player!.playerId) : players.map(player => player.playerId),
-          ...(isPublic ? { title: parseCustomLineupTitle(title).ok ? title : '' } : {}),
-        }),
-      });
-      if (!isPublic && response.status === 401) {
-        setIssueError('Administrator authorization is required. Sign in to the admin dashboard again.');
-        return;
-      }
-      if (!response.ok) {
-        setIssueError(response.status === 429 && isPublic
-          ? 'You have reached the creation limit. Try again later.'
-          : response.status === 422
-          ? 'At least one player does not have the required four-hint game data. Replace that player.'
-          : response.status === 400
-            ? isV2 ? isPublic ? 'Enter a name and select 1–10 distinct players.' : 'Choose 1–10 distinct players and try again.' : 'The nine-player selection is invalid. Verify all slots and try again.'
-            : isPublic && response.status >= 500
-              ? AMBIGUOUS_PUBLIC_CREATION
-              : 'Challenge could not be issued. Try again later.');
-        return;
-      }
-      const value: unknown = await response.json();
-      if (value === null || typeof value !== 'object'
-        || !('puzzleId' in value) || typeof value.puzzleId !== 'string'
-        || !(isV2
-          ? /^custom-lineup-v2-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(value.puzzleId)
-          : /^custom-nine-v1-[a-f0-9-]{36}$/.test(value.puzzleId))) {
-        throw new Error('Invalid issue response');
-      }
-      if (isPublic) {
-        const owner = 'ownerCapability' in value ? value.ownerCapability : null;
-        if (typeof owner !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(owner)) {
-          throw new Error('Missing one-time owner management code');
+    await issueGate.current.run(async () => {
+      setIssuing(true);
+      setIssueError(null);
+      setCopyMessage(null);
+      try {
+        const response = await fetch(creationEndpoint, {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            canonicalPlayerIds: isV2 ? slots.map(player => player!.playerId) : players.map(player => player.playerId),
+            ...(isPublic ? { title: parseCustomLineupTitle(title).ok ? title : '' } : {}),
+          }),
+        });
+        if (!isPublic && response.status === 401) {
+          setIssueError('Administrator authorization is required. Sign in to the admin dashboard again.');
+          return;
         }
-        setCreatedOwnerCapability(owner);
+        if (!response.ok) {
+          setIssueError(response.status === 429 && isPublic
+            ? 'You have reached the creation limit. Try again later.'
+            : response.status === 422
+            ? 'At least one player does not have the required four-hint game data. Replace that player.'
+            : response.status === 400
+              ? isV2 ? isPublic ? 'Enter a name and select 1–10 distinct players.' : 'Choose 1–10 distinct players and try again.' : 'The nine-player selection is invalid. Verify all slots and try again.'
+              : isPublic && response.status >= 500
+                ? AMBIGUOUS_PUBLIC_CREATION
+                : 'Challenge could not be issued. Try again later.');
+          return;
+        }
+        const value: unknown = await response.json();
+        if (value === null || typeof value !== 'object'
+          || !('puzzleId' in value) || typeof value.puzzleId !== 'string'
+          || !(isV2
+            ? /^custom-lineup-v2-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(value.puzzleId)
+            : /^custom-nine-v1-[a-f0-9-]{36}$/.test(value.puzzleId))) {
+          throw new Error('Invalid issue response');
+        }
+        if (isPublic) {
+          const owner = 'ownerCapability' in value ? value.ownerCapability : null;
+          if (typeof owner !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(owner)) {
+            throw new Error('Missing one-time owner management code');
+          }
+          setCreatedOwnerCapability(owner);
+        }
+        setCreatedId(value.puzzleId);
+      } catch {
+        setIssueError(isPublic
+          ? AMBIGUOUS_PUBLIC_CREATION
+          : 'Challenge could not be issued. Try again later.');
+      } finally {
+        setIssuing(false);
       }
-      setCreatedId(value.puzzleId);
-    } catch {
-      setIssueError(isPublic
-        ? AMBIGUOUS_PUBLIC_CREATION
-        : 'Challenge could not be issued. Try again later.');
-    } finally {
-      setIssuing(false);
-    }
+    });
   }
 
   async function copyOwnerCapability(): Promise<void> {
