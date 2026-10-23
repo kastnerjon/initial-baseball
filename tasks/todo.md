@@ -1,10 +1,8 @@
 # Initial Baseball — Current Work
 
-Last reconciled against GitHub and the latest verified launch checkpoint on October 22, 2026. `docs/START-HERE.md` records verified release evidence; completed work belongs in PRs and plans, not this active list.
+Last reconciled against GitHub, Vercel and Supabase on October 23, 2026. This file tracks remaining, unchecked work; completed QA and rollback evidence belongs in `docs/START-HERE.md` and its linked plans.
 
-October 22 release checkpoint: PR #491's engineering operating guidance and PR #492's anonymous creator uncertainty UI merged after independent CodeRabbit review, with clean main CI and READY production at `177111d`. PR #492 distinguishes definitive HTTP 409 rejection from ambiguous 5xx/response loss and preserves explicit manual retry, but does **not** implement idempotency or owner-code recovery (#471). The four hosted/WAF/mobile/rollback launch gates below remain incomplete; no public Custom flags were enabled.
-
-Remaining Custom launch gates are listed below; October 23 acceptance evidence and retained fixture accounting are recorded in `tasks/plans/custom-v2-qa-next-ingress-negative.md`. Production Custom flags remain OFF.
+Remaining Custom launch gates: real signed hosted-browser/cookie continuity (#470), genuine WAF enforcement and reversal, physical iOS/Android acceptance, and controlled enabled-feature rollout with a new rollback assessment. The response-loss product/security decision (#471) is required before that rollout. **Both production Custom flags remain OFF.**
 
 ## 1. Complete Custom Lineups Phase 1 launch gates
 
@@ -14,10 +12,10 @@ PR #488 merged as `411d5ac` after independent agent review; #487 was closed as d
 
 Public creation, unlisted sharing and signed 1–10 gameplay are staged behind server-side flags. Production `/create` currently returns 404; leave both Custom flags OFF until every launch gate below passes.
 
-- [ ] Run the real public creator → separate owner capability → friend share-link acceptance suite against isolated QA only. Cover canonical ordered identities, immutable issued lineup/title, friend gameplay, signed completion/scoring, first-attempt continuity, duplicate/idempotent submissions, concurrency, failure recovery, and cleanup. Include the real HTTP quota boundary: malformed requests do not spend quota; ten same-IP creations pass; the eleventh is limited with `Retry-After`; another IP remains admissible. See `tasks/plans/custom-v2-public-creator-hosted-qa.md` and `tasks/plans/custom-v2-creation-quota-hosted-qa.md`.
+- [ ] Complete the real native-browser, signed isolated-QA first-open/cookie-continuity acceptance for two tabs (#470), including cookie ordering, resumed progression and completion. The local Next + real isolated Supabase creator/friend HTTP and creation-quota suite already passed and is recorded in `docs/START-HERE.md`; it does not prove this distinct browser gate. Draft PR #499 stages a Chromium integration runner, but its signed-browser execution has not occurred; do not treat CI or simulated browser fixtures as acceptance.
 - [ ] Complete Vercel WAF entitlement and enforcement verification. Project API metadata shows SSO protection enabled for non-custom domains; password protection and trusted IP protection are disabled. Active firewall-config lookup returns 404. Authenticated Vercel Git deployment context confirms a Hobby team; current docs permit one fixed-window WAF rate-limit rule on Hobby (token bucket requires Enterprise). Active/staging firewall reads return 404 and the authenticated dashboard remains inaccessible, so an installed rule and its enforcement are unverified. Inspect the existing configuration before editing; stage a log-only route-scoped rule for `POST /api/custom-lineup/create`, verify actual controlled enforcement, and document disable/publish rollback. If unavailable, retain the independent server-side creation quota and keep public creation OFF. Do not weaken deployment protection. See `tasks/plans/custom-v2-live-vercel-ingress-evidence.md`.
 - [ ] Complete creator and friend gameplay acceptance on real iOS Safari and Android Chrome, including keyboard/autocomplete, two-tap swap, sharing, owner-code separation, results and navigation. Chromium viewport coverage is simulated mobile testing, not physical-device acceptance.
-- [ ] After all remaining hosted browser, genuine WAF and physical-device gates pass, perform a controlled production Custom flag rollout with enabled issuance, gameplay/scoring, logs, database state, and a new enabled-feature rollback assessment. The disabled-feature drill does **not** certify enabled-feature recovery.
+- [ ] After hosted signed-browser continuity, genuine WAF enforcement/reversal, physical-device acceptance **and the #471 response-loss product/security decision** are complete, perform a controlled production Custom flag rollout with enabled issuance, gameplay/scoring, logs, database state, and a new enabled-feature rollback assessment. The disabled-feature drill does **not** certify enabled-feature recovery.
 
 ## 2. Gated creator navigation: implemented on main
 
