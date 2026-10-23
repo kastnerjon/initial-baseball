@@ -1,5 +1,12 @@
 # Initial Baseball — Start Here
 
+## October 23 — Reversible disabled-feature production rollback verified
+
+- A controlled Vercel production rollback drill succeeded between two previously reviewed READY deployments that differ only in QA harness and documentation: #498 `3dc1e0a1c883a73f99ce6920c714256efd8fa2ae` (`dpl_6bG4qx8ZFFsZaoCiwU6HCuR8fTAY`) and #497 `b20cd07620ab757f18bc044e3b7ac9dc8546d6c8` (`dpl_BPu4DvhXDvdfJ2M46XBN4rtd5ojx`).
+- Vercel rollback changed the canonical production alias to #497. With the rollback active, `/`, `/archive`, `/classic`, and `/results` each returned HTTP 200; `/create` remained 404. Promotion restored #498. Alias mapping was then verified for all three production aliases, and the same five path checks passed; Vercel reported the alias promotion completed.
+- Read-only production counts after restoration remained 1 issued / 0 attempts / 0 completions / 0 at-bats / 0 creation-budget rows. Vercel reported no runtime-error clusters in the checked one-hour window. No production schema, data, feature flags, WAF or deployment protection was changed.
+- **Evidence limit:** this proves reversible routing among disabled-flag releases, not rollback safety after enabling Custom issuance/gameplay, nor any future migration/data recovery. Browser QA (#470), real WAF enforcement/reversal, physical mobile, #471 response-loss decision and a controlled enabled-feature rollout remain open. Exact record: `tasks/plans/custom-v2-production-rollback-drill.md`.
+
 ## October 23 — Real public creator/friend isolated-QA acceptance
 
 - Baseline main remains `b20cd07620ab757f18bc044e3b7ac9dc8546d6c8` (#496 creator single-flight, #497 exact isolated-QA provenance guard). Main CI `39980483516` SUCCESS; production `dpl_BPu4DvhXDvdfJ2M46XBN4rtd5ojx` READY on that SHA. Open #494 and #434 remain gated drafts.
