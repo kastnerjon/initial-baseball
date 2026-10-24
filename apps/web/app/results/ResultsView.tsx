@@ -7,23 +7,34 @@ import {
 
 export function ResultsView(): JSX.Element {
   const [history, setHistory] = useState<BrowserCompletedGameHistory | null>(null);
+  const [archivePuzzleId, setArchivePuzzleId] = useState<string | null>(null);
   useEffect(() => {
     try { setHistory(readBrowserCompletedGameHistory(globalThis.localStorage)); }
     catch { setHistory({ status: 'unavailable' }); }
+    const requested = new URLSearchParams(globalThis.location.search).get('archivePuzzleId');
+    if (requested !== null && /^archive-beta-v1-daily-[1-9]\\d{0,5}$/.test(requested)) {
+      setArchivePuzzleId(requested);
+    }
   }, []);
-  return <ResultsList history={history} />;
+  return <ResultsList history={history} archivePuzzleId={archivePuzzleId} />;
 }
 
-export function ResultsList({ history }: {
+export function ResultsList({ history, archivePuzzleId = null }: {
   history: BrowserCompletedGameHistory | null;
+  archivePuzzleId?: string | null;
 }): JSX.Element {
   if (history === null) return <p role="status">Loading your saved results…</p>;
   if (history.status === 'unavailable') return <p role="status">Saved results aren’t available in this browser right now.</p>;
+  const games = archivePuzzleId === null ? history.games
+    : history.games.filter(game => game.mode === 'Archive' && game.puzzleId === archivePuzzleId);
   return <>
+    {archivePuzzleId !== null ? <p><a href="/results">Show all saved results</a></p> : null}
     {history.unreadableRecords > 0 ? <p>Some saved results couldn’t be read.</p> : null}
-    {history.games.length === 0 ? <p>No completed games are saved here yet.</p> : (
+    {games.length === 0 ? <p>{archivePuzzleId === null
+      ? 'No completed games are saved here yet.'
+      : 'No completed result is saved here for this archive puzzle.'}</p> : (
       <ul className="my-results-list" aria-label="Your completed games">
-        {history.games.map(game => (
+        {games.map(game => (
           <li key={game.key}>
             <details className="my-result">
               <summary>
