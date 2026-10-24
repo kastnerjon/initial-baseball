@@ -61,3 +61,61 @@ The fixture does not exercise the actual Next HTTP handler, signed-cookie codec,
 ## Exact-head CI gate follow-up — October 22
 
 At original PR head `e1a9ab1c283a2aa984f6ba23c51e874756f20647`, GitHub Actions CI run `39835204374` completed: full `test` job SUCCESS; `documentation-impact` job FAILURE solely because the PR body used `## Architecture and documentation impact` rather than the exact CI-required `## Documentation impact` section. All documentation-impact unit tests passed; failure was in the PR-body heading assertion. The separate exact-head Vercel Preview `dpl_8LyiV5cMGR18kJxNTKgCuN8PxFCw` was READY. The PR body was corrected with the exact heading. This documentation-only commit is intended to trigger a fresh pull-request CI event; do not merge before the replacement head has successful required CI and READY Preview. The independent agent's reviewed product/QA code has not changed.
+
+
+## October 23 — staged native browser + signed QA database continuity (not executed)
+
+An optional, **unexecuted** cross-tab integration path now bridges native Chromium
+Web Locks/HttpOnly cookies to the actual local Next production server and the
+hard-pinned isolated QA Supabase database. It reuses the existing public creator
+and server-owned signed gameplay behavior without mocking HTTP responses.
+
+With the existing `CUSTOM_V2_QA_PUBLIC_CREATION=true` QA-only preflight, built
+Next server and designated isolated project credentials, set
+`CUSTOM_V2_QA_PLAYWRIGHT_MODULE=/absolute/path/to/playwright/index.mjs`.
+The external QA-only Chromium binary may be set through
+`CUSTOM_V2_QA_CHROMIUM_EXECUTABLE`. The optional mode creates one additional
+challenge for N=1 and N=10, concurrently bootstraps two same-context tabs,
+checks exactly two real bootstrap requests (one cookie-less and one carrying
+the challenge-specific HttpOnly cookie), checks identical signed tokens,
+progresses one hint, resumes from the other tab, completes and submits, and
+reopens the completed attempt. Token equality alone is not proof of one
+reservation: independent first opens can share an identical initial signed
+progression token. The browser request-cookie assertion guards that false positive
+without logging secret cookie values. A complete pass issues four private challenges total: two signed friend
+challenges, plus two unplayed creator challenges from the dropped response and
+manual retry. The friend cases create two attempts, two completions and eleven
+at-bats. The creator case consumes two anonymous-creation admissions for one
+synthetic QA IP in 192.0.2.0/24. It mints a distinct owner capability for each
+challenge; the first is deliberately unrecoverable after delivery is dropped,
+and the retry capability stays only in test/browser memory until teardown.
+Neither capability is logged or retained for cleanup. A partial run can leave
+one or both creator challenges; reconcile their rows and quota usage against
+the QA baseline before and after any run.
+
+Nine fail-closed origin/module preflight and secret-redaction tests pass locally, and the helper
+passes `node --check`. **No signed browser/database acceptance result is
+claimed**: QA-only credentials and the development sandbox are unavailable
+in this conversation (Vercel Hobby Sandbox limit resets November 1). This
+does not control deliberately delayed responses or prove physical Safari/
+Android, actual Vercel WAF, production compatibility or cookie uniqueness
+across profiles. Preserve issue #470 and the launch gates until the signed
+browser run and distinct physical-device checks are documented.
+
+## Fail-closed native QA mode configuration
+
+A configured but empty Playwright module path or a requested native run without `CUSTOM_V2_QA_PUBLIC_CREATION=true` is rejected at the runner's initial, side-effect-free preflight rather than silently passing the HTTP-only suite. Two dummy-credential child-process tests check this refusal before any fixture is created or contacted.
+
+This protects the evidentiary distinction between HTTP-only acceptance and actual signed native-browser execution; the latter is still **not performed**.
+
+## Staged signed-browser continuity extension — October 24
+
+PR #499's optional signed Chromium runner now includes a real server-committed resolve whose response is deliberately aborted at the browser boundary, followed by navigation, refresh, reopening in a new tab, completion, and first-result/replay admission checks. The request is forwarded to the local Next server backed only by the pinned isolated QA project; its 200 response is observed before the browser receives an `internetdisconnected` abort. These assertions are staged coverage only. The run has **not** occurred because QA service credentials are not provisioned in the current workspace, and Vercel Preview is confirmed to point at production. No Preview or production signed test was run. Do not count this extension or its simulated response loss as actual hosted-browser acceptance until the credential-backed run passes.
+
+The product and architecture specifications need no update: this PR adds QA evidence for the already-required signed attempt continuity and does not change runtime behavior or product rules. This plan records the new acceptance scenarios and preserves the distinction between a staged test and a passed hosted-browser run.
+
+## Staged native-browser creator response drop — October 24
+
+The existing hosted Node check receives the first HTTP 201 response and then discards its data before an explicit retry; it is simulated client-side loss, not a network interruption. The optional native Chromium path now drives the actual `/create` creator screen. It uses a deterministic suggestion response for a QA-valid fixture player, then forwards the real `POST /api/custom-lineup/create` to the local QA-backed Next server using the same synthetic TEST-NET `x-forwarded-for` and `x-vercel-forwarded-for` headers for both requests. This models Vercel ingress only inside the loopback QA process; it does not validate deployed Vercel header trust or WAF enforcement. The test observes the successful issuance response and aborts delivery with `internetdisconnected` before the page receives it. The creator UI must show its truthful uncertainty message, preserve the title/player selection, and make only one request until the user explicitly retries. That click must issue a distinct challenge and owner capability, which the UI displays separately from the share link. Owner-code values are checked only through boolean assertions and are not written to logs.
+
+This extension is staged only. It has not run against isolated QA because the required QA-only process credentials and Playwright module are unavailable in the current workspace. It does not change the approved #471 manual-retry behavior, add issuance idempotency, or prove any production behavior. Keep #471 and #470 open until the credential-backed run and their separate acceptance criteria pass.
