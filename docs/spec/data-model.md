@@ -1,7 +1,7 @@
 # Data Model Spec
 
 Status: Current persistence contract and approved next entities  
-Last updated: 2026-09-18
+Last updated: 2026-10-24
 
 ## Ownership
 
@@ -20,6 +20,14 @@ Last updated: 2026-09-18
 Names are never database join keys.
 
 Supabase is the current relational provider for operational records. It is not a second factual baseball database and does not own product rules.
+
+## Canonical player-season team evidence — reviewed 2025 gaps
+
+Regular-season statistics and team affiliations are joined by the exact canonical/Lahman player identity and season. The committed Lahman `Batting.csv` and `Pitching.csv` source subsets contain statistics but not team IDs; `Appearances.csv` supplies source team/position records. The canonical season-facts generator must not infer an unsourced season club from a player's career history or fill unknown positional games with zero.
+
+The reviewed source set has five 2025 batting player-seasons lacking an original appearance row (David Bañuelos, Kris Bryant, Luis Campusano, David Fry, and Marcell Ozuna). To preserve the original Lahman files, `packages/baseball-data/data/canonical/verified-appearance-gaps.csv` holds a separate, checksum-tracked MLB-sourced season/team/total-games record for each. Each record cites its MLB player source URL; it supplements only a season absent from the original appearances file. Positional appearance counts remain `null` if not sourced. The generator rejects overlapping or unknown supplements, malformed totals and years, and any batting or pitching player-season that still lacks appearance/team evidence; strict runtime validation also checks the five specific team/game regressions.
+
+This is a source-provenance and canonical reveal data correction, not a change to immutable issued Daily puzzle identities, player lookup, outcomes, scoring, or Supabase persistence. The web UI consumes the generated season/team display identities without its own override.
 
 ## `daily_editorial_puzzles`
 

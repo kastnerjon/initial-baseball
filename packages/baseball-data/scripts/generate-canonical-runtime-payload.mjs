@@ -243,6 +243,30 @@ function regression({ reveals, playerIndex, issues: out }) {
     else if (!seasonRow.teamIdentities.some(team => team.abbreviation === abbreviation)) out.push(`Runtime regression team display mismatch: ${lahmanId}:${season}:${abbreviation}`);
   }
 
+  // Every 2025 appearance gap is backed by committed MLB season/team/G evidence.
+  const verifiedAppearanceCases = [
+    ['banueda01', 'BAL', 1],
+    ['bryankr01', 'COL', 11],
+    ['campulu01', 'SDP', 10],
+    ['fryda01', 'CLE', 66],
+    ['ozunama01', 'ATL', 145],
+  ];
+  for (const [lahmanId, abbreviation, games] of verifiedAppearanceCases) {
+    const reveal = byLahman.get(lahmanId);
+    const season = reveal?.seasons.find(row => row.season === 2025);
+    if (!season) {
+      out.push(`Verified team season missing: ${lahmanId}:2025`);
+      continue;
+    }
+    if (season.teamIdentities.length !== 1
+        || season.teamIdentities[0].abbreviation !== abbreviation) {
+      out.push(`Verified team mismatch: ${lahmanId}:2025:${abbreviation}`);
+    }
+    if (season.positions?.gamesAll !== games) {
+      out.push(`Verified games mismatch: ${lahmanId}:2025:${games}`);
+    }
+  }
+
   const historicalCases = [
     [1955, 'BRO', 'BRO'],
     [1962, 'LAN', 'LAD'],
