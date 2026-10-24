@@ -48,11 +48,14 @@ const pitching = buildSourceRows(
 );
 const sourceAppearanceRows = parseCsv(inputs.appearances);
 const verifiedAppearanceRows = parseCsv(inputs.verifiedAppearanceGaps);
-const verifiedAppearanceIssues = validateVerifiedAppearanceRows({
+const {
+  issues: verifiedAppearanceIssues,
+  acceptedRows: acceptedVerifiedAppearanceRows,
+} = validateVerifiedAppearanceRows({
   sourceAppearanceRows, verifiedAppearanceRows, canonicalByLahmanId, batting, pitching,
 });
 const appearances = buildAppearanceFacts(
-  [...sourceAppearanceRows, ...verifiedAppearanceRows],
+  [...sourceAppearanceRows, ...acceptedVerifiedAppearanceRows],
   canonicalByLahmanId,
 );
 const validation = validate({
@@ -61,7 +64,7 @@ const validation = validate({
   pitching,
   appearances,
   verifiedAppearanceIssues,
-  verifiedAppearanceRowCount: verifiedAppearanceRows.length,
+  verifiedAppearanceRowCount: acceptedVerifiedAppearanceRows.length,
 });
 const sourceManifest = {
   schemaVersion: 1,
@@ -297,42 +300,47 @@ function validateVerifiedAppearanceRows({
   sourceAppearanceRows, verifiedAppearanceRows, canonicalByLahmanId, batting, pitching,
 }) {
   const issues = [];
+  const acceptedRows = [];
   const originalSeasons = new Set(sourceAppearanceRows.map(row =>
     `${clean(row.playerID)}|${integer(row.yearID)}`));
   const documentedSeasons = new Set([...batting.facts, ...pitching.facts].map(row =>
     `${row.lahmanPlayerId}|${row.season}`));
   const seen = new Set();
   for (const row of verifiedAppearanceRows) {
+    const rowIssues = [];
     const player = clean(row.playerID);
     // Unlike generic historical Lahman parsing, reviewed evidence must reject
     // malformed numeric strings rather than silently accepting their prefixes.
     const sourceYear = clean(row.yearID);
     const year = /^\d{4}$/.test(sourceYear) ? Number(sourceYear) : NaN;
     const key = `${player}|${year}`;
-    if (seen.has(key)) issues.push(`Duplicate verified appearance season: ${key}`);
+    if (seen.has(key)) rowIssues.push(`Duplicate verified appearance season: ${key}`);
     seen.add(key);
-    if (!canonicalByLahmanId.has(player)) issues.push(`Unknown verified appearance identity: ${key}`);
+    if (!canonicalByLahmanId.has(player)) rowIssues.push(`Unknown verified appearance identity: ${key}`);
     if (!Number.isInteger(year) || year < 1871 || year > 2100) {
-      issues.push(`Invalid verified appearance year: ${key}`);
+      rowIssues.push(`Invalid verified appearance year: ${key}`);
     }
-    if (!clean(row.teamID)) issues.push(`Missing verified appearance team: ${key}`);
+    if (!clean(row.teamID)) rowIssues.push(`Missing verified appearance team: ${key}`);
     const sourceGames = clean(row.G_all);
     const games = /^(?:0|[1-9]\d*)$/.test(sourceGames) ? Number(sourceGames) : NaN;
     if (!Number.isSafeInteger(games) || games < 1) {
-      issues.push(`Invalid verified appearance games: ${key}`);
+      rowIssues.push(`Invalid verified appearance games: ${key}`);
     }
     if (!/^https:\/\/www\.mlb\.com\/player\/[a-z0-9-]+$/i.test(clean(row.sourceURL))) {
-      issues.push(`Invalid verified appearance MLB provenance URL: ${key}`);
+      rowIssues.push(`Invalid verified appearance MLB provenance URL: ${key}`);
     }
-    if (originalSeasons.has(key)) issues.push(`Verified appearance overlaps Lahman: ${key}`);
-    if (!documentedSeasons.has(key)) issues.push(`Verified appearance has no batting/pitching season: ${key}`);
+    if (originalSeasons.has(key)) rowIssues.push(`Verified appearance overlaps Lahman: ${key}`);
+    if (!documentedSeasons.has(key)) rowIssues.push(`Verified appearance has no batting/pitching season: ${key}`);
     for (const field of Object.keys(row)) {
       if (field.startsWith('G_') && field !== 'G_all' && clean(row[field])) {
-        issues.push(`Unverified positional appearance count: ${key}:${field}`);
+        rowIssues.push(`Unverified positional appearance count: ${key}:${field}`);
       }
     }
+    // Never emit rejected source rows into artifacts, even in non-strict mode.
+    if (rowIssues.length === 0) acceptedRows.push(row);
+    issues.push(...rowIssues);
   }
-  return issues;
+  return { issues, acceptedRows };
 }
 
 function findMalformedSourceRows(kind, facts) {
