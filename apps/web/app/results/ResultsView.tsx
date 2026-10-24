@@ -11,7 +11,7 @@ export function ResultsView(): JSX.Element {
   useEffect(() => {
     try { setHistory(readBrowserCompletedGameHistory(globalThis.localStorage)); }
     catch { setHistory({ status: 'unavailable' }); }
-    const requested = new URLSearchParams(window.location.search).get('archivePuzzleId');
+    const requested = new URLSearchParams((globalThis as { location?: { search?: string } }).location?.search ?? '').get('archivePuzzleId');
     if (requested !== null && /^archive-beta-v1-daily-[1-9]\d{0,5}$/.test(requested)) {
       setArchivePuzzleId(requested);
     }
