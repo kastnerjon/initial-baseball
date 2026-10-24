@@ -5,8 +5,10 @@ Last reconciled against current GitHub `main`, CI, Vercel and read-only Supabase
 ## 1. Finish private Custom Lineups release gates
 
 - [x] Execute signed isolated-QA Chromium friend continuity and actual creator response-loss/manual retry (#470/#471). Run `40111285611` passed on `27fa07745d`; PR #499 merged and production verified on `398d7dc`. Evidence and limits are in START-HERE and issue comments; issue closure still requires acceptance-evidence review.
-- [ ] Provision hosted QA for physical devices with verified QA database destination. Existing Preview uses production Supabase; never use it for destructive QA.
-- [ ] Once isolated QA links are ready, complete creator and friend gameplay on actual iPhone Safari and Android Chrome: player search, hints, navigation, sharing, owner-code separation, scoring, results, refresh and usability. Chromium tests do not count as physical-device acceptance.
+- [x] Restore a dedicated hosted QA Preview and verify its isolated database destination. The protected `qa/private-custom` Preview is READY on `398d7dc`, with all five GET smoke routes passing and QA-only schema compatibility restored. Ordinary Preview branches may still use production Supabase; only the verified QA branch is an authorized destination for QA issuance.
+- [ ] Verify signed creator-to-friend gameplay through the *deployed* protected QA origin; GitHub Actions signed Chromium evidence runs against a local Next server, not the live Vercel ingress. Do not treat GET smoke as this acceptance.
+- [ ] Arrange temporary authenticated access to the isolated QA Preview on actual devices without weakening global deployment protection. Vercel Sandbox browser automation is blocked by the Hobby usage cap through November 1; use physical QA or a separately reviewed credential-safe runner.
+- [ ] Complete creator and friend gameplay on actual iPhone Safari and Android Chrome using the protected isolated-QA link: player search, hints, navigation, sharing, owner-code separation, scoring, results, refresh and usability. Chromium tests do not count as physical-device acceptance.
 - [ ] After those gates pass, run the controlled production Custom flag rollout. Verify issuance, gameplay/scoring, completion admission, database integrity, runtime errors and a new enabled-feature rollback path. The disabled-feature rollback drill does not prove rollback safety after Custom is enabled. Preserve both flags OFF until the rollout criteria are met.
 
 ## 2. Product experience after safe private Custom readiness
