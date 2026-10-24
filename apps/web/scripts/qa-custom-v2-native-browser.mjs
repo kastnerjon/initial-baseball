@@ -83,7 +83,9 @@ async function verifyNativeCreatorResponseLoss(browser, base, players) {
 
     const createButton = page.getByRole('button', { name: 'Create challenge', exact: true });
     await createButton.click();
-    const alert = page.getByRole('alert');
+    const alert = page.getByRole('alert').filter({
+      hasText: 'Could not confirm whether your lineup was created',
+    });
     await alert.waitFor({ state: 'visible', timeout: 15_000 });
     const errorText = await alert.textContent();
     assert.equal(errorText,
