@@ -4,8 +4,8 @@ Last reconciled against current GitHub `main`, CI, Vercel and read-only Supabase
 
 ## 1. Finish private Custom Lineups release gates
 
-- [ ] Complete the real native-browser, signed isolated-QA friend-game continuity acceptance for two tabs (#470): simultaneous first opens, cookie ordering, resumed signed progression, and after a committed gameplay resolve response is dropped, preserve the completed pitch and resume at the next pitch after refresh/navigation/reopen; verify completion and first-result admission. Draft PR #499 stages the browser coverage; its signed run has **not** happened. The local workspace lacks the QA-only service key, signing/budget secrets, fixture IDs and Playwright module path. Provision required values only through a secure local mechanism. Vercel Preview resolves to Production Supabase and must not be used for signed/destructive QA. See `tasks/plans/custom-v2-bootstrap-interruption-qa.md` and `tasks/plans/custom-v2-public-creator-hosted-qa.md`.
-- [ ] Corroborate the actual creator-issuance response-loss behavior in isolated QA (#471): the server may commit while the browser sees a network failure; there must be no automatic duplicate retry, the uncertainty message must stay truthful, and one explicit manual retry may create a separate challenge, consume another quota admission and mint a different owner capability. The original owner code cannot be recovered. The product decision is approved; this evidence is still unexecuted in PR #499 and must use only isolated QA, never Preview or Production.
+- [x] Execute signed isolated-QA Chromium friend continuity and actual creator response-loss/manual retry (#470/#471). Run `40111285611` passed on `27fa07745d`; PR #499 merged and production verified on `398d7dc`. Evidence and limits are in START-HERE and issue comments; issue closure still requires acceptance-evidence review.
+- [ ] Provision hosted QA for physical devices with verified QA database destination. Existing Preview uses production Supabase; never use it for destructive QA.
 - [ ] Once isolated QA links are ready, complete creator and friend gameplay on actual iPhone Safari and Android Chrome: player search, hints, navigation, sharing, owner-code separation, scoring, results, refresh and usability. Chromium tests do not count as physical-device acceptance.
 - [ ] After those gates pass, run the controlled production Custom flag rollout. Verify issuance, gameplay/scoring, completion admission, database integrity, runtime errors and a new enabled-feature rollback path. The disabled-feature rollback drill does not prove rollback safety after Custom is enabled. Preserve both flags OFF until the rollout criteria are met.
 
@@ -30,3 +30,7 @@ These gates are separate from Custom Lineups Phase 1. Keep them active until eac
 - [ ] Confirm calibrated recognizable lineups.
 - [ ] Verify analytics and error monitoring.
 - [ ] Complete privacy/terms, canonical domain, and social metadata.
+
+## Reported data correctness
+
+- [ ] Fix and audit missing season team metadata (#505), beginning with Kris Bryant 2025. Source authoritative team evidence; preserve stats and scoring.
