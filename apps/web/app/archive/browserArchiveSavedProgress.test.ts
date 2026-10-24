@@ -54,6 +54,9 @@ describe('browser Archive beta meaningful progress hint', () => {
   );
   it('rejects wrong identity, dated save, legacy schema, incompatible ruleset and terminal state', () => {
     for (const patch of [
+      { pendingAdvance: undefined },
+      { pendingAdvance: {} },
+      { pendingAdvance: { nextPitchIndex: 99, pitchLines: [], score: {} } },
       { puzzleId: 'archive-beta-v1-daily-5' },
       { puzzleDate: '2026-10-21' },
       { puzzleNumber: 5 },

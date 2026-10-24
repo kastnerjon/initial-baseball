@@ -45,6 +45,13 @@ export function readBrowserArchiveSavedProgress(
         || !isRecord(saved.gameState.score) || saved.gameState.score.completed !== false
         || !isRecord(saved.gameState.points) || saved.gameState.points.completed !== false
         || !Array.isArray(saved.gameState.completedPitchLines)
+        || !(saved.pendingAdvance === null
+          || (isRecord(saved.pendingAdvance)
+            && Number.isInteger(saved.pendingAdvance.nextPitchIndex)
+            && (saved.pendingAdvance.nextPitchIndex as number) >= 1
+            && (saved.pendingAdvance.nextPitchIndex as number) <= ARCHIVE_BETA_LENGTH
+            && Array.isArray(saved.pendingAdvance.pitchLines)
+            && isRecord(saved.pendingAdvance.score)))
         || !isRecord(saved.atBatState)
         || !Number.isInteger(saved.atBatState.revealCount)
         || !Number.isInteger(saved.atBatState.strikeCount)
