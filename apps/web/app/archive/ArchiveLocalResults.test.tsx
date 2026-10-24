@@ -14,8 +14,9 @@ const puzzles = [
   { dailyNumber: 4, puzzleDate: '2026-10-20' },
   { dailyNumber: 5, puzzleDate: '2026-10-21' },
 ];
-function render(history: BrowserCompletedGameHistory | null) {
-  return renderToStaticMarkup(<ArchiveLocalResultsList puzzles={puzzles} history={history} />);
+function render(history: BrowserCompletedGameHistory | null, savedProgress: ReadonlySet<string> = new Set()) {
+  return renderToStaticMarkup(<ArchiveLocalResultsList
+    puzzles={puzzles} history={history} savedProgress={savedProgress} />);
 }
 
 describe('Archive read-only browser results status', () => {
@@ -61,5 +62,21 @@ describe('Archive read-only browser results status', () => {
       expect(html).not.toContain('Saved here');
       expect(html).not.toContain('0 /');
     }
+  });
+  it('shows advisory saved progress only for a matching issued Archive row', () => {
+    const html = render({ status: 'ready', games: [], unreadableRecords: 0 },
+      new Set(['archive-beta-v1-daily-4']));
+    expect(html).toContain('Saved local progress · Resume');
+    expect(html).toContain('Archive beta #5');
+    expect(html).not.toContain('0 /');
+    expect(html).not.toContain('View at-bat details');
+  });
+
+  it('prioritizes decoded completed results over a simultaneous old gameplay save', () => {
+    const html = render({ status: 'ready', games: [archive], unreadableRecords: 0 },
+      new Set(['archive-beta-v1-daily-4']));
+    expect(html).toContain('63 / 63');
+    expect(html).toContain('View at-bat details');
+    expect(html).not.toContain('Saved local progress · Resume');
   });
 });
