@@ -307,7 +307,7 @@ function validateVerifiedAppearanceRows({
     // Unlike generic historical Lahman parsing, reviewed evidence must reject
     // malformed numeric strings rather than silently accepting their prefixes.
     const sourceYear = clean(row.yearID);
-    const year = /^\\d{4}$/.test(sourceYear) ? Number(sourceYear) : NaN;
+    const year = /^\d{4}$/.test(sourceYear) ? Number(sourceYear) : NaN;
     const key = `${player}|${year}`;
     if (seen.has(key)) issues.push(`Duplicate verified appearance season: ${key}`);
     seen.add(key);
@@ -317,7 +317,7 @@ function validateVerifiedAppearanceRows({
     }
     if (!clean(row.teamID)) issues.push(`Missing verified appearance team: ${key}`);
     const sourceGames = clean(row.G_all);
-    const games = /^(?:0|[1-9]\\d*)$/.test(sourceGames) ? Number(sourceGames) : NaN;
+    const games = /^(?:0|[1-9]\d*)$/.test(sourceGames) ? Number(sourceGames) : NaN;
     if (!Number.isSafeInteger(games) || games < 1) {
       issues.push(`Invalid verified appearance games: ${key}`);
     }
