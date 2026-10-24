@@ -12,7 +12,7 @@ export function ResultsView(): JSX.Element {
     try { setHistory(readBrowserCompletedGameHistory(globalThis.localStorage)); }
     catch { setHistory({ status: 'unavailable' }); }
     const requested = new URLSearchParams(globalThis.location.search).get('archivePuzzleId');
-    if (requested !== null && /^archive-beta-v1-daily-[1-9]\\d{0,5}$/.test(requested)) {
+    if (requested !== null && /^archive-beta-v1-daily-[1-9]\d{0,5}$/.test(requested)) {
       setArchivePuzzleId(requested);
     }
   }, []);

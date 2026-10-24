@@ -51,8 +51,9 @@ describe('Archive read-only browser results status', () => {
   });
 
   it('is safe when storage has no completion, is loading, or is unavailable', () => {
-    for (const history of [null, { status: 'unavailable' } as const,
-      { status: 'ready', games: [], unreadableRecords: 1 } as const]) {
+    const unavailable: BrowserCompletedGameHistory = { status: 'unavailable' };
+    const empty: BrowserCompletedGameHistory = { status: 'ready', games: [], unreadableRecords: 1 };
+    for (const history of [null, unavailable, empty]) {
       const html = render(history);
       expect(html).toContain('Archive beta #4');
       expect(html).toContain('Play / resume');
