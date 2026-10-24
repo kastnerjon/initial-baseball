@@ -27,22 +27,6 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - name: Build canonical runtime data
         run: pnpm data:runtime
-      - name: Install headless Chromium
-        run: pnpm --filter @initial-baseball/web exec playwright install --with-deps chromium
-      - name: Run signed browser acceptance against isolated QA Supabase
-        env:
-          CUSTOM_V2_QA_PROJECT_REF: iklbnlicgsxxhaoiscor
-          SUPABASE_URL: https://iklbnlicgsxxhaoiscor.supabase.co
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.CUSTOM_V2_QA_SUPABASE_SERVICE_ROLE_KEY }}
-          DAILY_PROGRESSION_SECRET: ${{ secrets.CUSTOM_V2_QA_SIGNING_SECRET }}
-          CUSTOM_LINEUP_CREATION_BUDGET_SECRET: ${{ secrets.CUSTOM_V2_QA_BUDGET_SECRET }}
-          CUSTOM_LINEUP_V2_GAMEPLAY_TRANSPORT_ENABLED: 'true'
-          CUSTOM_V2_QA_PUBLIC_CREATION: 'true'
-          CUSTOM_LINEUP_PUBLIC_CREATION_ENABLED: 'true'
-          CUSTOM_V2_QA_SIMULATED_VERCEL_INGRESS: 'true'
-          CUSTOM_V2_QA_PLAYWRIGHT_MODULE: playwright
-          CUSTOM_V2_QA_PLAYER_IDS: ${{ steps.fixtures.outputs.player_ids }}
-        run: node apps/web/scripts/qa-custom-v2-hosted.mjs
       - name: Select canonical fixture player IDs
         id: fixtures
         run: |
@@ -55,3 +39,24 @@ jobs:
           if (ids.length !== 10) throw new Error('Expected ten canonical fixture players');
           console.log('player_ids=' + ids.join(','));
           NODE
+      - name: Create per-run QA signing secrets
+        id: secrets
+        run: |
+          echo "progression=$(openssl rand -hex 32)" >> "$GITHUB_OUTPUT"
+          echo "budget=$(openssl rand -hex 32)" >> "$GITHUB_OUTPUT"
+      - name: Install headless Chromium
+        run: pnpm --filter @initial-baseball/web exec playwright install --with-deps chromium
+      - name: Run signed browser acceptance against isolated QA Supabase
+        env:
+          CUSTOM_V2_QA_PROJECT_REF: iklbnlicgsxxhaoiscor
+          SUPABASE_URL: https://iklbnlicgsxxhaoiscor.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.CUSTOM_V2_QA_SUPABASE_SERVICE_ROLE_KEY }}
+          DAILY_PROGRESSION_SECRET: ${{ steps.secrets.outputs.progression }}
+          CUSTOM_LINEUP_CREATION_BUDGET_SECRET: ${{ steps.secrets.outputs.budget }}
+          CUSTOM_LINEUP_V2_GAMEPLAY_TRANSPORT_ENABLED: 'true'
+          CUSTOM_V2_QA_PUBLIC_CREATION: 'true'
+          CUSTOM_LINEUP_PUBLIC_CREATION_ENABLED: 'true'
+          CUSTOM_V2_QA_SIMULATED_VERCEL_INGRESS: 'true'
+          CUSTOM_V2_QA_PLAYWRIGHT_MODULE: playwright
+          CUSTOM_V2_QA_PLAYER_IDS: ${{ steps.fixtures.outputs.player_ids }}
+        run: node apps/web/scripts/qa-custom-v2-hosted.mjs
