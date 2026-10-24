@@ -2,12 +2,13 @@ import { describe, expect, it, vi } from 'vitest';
 import { POINTS_V4_DAILY_RULESET_VERSION } from '@initial-baseball/shared';
 import { createInitialAtBatUiState, createInitialDailyGameState } from '../dailyClientState';
 import { saveDailyGame } from '../dailyLocalStorage';
+import { toPublicDailyPuzzle } from '../dailySavedGameCodec';
 import { getDailyModeStorage, getDailyModeStorageKey } from '../dailyModeStorage';
 import { DEMO_DAILY_PUZZLE } from '../mockDailyPuzzle';
 import { readBrowserArchiveSavedProgress } from './browserArchiveSavedProgress';
 
-const puzzle = { ...DEMO_DAILY_PUZZLE, id: 'archive-beta-v1-daily-4',
-  puzzleDate: '2026-10-20', puzzleNumber: 4 };
+const puzzle = toPublicDailyPuzzle({ ...DEMO_DAILY_PUZZLE, id: 'archive-beta-v1-daily-4',
+  puzzleDate: '2026-10-20', puzzleNumber: 4 });
 const issued = [{ dailyNumber: 4, puzzleDate: '2026-10-20' },
   { dailyNumber: 5, puzzleDate: '2026-10-21' }];
 function storage() {
