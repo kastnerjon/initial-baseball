@@ -304,7 +304,10 @@ function validateVerifiedAppearanceRows({
   const seen = new Set();
   for (const row of verifiedAppearanceRows) {
     const player = clean(row.playerID);
-    const year = integer(row.yearID);
+    // Unlike generic historical Lahman parsing, reviewed evidence must reject
+    // malformed numeric strings rather than silently accepting their prefixes.
+    const sourceYear = clean(row.yearID);
+    const year = /^\\d{4}$/.test(sourceYear) ? Number(sourceYear) : NaN;
     const key = `${player}|${year}`;
     if (seen.has(key)) issues.push(`Duplicate verified appearance season: ${key}`);
     seen.add(key);
@@ -313,8 +316,9 @@ function validateVerifiedAppearanceRows({
       issues.push(`Invalid verified appearance year: ${key}`);
     }
     if (!clean(row.teamID)) issues.push(`Missing verified appearance team: ${key}`);
-    const games = nullableInteger(row.G_all);
-    if (!Number.isInteger(games) || games < 1) {
+    const sourceGames = clean(row.G_all);
+    const games = /^(?:0|[1-9]\\d*)$/.test(sourceGames) ? Number(sourceGames) : NaN;
+    if (!Number.isSafeInteger(games) || games < 1) {
       issues.push(`Invalid verified appearance games: ${key}`);
     }
     if (!/^https:\/\/www\.mlb\.com\/player\/[a-z0-9-]+$/i.test(clean(row.sourceURL))) {
