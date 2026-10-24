@@ -88,8 +88,12 @@ The 409 immutable-conflict rejection means the current issuance did not commit
 and stays on the existing generic failure response.
 For public creation only, unexpected 5xx, network exceptions and malformed
 successful responses show the same conservative uncertainty warning. The admin
-creator's behavior is unchanged. This is a communication safeguard, **not
-recovery**; #471 remains open for a separate idempotency/product decision.
+creator's behavior is unchanged. This October 22 status predates the product
+decision. The owner settled #471 on October 24: Phase 1 allows an explicit
+manual retry as a separate creation and does not require idempotency or owner-code
+recovery. #471 stays open only for credential-backed browser/isolated-QA evidence
+of committed response loss, no automatic duplicate, and a successful disclosed
+retry.
 
 The optional local native Chromium suite simulates an HTTP 503, an HTTP 201 with invalid JSON, and a failed browser
 fetch at N=2, N=3 and N=4. It verifies the warning, absence of falsely
