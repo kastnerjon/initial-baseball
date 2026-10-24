@@ -4,6 +4,7 @@ import React, { useEffect, useState, type JSX } from 'react';
 import {
   readBrowserCompletedGameHistory, type BrowserCompletedGameHistory,
 } from '../browserCompletedGameHistory';
+import { readBrowserArchiveSavedProgress } from './browserArchiveSavedProgress';
 
 export type IssuedArchiveListEntry = Readonly<{
   dailyNumber: number;
@@ -15,17 +16,22 @@ export function ArchiveLocalResults({ puzzles }: {
   puzzles: readonly IssuedArchiveListEntry[];
 }): JSX.Element {
   const [history, setHistory] = useState<BrowserCompletedGameHistory | null>(null);
+  const [savedProgress, setSavedProgress] = useState<ReadonlySet<string>>(new Set());
   useEffect(() => {
-    try { setHistory(readBrowserCompletedGameHistory(globalThis.localStorage)); }
-    catch { setHistory({ status: 'unavailable' }); }
-  }, []);
-  return <ArchiveLocalResultsList puzzles={puzzles} history={history} />;
+    try {
+      const storage = globalThis.localStorage;
+      setHistory(readBrowserCompletedGameHistory(storage));
+      setSavedProgress(readBrowserArchiveSavedProgress(storage, puzzles));
+    } catch { setHistory({ status: 'unavailable' }); }
+  }, [puzzles]);
+  return <ArchiveLocalResultsList puzzles={puzzles} history={history} savedProgress={savedProgress} />;
 }
 
 /** Intentionally does not infer "unplayed" from missing completed-result storage. */
-export function ArchiveLocalResultsList({ puzzles, history }: {
+export function ArchiveLocalResultsList({ puzzles, history, savedProgress }: {
   puzzles: readonly IssuedArchiveListEntry[];
   history: BrowserCompletedGameHistory | null;
+  savedProgress?: ReadonlySet<string>;
 }): JSX.Element {
   return <ul aria-label="Issued archive puzzles">
     {puzzles.map(puzzle => {
@@ -40,7 +46,8 @@ export function ArchiveLocalResultsList({ puzzles, history }: {
         <a href={'/archive/' + puzzle.dailyNumber}>
           Archive beta #{puzzle.dailyNumber} · {puzzle.puzzleDate}
         </a>
-        {completions.length === 0 ? <span> · Play / resume</span> : (
+        {completions.length === 0 ? <span>{savedProgress?.has(puzzleId)
+          ? ' · Saved local progress · Resume' : ' · Play / resume'}</span> : (
           <ul aria-label={'Your saved results for archive beta ' + puzzle.dailyNumber}>
             {completions.map(game => <li key={game.key}>
               {game.submissionStatus === 'submitted' ? 'Saved here' : 'Saved locally (submission not confirmed)'}
