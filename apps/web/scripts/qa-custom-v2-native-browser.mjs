@@ -56,7 +56,16 @@ async function verifyNativeCreatorResponseLoss(browser, base, players) {
     let firstOwnerCapability = null;
     await page.route(createUrl, async route => {
       requestCount++;
-      const response = await route.fetch();
+      // The local QA server deliberately accepts simulated Vercel ingress only
+      // in this isolated mode. These TEST-NET headers never reach a deployment.
+      const requestHeaders = await route.request().allHeaders();
+      const response = await route.fetch({
+        headers: {
+          ...requestHeaders,
+          'x-forwarded-for': qaIp,
+          'x-vercel-forwarded-for': qaIp,
+        },
+      });
       if (requestCount === 1) {
         serverStatus = response.status();
         if (serverStatus === 201) {
