@@ -37,12 +37,13 @@ This plan and `tasks/todo.md` document the staged no-sign-in acceptance coverage
 
 ## October 22 — committed response-loss diagnostic (#471)
 
-**Scope contract:** Test-only documentation of the existing anonymous issuance
-retry behavior, owned by `apps/web` creator-service tests and the opt-in QA
-HTTP runner. This does not choose or implement an idempotency/persistence
-contract, recover an owner secret, alter quota or enable public creation.
-Production flags remain OFF. Any attempt at server-side replay recovery or
-reuse of owner credentials is a distinct design/architecture decision.
+**Scope contract:** Test-only documentation of anonymous issuance retry behavior,
+owned by `apps/web` creator-service tests and the opt-in QA HTTP runner. The owner
+settled #471 on October 24: Phase 1 permits an explicit manual retry after an
+uncertain response, accepting that it can create a second private challenge,
+consume another quota admission, and issue a different owner capability. Do not
+add idempotency or owner-code recovery solely to prevent that accepted duplication.
+Production flags remain OFF. The separate isolated-QA evidence gate remains open.
 
 A focused mocked-repository unit test now exercises a successful private
 creation-service insert followed by an intentionally undelivered response and
@@ -56,17 +57,22 @@ two-player selection from the same QA-only synthetic ingress address. The
 expected results are two successful, distinct challenges and owner codes;
 both consume their own issuance and quota reservation. The test does **not**
 cut a live TCP stream, prove any real hosted Vercel ingress/WAF behavior, or
-allow reconstruction of the first lost owner capability. It creates two
-additional disposable QA challenges (35 total on the full successful public
-QA path, versus 33 previously). No credential-backed run is claimed until
-that guarded mode actually executes against isolated QA.
+allow reconstruction of the first lost owner capability. At the time of this October 22 plan entry, the scenario was estimated to add two
+disposable QA challenges (35 versus 33 on the then-described full public QA path).
+That historical estimate is not the current database baseline; use the latest
+read-only counts in `docs/START-HERE.md`. The runner deliberately ignores an
+observed HTTP 201 response, but this caller simulation is not a browser-level
+network response drop or proof of recovery.
 
-**Pending product decision (#471):** For Phase 1, either accept and clearly
-disclose irrecoverability after an ambiguous creation failure, or design
-server-authoritative idempotent issuance with secret-safe recovery and
-concurrent retry semantics as a separate persistence-contract change.
-Do not silently interpret a retry as recovery.
-The current public creator client does not automatically retry a failed create request; after an ambiguous response failure, a manual retry is a separate creation under the present API. A challenge-specific creator-preview cookie is not a recoverable management capability. These constraints require explicit product acceptance or a separately reviewed contract change before claims of response-loss recovery.
+**Settled product decision (#471, October 24):** The owner accepts explicit
+manual retry after an ambiguous creation failure. Under the current API, that
+retry is a separate creation and may mint a second challenge, spend another
+quota admission, and return a different owner capability. The client must not
+automatically retry; it must preserve the draft and explain the uncertain outcome.
+A creator-preview cookie is not a recoverable management capability. The actual
+browser/network response-drop and isolated-QA database evidence remain separate
+open acceptance criteria; do not describe the caller-discard simulation as
+network recovery.
 
 ## October 22 — ambiguous creation outcome feedback (issue #471)
 
@@ -82,8 +88,12 @@ The 409 immutable-conflict rejection means the current issuance did not commit
 and stays on the existing generic failure response.
 For public creation only, unexpected 5xx, network exceptions and malformed
 successful responses show the same conservative uncertainty warning. The admin
-creator's behavior is unchanged. This is a communication safeguard, **not
-recovery**; #471 remains open for a separate idempotency/product decision.
+creator's behavior is unchanged. This October 22 status predates the product
+decision. The owner settled #471 on October 24: Phase 1 allows an explicit
+manual retry as a separate creation and does not require idempotency or owner-code
+recovery. #471 stays open only for credential-backed browser/isolated-QA evidence
+of committed response loss, no automatic duplicate, and a successful disclosed
+retry.
 
 The optional local native Chromium suite simulates an HTTP 503, an HTTP 201 with invalid JSON, and a failed browser
 fetch at N=2, N=3 and N=4. It verifies the warning, absence of falsely

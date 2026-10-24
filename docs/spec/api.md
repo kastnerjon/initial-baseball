@@ -48,7 +48,7 @@ and quota failures (400, 422, 429) retain their specific messages. The
 server's immutable-conflict 409 is a definitive non-issuance and retains
 the existing generic failure message. This is
 client feedback only, not an idempotency guarantee or a new server response.
-Issue #471 tracks the separate unresolved recovery/product decision.
+The owner approved this Phase 1 behavior in #471: an explicit retry after an ambiguous response may create another private immutable challenge, consume another quota admission, and mint a distinct one-time owner capability; the original capability cannot be recovered. No idempotency or owner-code recovery is in scope. #471 remains open only for credential-backed isolated-QA browser evidence of committed response loss, no automatic duplicate, and the disclosed manual retry.
 
 This is staging, not permission to activate anonymous creation. Newly issued anonymous Custom Lineups now require the bounded name under the shared contract (#442) and store it in the private issued table (#444). The actual creator UI (#441), safe title read/view, browser/mobile QA, and creator management/public publishing remain separate.
 Do not enable this route without naming, WAF/privacy review, hosted browser
