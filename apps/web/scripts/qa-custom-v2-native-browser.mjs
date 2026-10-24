@@ -1,7 +1,8 @@
 /**
  * Optional QA-only native Chromium acceptance against a real, isolated-DB Next server.
  * Invoked solely by qa-custom-v2-hosted.mjs after its hard-pinned QA preflight.
- * Neither HTTP nor database responses are mocked or intercepted here.
+ * One case forwards a real resolve request, confirms the server response, then
+ * aborts delivery to the browser to model a lost response after server commit.
  */
 import assert from 'node:assert/strict';
 import { mkdtemp, writeFile, rm } from 'node:fs/promises';
@@ -52,6 +53,7 @@ export async function verifyNativeBrowserContinuity({ base, createChallenge, pla
       try {
         const a = await context.newPage();
         const b = await context.newPage();
+        const challengeUrl = new URL('/custom/' + id, base).href;
         await Promise.all([a.goto(base.href), b.goto(base.href)]);
         await Promise.all([a.addScriptTag({ content: output.outputFiles[0].text }),
           b.addScriptTag({ content: output.outputFiles[0].text })]);
@@ -66,8 +68,7 @@ export async function verifyNativeBrowserContinuity({ base, createChallenge, pla
             (headers.cookie ?? '').split(';').some(pair =>
               pair.trim().startsWith(expectedCookie))));
         });
-        // Two real browser tabs share native Web Locks and HttpOnly cookies.
-        // Both POSTs reach the real Next handler and isolated Supabase ledger.
+        // Start two first opens together in the same real browser context.
         const [first, second] = await Promise.all([a, b].map(page => page.evaluate(async puzzleId =>
           window.IBNativeCustomQA.createCustomLineupV2BrowserTransport().bootstrap(puzzleId), id)));
         assert.equal(first.attemptMode, 'reserved');
@@ -91,7 +92,82 @@ export async function verifyNativeBrowserContinuity({ base, createChallenge, pla
         assertSameSignedProgression(restored.progressionToken, hinted.progressionToken,
           'Other tab must recover progressed token, not initialize a new attempt');
         let token = restored.progressionToken;
-        for (let pitch = 1; pitch <= n; pitch++) {
+        let firstPitch = 1;
+        let playPage = a;
+        if (n === 10) {
+          // Let the signed server/database commit the correct first pitch, then
+          // drop its HTTP response at the browser boundary. A refresh must recover
+          // the committed pitch and current signed state instead of resetting it.
+          const resolvePattern = '**/api/custom-lineup/challenges/' + id + '/attempt/resolve';
+          let serverResponseStatus = null;
+          await a.route(resolvePattern, async route => {
+            const response = await route.fetch();
+            serverResponseStatus = response.status();
+            await route.abort('internetdisconnected');
+          });
+          let responseWasLost = false;
+          try {
+            await a.evaluate(async ({ puzzleId, progressionToken, playerId }) =>
+              window.IBNativeCustomQA.createCustomLineupV2BrowserTransport()
+                .resolve(puzzleId, progressionToken, 1, 10, { submittedPlayerId: playerId }),
+            { puzzleId: id, progressionToken: token, playerId: players[0] });
+          } catch {
+            responseWasLost = true;
+          } finally {
+            await a.unroute(resolvePattern);
+          }
+          assert.ok(responseWasLost, 'Browser must observe the deliberately interrupted response');
+          assert.equal(serverResponseStatus, 200,
+            'The isolated Next/Supabase server must commit before the response is dropped');
+
+          // Navigate into the real app route, then refresh it. The mounted UI
+          // must render the next pitch from the committed server state.
+          await a.goto(challengeUrl);
+          await a.getByText('At bat 2 of 10', { exact: true })
+            .waitFor({ state: 'visible', timeout: 15_000 });
+          await a.reload();
+          await a.getByText('At bat 2 of 10', { exact: true })
+            .waitFor({ state: 'visible', timeout: 15_000 });
+          await a.addScriptTag({ content: output.outputFiles[0].text });
+          const afterRefresh = await a.evaluate(async puzzleId =>
+            window.IBNativeCustomQA.createCustomLineupV2BrowserTransport().bootstrap(puzzleId), id);
+          assert.equal(afterRefresh.attemptMode, 'reserved');
+          assert.equal(afterRefresh.attemptProgress.completedAtBats.length, 1,
+            'Refresh must preserve the server-committed first pitch');
+          assert.equal(afterRefresh.hintBundle.pitchNumber, 2,
+            'Refresh must resume at the next pitch after the lost response');
+
+          // Leave the game route, return to it, then close and reopen in a new tab.
+          await a.goto(new URL('/archive', base).href);
+          await a.goto(challengeUrl);
+          await a.getByText('At bat 2 of 10', { exact: true })
+            .waitFor({ state: 'visible', timeout: 15_000 });
+          await a.addScriptTag({ content: output.outputFiles[0].text });
+          const afterNavigation = await a.evaluate(async puzzleId =>
+            window.IBNativeCustomQA.createCustomLineupV2BrowserTransport().bootstrap(puzzleId), id);
+          assert.equal(afterNavigation.attemptProgress.completedAtBats.length, 1,
+            'Navigating away and back must preserve the committed pitch');
+          assertSameSignedProgression(afterNavigation.progressionToken,
+            afterRefresh.progressionToken,
+            'Navigation must restore the current signed attempt, not a second attempt');
+          await a.close();
+          const reopened = await context.newPage();
+          await reopened.goto(challengeUrl);
+          await reopened.getByText('At bat 2 of 10', { exact: true })
+            .waitFor({ state: 'visible', timeout: 15_000 });
+          await reopened.addScriptTag({ content: output.outputFiles[0].text });
+          const afterReopen = await reopened.evaluate(async puzzleId =>
+            window.IBNativeCustomQA.createCustomLineupV2BrowserTransport().bootstrap(puzzleId), id);
+          assert.equal(afterReopen.attemptProgress.completedAtBats.length, 1,
+            'Reopening the same challenge must keep the previously recorded pitch');
+          assertSameSignedProgression(afterReopen.progressionToken,
+            afterRefresh.progressionToken,
+            'Reopening must resume the same signed attempt');
+          token = afterReopen.progressionToken;
+          firstPitch = 2;
+          playPage = reopened;
+        }
+        for (let pitch = firstPitch; pitch <= n; pitch++) {
           const resolved = await b.evaluate(async ({ puzzleId, progressionToken, currentPitch,
             totalAtBats, playerId }) => window.IBNativeCustomQA.createCustomLineupV2BrowserTransport()
             .resolve(puzzleId, progressionToken, currentPitch, totalAtBats,
@@ -102,7 +178,7 @@ export async function verifyNativeBrowserContinuity({ base, createChallenge, pla
           assert.equal(resolved.completed, pitch === n);
           token = resolved.progressionToken;
         }
-        const finished = await a.evaluate(async puzzleId =>
+        const finished = await playPage.evaluate(async puzzleId =>
           window.IBNativeCustomQA.createCustomLineupV2BrowserTransport().bootstrap(puzzleId), id);
         assert.equal(finished.attemptMode, 'completed');
         assert.equal(finished.completedAtBats.length, n);
@@ -110,13 +186,19 @@ export async function verifyNativeBrowserContinuity({ base, createChallenge, pla
         const submit = await b.evaluate(async puzzleId =>
           window.IBNativeCustomQA.createCustomLineupV2BrowserTransport().submit(puzzleId), id);
         assert.equal(submit, 'created');
-        await a.reload();
-        await a.addScriptTag({ content: output.outputFiles[0].text });
-        const persisted = await a.evaluate(async puzzleId =>
+        const duplicateSubmit = await playPage.evaluate(async puzzleId =>
+          window.IBNativeCustomQA.createCustomLineupV2BrowserTransport().submit(puzzleId), id);
+        assert.equal(duplicateSubmit, 'existing', 'A second browser must not admit another result');
+        if (n === 1) await playPage.goto(challengeUrl);
+        else await playPage.reload();
+        await playPage.getByText('Lineup complete', { exact: true })
+          .waitFor({ state: 'visible', timeout: 15_000 });
+        await playPage.addScriptTag({ content: output.outputFiles[0].text });
+        const persisted = await playPage.evaluate(async puzzleId =>
           window.IBNativeCustomQA.createCustomLineupV2BrowserTransport().bootstrap(puzzleId), id);
         assert.equal(persisted.attemptMode, 'completed');
         assert.equal(persisted.completedAtBats.length, n);
-        console.log('PASS actual Chromium + isolated Supabase signed cross-tab continuity N=' + n);
+        console.log('PASS actual Chromium UI + isolated Supabase signed continuity N=' + n);
       } finally {
         await context.close();
       }

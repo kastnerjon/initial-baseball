@@ -1,12 +1,5 @@
 # Initial Baseball — Start Here
 
-## October 23 — Real signed browser QA staged in draft #499 (not executed)
-
-- Draft PR #499 adds an **opt-in**, QA-only native Chromium / Web Locks integration to the real local Next production server and isolated Supabase Custom acceptance harness. Two same-origin browser tabs must generate exactly two bootstrap requests: one with no challenge cookie and the second reusing the HttpOnly challenge credential, then persist hint progress, signed completion and reopening. The browser does **not** mock network or database responses.
-- Before reconciliation, the reviewed helper/test head `bade06abb159e8becac32252aba04a68d42decec` passed exact-head GitHub CI run `40029639924` and had Vercel Preview `dpl_Da4TzkiKCYEAgwJxxxQEkvSap25t` READY. Local JS syntax checks and six fail-closed preflight tests passed. CodeRabbit review found a genuine localhost-vs-127.0.0.1 mismatch; corrected, with separate tests rejecting lookalike and other non-loopback origins. Its final remaining findings concerned documentation/checklist reconciliation and are handled in the merged branch.
-- **Evidence limit:** this is test-harness implementation and static/integration-preflight evidence, **not execution of the signed native Chromium + isolated Supabase suite**. Previous temporary QA service credentials are not available in this session and Vercel Hobby Sandbox creation was blocked by HTTP 402 (reported reset November 1, 2026). The actual signed dual-tab #470 gate remains open. The current PR head after reconciliation requires its own exact-head CI, Preview and incremental review.
-- Both public Custom flags remain OFF. Browser/physical iOS and Android acceptance, Vercel WAF real enforcement/reversal, #471 response-loss decision, and enabled-feature rollout/rollback assessment remain open. Do not merge gated RLS PR #494 or activate public creation as a substitute.
-
 ## October 23 — Reversible disabled-feature production rollback verified
 
 - A controlled Vercel production rollback drill succeeded between two previously reviewed READY deployments that differ only in QA harness and documentation: #498 `3dc1e0a1c883a73f99ce6920c714256efd8fa2ae` (`dpl_6bG4qx8ZFFsZaoCiwU6HCuR8fTAY`) and #497 `b20cd07620ab757f18bc044e3b7ac9dc8546d6c8` (`dpl_BPu4DvhXDvdfJ2M46XBN4rtd5ojx`).

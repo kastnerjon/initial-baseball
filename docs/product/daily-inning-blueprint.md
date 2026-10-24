@@ -1,7 +1,7 @@
 # Daily Inning end-to-end blueprint
 
 Status: Living product source of truth  
-Last updated: 2026-10-21
+Last updated: 2026-10-23
 
 **Custom creator UX (October 20, agreed; implementation staged, public flags OFF):**
 The ordinary-user Custom v2 creator starts with **nine vertically numbered empty slots**,
@@ -188,6 +188,10 @@ The disposable beta archive exposes only actually issued schema-2 puzzles throug
 The permanent archive begins only after the explicit launch reset to Daily #1. Each prior permanent Daily remains playable/shareable. While both games remain supported, an archived Daily can offer each independently and track completion separately.
 
 The initial no-account product remembers played Dailies and the user's recorded result on that browser/device. Archive saves/history are keyed by stable Daily identity plus game/ruleset and must not overwrite the current Daily save. Cross-device history remains deferred until accounts.
+
+Archive beta can also show **Saved local progress · Resume** when its existing points-v4 gameplay save has the exact issued puzzle/date/number, a compatible uncompleted state, and meaningful play (a hint, a wrong guess or a completed at-bat). The game page still validates progression on reopen; the Archive label is advisory browser-local data, not proof of a valid token or server admission. Initial auto-saves, text-only queries, corrupt or mismatched saves and unavailable storage never establish progress; those rows retain neutral **Play / resume**. A completed-result record takes precedence over any gameplay save.
+
+The Archive beta catalog may display a same-browser completed score next to an issued row **only** when the saved first-completion record matches the exact Archive puzzle ID, date, number and mode. It displays the original score and ruleset-specific maximum, and links to that exact puzzle's saved at-bat detail in My Results. Missing or unreadable saved completion is not a zero or proof that the player never began; show a neutral Play / resume link instead. This is an untrusted local display convenience, not authenticated result admission, a cross-device history guarantee or a new competition record.
 
 ## Required before broad launch
 

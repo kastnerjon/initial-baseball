@@ -100,3 +100,7 @@ browser run and distinct physical-device checks are documented.
 A configured but empty Playwright module path or a requested native run without `CUSTOM_V2_QA_PUBLIC_CREATION=true` is rejected at the runner's initial, side-effect-free preflight rather than silently passing the HTTP-only suite. Two dummy-credential child-process tests check this refusal before any fixture is created or contacted.
 
 This protects the evidentiary distinction between HTTP-only acceptance and actual signed native-browser execution; the latter is still **not performed**.
+
+## Staged signed-browser continuity extension — October 24
+
+PR #499's optional signed Chromium runner now includes a real server-committed resolve whose response is deliberately aborted at the browser boundary, followed by navigation, refresh, reopening in a new tab, completion, and first-result/replay admission checks. The request is forwarded to the local Next server backed only by the pinned isolated QA project; its 200 response is observed before the browser receives an `internetdisconnected` abort. These assertions are staged coverage only. The run has **not** occurred because QA service credentials are not provisioned in the current workspace, and Vercel Preview is confirmed to point at production. No Preview or production signed test was run. Do not count this extension or its simulated response loss as actual hosted-browser acceptance until the credential-backed run passes.
