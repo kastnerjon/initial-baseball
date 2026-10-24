@@ -11,6 +11,7 @@ const PATHS = {
   batting: resolve(PACKAGE_DIR, 'data/lahman/Batting.csv'),
   pitching: resolve(PACKAGE_DIR, 'data/lahman/Pitching.csv'),
   appearances: resolve(PACKAGE_DIR, 'data/lahman/Appearances.csv'),
+  teams: resolve(PACKAGE_DIR, 'data/lahman/Teams.csv'),
   verifiedAppearanceGaps: resolve(PACKAGE_DIR, 'data/canonical/verified-appearance-gaps.csv'),
 };
 const BATTING_FIELDS = [
@@ -47,12 +48,15 @@ const pitching = buildSourceRows(
   buildPitchingFact,
 );
 const sourceAppearanceRows = parseCsv(inputs.appearances);
+const knownTeamSeasons = new Set(parseCsv(inputs.teams).map(row =>
+  `${integer(row.yearID)}|${clean(row.teamID)}`));
 const verifiedAppearanceRows = parseCsv(inputs.verifiedAppearanceGaps);
 const {
   issues: verifiedAppearanceIssues,
   acceptedRows: acceptedVerifiedAppearanceRows,
 } = validateVerifiedAppearanceRows({
-  sourceAppearanceRows, verifiedAppearanceRows, canonicalByLahmanId, batting, pitching,
+  sourceAppearanceRows, verifiedAppearanceRows, knownTeamSeasons,
+  canonicalByLahmanId, batting, pitching,
 });
 const appearances = buildAppearanceFacts(
   [...sourceAppearanceRows, ...acceptedVerifiedAppearanceRows],
@@ -76,6 +80,7 @@ const sourceManifest = {
     batting: sourceEntry('packages/baseball-data/data/lahman/Batting.csv', inputs.batting),
     pitching: sourceEntry('packages/baseball-data/data/lahman/Pitching.csv', inputs.pitching),
     appearances: sourceEntry('packages/baseball-data/data/lahman/Appearances.csv', inputs.appearances),
+    teams: sourceEntry('packages/baseball-data/data/lahman/Teams.csv', inputs.teams),
   },
   verifiedAppearanceGaps: sourceEntry(
     'packages/baseball-data/data/canonical/verified-appearance-gaps.csv',
@@ -297,7 +302,8 @@ function validate({
 }
 
 function validateVerifiedAppearanceRows({
-  sourceAppearanceRows, verifiedAppearanceRows, canonicalByLahmanId, batting, pitching,
+  sourceAppearanceRows, verifiedAppearanceRows, knownTeamSeasons,
+  canonicalByLahmanId, batting, pitching,
 }) {
   const issues = [];
   const acceptedRows = [];
@@ -320,7 +326,11 @@ function validateVerifiedAppearanceRows({
     if (!Number.isInteger(year) || year < 1871 || year > 2100) {
       rowIssues.push(`Invalid verified appearance year: ${key}`);
     }
-    if (!clean(row.teamID)) rowIssues.push(`Missing verified appearance team: ${key}`);
+    const teamId = clean(row.teamID);
+    if (!teamId) rowIssues.push(`Missing verified appearance team: ${key}`);
+    else if (!knownTeamSeasons.has(`${year}|${teamId}`)) {
+      rowIssues.push(`Unknown verified appearance team-season: ${key}:${teamId}`);
+    }
     const sourceGames = clean(row.G_all);
     const games = /^(?:0|[1-9]\d*)$/.test(sourceGames) ? Number(sourceGames) : NaN;
     if (!Number.isSafeInteger(games) || games < 1) {
@@ -537,7 +547,7 @@ function renderMarkdown(validation) {
     '- Their rows retain only the counting-stat columns present in those files.',
     '- Repeated player-year rows are preserved with a deterministic source-row ordinal and summed in the season layer.',
     '- Team and position history comes from the separate team-grain appearances file.',
-    '- MLB-sourced verified appearance gaps are a separate, checksum-tracked CSV and never invent positional game counts.',
+    '- MLB-sourced verified appearance gaps are a separate, checksum-tracked CSV; each team/year must exist in committed Lahman Teams.csv and positional game counts are never invented.',
     '- Missing historical values remain null rather than becoming zero.',
     '- Pitching workload is stored as outs.',
     '- Career aggregation and runtime migration remain deferred.',
