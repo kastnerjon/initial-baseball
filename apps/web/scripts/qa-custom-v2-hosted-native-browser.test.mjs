@@ -2,7 +2,8 @@ import assert from 'node:assert/strict';
 import { test } from 'node:test';
 import { spawnSync } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
-import { verifyNativeBrowserContinuity } from './qa-custom-v2-native-browser.mjs';
+import { verifyNativeBrowserContinuity, assertSameSignedProgression }
+  from './qa-custom-v2-native-browser.mjs';
 
 const noFixtures = () => { throw new Error('Preflight must precede fixtures'); };
 for (const url of ['https://initial-baseball-web.vercel.app/',
@@ -57,3 +58,20 @@ for (const [mode, modulePath, expected] of [
       assert.match(child.stderr, expected);
     });
 }
+
+// A failure must never print signed progression tokens (or hint/player payloads)
+// in public CI diagnostics; assert.equal(actual, expected) would leak both.
+test('signed progression assertion redacts mismatched credentials', () => {
+  const secretA = 'qa-token-A-signature-restricted-1234';
+  const secretB = 'qa-token-B-signature-restricted-5678';
+  assert.doesNotThrow(() => assertSameSignedProgression(secretA, secretA, 'same attempt'));
+  assert.throws(() => assertSameSignedProgression(secretA, secretB, 'attempt mismatch'),
+    error => {
+      assert.equal(error.name, 'AssertionError');
+      const rendered = String(error.stack) + JSON.stringify(error);
+      assert.ok(!rendered.includes(secretA));
+      assert.ok(!rendered.includes(secretB));
+      assert.match(rendered, /attempt mismatch/);
+      return true;
+    });
+});

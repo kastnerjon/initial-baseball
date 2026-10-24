@@ -14,6 +14,12 @@ const webRoot = fileURLToPath(new URL('../', import.meta.url));
 const repoRoot = fileURLToPath(new URL('../../../', import.meta.url));
 const puzzleIdPattern = /^custom-lineup-v2-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
+// Assert on a boolean, not on secret string operands. node:assert.equal embeds
+// actual/expected signed credentials in its failure diff and CI job logs.
+export function assertSameSignedProgression(actual, expected, message) {
+  assert.ok(actual === expected, message);
+}
+
 export async function verifyNativeBrowserContinuity({ base, createChallenge, players, modulePath }) {
   assert.ok(base.hostname === '127.0.0.1' || base.hostname === 'localhost',
     'Native QA must stay on loopback');
@@ -41,7 +47,7 @@ export async function verifyNativeBrowserContinuity({ base, createChallenge, pla
       ...(executablePath ? { executablePath } : {}) });
     for (const n of [1, 10]) {
       const id = await createChallenge(n);
-      assert.match(id, puzzleIdPattern);
+      assert.ok(puzzleIdPattern.test(id), 'Expected a newly issued isolated-QA puzzle ID');
       const context = await browser.newContext();
       try {
         const a = await context.newPage();
@@ -67,8 +73,9 @@ export async function verifyNativeBrowserContinuity({ base, createChallenge, pla
         assert.equal(first.attemptMode, 'reserved');
         assert.equal(second.attemptMode, 'reserved');
         assert.equal(first.atBats.length, n);
-        assert.deepEqual(second.atBats, first.atBats);
-        assert.equal(second.progressionToken, first.progressionToken,
+        assert.ok(JSON.stringify(second.atBats) === JSON.stringify(first.atBats),
+          'Concurrent tabs must receive the identical spoiler-safe public slots');
+        assertSameSignedProgression(second.progressionToken, first.progressionToken,
           'Concurrent same-browser first opens must resume one signed attempt');
         assert.equal(bootstrapCookiePresence.length, 2, 'Exactly two browser bootstrap POSTs');
         assert.deepEqual((await Promise.all(bootstrapCookiePresence)).sort(), [false, true],
@@ -81,7 +88,7 @@ export async function verifyNativeBrowserContinuity({ base, createChallenge, pla
           window.IBNativeCustomQA.createCustomLineupV2BrowserTransport().bootstrap(puzzleId), id);
         assert.equal(restored.attemptMode, 'reserved');
         assert.equal(restored.hintBundle.revealedCount, 1);
-        assert.equal(restored.progressionToken, hinted.progressionToken,
+        assertSameSignedProgression(restored.progressionToken, hinted.progressionToken,
           'Other tab must recover progressed token, not initialize a new attempt');
         let token = restored.progressionToken;
         for (let pitch = 1; pitch <= n; pitch++) {
