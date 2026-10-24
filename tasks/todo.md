@@ -1,8 +1,8 @@
 # Initial Baseball — Current Work
 
-Last reconciled against GitHub, Vercel and Supabase on October 23, 2026. This file tracks remaining, unchecked work; completed QA and rollback evidence belongs in `docs/START-HERE.md` and its linked plans.
+Last reconciled against GitHub, CI, Vercel and the owner's recorded decisions on October 23 New York / October 24 UTC, 2026. Hosted Supabase was **not re-read** in this reconciliation; prior QA/production database evidence is in `docs/START-HERE.md`. This file lists only unfinished work, not completed QA history.
 
-Remaining Custom launch gates: real signed hosted-browser/cookie continuity (#470), genuine WAF enforcement and reversal, physical iOS/Android acceptance, and controlled enabled-feature rollout with a new rollback assessment. The response-loss product/security decision (#471) is required before that rollout. **Both production Custom flags remain OFF.**
+Remaining private Custom launch gates: real signed isolated-QA native-browser/cookie continuity (#470), genuine Vercel WAF enforcement and reversal, physical iPhone Safari/Android Chrome acceptance, and controlled enabled-feature rollout with a new rollback assessment. **Issue #471's product decision is resolved: allow explicit manual retry after uncertain creator response, accepting a duplicate challenge and extra quota admission; no idempotent recovery for Phase 1.** Both production public Custom flags remain OFF.
 
 ## 1. Complete Custom Lineups Phase 1 launch gates
 
@@ -15,17 +15,18 @@ Public creation, unlisted sharing and signed 1–10 gameplay are staged behind s
 - [ ] Complete the real native-browser, signed isolated-QA first-open/cookie-continuity acceptance for two tabs (#470), including cookie ordering, resumed progression and completion. The local Next + real isolated Supabase creator/friend HTTP and creation-quota suite already passed and is recorded in `docs/START-HERE.md`; it does not prove this distinct browser gate. Draft PR #499 stages a Chromium integration runner, but its signed-browser execution has not occurred; do not treat CI or simulated browser fixtures as acceptance.
 - [ ] Complete Vercel WAF entitlement and enforcement verification. Project API metadata shows SSO protection enabled for non-custom domains; password protection and trusted IP protection are disabled. Active firewall-config lookup returns 404. Authenticated Vercel Git deployment context confirms a Hobby team; current docs permit one fixed-window WAF rate-limit rule on Hobby (token bucket requires Enterprise). Active/staging firewall reads return 404 and the authenticated dashboard remains inaccessible, so an installed rule and its enforcement are unverified. Inspect the existing configuration before editing; stage a log-only route-scoped rule for `POST /api/custom-lineup/create`, verify actual controlled enforcement, and document disable/publish rollback. If unavailable, retain the independent server-side creation quota and keep public creation OFF. Do not weaken deployment protection. See `tasks/plans/custom-v2-live-vercel-ingress-evidence.md`.
 - [ ] Complete creator and friend gameplay acceptance on real iOS Safari and Android Chrome, including keyboard/autocomplete, two-tap swap, sharing, owner-code separation, results and navigation. Chromium viewport coverage is simulated mobile testing, not physical-device acceptance.
-- [ ] After hosted signed-browser continuity, genuine WAF enforcement/reversal, physical-device acceptance **and the #471 response-loss product/security decision** are complete, perform a controlled production Custom flag rollout with enabled issuance, gameplay/scoring, logs, database state, and a new enabled-feature rollback assessment. The disabled-feature drill does **not** certify enabled-feature recovery.
+- [ ] After hosted signed-browser continuity, genuine WAF enforcement/reversal, and physical-device acceptance are complete, perform a controlled production Custom flag rollout with enabled issuance, gameplay/scoring, logs, database state, and a new enabled-feature rollback assessment. The #471 product decision is already approved (manual retry; no secret recovery); preserve its uncertainty messaging and review QA evidence during rollout. The disabled-feature drill does **not** certify enabled-feature recovery.
 
 ## 2. Gated creator navigation: implemented on main
 
 The two-flag-gated `/create` entry in the Daily footer, the creator return link, narrow-screen wrapping, and focused static-render tests are already present on main (`54e559f`). Both production flags remain OFF. No additional navigation change is needed; the `tasks/plans/custom-creator-navigation.md` scope is satisfied by the shipped code.
 
-## 3. After Custom Lineups launch
+## 3. After private Custom Lineups works safely — UX/UI refinement before expansion
 
-- [ ] Resume the deferred version-aware Daily editorial horizon inspection in draft PR #434 only after Custom launch; preserve Daily Nine, Archive and Classic behavior. Do not merge until its independent review is available.
+- [ ] Review the complete real-device Create → owner preview → share → independent friend play → results loop with the product owner. Refine visual design, button hierarchy, navigation, labels, loading/errors, game/result layouts, accessibility and responsive behavior. The existing HTML/branding concepts were exploratory; **do not implement a final theme or layout without an approved direction**. Preserve server-authoritative gameplay, private-link semantics and creator exclusion. This is the next product focus once private Custom functionality clears its safety gates, before broader public discovery/social expansion.
+- [ ] After the Custom launch milestone, resume the deferred version-aware Daily editorial horizon inspection in draft PR #434 only after Custom launch; preserve Daily Nine, Archive and Classic behavior. Do not merge until its independent review is available.
 - [ ] Continue the approved administrator-configurable Daily Lineup design and issuance stages. Freeze each lineup length into the issued contract; retain all historical nine-player Daily/Archive results and Classic.
-- [ ] Consider public Custom publishing, Discover and leaderboards only after private sharing and first-attempt integrity are stable. They require separate moderation, ownership, privacy, abuse and activation decisions; see `tasks/plans/community-custom-lineups.md`.
+- [ ] Consider public Custom publishing, Discover, optional ratings and leaderboards only after private sharing, first-attempt integrity and the agreed UX direction are stable. They require separate moderation, ownership, privacy, abuse and activation decisions; see `tasks/plans/community-custom-lineups.md`.
 
 ## Deferred polish
 
