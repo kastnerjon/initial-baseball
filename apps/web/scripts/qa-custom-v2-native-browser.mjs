@@ -59,18 +59,31 @@ export async function verifyNativeBrowserContinuity({ base, createChallenge, pla
           b.addScriptTag({ content: output.outputFiles[0].text })]);
         const expectedCookie = 'ib-custom-lineup-v2-attempt-' + id + '=';
         const bootstrapCookiePresence = [];
-        for (const tab of [a, b]) tab.on('request', request => {
-          if (request.method() !== 'POST'
-            || new URL(request.url()).pathname !== '/api/custom-lineup/challenges/'
-              + id + '/attempt/bootstrap') return;
-          // Keep only a boolean, never a credential value, in test evidence.
-          bootstrapCookiePresence.push(request.allHeaders().then(headers =>
-            (headers.cookie ?? '').split(';').some(pair =>
-              pair.trim().startsWith(expectedCookie))));
-        });
+        const bootstrapRequestListeners = new Map();
+        for (const tab of [a, b]) {
+          const onBootstrapRequest = request => {
+            if (request.method() !== 'POST'
+              || new URL(request.url()).pathname !== '/api/custom-lineup/challenges/'
+                + id + '/attempt/bootstrap') return;
+            // Keep only a boolean, never a credential value, in test evidence.
+            bootstrapCookiePresence.push(request.allHeaders().then(headers =>
+              (headers.cookie ?? '').split(';').some(pair =>
+                pair.trim().startsWith(expectedCookie))));
+          };
+          bootstrapRequestListeners.set(tab, onBootstrapRequest);
+          tab.on('request', onBootstrapRequest);
+        }
         // Start two first opens together in the same real browser context.
-        const [first, second] = await Promise.all([a, b].map(page => page.evaluate(async puzzleId =>
-          window.IBNativeCustomQA.createCustomLineupV2BrowserTransport().bootstrap(puzzleId), id)));
+        let first;
+        let second;
+        let cookieHeaderReads;
+        try {
+          [first, second] = await Promise.all([a, b].map(page => page.evaluate(async puzzleId =>
+            window.IBNativeCustomQA.createCustomLineupV2BrowserTransport().bootstrap(puzzleId), id)));
+        } finally {
+          for (const [tab, listener] of bootstrapRequestListeners) tab.off('request', listener);
+          cookieHeaderReads = await Promise.allSettled(bootstrapCookiePresence);
+        }
         assert.equal(first.attemptMode, 'reserved');
         assert.equal(second.attemptMode, 'reserved');
         assert.equal(first.atBats.length, n);
@@ -79,7 +92,10 @@ export async function verifyNativeBrowserContinuity({ base, createChallenge, pla
         assertSameSignedProgression(second.progressionToken, first.progressionToken,
           'Concurrent same-browser first opens must resume one signed attempt');
         assert.equal(bootstrapCookiePresence.length, 2, 'Exactly two browser bootstrap POSTs');
-        assert.deepEqual((await Promise.all(bootstrapCookiePresence)).sort(), [false, true],
+        assert.ok(cookieHeaderReads.every(result => result.status === 'fulfilled'),
+          'Reading initial bootstrap request headers must succeed');
+        assert.deepEqual(cookieHeaderReads.map(result => result.status === 'fulfilled'
+          ? result.value : false).sort(), [false, true],
           'One first request must lack this challenge cookie; the second must reuse it');
         // Advance one actual signed attempt through the same transported browser API.
         const hinted = await b.evaluate(async ({ puzzleId, token }) =>
