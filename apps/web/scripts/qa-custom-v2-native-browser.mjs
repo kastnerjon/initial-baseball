@@ -319,6 +319,9 @@ export async function verifyNativeBrowserContinuity({ base, createChallenge, pla
         await context.close();
       }
     }
+    // Exercise the actual public creator only after the two signed friend cases
+    // have completed against the hard-pinned isolated QA server.
+    await verifyNativeCreatorResponseLoss(browser, base, players);
   } finally {
     if (browser) await browser.close();
     await rm(temp, { force: true, recursive: true });

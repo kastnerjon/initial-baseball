@@ -82,11 +82,12 @@ progresses one hint, resumes from the other tab, completes and submits, and
 reopens the completed attempt. Token equality alone is not proof of one
 reservation: independent first opens can share an identical initial signed
 progression token. The browser request-cookie assertion guards that false positive
-without logging secret cookie values. If passed, it
-adds two issued challenges, two attempts, two completions and eleven at-bats.
-Fixture retention must be accounted for after the run.
+without logging secret cookie values. The signed friend cases add two issued
+challenges, two attempts, two completions and eleven at-bats. The native creator
+response-loss case adds two more issued challenges and no gameplay attempts;
+reconcile those records separately when accounting for fixture retention.
 
-Four fail-closed origin/module preflight tests pass locally, and the helper
+Nine fail-closed origin/module preflight and secret-redaction tests pass locally, and the helper
 passes `node --check`. **No signed browser/database acceptance result is
 claimed**: QA-only credentials and the development sandbox are unavailable
 in this conversation (Vercel Hobby Sandbox limit resets November 1). This
