@@ -4,6 +4,7 @@
  * One case forwards a real resolve request, confirms the server response, then
  * aborts delivery to the browser to model a lost response after server commit.
  */
+import { randomInt } from 'node:crypto';
 import assert from 'node:assert/strict';
 import { mkdtemp, writeFile, rm } from 'node:fs/promises';
 import { createRequire } from 'node:module';
@@ -19,6 +20,111 @@ const puzzleIdPattern = /^custom-lineup-v2-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-
 // actual/expected signed credentials in its failure diff and CI job logs.
 export function assertSameSignedProgression(actual, expected, message) {
   assert.ok(actual === expected, message);
+}
+
+async function verifyNativeCreatorResponseLoss(browser, base, players) {
+  const context = await browser.newContext();
+  try {
+    const page = await context.newPage();
+    await page.goto(base.href);
+    const createUrl = new URL('/api/custom-lineup/create', base).href;
+    const qaIp = '192.0.2.' + randomInt(1, 255);
+    const payload = {
+      canonicalPlayerIds: players.slice(0, 2),
+      title: 'QA browser dropped create response',
+    };
+    let requestCount = 0;
+    let serverStatus = null;
+    let firstPuzzleId = null;
+    let firstOwnerCapability = null;
+    await page.route(createUrl, async route => {
+      requestCount++;
+      const response = await route.fetch();
+      if (requestCount === 1) {
+        serverStatus = response.status();
+        if (serverStatus === 201) {
+          const firstPayload = await response.json();
+          firstPuzzleId = typeof firstPayload?.puzzleId === 'string'
+            ? firstPayload.puzzleId : null;
+          firstOwnerCapability = typeof firstPayload?.ownerCapability === 'string'
+            ? firstPayload.ownerCapability : null;
+        }
+        await route.abort('internetdisconnected');
+        return;
+      }
+      await route.fulfill({ response });
+    });
+
+    const first = await page.evaluate(async ({ url, requestBody, ip }) => {
+      try {
+        const response = await fetch(url, {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: {
+            'content-type': 'application/json',
+            'x-forwarded-for': ip,
+            'x-vercel-forwarded-for': ip,
+          },
+          body: JSON.stringify(requestBody),
+        });
+        return { responseReceived: true, status: response.status };
+      } catch {
+        return { responseReceived: false };
+      }
+    }, { url: createUrl, requestBody: payload, ip: qaIp });
+
+    assert.equal(first.responseReceived, false,
+      'Chromium must observe the committed create response as a network failure');
+    assert.equal(serverStatus, 201,
+      'The isolated Next/Supabase handler must finish issuance before delivery is dropped');
+    assert.ok(puzzleIdPattern.test(firstPuzzleId ?? ''),
+      'The intercepted server response must contain a newly issued QA challenge');
+    assert.ok(typeof firstOwnerCapability === 'string'
+      && /^[A-Za-z0-9_-]{43}$/.test(firstOwnerCapability),
+    'The committed issuance must contain a well-formed one-time owner capability');
+    assert.equal(requestCount, 1,
+      'A lost response must not trigger an automatic duplicate creation request');
+
+    const retry = await page.evaluate(async ({ url, requestBody, ip }) => {
+      const response = await fetch(url, {
+        method: 'POST',
+        credentials: 'same-origin',
+        headers: {
+          'content-type': 'application/json',
+          'x-forwarded-for': ip,
+          'x-vercel-forwarded-for': ip,
+        },
+        body: JSON.stringify(requestBody),
+      });
+      let value = null;
+      try { value = await response.json(); } catch { /* report only status/shape below */ }
+      return {
+        status: response.status,
+        keys: value && typeof value === 'object' ? Object.keys(value).sort() : [],
+        puzzleId: value?.puzzleId,
+        ownerCapability: value?.ownerCapability,
+      };
+    }, { url: createUrl, requestBody: payload, ip: qaIp });
+
+    assert.equal(retry.status, 201, 'One explicit manual retry must issue successfully');
+    assert.deepEqual(retry.keys, ['ownerCapability', 'puzzleId'],
+      'A retry response must contain only the private ID and separate owner capability');
+    assert.ok(puzzleIdPattern.test(retry.puzzleId ?? ''),
+      'The explicit retry must return a new private challenge ID');
+    assert.ok(typeof retry.ownerCapability === 'string'
+      && /^[A-Za-z0-9_-]{43}$/.test(retry.ownerCapability),
+    'The retry must return a well-formed one-time owner capability');
+    assert.ok(retry.puzzleId !== firstPuzzleId,
+      'Manual retry must create a separate immutable private challenge');
+    assert.ok(retry.ownerCapability !== firstOwnerCapability,
+      'A separate issuance must use a different private owner capability');
+    assert.equal(requestCount, 2,
+      'The two issued challenges must correspond to one lost request and one explicit retry');
+    firstOwnerCapability = null;
+    console.log('PASS actual Chromium creator response drop and explicit retry on isolated QA');
+  } finally {
+    await context.close();
+  }
 }
 
 export async function verifyNativeBrowserContinuity({ base, createChallenge, players, modulePath }) {
@@ -46,6 +152,7 @@ export async function verifyNativeBrowserContinuity({ base, createChallenge, pla
       'QA Chromium executable must be an absolute path');
     browser = await chromium.launch({ headless: true,
       ...(executablePath ? { executablePath } : {}) });
+    await verifyNativeCreatorResponseLoss(browser, base, players);
     for (const n of [1, 10]) {
       const id = await createChallenge(n);
       assert.ok(puzzleIdPattern.test(id), 'Expected a newly issued isolated-QA puzzle ID');

@@ -452,8 +452,9 @@ async function verifyCommittedCreationResponseLoss() {
   assert.match(first.data?.ownerCapability ?? '', /^[A-Za-z0-9_-]{43}$/);
   assert.match(first.headers.get('set-cookie') ?? '', /HttpOnly/);
 
-  // Deliberately do not use the first returned ID/capability to make the
-  // subsequent request. The caller retries the same selection and title.
+  // This Node test receives the first HTTP 201 and then discards its data
+  // before an explicit retry. It is simulated client-side loss, not a network
+  // response drop; the optional Chromium test covers that browser boundary.
   const retry = await client.send('/api/custom-lineup/create', {
     qaForwardedIp: ip, body,
   });
@@ -467,7 +468,7 @@ async function verifyCommittedCreationResponseLoss() {
   assert.match(retry.headers.get('set-cookie') ?? '', /HttpOnly/);
   assert.ok(!JSON.stringify([...retry.headers]).includes(first.data.ownerCapability),
     'Prior owner capability must not leak on retry');
-  console.log('PASS QA simulated committed-response loss: retry creates another immutable challenge');
+  console.log('PASS QA caller-discarded committed create response: explicit retry issues separately');
 }
 
 const server = await startValidatedWebServer();
