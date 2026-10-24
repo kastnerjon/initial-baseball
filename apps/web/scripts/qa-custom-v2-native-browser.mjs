@@ -26,13 +26,30 @@ async function verifyNativeCreatorResponseLoss(browser, base, players) {
   const context = await browser.newContext();
   try {
     const page = await context.newPage();
-    await page.goto(base.href);
+    // Keep this case focused on issuance UX while using a known QA-valid player.
+    // The actual creation POST, feature gate, quota, issuance and owner code are real.
+    await page.route('**/api/players/search*', route => route.fulfill({
+      status: 200,
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({
+        results: [{ playerId: players[0], displayName: 'QA Fixture Player' }],
+      }),
+    }));
+    await page.goto(new URL('/create', base).href);
+
+    const title = 'QA native creator response loss';
+    await page.getByLabel('Puzzle name (3–60 characters)').fill(title);
+    await page.getByLabel('Number of players').selectOption('1');
+    await page.getByRole('button', { name: 'Choose player for slot 1' }).click();
+    await page.getByRole('searchbox', { name: 'Search player for slot 1' }).fill('QA');
+    const candidate = page.getByRole('button', { name: /QA Fixture Player/ });
+    await candidate.waitFor({ state: 'visible', timeout: 15_000 });
+    await candidate.click();
+    assert.equal(await page.locator('button[aria-label="Change player in slot 1"]').textContent(),
+      'QA Fixture Player', 'The real creator UI must retain the selected QA player');
+
     const createUrl = new URL('/api/custom-lineup/create', base).href;
     const qaIp = '192.0.2.' + randomInt(1, 255);
-    const payload = {
-      canonicalPlayerIds: players.slice(0, 2),
-      title: 'QA browser dropped create response',
-    };
     let requestCount = 0;
     let serverStatus = null;
     let firstPuzzleId = null;
@@ -55,26 +72,14 @@ async function verifyNativeCreatorResponseLoss(browser, base, players) {
       await route.fulfill({ response });
     });
 
-    const first = await page.evaluate(async ({ url, requestBody, ip }) => {
-      try {
-        const response = await fetch(url, {
-          method: 'POST',
-          credentials: 'same-origin',
-          headers: {
-            'content-type': 'application/json',
-            'x-forwarded-for': ip,
-            'x-vercel-forwarded-for': ip,
-          },
-          body: JSON.stringify(requestBody),
-        });
-        return { responseReceived: true, status: response.status };
-      } catch {
-        return { responseReceived: false };
-      }
-    }, { url: createUrl, requestBody: payload, ip: qaIp });
-
-    assert.equal(first.responseReceived, false,
-      'Chromium must observe the committed create response as a network failure');
+    const createButton = page.getByRole('button', { name: 'Create challenge', exact: true });
+    await createButton.click();
+    const alert = page.getByRole('alert');
+    await alert.waitFor({ state: 'visible', timeout: 15_000 });
+    const errorText = await alert.textContent();
+    assert.equal(errorText,
+      'Could not confirm whether your lineup was created. If it was, its owner code cannot be recovered here. Retrying creates a separate challenge and uses another creation attempt.',
+      'The actual creator UI must explain that the first owner code is not recoverable');
     assert.equal(serverStatus, 201,
       'The isolated Next/Supabase handler must finish issuance before delivery is dropped');
     assert.ok(puzzleIdPattern.test(firstPuzzleId ?? ''),
@@ -83,45 +88,33 @@ async function verifyNativeCreatorResponseLoss(browser, base, players) {
       && /^[A-Za-z0-9_-]{43}$/.test(firstOwnerCapability),
     'The committed issuance must contain a well-formed one-time owner capability');
     assert.equal(requestCount, 1,
-      'A lost response must not trigger an automatic duplicate creation request');
+      'The real creator UI must not issue an automatic duplicate after a lost response');
+    assert.ok(await createButton.isEnabled(),
+      'The creator must allow a separate user-requested retry after explaining uncertainty');
+    assert.equal(await page.getByLabel('Puzzle name (3–60 characters)').inputValue(), title,
+      'The failed create must preserve the title for an explicit retry');
+    assert.equal(await page.locator('button[aria-label="Change player in slot 1"]').textContent(),
+      'QA Fixture Player', 'The failed create must preserve the selected player');
 
-    const retry = await page.evaluate(async ({ url, requestBody, ip }) => {
-      const response = await fetch(url, {
-        method: 'POST',
-        credentials: 'same-origin',
-        headers: {
-          'content-type': 'application/json',
-          'x-forwarded-for': ip,
-          'x-vercel-forwarded-for': ip,
-        },
-        body: JSON.stringify(requestBody),
-      });
-      let value = null;
-      try { value = await response.json(); } catch { /* report only status/shape below */ }
-      return {
-        status: response.status,
-        keys: value && typeof value === 'object' ? Object.keys(value).sort() : [],
-        puzzleId: value?.puzzleId,
-        ownerCapability: value?.ownerCapability,
-      };
-    }, { url: createUrl, requestBody: payload, ip: qaIp });
-
-    assert.equal(retry.status, 201, 'One explicit manual retry must issue successfully');
-    assert.deepEqual(retry.keys, ['ownerCapability', 'puzzleId'],
-      'A retry response must contain only the private ID and separate owner capability');
-    assert.ok(puzzleIdPattern.test(retry.puzzleId ?? ''),
-      'The explicit retry must return a new private challenge ID');
-    assert.ok(typeof retry.ownerCapability === 'string'
-      && /^[A-Za-z0-9_-]{43}$/.test(retry.ownerCapability),
-    'The retry must return a well-formed one-time owner capability');
-    assert.ok(retry.puzzleId !== firstPuzzleId,
-      'Manual retry must create a separate immutable private challenge');
-    assert.ok(retry.ownerCapability !== firstOwnerCapability,
-      'A separate issuance must use a different private owner capability');
+    await createButton.click();
+    await page.getByText('Challenge issued.', { exact: true })
+      .waitFor({ state: 'visible', timeout: 15_000 });
     assert.equal(requestCount, 2,
-      'The two issued challenges must correspond to one lost request and one explicit retry');
+      'The second issuance must follow one explicit click after the lost response');
+    const shareHref = await page.getByLabel('Challenge link').inputValue();
+    const retryPuzzleId = new URL(shareHref, base).pathname.split('/').at(-1) ?? '';
+    const retryOwnerCapability = (await page.locator('.custom-nine-created code').last()
+      .textContent())?.trim() ?? '';
+    assert.ok(puzzleIdPattern.test(retryPuzzleId),
+      'The explicit retry must return a distinct private challenge link');
+    assert.ok(/^[A-Za-z0-9_-]{43}$/.test(retryOwnerCapability),
+      'The real creator UI must display the new one-time owner capability');
+    assert.ok(retryPuzzleId !== firstPuzzleId,
+      'Manual retry must create a separate immutable private challenge');
+    assert.ok(retryOwnerCapability !== firstOwnerCapability,
+      'A separate issuance must use a different private owner capability');
     firstOwnerCapability = null;
-    console.log('PASS actual Chromium creator response drop and explicit retry on isolated QA');
+    console.log('PASS actual Chromium /create UI response loss and explicit retry on isolated QA');
   } finally {
     await context.close();
   }
