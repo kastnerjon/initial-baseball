@@ -11,6 +11,7 @@ const PATHS = {
   batting: resolve(PACKAGE_DIR, 'data/lahman/Batting.csv'),
   pitching: resolve(PACKAGE_DIR, 'data/lahman/Pitching.csv'),
   appearances: resolve(PACKAGE_DIR, 'data/lahman/Appearances.csv'),
+  verifiedAppearanceGaps: resolve(PACKAGE_DIR, 'data/canonical/verified-appearance-gaps.csv'),
 };
 const BATTING_FIELDS = [
   'atBats', 'runs', 'hits', 'doubles', 'triples', 'homeRuns',
@@ -45,8 +46,13 @@ const pitching = buildSourceRows(
   canonicalByLahmanId,
   buildPitchingFact,
 );
+const sourceAppearanceRows = parseCsv(inputs.appearances);
+const verifiedAppearanceRows = parseCsv(inputs.verifiedAppearanceGaps);
+const verifiedAppearanceIssues = validateVerifiedAppearanceRows({
+  sourceAppearanceRows, verifiedAppearanceRows, canonicalByLahmanId, batting, pitching,
+});
 const appearances = buildAppearanceFacts(
-  parseCsv(inputs.appearances),
+  [...sourceAppearanceRows, ...verifiedAppearanceRows],
   canonicalByLahmanId,
 );
 const validation = validate({
@@ -54,6 +60,8 @@ const validation = validate({
   batting,
   pitching,
   appearances,
+  verifiedAppearanceIssues,
+  verifiedAppearanceRowCount: verifiedAppearanceRows.length,
 });
 const sourceManifest = {
   schemaVersion: 1,
@@ -66,6 +74,10 @@ const sourceManifest = {
     pitching: sourceEntry('packages/baseball-data/data/lahman/Pitching.csv', inputs.pitching),
     appearances: sourceEntry('packages/baseball-data/data/lahman/Appearances.csv', inputs.appearances),
   },
+  verifiedAppearanceGaps: sourceEntry(
+    'packages/baseball-data/data/canonical/verified-appearance-gaps.csv',
+    inputs.verifiedAppearanceGaps,
+  ),
 };
 const shared = { schemaVersion: 1, sourceManifest };
 
@@ -220,7 +232,10 @@ function buildPitchingFact(row, playerId, lahmanPlayerId, season, sourceRow) {
   };
 }
 
-function validate({ canonicalPlayers, batting, pitching, appearances }) {
+function validate({
+  canonicalPlayers, batting, pitching, appearances, verifiedAppearanceIssues,
+  verifiedAppearanceRowCount,
+}) {
   const criticalIssues = [];
   const duplicateKeys = {
     batting: findDuplicateKeys(batting.facts, sourceRowKey),
@@ -237,6 +252,14 @@ function validate({ canonicalPlayers, batting, pitching, appearances }) {
   appendIssues(criticalIssues, findInvalidIntegers('batting', batting.facts, BATTING_FIELDS));
   appendIssues(criticalIssues, findInvalidIntegers('pitching', pitching.facts, PITCHING_FIELDS));
   appendIssues(criticalIssues, findInvalidIntegers('appearances', appearances.facts, APPEARANCE_FIELDS));
+  appendIssues(criticalIssues, verifiedAppearanceIssues);
+  const appearanceSeasons = new Set(appearances.facts.map(seasonKey));
+  const missingAppearanceSeasons = [...new Set(
+    [...batting.facts, ...pitching.facts].map(seasonKey),
+  )].filter(key => !appearanceSeasons.has(key)).sort();
+  for (const key of missingAppearanceSeasons) {
+    criticalIssues.push(`Batting/pitching season missing team appearance evidence: ${key}`);
+  }
 
   return {
     summary: {
@@ -244,6 +267,8 @@ function validate({ canonicalPlayers, batting, pitching, appearances }) {
       battingSourceRowCount: batting.facts.length,
       pitchingSourceRowCount: pitching.facts.length,
       appearanceRowCount: appearances.facts.length,
+      verifiedAppearanceRowCount,
+      missingAppearanceSeasonCount: missingAppearanceSeasons.length,
       battingPlayerSeasonCount: distinctSeasonCount(batting.facts),
       pitchingPlayerSeasonCount: distinctSeasonCount(pitching.facts),
       appearancePlayerSeasonCount: distinctSeasonCount(appearances.facts),
@@ -263,8 +288,47 @@ function validate({ canonicalPlayers, batting, pitching, appearances }) {
         appearances: appearances.unmatchedLahmanPlayerIds,
       },
       criticalIssues,
+      missingAppearanceSeasons,
     },
   };
+}
+
+function validateVerifiedAppearanceRows({
+  sourceAppearanceRows, verifiedAppearanceRows, canonicalByLahmanId, batting, pitching,
+}) {
+  const issues = [];
+  const originalSeasons = new Set(sourceAppearanceRows.map(row =>
+    `${clean(row.playerID)}|${integer(row.yearID)}`));
+  const documentedSeasons = new Set([...batting.facts, ...pitching.facts].map(row =>
+    `${row.lahmanPlayerId}|${row.season}`));
+  const seen = new Set();
+  for (const row of verifiedAppearanceRows) {
+    const player = clean(row.playerID);
+    const year = integer(row.yearID);
+    const key = `${player}|${year}`;
+    if (seen.has(key)) issues.push(`Duplicate verified appearance season: ${key}`);
+    seen.add(key);
+    if (!canonicalByLahmanId.has(player)) issues.push(`Unknown verified appearance identity: ${key}`);
+    if (!Number.isInteger(year) || year < 1871 || year > 2100) {
+      issues.push(`Invalid verified appearance year: ${key}`);
+    }
+    if (!clean(row.teamID)) issues.push(`Missing verified appearance team: ${key}`);
+    const games = nullableInteger(row.G_all);
+    if (!Number.isInteger(games) || games < 1) {
+      issues.push(`Invalid verified appearance games: ${key}`);
+    }
+    if (!/^https:\/\/www\.mlb\.com\/player\/[a-z0-9-]+$/i.test(clean(row.sourceURL))) {
+      issues.push(`Invalid verified appearance MLB provenance URL: ${key}`);
+    }
+    if (originalSeasons.has(key)) issues.push(`Verified appearance overlaps Lahman: ${key}`);
+    if (!documentedSeasons.has(key)) issues.push(`Verified appearance has no batting/pitching season: ${key}`);
+    for (const field of Object.keys(row)) {
+      if (field.startsWith('G_') && field !== 'G_all' && clean(row[field])) {
+        issues.push(`Unverified positional appearance count: ${key}:${field}`);
+      }
+    }
+  }
+  return issues;
 }
 
 function findMalformedSourceRows(kind, facts) {
@@ -431,6 +495,8 @@ function renderMarkdown(validation) {
     `| Batting source rows | ${summary.battingSourceRowCount} |`,
     `| Pitching source rows | ${summary.pitchingSourceRowCount} |`,
     `| Appearance rows | ${summary.appearanceRowCount} |`,
+    `| Sourced verified appearance-gap rows | ${summary.verifiedAppearanceRowCount} |`,
+    `| Batting/pitching seasons lacking appearance evidence | ${summary.missingAppearanceSeasonCount} |`,
     `| Batting player-seasons | ${summary.battingPlayerSeasonCount} |`,
     `| Pitching player-seasons | ${summary.pitchingPlayerSeasonCount} |`,
     `| Appearance player-seasons | ${summary.appearancePlayerSeasonCount} |`,
@@ -459,6 +525,7 @@ function renderMarkdown(validation) {
     '- Their rows retain only the counting-stat columns present in those files.',
     '- Repeated player-year rows are preserved with a deterministic source-row ordinal and summed in the season layer.',
     '- Team and position history comes from the separate team-grain appearances file.',
+    '- MLB-sourced verified appearance gaps are a separate, checksum-tracked CSV and never invent positional game counts.',
     '- Missing historical values remain null rather than becoming zero.',
     '- Pitching workload is stored as outs.',
     '- Career aggregation and runtime migration remain deferred.',
