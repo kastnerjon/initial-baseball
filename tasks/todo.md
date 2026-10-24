@@ -1,6 +1,6 @@
 # Initial Baseball — Current Work
 
-Last reconciled against exact production main `a5d0c44401ad6ce69f76e9a4433dde1d3accb933` (PR #506), successful CI, READY Vercel and read-only route smoke on October 24, 2026. Completed data correction #505 and scoped QA issues #470/#471 are documented in `docs/START-HERE.md`. Both production Custom flags remain OFF.
+Last reconciled against exact production main `45ea3423740081b7c76d9e4053d3fdf05f063342` (PR #507 after #506), successful CI, READY Vercel and read-only route smoke on October 24, 2026. Completed data correction #505 and scoped QA issues #470/#471 are documented in `docs/START-HERE.md`. Both production Custom flags remain OFF.
 
 ## 1. Finish private Custom Lineups release gates
 
