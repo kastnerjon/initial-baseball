@@ -1,13 +1,12 @@
 # Initial Baseball — Current Work
 
-Last reconciled against current GitHub `main`, CI, Vercel and read-only Supabase checks on October 24, 2026. Verified operational evidence and completed work are in `docs/START-HERE.md` and the linked plans. Both production Custom flags remain OFF.
+Last reconciled against exact production main `a5d0c44401ad6ce69f76e9a4433dde1d3accb933` (PR #506), successful CI, READY Vercel and read-only route smoke on October 24, 2026. Completed data correction #505 and scoped QA issues #470/#471 are documented in `docs/START-HERE.md`. Both production Custom flags remain OFF.
 
 ## 1. Finish private Custom Lineups release gates
 
-- [x] Execute signed isolated-QA Chromium friend continuity and actual creator response-loss/manual retry (#470/#471). Run `40111285611` passed on `27fa07745d`; PR #499 merged and production verified on `398d7dc`. Evidence and limits are in START-HERE and issue comments; issue closure still requires acceptance-evidence review.
 - [x] Restore a dedicated hosted QA Preview and verify its isolated database destination. The protected `qa/private-custom` Preview is READY on `398d7dc`, with all five GET smoke routes passing and QA-only schema compatibility restored. Ordinary Preview branches may still use production Supabase; only the verified QA branch is an authorized destination for QA issuance.
 - [ ] Verify signed creator-to-friend gameplay through the *deployed* protected QA origin; GitHub Actions signed Chromium evidence runs against a local Next server, not the live Vercel ingress. Do not treat GET smoke as this acceptance.
-- [ ] Arrange temporary authenticated access to the isolated QA Preview on actual devices without weakening global deployment protection. Vercel Sandbox browser automation is blocked by the Hobby usage cap through November 1; use physical QA or a separately reviewed credential-safe runner.
+- [ ] Provide testers a current, expiring authenticated QA Preview share link at the time of physical acceptance. A temporary link was created October 24; it expires October 25 and must not be stored in Git. Vercel Sandbox browser automation remains blocked on Hobby through November 1; use physical QA or a separately reviewed credential-safe runner.
 - [ ] Complete creator and friend gameplay on actual iPhone Safari and Android Chrome using the protected isolated-QA link: player search, hints, navigation, sharing, owner-code separation, scoring, results, refresh and usability. Chromium tests do not count as physical-device acceptance.
 - [ ] After those gates pass, run the controlled production Custom flag rollout. Verify issuance, gameplay/scoring, completion admission, database integrity, runtime errors and a new enabled-feature rollback path. The disabled-feature rollback drill does not prove rollback safety after Custom is enabled. Preserve both flags OFF until the rollout criteria are met.
 
@@ -33,6 +32,6 @@ These gates are separate from Custom Lineups Phase 1. Keep them active until eac
 - [ ] Verify analytics and error monitoring.
 - [ ] Complete privacy/terms, canonical domain, and social metadata.
 
-## Reported data correctness
+## Independent security follow-up (not a Custom launch gate)
 
-- [ ] Fix and audit missing season team metadata (#505), beginning with Kris Bryant 2025. Source authoritative team evidence; preserve stats and scoring.
+- [ ] Resume staged RLS helper EXECUTE hardening in draft PR #494 only after matched hosted Supabase staging verifies event-trigger and DDL behavior. Never apply the migration to production on local-only evidence.
