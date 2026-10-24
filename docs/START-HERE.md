@@ -1,5 +1,20 @@
 # Initial Baseball — Start Here
 
+## October 24 — Verified production and signed Custom QA
+
+- **Current main:** `398d7dc7f69782609d1eef26b4fc747927cc8034`, PR #499 merged. Main CI `40117153739` succeeded. Production `dpl_DhMokf3BKFfeRMLgB3dQZYpjDbFd` is READY on that exact SHA and serves the production alias. Smoke: `/`, `/archive`, `/results` 200; `/create` 404. Both production Custom flags remain OFF.
+- **Real signed browser QA passed:** run `40111285611` on reviewed PR head `27fa07745d9248c8511625bf27e4c3ae22ec20f9`; exact-head CI `40111288779` passed and Preview `dpl_4NsnZM1PeAtmHxFqGCgQJ1KYWrwY` was READY. Final Codex review found no major issues. Chromium exercised actual creator response-loss/manual retry and signed friend continuity with two tabs, refresh/navigation/reopen, completion and first-result admission for N=1 and N=10 against isolated QA Supabase. HTTP scenarios N=1–10 and sequential/concurrent quotas also passed. Evidence is in #470/#471 and PR #499.
+- **Isolation and credentials:** QA is `iklbnlicgsxxhaoiscor`; production is `dwreeiydvwikpamlokji`. The QA service key is an Actions repository secret named `CUSTOM_V2_QA_SUPABASE_SERVICE_ROLE_KEY`, scoped to the acceptance step. Signing/budget secrets are generated per run and masked. The workflow uses a local Next production server and synthetic Vercel ingress; it does not establish hosted ingress or physical-device acceptance. Existing Preview is recorded as production-backed and must not receive destructive QA.
+- **Database reconciliation:** QA totals are 88 issued / 38 attempts / 38 completed / 182 at-bats / 20 budget rows. Production remains 1 / 0 / 0 / 0 / 0. These are post-run observations, not authorization for production tests.
+- **Next launch gates:** provision an isolated hosted QA destination for actual iPhone Safari and Android Chrome testing; verify its database destination before writes. Finish genuine hosted ingress and enabled-feature rollback acceptance before controlled public activation. Prior disabled-feature rollback and closed-gate WAF probes are not proof of enabled gameplay rollback.
+- **Creator retry decision is settled:** explicit manual retry may create another private challenge, spend another quota admission and issue a distinct owner capability. No automatic duplicate retry or owner-code recovery is required for Phase 1. Actual browser QA now supports the approved behavior.
+- **Handoff PR #504:** reconcile this checkpoint, obtain new exact-head CI/Preview and independent review, then merge. Historical checkpoints below may describe blockers that have since cleared. Draft #494 remains gated on matched staging/security review; #434 remains deferred.
+- **Data bug #505:** Kris Bryant's 2025 batting source row exists, but the corresponding appearance/team metadata is absent. Audit affected seasons and fix the baseball-data pipeline with authoritative team evidence; do not fabricate appearance counts or patch one player in the UI.
+- **After private Custom readiness:** collaborate on journey, navigation, mobile/accessibility, colors, typography and visual consistency before substantial redesign. Prior HTML/branding work is exploratory. Public discovery, accounts, social competition and Head-to-Head remain later scoped roadmap work.
+
+
+### Historical checkpoint (superseded above)
+
 ## October 24 UTC — Current verified handoff, Custom launch gates and UX sequencing
 
 - **Verified current main:** `1035e1bbedcf70919b926e36a197c756a35f530e` (PR #503 merged after #502). Exact-main GitHub Actions run `40052558895` SUCCESS; production deployment `dpl_5emmhvyBhQm44PddKvs6doePtyEY` READY on that SHA. The last production smoke returned `/`, `/archive`, `/results` HTTP 200 and `/create` HTTP 404. Production Custom flags remain OFF.
