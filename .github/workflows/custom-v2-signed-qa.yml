@@ -2,6 +2,9 @@ name: Isolated Custom Lineup signed browser QA
 
 on:
   workflow_dispatch:
+  push:
+    branches: [test/custom-v2-native-signed-browser-20261023]
+    paths: [.github/workflows/custom-v2-signed-qa.yml]
 
 permissions:
   contents: read
@@ -25,25 +28,22 @@ jobs:
           node-version: 22
           cache: pnpm
       - run: pnpm install --frozen-lockfile
-      - name: Build canonical runtime data
-        run: pnpm data:runtime
+      - name: Build app and canonical runtime data without database credentials
+        env:
+          DAILY_PROGRESSION_SECRET: build-only-not-used-for-qa-runtime-0123456789abcdef
+        run: pnpm build:web
       - name: Select canonical fixture player IDs
         id: fixtures
         run: |
           node --input-type=module <<'NODE' >> "$GITHUB_OUTPUT"
           import { readFileSync } from 'node:fs';
-          const universe = JSON.parse(readFileSync('packages/baseball-data/reports/canonical-universe/canonical-player-universe.json', 'utf8'));
+          const universe = JSON.parse(readFileSync('packages/baseball-data/reports/canonical-runtime-payload/player-index.json', 'utf8'));
           const candidates = Array.isArray(universe) ? universe : universe.players;
           if (!Array.isArray(candidates)) throw new Error('Canonical QA player universe is unavailable');
           const ids = candidates.map(player => player.playerId ?? player.id).filter(id => /^ibp_[0-9a-f]{20}$/.test(id)).slice(0, 10);
           if (ids.length !== 10) throw new Error('Expected ten canonical fixture players');
           console.log('player_ids=' + ids.join(','));
           NODE
-      - name: Create per-run QA signing secrets
-        id: secrets
-        run: |
-          echo "progression=$(openssl rand -hex 32)" >> "$GITHUB_OUTPUT"
-          echo "budget=$(openssl rand -hex 32)" >> "$GITHUB_OUTPUT"
       - name: Install headless Chromium and browser driver
         run: |
           npm install --prefix /tmp/custom-v2-qa playwright@1.56.1
@@ -53,12 +53,15 @@ jobs:
           CUSTOM_V2_QA_PROJECT_REF: iklbnlicgsxxhaoiscor
           SUPABASE_URL: https://iklbnlicgsxxhaoiscor.supabase.co
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.CUSTOM_V2_QA_SUPABASE_SERVICE_ROLE_KEY }}
-          DAILY_PROGRESSION_SECRET: ${{ steps.secrets.outputs.progression }}
-          CUSTOM_LINEUP_CREATION_BUDGET_SECRET: ${{ steps.secrets.outputs.budget }}
           CUSTOM_LINEUP_V2_GAMEPLAY_TRANSPORT_ENABLED: 'true'
           CUSTOM_V2_QA_PUBLIC_CREATION: 'true'
           CUSTOM_LINEUP_PUBLIC_CREATION_ENABLED: 'true'
           CUSTOM_V2_QA_SIMULATED_VERCEL_INGRESS: 'true'
           CUSTOM_V2_QA_PLAYWRIGHT_MODULE: /tmp/custom-v2-qa/node_modules/playwright/index.mjs
           CUSTOM_V2_QA_PLAYER_IDS: ${{ steps.fixtures.outputs.player_ids }}
-        run: node apps/web/scripts/qa-custom-v2-hosted.mjs
+        run: |
+          export DAILY_PROGRESSION_SECRET="$(openssl rand -hex 32)"
+          export CUSTOM_LINEUP_CREATION_BUDGET_SECRET="$(openssl rand -hex 32)"
+          echo "::add-mask::$DAILY_PROGRESSION_SECRET"
+          echo "::add-mask::$CUSTOM_LINEUP_CREATION_BUDGET_SECRET"
+          node apps/web/scripts/qa-custom-v2-hosted.mjs
