@@ -3,6 +3,10 @@
 Status: Living architecture source of truth  
 Last updated: 2026-10-26
 
+## Verified account My Creations read — staged web layer (October 26)
+
+The My Creations list is a separately scoped, read-only account boundary. A server-verified `getUser()` identity scopes a service-role query to `creator_account_id`, with a fixed bounded newest-first page and an explicit projection of only `puzzle_id,display_title,issued_at`. No answer IDs, clue snapshots, owner credentials or account emails may appear in the query or API response. Browser `/account/creations` calls the private route and renders only the owner's unlisted friend URLs. There is no browser database grant or publication/management mutation. Historical anonymous puzzles without an owner association are intentionally absent until separately proved/claimed. No production release flags change.
+
 ## Authenticated public Custom issuance — staged web boundary (October 26)
 
 The existing default-disabled Custom creation POST now requires a valid creator Auth environment and server-verified confirmed nonanonymous Supabase session, in addition to existing Custom gameplay/issuance flags. The route derives its creator UUID from `getUser()`, never a client field, and calls the private account-owned service to atomically persist the immutable challenge and account owner. IP-based atomic quota/WAF remain abuse defenses, not identity authorization. No owner-code credential is issued for new account-owned puzzles. Guest authoring remains browser-only, with bounded session-tab draft storage to survive cross-page sign-in; Guest Custom friend gameplay and Daily remain unaffected. The signed cookie for creator-preview exclusion is not an ownership credential. The code being staged does not activate production flags; isolated-QA schema/provider/hosted and physical testing precede any public enablement.
