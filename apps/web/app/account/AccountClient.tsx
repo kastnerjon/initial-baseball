@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type JSX } from 'react';
 
 export default function AccountClient({ status }: { status?: string | undefined }): JSX.Element {
   const [accountId, setAccountId] = useState<string | null | undefined>();
