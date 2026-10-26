@@ -1,5 +1,11 @@
 # Initial Baseball — Start Here
 
+## October 26 — Authentication foundation implementation checkpoint (review pending)
+
+- PR #514 stages web creator authentication via Google/Apple PKCE and email one-time code, with a verified, nonanonymous Supabase Auth UUID, request-scoped publishable-key session adapter, and server-only `CREATOR_AUTH_ENABLED` default OFF. This stage does **not** authorize or implement Custom issuing, owning, saving, claiming, or sharing; all existing guest game behavior stays unchanged. No provider or production flag activation is authorized.
+- The first exact-head test job passed, but the mandatory documentation-impact job failed because canonical architecture documentation was missing; CodeRabbit separately found a misconfigured `/account` page could render when APIs correctly returned 404. Follow-up commits add the canonical architecture update, shared configuration validation, and regression coverage. Recheck exact-latest-head CI, Vercel Preview, and independent review before merge.
+- Next: implement account-associated immutable new Custom issuance under verified-session authorization while retaining anonymous drafts and guest Custom play, then My Creations/owner claims, provider-hosted QA, physical iOS/Android acceptance, and enabled-feature rollback. The historical anonymous issuer cannot be activated as-is.
+
 ## October 26 — Custom creator account requirement (approved, not implemented)
 
 - **Latest owner product decision:** Visitors may build an unsaved 1–10-player Custom draft and preview it without login, but **must use a verified account before saving/issuing and sharing a new Custom challenge**. My Creations and creator management require a verified account (Google, Apple or email OTP) and server-owned account-to-lineup association. Account holders may later publish/unpublish and review creator stats; the issued roster, clues and existing results remain immutable.
