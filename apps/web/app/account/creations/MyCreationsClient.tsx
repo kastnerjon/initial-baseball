@@ -17,7 +17,7 @@ export default function MyCreationsClient(): JSX.Element {
   const [error, setError] = useState<'sign-in' | 'unavailable' | null>(null);
   useEffect(() => {
     const controller = new AbortController();
-    void fetch('/api/account/creations', { credentials: 'same-origin', cache: 'no-store', signal: controller.signal })
+    void fetch('/api/account/creations', { credentials: 'same-origin', signal: controller.signal })
       .then(async response => {
         if (response.status === 401) { setError('sign-in'); return; }
         if (!response.ok) throw new Error('unavailable');
