@@ -3,6 +3,10 @@
 Status: Living architecture source of truth  
 Last updated: 2026-10-26
 
+## Account authentication adapter — staged default-OFF implementation (October 26)
+
+The web-only account adapter is staged behind `CREATOR_AUTH_ENABLED`, using Supabase Auth Google/Apple PKCE and email one-time codes. Its request-scoped `@supabase/ssr` client uses only the Supabase publishable key; `auth.getUser()` must verify a confirmed, nonanonymous `auth.users.id` before authorization. The service-role Custom repository stays separate. Fail-closed site-origin validation is shared between the account page and API, and authentication cookies remain HttpOnly, Secure on HTTPS, host-only, and no-store. The account UI and provider routes being staged **do not themselves permit any Custom issuance**. Full provider setup and isolated-QA browser verification are outstanding; production authentication and Custom flags must remain off. Creator ownership and guest play admission are separate follow-up boundaries.
+
 ## Approved three-game north star — architecture fit and staged boundaries (October 21)
 
 **Status:** Architectural assessment of the existing contracts against owner-approved issues [#478](https://github.com/kastnerjon/initial-baseball/issues/478), [#477](https://github.com/kastnerjon/initial-baseball/issues/477), and [#441](https://github.com/kastnerjon/initial-baseball/issues/441). This is **future direction**, not an implementation or permission to enable public Custom features. The current production game remains Daily Nine; Classic Inning is retained but hidden, and public Custom creation/gameplay remain default-off pending their independent launch gates.
