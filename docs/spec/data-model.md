@@ -122,6 +122,24 @@ This code is **not connected to any HTTP route** and does not sign or cryptograp
 
 ## Repository and security
 
+### Supabase DDL auto-RLS helper privilege boundary (issue #481)
+
+Production Supabase has a `postgres`-owned SECURITY DEFINER
+`public.rls_auto_enable()` event-trigger function, called by the enabled
+`ensure_rls` DDL hook to enable RLS on new public tables. Historically,
+PostgreSQL's implicit PUBLIC EXECUTE also gave `anon` and `authenticated`
+EXECUTE privileges, despite this not being a normal HTTP-callable RPC.
+The scoped privilege-hardening migration
+`20261023004439_restrict_rls_auto_enable_execute.sql` conditionally revokes
+those default grants after verifying the reviewed helper/trigger identity.
+It must not disable or recreate the event trigger, change existing table RLS,
+or imply Supabase projects without this helper should acquire one.
+
+This migration is **staged in source, not evidence of a live grant change**.
+A matching hosted Supabase staging test, independent review and post-apply
+security/DDL verification are required before declaring remediation complete.
+See `tasks/plans/rls-event-trigger-execute-hardening.md`.
+
 `apps/web/app/supabaseDailyPuzzleRepository.ts` implements the provider-neutral editorial puzzle port.
 
 - Reads support one date and inclusive date ranges.
