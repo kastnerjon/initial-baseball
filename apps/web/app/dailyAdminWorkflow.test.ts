@@ -305,7 +305,8 @@ describe('Daily admin workflow', () => {
     expect(scheduled.status).toBe('scheduled');
     expect(scheduled.revision).toBe(2);
     expect((await repository.getByDate(input.puzzleDate))?.updatedBy).toBe('chatops:assistant');
-    repository.seed({ ...scheduled, status: 'published' });
+    const persisted = (await repository.getByDate(input.puzzleDate))!;
+    repository.seed({ ...persisted, status: 'published' });
     await expect(workflow.replaceLineup({ ...input, allowCurrentDraftReset: true }))
       .rejects.toMatchObject({ kind: 'not-current-scheduled-puzzle' });
   });
