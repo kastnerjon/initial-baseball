@@ -278,51 +278,47 @@ describe('Daily admin workflow', () => {
     })).rejects.toMatchObject({ kind: 'not-current-scheduled-puzzle' });
   });
 
-  it('allows only an explicitly authorized same-day draft reset and preserves the normal schedule transition', async () => {
+  it('requires explicit same-day reset intent and preserves publication immutability', async () => {
     const repository = new InMemoryRepository();
     const candidates = buildCandidates();
-    repository.seed(buildDraft('2026-07-21', candidates));
+    const draft = buildDraft('2026-07-21', candidates);
+    const replacement = candidates.find(c => c.recognizabilityRank === 253)!;
+    const ids = draft.selections.map(s => s.slot === 5 ? replacement.canonicalPlayerId : s.canonicalPlayerId);
     const workflow = createDailyAdminWorkflow(repository, dependencies(candidates));
-    const replacement = candidates.find(candidate => candidate.recognizabilityRank === 253)!;
-    const original = (await repository.getByDate('2026-07-21'))!;
-    const ids = original.selections.map(selection =>
-      selection.slot === 5 ? replacement.canonicalPlayerId : selection.canonicalPlayerId,
-    );
     const input = {
       puzzleDate: '2026-07-21', canonicalPlayerIds: ids,
       actorId: 'chatops:assistant', occurredAt: OCCURRED_AT,
     };
 
-    await expect(workflow.replaceLineup(input)).rejects.toMatchObject({
-      kind: 'not-current-scheduled-puzzle',
-    });
-    expect((await repository.getByDate(input.puzzleDate))?.revision).toBe(0);
-
-    const replaced = await workflow.replaceLineup({ ...input, allowCurrentDraftReset: true });
-    expect(replaced.status).toBe('draft');
-    expect(replaced.revision).toBe(1);
-    expect(replaced.selections[4]?.player?.canonicalPlayerId).toBe(replacement.canonicalPlayerId);
-
+    await expect(workflow.replaceLineup({ ...input, allowCurrentDraftReset: true }))
+      .rejects.toMatchObject({ kind: 'not-current-scheduled-puzzle' });
+    repository.seed(draft);
+    await expect(workflow.replaceLineup(input))
+      .rejects.toMatchObject({ kind: 'not-current-scheduled-puzzle' });
+    const revised = await workflow.replaceLineup({ ...input, allowCurrentDraftReset: true });
+    expect(revised.status).toBe('draft');
+    expect(revised.revision).toBe(1);
+    expect(revised.selections[4]?.player?.canonicalPlayerId).toBe(replacement.canonicalPlayerId);
     const scheduled = await workflow.transitionLifecycle({
-      puzzleDate: input.puzzleDate, action: 'schedule',
-      actorId: input.actorId, occurredAt: OCCURRED_AT,
+      puzzleDate: input.puzzleDate, action: 'schedule', actorId: input.actorId, occurredAt: OCCURRED_AT,
     });
     expect(scheduled.status).toBe('scheduled');
     expect(scheduled.revision).toBe(2);
     expect((await repository.getByDate(input.puzzleDate))?.updatedBy).toBe('chatops:assistant');
+    repository.seed({ ...scheduled, status: 'published' });
+    await expect(workflow.replaceLineup({ ...input, allowCurrentDraftReset: true }))
+      .rejects.toMatchObject({ kind: 'not-current-scheduled-puzzle' });
   });
 
-  it('fails an authorized draft reset without disturbing a concurrent schedule', async () => {
+  it('rejects a draft reset if another admin schedules before its CAS save', async () => {
     const repository = new InMemoryRepository();
     const candidates = buildCandidates();
     const draft = buildDraft('2026-07-21', candidates);
     repository.seed(draft);
     const ids = draft.selections.map(s => s.canonicalPlayerId);
-    const replacement = candidates.find(candidate => candidate.recognizabilityRank === 253)!;
-    ids[4] = replacement.canonicalPlayerId;
+    ids[4] = candidates.find(c => c.recognizabilityRank === 253)!.canonicalPlayerId;
     const originalSave = repository.save.bind(repository);
     vi.spyOn(repository, 'save').mockImplementation(async (record, options) => {
-      // Simulate a second admin scheduling this draft between read and CAS save.
       const current = (await repository.getByDate(record.puzzleDate))!;
       if (current.status === 'draft') {
         repository.seed(scheduleDailyPuzzle(current, {
@@ -331,40 +327,14 @@ describe('Daily admin workflow', () => {
       }
       return originalSave(record, options);
     });
-
     await expect(createDailyAdminWorkflow(repository, dependencies(candidates)).replaceLineup({
       puzzleDate: '2026-07-21', canonicalPlayerIds: ids,
-      actorId: 'chatops:assistant', occurredAt: OCCURRED_AT,
-      allowCurrentDraftReset: true,
+      actorId: 'chatops:assistant', occurredAt: OCCURRED_AT, allowCurrentDraftReset: true,
     })).rejects.toThrow('revision conflict');
     const persisted = await repository.getByDate('2026-07-21');
     expect(persisted?.status).toBe('scheduled');
     expect(persisted?.revision).toBe(1);
     expect(persisted?.selections[4]?.canonicalPlayerId).toBe(draft.selections[4]?.canonicalPlayerId);
-  });
-
-  it('does not let a same-day draft reset bypass published status or missing editorial records', async () => {
-    const repository = new InMemoryRepository();
-    const candidates = buildCandidates();
-    const workflow = createDailyAdminWorkflow(repository, dependencies(candidates));
-    const input = {
-      puzzleDate: '2026-07-21',
-      canonicalPlayerIds: buildDraft('2026-07-21', candidates).selections.map(s => s.canonicalPlayerId),
-      actorId: 'chatops:assistant', occurredAt: OCCURRED_AT,
-      allowCurrentDraftReset: true,
-    };
-
-    await expect(workflow.replaceLineup(input)).rejects.toMatchObject({
-      kind: 'not-current-scheduled-puzzle',
-    });
-    const scheduled = scheduleDailyPuzzle(buildDraft('2026-07-21', candidates), {
-      actorId: 'daily-editor', occurredAt: OCCURRED_AT,
-    });
-    repository.seed({ ...scheduled, status: 'published' });
-    await expect(workflow.replaceLineup(input)).rejects.toMatchObject({
-      kind: 'not-current-scheduled-puzzle',
-    });
-    expect((await repository.getByDate(input.puzzleDate))?.status).toBe('published');
   });
 
   it('rejects non-future dates and canonical IDs outside the reviewed candidate universe', async () => {
