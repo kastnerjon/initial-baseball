@@ -312,6 +312,37 @@ describe('Daily admin workflow', () => {
     expect((await repository.getByDate(input.puzzleDate))?.updatedBy).toBe('chatops:assistant');
   });
 
+  it('fails an authorized draft reset without disturbing a concurrent schedule', async () => {
+    const repository = new InMemoryRepository();
+    const candidates = buildCandidates();
+    const draft = buildDraft('2026-07-21', candidates);
+    repository.seed(draft);
+    const ids = draft.selections.map(s => s.canonicalPlayerId);
+    const replacement = candidates.find(candidate => candidate.recognizabilityRank === 253)!;
+    ids[4] = replacement.canonicalPlayerId;
+    const originalSave = repository.save.bind(repository);
+    vi.spyOn(repository, 'save').mockImplementation(async (record, options) => {
+      // Simulate a second admin scheduling this draft between read and CAS save.
+      const current = (await repository.getByDate(record.puzzleDate))!;
+      if (current.status === 'draft') {
+        repository.seed(scheduleDailyPuzzle(current, {
+          actorId: 'concurrent-editor', occurredAt: OCCURRED_AT,
+        }));
+      }
+      return originalSave(record, options);
+    });
+
+    await expect(createDailyAdminWorkflow(repository, dependencies(candidates)).replaceLineup({
+      puzzleDate: '2026-07-21', canonicalPlayerIds: ids,
+      actorId: 'chatops:assistant', occurredAt: OCCURRED_AT,
+      allowCurrentDraftReset: true,
+    })).rejects.toThrow('revision conflict');
+    const persisted = await repository.getByDate('2026-07-21');
+    expect(persisted?.status).toBe('scheduled');
+    expect(persisted?.revision).toBe(1);
+    expect(persisted?.selections[4]?.canonicalPlayerId).toBe(draft.selections[4]?.canonicalPlayerId);
+  });
+
   it('does not let a same-day draft reset bypass published status or missing editorial records', async () => {
     const repository = new InMemoryRepository();
     const candidates = buildCandidates();
