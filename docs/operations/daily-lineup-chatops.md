@@ -4,7 +4,7 @@ Status: operational in production; smoke-tested September 16 and exercised for r
 
 ## Goal
 
-Allow the owner to provide a future Daily date and nine players in conversation and have an authorized assistant apply that exact lineup without manually editing nine slots in `/admin/daily`. The same private path also supports a bounded same-day correction while the live editorial record is still `scheduled`, so an identity mistake can be corrected without a direct database edit or a draft/fallback window.
+Allow the owner to provide a future Daily date and nine players in conversation and have an authorized assistant apply that exact lineup without manually editing nine slots in `/admin/daily`. The same private path also supports bounded same-day correction while an editorial record remains `scheduled`, plus an exceptional owner-authorized reset of today's live deterministic fallback via an explicit draft replacement and immediate scheduling.
 
 This is an operational adapter only. It does not replace the existing admin UI, lineup generator, lifecycle, validation, repository, or publication model.
 
@@ -43,7 +43,7 @@ The route:
 7. optionally schedules only when `schedule: true` was explicit; a current already-scheduled correction treats this as an idempotent transition;
 8. returns the persisted date, puzzle number, status, revision, validation result, and resolved ordered selections.
 
-Published and archived puzzles remain immutable. Replacing a scheduled future lineup returns it to draft before an explicit schedule transition. A same-day full-lineup correction is allowed only while the current record is already `scheduled`; it is one optimistic-revision save that preserves scheduled lifecycle metadata. The route may then receive the explicit `schedule: true` action as usual, and the workflow treats that already-scheduled current puzzle as an idempotent schedule transition. Because public puzzle identity is derived from the ordered canonical lineup, the corrected lineup receives a new puzzle ID automatically while earlier results remain attached to the old ID. Repository optimistic-revision semantics remain intact.
+Published and archived puzzles remain immutable. Replacing a scheduled future lineup returns it to draft before an explicit schedule transition. A normal same-day full-lineup correction is allowed only while the current record is already `scheduled`; it is one optimistic-revision save that preserves scheduled lifecycle metadata. An exceptional owner-authorized current-day fallback reset may instead replace a `draft` with an explicit `schedule: true` request, using the already-read draft revision as its save precondition. The route may then receive the explicit `schedule: true` action as usual, and the workflow treats that already-scheduled current puzzle as an idempotent schedule transition. Because public puzzle identity is derived from the ordered canonical lineup, the corrected lineup receives a new puzzle ID automatically while earlier results remain attached to the old ID. Repository optimistic-revision semantics remain intact.
 
 ## Conversational operating procedure
 
@@ -86,10 +86,10 @@ Verified before routine production use:
 - full-lineup replacement is one optimistic-revision save and preserves exact order;
 - unknown, non-canonical, or non-reveal-ready players are rejected before mutation;
 - reveal-ready manual players outside the automatic Daily pool may be selected and are surfaced with `outside-automatic-daily-pool` rather than being silently promoted into automatic generation;
-- past dates remain rejected; the current date is accepted only for a full-lineup correction while its authoritative record is already `scheduled`;
+- past dates remain rejected; ordinary current-date corrections require `scheduled`, while an owner-approved current-day fallback reset additionally permits `draft` only with explicit `schedule: true`; missing/published/archived current-day records cannot be replaced;
 - published/archived puzzles remain immutable;
 - future scheduled replacement returns to draft and only explicit scheduling restores `scheduled`;
-- same-day scheduled correction preserves the scheduled lifecycle atomically, changes the derived puzzle identity when the lineup changes, and leaves prior result rows isolated under the old puzzle ID;
+- same-day scheduled correction preserves the scheduled lifecycle atomically, while draft reset uses a checked optimistic revision followed by explicit scheduling; either replacement changes the derived puzzle identity and leaves prior result rows isolated under the old puzzle ID;
 - cache invalidation still runs through the existing repository wrapper;
 - validation warnings are returned for conversational review;
 - normal 2xx response readback exactly matches the requested nine;
