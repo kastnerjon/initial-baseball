@@ -22,6 +22,14 @@ export function creatorAuthEnvironment() {
   } catch { return null; }
 }
 
+/** A server page cannot construct a NextRequest; verify its actual Host before rendering forms. */
+export function creatorAuthPageHostAllowed(
+  config: NonNullable<ReturnType<typeof creatorAuthEnvironment>>,
+  requestHost: string | null,
+): boolean {
+  return requestHost === new URL(config.origin).host;
+}
+
 /** Request admission additionally binds the configured site to the actual incoming origin. */
 export function creatorAuthConfiguration(request: NextRequest) {
   const config = creatorAuthEnvironment();
