@@ -1,6 +1,12 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { NextRequest } from 'next/server';
 
 vi.mock('server-only', () => ({}));
+vi.mock('../../../serverCreatorAccountAuth', () => ({
+  creatorAuthConfiguration: vi.fn(() => ({ origin: 'https://example.test', supabaseUrl: 'https://qa.supabase.co', key: 'public-test' })),
+  creatorAuthClient: vi.fn(() => ({ client: { auth: {} }, finish: (response: unknown) => response })),
+  verifiedCreatorAccount: vi.fn(),
+}));
 vi.mock('../../../serverCustomLineupCreationBudget', () => ({
   reservePublicCustomLineupCreation: vi.fn(),
 }));
@@ -16,6 +22,7 @@ vi.mock('../../../serverCustomLineupV2GameplayHttp', () => ({
 }));
 
 import { POST } from './route';
+import { creatorAuthConfiguration, verifiedCreatorAccount } from '../../../serverCreatorAccountAuth';
 import { reservePublicCustomLineupCreation } from '../../../serverCustomLineupCreationBudget';
 import {
   createServerCustomLineupV2CreationService,
@@ -25,30 +32,35 @@ import {
 const BASE_URL = 'https://example.test/api/custom-lineup/create';
 const ID = 'custom-lineup-v2-123e4567-e89b-42d3-a456-426614174000';
 const issue = vi.fn();
-const OWNER = 'A'.repeat(43);
+const ACCOUNT = '123e4567-e89b-42d3-a456-426614174099';
 const reserve = vi.mocked(reservePublicCustomLineupCreation);
 
 beforeEach(() => {
+  vi.stubEnv('CREATOR_AUTH_ENABLED', 'true');
   vi.stubEnv('CUSTOM_LINEUP_PUBLIC_CREATION_ENABLED', 'true');
   vi.stubEnv('CUSTOM_LINEUP_V2_GAMEPLAY_TRANSPORT_ENABLED', 'true');
   vi.stubEnv('DAILY_PROGRESSION_SECRET', 'private-test-progression-secret-long-enough');
   issue.mockReset();
-  issue.mockResolvedValue({ puzzleId: ID, ownerCapability: OWNER });
+  issue.mockResolvedValue({ puzzleId: ID });
+  vi.mocked(verifiedCreatorAccount).mockReset();
+  vi.mocked(verifiedCreatorAccount).mockResolvedValue({ id: ACCOUNT });
+  vi.mocked(creatorAuthConfiguration).mockReset();
+  vi.mocked(creatorAuthConfiguration).mockReturnValue({ origin: 'https://example.test', supabaseUrl: 'https://qa.supabase.co', key: 'public-test' });
   reserve.mockReset();
   reserve.mockResolvedValue({ allowed: true });
-  vi.mocked(createServerCustomLineupV2CreationService).mockReturnValue({ issueAnonymous: issue, issue: vi.fn(), issueForAccount: vi.fn() });
+  vi.mocked(createServerCustomLineupV2CreationService).mockReturnValue({ issueAnonymous: issue, issue: vi.fn(), issueForAccount: issue });
 });
 afterEach(() => { vi.unstubAllEnvs(); vi.clearAllMocks(); });
 
 function request(ids: string[] = ['ibp_00000000000000000001'], headers: Record<string, string> = {}, url = BASE_URL) {
-  return new Request(url, {
+  return new NextRequest(url, {
     method: 'POST',
     headers: { origin: new URL(url).origin, 'content-type': 'application/json', ...headers },
     body: JSON.stringify({ canonicalPlayerIds: ids, title: '1998 Yankees Legends' }),
   });
 }
 
-describe('default-disabled, anonymous Custom v2 creation', () => {
+describe('default-disabled, account-gated Custom v2 creation', () => {
   it('remains closed unless both issuance and gameplay gates are enabled', async () => {
     vi.stubEnv('CUSTOM_LINEUP_PUBLIC_CREATION_ENABLED', '');
     expect((await POST(request())).status).toBe(404);
@@ -59,17 +71,50 @@ describe('default-disabled, anonymous Custom v2 creation', () => {
     expect(issue).not.toHaveBeenCalled();
   });
 
-  it('issues 1–10 anonymous selections only after quota admission, never returning answers', async () => {
+  it('refuses disabled or misconfigured auth and does not reserve or issue', async () => {
+    vi.stubEnv('CREATOR_AUTH_ENABLED', 'false');
+    // Even if this test's configuration mock is present, the route must use a
+    // separately disabled auth configuration to prevent anonymous fallback.
+    vi.mocked(creatorAuthConfiguration).mockReturnValueOnce(null);
+    expect((await POST(request())).status).toBe(404);
+    vi.stubEnv('CREATOR_AUTH_ENABLED', 'true');
+    vi.mocked(creatorAuthConfiguration).mockReturnValueOnce(null);
+    expect((await POST(request())).status).toBe(404);
+    expect(reserve).not.toHaveBeenCalled();
+    expect(issue).not.toHaveBeenCalled();
+  });
+
+  it('rejects unauthenticated sessions before body parsing or quota reservation', async () => {
+    vi.mocked(verifiedCreatorAccount).mockResolvedValueOnce(null);
+    const response = await POST(request());
+    expect(response.status).toBe(401);
+    expect(await response.json()).toEqual({ error: 'authentication_required' });
+    expect(reserve).not.toHaveBeenCalled();
+    expect(issue).not.toHaveBeenCalled();
+    expect(response.headers.has('set-cookie')).toBe(false);
+  });
+
+  it('rejects caller-supplied creator IDs instead of authorizing from JSON', async () => {
+    const response = await POST(new NextRequest(request(), {
+      body: JSON.stringify({ canonicalPlayerIds: ['ibp_00000000000000000001'],
+        title: 'My challenge', creatorAccountId: ACCOUNT }),
+    }));
+    expect(response.status).toBe(400);
+    expect(reserve).not.toHaveBeenCalled();
+    expect(issue).not.toHaveBeenCalled();
+  });
+
+  it('issues 1–10 verified-account selections only after quota admission, never returning answers', async () => {
     for (let length = 1; length <= 10; length++) {
       const ids = Array.from({ length }, (_, i) => 'ibp_' + String(i + 1).padStart(20, '0'));
       const response = await POST(request(ids));
       expect(response.status).toBe(201);
-      expect(await response.json()).toEqual({ puzzleId: ID, ownerCapability: OWNER });
+      expect(await response.json()).toEqual({ puzzleId: ID });
       expect(response.headers.get('cache-control')).toBe('private, no-store');
-      expect(JSON.stringify(response.headers)).not.toContain(OWNER);
+      expect(JSON.stringify([...response.headers])).not.toContain(ACCOUNT);
       expect(response.headers.get('set-cookie')).toContain('HttpOnly; SameSite=Strict; Secure');
       expect(response.headers.get('set-cookie')).toContain('ib-custom-lineup-creator-v2-');
-      expect(issue).toHaveBeenLastCalledWith({ canonicalPlayerIds: ids }, '1998 Yankees Legends');
+      expect(issue).toHaveBeenLastCalledWith({ canonicalPlayerIds: ids }, '1998 Yankees Legends', ACCOUNT);
     }
     expect(reserve).toHaveBeenCalledTimes(10);
     expect(issue).toHaveBeenCalledTimes(10);
@@ -81,7 +126,7 @@ describe('default-disabled, anonymous Custom v2 creation', () => {
     expect((await POST(request(undefined, { 'content-type': 'text/plain' }))).status).toBe(400);
     expect((await POST(request(undefined, {}, BASE_URL + '?override=1'))).status).toBe(400);
     const tooLarge = request();
-    const huge = new Request(tooLarge, { body: JSON.stringify({ canonicalPlayerIds: ['x'.repeat(5000)] }) });
+    const huge = new NextRequest(tooLarge, { body: JSON.stringify({ canonicalPlayerIds: ['x'.repeat(5000)] }) });
     expect((await POST(huge)).status).toBe(413);
     expect(reserve).not.toHaveBeenCalled();
     expect(issue).not.toHaveBeenCalled();
@@ -98,7 +143,7 @@ describe('default-disabled, anonymous Custom v2 creation', () => {
       { canonicalPlayerIds: [], title: 'x'.repeat(61) },
     ]) {
       const original = request();
-      const response = await POST(new Request(original, { body: JSON.stringify(payload) }));
+      const response = await POST(new NextRequest(original, { body: JSON.stringify(payload) }));
       expect(response.status).toBe(400);
     }
     expect(reserve).not.toHaveBeenCalled();
@@ -112,7 +157,7 @@ describe('default-disabled, anonymous Custom v2 creation', () => {
       [4], [null], [id, 4], 'not-an-array', null, {}, [id.repeat(15)],
     ];
     for (const canonicalPlayerIds of cases) {
-      const response = await POST(new Request(request(), {
+      const response = await POST(new NextRequest(request(), {
         body: JSON.stringify({ canonicalPlayerIds, title: 'A valid lineup title' }),
       }));
       expect(response.status).toBe(400);
@@ -125,13 +170,13 @@ describe('default-disabled, anonymous Custom v2 creation', () => {
 
   it('normalizes a whitespace-heavy name and submits only the title to private issuer', async () => {
     const original = request();
-    const response = await POST(new Request(original, {
+    const response = await POST(new NextRequest(original, {
       body: JSON.stringify({ canonicalPlayerIds: ['ibp_00000000000000000001'], title: '  The   Big Red  Machine ' }),
     }));
     expect(response.status).toBe(201);
     expect(issue).toHaveBeenCalledWith({
       canonicalPlayerIds: ['ibp_00000000000000000001'],
-    }, 'The Big Red Machine');
+    }, 'The Big Red Machine', ACCOUNT);
   });
 
   it('returns 429 with retry-after and does not issue on a denied reservation', async () => {
