@@ -38,7 +38,7 @@ The route:
 2. ensures the requested date has an editorial record;
 3. validates all requested IDs against the canonical, reveal-ready manual editorial candidate universe;
 4. for a future date, atomically replaces all nine selections through the ordinary editable lifecycle and returns a previously scheduled puzzle to draft;
-5. for the current date, requires the existing record to remain `scheduled` and atomically replaces the full lineup without opening a draft/fallback window;
+5. for the current date, corrects an existing `scheduled` lineup atomically; for an owner-approved reset of a fallback puzzle, it also accepts an existing `draft` **only when `schedule: true` is explicit**, replaces the draft, and immediately schedules it; the public deterministic fallback remains available until scheduling completes;
 6. reruns the existing horizon/lineup validation and returns rank-band, repeat, automatic-pool, and other warnings for conversational review;
 7. optionally schedules only when `schedule: true` was explicit; a current already-scheduled correction treats this as an idempotent transition;
 8. returns the persisted date, puzzle number, status, revision, validation result, and resolved ordered selections.
@@ -101,3 +101,26 @@ Verified before routine production use:
 ## Deferred
 
 The admin UI may be redesigned later, but it is intentionally out of scope. Automatic publishing, published-puzzle correction/versioning, bulk lineup recipes, and direct assistant database writes are also out of scope.
+
+### Owner-authorized current-day fallback reset
+
+A live Daily without an editorial row is normally served from the deterministic fallback.
+A valid ChatOps call for today's date first creates an editorial draft via `ensureHorizon`.
+When the owner explicitly accepts interrupting active gameplay and supplies `schedule: true`,
+the endpoint may replace that draft and schedule it. Normal same-day corrections still use
+the atomic `scheduled` path. Missing, published and archived editorial rows remain
+ineligible for a direct replacement (and past dates are rejected). This exception does not
+grant permission for direct database mutations.
+
+**Consequences that must be disclosed to the owner:** the replacement remains the same
+calendar date and Daily number, but receives a different lineup-derived puzzle ID.
+Signed progression tokens for the old lineup stop working; clients must refresh.
+Points-v4 gameplay, completed-submission storage and result comparisons are puzzle-ID
+scoped, so new visitors and refreshed clients start a separate puzzle. Old
+recorded results stay associated with the original ID and should not be deleted or
+merged into the replacement leaderboard. Other rulesets or clients may need an
+explicit reset. An owner-approved live reset should therefore be exceptional.
+
+Verify the ChatOps HTTP response and the authoritative scheduled editorial row's
+exact nine canonical IDs and audit identity, then check the public page after
+cache invalidation. Never report completion based on the `pg_net` dispatch ID alone.

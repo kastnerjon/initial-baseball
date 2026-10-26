@@ -92,6 +92,8 @@ export interface DailyAdminWorkflow {
     canonicalPlayerIds: readonly string[];
     actorId: string;
     occurredAt: string;
+    /** Owner-authorized current-day fallback reset; ordinary edits remain scheduled-only. */
+    allowCurrentDraftReset?: boolean;
   }): Promise<DailyEditorialHorizonPuzzle>;
   transitionLifecycle(input: {
     puzzleDate: string;
@@ -219,13 +221,18 @@ export function createDailyAdminWorkflow(
 
       if (isCurrentScheduledCorrection) {
         const current = await repository.getByDate(input.puzzleDate);
-        if (current?.status !== 'scheduled') {
+        if (current?.status === 'scheduled') {
+          await editorialService.correctScheduledLineup(input);
+        } else if (current?.status === 'draft' && input.allowCurrentDraftReset === true) {
+          // ChatOps explicitly schedules this owner-approved live fallback reset.
+          // Keep public fallback in place until the subsequent schedule transition.
+          await editorialService.replaceLineup(input);
+        } else {
           throw new DailyAdminWorkflowError(
             'not-current-scheduled-puzzle',
-            `Daily puzzle ${input.puzzleDate} must already be scheduled for a same-day correction.`,
+            `Daily puzzle ${input.puzzleDate} must be scheduled, or be a draft with an explicit same-day reset.`,
           );
         }
-        await editorialService.correctScheduledLineup(input);
       } else {
         await editorialService.replaceLineup(input);
       }
