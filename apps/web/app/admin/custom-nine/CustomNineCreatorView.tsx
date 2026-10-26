@@ -64,7 +64,6 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
   const [searchError, setSearchError] = useState(false);
   const [issuing, setIssuing] = useState(false);
   const [createdId, setCreatedId] = useState<string | null>(null);
-  const [createdOwnerCapability, setCreatedOwnerCapability] = useState<string | null>(null);
   const [issueError, setIssueError] = useState<string | null>(null);
   const [draftHydrated, setDraftHydrated] = useState(false);
   const [needsSignIn, setNeedsSignIn] = useState(false);
@@ -200,20 +199,6 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
     });
   }
 
-  async function copyOwnerCapability(): Promise<void> {
-    if (!createdOwnerCapability) return;
-    try {
-      const clipboard = (navigator as Navigator & {
-        clipboard?: { writeText: (text: string) => Promise<void> };
-      }).clipboard;
-      if (!clipboard) throw new Error('Clipboard unavailable');
-      await clipboard.writeText(createdOwnerCapability);
-      setCopyMessage('Owner code copied. Store it securely.');
-    } catch {
-      setCopyMessage('Could not copy automatically. Select the owner code below.');
-    }
-  }
-
   async function copyId(): Promise<void> {
     if (createdId === null) return;
     try {
@@ -339,17 +324,7 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
               {isV2 && gameplayAvailable ? <CustomLineupShareLink key={createdId} puzzleId={createdId} />
                 : <p>{isV2 ? 'This challenge is issued privately. Gameplay links remain disabled until a separately approved release.' : 'The opaque challenge ID is ready. Playable challenge links are a separate upcoming stage.'}</p>}
               {isPublic ? <>
-                <p>Your lineup is locked. Use the link above to share it.</p>
-                {createdOwnerCapability ? <div>
-                  <strong>Save your private owner code</strong>
-                  <p>Keep this separate from the play link. You will need it to
-                    manage publishing later. This code cannot be recovered without an account.</p>
-                  <code>{createdOwnerCapability}</code>
-                  <button type="button" onClick={() => { void copyOwnerCapability(); }}>
-                    Copy owner code
-                  </button>
-                  {copyMessage !== null ? <span>{copyMessage}</span> : null}
-                </div> : null}
+                <p>This challenge is now owned by your signed-in account. Use the link above to share it.</p>
               </> : <>
                 <code>{createdId}</code>
                 <button type="button" onClick={() => { void copyId(); }}>Copy challenge ID</button>
@@ -364,7 +339,6 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
                 setTitle('');
                 setSuggestions([]);
                 setCreatedId(null);
-                setCreatedOwnerCapability(null);
                 setNeedsSignIn(false);
                 setIssueError(null);
                 setCopyMessage(null);
