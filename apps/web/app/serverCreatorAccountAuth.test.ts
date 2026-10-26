@@ -5,7 +5,7 @@ vi.mock('server-only', () => ({}));
 const createServerClient = vi.hoisted(() => vi.fn());
 vi.mock('@supabase/ssr', () => ({ createServerClient }));
 import {
-  creatorAuthClient, creatorAuthConfiguration, creatorAuthForm, sameOriginPost,
+  creatorAuthClient, creatorAuthConfiguration, creatorAuthEnvironment, creatorAuthForm, sameOriginPost,
   verifiedCreatorAccount,
 } from './serverCreatorAccountAuth';
 
@@ -31,6 +31,18 @@ describe('creator account boundary', () => {
     expect(creatorAuthConfiguration(new NextRequest('https://evil.example/api/account/session'))).toBeNull();
     vi.stubEnv('SUPABASE_PUBLISHABLE_KEY', '');
     expect(creatorAuthConfiguration(req())).toBeNull();
+  });
+
+  it('rejects malformed configured origins and backends before rendering account UI', () => {
+    expect(creatorAuthEnvironment()?.origin).toBe(ORIGIN);
+    vi.stubEnv('CREATOR_AUTH_SITE_URL', 'https://game.example/invalid-path');
+    expect(creatorAuthEnvironment()).toBeNull();
+    vi.stubEnv('CREATOR_AUTH_SITE_URL', ORIGIN);
+    vi.stubEnv('SUPABASE_URL', 'http://qa.supabase.co');
+    expect(creatorAuthEnvironment()).toBeNull();
+    vi.stubEnv('SUPABASE_URL', 'https://qa.supabase.co');
+    vi.stubEnv('CREATOR_AUTH_ENABLED', 'false');
+    expect(creatorAuthEnvironment()).toBeNull();
   });
 
   it('rejects missing or foreign POST origin and unexpected query', () => {
