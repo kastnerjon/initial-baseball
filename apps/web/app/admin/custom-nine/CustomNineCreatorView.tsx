@@ -35,6 +35,15 @@ const AMBIGUOUS_PUBLIC_CREATION = 'Could not confirm whether your lineup was cre
   + 'A retry may create a second challenge and use another creation attempt. '
   + 'Check My Creations once available before retrying.';
 
+/** The web tsconfig deliberately avoids ambient DOM storage globals. */
+function creatorDraftStorage() {
+  return (globalThis as unknown as { sessionStorage?: {
+    getItem(key: string): string | null;
+    setItem(key: string, value: string): void;
+    removeItem(key: string): void;
+  } }).sessionStorage;
+}
+
 function playerLabel(player: SearchCandidate): string {
   const first = player.metadata?.firstYear;
   const last = player.metadata?.lastYear;
@@ -78,7 +87,7 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
   useEffect(() => {
     if (!isPublic) return;
     try {
-      const value = window.sessionStorage.getItem(CUSTOM_LINEUP_DRAFT_KEY);
+      const value = creatorDraftStorage()?.getItem(CUSTOM_LINEUP_DRAFT_KEY);
       if (value && value.length <= 6000) {
         const draft = parseCustomLineupDraft(JSON.parse(value));
         if (draft) { setTitle(draft.title); setSlots(draft.slots); }
@@ -90,8 +99,8 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
   useEffect(() => {
     if (!isPublic || !draftHydrated) return;
     try {
-      if (createdId !== null) window.sessionStorage.removeItem(CUSTOM_LINEUP_DRAFT_KEY);
-      else window.sessionStorage.setItem(CUSTOM_LINEUP_DRAFT_KEY, JSON.stringify({ title, slots }));
+      if (createdId !== null) creatorDraftStorage()?.removeItem(CUSTOM_LINEUP_DRAFT_KEY);
+      else creatorDraftStorage()?.setItem(CUSTOM_LINEUP_DRAFT_KEY, JSON.stringify({ title, slots }));
     } catch { /* Storage is best-effort and contains only public player selection. */ }
   }, [isPublic, draftHydrated, createdId, title, slots]);
 
