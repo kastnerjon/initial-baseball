@@ -5,7 +5,7 @@ vi.mock('server-only', () => ({}));
 const createServerClient = vi.hoisted(() => vi.fn());
 vi.mock('@supabase/ssr', () => ({ createServerClient }));
 import {
-  creatorAuthClient, creatorAuthConfiguration, creatorAuthEnvironment, creatorAuthForm, sameOriginPost,
+  creatorAuthClient, creatorAuthConfiguration, creatorAuthEnvironment, creatorAuthPageHostAllowed, creatorAuthForm, sameOriginPost,
   verifiedCreatorAccount,
 } from './serverCreatorAccountAuth';
 
@@ -43,6 +43,14 @@ describe('creator account boundary', () => {
     vi.stubEnv('SUPABASE_URL', 'https://qa.supabase.co');
     vi.stubEnv('CREATOR_AUTH_ENABLED', 'false');
     expect(creatorAuthEnvironment()).toBeNull();
+  });
+
+  it('does not render account sign-in forms for a wrong or missing request host', () => {
+    const config = creatorAuthEnvironment()!;
+    expect(creatorAuthPageHostAllowed(config, 'game.example')).toBe(true);
+    expect(creatorAuthPageHostAllowed(config, 'preview.example')).toBe(false);
+    expect(creatorAuthPageHostAllowed(config, 'game.example:8443')).toBe(false);
+    expect(creatorAuthPageHostAllowed(config, null)).toBe(false);
   });
 
   it('rejects missing or foreign POST origin and unexpected query', () => {
