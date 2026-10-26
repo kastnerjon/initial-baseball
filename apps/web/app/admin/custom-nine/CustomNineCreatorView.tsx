@@ -4,6 +4,7 @@ import React, { useEffect, useRef, useState, type JSX } from 'react';
 import { parseCustomLineupTitle } from '@initial-baseball/shared';
 import { CustomLineupShareLink } from '../custom-lineup/CustomLineupShareLink';
 import { CustomLineupSlotPicker } from './CustomLineupSlotPicker';
+import { CUSTOM_LINEUP_DRAFT_KEY, parseCustomLineupDraft } from './customLineupDraftSession';
 import { createCustomNineCreatorIssueGate } from './customNineCreatorIssueGate';
 import {
   appendCustomNinePlayer,
@@ -29,10 +30,10 @@ function isCandidate(value: unknown): value is SearchCandidate {
     && typeof candidate.displayName === 'string' && candidate.displayName.trim().length > 0;
 }
 
-// Anonymous creation has no replay/idempotency key or owner-code readback.
+// A dropped issuance response is ambiguous even though the creator is signed in.
 const AMBIGUOUS_PUBLIC_CREATION = 'Could not confirm whether your lineup was created. '
-  + 'If it was, its owner code cannot be recovered here. Retrying creates a separate '
-  + 'challenge and uses another creation attempt.';
+  + 'A retry may create a second challenge and use another creation attempt. '
+  + 'Check My Creations once available before retrying.';
 
 function playerLabel(player: SearchCandidate): string {
   const first = player.metadata?.firstYear;
@@ -65,6 +66,8 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
   const [createdId, setCreatedId] = useState<string | null>(null);
   const [createdOwnerCapability, setCreatedOwnerCapability] = useState<string | null>(null);
   const [issueError, setIssueError] = useState<string | null>(null);
+  const [draftHydrated, setDraftHydrated] = useState(false);
+  const [needsSignIn, setNeedsSignIn] = useState(false);
   const [copyMessage, setCopyMessage] = useState<string | null>(null);
   const draftEditable = isCustomNineDraftEditable(createdId, issuing);
   const titleValid = parseCustomLineupTitle(title).ok;
@@ -72,6 +75,26 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
     ? isCompleteCustomLineupSlots(slots)
     : isCompleteCustomNineSelection(players);
   const displayedSlots = maximumPlayers;
+
+  useEffect(() => {
+    if (!isPublic) return;
+    try {
+      const value = window.sessionStorage.getItem(CUSTOM_LINEUP_DRAFT_KEY);
+      if (value && value.length <= 6000) {
+        const draft = parseCustomLineupDraft(JSON.parse(value));
+        if (draft) { setTitle(draft.title); setSlots(draft.slots); }
+      }
+    } catch { /* Browser may disable storage; unsaved drafting still works. */ }
+    setDraftHydrated(true);
+  }, [isPublic]);
+
+  useEffect(() => {
+    if (!isPublic || !draftHydrated) return;
+    try {
+      if (createdId !== null) window.sessionStorage.removeItem(CUSTOM_LINEUP_DRAFT_KEY);
+      else window.sessionStorage.setItem(CUSTOM_LINEUP_DRAFT_KEY, JSON.stringify({ title, slots }));
+    } catch { /* Storage is best-effort and contains only public player selection. */ }
+  }, [isPublic, draftHydrated, createdId, title, slots]);
 
   useEffect(() => {
     const trimmed = query.trim();
@@ -131,6 +154,11 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
             ...(isPublic ? { title: parseCustomLineupTitle(title).ok ? title : '' } : {}),
           }),
         });
+        if (isPublic && response.status === 401) {
+          setNeedsSignIn(true);
+          setIssueError('Sign in to save and share this lineup. Your unsaved draft stays on this device.');
+          return false;
+        }
         if (!isPublic && response.status === 401) {
           setIssueError('Administrator authorization is required. Sign in to the admin dashboard again.');
           return false;
@@ -155,13 +183,10 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
             : /^custom-nine-v1-[a-f0-9-]{36}$/.test(value.puzzleId))) {
           throw new Error('Invalid issue response');
         }
-        if (isPublic) {
-          const owner = 'ownerCapability' in value ? value.ownerCapability : null;
-          if (typeof owner !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(owner)) {
-            throw new Error('Missing one-time owner management code');
-          }
-          setCreatedOwnerCapability(owner);
+        if (isPublic && ('ownerCapability' in value || 'creatorAccountId' in value)) {
+          throw new Error('Unexpected private ownership data in public issue response');
         }
+        setNeedsSignIn(false);
         setCreatedId(value.puzzleId);
         return true;
       } catch {
@@ -207,12 +232,12 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
         <p className="eyebrow">{isPublic ? 'Make your own challenge' : 'Authorized operations · ' + (isV2 ? 'Custom Lineup v2' : 'Staged Custom Nine')}</p>
         <h1>{isPublic ? 'Create a Lineup' : isV2 ? 'Create a Custom Lineup' : 'Create a Custom Nine'}</h1>
         <p>{isPublic
-          ? 'Name your challenge, choose 1–10 baseball players in order, and share it privately with friends.'
+          ? 'Name your challenge and choose 1–10 baseball players. Draft without signing in; sign in to save and share it.'
           : isV2
           ? 'Choose 1–10 different canonical players in batting order. Players and clues are frozen when issued.'
           : 'Select exactly nine different canonical players in batting order. Players and their clues are frozen when you issue the challenge.'}</p>
         {isPublic ? <>
-          <p>Your lineup is unlisted: only friends with your link can play it.</p>
+          <p>Your issued lineup is unlisted: only friends with your link can play it.</p>
           <p><a href="/">Back to Daily Nine</a></p>
         </> : <>
           <p><a href="/admin/daily">Back to Daily administration</a></p>
@@ -306,6 +331,8 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
           </button>
           <p>{isPublic ? 'Friends can play your exact lineup from the share link. No account required.' : 'Admin-only staging. Issuing does not activate public competitive participation.'}</p>
           {issueError !== null ? <p role="alert">{issueError}</p> : null}
+          {isPublic && needsSignIn && createdId === null
+            ? <p><a href="/account">Sign in to save this lineup</a></p> : null}
           {createdId !== null ? (
             <div className="custom-nine-created" role="status">
               <strong>Challenge issued.</strong>
@@ -338,6 +365,7 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
                 setSuggestions([]);
                 setCreatedId(null);
                 setCreatedOwnerCapability(null);
+                setNeedsSignIn(false);
                 setIssueError(null);
                 setCopyMessage(null);
               }}>Start another challenge</button>
