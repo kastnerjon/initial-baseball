@@ -10,11 +10,11 @@ export function parseCustomLineupDraft(value: unknown): CustomLineupDraft | null
   if (Object.keys(draft).length !== 2 || typeof draft.title !== 'string'
     || draft.title.length > 100 || !Array.isArray(draft.slots)
     || draft.slots.length < 1 || draft.slots.length > 10) return null;
-  const slots: CustomLineupSlots = [];
+  const slots: CustomLineupSlots[number][] = [];
   const ids = new Set<string>();
   for (const entry of draft.slots) {
     if (entry === null) {
-      (slots as (null | CustomLineupSlots[number])[]).push(null);
+      slots.push(null);
       continue;
     }
     if (!entry || typeof entry !== 'object' || Array.isArray(entry)) return null;
@@ -26,7 +26,7 @@ export function parseCustomLineupDraft(value: unknown): CustomLineupDraft | null
       || typeof player.label !== 'string' || player.label.length > 200 || !player.label.trim()
       || ids.has(player.playerId)) return null;
     ids.add(player.playerId);
-    (slots as (null | CustomLineupSlots[number])[]).push({
+    slots.push({
       playerId: player.playerId, displayName: player.displayName, label: player.label,
     });
   }
