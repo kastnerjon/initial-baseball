@@ -1,3 +1,4 @@
+import type { JSX } from 'react';
 import { notFound } from 'next/navigation';
 import { headers } from 'next/headers';
 import AccountClient from './AccountClient';
