@@ -52,11 +52,16 @@ export function createServerCustomLineupV2CreationService({
   dependencies?: Dependencies;
 } = {}) {
   async function issueInternal(
-    payload: unknown, displayTitle: string | undefined, owned: boolean,
+    payload: unknown, displayTitle: string | undefined,
+    ownerMode: 'none' | 'capability' | 'account', creatorAccountId?: string,
   ): Promise<{ puzzleId: string; ownerCapability: string | null }> {
+      if (ownerMode === 'account' && (!creatorAccountId
+        || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(creatorAccountId))) {
+        throw new ServerCustomLineupV2CreationError('invalid_selection');
+      }
       const ids = readSelection(payload);
       const parsedTitle = displayTitle === undefined ? null : parseCustomLineupTitle(displayTitle);
-      if ((owned && !parsedTitle?.ok) || (parsedTitle !== null && !parsedTitle.ok)) {
+      if ((ownerMode !== 'none' && !parsedTitle?.ok) || (parsedTitle !== null && !parsedTitle.ok)) {
         throw new ServerCustomLineupV2CreationError('invalid_selection');
       }
       let requested: CustomLineupIssuedChallenge;
@@ -75,7 +80,7 @@ export function createServerCustomLineupV2CreationService({
 
       // The management capability is separate from both the unlisted play URL
       // and the creator-preview cookie. Only its digest enters persistence.
-      const ownerCapability = owned
+      const ownerCapability = ownerMode === 'capability'
         ? (dependencies.mintOwnerCapability ?? DEFAULT.mintOwnerCapability!)() : null;
       if (ownerCapability !== null && !/^[A-Za-z0-9_-]{43}$/.test(ownerCapability)) {
         throw new Error('Owner capability mint failed.');
@@ -83,10 +88,12 @@ export function createServerCustomLineupV2CreationService({
       const ownerDigest = ownerCapability === null ? undefined
         : createHash('sha256').update(ownerCapability, 'utf8').digest('hex');
       const repository = dependencies.createRepository(dependencies.createSupabaseClient(environment));
-      const result = ownerDigest === undefined
-        ? await repository.insertIfAbsent(requested, parsedTitle?.ok ? parsedTitle.title : undefined)
-        : await repository.insertIfAbsent(requested, parsedTitle?.ok ? parsedTitle.title : undefined,
-          ownerDigest);
+      const normalizedTitle = parsedTitle?.ok ? parsedTitle.title : undefined;
+      const result = ownerMode === 'account'
+        ? await repository.insertIfAbsent(requested, normalizedTitle, undefined, creatorAccountId)
+        : ownerDigest === undefined
+        ? await repository.insertIfAbsent(requested, normalizedTitle)
+        : await repository.insertIfAbsent(requested, normalizedTitle, ownerDigest);
       // A UUID collision must not masquerade as successfully issued content.
       if (result.status !== 'inserted'
         || JSON.stringify(result.challenge) !== JSON.stringify(requested)) {
@@ -96,13 +103,22 @@ export function createServerCustomLineupV2CreationService({
   }
   return {
     async issue(payload: unknown, displayTitle?: string): Promise<{ puzzleId: string }> {
-      const result = await issueInternal(payload, displayTitle, false);
+      const result = await issueInternal(payload, displayTitle, 'none');
+      return { puzzleId: result.puzzleId };
+    },
+    /**
+     * Internal trusted service. HTTP callers MUST obtain creatorAccountId from
+     * verifiedCreatorAccount(getUser()), never from submitted payload or email.
+     */
+    async issueForAccount(payload: unknown, displayTitle: string, creatorAccountId: string):
+      Promise<{ puzzleId: string }> {
+      const result = await issueInternal(payload, displayTitle, 'account', creatorAccountId);
       return { puzzleId: result.puzzleId };
     },
     async issueAnonymous(payload: unknown, displayTitle: string): Promise<{
       puzzleId: string; ownerCapability: string;
     }> {
-      const result = await issueInternal(payload, displayTitle, true);
+      const result = await issueInternal(payload, displayTitle, 'capability');
       if (result.ownerCapability === null) throw new Error('Missing owner capability.');
       return { puzzleId: result.puzzleId, ownerCapability: result.ownerCapability };
     },
