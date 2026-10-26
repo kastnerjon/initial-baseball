@@ -7,7 +7,7 @@ const NO_STORE = 'private, no-store';
 type CookieChange = Parameters<SetAllCookies>[0][number];
 
 /** Account auth is a separate, default-off server boundary; never use the service-role key here. */
-export function creatorAuthConfiguration(request: NextRequest) {
+export function creatorAuthEnvironment() {
   const site = process.env.CREATOR_AUTH_SITE_URL;
   const supabaseUrl = process.env.SUPABASE_URL;
   const key = process.env.SUPABASE_PUBLISHABLE_KEY;
@@ -15,11 +15,17 @@ export function creatorAuthConfiguration(request: NextRequest) {
   try {
     const origin = new URL(site);
     const backend = new URL(supabaseUrl);
-    if (origin.origin !== site || origin.origin !== request.nextUrl.origin
+    if (origin.origin !== site
       || (origin.protocol !== 'https:' && origin.hostname !== 'localhost')
       || backend.protocol !== 'https:' || backend.username || backend.password) return null;
     return { origin: origin.origin, supabaseUrl: backend.origin, key };
   } catch { return null; }
+}
+
+/** Request admission additionally binds the configured site to the actual incoming origin. */
+export function creatorAuthConfiguration(request: NextRequest) {
+  const config = creatorAuthEnvironment();
+  return config && config.origin === request.nextUrl.origin ? config : null;
 }
 
 export function sameOriginPost(request: NextRequest): boolean {
