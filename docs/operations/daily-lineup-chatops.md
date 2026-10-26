@@ -4,7 +4,7 @@ Status: operational in production; smoke-tested September 16 and exercised for r
 
 ## Goal
 
-Allow the owner to provide a future Daily date and nine players in conversation and have an authorized assistant apply that exact lineup without manually editing nine slots in `/admin/daily`. The same private path also supports a bounded same-day correction while the live editorial record is still `scheduled`, so an identity mistake can be corrected without a direct database edit or a draft/fallback window.
+Allow the owner to provide a future Daily date and nine players in conversation and have an authorized assistant apply that exact lineup without manually editing nine slots in `/admin/daily`. The same private path also supports bounded same-day correction while an editorial record remains `scheduled`, plus an exceptional owner-authorized reset of today's live deterministic fallback via an explicit draft replacement and immediate scheduling.
 
 This is an operational adapter only. It does not replace the existing admin UI, lineup generator, lifecycle, validation, repository, or publication model.
 
@@ -38,12 +38,12 @@ The route:
 2. ensures the requested date has an editorial record;
 3. validates all requested IDs against the canonical, reveal-ready manual editorial candidate universe;
 4. for a future date, atomically replaces all nine selections through the ordinary editable lifecycle and returns a previously scheduled puzzle to draft;
-5. for the current date, requires the existing record to remain `scheduled` and atomically replaces the full lineup without opening a draft/fallback window;
+5. for the current date, corrects an existing `scheduled` lineup atomically; for an owner-approved reset of a fallback puzzle, it also accepts an existing `draft` **only when `schedule: true` is explicit**, replaces the draft, and immediately schedules it; the public deterministic fallback remains available until scheduling completes;
 6. reruns the existing horizon/lineup validation and returns rank-band, repeat, automatic-pool, and other warnings for conversational review;
 7. optionally schedules only when `schedule: true` was explicit; a current already-scheduled correction treats this as an idempotent transition;
 8. returns the persisted date, puzzle number, status, revision, validation result, and resolved ordered selections.
 
-Published and archived puzzles remain immutable. Replacing a scheduled future lineup returns it to draft before an explicit schedule transition. A same-day full-lineup correction is allowed only while the current record is already `scheduled`; it is one optimistic-revision save that preserves scheduled lifecycle metadata. The route may then receive the explicit `schedule: true` action as usual, and the workflow treats that already-scheduled current puzzle as an idempotent schedule transition. Because public puzzle identity is derived from the ordered canonical lineup, the corrected lineup receives a new puzzle ID automatically while earlier results remain attached to the old ID. Repository optimistic-revision semantics remain intact.
+Published and archived puzzles remain immutable. Replacing a scheduled future lineup returns it to draft before an explicit schedule transition. A normal same-day full-lineup correction is allowed only while the current record is already `scheduled`; it is one optimistic-revision save that preserves scheduled lifecycle metadata. An exceptional owner-authorized current-day fallback reset may instead replace a `draft` with an explicit `schedule: true` request, using the already-read draft revision as its save precondition. The route may then receive the explicit `schedule: true` action as usual, and the workflow treats that already-scheduled current puzzle as an idempotent schedule transition. Because public puzzle identity is derived from the ordered canonical lineup, the corrected lineup receives a new puzzle ID automatically while earlier results remain attached to the old ID. Repository optimistic-revision semantics remain intact.
 
 ## Conversational operating procedure
 
@@ -86,10 +86,10 @@ Verified before routine production use:
 - full-lineup replacement is one optimistic-revision save and preserves exact order;
 - unknown, non-canonical, or non-reveal-ready players are rejected before mutation;
 - reveal-ready manual players outside the automatic Daily pool may be selected and are surfaced with `outside-automatic-daily-pool` rather than being silently promoted into automatic generation;
-- past dates remain rejected; the current date is accepted only for a full-lineup correction while its authoritative record is already `scheduled`;
+- past dates remain rejected; ordinary current-date corrections require `scheduled`, while an owner-approved current-day fallback reset additionally permits `draft` only with explicit `schedule: true`; missing/published/archived current-day records cannot be replaced;
 - published/archived puzzles remain immutable;
 - future scheduled replacement returns to draft and only explicit scheduling restores `scheduled`;
-- same-day scheduled correction preserves the scheduled lifecycle atomically, changes the derived puzzle identity when the lineup changes, and leaves prior result rows isolated under the old puzzle ID;
+- same-day scheduled correction preserves the scheduled lifecycle atomically, while draft reset uses a checked optimistic revision followed by explicit scheduling; either replacement changes the derived puzzle identity and leaves prior result rows isolated under the old puzzle ID;
 - cache invalidation still runs through the existing repository wrapper;
 - validation warnings are returned for conversational review;
 - normal 2xx response readback exactly matches the requested nine;
@@ -101,3 +101,26 @@ Verified before routine production use:
 ## Deferred
 
 The admin UI may be redesigned later, but it is intentionally out of scope. Automatic publishing, published-puzzle correction/versioning, bulk lineup recipes, and direct assistant database writes are also out of scope.
+
+### Owner-authorized current-day fallback reset
+
+A live Daily without an editorial row is normally served from the deterministic fallback.
+A valid ChatOps call for today's date first creates an editorial draft via `ensureHorizon`.
+When the owner explicitly accepts interrupting active gameplay and supplies `schedule: true`,
+the endpoint may replace that draft and schedule it. Normal same-day corrections still use
+the atomic `scheduled` path. Missing, published and archived editorial rows remain
+ineligible for a direct replacement (and past dates are rejected). This exception does not
+grant permission for direct database mutations.
+
+**Consequences that must be disclosed to the owner:** the replacement remains the same
+calendar date and Daily number, but receives a different lineup-derived puzzle ID.
+Signed progression tokens for the old lineup stop working; clients must refresh.
+Points-v4 gameplay, completed-submission storage and result comparisons are puzzle-ID
+scoped, so new visitors and refreshed clients start a separate puzzle. Old
+recorded results stay associated with the original ID and should not be deleted or
+merged into the replacement leaderboard. Other rulesets or clients may need an
+explicit reset. An owner-approved live reset should therefore be exceptional.
+
+Verify the ChatOps HTTP response and the authoritative scheduled editorial row's
+exact nine canonical IDs and audit identity, then check the public page after
+cache invalidation. Never report completion based on the `pg_net` dispatch ID alone.
