@@ -9,6 +9,7 @@ import {
   createCanonicalDailyLineupCandidates,
   createDailyEditorialHorizonService,
   createDailyPuzzleEditorialService,
+  replaceDailyPuzzleLineup,
   createProductionCanonicalDailySelector,
   rankPlayersByRecognizability,
   type DailyEditorialHorizonPuzzle,
@@ -224,9 +225,11 @@ export function createDailyAdminWorkflow(
         if (current?.status === 'scheduled') {
           await editorialService.correctScheduledLineup(input);
         } else if (current?.status === 'draft' && input.allowCurrentDraftReset === true) {
-          // ChatOps explicitly schedules this owner-approved live fallback reset.
-          // Keep public fallback in place until the subsequent schedule transition.
-          await editorialService.replaceLineup(input);
+          // Reuse the reviewed pure mutation and save against the *same* revision
+          // that was checked as draft. A concurrent schedule must reject this
+          // reset rather than turn a scheduled puzzle back into fallback.
+          const updated = replaceDailyPuzzleLineup(current, input);
+          await repository.save(updated, { expectedRevision: current.revision });
         } else {
           throw new DailyAdminWorkflowError(
             'not-current-scheduled-puzzle',
