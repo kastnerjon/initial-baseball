@@ -1,5 +1,6 @@
 import 'server-only';
 import { createServerClient, type SetAllCookies } from '@supabase/ssr';
+import { isAuthApiError, isAuthSessionMissingError } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
 const NO_STORE = 'private, no-store';
@@ -86,7 +87,17 @@ export async function inspectCreatorAccountSession(
 ): Promise<{ kind: 'verified'; id: string } | { kind: 'guest' } | { kind: 'unavailable' }> {
   try {
     const { data, error } = await client.auth.getUser();
-    if (error) return { kind: 'unavailable' };
+    if (error) {
+      // A definitively rejected session is a guest, not a provider outage.
+      // This lets the SSR client clear stale cookies in the response.
+      // Network failures, rate limits and unrelated API errors fail closed.
+      const invalidSession = isAuthSessionMissingError(error)
+        || (isAuthApiError(error) && (error.status === 401 || [
+          'refresh_token_already_used', 'refresh_token_not_found',
+          'session_expired', 'session_not_found',
+        ].includes(error.code ?? '')));
+      return { kind: invalidSession ? 'guest' : 'unavailable' };
+    }
     const user = data.user;
     if (!user || user.is_anonymous === true || !user.email_confirmed_at) return { kind: 'guest' };
     return { kind: 'verified', id: user.id };

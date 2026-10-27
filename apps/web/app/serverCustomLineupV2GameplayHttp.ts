@@ -134,24 +134,30 @@ export async function handleCustomLineupV2GameplayPost(
     return response('forbidden', 403);
   }
   if (new URL(request.url).search !== '') return response('invalid_request', 400);
+  let finish: (result: Response) => Response = result => result;
   try {
     const { puzzleId } = await context.params;
     try { validateCustomLineupPuzzleId(puzzleId); }
     catch { return response('not_found', 404); }
     const cookie = request.headers.get('cookie');
-    const access = await inspectCustomLineupV2AccountCreator(request, puzzleId, cookie);
+    const access = await inspectCustomLineupV2AccountCreator(
+      request, puzzleId, cookie, nextFinish => { finish = nextFinish; },
+    );
+    finish = access.finish;
     if (access.owner && action !== 'bootstrap') {
-      return access.finish(response('invalid_credential', 403));
+      return finish(response('invalid_credential', 403));
     }
-    return access.finish(await dispatchCustomLineupV2Action(
+    return finish(await dispatchCustomLineupV2Action(
       request, puzzleId, cookie, action, access.owner,
     ));
   } catch (error) {
-    if (error instanceof CustomNineHintRequestError) return response('invalid_request', 400);
+    if (error instanceof CustomNineHintRequestError) {
+      return finish(response('invalid_request', 400));
+    }
     // Action/status only: never log the exception, request, credentials, or clues.
     console.error(JSON.stringify({
       event: 'custom_lineup_gameplay_unavailable', action, status: 503,
     }));
-    return response('session_unavailable', 503);
+    return finish(response('session_unavailable', 503));
   }
 }

@@ -31,6 +31,7 @@ function completeWithRefreshedAuthCookies(
  */
 export async function inspectCustomLineupV2AccountCreator(
   request: Request, puzzleId: string, cookieHeader: string | null,
+  onFinish?: (finish: Context['finish']) => void,
 ): Promise<Context> {
   validateCustomLineupPuzzleId(puzzleId);
   if (process.env.CREATOR_AUTH_ENABLED !== 'true') return NONE;
@@ -45,6 +46,8 @@ export async function inspectCustomLineupV2AccountCreator(
   if (!config) throw new Error('Custom creator identity configuration unavailable.');
   const auth = creatorAuthClient(authRequest, config);
   const finish = (response: Response) => completeWithRefreshedAuthCookies(response, auth.finish);
+  // Hand back queued Auth-cookie refreshes before any awaited Auth/DB lookup can fail.
+  onFinish?.(finish);
   const account = await inspectCreatorAccountSession(auth.client);
   if (account.kind === 'unavailable') {
     throw new Error('Custom creator account verification unavailable.');

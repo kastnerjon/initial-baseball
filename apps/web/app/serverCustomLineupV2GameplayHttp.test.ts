@@ -185,6 +185,41 @@ describe('off-by-default Custom v2 gameplay HTTP transport', () => {
     expect(cookies).toContain('opaque=valid; Path=');
   });
 
+  it('preserves refreshed Auth cookies when inspection or action dispatch fails', async () => {
+    const addRefresh = (result: Response) => {
+      result.headers.append('set-cookie', 'sb-refresh=renewed; Path=/; HttpOnly');
+      return result;
+    };
+    vi.mocked(inspectCustomLineupV2AccountCreator).mockImplementationOnce(
+      async (_request, _id, _cookie, onFinish) => {
+        onFinish?.(addRefresh);
+        throw new Error('PRIVATE_AUTH_LOOKUP_ERROR');
+      },
+    );
+    const diagnostic = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const unavailable = await send('bootstrap');
+      expect(unavailable.status).toBe(503);
+      expect(unavailable.headers.get('set-cookie')).toContain('sb-refresh=renewed');
+      expect(await unavailable.json()).toEqual({ error: 'session_unavailable' });
+      vi.mocked(inspectCustomLineupV2AccountCreator).mockResolvedValueOnce({
+        owner: false, finish: addRefresh,
+      });
+      const invalidBody = await send('hint', { body: 'invalid-json' });
+      expect(invalidBody.status).toBe(400);
+      expect(invalidBody.headers.get('set-cookie')).toContain('sb-refresh=renewed');
+      bootstrap.mockRejectedValueOnce(new Error('PRIVATE_DISPATCH_ERROR'));
+      vi.mocked(inspectCustomLineupV2AccountCreator).mockResolvedValueOnce({
+        owner: false, finish: addRefresh,
+      });
+      const failedDispatch = await send('bootstrap');
+      expect(failedDispatch.status).toBe(503);
+      expect(failedDispatch.headers.get('set-cookie')).toContain('sb-refresh=renewed');
+    } finally {
+      diagnostic.mockRestore();
+    }
+  });
+
   it('rejects nonempty bootstrap or submit bodies, including streaming body', async () => {
     expect((await send('bootstrap', { body: '{}' })).status).toBe(400);
     expect((await send('submit', { body: '{"score":100}' })).status).toBe(400);

@@ -105,6 +105,18 @@ describe('server-verified Custom owner eligibility guard', () => {
       .rejects.toThrow('Custom creator eligibility marker unavailable.');
   });
 
+  it('makes the cookie finisher available even when Auth verification rejects', async () => {
+    vi.mocked(inspectCreatorAccountSession).mockResolvedValueOnce({ kind: 'unavailable' });
+    let finisher: ((result: Response) => Response) | undefined;
+    await expect(inspectCustomLineupV2AccountCreator(
+      request(), ID, WITH_AUTH, finish => { finisher = finish; },
+    )).rejects.toThrow('Custom creator account verification unavailable.');
+    expect(finisher).toBeTypeOf('function');
+    const result = finisher!(Response.json({ error: 'session_unavailable' }, { status: 503 }));
+    expect(result.status).toBe(503);
+    expect(result.headers.get('set-cookie')).toContain('sb-auth-session=renewed');
+  });
+
   it('fails closed if a presented session cannot be verified during an Auth outage', async () => {
     vi.mocked(inspectCreatorAccountSession).mockResolvedValueOnce({ kind: 'unavailable' });
     await expect(inspectCustomLineupV2AccountCreator(request(), ID, WITH_AUTH))
