@@ -1,5 +1,10 @@
 # Initial Baseball — Start Here
 
+## October 26 — Initial My Creations read layer (staged PR)
+
+- A new account-gated `GET /api/account/creations` endpoint reads only this account's own `puzzle_id,display_title,issued_at` from the private service-role store, ordered newest-first and capped at 40; no client ID or published hint/answer/owner-code data enters the response. The `/account/creations` page and account link show read-only unlisted friend URLs.
+- This is NOT publishing/unpublishing, ratings, creator analytics, ownership claim or account-history integration. PRs #514-#516, isolated-QA schema/provider setup, exact-head review and deployment verification are prerequisites. Production Custom flags remain OFF.
+
 ## October 26 — Account-gated Custom issuance route + guest draft (staged PR)
 
 - Dependent on Auth #514 and ownership storage #515, the public Custom creator POST now admits only verified accounts with the existing v2 and public-create gates both enabled. The server obtains UUID exclusively from Auth `getUser()` before consuming quota or creating a puzzle; success returns only an opaque puzzle ID, no new owner code. The creator-exclusion cookie and guest friend game remain distinct.

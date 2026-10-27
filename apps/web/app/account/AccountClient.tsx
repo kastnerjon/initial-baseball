@@ -17,6 +17,7 @@ export default function AccountClient({ status }: { status?: string | undefined 
     {accountId === undefined ? <p>Checking account…</p> : accountId ? <>
       <p>Signed in. Return to your Custom Lineup draft to save and share it when creation is enabled.</p>
       <p><a href="/create">Return to Custom Lineup draft</a></p>
+      <p><a href="/account/creations">My Creations</a></p>
       <form method="post" action="/api/account/auth/signout"><button type="submit">Sign out</button></form>
     </> : <>
       <p>Sign in to save and share a Custom Lineup. You can still play Daily Nine and issued Custom games as a guest.</p>
