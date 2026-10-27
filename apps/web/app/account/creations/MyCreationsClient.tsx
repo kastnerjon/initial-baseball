@@ -1,14 +1,15 @@
 'use client';
 import { useEffect, useState, type JSX } from 'react';
+import { parseCustomLineupTitle } from '@initial-baseball/shared';
 
 type Creation = Readonly<{ puzzleId: string; title: string; issuedAt: string }>;
 const ID = /^custom-lineup-v2-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
-function isCreation(value: unknown): value is Creation {
+export function isCreation(value: unknown): value is Creation {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const v = value as Record<string, unknown>;
   return typeof v.puzzleId === 'string' && ID.test(v.puzzleId)
-    && typeof v.title === 'string' && v.title.length >= 3 && v.title.length <= 60
+    && typeof v.title === 'string' && parseCustomLineupTitle(v.title).ok
     && typeof v.issuedAt === 'string' && !Number.isNaN(Date.parse(v.issuedAt));
 }
 
