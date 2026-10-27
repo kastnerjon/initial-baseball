@@ -37,7 +37,7 @@ export async function inspectCustomLineupV2AccountCreator(
   // No Supabase session cookie means a genuine anonymous friend request.
   // Default SSR cookie name is sb-<project-ref>-auth-token (possibly chunked).
   // Never block guests merely because Auth itself is slow or unavailable.
-  const hasAuthCookie = /(?:^|;\\s*)sb-[A-Za-z0-9_-]+-auth-token(?:\\.[0-9]+)?=/.test(cookieHeader ?? '');
+  const hasAuthCookie = /(?:^|;\s*)sb-[A-Za-z0-9_-]+-auth-token(?:\.[0-9]+)?=/.test(cookieHeader ?? '');
   if (!hasAuthCookie) return NONE;
   // Reconstruct only headers/URL, not the already-bound POST body stream.
   const authRequest = new NextRequest(request.url, { headers: request.headers });
