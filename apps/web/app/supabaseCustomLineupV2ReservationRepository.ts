@@ -12,7 +12,7 @@ const TABLE = 'custom_nine_attempt_states';
 const COLUMNS = [
   'challenge_id', 'browser_key_digest', 'attempt_id', 'revision',
   'current_progression_token', 'terminal_at_bats', 'status',
-  'created_at', 'updated_at', 'completed_at',
+  'created_at', 'updated_at', 'completed_at', 'creator_seen',
 ].join(',');
 
 export type CustomLineupV2ReservationKey = Readonly<{ challengeId: string; browserKeyDigest: string }>;

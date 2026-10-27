@@ -1,5 +1,12 @@
 # Initial Baseball — Start Here
 
+## October 26 — Sticky creator v2 attempt exclusion, staged dependent PRs
+
+- Schema/service PR #520 adds a private `creator_seen` boolean to the v1/v2 attempt table (legacy defaults FALSE), one-way TRUE preservation and a v2 admission RPC check under `FOR UPDATE`; v1 scoring/admission is unchanged. V2 bootstrap and completed-admission services honor persisted creator status after signout. **QA-only migration applied and verified; production migration NOT applied.** On isolated QA, preflight observed 42 v2 attempts; postflight preserved all 42, flag default false on all, owner FK and grants unchanged, monotone trigger and v2 RPC lock guard present. A transaction test marked one row, verified v2 admission refusal and TRUE→FALSE prohibition, rolled back and rechecked zero permanent marks. Stored SQL was byte-identical to the committed migration and QA history was aligned to `20261027003000`. The dependent verified-owner HTTP branch is NOT yet integrated, so production behavior is not fixed or enabled.
+- **Dependent HTTP behavior is not merged or operational:** PR #521 proposes resolving verified Supabase account UUIDs, reading only puzzle-owner ID, marking existing browser attempts when the creator is recognized, and returning creator preview without creating a new eligible attempt. Other accounts and guests must retain normal play and the legacy marker stays independent. Intended DB/auth failure handling returns sanitized 503, subject to exact-head review, schema QA and integration.
+- This safety change requires exact-head CI, external review, isolated-QA schema transaction/one-way/race rehearsal, protected hosted QA and final release permission. Production Custom/account flags stay OFF. Existing admitted results recognized later as owner attempts require future comparison/metrics exclusion before counts are claimed accurate.
+
+
 ## October 26 — Astra #477 review and verified QA ownership migration reconciliation
 
 - Independent review of main `5cf36aa` found the architecture sound but identified account-aware creator exclusion, provider identity continuity, cookie accumulation, and a known migration-history discrepancy. Product direction: account-required issuing/sharing, guest play, one shared Custom gameplay/completion design; no leagues/H2H work now.

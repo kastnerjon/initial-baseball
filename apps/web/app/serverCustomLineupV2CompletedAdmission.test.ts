@@ -140,6 +140,15 @@ describe('private authoritative Custom v2 N-batter completed admission', () => {
     expect(s.dependencies.admit).not.toHaveBeenCalled();
   });
 
+  it('never admits creator-seen completed attempts after account signout', async () => {
+    const s = setup(5);
+    s.dependencies.attempt.mockResolvedValueOnce({
+      ...s.saved, creatorSeen: true as const,
+    });
+    expect(await s.service.admit(ID, COOKIE)).toEqual({ kind: 'invalid_credential' });
+    expect(s.dependencies.admit).not.toHaveBeenCalled();
+  });
+
   it('rejects missing, active and foreign saved attempts before scoring', async () => {
     const s = setup(5);
     s.dependencies.attempt.mockResolvedValueOnce(null as never);

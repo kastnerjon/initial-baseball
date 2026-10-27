@@ -3,6 +3,11 @@
 Status: Living architecture source of truth  
 Last updated: 2026-10-26
 
+## Sticky Custom creator-attempt provenance (October 26 staged schema boundary)
+
+For Custom v2, a server-observed, verified same-account creator must be permanently excluded from competitive result admission for that particular browser attempt, including after signout. The additive `creator_seen` boolean on private `custom_nine_attempt_states` defaults FALSE for legacy/v1/guest attempts; a trigger rejects clearing TRUE, and the authoritative v2 atomic completed-admission RPC rejects marked attempts while holding its existing `FOR UPDATE` lock. The v1 RPC and frozen scoring facts do not change. The v2 service reads and respects the mark on bootstrap and completion; the **next staged HTTP integration must identify verified owners and set the mark** before this is fully effective. Existing admitted results created before the mark require exclusion in future aggregate statistics; do not claim lifetime noncreator counts until those reads enforce it. No production migration or public flag is authorized by this code. Exact-commit CI, independently reviewed SQL, and isolated-QA transaction/race validation remain required.
+
+
 ## Astra #477 follow-through — identity, competitive provenance and release safety (October 26)
 
 Main `5cf36aa` was independently assessed as sound without a rewrite; implementation and release gate evidence are distinct. **Current uncorrected gap:** browser creator markers alone cannot identify an account owner playing on a second device. Server ownership inspection and sticky attempt-level noncompetitive provenance must be enforced at bootstrap, all action paths where owner identity becomes visible, and atomic completion admission. The verified account identity never becomes scoring-engine input; legacy anonymous friend attempts remain allowed and browser identity cannot prove a unique human. Cross-provider identity continuity depends on verified provider linking, not email equality; Apple private relay can produce a separate account and original-method messaging is required until linking is proved. Existing per-puzzle cookies should be stress-tested before redesign. Browser-facing issued rows remain answer-free; immutable issuance, RLS and account UUID ownership remain intact.
