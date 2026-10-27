@@ -1,5 +1,6 @@
 import 'server-only';
 import { createServerClient, type SetAllCookies } from '@supabase/ssr';
+import { isAuthApiError, isAuthSessionMissingError } from '@supabase/supabase-js';
 import { NextRequest, NextResponse } from 'next/server';
 
 const NO_STORE = 'private, no-store';
@@ -76,14 +77,36 @@ export function creatorAuthClient(request: NextRequest, config: NonNullable<Retu
   };
 }
 
-export async function verifiedCreatorAccount(client: ReturnType<typeof creatorAuthClient>['client']) {
-  // getUser contacts Auth; getSession alone trusts cookie storage and is not an authorization check.
+/**
+ * Session lookup distinguishes signed-in verification failures from guests.
+ * Server gameplay callers must fail closed on unavailable Auth; creation can
+ * continue to return a generic unauthorized status without exposing details.
+ */
+export async function inspectCreatorAccountSession(
+  client: ReturnType<typeof creatorAuthClient>['client'],
+): Promise<{ kind: 'verified'; id: string } | { kind: 'guest' } | { kind: 'unavailable' }> {
   try {
     const { data, error } = await client.auth.getUser();
+    if (error) {
+      // A definitively rejected session is a guest, not a provider outage.
+      // This lets the SSR client clear stale cookies in the response.
+      // Network failures, rate limits and unrelated API errors fail closed.
+      const invalidSession = isAuthSessionMissingError(error)
+        || (isAuthApiError(error) && [
+          'bad_jwt', 'refresh_token_already_used', 'refresh_token_not_found',
+          'session_expired', 'session_not_found',
+        ].includes(error.code ?? ''));
+      return { kind: invalidSession ? 'guest' : 'unavailable' };
+    }
     const user = data.user;
-    if (error || !user || user.is_anonymous === true || !user.email_confirmed_at) return null;
-    return { id: user.id };
-  } catch { return null; }
+    if (!user || user.is_anonymous === true || !user.email_confirmed_at) return { kind: 'guest' };
+    return { kind: 'verified', id: user.id };
+  } catch { return { kind: 'unavailable' }; }
+}
+
+export async function verifiedCreatorAccount(client: ReturnType<typeof creatorAuthClient>['client']) {
+  const observed = await inspectCreatorAccountSession(client);
+  return observed.kind === 'verified' ? { id: observed.id } : null;
 }
 
 /** Bounded, URL-encoded form parser for small auth requests. Reject duplicate fields. */

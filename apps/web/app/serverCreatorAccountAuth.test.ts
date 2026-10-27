@@ -1,12 +1,13 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest, NextResponse } from 'next/server';
+import { AuthApiError, AuthRetryableFetchError, AuthSessionMissingError } from '@supabase/supabase-js';
 
 vi.mock('server-only', () => ({}));
 const createServerClient = vi.hoisted(() => vi.fn());
 vi.mock('@supabase/ssr', () => ({ createServerClient }));
 import {
   creatorAuthClient, creatorAuthConfiguration, creatorAuthEnvironment, creatorAuthPageHostAllowed, creatorAuthForm, sameOriginPost,
-  verifiedCreatorAccount,
+  inspectCreatorAccountSession, verifiedCreatorAccount,
 } from './serverCreatorAccountAuth';
 
 const ORIGIN = 'https://game.example';
@@ -85,6 +86,35 @@ describe('creator account boundary', () => {
     expect(cookie).toContain('SameSite=lax');
     expect(cookie).not.toContain('Domain=');
     expect(response.headers.get('cache-control')).toBe('private, no-store');
+  });
+
+  it('treats definitively rejected sessions as guests, not Auth outages', async () => {
+    const client = { auth: { getUser: vi.fn() } } as any;
+    client.auth.getUser.mockResolvedValueOnce({
+      data: { user: null }, error: new AuthApiError('session expired', 401, 'session_not_found'),
+    });
+    expect(await inspectCreatorAccountSession(client)).toEqual({ kind: 'guest' });
+    client.auth.getUser.mockResolvedValueOnce({
+      data: { user: null }, error: new AuthSessionMissingError(),
+    });
+    expect(await inspectCreatorAccountSession(client)).toEqual({ kind: 'guest' });
+    client.auth.getUser.mockResolvedValueOnce({
+      data: { user: null }, error: new AuthApiError('refresh rejected', 400, 'refresh_token_not_found'),
+    });
+    expect(await inspectCreatorAccountSession(client)).toEqual({ kind: 'guest' });
+    client.auth.getUser.mockResolvedValueOnce({
+      data: { user: null }, error: new AuthApiError('invalid bearer token', 401, 'bad_jwt'),
+    });
+    expect(await inspectCreatorAccountSession(client)).toEqual({ kind: 'guest' });
+    for (const error of [
+      new AuthRetryableFetchError('network unavailable', 503),
+      new AuthApiError('rate limited', 429, 'over_request_rate_limit'),
+      new AuthApiError('unrecognized unauthorized response', 401, 'unrelated_api_error'),
+      new AuthApiError('unexpected response', 400, 'invalid_credentials'),
+    ]) {
+      client.auth.getUser.mockResolvedValueOnce({ data: { user: null }, error });
+      expect(await inspectCreatorAccountSession(client)).toEqual({ kind: 'unavailable' });
+    }
   });
 
   it('accepts only server-verified, confirmed, nonanonymous Auth users', async () => {
