@@ -93,7 +93,8 @@ describe('private Custom Lineup v2 issuance', () => {
   });
 
   it('rejects invalid account identity and titles before catalog or DB work', async () => {
-    for (const accountId of ['', 'user@example.test', '../admin', 'not-a-uuid']) {
+    for (const accountId of ['', 'user@example.test', '../admin', 'not-a-uuid',
+      '123e4567-e89b-42d3-7456-426614174099', '123e4567-e89b-42d3-c456-426614174099']) {
       const { service, dependencies } = setup();
       await expect(service.issueForAccount(
         { canonicalPlayerIds: players(1) }, 'Valid Title', accountId,
