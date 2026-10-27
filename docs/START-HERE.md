@@ -1,5 +1,12 @@
 # Initial Baseball — Start Here
 
+## October 26 — Sticky creator v2 attempt exclusion, staged dependent PRs
+
+- Schema/service PR #520 adds a private `creator_seen` boolean to the v1/v2 attempt table (legacy defaults FALSE), one-way TRUE preservation and a v2 admission RPC check under `FOR UPDATE`; v1 scoring/admission is unchanged. V2 bootstrap and completed-admission services honor persisted creator status after signout. **This is staged code only: no QA or production migration was applied for the new marker, and app behavior is not considered fixed until the dependent verified-account HTTP guard is reviewed and integrated.**
+- The dependent gameplay branch resolves the verified Supabase account UUID, reads only puzzle-owner ID, marks any existing anonymous browser attempt when the creator is recognized, and returns creator preview without creating a new eligible attempt. Other authenticated accounts and guests retain normal play. Browser creator-cookie exclusion remains separate. Any failure to read owner/mark provenance returns sanitized 503 rather than an eligible result.
+- This safety change requires exact-head CI, external review, isolated-QA schema transaction/one-way/race rehearsal, protected hosted QA and final release permission. Production Custom/account flags stay OFF. Existing admitted results recognized later as owner attempts require future comparison/metrics exclusion before counts are claimed accurate.
+
+
 ## October 26, late ET — Creator account implementation merged; release still gated
 
 **Source of truth for engineering continuation (supersedes older “staged PR” headings below):** PRs **#514, #515, #516, and #517 are merged into `main`**. Main merge checkpoint: `4410761475fd422d59237cab91263233cf6d09c9`. Latest exact-head GitHub CI, Vercel Preview and independent review findings were checked before each merge. #516 production deployment was observed READY with CI green; verify #517 merge-commit production CI/READY separately, not by extrapolating from its Preview.
