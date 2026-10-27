@@ -36,7 +36,7 @@ beforeEach(() => {
   issue.mockResolvedValue({ puzzleId: ID, ownerCapability: OWNER });
   reserve.mockReset();
   reserve.mockResolvedValue({ allowed: true });
-  vi.mocked(createServerCustomLineupV2CreationService).mockReturnValue({ issueAnonymous: issue, issue: vi.fn() });
+  vi.mocked(createServerCustomLineupV2CreationService).mockReturnValue({ issueAnonymous: issue, issue: vi.fn(), issueForAccount: vi.fn() });
 });
 afterEach(() => { vi.unstubAllEnvs(); vi.clearAllMocks(); });
 

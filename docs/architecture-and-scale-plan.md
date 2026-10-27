@@ -3,6 +3,10 @@
 Status: Living architecture source of truth  
 Last updated: 2026-10-26
 
+## Verified creator ownership storage — staged implementation (October 26)
+
+A nullable, private `creator_account_id` UUID can be inserted in the same `custom_nine_issued_challenges` transaction/row as the frozen version-2 roster and clues. The referenced Supabase Auth user supplies a stable cross-client identity; the account ID is accepted only from server-verified `getUser()` in the future HTTP boundary, never from the client's title/selection payload. Legacy/admin puzzles remain NULL and keep any independent hashed owner capability. The new path does not mint anonymous owner codes. Account deletion nulls the FK without deleting immutable puzzles or their results; historical code-based claims remain separately staged. Existing row RLS and service-only SELECT/INSERT grants remain unchanged. A targeted indexed lookup can later support My Creations, but no browser access to answer-bearing rows is permitted. The issuer, ownership UI and QA migration application are independent release gates.
+
 ## Account authentication adapter — staged default-OFF implementation (October 26)
 
 The web-only account adapter is staged behind `CREATOR_AUTH_ENABLED`, using Supabase Auth Google/Apple PKCE and email one-time codes. Its request-scoped `@supabase/ssr` client uses only the Supabase publishable key; `auth.getUser()` must verify a confirmed, nonanonymous `auth.users.id` before authorization. The service-role Custom repository stays separate. Fail-closed site-origin validation is shared between the account page and API, and authentication cookies remain HttpOnly, Secure on HTTPS, host-only, and no-store. The account UI and provider routes being staged **do not themselves permit any Custom issuance**. Full provider setup and isolated-QA browser verification are outstanding; production authentication and Custom flags must remain off. Creator ownership and guest play admission are separate follow-up boundaries.

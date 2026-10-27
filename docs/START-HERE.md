@@ -1,5 +1,10 @@
 # Initial Baseball — Start Here
 
+## October 26 — Verified Custom creator ownership storage (staged PR)
+
+- Following auth PR #514, account-owned issuer storage adds one nullable `creator_account_id` on the existing immutable issue row, constrained to version 2 and mutually exclusive with anonymous owner-code digests, with an `auth.users` foreign key and server-only indexed ownership reads. The private service introduces `issueForAccount` and rejects malformed UUIDs before source/catalog/DB work. Neither the existing anonymous public creation route nor gameplay/admission is changed in this milestone.
+- This schema and service change must be reviewed and applied first to isolated QA. It has NOT been applied to Supabase merely by committing the migration. Production Custom public flags remain OFF. The next bounded PR must gate the public issue route on verified `getUser()` and pass the trusted account UUID to the single-row insert; never take user identity from JSON/email.
+
 ## October 26 — Authentication foundation implementation checkpoint (review pending)
 
 - PR #514 stages web creator authentication via Google/Apple PKCE and email one-time code, with a verified, nonanonymous Supabase Auth UUID, request-scoped publishable-key session adapter, and server-only `CREATOR_AUTH_ENABLED` default OFF. This stage does **not** authorize or implement Custom issuing, owning, saving, claiming, or sharing; all existing guest game behavior stays unchanged. No provider or production flag activation is authorized.
