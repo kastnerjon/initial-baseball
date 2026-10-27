@@ -9,12 +9,12 @@ const item = {
 
 describe('My Creations safe public list parser', () => {
   it('accepts a valid non-BMP Unicode title under the shared code-point limit', () => {
-    expect(isCreation({ ...item, title: '⚾'.repeat(40) })).toBe(true);
-    expect(isCreation({ ...item, title: '⚾'.repeat(60) })).toBe(true);
+    expect(isCreation({ ...item, title: '🧢'.repeat(40) })).toBe(true);
+    expect(isCreation({ ...item, title: '🧢'.repeat(60) })).toBe(true);
   });
 
   it('rejects titles the canonical parser rejects without changing any other response fields', () => {
-    for (const title of ['⚾'.repeat(61), '<script>', 'a', '\u200b', '', '\nBad Title']) {
+    for (const title of ['🧢'.repeat(61), '<script>', 'a', '\u200b', '', '\nBad Title']) {
       expect(isCreation({ ...item, title })).toBe(false);
     }
   });
