@@ -7,6 +7,14 @@
 - This safety change requires exact-head CI, external review, isolated-QA schema transaction/one-way/race rehearsal, protected hosted QA and final release permission. Production Custom/account flags stay OFF. Existing admitted results recognized later as owner attempts require future comparison/metrics exclusion before counts are claimed accurate.
 
 
+## October 26 — Astra #477 review and verified QA ownership migration reconciliation
+
+- Independent review of main `5cf36aa` found the architecture sound but identified account-aware creator exclusion, provider identity continuity, cookie accumulation, and a known migration-history discrepancy. Product direction: account-required issuing/sharing, guest play, one shared Custom gameplay/completion design; no leagues/H2H work now.
+- **QA migration identifier corrected and verified:** read QA's recorded SQL under `20261026235720`; it matched committed `20261026233000_add_custom_v2_verified_creator_owner.sql` byte-for-byte. Verified FK, exclusivity CHECK, index, RLS, zero anon/authenticated grants, 92 issued records and 80 legacy owner-code digests. Ran a guarded single-row migration-history UPDATE only in isolated QA to `20261026233000`, then re-read confirming one canonical version, old version absent and counts unchanged. This clears that **specific** mismatch, not the difference between broader QA/production migration timelines. Production was not touched; broad `db push` is still forbidden without full parity/rehearsal.
+- P1 until resolved: recognize verified owners playing their puzzles on another device and mark already existing attempts noncompetitive with atomic admission enforcement. No client creator flag or change to guest gameplay/engine. Real Google/Apple/email OTP hosted QA and explicit cross-provider linking/recovery policy remain mandatory before activation. Cookie stress and My Creations keyset pagination are follow-up work, not immediate redesign.
+- Canonical actions: `tasks/plans/astra-477-auth-custom-launch-corrections.md`, `tasks/todo.md`, and the architecture/product blueprint. The older October 26 status below is historical and may contain already-completed items.
+
+
 ## October 26, late ET — Creator account implementation merged; release still gated
 
 **Source of truth for engineering continuation (supersedes older “staged PR” headings below):** PRs **#514, #515, #516, and #517 are merged into `main`**. Main merge checkpoint: `4410761475fd422d59237cab91263233cf6d09c9`. Latest exact-head GitHub CI, Vercel Preview and independent review findings were checked before each merge. #516 production deployment was observed READY with CI green; verify #517 merge-commit production CI/READY separately, not by extrapolating from its Preview.
