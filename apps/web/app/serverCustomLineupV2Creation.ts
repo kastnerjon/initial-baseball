@@ -56,7 +56,7 @@ export function createServerCustomLineupV2CreationService({
     ownerMode: 'none' | 'capability' | 'account', creatorAccountId?: string,
   ): Promise<{ puzzleId: string; ownerCapability: string | null }> {
       if (ownerMode === 'account' && (!creatorAccountId
-        || !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(creatorAccountId))) {
+        || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(creatorAccountId))) {
         throw new ServerCustomLineupV2CreationError('invalid_selection');
       }
       const ids = readSelection(payload);
