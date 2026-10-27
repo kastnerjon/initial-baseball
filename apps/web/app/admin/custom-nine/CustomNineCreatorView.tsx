@@ -245,7 +245,7 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
           <h2 id="custom-lineup-title-heading">Name your puzzle</h2>
           <label htmlFor="custom-lineup-puzzle-title">Puzzle name (3–60 characters)</label>
           <input id="custom-lineup-puzzle-title" type="text"
-            autoComplete="off" value={title} disabled={!draftEditable}
+            autoComplete="off" maxLength={60} value={title} disabled={!draftEditable}
             placeholder="e.g. 1998 Yankees Legends"
             onChange={event => {
               if ('value' in event.target && typeof event.target.value === 'string') {
