@@ -88,6 +88,7 @@ export function createServerCustomLineupV2CompletedAdmissionService({
         || state.browserKeyDigest !== browser.browserKeyDigest) {
         return { kind: 'invalid_credential' };
       }
+      if (state.creatorSeen === true) return { kind: 'invalid_credential' };
       if (state.status !== 'completed') return { kind: 'incomplete' };
       if (state.completedAt === null || state.terminalAtBats.length !== n) invalidCompletion();
 

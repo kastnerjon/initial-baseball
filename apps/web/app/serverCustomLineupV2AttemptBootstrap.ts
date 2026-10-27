@@ -54,7 +54,8 @@ export function createServerCustomLineupV2AttemptBootstrap({
   environment = process.env, dependencies = DEFAULT,
 }: { environment?: Record<string, string | undefined>; dependencies?: Dependencies } = {}) {
   return {
-    async bootstrap(puzzleId: unknown, cookieHeader: string | null, requestUrl: string): Promise<Result> {
+    async bootstrap(puzzleId: unknown, cookieHeader: string | null, requestUrl: string,
+      verifiedOwner = false): Promise<Result> {
       if (typeof puzzleId !== 'string') return { kind: 'not_found' };
       try { validateCustomLineupPuzzleId(puzzleId); } catch { return { kind: 'not_found' }; }
       const secret = dependencies.getSecret(environment);
@@ -85,7 +86,7 @@ export function createServerCustomLineupV2AttemptBootstrap({
       const redacted: Opening = {
         ...opening, hintBundle: projectCustomNineAttemptHintBundle(opening.hintBundle),
       };
-      if (creator === 'creator') return { kind: 'preview', bootstrap: redacted };
+      if (creator === 'creator' || verifiedOwner) return { kind: 'preview', bootstrap: redacted };
 
       const repo = dependencies.repository(environment, length);
       const issued = inspected.kind === 'absent' ? credentials.issue(puzzleId, requestUrl) : null;
@@ -98,6 +99,7 @@ export function createServerCustomLineupV2AttemptBootstrap({
         ? await repo.getByKey(key)
         : (await repo.getOrCreate(key, opening.progressionToken)).state;
       if (saved === null) return { kind: 'invalid_credential' };
+      if (saved.creatorSeen === true) return { kind: 'preview', bootstrap: redacted };
       if (saved.challengeId !== puzzleId || saved.browserKeyDigest !== key.browserKeyDigest) {
         throw new Error('Custom v2 saved attempt identity mismatch.');
       }

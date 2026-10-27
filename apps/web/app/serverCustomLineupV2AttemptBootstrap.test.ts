@@ -78,6 +78,19 @@ function setup(n:number) {
   return {map,repo,deps,service:createServerCustomLineupV2AttemptBootstrap({dependencies:deps})};
 }
 describe('private Custom v2 first-attempt reservation',()=>{
+  it('restores a sticky creator-seen attempt only as preview after signout',async()=>{
+    const s=setup(5);
+    const issued=await s.service.bootstrap(ID,null,URL);
+    if(issued.kind!=='ready')throw Error('missing issued attempt');
+    const cookie=issued.setCookie!.split(';')[0]!;
+    const digest=[...s.map.keys()][0]!;
+    s.map.set(digest,{...s.map.get(digest)!,creatorSeen:true as const});
+    const resumed=await s.service.bootstrap(ID,cookie,URL);
+    expect(resumed.kind).toBe('preview');
+    expect(s.repo.getOrCreate).toHaveBeenCalledTimes(1);
+    expect(JSON.stringify(resumed)).not.toContain('browserKeyDigest');
+  });
+
   it.each([1,5,9,10])('reserves exactly one N=%i challenge attempt and redacts clues',async n=>{
     const {service,repo,deps}=setup(n);
     const first=await service.bootstrap(ID,null,URL);

@@ -76,6 +76,39 @@ describe('private Custom Lineup v2 issuance', () => {
     expect(JSON.stringify(result)).not.toContain('Mets');
   });
 
+  it('issues to a verified account UUID in the same frozen row, with no owner code', async () => {
+    const { service, insertIfAbsent, dependencies } = setup();
+    const accountId = '123e4567-e89b-42d3-a456-426614174099';
+    const result = await service.issueForAccount(
+      { canonicalPlayerIds: players(10) }, '  Historical   Dodgers ', accountId,
+    );
+    expect(result).toEqual({ puzzleId: ID });
+    expect(insertIfAbsent).toHaveBeenCalledWith(
+      expect.objectContaining({ schemaVersion: 2, puzzleId: ID }),
+      'Historical Dodgers', undefined, accountId,
+    );
+    expect(dependencies.mintOwnerCapability).not.toHaveBeenCalled();
+    expect(JSON.stringify(result)).not.toContain(accountId);
+    expect(JSON.stringify(result)).not.toContain('player-');
+  });
+
+  it('rejects invalid account identity and titles before catalog or DB work', async () => {
+    for (const accountId of ['', 'user@example.test', '../admin', 'not-a-uuid',
+      '123e4567-e89b-42d3-7456-426614174099', '123e4567-e89b-42d3-c456-426614174099']) {
+      const { service, dependencies } = setup();
+      await expect(service.issueForAccount(
+        { canonicalPlayerIds: players(1) }, 'Valid Title', accountId,
+      )).rejects.toMatchObject({ kind: 'invalid_selection' });
+      expect(dependencies.materializeClues).not.toHaveBeenCalled();
+      expect(dependencies.createSupabaseClient).not.toHaveBeenCalled();
+    }
+    const { service, dependencies } = setup();
+    await expect(service.issueForAccount(
+      { canonicalPlayerIds: players(1) }, '<script>', '123e4567-e89b-42d3-a456-426614174099',
+    )).rejects.toMatchObject({ kind: 'invalid_selection' });
+    expect(dependencies.materializeClues).not.toHaveBeenCalled();
+  });
+
   it('creates a separate random owner management code and stores only its digest', async () => {
     const { service, insertIfAbsent, dependencies } = setup();
     const response = await service.issueAnonymous({ canonicalPlayerIds: players(2) },

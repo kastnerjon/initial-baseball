@@ -13,6 +13,8 @@ export type CustomNineAttemptState = Readonly<{
   createdAt: string;
   updatedAt: string;
   completedAt: string | null;
+  /** Monotonic server-observed v2 creator exclusion; omitted for legacy/false rows. */
+  creatorSeen?: true;
 }>;
 
 export class CustomNineAttemptRepositoryError extends Error {
@@ -78,6 +80,7 @@ function decodeCustomAttemptRow(raw: unknown, atBatCount: number, version: 'v1' 
     || raw.revision < 0) throw invalid();
   requireCustomNineProgressionToken(raw.current_progression_token);
   const facts = normalizeCustomNineAttemptFacts(raw.terminal_at_bats, atBatCount);
+  if (raw.creator_seen !== undefined && typeof raw.creator_seen !== 'boolean') throw invalid();
   const completedAt = raw.completed_at;
   if (completedAt !== null && !timestamp(completedAt)) throw invalid();
   if (raw.revision < facts.length
@@ -90,6 +93,7 @@ function decodeCustomAttemptRow(raw: unknown, atBatCount: number, version: 'v1' 
     revision: raw.revision, currentProgressionToken: raw.current_progression_token,
     terminalAtBats: facts, status: raw.status,
     createdAt: raw.created_at, updatedAt: raw.updated_at, completedAt,
+    ...(raw.creator_seen === true ? { creatorSeen: true as const } : {}),
   };
 }
 
