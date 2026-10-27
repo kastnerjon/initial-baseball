@@ -19,6 +19,10 @@ staged behind default-off server flags; the issuer requires replacement or authe
 physical-device acceptance and rollback remain release gates. Scope:
 tasks/plans/custom-lineup-slot-creator.md.
 
+## Shared Custom gameplay and completion product milestone (October 26 owner direction)
+
+Saving/issuing/sharing requires a verified account; guest drafts and guest **playing** issued Custom Lineups remain supported. Private/unlisted and eventual publicly discoverable puzzles use the **same core game and completion view**; visibility controls discovery and attribution/contextual actions, not scoring rules or puzzle identity. Review the journey in four contexts: anonymous friend, authenticated nonowner, creator preview (noncompetitive), and future Discover entrant. Completion should display a factual score out of issued maximum, player-by-player recap, comparison only when a backed cohort exists, and next actions such as share, play another, or creator management where authorized. Creator analytics is a separate owner view; creator previews never increase competitive completion counts. Treat an unlisted URL as bearer-like discoverability, not confidentiality. Wireframes and responsive mobile acceptance are **the next product milestone**, but no final design is approved and substantial UI changes require review. Creator identity exclusion is a release correctness gate; leagues, team rounds and asynchronous H2H are not in current implementation scope.
+
 ## Product decision
 
 Initial Baseball currently exposes **Daily Nine** as the normal/default browser game. **Classic Inning** remains a distinct implemented beta game over the same daily baseball puzzle, but it is hidden by default through a server-only web availability setting. This is a reversible presentation/route decision, not deletion: Classic rules, saves, results, comparison infrastructure, and data remain intact. Shared lineup content is a current product choice, not a permanent identity constraint.
