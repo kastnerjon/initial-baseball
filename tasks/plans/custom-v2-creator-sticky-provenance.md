@@ -10,4 +10,6 @@ Out of scope: auth session lookup or marker write (next dependent PR), retroacti
 
 Acceptance: legacy v1/v2 rows default false; once marked, cannot be cleared; marked completed v2 attempt rejected even if request no longer has auth session; atomic RPC protects mark/admit order; no browser grants or answer changes; exact CI, SQL review, isolated QA proof, no production activation.
 
+Isolated QA proof (not production): migration was applied with 42 existing v2 attempts, all preserved, and then the managed migration-history version was reconciled to the committed `20261027003000` after byte-for-byte SQL comparison. Verified private RLS and service-role-only grants, monotone trigger, and v2 RPC row-lock guard. An explicit transaction set a QA attempt marker, tested that admission failed and the marker could not be cleared, then ROLLBACK preserved zero permanently marked attempts. No live provider or cross-device browser QA yet.
+
 Risk: independently replaying an old QA/prod migration is unsafe; this additive migration requires the reviewed ownership migration to be installed and a staging rehearsal. An already admitted attempt recognized only later may still exist in historical aggregates; block public creator metrics until aggregate exclusion policy is implemented.
