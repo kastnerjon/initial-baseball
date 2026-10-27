@@ -1,5 +1,11 @@
 # Initial Baseball — Start Here
 
+## October 26 — Account-gated Custom issuance route + guest draft (staged PR)
+
+- Dependent on Auth #514 and ownership storage #515, the public Custom creator POST now admits only verified accounts with the existing v2 and public-create gates both enabled. The server obtains UUID exclusively from Auth `getUser()` before consuming quota or creating a puzzle; success returns only an opaque puzzle ID, no new owner code. The creator-exclusion cookie and guest friend game remain distinct.
+- The no-login UI can still prepare a bounded 1–10-player draft; session-only storage preserves it across a sign-in trip and the Account page links back. No historical owner claim or My Creations is implemented by this stage; the legacy anonymous issuer MUST remain unlaunchable.
+- This is **committed code awaiting independent review and hosted isolated-QA acceptance**, not deployed/activated behavior. Existing production flags stay OFF. Database migration from #515 must be verified in QA before a signed-in POST.
+
 ## October 26 — Verified Custom creator ownership storage (staged PR)
 
 - Following auth PR #514, account-owned issuer storage adds one nullable `creator_account_id` on the existing immutable issue row, constrained to version 2 and mutually exclusive with anonymous owner-code digests, with an `auth.users` foreign key and server-only indexed ownership reads. The private service introduces `issueForAccount` and rejects malformed UUIDs before source/catalog/DB work. Neither the existing anonymous public creation route nor gameplay/admission is changed in this milestone.

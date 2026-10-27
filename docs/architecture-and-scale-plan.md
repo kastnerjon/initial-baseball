@@ -3,6 +3,10 @@
 Status: Living architecture source of truth  
 Last updated: 2026-10-26
 
+## Authenticated public Custom issuance — staged web boundary (October 26)
+
+The existing default-disabled Custom creation POST now requires a valid creator Auth environment and server-verified confirmed nonanonymous Supabase session, in addition to existing Custom gameplay/issuance flags. The route derives its creator UUID from `getUser()`, never a client field, and calls the private account-owned service to atomically persist the immutable challenge and account owner. IP-based atomic quota/WAF remain abuse defenses, not identity authorization. No owner-code credential is issued for new account-owned puzzles. Guest authoring remains browser-only, with bounded session-tab draft storage to survive cross-page sign-in; Guest Custom friend gameplay and Daily remain unaffected. The signed cookie for creator-preview exclusion is not an ownership credential. The code being staged does not activate production flags; isolated-QA schema/provider/hosted and physical testing precede any public enablement.
+
 ## Verified creator ownership storage — staged implementation (October 26)
 
 A nullable, private `creator_account_id` UUID can be inserted in the same `custom_nine_issued_challenges` transaction/row as the frozen version-2 roster and clues. The referenced Supabase Auth user supplies a stable cross-client identity; the account ID is accepted only from server-verified `getUser()` in the future HTTP boundary, never from the client's title/selection payload. Legacy/admin puzzles remain NULL and keep any independent hashed owner capability. The new path does not mint anonymous owner codes. Account deletion nulls the FK without deleting immutable puzzles or their results; historical code-based claims remain separately staged. Existing row RLS and service-only SELECT/INSERT grants remain unchanged. A targeted indexed lookup can later support My Creations, but no browser access to answer-bearing rows is permitted. The issuer, ownership UI and QA migration application are independent release gates.
