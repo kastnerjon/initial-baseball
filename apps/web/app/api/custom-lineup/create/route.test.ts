@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { NextRequest } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 
 vi.mock('server-only', () => ({}));
 vi.mock('../../../serverCreatorAccountAuth', () => ({
@@ -22,7 +22,7 @@ vi.mock('../../../serverCustomLineupV2GameplayHttp', () => ({
 }));
 
 import { POST } from './route';
-import { creatorAuthConfiguration, verifiedCreatorAccount } from '../../../serverCreatorAccountAuth';
+import { creatorAuthClient, creatorAuthConfiguration, verifiedCreatorAccount } from '../../../serverCreatorAccountAuth';
 import { reservePublicCustomLineupCreation } from '../../../serverCustomLineupCreationBudget';
 import {
   createServerCustomLineupV2CreationService,
@@ -118,6 +118,28 @@ describe('default-disabled, account-gated Custom v2 creation', () => {
     }
     expect(reserve).toHaveBeenCalledTimes(10);
     expect(issue).toHaveBeenCalledTimes(10);
+  });
+
+  it('keeps the creator marker when Auth rebuilds refreshed session cookies', async () => {
+    // In production the Auth adapter may reconstruct Set-Cookie during a refresh.
+    // The creator-exclusion cookie must be appended to the finalized response.
+    vi.mocked(creatorAuthClient).mockReturnValueOnce({
+      client: { auth: {} },
+      finish: (response: NextResponse) => {
+        response.headers.delete('set-cookie');
+        response.cookies.set('sb-refreshed-session', 'opaque-test-token', {
+          httpOnly: true, secure: true, sameSite: 'lax', path: '/',
+        });
+        return response;
+      },
+    } as ReturnType<typeof creatorAuthClient>);
+    const response = await POST(request());
+    expect(response.status).toBe(201);
+    expect(await response.json()).toEqual({ puzzleId: ID });
+    const cookie = response.headers.get('set-cookie') ?? '';
+    expect(cookie).toContain('sb-refreshed-session=opaque-test-token');
+    expect(cookie).toContain('ib-custom-lineup-creator-v2-');
+    expect(cookie).not.toContain(ACCOUNT);
   });
 
   it('never reserves for cross-origin or malformed media/body requests', async () => {
