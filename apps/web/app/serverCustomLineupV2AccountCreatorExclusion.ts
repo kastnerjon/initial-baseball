@@ -1,7 +1,7 @@
 import 'server-only';
 import { NextRequest, NextResponse } from 'next/server';
 import { validateCustomLineupPuzzleId } from '@initial-baseball/daily';
-import { creatorAuthClient, creatorAuthConfiguration, verifiedCreatorAccount } from './serverCreatorAccountAuth';
+import { creatorAuthClient, creatorAuthConfiguration, inspectCreatorAccountSession } from './serverCreatorAccountAuth';
 import { createServerSupabaseClient } from './serverSupabaseClient';
 import { createCustomLineupV2AttemptBrowserCredential } from './customNineAttemptBrowserCredential';
 import { getDailyProgressionSecret } from './dailyProgressionSecret';
@@ -34,14 +34,22 @@ export async function inspectCustomLineupV2AccountCreator(
 ): Promise<Context> {
   validateCustomLineupPuzzleId(puzzleId);
   if (process.env.CREATOR_AUTH_ENABLED !== 'true') return NONE;
+  // No Supabase session cookie means a genuine anonymous friend request.
+  // Default SSR cookie name is sb-<project-ref>-auth-token (possibly chunked).
+  // Never block guests merely because Auth itself is slow or unavailable.
+  const hasAuthCookie = /(?:^|;\\s*)sb-[A-Za-z0-9_-]+-auth-token(?:\\.[0-9]+)?=/.test(cookieHeader ?? '');
+  if (!hasAuthCookie) return NONE;
   // Reconstruct only headers/URL, not the already-bound POST body stream.
   const authRequest = new NextRequest(request.url, { headers: request.headers });
   const config = creatorAuthConfiguration(authRequest);
   if (!config) throw new Error('Custom creator identity configuration unavailable.');
   const auth = creatorAuthClient(authRequest, config);
   const finish = (response: Response) => completeWithRefreshedAuthCookies(response, auth.finish);
-  const account = await verifiedCreatorAccount(auth.client);
-  if (!account) return { owner: false, finish };
+  const account = await inspectCreatorAccountSession(auth.client);
+  if (account.kind === 'unavailable') {
+    throw new Error('Custom creator account verification unavailable.');
+  }
+  if (account.kind === 'guest') return { owner: false, finish };
 
   // Explicit narrow owner read. Issued canonical player IDs and clue snapshots
   // must never cross this server-only query.
