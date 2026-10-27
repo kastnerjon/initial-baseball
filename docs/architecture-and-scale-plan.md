@@ -3,6 +3,10 @@
 Status: Living architecture source of truth  
 Last updated: 2026-10-26
 
+## Sticky Custom creator-attempt provenance (October 26 staged schema boundary)
+
+For Custom v2, a server-observed, verified same-account creator must be permanently excluded from competitive result admission for that particular browser attempt, including after signout. The additive `creator_seen` boolean on private `custom_nine_attempt_states` defaults FALSE for legacy/v1/guest attempts; a trigger rejects clearing TRUE, and the authoritative v2 atomic completed-admission RPC rejects marked attempts while holding its existing `FOR UPDATE` lock. The v1 RPC and frozen scoring facts do not change. The v2 service reads and respects the mark on bootstrap and completion; the **next staged HTTP integration must identify verified owners and set the mark** before this is fully effective. Existing admitted results created before the mark require exclusion in future aggregate statistics; do not claim lifetime noncreator counts until those reads enforce it. No production migration or public flag is authorized by this code. Exact-commit CI, independently reviewed SQL, and isolated-QA transaction/race validation remain required.
+
 ## Verified account My Creations read — staged web layer (October 26)
 
 The My Creations list is a separately scoped, read-only account boundary. A server-verified `getUser()` identity scopes a service-role query to `creator_account_id`, with a fixed bounded newest-first page and an explicit projection of only `puzzle_id,display_title,issued_at`. No answer IDs, clue snapshots, owner credentials or account emails may appear in the query or API response. Browser `/account/creations` calls the private route and renders only the owner's unlisted friend URLs. There is no browser database grant or publication/management mutation. Historical anonymous puzzles without an owner association are intentionally absent until separately proved/claimed. No production release flags change.
