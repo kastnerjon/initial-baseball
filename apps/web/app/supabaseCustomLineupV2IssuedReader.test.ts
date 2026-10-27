@@ -31,6 +31,32 @@ function reader(data:unknown,error:unknown=null) {
   return {repo:createSupabaseCustomLineupV2IssuedReader({from} as unknown as SupabaseClient),from,match};
 }
 describe('private v2 issued challenge read boundary',()=>{
+  it('reads only narrow account owner metadata and rejects corrupt rows',async()=>{
+    const account='123e4567-e89b-42d3-a456-426614174099';
+    const maybeSingle=vi.fn().mockResolvedValue({data:{creator_account_id:account},error:null});
+    const eq=vi.fn().mockReturnThis();
+    const select=vi.fn().mockReturnValue({eq,maybeSingle});
+    const from=vi.fn().mockReturnValue({select});
+    const adapter=createSupabaseCustomLineupV2IssuedReader({from} as unknown as SupabaseClient);
+    await expect(adapter.getCreatorAccountId(ID)).resolves.toBe(account);
+    expect(from).toHaveBeenCalledWith('custom_nine_issued_challenges');
+    expect(select).toHaveBeenCalledWith('creator_account_id');
+    expect(eq).toHaveBeenCalledWith('puzzle_id',ID);
+    expect(eq).toHaveBeenCalledWith('schema_version',2);
+    maybeSingle.mockResolvedValueOnce({data:{creator_account_id:null},error:null});
+    await expect(adapter.getCreatorAccountId(ID)).resolves.toBeNull();
+    maybeSingle.mockResolvedValueOnce({data:null,error:null});
+    await expect(adapter.getCreatorAccountId(ID)).resolves.toBeNull();
+    for (const row of [{},{creator_account_id:'invalid'},{creator_account_id:42}]) {
+      maybeSingle.mockResolvedValueOnce({data:row,error:null});
+      await expect(adapter.getCreatorAccountId(ID)).rejects.toMatchObject({kind:'invalid-row'});
+    }
+    maybeSingle.mockResolvedValueOnce({data:null,error:{message:'PRIVATE SQL'}});
+    await expect(adapter.getCreatorAccountId(ID)).rejects.toMatchObject({kind:'query'});
+    const before=from.mock.calls.length;
+    await expect(adapter.getCreatorAccountId('bad-id')).rejects.toThrow();
+    expect(from).toHaveBeenCalledTimes(before);
+  });
   it.each([1,5,9,10])('reads strict schema-2 frozen %i batter challenge',async n=>{
     const row=fixture(n),decoded=decodeCustomLineupV2IssuedRow(row);
     const expected=createCustomLineupIssuedChallenge({
