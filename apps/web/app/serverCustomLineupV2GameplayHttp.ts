@@ -8,6 +8,7 @@ import { createServerCustomLineupV2AttemptBootstrap } from './serverCustomLineup
 import { createServerCustomLineupV2AttemptHintService } from './serverCustomLineupV2AttemptHints';
 import { createServerCustomLineupV2IncorrectGuessService } from './serverCustomLineupV2IncorrectGuesses';
 import { createServerCustomLineupV2CompletedAdmissionService } from './serverCustomLineupV2CompletedAdmission';
+import { inspectCustomLineupV2AccountCreator } from './serverCustomLineupV2AccountCreatorExclusion';
 
 const HEADERS = { 'cache-control': 'private, no-store', 'vary': 'Cookie' } as const;
 type Action = 'bootstrap' | 'hint' | 'resolve' | 'submit';
@@ -47,28 +48,14 @@ function serviceError(kind: string): Response {
   return response(kind, status);
 }
 
-/** Disabled by default. A private transport boundary for the already reviewed
- * v2 ledger services; no route may dispatch terminal vs nonterminal guesses
- * separately. Public activation requires its own security/release decision.
- */
-export async function handleCustomLineupV2GameplayPost(
-  request: Request, context: Context, action: Action,
+async function dispatchCustomLineupV2Action(
+  request: Request, puzzleId: string, cookie: string | null,
+  action: Action, verifiedOwner: boolean,
 ): Promise<Response> {
-  // Gate all actions before inspecting a body, cookie or contacting persistence.
-  if (!isCustomLineupV2GameplayTransportEnabled()) return response('not_found', 404);
-  if (request.headers.get('origin') !== new URL(request.url).origin) {
-    return response('forbidden', 403);
-  }
-  if (new URL(request.url).search !== '') return response('invalid_request', 400);
-  try {
-    const { puzzleId } = await context.params;
-    try { validateCustomLineupPuzzleId(puzzleId); }
-    catch { return response('not_found', 404); }
-    const cookie = request.headers.get('cookie');
     if (action === 'bootstrap') {
       if (await hasUnexpectedCustomNinePostBody(request)) return response('invalid_request', 400);
       const result = await createServerCustomLineupV2AttemptBootstrap()
-        .bootstrap(puzzleId, cookie, request.url);
+        .bootstrap(puzzleId, cookie, request.url, verifiedOwner);
       switch (result.kind) {
         case 'not_found':
         case 'invalid_credential': return serviceError(result.kind);
@@ -131,6 +118,34 @@ export async function handleCustomLineupV2GameplayPost(
       progressionToken: result.progressionToken, revision: result.revision,
       completed: result.completed, hintBundle: result.hintBundle,
     }, { headers: HEADERS });
+
+}
+
+/** Disabled by default. A private transport boundary for the already reviewed
+ * v2 ledger services; no route may dispatch terminal vs nonterminal guesses
+ * separately. Public activation requires its own security/release decision.
+ */
+export async function handleCustomLineupV2GameplayPost(
+  request: Request, context: Context, action: Action,
+): Promise<Response> {
+  // Gate all actions before inspecting a body, cookie or contacting persistence.
+  if (!isCustomLineupV2GameplayTransportEnabled()) return response('not_found', 404);
+  if (request.headers.get('origin') !== new URL(request.url).origin) {
+    return response('forbidden', 403);
+  }
+  if (new URL(request.url).search !== '') return response('invalid_request', 400);
+  try {
+    const { puzzleId } = await context.params;
+    try { validateCustomLineupPuzzleId(puzzleId); }
+    catch { return response('not_found', 404); }
+    const cookie = request.headers.get('cookie');
+    const access = await inspectCustomLineupV2AccountCreator(request, puzzleId, cookie);
+    if (access.owner && action !== 'bootstrap') {
+      return access.finish(response('invalid_credential', 403));
+    }
+    return access.finish(await dispatchCustomLineupV2Action(
+      request, puzzleId, cookie, action, access.owner,
+    ));
   } catch (error) {
     if (error instanceof CustomNineHintRequestError) return response('invalid_request', 400);
     // Action/status only: never log the exception, request, credentials, or clues.
