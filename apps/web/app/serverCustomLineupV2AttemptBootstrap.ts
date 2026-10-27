@@ -98,6 +98,7 @@ export function createServerCustomLineupV2AttemptBootstrap({
         ? await repo.getByKey(key)
         : (await repo.getOrCreate(key, opening.progressionToken)).state;
       if (saved === null) return { kind: 'invalid_credential' };
+      if (saved.creatorSeen === true) return { kind: 'preview', bootstrap: redacted };
       if (saved.challengeId !== puzzleId || saved.browserKeyDigest !== key.browserKeyDigest) {
         throw new Error('Custom v2 saved attempt identity mismatch.');
       }
