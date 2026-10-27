@@ -102,9 +102,14 @@ describe('creator account boundary', () => {
       data: { user: null }, error: new AuthApiError('refresh rejected', 400, 'refresh_token_not_found'),
     });
     expect(await inspectCreatorAccountSession(client)).toEqual({ kind: 'guest' });
+    client.auth.getUser.mockResolvedValueOnce({
+      data: { user: null }, error: new AuthApiError('invalid bearer token', 401, 'bad_jwt'),
+    });
+    expect(await inspectCreatorAccountSession(client)).toEqual({ kind: 'guest' });
     for (const error of [
       new AuthRetryableFetchError('network unavailable', 503),
       new AuthApiError('rate limited', 429, 'over_request_rate_limit'),
+      new AuthApiError('unrecognized unauthorized response', 401, 'unrelated_api_error'),
       new AuthApiError('unexpected response', 400, 'invalid_credentials'),
     ]) {
       client.auth.getUser.mockResolvedValueOnce({ data: { user: null }, error });

@@ -92,10 +92,10 @@ export async function inspectCreatorAccountSession(
       // This lets the SSR client clear stale cookies in the response.
       // Network failures, rate limits and unrelated API errors fail closed.
       const invalidSession = isAuthSessionMissingError(error)
-        || (isAuthApiError(error) && (error.status === 401 || [
-          'refresh_token_already_used', 'refresh_token_not_found',
+        || (isAuthApiError(error) && [
+          'bad_jwt', 'refresh_token_already_used', 'refresh_token_not_found',
           'session_expired', 'session_not_found',
-        ].includes(error.code ?? '')));
+        ].includes(error.code ?? ''));
       return { kind: invalidSession ? 'guest' : 'unavailable' };
     }
     const user = data.user;
