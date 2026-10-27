@@ -32,6 +32,22 @@ async function query<T>(perform: () => PromiseLike<T>): Promise<T> {
   try { return await perform(); } catch { throw failure(); }
 }
 
+/** Monotone creator provenance update; the database trigger forbids clearing true.
+ * Missing attempts are harmless because there is no reserved row to mark.
+ */
+export async function markCustomLineupV2CreatorSeen(
+  client: SupabaseClient, key: CustomLineupV2ReservationKey,
+): Promise<void> {
+  requireKey(key);
+  const result = await query(() => client.from(TABLE).update({ creator_seen: true })
+    .eq('challenge_id', key.challengeId)
+    .eq('browser_key_digest', key.browserKeyDigest)
+    .select('creator_seen').maybeSingle());
+  if (result.error !== null || (result.data !== null && result.data.creator_seen !== true)) {
+    throw failure();
+  }
+}
+
 /** Immutable-N v2 reservation only. No v1 nine-only CAS completion method is exposed. */
 export function createSupabaseCustomLineupV2ReservationRepository(
   client: SupabaseClient, immutableAtBatCount: number,

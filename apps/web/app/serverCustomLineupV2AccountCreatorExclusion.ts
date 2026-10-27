@@ -3,6 +3,8 @@ import { NextRequest, NextResponse } from 'next/server';
 import { validateCustomLineupPuzzleId } from '@initial-baseball/daily';
 import { creatorAuthClient, creatorAuthConfiguration, inspectCreatorAccountSession } from './serverCreatorAccountAuth';
 import { createServerSupabaseClient } from './serverSupabaseClient';
+import { createSupabaseCustomLineupV2IssuedReader } from './supabaseCustomLineupV2IssuedReader';
+import { markCustomLineupV2CreatorSeen } from './supabaseCustomLineupV2ReservationRepository';
 import { createCustomLineupV2AttemptBrowserCredential } from './customNineAttemptBrowserCredential';
 import { getDailyProgressionSecret } from './dailyProgressionSecret';
 
@@ -57,15 +59,13 @@ export async function inspectCustomLineupV2AccountCreator(
   // Explicit narrow owner read. Issued canonical player IDs and clue snapshots
   // must never cross this server-only query.
   const service = createServerSupabaseClient();
-  const found = await service.from('custom_nine_issued_challenges')
-    .select('creator_account_id')
-    .eq('puzzle_id', puzzleId).eq('schema_version', 2).maybeSingle();
-  if (found.error || (found.data !== null
-    && (typeof found.data.creator_account_id !== 'string'
-      && found.data.creator_account_id !== null))) {
+  let ownerId: string | null;
+  try {
+    ownerId = await createSupabaseCustomLineupV2IssuedReader(service).getCreatorAccountId(puzzleId);
+  } catch {
     throw new Error('Custom creator ownership lookup unavailable.');
   }
-  if (found.data?.creator_account_id !== account.id) return { owner: false, finish };
+  if (ownerId !== account.id) return { owner: false, finish };
 
   // An owner could have played as a guest before logging in. The attempt row
   // becomes irrevocably noncompetitive; the RPC checks under its FOR UPDATE
@@ -73,12 +73,11 @@ export async function inspectCustomLineupV2AccountCreator(
   const browser = createCustomLineupV2AttemptBrowserCredential(getDailyProgressionSecret())
     .inspect(cookieHeader, puzzleId);
   if (browser.kind === 'valid') {
-    const marked = await service.from('custom_nine_attempt_states')
-      .update({ creator_seen: true })
-      .eq('challenge_id', puzzleId)
-      .eq('browser_key_digest', browser.browserKeyDigest)
-      .select('creator_seen').maybeSingle();
-    if (marked.error || (marked.data !== null && marked.data.creator_seen !== true)) {
+    try {
+      await markCustomLineupV2CreatorSeen(service, {
+        challengeId: puzzleId, browserKeyDigest: browser.browserKeyDigest,
+      });
+    } catch {
       throw new Error('Custom creator eligibility marker unavailable.');
     }
   }
