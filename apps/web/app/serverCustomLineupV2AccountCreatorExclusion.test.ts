@@ -15,6 +15,15 @@ vi.mock('./serverCreatorAccountAuth', () => ({
   inspectCreatorAccountSession: vi.fn(),
 }));
 vi.mock('./serverSupabaseClient', () => ({ createServerSupabaseClient: vi.fn() }));
+const { ownerRead, markCreator } = vi.hoisted(() => ({
+  ownerRead: vi.fn(), markCreator: vi.fn(),
+}));
+vi.mock('./supabaseCustomLineupV2IssuedReader', () => ({
+  createSupabaseCustomLineupV2IssuedReader: vi.fn(() => ({ getCreatorAccountId: ownerRead })),
+}));
+vi.mock('./supabaseCustomLineupV2ReservationRepository', () => ({
+  markCustomLineupV2CreatorSeen: markCreator,
+}));
 vi.mock('./dailyProgressionSecret', () => ({
   getDailyProgressionSecret: vi.fn(() => '0123456789a-private-strong-creator-exclusion-signing-key'),
 }));
@@ -30,24 +39,16 @@ const URL = 'https://example.test/api/custom-lineup/challenges/' + ID + '/attemp
 const signed = createCustomLineupV2AttemptBrowserCredential(SECRET).issue(ID, URL);
 const COOKIE = signed.setCookie.split(';')[0]!;
 const WITH_AUTH = COOKIE + '; sb-qa-auth-token=opaque-session';
-const ownerRead = vi.fn();
-const markRead = vi.fn();
-const select = vi.fn(() => ({ eq: vi.fn().mockReturnThis(), maybeSingle: ownerRead }));
-const markSelect = vi.fn(() => ({ maybeSingle: markRead }));
-const update = vi.fn(() => ({ eq: vi.fn().mockReturnThis(), select: markSelect }));
-const from = vi.fn((table: string) => table === 'custom_nine_issued_challenges'
-  ? { select } : { update });
-
 function request(cookie = WITH_AUTH): Request {
   return new Request(URL, { headers: { cookie, origin: 'https://example.test' } });
 }
 beforeEach(() => {
   vi.clearAllMocks();
   vi.stubEnv('CREATOR_AUTH_ENABLED', 'true');
-  vi.mocked(createServerSupabaseClient).mockReturnValue({ from } as never);
+  vi.mocked(createServerSupabaseClient).mockReturnValue({} as never);
   vi.mocked(inspectCreatorAccountSession).mockResolvedValue({ kind: 'verified', id: ACCOUNT });
-  ownerRead.mockResolvedValue({ error: null, data: { creator_account_id: ACCOUNT } });
-  markRead.mockResolvedValue({ error: null, data: { creator_seen: true } });
+  ownerRead.mockResolvedValue(ACCOUNT);
+  markCreator.mockResolvedValue(undefined);
 });
 afterEach(() => vi.unstubAllEnvs());
 
@@ -65,25 +66,26 @@ describe('server-verified Custom owner eligibility guard', () => {
   });
 
   it('does not mark a different account or a pre-account anonymous issuer', async () => {
-    ownerRead.mockResolvedValueOnce({ error: null, data: { creator_account_id:
-      '123e4567-e89b-42d3-a456-426614174098' } });
+    ownerRead.mockResolvedValueOnce('123e4567-e89b-42d3-a456-426614174098');
     expect((await inspectCustomLineupV2AccountCreator(request(), ID, WITH_AUTH)).owner).toBe(false);
-    ownerRead.mockResolvedValueOnce({ error: null, data: { creator_account_id: null } });
+    ownerRead.mockResolvedValueOnce(null);
     expect((await inspectCustomLineupV2AccountCreator(request(), ID, WITH_AUTH)).owner).toBe(false);
-    expect(update).not.toHaveBeenCalled();
+    expect(markCreator).not.toHaveBeenCalled();
   });
 
   it('shows owner preview on another device after lost issuance response, without reserving', async () => {
     const result = await inspectCustomLineupV2AccountCreator(request('sb-qa-auth-token=opaque-session'), ID, 'sb-qa-auth-token=opaque-session');
     expect(result.owner).toBe(true);
-    expect(update).not.toHaveBeenCalled();
+    expect(markCreator).not.toHaveBeenCalled();
   });
 
   it('marks a prior guest attempt permanently in private storage when its owner signs in', async () => {
     const result = await inspectCustomLineupV2AccountCreator(request(), ID, WITH_AUTH);
     expect(result.owner).toBe(true);
-    expect(select).toHaveBeenCalledWith('creator_account_id');
-    expect(update).toHaveBeenCalledWith({ creator_seen: true });
+    expect(ownerRead).toHaveBeenCalledWith(ID);
+    expect(markCreator).toHaveBeenCalledWith(expect.anything(), {
+      challengeId: ID, browserKeyDigest: signed.browserKeyDigest,
+    });
     const res = result.finish(Response.json({ attemptMode: 'creator_preview' }, {
       headers: { 'set-cookie': signed.setCookie, 'cache-control': 'private, no-store' },
     }));
@@ -96,11 +98,11 @@ describe('server-verified Custom owner eligibility guard', () => {
   it('does not mark a tampered browser cookie and rejects owner lookup or marker failures', async () => {
     expect((await inspectCustomLineupV2AccountCreator(request('bad=token; sb-qa-auth-token=opaque-session'), ID, 'bad=token; sb-qa-auth-token=opaque-session')).owner)
       .toBe(true);
-    expect(update).not.toHaveBeenCalled();
-    ownerRead.mockResolvedValueOnce({ data: null, error: { message: 'PRIVATE_SQL' } });
+    expect(markCreator).not.toHaveBeenCalled();
+    ownerRead.mockRejectedValueOnce(new Error('PRIVATE_SQL'));
     await expect(inspectCustomLineupV2AccountCreator(request(), ID, WITH_AUTH))
       .rejects.toThrow('Custom creator ownership lookup unavailable.');
-    markRead.mockResolvedValueOnce({ data: null, error: { message: 'PRIVATE_SQL' } });
+    markCreator.mockRejectedValueOnce(new Error('PRIVATE_SQL'));
     await expect(inspectCustomLineupV2AccountCreator(request(), ID, WITH_AUTH))
       .rejects.toThrow('Custom creator eligibility marker unavailable.');
   });

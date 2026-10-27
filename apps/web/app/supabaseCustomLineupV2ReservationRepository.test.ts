@@ -1,7 +1,7 @@
 import { describe,expect,it,vi } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 vi.mock('server-only',()=>({}));
-import {createSupabaseCustomLineupV2ReservationRepository}
+import {createSupabaseCustomLineupV2ReservationRepository,markCustomLineupV2CreatorSeen}
   from './supabaseCustomLineupV2ReservationRepository';
 import {decodeCustomLineupV2AttemptRow} from './customNineAttemptRowCodec';
 
@@ -29,6 +29,41 @@ function fakeDb(){
  }));
  return {client:{from} as unknown as SupabaseClient,from,map};
 }
+describe('private Custom v2 creator provenance adapter',()=>{
+ it('updates only a validated attempt digest with a sticky true marker',async()=>{
+   const maybeSingle=vi.fn().mockResolvedValue({data:{creator_seen:true},error:null});
+   const select=vi.fn().mockReturnValue({maybeSingle});
+   const eq=vi.fn().mockReturnThis();
+   const update=vi.fn().mockReturnValue({eq,select});
+   const from=vi.fn().mockReturnValue({update});
+   const client={from} as unknown as SupabaseClient;
+   await expect(markCustomLineupV2CreatorSeen(client,KEY)).resolves.toBeUndefined();
+   expect(from).toHaveBeenCalledWith('custom_nine_attempt_states');
+   expect(update).toHaveBeenCalledWith({creator_seen:true});
+   expect(eq).toHaveBeenCalledWith('challenge_id',ID);
+   expect(eq).toHaveBeenCalledWith('browser_key_digest',DIGEST);
+   expect(select).toHaveBeenCalledWith('creator_seen');
+   maybeSingle.mockResolvedValueOnce({data:null,error:null});
+   await expect(markCustomLineupV2CreatorSeen(client,KEY)).resolves.toBeUndefined();
+   for (const result of [
+     {data:{creator_seen:false},error:null},
+     {data:{creator_seen:'true'},error:null},
+     {data:null,error:{message:'PRIVATE SQL'}},
+   ]) {
+     maybeSingle.mockResolvedValueOnce(result);
+     await expect(markCustomLineupV2CreatorSeen(client,KEY))
+       .rejects.toMatchObject({kind:'query',message:expect.not.stringContaining('PRIVATE SQL')});
+   }
+   const before=from.mock.calls.length;
+   await expect(markCustomLineupV2CreatorSeen(client,{...KEY,browserKeyDigest:'bad'}))
+     .rejects.toMatchObject({kind:'invalid-row'});
+   expect(from).toHaveBeenCalledTimes(before);
+   const failing={from:()=>{throw Error('PRIVATE PROVIDER')}} as unknown as SupabaseClient;
+   await expect(markCustomLineupV2CreatorSeen(failing,KEY))
+     .rejects.toMatchObject({kind:'query',message:expect.not.stringContaining('PRIVATE PROVIDER')});
+ });
+});
+
 describe('Custom v2 private attempt reservation and exact N row decoder',()=>{
  it.each([1,5,9,10])('reserves first immutable N=%i attempt with concurrent loser observing winner',async n=>{
    const db=fakeDb(),repo=createSupabaseCustomLineupV2ReservationRepository(db.client,n);
