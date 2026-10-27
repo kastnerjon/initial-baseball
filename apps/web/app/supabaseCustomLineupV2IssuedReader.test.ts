@@ -56,6 +56,12 @@ describe('private v2 issued challenge read boundary',()=>{
     const before=from.mock.calls.length;
     await expect(adapter.getCreatorAccountId('bad-id')).rejects.toThrow();
     expect(from).toHaveBeenCalledTimes(before);
+    const failing=createSupabaseCustomLineupV2IssuedReader({
+      from:()=>{throw new Error('PRIVATE PROVIDER DETAILS');},
+    } as unknown as SupabaseClient);
+    await expect(failing.getCreatorAccountId(ID)).rejects.toMatchObject({
+      kind:'query',message:expect.not.stringContaining('PRIVATE PROVIDER DETAILS'),
+    });
   });
   it.each([1,5,9,10])('reads strict schema-2 frozen %i batter challenge',async n=>{
     const row=fixture(n),decoded=decodeCustomLineupV2IssuedRow(row);
