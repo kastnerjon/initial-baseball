@@ -4,12 +4,19 @@ Remaining tasks only; completed verification and production evidence are recorde
 
 ## 1. Account-gated Custom creation before private-sharing launch (October 26 decision)
 
-- [ ] Stage secure Google/Apple/email-OTP sign-in, account and verified session model with stable internal user IDs, CSRF/session protection, tested identity-linking rules, RLS grants and QA/production provider configuration. Accounts are mandatory only for issuing/managing new Custom creations, **not for Custom friend play**.
-- [ ] Permit anonymous **unsaved draft creation/preview**, preserve an in-progress draft across OAuth/email sign-in safely, and fail closed if the session is not verified when submitting a new immutable challenge. The existing no-account `POST /api/custom-lineup/create` MUST NOT be activated in production unchanged.
-- [ ] Persist server-authoritative account ownership at issuance, build authenticated **My Creations** with private share link, completion metrics and management authorization. Keep immutable players/clues and historical scores; allow only explicitly approved mutable title, publication and deactivation metadata.
-- [ ] Preserve already-issued anonymous puzzles and one-time owner-code digests. Stage a separately reviewed, bounded, single-owner-claim flow requiring both an authenticated session and the original owner capability; the share link and preview cookie do not confer ownership.
-- [ ] Define a reversible **per-mode server play-admission policy**, initially guest-allowed for Custom and always guest-allowed for the editor-published Daily Nine. Other-mode authentication gates are a future opt-in decision; keep scoring, immutable attempts and answer secrecy independent, and test in-progress guest attempts across policy changes.
-- [ ] Reassess the private Custom launch QA plan and rollback under the new authenticated-creation/guest-play model. Do not declare the prior anonymous issuance tests equivalent to authenticated creator acceptance.
+**Implementation complete on main, NOT operational launch:** PRs #514–#517 merged after exact-head CI, Vercel Preview and resolved independent CodeRabbit findings. All public Custom and creator-auth production flags remain OFF. See the latest `docs/START-HERE.md` checkpoint.
+
+- [x] Implement default-OFF Google/Apple PKCE + email OTP account foundation, verified/nonanonymous Supabase Auth UUID, CSRF/Host/session cookie boundaries and account page (#514). Real provider configuration and acceptance are separate below.
+- [x] Bind every **new** v2 Custom issuance to a server-verified account UUID in the same immutable DB row; never trust a supplied account ID or mint a new anonymous owner code for verified owners (#515, #516). Isolated-QA schema migration validated; **production migration pending**.
+- [x] Implement account-gated create POST, ordered guest draft builder, bounded same-tab draft restoration across login and guest friend-play preservation (#516). Hosted guest preview/user journey still requires QA.
+- [x] Implement first read-only My Creations endpoint/page scoped to the verified account, returning only safe puzzle identity/title/issuance date (#517).
+- [ ] Configure separate isolated-QA Auth provider/redirect/email templates and branch-scoped Vercel `CREATOR_AUTH_ENABLED`, `CREATOR_AUTH_SITE_URL`, `SUPABASE_PUBLISHABLE_KEY`; verify real Google, Apple and email OTP flows, session refresh/sign-out, account identity continuity and iPhone/Android browser behavior. Keep production flags OFF.
+- [ ] Reconcile the QA managed migration version `20261026235720` with committed file version `20261026233000` before any automated `supabase db push`; then rehearse production-target schema/migration and rollback safely. The QA migration alone is not production deployment evidence.
+- [ ] Validate hosted unsaved **preview** behavior and persistence across authenticating in the same tab, as well as single-owner atomic issuance → My Creations readback → unlisted guest play. Verify lost response, retries, cookies, account deletion and parallel openings against isolated QA.
+- [ ] Add separately approved creator completion metrics, management authorization and publishing/unpublishing without altering immutable lineup/clue/score facts. Confirm product UX direction first.
+- [ ] Preserve already-issued anonymous puzzles and one-time owner-code digests. Stage a separately reviewed, bounded, single-owner-claim flow requiring both authenticated session and original owner capability; share links/preview cookies are not ownership proof.
+- [ ] Define a reversible **per-mode server play-admission policy**, initially guest-allowed for Custom and always guest-allowed for official Daily Nine. Any activation of other-mode authentication gates is a future owner decision, not authorized now; test in-progress guest attempts and rollback.
+- [ ] Reassess private Custom launch QA and enabled-feature rollback under authenticated creation/guest play. Never treat historical anonymous QA issuance evidence as authenticated creator acceptance.
 
 ## 2. Remaining private Custom Lineups release gates
 
