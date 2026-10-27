@@ -90,8 +90,11 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     const response = NextResponse.json({ puzzleId: issued.puzzleId }, {
       status: 201, headers: HEADERS,
     });
-    response.headers.append('set-cookie', creatorMarker.creatorCookie(issued.puzzleId, request.url));
-    return auth.finish(response);
+    const finished = auth.finish(response);
+    // Auth session refresh can rebuild Set-Cookie. Append the preview marker last
+    // to preserve both cookies; the marker is not an ownership credential.
+    finished.headers.append('set-cookie', creatorMarker.creatorCookie(issued.puzzleId, request.url));
+    return finished;
   } catch (error) {
     if (error instanceof ServerCustomLineupV2CreationError) {
       const status = error.kind === 'invalid_selection' ? 400
