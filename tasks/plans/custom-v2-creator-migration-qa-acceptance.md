@@ -1,0 +1,37 @@
+# Custom v2 creator migrations — QA acceptance and production gate (October 27, 2026)
+
+**Scope contract.** Goal: establish repeatable, rollback-only evidence for account-owner constraints and sticky creator admission without changing production or leaving QA records. Owning layer: `supabase/tests`; accompanying canonical handoff in `docs/START-HERE.md` and `tasks/todo.md`. In scope: a single SQL test and precise environment/readiness evidence. Out of scope: production DDL, automatic migration-history rewrites, Auth provider configuration, browser UI, scoring changes, public feature activation and historical owner-code claims. Stop if QA schema differs from the two reviewed migrations or if any test requires actual Auth-user creation outside provider acceptance.
+
+## Source and environment contract
+
+- Source base: `main` `afd5a1e2ca555ff927b86779904b87bd22576ba1`; QA Preview source `qa/private-custom` `20e645d51d58d2ca4b9fbbe0cfd3dfd507522489`. These are historical inspection SHAs; reverify before executing.
+- Production Supabase `dwreeiydvwikpamlokji` has recorded 29 migrations. Its Custom v2 issued/attempt schema lacks both creator extensions. The current admission RPC is invoker-only and serializes with `FOR UPDATE`, but has no creator check.
+- Isolated QA `iklbnlicgsxxhaoiscor` has canonical recorded versions `20261026233000` (verified creator owner) and `20261027003000` (sticky marker). Its admission RPC is invoker-only, creator-aware, and retains `FOR UPDATE`; the server service role can execute, browser roles cannot. The creator FK and exclusivity CHECK are validated, the filtered owner index exists, and `custom_creator_seen_monotonic` is enabled.
+- Existing QA and production share the relevant pre-creator Custom column/constraint/index contracts, except these two new migrations. QA is **not** a complete clone of production: its editorial/archive bootstrap and migration version history are distinct. SQL-body correspondence does not prove unrecorded schema objects or exact full replay.
+- The two recorded QA creator SQL statements match committed source (see issue #477 audit). Do not use an unrestricted `supabase db push` or rewrite old versions.
+
+## Reproducible, nonpersistent QA test
+
+Run `supabase/tests/custom_v2_verified_creator_exclusion.sql` only against isolated QA or a compatible disposable schema, with a privileged SQL test role, **after both creator migrations**. It starts a transaction and ends in `ROLLBACK`. It creates one disposable one-player v2 issued challenge and two completed browser attempts with distinct first-attempt digests. Assertions:
+
+1. FK, validated owner exclusivity, creator marker default, enabled trigger, RLS/grants and private RPC permissions are present.
+2. Legacy owner-code digest cannot be combined with verified-account UUID; a nonexistent Auth UUID cannot pass FK. This is a negative constraint test, **not** proof that real Google/Apple/OTP accounts can issue.
+3. An already-recognized creator attempt is rejected before admission; marker cannot go TRUE→FALSE and unrelated progress updates preserve it.
+4. A distinct guest attempt is admitted once, an exact retry returns `created=false`, and after creator recognition its retry is no longer competitively admissible. The stored original score/result is unchanged.
+5. Exactly one new result and batter row exist **inside** the test transaction; no fixture persists after rollback.
+
+Observed successful on hosted QA October 27. Separate rollback-only tests marked an existing completed attempt and validated the same guard and one-way trigger, and replayed all **39** existing result rows idempotently. Postflight counts and ordered MD5 fingerprints were unchanged: 92 issued/80 legacy digests, 42 attempts, 39 results, 183 batter rows; zero creator owners/marks. Issued MD5 `5b0d9a3686fea879ee3d91938b30b0db`, attempt MD5 `277c36a33e6673194a5307dd70fea928`. One completed row has no result; validate resume/retry behavior in acceptance rather than inserting a speculative repair.
+
+**Important limitations:** A single transaction cannot demonstrate an actual simultaneous writer race; formal cross-session admission-vs-marker concurrency and hosted server identity flows remain release gates. This test exercises the already-migrated QA schema; it does **not** replay both migrations against a fully production-matched starting catalog. No QA Auth users were present during this test.
+
+## Required targeted migration replay before production DDL
+
+1. Create or provision a genuinely isolated, access-controlled staging database with a matched copy of production's affected tables, functions, constraints, indexes, triggers, role grants and representative redacted data. Do not destroy the existing QA project or its records. Include baseline/editorial differences explicitly in the diff rather than assuming parity.
+2. Snapshot/backup staged data and exact pre-migration `admit_custom_lineup_v2_completed_attempt` function definition, ownership/grants and migration history. Apply only the two reviewed migrations, in order, with an explicitly validated plan for differing recorded versions. Verify preserved legacy owner digest rows, no answer payload leak, new FK/CHECK/index and trigger, invoker-only RPC, locked admission guard, role grants, no RLS relaxation.
+3. Run the rollback-only SQL test, existing atomic Custom v2 admission suite, negative privilege tests, actual concurrent marker/admission transactions and enabled-feature rollback. Verify row counts and checksums before/after. Run Supabase security advisors; RLS-without-policy INFO is expected for intentionally server-private tables. Production `rls_auto_enable()` EXECUTE warnings are tracked separately by issue #481/PR #494; do not merge that PR without its own matched hosted stage.
+4. Prepare the production-specific reversal from the **exact captured old function** and reviewed DDL. For marker rollback: stop new writes, ensure no live marked attempts would lose exclusion, restore the previous v2 admission RPC, remove marker trigger/function, and only then remove the column if proved safe. For owner rollback: verify zero live account-owned rows and no ongoing issuance, then remove filtered index, ownership CHECK/FK and column. A live rollout with nonzero creator ownership/marks generally requires **feature disable/forward remediation**, not destructive schema rollback; dropping provenance would violate the security contract. Never delete or transfer existing owner-code records.
+5. Only after hosted Auth provider acceptance, verified creator→My Creations→share→guest play, cross-device/expired-session/account-switch and real physical browser tests, enabled-feature rollback, external review, exact-commit CI/Preview, and **explicit release authorization** may production migrations/flags be considered.
+
+## External dependency
+
+Supabase connector supports SQL/catalog work but does not expose Google/Apple/OTP provider configuration or templates. The dashboard sign-in prompt was canceled; do not retry silently. Keep `CREATOR_AUTH_ENABLED=false` in isolated QA until safe provider setup/acceptance. Production flags stay OFF. No passwords or OTPs in issue comments or chat.
