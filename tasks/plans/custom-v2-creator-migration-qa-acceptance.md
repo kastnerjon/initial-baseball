@@ -14,11 +14,11 @@
 
 Run `supabase/tests/custom_v2_verified_creator_exclusion.sql` only against isolated QA or a compatible disposable schema, with a privileged SQL test role, **after both creator migrations**. It starts a transaction and ends in `ROLLBACK`. It creates one disposable one-player v2 issued challenge and two completed browser attempts with distinct first-attempt digests. Assertions:
 
-1. FK, validated owner exclusivity, creator marker default, enabled trigger, RLS/grants and private RPC permissions are present.
+1. FK, validated owner exclusivity, creator marker default, enabled trigger, four server-private tables with RLS and no browser policies, required service-role table grants, and private RPC permissions are present.
 2. Legacy owner-code digest cannot be combined with verified-account UUID; a nonexistent Auth UUID cannot pass FK. This is a negative constraint test, **not** proof that real Google/Apple/OTP accounts can issue.
 3. An already-recognized creator attempt is rejected before admission; marker cannot go TRUE→FALSE and unrelated progress updates preserve it.
-4. A distinct guest attempt is admitted once, an exact retry returns `created=false`, and after creator recognition its retry is no longer competitively admissible. The stored original score/result is unchanged.
-5. Exactly one new result and batter row exist **inside** the test transaction; no fixture persists after rollback.
+4. A distinct guest attempt is admitted once, an exact retry returns `created=false`, and after creator recognition its retry is no longer competitively admissible. The original stored guest summary/facts/points are verified unchanged.
+5. A separate two-batter completed attempt with invalid batter-two data is refused during insertion, leaving neither a completed result nor a partial first-batter row. Exactly one valid result and batter row exist **inside** the test transaction; no fixture persists after rollback.
 
 Observed successful on hosted QA October 27. Separate rollback-only tests marked an existing completed attempt and validated the same guard and one-way trigger, and replayed all **39** existing result rows idempotently. Postflight counts and ordered MD5 fingerprints were unchanged: 92 issued/80 legacy digests, 42 attempts, 39 results, 183 batter rows; zero creator owners/marks. Issued MD5 `5b0d9a3686fea879ee3d91938b30b0db`, attempt MD5 `277c36a33e6673194a5307dd70fea928`. One completed row has no result; validate resume/retry behavior in acceptance rather than inserting a speculative repair.
 

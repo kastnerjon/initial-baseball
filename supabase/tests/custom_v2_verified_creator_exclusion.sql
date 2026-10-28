@@ -12,6 +12,12 @@ declare
   v_creator_digest text := repeat('a', 64);
   v_friend_digest text := repeat('b', 64);
   v_missing_auth uuid := '00000000-0000-4000-8000-000000000001'::uuid;
+  v_failure_id text := 'custom-lineup-v2-' || gen_random_uuid()::text;
+  v_failure_attempt uuid := gen_random_uuid();
+  v_failure_digest text := repeat('d', 64);
+  v_failure_clues jsonb;
+  v_failure_facts jsonb;
+  v_failure_summary jsonb;
   v_clues jsonb;
   v_facts jsonb;
   v_summary jsonb;
@@ -44,6 +50,29 @@ begin
       where tgrelid='public.custom_nine_attempt_states'::regclass
         and tgname='custom_creator_seen_monotonic' and tgenabled='O')
   then raise exception 'Creator schema, constraint, or trigger missing'; end if;
+
+  -- RLS-without-policy is deliberate: all Custom data is private to service_role.
+  if (select count(*) from pg_class where oid in (
+      'public.custom_nine_issued_challenges'::regclass,
+      'public.custom_nine_attempt_states'::regclass,
+      'public.custom_nine_completed_results'::regclass,
+      'public.custom_nine_at_bat_results'::regclass
+    ) and relrowsecurity) <> 4
+    or exists (select 1 from pg_policy where polrelid in (
+      'public.custom_nine_issued_challenges'::regclass,
+      'public.custom_nine_attempt_states'::regclass,
+      'public.custom_nine_completed_results'::regclass,
+      'public.custom_nine_at_bat_results'::regclass))
+  then raise exception 'Private Custom RLS unexpectedly disabled or policy widened'; end if;
+
+  -- SECURITY INVOKER admission needs table grants, not merely RPC EXECUTE.
+  if not has_table_privilege('service_role','public.custom_nine_issued_challenges','SELECT')
+    or not has_table_privilege('service_role','public.custom_nine_attempt_states','SELECT')
+    or not has_table_privilege('service_role','public.custom_nine_completed_results','SELECT')
+    or not has_table_privilege('service_role','public.custom_nine_completed_results','INSERT')
+    or not has_table_privilege('service_role','public.custom_nine_at_bat_results','SELECT')
+    or not has_table_privilege('service_role','public.custom_nine_at_bat_results','INSERT')
+  then raise exception 'Service-role admission table grant missing'; end if;
 
   if has_table_privilege('anon','public.custom_nine_issued_challenges','SELECT')
     or has_table_privilege('authenticated','public.custom_nine_issued_challenges','SELECT')
@@ -167,8 +196,57 @@ begin
   end;
   if not v_rejected then raise exception 'Previously admitted creator retry accepted'; end if;
 
-  if (select count(*) from public.custom_nine_issued_challenges) <> v_issued_count+1
-    or (select count(*) from public.custom_nine_attempt_states) <> v_attempt_count+2
+  -- A post-admission creator mark may prevent replay, but must not rewrite
+  -- the already-stored guest summary, facts, or awarded score.
+  if not exists (select 1 from public.custom_nine_completed_results r
+      where r.submission_id=v_friend_attempt::text and r.challenge_id=v_id
+        and r.summary=v_summary and r.completed_at_bats=v_facts)
+    or not exists (select 1 from public.custom_nine_at_bat_results r
+      where r.attempt_id=v_friend_attempt::text and r.challenge_id=v_id
+        and r.pitch_number=1 and r.awarded_points=4
+        and r.initials='FP' and r.outcome='HR' and r.hints_revealed=0
+        and r.wrong_guesses=0 and r.resolution='correct')
+  then raise exception 'Stored guest result was rewritten'; end if;
+
+  -- Force an INSERT failure on batter two, after completed-result admission has
+  -- begun. The first batter/result must not escape the failed function call.
+  v_failure_clues := jsonb_set(v_clues,'{pitches}',jsonb_build_array(
+    v_clues #> '{pitches,0}',
+    jsonb_build_object('pitchNumber',2,'canonicalPlayerId','fixture-player-2',
+      'initials','F2','hintValues',jsonb_build_array('2000s','Mets','SS','HR 222'))));
+  v_failure_facts := jsonb_build_array(
+    v_facts -> 0,
+    jsonb_build_object('pitchNumber',2,'initials','F2','outcome','HR',
+      'hintsRevealed',0,'wrongGuesses',4,'resolution','correct'));
+  v_failure_summary := jsonb_build_object(
+    'points',8,'maximumPoints',8,'atBatsCompleted',2,
+    'totalAtBats',2,'completed',true,'strikeouts',0);
+  insert into public.custom_nine_issued_challenges(
+    puzzle_id,schema_version,ruleset_version,canonical_player_ids,
+    clue_snapshot,issued_at,display_title)
+  values (v_failure_id,2,'points-v4',
+    jsonb_build_array('fixture-player-1','fixture-player-2'),
+    v_failure_clues,now(),'Atomic Failure QA');
+  insert into public.custom_nine_attempt_states(
+    challenge_id,browser_key_digest,attempt_id,revision,
+    current_progression_token,terminal_at_bats,status,completed_at)
+  values (v_failure_id,v_failure_digest,v_failure_attempt,2,
+    'failure-token',v_failure_facts,'completed',now());
+  v_rejected := false;
+  begin
+    perform * from public.admit_custom_lineup_v2_completed_attempt(
+      v_failure_id,v_failure_digest,v_failure_summary,array[4::numeric,4::numeric]);
+  exception when check_violation then v_rejected := true;
+  end;
+  if not v_rejected then raise exception 'Invalid batter two unexpectedly admitted'; end if;
+  if exists (select 1 from public.custom_nine_completed_results
+      where challenge_id=v_failure_id)
+    or exists (select 1 from public.custom_nine_at_bat_results
+      where challenge_id=v_failure_id)
+  then raise exception 'Partial result survived failed batter insertion'; end if;
+
+  if (select count(*) from public.custom_nine_issued_challenges) <> v_issued_count+2
+    or (select count(*) from public.custom_nine_attempt_states) <> v_attempt_count+3
     or (select count(*) from public.custom_nine_completed_results) <> v_result_count+1
     or (select count(*) from public.custom_nine_at_bat_results) <> v_at_bat_count+1
     or (select count(*) from public.custom_nine_completed_results
