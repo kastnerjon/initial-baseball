@@ -160,6 +160,9 @@ async function admissionCommitsFirst() {
 
 assert.ok(process.env.PGHOST && process.env.PGUSER,
   'Provide an explicit disposable PostgreSQL test connection');
+const serverVersion = Number(sql('show server_version_num'));
+assert.ok(Number.isInteger(serverVersion) && serverVersion >= 170000 && serverVersion < 180000,
+  'The creator race must run on PostgreSQL 17 (production and isolated QA major)');
 await markerCommitsFirst();
 await admissionCommitsFirst();
 console.log('PASS: real concurrent PostgreSQL sessions, both lock orders');
