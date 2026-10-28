@@ -1,6 +1,7 @@
 -- Disposable structural harness for two-connection creator/admission race tests.
 -- NOT a production clone. The admission/creator function bodies are loaded
 -- from the exact committed migrations, rather than copied into this fixture.
+set check_function_bodies = off;
 create role anon nologin;
 create role authenticated nologin;
 create role service_role nologin;
