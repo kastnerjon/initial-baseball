@@ -151,8 +151,8 @@ try {
   assert.ok(owner2Creations.creations.some(x=>x.puzzleId===id));
 
   // Independent guest: no account, full competitive first attempt, idempotent admission.
+  // Avoid racing two independent first bootstraps before either cookie is stored.
   const guestPage=await guest.newPage();
-  await guestPage.goto(new URL('/custom/'+id,base).href);
   const opening=await bootstrap(guest,base,id,'reserved');
   assert.equal(opening.atBats.length,1);
   assert.ok(!JSON.stringify(opening).includes(fixtureIds[0]),
@@ -168,7 +168,7 @@ try {
     headers:{origin:base.origin}}),201),{status:'created'});
   assert.deepEqual(await jsonResponse(await guest.request.post(attempt(base,id,'submit'),{
     headers:{origin:base.origin}}),200),{status:'existing'});
-  await guestPage.reload();
+  await guestPage.goto(new URL('/custom/'+id,base).href);
   await guestPage.getByText('Lineup complete').waitFor();
 
   // Different authenticated account remains eligible as a player, not an owner.
