@@ -132,7 +132,7 @@ try {
 
   const ownerCreations=await jsonResponse(
     await owner.request.get(new URL('/api/account/creations',base).href),200);
-  assert.ok(ownerCreations.creations.some(x=>x.puzzleId===id&&x.displayTitle===testName),
+  assert.ok(ownerCreations.creations.some(x=>x.puzzleId===id&&x.title===testName),
     'Owner cannot retrieve new challenge');
   await bootstrap(owner,base,id,'creator_preview');
   const ownerSubmit=await owner.request.post(attempt(base,id,'submit'),{headers:{origin:base.origin}});
