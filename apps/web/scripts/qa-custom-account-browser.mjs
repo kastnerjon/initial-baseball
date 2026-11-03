@@ -107,8 +107,9 @@ try {
   const owner=await browser.newContext({serviceWorkers:'block'});
   const ownerPage=await owner.newPage();
   await ownerPage.goto(new URL('/account',base).href);
-  assert.ok(await ownerPage.getByText('Continue with Google').count(),
-    'Account form was not visible before login');
+  await ownerPage.getByText('Continue with Google').waitFor({
+    state:'visible', timeout:10000,
+  });
   const guest=await browser.newContext({serviceWorkers:'block'});
   assert.deepEqual(await jsonResponse(
     await guest.request.get(new URL('/api/account/session',base).href),200),
