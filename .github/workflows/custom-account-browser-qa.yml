@@ -2,11 +2,6 @@ name: QA Custom account browser regression
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - '.github/workflows/custom-account-browser-qa.yml'
-      - 'apps/web/scripts/qa-custom-account-*.mjs'
   schedule:
     - cron: '17 14 * * 2'
 
@@ -19,8 +14,10 @@ concurrency:
 
 jobs:
   account-browser-qa:
-    # Never load QA admin credentials from PR-authored code or an arbitrary branch.
+    # Only trusted main may access this branch-restricted GitHub Environment.
+    # The secret must be an Environment secret, not a repository secret.
     if: github.ref == 'refs/heads/main'
+    environment: qa-custom-account
     runs-on: ubuntu-latest
     timeout-minutes: 35
     steps:
@@ -34,6 +31,11 @@ jobs:
         with:
           node-version: '22'
           cache: pnpm
+      - name: Require restricted QA Environment credential before any build
+        env:
+          QA_SERVICE_ROLE: ${{ secrets.QA_CUSTOM_ACCOUNT_SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          test -n "$QA_SERVICE_ROLE" || { echo 'Missing qa-custom-account Environment secret'; exit 1; }
       - run: pnpm install --frozen-lockfile
       - name: Verify QA-only project guards before running browser tests
         run: node --test apps/web/scripts/qa-custom-account-safety.test.mjs
@@ -62,7 +64,7 @@ jobs:
           CUSTOM_V2_QA_ACCOUNT_ACCEPTANCE: 'true'
           CUSTOM_V2_QA_PROJECT_REF: iklbnlicgsxxhaoiscor
           SUPABASE_URL: https://iklbnlicgsxxhaoiscor.supabase.co
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.CUSTOM_V2_QA_SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.QA_CUSTOM_ACCOUNT_SUPABASE_SERVICE_ROLE_KEY }}
           SUPABASE_PUBLISHABLE_KEY: sb_publishable_LWNwQXGFAlcwDforUq84oA_mfoThTmS
           CUSTOM_V2_QA_PLAYER_IDS: ${{ steps.fixture.outputs.ids }}
           CUSTOM_V2_QA_PLAYWRIGHT_MODULE: /tmp/custom-account-qa/node_modules/playwright/index.mjs

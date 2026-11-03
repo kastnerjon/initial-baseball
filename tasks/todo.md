@@ -4,7 +4,7 @@ Remaining tasks only; completed verification and production evidence are recorde
 
 ## 1. Account-gated Custom creation before private-sharing launch (October 26 decision)
 
-- [ ] Observe first trusted-main push/scheduled/manual GitHub Actions **QA Custom account browser regression** on trusted main and establish reliable pass/fail. It uses existing QA-only service-role GitHub secret and a public QA publishable key; never runs on PR changes or touches production. After confirmed green, schedule reduces repetitive human QA; it does not replace real OAuth/hosted ingress/iOS/Android. See `.github/workflows/custom-account-browser-qa.yml`.
+- [ ] Observe first restricted-environment scheduled/manual GitHub Actions **QA Custom account browser regression** on trusted main and establish reliable pass/fail. **One-time authorized setup required:** create GitHub Environment `qa-custom-account`, restrict deployments to `main`, set only its `QA_CUSTOM_ACCOUNT_SUPABASE_SERVICE_ROLE_KEY` secret from the isolated QA project. The workflow uses this Environment secret rather than the existing repository-wide QA secret, plus a public QA publishable key; never runs on PR changes or touches production. After confirmed green, schedule reduces repetitive human QA; it does not replace real OAuth/hosted ingress/iOS/Android. See `.github/workflows/custom-account-browser-qa.yml`.
 
 **Release still gated:** production Custom/Auth flags remain OFF and the account-owner/creator-marker migrations are not applied in production. Completed source milestones are recorded in `docs/START-HERE.md`.
 
