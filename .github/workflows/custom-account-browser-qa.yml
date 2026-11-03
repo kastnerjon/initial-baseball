@@ -1,0 +1,64 @@
+name: QA Custom account browser regression
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '17 14 * * 2'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: isolated-qa-custom-account
+  cancel-in-progress: false
+
+jobs:
+  account-browser-qa:
+    # Never load QA admin credentials from PR-authored code or an arbitrary branch.
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
+      - uses: pnpm/action-setup@v4
+        with:
+          version: 9.15.0
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Verify QA-only project guards before running browser tests
+        run: node --test apps/web/scripts/qa-custom-account-safety.test.mjs
+      - name: Build signed account app and canonical fixture data
+        env:
+          DAILY_PROGRESSION_SECRET: build-only-not-used-for-qa-runtime-0123456789abcdef
+        run: pnpm build:web
+      - name: Select ten canonical fixture player IDs
+        id: fixture
+        run: |
+          node --input-type=module <<'NODE' >> "$GITHUB_OUTPUT"
+          import { readFileSync } from 'node:fs';
+          const universe = JSON.parse(readFileSync('packages/baseball-data/reports/canonical-runtime-payload/player-index.json','utf8'));
+          const players = Array.isArray(universe) ? universe : universe.players;
+          if (!Array.isArray(players)) throw new Error('Missing canonical player index');
+          const ids = players.map(p=>p.playerId??p.id).filter(id=>/^ibp_[0-9a-f]{20}$/.test(id)).slice(0,10);
+          if (ids.length!==10||new Set(ids).size!==10) throw new Error('Invalid QA canonical fixtures');
+          console.log('ids='+ids.join(','));
+          NODE
+      - name: Install Chromium browser driver
+        run: |
+          npm install --prefix /tmp/custom-account-qa playwright@1.56.1
+          /tmp/custom-account-qa/node_modules/.bin/playwright install --with-deps chromium
+      - name: Run real QA Auth and DB regression in isolated local Chromium
+        env:
+          CUSTOM_V2_QA_ACCOUNT_ACCEPTANCE: 'true'
+          CUSTOM_V2_QA_PROJECT_REF: iklbnlicgsxxhaoiscor
+          SUPABASE_URL: https://iklbnlicgsxxhaoiscor.supabase.co
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.CUSTOM_V2_QA_SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_PUBLISHABLE_KEY: sb_publishable_LWNwQXGFAlcwDforUq84oA_mfoThTmS
+          CUSTOM_V2_QA_PLAYER_IDS: ${{ steps.fixture.outputs.ids }}
+          CUSTOM_V2_QA_PLAYWRIGHT_MODULE: /tmp/custom-account-qa/node_modules/playwright/index.mjs
+        run: node apps/web/scripts/qa-custom-account-browser.mjs

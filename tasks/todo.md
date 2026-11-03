@@ -4,6 +4,8 @@ Remaining tasks only; completed verification and production evidence are recorde
 
 ## 1. Account-gated Custom creation before private-sharing launch (October 26 decision)
 
+- [ ] Observe first scheduled/manual GitHub Actions **QA Custom account browser regression** on trusted main and establish reliable pass/fail. It uses existing QA-only service-role GitHub secret and a public QA publishable key; never runs on PR changes or touches production. After confirmed green, schedule reduces repetitive human QA; it does not replace real OAuth/hosted ingress/iOS/Android. See `.github/workflows/custom-account-browser-qa.yml`.
+
 **Release still gated:** production Custom/Auth flags remain OFF and the account-owner/creator-marker migrations are not applied in production. Completed source milestones are recorded in `docs/START-HERE.md`.
 
 - [x] Implement default-OFF Google/Apple PKCE + email OTP account foundation, verified/nonanonymous Supabase Auth UUID, CSRF/Host/session cookie boundaries and account page (#514). Real provider configuration and acceptance are separate below.
