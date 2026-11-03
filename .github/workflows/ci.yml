@@ -48,6 +48,10 @@ jobs:
       - run: pnpm test
       - name: Verify isolated Custom QA startup and loopback-origin guards
         run: node --test apps/web/scripts/qa-custom-v2-hosted*.test.mjs
+      - name: Verify isolated QA account journey safety and browser runner syntax
+        run: |
+          node --check apps/web/scripts/qa-custom-account-browser.mjs
+          node --test apps/web/scripts/qa-custom-account-safety.test.mjs
       - run: pnpm check:file-sizes
       - name: Generate current baseball data audit
         run: pnpm data:audit

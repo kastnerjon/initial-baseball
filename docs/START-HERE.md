@@ -1,5 +1,12 @@
 # Initial Baseball — Start Here
 
+## November 3, 2026 — account browser QA automation staged
+
+- Real QA acceptance (product owner): Google OAuth → independently signed-in browser → account-owned named issuance → My Creations → creator preview → separate Safari private guest completion, saved 2/4 score. Read-only QA SQL reconciled one completed attempt and 2B result (issue #477). Production flags and schema remain untouched.
+- The new dedicated **QA Custom account browser regression** runs on trusted `main` by weekly schedule or manual dispatch **only after** a GitHub Environment named `qa-custom-account` is configured with an exact-main branch deployment restriction and the `QA_CUSTOM_ACCOUNT_SUPABASE_SERVICE_ROLE_KEY` Environment secret, against only the pinned isolated QA Supabase project, using synthetic test-only email OTPs minted by the QA admin test harness. The test drives separate Chromium contexts for creator, same account in another browser, unauthenticated guest and a different account; it checks real issuance, account ownership/visibility, creator exclusion, guest/friend completion admission, immutable saved DB readback and signout.
+- **Security/limits:** Never run privileged test code for pull requests; The new job does not consume any repository-level service-role key: its separately scoped GitHub Environment secret must be provisioned by an authorized maintainer before the first run. The currently existing repo-wide QA secret (used by legacy jobs) should be moved to a restricted environment in a separate security remediation. Synthetic test accounts and immutable test challenges accumulate in isolated QA (at most one challenge per scheduled run). Tests use local Next.js plus isolated QA DB, **not** real Google/Apple sign-in, actual hosted Vercel ingress, Android/iOS physical devices or production migration replay. A green run is a regression signal, not a production-release authorization. First scheduled/manual restricted-environment run must be observed before marking this acceptance gate passed.
+
+
 ## October 27, later ET — read-only catalog audit and isolated QA rollback-only tests (no launch)
 
 - **Exact live source/deployment:** `main` remains `afd5a1e2ca555ff927b86779904b87bd22576ba1`, GitHub Actions run `40566943207` test SUCCESS, Vercel production `dpl_FTkEp3RZy4wFNt532cPHPhCpZsU3` READY. Protected QA `qa/private-custom` remains `20e645d51d58d2ca4b9fbbe0cfd3dfd507522489`, Vercel `dpl_BbjWwNfKpDvgeXvfWax4jqLFcn9e` READY. These are build/deploy checks, **not** hosted Auth acceptance.
