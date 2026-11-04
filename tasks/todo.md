@@ -1,9 +1,28 @@
 # Initial Baseball — Current Work
 
-## Custom #529 guest strike-cap activation gates
+## Custom #529 browser integration QA
 
-- [ ] Run hosted and physical-device acceptance for 1/2/3-cap Custom games and verify privacy, concurrent first attempt, live strike counter, terminal reveal, completed result, and historical three-strike compatibility. Browser transport requires a valid server-issued cap from bootstrap and fails closed on mismatched saved and terminal facts; server issuance remains default-OFF for 1/2.
+- [ ] Run 1/2/3-strike signed browser/HTTP acceptance with the issued strike-cap adapter, including 10 at-bats, Give Up actual guesses, lost responses, refresh, two-tab CAS, owner exclusion and mobile. Do not activate nondefault issuance or production Custom flags before separately approved QA and migration release.
 
+
+## Custom #529 remaining first-attempt QA
+
+- [ ] Rehearse 1/2/3-issued Custom attempts through stored reservation, cross-browser creator exclusion, resumed K facts, conflict races and full completion on isolated QA. Keep default-off nondefault issuance pending independently reviewed whole-stack integration.
+
+
+## Custom #529 remaining attempts/QA
+
+- [ ] After cap-specific hint/CAS/admission readers are integrated, complete browser transport, one- or two-strike first-attempt refresh, lost-response retry, and real hosted QA before allowing nondefault issuance.
+
+
+## Custom #529 pending browser strike-cap integration
+
+- [ ] Browser transport must validate the immutable strike limit in reserved, preview and completed openings, keep valid active-strike ranges below the cap and pass the cap into terminal-result decoding. Server bootstrap projects the issued rule but still refuses 1/2 at runtime. Preserve historical 3 and complete QA before enabling issuance.
+
+
+## Custom #529 terminal decoder activation
+
+- [ ] The strict Custom terminal decoder can validate issued 1/2/3-strike K receipts; the browser transport must still pass the server-issued cap and complete end-to-end QA before activation.
 
 
 ## Custom #529 remaining runtime integration

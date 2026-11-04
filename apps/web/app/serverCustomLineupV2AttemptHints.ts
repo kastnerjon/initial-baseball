@@ -18,13 +18,13 @@ import { createSupabaseCustomLineupV2ReservationRepository } from './supabaseCus
 type Repository = Pick<ReturnType<typeof createSupabaseCustomLineupV2ReservationRepository>, 'getByKey' | 'advanceHint'>;
 type Dependencies = {
   readChallenge: (id: string, env: Record<string, string | undefined>) => Promise<CustomLineupIssuedChallenge | null>;
-  repository: (env: Record<string, string | undefined>, n: number) => Repository;
+  repository: (env: Record<string, string | undefined>, n: number, cap: 1 | 2 | 3) => Repository;
   resolvePlayer: (id: string) => Player | null;
   getSecret: (env: Record<string, string | undefined>) => string;
 };
 const DEFAULT: Dependencies = {
   readChallenge: (id, env) => createSupabaseCustomLineupV2IssuedReader(createServerSupabaseClient(env)).getById(id),
-  repository: (env, n) => createSupabaseCustomLineupV2ReservationRepository(createServerSupabaseClient(env), n),
+  repository: (env, n, cap) => createSupabaseCustomLineupV2ReservationRepository(createServerSupabaseClient(env), n, cap),
   resolvePlayer: getCanonicalDailyPlayer,
   getSecret: getDailyProgressionSecret,
 };
@@ -111,7 +111,7 @@ export function createServerCustomLineupV2AttemptHintService({
       }
       if (!signedScope(before, puzzleId, n, challenge.strikeLimit)) return { kind: 'invalid_progression' };
 
-      const repository = dependencies.repository(environment, n);
+      const repository = dependencies.repository(environment, n, challenge.strikeLimit);
       const state = await repository.getByKey({
         challengeId: puzzleId, browserKeyDigest: browser.browserKeyDigest,
       });

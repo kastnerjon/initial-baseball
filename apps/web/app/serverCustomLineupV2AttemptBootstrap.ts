@@ -22,13 +22,13 @@ type Ledger = Pick<ReturnType<typeof createSupabaseCustomLineupV2ReservationRepo
   'getByKey' | 'getOrCreate'>;
 type Dependencies = {
   opening: (id: string, env: Record<string, string | undefined>) => Promise<Opening | null>;
-  repository: (env: Record<string, string | undefined>, n: number) => Ledger;
+  repository: (env: Record<string, string | undefined>, n: number, cap: 1 | 2 | 3) => Ledger;
   readChallenge: (id: string, env: Record<string, string | undefined>) => Promise<CustomLineupIssuedChallenge | null>;
   getSecret: (env: Record<string, string | undefined>) => string;
 };
 const DEFAULT: Dependencies = {
   opening: (id, env) => createServerCustomLineupV2BootstrapService({ environment: env }).bootstrap(id),
-  repository: (env, n) => createSupabaseCustomLineupV2ReservationRepository(createServerSupabaseClient(env), n),
+  repository: (env, n, cap) => createSupabaseCustomLineupV2ReservationRepository(createServerSupabaseClient(env), n, cap),
   readChallenge: (id, env) =>
     createSupabaseCustomLineupV2IssuedReader(createServerSupabaseClient(env)).getById(id),
   getSecret: getDailyProgressionSecret,
@@ -89,7 +89,7 @@ export function createServerCustomLineupV2AttemptBootstrap({
       };
       if (creator === 'creator' || verifiedOwner) return { kind: 'preview', bootstrap: redacted };
 
-      const repo = dependencies.repository(environment, length);
+      const repo = dependencies.repository(environment, length, opening.strikeLimit);
       const issued = inspected.kind === 'absent' ? credentials.issue(puzzleId, requestUrl) : null;
       const key = {
         challengeId: puzzleId,
@@ -126,7 +126,8 @@ export function createServerCustomLineupV2AttemptBootstrap({
       const row = await dependencies.readChallenge(puzzleId, environment);
       if (row === null) throw new Error('Custom v2 saved challenge unavailable.');
       const challenge = cloneCustomLineupIssuedChallenge(row);
-      if (challenge.puzzleId !== puzzleId || challenge.canonicalPlayerIds.length !== length
+      if (challenge.puzzleId !== puzzleId || challenge.strikeLimit !== opening.strikeLimit
+        || challenge.canonicalPlayerIds.length !== length
         || challenge.clueSnapshot.pitches.some((pitch, index) =>
           pitch.pitchNumber !== opening.atBats[index]?.pitchNumber
           || pitch.initials !== opening.atBats[index]?.initials)
