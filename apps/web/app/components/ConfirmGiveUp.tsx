@@ -3,6 +3,12 @@
 import React, { useEffect, useState, type JSX } from 'react';
 
 type ConfirmationAction = 'toggle' | 'confirm' | 'reset';
+// This app's TypeScript runtime intentionally omits browser DOM globals.
+type KeydownListener = (event: { key?: string }) => void;
+type KeydownTarget = {
+  addEventListener: (type: 'keydown', listener: KeydownListener) => void;
+  removeEventListener: (type: 'keydown', listener: KeydownListener) => void;
+};
 
 /** A second tap on the original button cancels; only a distinct confirmation commits. */
 export function transitionGiveUpConfirmation(armed: boolean, action: ConfirmationAction):
@@ -28,11 +34,15 @@ export function ConfirmGiveUp({
   useEffect(() => {
     if (!armed || disabled) return;
     // The player may have moved keyboard focus to search or another control.
-    const dismiss = (event: KeyboardEvent) => {
+    const browserDocument = (globalThis as typeof globalThis & {
+      document?: KeydownTarget;
+    }).document;
+    if (!browserDocument) return;
+    const dismiss: KeydownListener = event => {
       if (event.key === 'Escape') setArmed(false);
     };
-    document.addEventListener('keydown', dismiss);
-    return () => { document.removeEventListener('keydown', dismiss); };
+    browserDocument.addEventListener('keydown', dismiss);
+    return () => { browserDocument.removeEventListener('keydown', dismiss); };
   }, [armed, disabled]);
 
   const confirming = armed && !disabled;
