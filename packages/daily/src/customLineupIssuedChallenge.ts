@@ -44,7 +44,8 @@ export function createCustomLineupIssuedChallenge(
 ): CustomLineupIssuedChallenge {
   validateCustomLineupPuzzleId(input.puzzleId);
   const selection = createCustomLineupSelection(input.canonicalPlayerIds);
-  const strikeLimit = input.strikeLimit ?? DEFAULT_CUSTOM_LINEUP_STRIKE_LIMIT;
+  const strikeLimit = input.strikeLimit === undefined
+    ? DEFAULT_CUSTOM_LINEUP_STRIKE_LIMIT : input.strikeLimit;
   if (strikeLimit !== 1 && strikeLimit !== 2 && strikeLimit !== 3) {
     throw new Error('Custom Lineup strike limit must be 1, 2, or 3.');
   }
