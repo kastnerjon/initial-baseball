@@ -25,15 +25,22 @@ export function ConfirmGiveUp({
     // Another gameplay action, or a terminal request, invalidates confirmation.
     if (disabled) setArmed(false);
   }, [disabled]);
+  useEffect(() => {
+    if (!armed || disabled) return;
+    // The player may have moved keyboard focus to search or another control.
+    const dismiss = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setArmed(false);
+    };
+    document.addEventListener('keydown', dismiss);
+    return () => { document.removeEventListener('keydown', dismiss); };
+  }, [armed, disabled]);
 
   const confirming = armed && !disabled;
   return (
     <div className="give-up-confirmation"
       role={confirming ? 'group' : undefined}
       aria-label={confirming ? 'Confirm give up' : undefined}
-      onKeyDown={event => {
-        if (confirming && event.key === 'Escape') setArmed(false);
-      }}>
+>
       <button type="button" className={className} disabled={disabled}
         aria-busy={pending}
         onClick={() => { setArmed(transitionGiveUpConfirmation(armed, 'toggle').armed); }}>
