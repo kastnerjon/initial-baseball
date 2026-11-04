@@ -205,7 +205,7 @@ try {
   assert.ifError(ie);
   assert.equal(issuedRow.creator_account_id,ownerId);
   const {data:results,error:re}=await admin.from('custom_nine_completed_results')
-    .select('summary').eq('challenge_id',id);
+    .select('submission_id,summary').eq('challenge_id',id);
   assert.ifError(re);
   assert.equal(results.length,2,'Only friend and guest can have results');
   assert.deepEqual(results.map(r=>r.summary.points).sort((a,b)=>a-b),[0,4]);
@@ -218,7 +218,9 @@ try {
   // Guest plays first, then proves they are the creator in the SAME browser.
   // The saved submission must remain immutable, but the browser's attempt
   // becomes irrevocably noncompetitive even if they sign out again.
-  const beforeCreatorRecognition = results.map(row => JSON.stringify(row.summary)).sort();
+  const beforeCreatorRecognition = results
+    .map(row => [row.submission_id, JSON.stringify(row.summary)])
+    .sort(([a],[b]) => a.localeCompare(b));
   assert.equal(await login(guest,base,fixtureEmails.owner),ownerId);
   await bootstrap(guest,base,id,'creator_preview');
   assert.equal((await guest.request.post(attempt(base,id,'submit'),{
@@ -237,6 +239,9 @@ try {
     headers:{origin:base.origin},maxRedirects:0,
   });
   assert.equal(signoutGuest.status(),303);
+  assert.equal(new URL(signoutGuest.headers().location,base).pathname,'/account');
+  assert.equal(new URL(signoutGuest.headers().location,base).search,'',
+    'Signout must succeed, not just report an account-verification outage');
   assert.deepEqual(await jsonResponse(
     await guest.request.get(new URL('/api/account/session',base).href),200),{accountId:null});
   await bootstrap(guest,base,id,'creator_preview');
@@ -245,10 +250,12 @@ try {
   })).status(),403,'Signout must not erase stored creator exclusion');
 
   const {data:preserved,error:preserveError}=await admin.from('custom_nine_completed_results')
-    .select('summary').eq('challenge_id',id);
+    .select('submission_id,summary').eq('challenge_id',id);
   assert.ifError(preserveError);
   assert.equal(preserved.length,2,'Creator recognition must not delete saved results');
-  assert.deepEqual(preserved.map(row=>JSON.stringify(row.summary)).sort(),
+  assert.deepEqual(preserved
+    .map(row => [row.submission_id, JSON.stringify(row.summary)])
+    .sort(([a],[b]) => a.localeCompare(b)),
     beforeCreatorRecognition,'Creator recognition must not mutate committed score facts');
   console.log('PASS isolated QA signed creator -> immutable issue -> cross-browser exclusion -> guest/friend results -> late owner sign-in sticky exclusion -> signout');
   console.log('SCOPE: local Next/Chromium against QA Supabase Auth and DB; NOT live Google OAuth, Vercel ingress or physical mobile QA');
