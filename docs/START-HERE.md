@@ -1,5 +1,12 @@
 # Initial Baseball — Start Here
 
+## November 3 — Custom attempt repository immutable strike-cap validation staged (#529)
+
+- Private v2 attempt row decoder and CAS repository accept a trusted optional 1/2/3 cap for normalizing/validating terminal K facts on reads and writes, retaining default three for legacy/v1 callers. Tests use a realistic conditional-update mock to verify single-winner K commits for all three caps, invalid values and no malformed default-three acceptance.
+- **Not playable:** all private service callers must pass their issued cap in separate reviewed integration; default-three repository calls correctly reject K1/K2. Production schema/flags untouched.
+
+
+
 ## November 3 — Custom strike-limit durable facts/score checks staged (#529)
 
 - Server-only v2 saved-history validation now derives K strike facts, exact CAS revision history and current active strike bounds from the immutable issued rule (1/2/3), including single-strike no-intermediate resolution. Private completed-result admission uses that same rule and points-v4 scoring for all 1–10 at-bats, even after three outs. Tests cover 1/2/3, no invented Give Up guesses, altered terminal facts and inconsistent revisions.
