@@ -184,6 +184,20 @@ describe('v2 immutable strike-cap row validation and actual terminal CAS (#529)'
    expect(()=>normalizeCustomNineAttemptFacts([k(other)],2,cap)).toThrow();
   }
  });
+ it.each([1,2] as const)('reads persisted cap-%i K from the real repository projection',async cap=>{
+  const stored={...row(),revision:cap,terminal_at_bats:[k(cap)]};
+  const maybeSingle=vi.fn().mockResolvedValue({data:stored,error:null});
+  const eq=vi.fn().mockReturnThis();
+  const select=vi.fn().mockReturnValue({eq,maybeSingle});
+  const from=vi.fn().mockReturnValue({select});
+  const repo=createSupabaseCustomLineupV2ReservationRepository(
+   {from} as unknown as SupabaseClient,2,cap);
+  const saved=await repo.getByKey(KEY);
+  expect(saved?.terminalAtBats).toMatchObject([{
+   pitchNumber:1,outcome:'K',resolution:'strikeout',wrongGuesses:cap,
+  }]);
+  expect(from).toHaveBeenCalledWith('custom_nine_attempt_states');
+ });
  it('rejects malformed cap values and preserves old three-strike normalization',()=>{
   for(const bad of [0,4,-1,1.5,null,'2']){
    expect(()=>normalizeCustomNineAttemptFacts([],2,bad as 1|2|3)).toThrow();
