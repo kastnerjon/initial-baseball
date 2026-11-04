@@ -61,6 +61,52 @@ function request(ids: string[] = ['ibp_00000000000000000001'], headers: Record<s
 }
 
 describe('default-disabled, account-gated Custom v2 creation', () => {
+  it('keeps optional strike-limit HTTP input closed by default before quota reservation', async () => {
+    const ids = ['ibp_00000000000000000001'];
+    for (const strikeLimit of [1, 2, 3]) {
+      const original = request(ids);
+      const response = await POST(new NextRequest(original, {
+        body: JSON.stringify({ canonicalPlayerIds: ids, title: 'Valid title', strikeLimit }),
+      }));
+      expect(response.status).toBe(400);
+    }
+    expect(reserve).not.toHaveBeenCalled();
+    expect(issue).not.toHaveBeenCalled();
+  });
+
+  it.each([1, 2, 3] as const)('passes vetted issued cap %i to verified owner service only', async strikeLimit => {
+    vi.stubEnv('CUSTOM_LINEUP_VARIABLE_STRIKES_ENABLED', 'true');
+    const ids = ['ibp_00000000000000000001'];
+    const original = request(ids);
+    const response = await POST(new NextRequest(original, {
+      body: JSON.stringify({ canonicalPlayerIds: ids, title: 'Valid title', strikeLimit }),
+    }));
+    expect(response.status).toBe(201);
+    expect(await response.json()).toEqual({ puzzleId: ID });
+    expect(issue).toHaveBeenCalledWith({ canonicalPlayerIds: ids, strikeLimit },
+      'Valid title', ACCOUNT);
+    expect(reserve).toHaveBeenCalledOnce();
+  });
+
+  it('rejects malformed or extra cap inputs before budget even with readiness enabled', async () => {
+    vi.stubEnv('CUSTOM_LINEUP_VARIABLE_STRIKES_ENABLED', 'true');
+    const ids = ['ibp_00000000000000000001'];
+    for (const strikeLimit of [null, 0, 4, -1, 1.5, '2', false, [], {}]) {
+      const original = request(ids);
+      const result = await POST(new NextRequest(original, {
+        body: JSON.stringify({ canonicalPlayerIds: ids, title: 'Valid title', strikeLimit }),
+      }));
+      expect(result.status).toBe(400);
+      expect(await result.json()).toEqual({ error: 'invalid_selection' });
+    }
+    const response = await POST(new NextRequest(request(ids), {
+      body: JSON.stringify({ canonicalPlayerIds: ids, title: 'Valid title', strikeLimit: 2,
+        creatorAccountId: ACCOUNT }),
+    }));
+    expect(response.status).toBe(400);
+    expect(reserve).not.toHaveBeenCalled();
+    expect(issue).not.toHaveBeenCalled();
+  });
   it('remains closed unless both issuance and gameplay gates are enabled', async () => {
     vi.stubEnv('CUSTOM_LINEUP_PUBLIC_CREATION_ENABLED', '');
     expect((await POST(request())).status).toBe(404);

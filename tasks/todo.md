@@ -1,5 +1,10 @@
 # Initial Baseball — Current Work
 
+## Custom #529 HTTP rule rollout
+
+- [ ] Keep CUSTOM_LINEUP_VARIABLE_STRIKES_ENABLED default OFF until the protected issuance route, creator control, signed gameplay and terminal codec have completed integrated QA across 1/2/3. Never activate production Custom/Auth or apply production schema in this milestone.
+
+
 ## Custom #529 issuance transport activation
 
 - [ ] Keep CUSTOM_LINEUP_VARIABLE_STRIKES_ENABLED unset until route parsing, client bootstrap, signed CAS, result codecs and full QA prove 1/2/3 correctness. Wire strict account-only HTTP issuance to the immutable private writer and enable the creator selector together; do not apply production migrations/flags.

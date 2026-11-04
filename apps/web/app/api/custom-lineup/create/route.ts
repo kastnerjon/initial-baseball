@@ -54,12 +54,23 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
   // challenges can still be read and old private test issuers are compatible.
   const payload = body.value;
   if (payload === null || typeof payload !== 'object' || Array.isArray(payload)
-    || Object.keys(payload).length !== 2
     || !Object.prototype.hasOwnProperty.call(payload, 'canonicalPlayerIds')
-    || !Object.prototype.hasOwnProperty.call(payload, 'title')) {
+    || !Object.prototype.hasOwnProperty.call(payload, 'title')
+    || Object.keys(payload).some(key => key !== 'canonicalPlayerIds'
+      && key !== 'title' && key !== 'strikeLimit')
+    || (Object.keys(payload).length !== 2 && Object.keys(payload).length !== 3)) {
     return auth.finish(fail('invalid_selection', 400));
   }
-  const selected = payload as { canonicalPlayerIds: unknown; title: unknown };
+  const selected = payload as { canonicalPlayerIds: unknown; title: unknown; strikeLimit?: unknown };
+  const hasExplicitLimit = Object.hasOwn(payload, 'strikeLimit');
+  // Preserve the exact old two-property HTTP contract until the independent
+  // server-owned rollout switch is enabled. Never trust an arbitrary client cap.
+  const variableStrikesEnabled = process.env.CUSTOM_LINEUP_VARIABLE_STRIKES_ENABLED === 'true';
+  const cap = hasExplicitLimit ? selected.strikeLimit : 3;
+  if ((hasExplicitLimit && !variableStrikesEnabled)
+    || (cap !== 1 && cap !== 2 && cap !== 3)) {
+    return auth.finish(fail('invalid_selection', 400));
+  }
   const title = parseCustomLineupTitle(selected.title);
   if (!title.ok) return auth.finish(fail('invalid_selection', 400));
   let canonicalPlayerIds: readonly string[];
@@ -86,7 +97,8 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
 
     stage = 'issuance';
     const issued = await createServerCustomLineupV2CreationService()
-      .issueForAccount({ canonicalPlayerIds }, title.title, account.id);
+      .issueForAccount({ canonicalPlayerIds, ...(hasExplicitLimit ? { strikeLimit: cap } : {}) },
+        title.title, account.id);
     const response = NextResponse.json({ puzzleId: issued.puzzleId }, {
       status: 201, headers: HEADERS,
     });

@@ -1,5 +1,11 @@
 # Initial Baseball — Start Here
 
+## November 3 — strict Custom strike-limit HTTP issuance transport staged (#529)
+
+- Account-gated public Create API now optionally validates 1/2/3 strikes only when the matching default-off server variable-strike readiness setting is explicitly enabled. With that setting absent, it preserves the old exact two-field payload. Invalid or extra rule fields fail before rate-limit reservation. Verified Auth UUID remains server-derived; response still contains only the opaque puzzle ID.
+- This is a stacked source-only transport milestone depending on the reviewed private issuance writer. Public /create still does not expose the 1/2 selector; client gameplay and completed cohorts remain gated. Do not enable this server switch or production Custom/Auth flags until all #529 integration and QA gates pass.
+
+
 ## November 3 — immutable Custom variable-strike issuance writer staged (#529)
 
 - The private issue service strictly parses optional 1/2/3 strike metadata, freezing the whole-lineup selection on the issued v2 row. Missing field preserves 3; null, undefined, strings, unknown fields, and malformed caps fail before player/DB access. Only a verified-account issuance with an explicit server-side CUSTOM_LINEUP_VARIABLE_STRIKES_ENABLED=true permits 1/2; legacy admin/anonymous paths remain 3. Writer persists and re-reads the issued rule atomically, without client-trusted IDs.
