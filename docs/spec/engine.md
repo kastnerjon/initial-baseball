@@ -28,7 +28,7 @@ It owns deterministic game questions:
 
 The hint type does not determine the outcome. The revealed slot count does.
 
-Three wrong guesses or Give Up produces `K`.
+Three wrong guesses or Give Up produces `K` in existing Daily, Classic, Archive and historical Custom play. The pure terminal-fact normalizer defaults to **three strikes** for every existing caller; an explicitly server-owned strike cap of 1, 2 or 3 can be passed for the approved future Custom lineup-wide rule (#529). A strikeout records exactly that cap's number of wrong guesses. Give Up records only guesses actually made (0 through cap minus one), without fabricating a strike. This is an engine validation primitive; enabling nondefault Custom issuance, signed progression, persistence or UI requires separately reviewed milestones.
 
 These outcomes are the stable vocabulary. Scoring and completion policies interpret them.
 

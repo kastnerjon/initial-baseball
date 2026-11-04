@@ -9,20 +9,25 @@ type TerminalAtBatValidation =
 export function normalizeDailyTerminalAtBat(
   fact: unknown,
   pitch: DailyPublicPuzzle['pitches'][number] | undefined,
+  /** Trusted, server-issued game rule. Omitting the argument preserves Daily's three strikes. */
+  maxStrikes: 1 | 2 | 3 = 3,
 ): TerminalAtBatValidation {
+  if (maxStrikes !== 1 && maxStrikes !== 2 && maxStrikes !== 3) {
+    return reject('invalid_at_bat');
+  }
   if (!isRecord(fact) || !isRevealCount(fact.hintsRevealed)
-    || !isIntegerWithin(fact.wrongGuesses, 0, 3)
+    || !isIntegerWithin(fact.wrongGuesses, 0, maxStrikes)
     || (fact.resolution !== 'correct' && fact.resolution !== 'strikeout' && fact.resolution !== 'give_up')) {
     return reject('invalid_at_bat');
   }
   if (!pitch || fact.pitchNumber !== pitch.pitchNumber || fact.initials !== pitch.initials) {
     return reject('at_bat_mismatch');
   }
-  if (fact.resolution === 'strikeout' ? fact.wrongGuesses !== 3 : fact.wrongGuesses >= 3) {
+  if (fact.resolution === 'strikeout' ? fact.wrongGuesses !== maxStrikes : fact.wrongGuesses >= maxStrikes) {
     return reject('inconsistent_at_bat');
   }
   const correct = getGuessOutcome({
-    isCorrect: true, revealCount: fact.hintsRevealed, strikeCount: fact.wrongGuesses, maxStrikes: 3,
+    isCorrect: true, revealCount: fact.hintsRevealed, strikeCount: fact.wrongGuesses, maxStrikes,
   });
   const outcome = fact.resolution === 'correct' && correct.kind === 'correct' ? correct.outcome : 'K';
   if (fact.outcome !== outcome) return reject('inconsistent_at_bat');
