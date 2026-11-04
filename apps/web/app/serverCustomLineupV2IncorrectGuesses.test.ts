@@ -20,8 +20,8 @@ const CLAIMS={version:1 as const,rulesetVersion:'points-v4' as const,puzzleId:ID
 const INITIAL=TOKENS.sign(CLAIMS);
 const issued=createCustomLineupV2AttemptBrowserCredential(SECRET).issue(ID,'https://test.example');
 const COOKIE=issued.setCookie.split(';')[0]!;
-function challenge(n:number) {
- return createCustomLineupIssuedChallenge({puzzleId:ID,issuedAt:'2026-10-14T12:00:00Z',
+function challenge(n:number,cap:1|2|3=3) {
+ return createCustomLineupIssuedChallenge({puzzleId:ID,issuedAt:'2026-10-14T12:00:00Z',strikeLimit:cap,
   canonicalPlayerIds:IDS.slice(0,n),
   clueSnapshot:createCustomLineupIssuedClueSnapshot({
    hintLayout:[
@@ -35,7 +35,7 @@ function challenge(n:number) {
    })),
   })});
 }
-function setup(n:number){
+function setup(n:number,cap:1|2|3=3){
  let saved:CustomNineAttemptState|null={challengeId:ID,browserKeyDigest:issued.browserKeyDigest,
   attemptId:'123e4567-e89b-42d3-a456-426614174010',revision:0,
   currentProgressionToken:INITIAL,terminalAtBats:[],status:'active',
@@ -60,7 +60,7 @@ function setup(n:number){
    return {status:'advanced' as const,state:{...saved}};
   }),
  };
- const dependencies={readChallenge:vi.fn(async()=>challenge(n)),repository:vi.fn(()=>repository),
+ const dependencies={readChallenge:vi.fn(async()=>challenge(n,cap)),repository:vi.fn(()=>repository),
   resolvePlayer:vi.fn((id:string):Player|null=>IDS.includes(id)?{
    id,fullName:'SECRET_ANSWER',displayName:'SECRET_ANSWER',primaryRole:'hitter',
    primaryPosition:'RF'} as Player:null),
@@ -93,6 +93,64 @@ describe('private Custom Lineup v2 nonterminal incorrect CAS',()=>{
   expect(s.repository.advanceHint).toHaveBeenCalledTimes(2);
   expect(s.repository.advanceTerminal).toHaveBeenCalledTimes(1);
   expect(s.read()?.terminalAtBats).toMatchObject([{resolution:'strikeout',wrongGuesses:3}]);
+ });
+ it.each([1,2,3] as const)('commits K on exactly the %i-th wrong guess with one terminal CAS',async cap=>{
+  const s=setup(10,cap);
+  let token=INITIAL;
+  for(let count=1;count<cap;count++){
+   const result=await s.service.attempt(ID,COOKIE,guess(token));
+   expect(result).toMatchObject({kind:'incorrect',strikeCount:count,revision:count});
+   if(result.kind!=='incorrect')throw Error('missing intermediate strike');
+   token=result.progressionToken;
+  }
+  const final=await s.service.attempt(ID,COOKIE,guess(token));
+  expect(final).toMatchObject({kind:'terminal',completed:false,
+    result:{kind:'strikeout',strikeCount:cap},revision:cap});
+  expect(s.repository.advanceHint).toHaveBeenCalledTimes(cap-1);
+  expect(s.repository.advanceTerminal).toHaveBeenCalledOnce();
+  expect(s.read()?.terminalAtBats).toEqual([{
+   pitchNumber:1,initials:'P1',hintsRevealed:0,wrongGuesses:cap,
+   resolution:'strikeout',outcome:'K',
+  }]);
+  expect(TOKENS.verify(s.read()!.currentProgressionToken)).toMatchObject({
+   pitchNumber:2,strikeCount:0,outCount:1,completed:false,
+  });
+  expect(await s.service.attempt(ID,COOKIE,guess(token))).toEqual({kind:'conflict'});
+  // The next at-bat begins at zero; the same immutable cap still applies.
+  const next=await s.service.attempt(ID,COOKIE,guess(s.read()!.currentProgressionToken,IDS[9]));
+  expect(next.kind).toBe(cap===1?'terminal':'incorrect');
+ });
+ it.each([1,2,3] as const)('Give Up on cap %i preserves actual guesses and scores K once',async cap=>{
+  const s=setup(5,cap);
+  let token=INITIAL;
+  for(let count=1;count<cap;count++){
+   const wrong=await s.service.attempt(ID,COOKIE,guess(token));
+   if(wrong.kind!=='incorrect')throw Error('missing wrong guess');
+   token=wrong.progressionToken;
+  }
+  const result=await s.service.attempt(ID,COOKIE,{progressionToken:token,giveUp:true});
+  expect(result).toMatchObject({kind:'terminal',result:{kind:'strikeout',strikeCount:cap},
+    revision:cap,completed:false});
+  expect(s.read()?.terminalAtBats).toMatchObject([{
+   resolution:'give_up',outcome:'K',wrongGuesses:cap-1,
+  }]);
+  expect(s.repository.advanceTerminal).toHaveBeenCalledOnce();
+ });
+ it.each([1,2] as const)('rejects an illegal cap-%i preterminal signed strike state',async cap=>{
+  const s=setup(5,cap);
+  const invalid=TOKENS.sign({...CLAIMS,strikeCount:cap});
+  expect(await s.service.attempt(ID,COOKIE,guess(invalid))).toEqual({kind:'invalid_progression'});
+  expect(s.repository.advanceHint).not.toHaveBeenCalled();
+  expect(s.repository.advanceTerminal).not.toHaveBeenCalled();
+ });
+ it('serializes simultaneous one-strike wrong guesses with one terminal winner',async()=>{
+  const s=setup(5,1);
+  const attempts=await Promise.all(Array.from({length:6},
+   ()=>s.service.attempt(ID,COOKIE,guess(INITIAL))));
+  expect(attempts.filter(x=>x.kind==='terminal')).toHaveLength(1);
+  expect(attempts.filter(x=>x.kind==='conflict')).toHaveLength(5);
+  expect(s.read()?.terminalAtBats).toHaveLength(1);
+  expect(s.read()?.revision).toBe(1);
  });
  it('atomically commits correct guesses, withholds future hints and rejects replay',async()=>{
   const s=setup(10);
