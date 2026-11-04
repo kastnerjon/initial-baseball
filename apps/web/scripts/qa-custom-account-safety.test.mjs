@@ -55,4 +55,15 @@ describe('legacy signed Custom QA workflow isolated admin-credential gate (#531)
     assert.ok(workflow.includes('persist-credentials: false'));
     assert.match(workflow, /permissions:\n  contents: read/);
   });
+  it('uses local-only ephemeral admin fixture issuance without obsolete anonymous account bypass', () => {
+    assert.ok(workflow.includes("CUSTOM_V2_QA_PUBLIC_CREATION: 'false'"));
+    assert.ok(workflow.includes("CUSTOM_LINEUP_PUBLIC_CREATION_ENABLED: 'false'"));
+    assert.ok(!workflow.includes('CUSTOM_V2_QA_SIMULATED_VERCEL_INGRESS'));
+    assert.ok(workflow.includes('export DAILY_ADMIN_USERNAME=qa-signed-browser'));
+    assert.ok(workflow.includes('export DAILY_ADMIN_PASSWORD="$(openssl rand -hex 32)"'));
+    assert.ok(workflow.includes('::add-mask::$DAILY_ADMIN_PASSWORD'));
+    const runner = readFileSync(new URL('./qa-custom-v2-hosted.mjs', import.meta.url), 'utf8');
+    assert.ok(runner.includes('if (env.CUSTOM_V2_QA_PLAYWRIGHT_MODULE) {'));
+    assert.ok(runner.includes('testPublicCreatorUi: publicCreatorQa'));
+  });
 });

@@ -25,9 +25,9 @@ const CREATOR = createCustomLineupV2CreatorBrowserMarker(SECRET)
   .creatorCookie(ID, 'https://example.test').split(';')[0]!;
 const IDS = Array.from({ length: 10 }, (_, i) => 'ibp_' + (i + 1).toString(16).padStart(20, '0'));
 
-function challenge(n: number) {
+function challenge(n: number, strikeLimit: 1 | 2 | 3 = 3) {
   return createCustomLineupIssuedChallenge({
-    puzzleId: ID, issuedAt: '2026-10-15T12:00:00Z',
+    puzzleId: ID, issuedAt: '2026-10-15T12:00:00Z', strikeLimit,
     canonicalPlayerIds: IDS.slice(0, n),
     clueSnapshot: createCustomLineupIssuedClueSnapshot({
       hintLayout: [
@@ -43,23 +43,23 @@ function challenge(n: number) {
     }),
   });
 }
-function facts(n: number): DailyCompletedAtBat[] {
+function facts(n: number, strikeLimit: 1 | 2 | 3 = 3): DailyCompletedAtBat[] {
   return Array.from({ length: n }, (_, i): DailyCompletedAtBat => {
     if (i === 1) return { pitchNumber: i + 1, initials: 'P' + (i + 1),
       hintsRevealed: 4, wrongGuesses: 0, outcome: 'BB', resolution: 'correct' };
     if (i === 2) return { pitchNumber: i + 1, initials: 'P' + (i + 1),
-      hintsRevealed: 0, wrongGuesses: 3, outcome: 'K', resolution: 'strikeout' };
+      hintsRevealed: 0, wrongGuesses: strikeLimit, outcome: 'K', resolution: 'strikeout' };
     if (i === 3) return { pitchNumber: i + 1, initials: 'P' + (i + 1),
-      hintsRevealed: 1, wrongGuesses: 1, outcome: 'K', resolution: 'give_up' };
+      hintsRevealed: 1, wrongGuesses: Math.min(1, strikeLimit - 1), outcome: 'K', resolution: 'give_up' };
     return { pitchNumber: i + 1, initials: 'P' + (i + 1),
       hintsRevealed: 0, wrongGuesses: 0, outcome: 'HR', resolution: 'correct' };
   });
 }
-function state(n: number): CustomNineAttemptState {
-  const completedAtBats = facts(n);
+function state(n: number, strikeLimit: 1 | 2 | 3 = 3): CustomNineAttemptState {
+  const completedAtBats = facts(n, strikeLimit);
   const strikeouts = completedAtBats.filter(f => f.outcome === 'K').length;
   const revision = completedAtBats.reduce((sum, f) => sum + 1 + f.hintsRevealed
-    + (f.resolution === 'strikeout' ? 2 : f.wrongGuesses), 0);
+    + (f.resolution === 'strikeout' ? strikeLimit - 1 : f.wrongGuesses), 0);
   return {
     challengeId: ID, browserKeyDigest: BROWSER.browserKeyDigest, attemptId: ATTEMPT,
     revision, terminalAtBats: completedAtBats,
@@ -73,8 +73,8 @@ function state(n: number): CustomNineAttemptState {
     updatedAt: '2026-10-15T13:00:00Z', completedAt: '2026-10-15T13:00:00Z',
   };
 }
-function setup(n: number) {
-  const issued = challenge(n), saved = state(n);
+function setup(n: number, strikeLimit: 1 | 2 | 3 = 3) {
+  const issued = challenge(n, strikeLimit), saved = state(n, strikeLimit);
   const dependencies = {
     getSecret: vi.fn(() => SECRET),
     challenge: vi.fn(async () => issued),
@@ -98,7 +98,7 @@ describe('private authoritative Custom v2 N-batter completed admission', () => {
     expect(result).toMatchObject({ kind: 'admitted', status: 'created', submissionId: ATTEMPT,
       summary: { points: expected, maximumPoints: 4 * n, atBatsCompleted: n,
         totalAtBats: n, completed: true, strikeouts: Math.min(2, Math.max(0, n - 2)) } });
-    expect(s.dependencies.attempt).toHaveBeenCalledWith(ID, BROWSER.browserKeyDigest, n, {});
+    expect(s.dependencies.attempt).toHaveBeenCalledWith(ID, BROWSER.browserKeyDigest, n, 3, {});
     const admission = s.dependencies.admit.mock.calls[0]![0];
     expect(admission).toMatchObject({
       challengeId: ID, browserKeyDigest: BROWSER.browserKeyDigest,
@@ -112,6 +112,36 @@ describe('private authoritative Custom v2 N-batter completed admission', () => {
     expect(JSON.stringify(result)).not.toContain('progressionToken');
   });
 
+  it.each([1, 2, 3] as const)('admits all ten batters under an immutable %i-strike rule', async cap => {
+    const s = setup(10, cap);
+    expect(s.saved.terminalAtBats[2]).toMatchObject({ resolution: 'strikeout', wrongGuesses: cap });
+    expect(s.saved.terminalAtBats[3]).toMatchObject({
+      resolution: 'give_up', wrongGuesses: Math.min(1, cap - 1),
+    });
+    expect(await s.service.admit(ID, COOKIE)).toMatchObject({
+      kind: 'admitted', summary: {
+        points: 28.5, maximumPoints: 40, atBatsCompleted: 10,
+        totalAtBats: 10, strikeouts: 2, completed: true,
+      },
+    });
+    expect(s.dependencies.attempt).toHaveBeenCalledWith(ID, BROWSER.browserKeyDigest, 10, cap, {});
+    expect(s.dependencies.admit).toHaveBeenCalledOnce();
+  });
+  it.each([1, 2, 3] as const)('rejects forged %i-strike completion and CAS revision', async cap => {
+    const s = setup(10, cap);
+    const wrongGuesses = cap === 3 ? 2 : cap + 1;
+    s.dependencies.attempt.mockResolvedValueOnce({
+      ...s.saved,
+      terminalAtBats: s.saved.terminalAtBats.map((f, i) =>
+        i === 2 ? { ...f, wrongGuesses } : f),
+    });
+    await expect(s.service.admit(ID, COOKIE)).rejects.toThrow(
+      'Invalid authoritative Custom Lineup v2 completed attempt.');
+    s.dependencies.attempt.mockResolvedValueOnce({ ...s.saved, revision: s.saved.revision + 1 });
+    await expect(s.service.admit(ID, COOKIE)).rejects.toThrow(
+      'Invalid authoritative Custom Lineup v2 completed attempt.');
+    expect(s.dependencies.admit).not.toHaveBeenCalled();
+  });
   it('allows exact admission retries but never constructs a browser-selected submission', async () => {
     const s = setup(10);
     s.dependencies.admit.mockResolvedValue({ status: 'existing', submissionId: ATTEMPT });

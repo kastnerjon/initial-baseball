@@ -31,7 +31,7 @@ type Summary = DailyPointsSummary & { strikeouts: number };
 type Dependencies = {
   getSecret: (env: Environment) => string;
   challenge: (id: string, env: Environment) => Promise<CustomLineupIssuedChallenge | null>;
-  attempt: (id: string, digest: string, n: number, env: Environment) =>
+  attempt: (id: string, digest: string, n: number, cap: 1 | 2 | 3, env: Environment) =>
     Promise<CustomNineAttemptState | null>;
   admit: (input: CustomLineupV2AdmissionInput, env: Environment) =>
     Promise<{ status: 'created' | 'existing'; submissionId: string }>;
@@ -40,8 +40,8 @@ const DEFAULT: Dependencies = {
   getSecret: getDailyProgressionSecret,
   challenge: (id, env) =>
     createSupabaseCustomLineupV2IssuedReader(createServerSupabaseClient(env)).getById(id),
-  attempt: (id, digest, n, env) =>
-    createSupabaseCustomLineupV2ReservationRepository(createServerSupabaseClient(env), n)
+  attempt: (id, digest, n, cap, env) =>
+    createSupabaseCustomLineupV2ReservationRepository(createServerSupabaseClient(env), n, cap)
       .getByKey({ challengeId: id, browserKeyDigest: digest }),
   admit: (input, env) =>
     createSupabaseCustomLineupV2AdmissionRepository(createServerSupabaseClient(env)).admit(input),
@@ -83,7 +83,8 @@ export function createServerCustomLineupV2CompletedAdmissionService({
       if (creator !== 'unmarked' || browser.kind !== 'valid') {
         return { kind: 'invalid_credential' };
       }
-      const state = await dependencies.attempt(puzzleId, browser.browserKeyDigest, n, environment);
+      const state = await dependencies.attempt(
+        puzzleId, browser.browserKeyDigest, n, challenge.strikeLimit, environment);
       if (state === null || state.challengeId !== puzzleId
         || state.browserKeyDigest !== browser.browserKeyDigest) {
         return { kind: 'invalid_credential' };
@@ -136,7 +137,7 @@ function scoreCompletedAttempt(
     if (!pitch || pitch.pitchNumber !== index + 1 || game.points.completed) invalidCompletion();
     const normalized = normalizeDailyTerminalAtBat(rawFact, {
       pitchNumber: pitch.pitchNumber, initials: pitch.initials,
-    } as DailyPublicPuzzle['pitches'][number]);
+    } as DailyPublicPuzzle['pitches'][number], challenge.strikeLimit);
     if (!normalized.ok) invalidCompletion();
     const fact = normalized.atBat;
     awardedPoints.push(getDailyAtBatPoints({ ...fact, rulesetVersion: 'points-v4' }));

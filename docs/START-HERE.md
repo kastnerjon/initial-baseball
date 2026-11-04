@@ -1,5 +1,32 @@
 # Initial Baseball — Start Here
 
+## November 3 — signed Custom v2 variable-strike CAS staged (#529)
+
+- Server-only Custom incorrect-guess resolution now reads the frozen issued cap 1/2/3 and ensures the cap-th wrong guess atomically commits terminal K, without an intermediate incorrect response, with exact real wrong-guess facts and Give Up preserving actual guesses. CAS conflict, signed successor, per-batter reset, and full-lineup continuation under points-v4 remain enforced. Regression tests cover every cap, replay, concurrent one-strike terminals and forbidden active strike states.
+- **Not player-accessible:** the issued writer and bootstrap still block 1/2 until client transport, codec, UI and creator issuance are fully reviewed. No production schema/flag changes.
+
+
+
+## November 3 — Custom attempt repository immutable strike-cap validation staged (#529)
+
+- Private v2 attempt row decoder and CAS repository accept a trusted optional 1/2/3 cap for normalizing/validating terminal K facts on reads and writes, retaining default three for legacy/v1 callers. Tests use a realistic conditional-update mock to verify single-winner K commits for all three caps, invalid values and no malformed default-three acceptance.
+- **Not playable:** all private service callers must pass their issued cap in separate reviewed integration; default-three repository calls correctly reject K1/K2. Production schema/flags untouched.
+
+
+
+## November 3 — Custom strike-limit durable facts/score checks staged (#529)
+
+- Server-only v2 saved-history validation now derives K strike facts, exact CAS revision history and current active strike bounds from the immutable issued rule (1/2/3), including single-strike no-intermediate resolution. Private completed-result admission uses that same rule and points-v4 scoring for all 1–10 at-bats, even after three outs. Tests cover 1/2/3, no invented Give Up guesses, altered terminal facts and inconsistent revisions.
+- **Source only, still NOT playable:** Create issuance, signed incorrect progression, browser payload codecs and creator UI remain gated to three until reviewed end-to-end. Production DB/flags untouched; isolated QA migration only.
+
+
+
+## November 3 — persisted Custom strike-limit row adapters staged (#529)
+
+- Service-role issued adapter now selects/decodes the stored `strike_limit`, validates 1/2/3, rejects explicit NULL/malformed database values, and writes the immutable default 3 on new records. Missing historical test fixtures still default to 3. An explicit Custom v2 bootstrap guard fails closed on 1/2 until the full server progression/terminal/client contract is ready; the issuance writer still rejects 1/2.
+- **Source-only adapter milestone after merged #534; not a playable feature.** Schema was applied and SQL-tested only in isolated QA, not production. No Auth/Custom production flags were changed.
+
+
 ## November 3 — Custom strike-limit persistence schema staged (#529)
 
 - Additive migration `20261104032946_add_custom_v2_issued_strike_limit.sql` and rollback-only SQL acceptance provide an immutable column defaulting to 3, with v1 constrained to 3 and v2 constrained to 1/2/3. Previously issued rows retain three-strike rules. No player or client setting is trusted.

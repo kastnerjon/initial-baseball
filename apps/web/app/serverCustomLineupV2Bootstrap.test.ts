@@ -50,6 +50,7 @@ describe('private Custom Lineup v2 signed opening',()=>{
     const {service,deps}=setup(challenge(n));
     const result=await service.bootstrap(ID);
     expect(result?.atBats).toHaveLength(n);
+    expect(result?.strikeLimit).toBe(3);
     expect(result?.atBats[n-1]).toEqual({pitchNumber:n,initials:'P'+n});
     expect(result?.hintBundle.pitchNumber).toBe(1);
     expect(result?.hintBundle.hints.map(h=>h.hintValue))
@@ -63,6 +64,12 @@ describe('private Custom Lineup v2 signed opening',()=>{
     for(const privateValue of ['PRIVATE_FUTURE_CLUE','PRIVATE_ANSWER_NAME','canonicalPlayerIds','clueSnapshot',...IDS])
       expect(json).not.toContain(privateValue);
     expect(deps.resolvePlayer).toHaveBeenCalledTimes(n);
+  });
+  it.each([1, 2] as const)('refuses to bootstrap an issued %i-strike game before complete progression support', async strikeLimit => {
+    const { service, deps } = setup({ ...challenge(2), strikeLimit });
+    await expect(service.bootstrap(ID)).rejects.toThrow('strike-limit gameplay unavailable');
+    expect(deps.resolvePlayer).not.toHaveBeenCalled();
+    expect(deps.getSecret).not.toHaveBeenCalled();
   });
   it('rejects short master secrets before deriving the isolated signing key',()=>{
     for(const secret of ['', 'guessable', 'x'.repeat(31)]) {
