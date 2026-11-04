@@ -7,7 +7,10 @@ const STAT_KEYS = new Set(['AB', 'H', 'HR', 'BA', 'R', 'RBI', 'SB', 'OBP', 'SLG'
   'W', 'L', 'SV', 'ERA', 'WHIP', 'K', 'IP']);
 
 /** Whitelist the exact scored result shape, never transport arbitrary server fields. */
-export function decodeCustomNineTerminalResult(value: unknown): TerminalResult {
+export function decodeCustomNineTerminalResult(value: unknown, strikeLimit: 1 | 2 | 3 = 3): TerminalResult {
+  // The caller must obtain this rule from the server-issued challenge, never
+  // a user-edited terminal result. Omission preserves historical v1/v2 K=3.
+  if (strikeLimit !== 1 && strikeLimit !== 2 && strikeLimit !== 3) malformed();
   if (!record(value) || !integer(value.revealedCount, 0, 4)) malformed();
   const depth = value.revealedCount as 0 | 1 | 2 | 3 | 4;
   if (value.kind === 'correct') {
@@ -17,9 +20,9 @@ export function decodeCustomNineTerminalResult(value: unknown): TerminalResult {
       source: value.source as Exclude<TerminalResult, {kind:'strikeout'}>['source'] };
   }
   if (value.kind === 'strikeout') {
-    if (value.outcome !== 'K' || value.strikeCount !== 3 || value.source !== 'strikeout') malformed();
+    if (value.outcome !== 'K' || value.strikeCount !== strikeLimit || value.source !== 'strikeout') malformed();
     return { kind: 'strikeout', revealedCount: depth, outcome: 'K',
-      strikeCount: 3, source: 'strikeout' };
+      strikeCount: strikeLimit, source: 'strikeout' };
   }
   malformed();
 }

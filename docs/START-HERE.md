@@ -1,5 +1,12 @@
 # Initial Baseball — Start Here
 
+## November 3 — signed Custom v2 variable-strike CAS staged (#529)
+
+- Server-only Custom incorrect-guess resolution now reads the frozen issued cap 1/2/3 and ensures the cap-th wrong guess atomically commits terminal K, without an intermediate incorrect response, with exact real wrong-guess facts and Give Up preserving actual guesses. CAS conflict, signed successor, per-batter reset, and full-lineup continuation under points-v4 remain enforced. Regression tests cover every cap, replay, concurrent one-strike terminals and forbidden active strike states.
+- **Not player-accessible:** the issued writer and bootstrap still block 1/2 until client transport, codec, UI and creator issuance are fully reviewed. No production schema/flag changes.
+
+
+
 ## November 3 — Custom attempt repository immutable strike-cap validation staged (#529)
 
 - Private v2 attempt row decoder and CAS repository accept a trusted optional 1/2/3 cap for normalizing/validating terminal K facts on reads and writes, retaining default three for legacy/v1 callers. Tests use a realistic conditional-update mock to verify single-winner K commits for all three caps, invalid values and no malformed default-three acceptance.
