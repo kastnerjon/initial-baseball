@@ -1,9 +1,9 @@
 # Initial Baseball — Start Here
 
-## November 3 — nonsecret Custom v2 strike rule in server bootstrap staged (#529)
+## November 3 — Custom attempt repository immutable strike-cap validation staged (#529)
 
-- Server-only Custom v2 bootstrap projects the whole-lineup immutable strike cap as a nonsecret field in reserved and creator-preview openings, and preserves it in read-only completed-attempt snapshots. Hosted HTTP projection and unit fixtures verify the default three, preserving all privacy/redaction and current routes.
-- **Not a nondefault-play activation:** the existing guard still refuses cap1/2 before signed gameplay. The browser codec/UI and issuance remain separately gated. No production migrations or flags changed.
+- Private v2 attempt row decoder and CAS repository accept a trusted optional 1/2/3 cap for normalizing/validating terminal K facts on reads and writes, retaining default three for legacy/v1 callers. Tests use a realistic conditional-update mock to verify single-winner K commits for all three caps, invalid values and no malformed default-three acceptance.
+- **Not playable:** all private service callers must pass their issued cap in separate reviewed integration; default-three repository calls correctly reject K1/K2. Production schema/flags untouched.
 
 
 

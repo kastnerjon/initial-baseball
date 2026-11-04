@@ -50,13 +50,14 @@ export async function markCustomLineupV2CreatorSeen(
 
 /** Immutable-N v2 reservation only. No v1 nine-only CAS completion method is exposed. */
 export function createSupabaseCustomLineupV2ReservationRepository(
-  client: SupabaseClient, immutableAtBatCount: number,
+  client: SupabaseClient, immutableAtBatCount: number, cap: 1 | 2 | 3 = 3,
 ) {
-  if (!Number.isInteger(immutableAtBatCount) || immutableAtBatCount < 1 || immutableAtBatCount > 10) {
+  if (!Number.isInteger(immutableAtBatCount) || immutableAtBatCount < 1 || immutableAtBatCount > 10
+    || (cap !== 1 && cap !== 2 && cap !== 3)) {
     throw invalid();
   }
   function decode(row: unknown, key: CustomLineupV2ReservationKey): CustomNineAttemptState {
-    const saved = decodeCustomLineupV2AttemptRow(row, immutableAtBatCount);
+    const saved = decodeCustomLineupV2AttemptRow(row, immutableAtBatCount, cap);
     if (saved.challengeId !== key.challengeId || saved.browserKeyDigest !== key.browserKeyDigest) {
       throw invalid();
     }
@@ -107,7 +108,7 @@ export function createSupabaseCustomLineupV2ReservationRepository(
         || JSON.stringify(next.terminalAtBats) !== JSON.stringify(prior.terminalAtBats)) throw invalid();
       return { status: 'advanced', state: next };
     },
-    /** Exact-N terminal CAS: every correct, third-strike or give-up result must
+    /** Exact-N terminal CAS: every correct, issued-cap strikeout or give-up result must
      * win the same revision/token predicate as nonterminal guesses.
      */
     async advanceTerminal(
@@ -129,7 +130,7 @@ export function createSupabaseCustomLineupV2ReservationRepository(
       requireCustomNineProgressionToken(successorToken);
       if (successorToken === prior.currentProgressionToken) throw invalid();
       const facts = normalizeCustomNineAttemptFacts(
-        [...prior.terminalAtBats, terminalAtBat], immutableAtBatCount,
+        [...prior.terminalAtBats, terminalAtBat], immutableAtBatCount, cap,
       );
       if (facts.length !== prior.terminalAtBats.length + 1) throw invalid();
       const completed = facts.length === immutableAtBatCount;

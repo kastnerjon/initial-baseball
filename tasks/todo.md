@@ -1,5 +1,16 @@
 # Initial Baseball — Current Work
 
+## Custom #529 staged nonsecret bootstrap projection
+
+- [ ] The issued cap is included in private reserved/creator-preview and completed DTOs, but nondefault gameplay is still rejected at bootstrap until browser transport and UI honor it. QA and release gates unchanged.
+
+
+## #529 private repository integration
+
+- [ ] Wire immutable issued strike cap into all v2 reservation-repository callers, including signed resolution, hint/continuation, completion and bootstrap. The default-three repository cannot admit K1/K2; do not activate creation/flag paths before full integration.
+
+
+
 ## Custom #529 next scoring boundary
 
 - [ ] Integrate immutable strike limits into signed incorrect/terminal progression and public/client bootstrap, then update creator controls and end-to-end browser QA. Durable history and scored-result verification are staged; nondefault issuance remains prohibited. Do not activate production migrations/flags.
