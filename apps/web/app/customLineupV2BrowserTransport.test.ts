@@ -11,8 +11,8 @@ const hint = {slot:1,hintType:'main_decade',hintLabel:'Decade',hintValue:'1980s'
 const bundle = (pitchNumber:number, hints:unknown[]=[]) => ({
   pitchNumber,revealedCount:hints.length,hints,checkpoints:[],
 });
-const opening = (n:number) => ({
-  attemptMode:'reserved',puzzleId:ID,rulesetVersion:'points-v4',
+const opening = (n:number, strikeLimit:1|2|3=3) => ({
+  attemptMode:'reserved',puzzleId:ID,rulesetVersion:'points-v4',strikeLimit,
   atBats:pitches(n),progressionToken:'signed-start',hintBundle:bundle(1),
   attemptProgress:{strikeCount:0,completedAtBats:[]},
 });
@@ -61,13 +61,13 @@ describe('Custom Lineup v2 strict browser transport, 1–10',()=>{
   });
 
   it.each([1,5,9,10])('reads N=%i completed terminal facts without a live token',async n=>{
-    const data={attemptMode:'completed',atBats:pitches(n),
+    const data={attemptMode:'completed',strikeLimit:3,atBats:pitches(n),
       completedAtBats:Array.from({length:n},(_,i)=>fact(i)),
       revision:n,completedAt:'2026-10-15T12:00:00Z',PRIVATE_ANSWER:'hidden'};
     const s=setup([ok(data)]);
     const actual=await s.client.bootstrap(ID);
     expect(actual).toEqual({
-      attemptMode:'completed',atBats:data.atBats,
+      attemptMode:'completed',strikeLimit:3,atBats:data.atBats,
       completedAtBats:data.completedAtBats,revision:n,completedAt:data.completedAt,
     });
     expect(actual).not.toHaveProperty('progressionToken');
@@ -94,12 +94,63 @@ describe('Custom Lineup v2 strict browser transport, 1–10',()=>{
       {...base,attemptProgress:{...base.attemptProgress,completedAtBats:[fact(0)]}},
       {...base,attemptProgress:{...base.attemptProgress,completedAtBats:[{...fact(0),initials:'BAD'}]}},
       {...base,attemptProgress:{...base.attemptProgress,strikeCount:3}},
+      {...base,strikeLimit:null}, {...base,strikeLimit:'2'},
+      {...base,strikeLimit:0}, {...base,strikeLimit:4},
     ]){
       const s=setup([ok(mutated)]);
       await expect(s.client.bootstrap(ID)).rejects.toMatchObject({kind:'invalid_response'});
     }
   });
 
+  it.each([1,2,3] as const)('validates cap-%i active and completed K history on bootstrap',async cap=>{
+    const k={...fact(0),outcome:'K',wrongGuesses:cap,resolution:'strikeout'};
+    const saved={...opening(2,cap),hintBundle:bundle(2),
+      attemptProgress:{strikeCount:0,completedAtBats:[k]}};
+    const s=setup([ok({...saved,UNRELEASED_ANSWER:'SECRET'})]);
+    expect(await s.client.bootstrap(ID)).toEqual(saved);
+    const completed={attemptMode:'completed',strikeLimit:cap,atBats:pitches(1),
+      completedAtBats:[k],revision:cap,completedAt:'2026-10-15T12:00:00Z'};
+    expect(await setup([ok(completed)]).client.bootstrap(ID)).toEqual(completed);
+    for (const wrong of [1,2,3].filter(x=>x!==cap)) {
+      await expect(setup([ok({...saved,attemptProgress:{strikeCount:0,
+        completedAtBats:[{...k,wrongGuesses:wrong}]}})]).client.bootstrap(ID))
+        .rejects.toMatchObject({kind:'invalid_response'});
+    }
+    if(cap<3) {
+      await expect(setup([ok({...opening(2,cap),attemptProgress:{
+        strikeCount:cap,completedAtBats:[]}})]).client.bootstrap(ID))
+        .rejects.toMatchObject({kind:'invalid_response'});
+    }
+  });
+
+  it.each([1,2,3] as const)('uses only bootstrapped cap-%i for terminal receipts',async cap=>{
+    const k={kind:'strikeout',outcome:'K',revealedCount:0,
+      strikeCount:cap,source:'strikeout'};
+    const terminal={kind:'terminal',result:k,reveal,progressionToken:'signed-end',
+      revision:cap,completed:true,hintBundle:null};
+    const s=setup([ok(opening(1,cap)),ok(terminal)]);
+    await s.client.bootstrap(ID);
+    const result=await s.client.resolve(ID,'signed-start',1,1,{giveUp:true});
+    expect(result).toMatchObject({kind:'terminal',result:k});
+    for(const wrong of [1,2,3].filter(x=>x!==cap)) {
+      const invalid=setup([ok(opening(1,cap)),ok({...terminal,result:{...k,strikeCount:wrong}})]);
+      await invalid.client.bootstrap(ID);
+      await expect(invalid.client.resolve(ID,'signed-start',1,1,{giveUp:true}))
+        .rejects.toMatchObject({kind:'invalid_response'});
+    }
+    const bad=setup([ok(opening(1,cap)),ok({kind:'incorrect',strikeCount:cap,
+      revision:1,progressionToken:'signed-wrong'})]);
+    await bad.client.bootstrap(ID);
+    await expect(bad.client.resolve(ID,'signed-start',1,1,{giveUp:true}))
+      .rejects.toMatchObject({kind:'invalid_response'});
+  });
+
+  it('refuses any resolve before a valid issued bootstrap and makes no network call',async()=>{
+    const s=setup([]);
+    await expect(s.client.resolve(ID,'signed-start',1,1,{giveUp:true}))
+      .rejects.toMatchObject({kind:'invalid_request'});
+    expect(s.request).not.toHaveBeenCalled();
+  });
   it('requests signed single hints and validates returned shape',async()=>{
     const data={hint:{hintType:'main_decade',hintLabel:'Decade',hintValue:'1980s'},
       progressionToken:'signed-hint',revision:3,privateAnswer:'PRIVATE_ANSWER'};
@@ -121,8 +172,9 @@ describe('Custom Lineup v2 strict browser transport, 1–10',()=>{
       reveal:{...reveal,privateAnswer:'PRIVATE_ANSWER'},
       progressionToken:'signed-next',revision:1,completed:false,
       hintBundle:bundle(2)};
-    const s=setup([ok({kind:'incorrect',strikeCount:1,revision:1,
+    const s=setup([ok(opening(10)),ok({kind:'incorrect',strikeCount:1,revision:1,
       progressionToken:'signed-wrong'}),ok(result)]);
+    await s.client.bootstrap(ID);
     expect(await s.client.resolve(ID,'signed-open',1,10,{submittedPlayerId:reveal.playerId}))
       .toEqual({kind:'incorrect',strikeCount:1,revision:1,progressionToken:'signed-wrong'});
     const terminal=await s.client.resolve(ID,'signed-wrong',1,10,{submittedPlayerId:reveal.playerId});
@@ -132,9 +184,11 @@ describe('Custom Lineup v2 strict browser transport, 1–10',()=>{
       method:'POST',credentials:'same-origin',headers:{'content-type':'application/json'},
       body:JSON.stringify({progressionToken:'signed-wrong',submittedPlayerId:reveal.playerId}),
     });
-    const final=setup([ok({...result,completed:true,hintBundle:null})]);
+    const final=setup([ok(opening(1)),ok({...result,completed:true,hintBundle:null})]);
+    await final.client.bootstrap(ID);
     expect((await final.client.resolve(ID,'signed-last',1,1,{giveUp:true})).kind).toBe('terminal');
-    const wrongFinal=setup([ok({...result,completed:false,hintBundle:null})]);
+    const wrongFinal=setup([ok(opening(1)),ok({...result,completed:false,hintBundle:null})]);
+    await wrongFinal.client.bootstrap(ID);
     await expect(wrongFinal.client.resolve(ID,'signed-last',1,1,{giveUp:true}))
       .rejects.toMatchObject({kind:'invalid_response'});
   });
@@ -151,7 +205,8 @@ describe('Custom Lineup v2 strict browser transport, 1–10',()=>{
     expect(s.request).not.toHaveBeenCalled();
     const result={kind:'terminal',result:correct,reveal,progressionToken:'signed-next',
       revision:1,completed:false,hintBundle:null};
-    const invalidNext=setup([ok(result)]);
+    const invalidNext=setup([ok(opening(10)),ok(result)]);
+    await invalidNext.client.bootstrap(ID);
     await expect(invalidNext.client.resolve(ID,'signed-current',1,10,{giveUp:true}))
       .rejects.toMatchObject({kind:'invalid_response'});
   });
