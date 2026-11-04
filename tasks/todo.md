@@ -5,15 +5,6 @@
 - [ ] Run hosted and physical-device acceptance for 1/2/3-cap Custom games and verify privacy, concurrent first attempt, live strike counter, terminal reveal, completed result, and historical three-strike compatibility. Browser transport requires a valid server-issued cap from bootstrap and fails closed on mismatched saved and terminal facts; server issuance remains default-OFF for 1/2.
 
 
-## Custom #529 pending browser strike-cap integration
-
-- [ ] Browser transport must validate the immutable strike limit in reserved, preview and completed openings, keep valid active-strike ranges below the cap and pass the cap into terminal-result decoding. Server bootstrap projects the issued rule but still refuses 1/2 at runtime. Preserve historical 3 and complete QA before enabling issuance.
-
-
-## Custom #529 terminal decoder activation
-
-- [ ] The strict Custom terminal decoder can validate issued 1/2/3-strike K receipts; the browser transport must still pass the server-issued cap and complete end-to-end QA before activation.
-
 
 ## Custom #529 remaining runtime integration
 
