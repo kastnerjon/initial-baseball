@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { decodeCustomNineTerminalReveal } from './customNineGameplayPayloadCodec';
+import { decodeCustomNineTerminalResult, decodeCustomNineTerminalReveal } from './customNineGameplayPayloadCodec';
 
 const baseReveal = {
   playerId: 'ibp_example',
@@ -77,5 +77,49 @@ describe('Custom Nine and Custom Lineup v2 shared terminal reveal decoder', () =
       ...baseReveal,
       career: { ...baseReveal.career, regularSeasonPeaks: peaks },
     })).toThrow('Invalid Custom Nine terminal payload');
+  });
+});
+
+
+describe('authoritative terminal result decoder with Custom strike limits (#529)', () => {
+  const terminal = (cap: number) => ({
+    kind: 'strikeout', revealedCount: 2, outcome: 'K',
+    strikeCount: cap, source: 'strikeout', PRIVATE_FUTURE_ANSWER: 'do not leak',
+  });
+  it.each([1, 2, 3] as const)('accepts a server-issued %i-strike K and strips private fields', cap => {
+    const decoded = decodeCustomNineTerminalResult(terminal(cap), cap);
+    expect(decoded).toEqual({
+      kind: 'strikeout', revealedCount: 2,
+      outcome: 'K', strikeCount: cap, source: 'strikeout',
+    });
+    expect(JSON.stringify(decoded)).not.toContain('PRIVATE_');
+  });
+  it.each([1, 2, 3] as const)('rejects K facts forged under a different cap than %i', cap => {
+    for (const wrong of [1, 2, 3].filter(n => n !== cap)) {
+      expect(() => decodeCustomNineTerminalResult(terminal(wrong), cap))
+        .toThrow('Invalid Custom Nine terminal payload');
+    }
+    expect(() => decodeCustomNineTerminalResult({ ...terminal(cap), strikeCount: '2' }, cap))
+      .toThrow('Invalid Custom Nine terminal payload');
+    expect(() => decodeCustomNineTerminalResult({ ...terminal(cap), source: 'correct' }, cap))
+      .toThrow('Invalid Custom Nine terminal payload');
+  });
+  it('retains legacy Custom Nine K=3 and three-strike default', () => {
+    expect(decodeCustomNineTerminalResult(terminal(3))).toMatchObject({
+      kind: 'strikeout', strikeCount: 3,
+    });
+    expect(() => decodeCustomNineTerminalResult(terminal(1))).toThrow();
+    expect(() => decodeCustomNineTerminalResult(terminal(2))).toThrow();
+  });
+  it('rejects malformed authoritative cap and leaves correct scoring shapes unchanged', () => {
+    for (const invalid of [null, 0, 4, -1, 1.5, '2']) {
+      expect(() => decodeCustomNineTerminalResult(terminal(3), invalid as 1 | 2 | 3))
+        .toThrow('Invalid Custom Nine terminal payload');
+    }
+    for (const cap of [1, 2, 3] as const) {
+      expect(decodeCustomNineTerminalResult({
+        kind: 'correct', revealedCount: 0, outcome: 'HR', source: 'initials',
+      }, cap)).toEqual({ kind: 'correct', revealedCount: 0, outcome: 'HR', source: 'initials' });
+    }
   });
 });
