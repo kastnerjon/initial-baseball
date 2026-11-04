@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, type JSX } from 'react';
+import React, { useEffect, useState, type JSX } from 'react';
 
 type ConfirmationAction = 'toggle' | 'confirm' | 'reset';
 
