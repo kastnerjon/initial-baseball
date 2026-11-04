@@ -39,7 +39,7 @@ export type CustomLineupV2AttemptProgress = Readonly<{
 }>;
 type Result =
   | { kind: 'not_found' | 'invalid_credential' }
-  | { kind: 'completed'; atBats: Opening['atBats'];
+  | { kind: 'completed'; atBats: Opening['atBats']; strikeLimit: Opening['strikeLimit'];
       completedAtBats: readonly DailyCompletedAtBat[]; revision: number; completedAt: string }
   | { kind: 'preview'; bootstrap: Opening }
   | { kind: 'ready'; bootstrap: Opening; setCookie: string | null;
@@ -69,6 +69,7 @@ export function createServerCustomLineupV2AttemptBootstrap({
       if (opening === null) return { kind: 'not_found' };
       const length = opening.atBats.length;
       if (opening.puzzleId !== puzzleId || opening.rulesetVersion !== 'points-v4'
+        || (opening.strikeLimit !== 1 && opening.strikeLimit !== 2 && opening.strikeLimit !== 3)
         || length < 1 || length > 10
         || opening.atBats.some((ab, i) => ab.pitchNumber !== i + 1)
         || opening.hintBundle.pitchNumber !== 1 || opening.hintBundle.revealedCount !== 0) {
@@ -137,7 +138,7 @@ export function createServerCustomLineupV2AttemptBootstrap({
       if (saved.status === 'completed') {
         if (saved.completedAt === null) throw new Error('Custom v2 completion timestamp missing.');
         return {
-          kind: 'completed', atBats: redacted.atBats,
+          kind: 'completed', atBats: redacted.atBats, strikeLimit: redacted.strikeLimit,
           completedAtBats, revision: saved.revision, completedAt: saved.completedAt,
         };
       }

@@ -1,5 +1,11 @@
 # Initial Baseball — Start Here
 
+## November 3 — nonsecret Custom v2 strike rule in server bootstrap staged (#529)
+
+- Server-only Custom v2 bootstrap projects the whole-lineup immutable strike cap as a nonsecret field in reserved and creator-preview openings, and preserves it in read-only completed-attempt snapshots. Hosted HTTP projection and unit fixtures verify the default three, preserving all privacy/redaction and current routes.
+- **Not a nondefault-play activation:** the existing guard still refuses cap1/2 before signed gameplay. The browser codec/UI and issuance remain separately gated. No production migrations or flags changed.
+
+
 ## November 3 — persisted Custom strike-limit row adapters staged (#529)
 
 - Service-role issued adapter now selects/decodes the stored `strike_limit`, validates 1/2/3, rejects explicit NULL/malformed database values, and writes the immutable default 3 on new records. Missing historical test fixtures still default to 3. An explicit Custom v2 bootstrap guard fails closed on 1/2 until the full server progression/terminal/client contract is ready; the issuance writer still rejects 1/2.

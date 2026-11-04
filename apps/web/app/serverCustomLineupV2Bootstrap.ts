@@ -79,6 +79,7 @@ export function createServerCustomLineupV2BootstrapService({
       return {
         puzzleId: challenge.puzzleId,
         rulesetVersion: challenge.rulesetVersion,
+        strikeLimit: challenge.strikeLimit,
         atBats: result.puzzle.pitches.map(p => ({ pitchNumber: p.pitchNumber, initials: p.initials })),
         progressionToken: result.progressionToken,
         hintBundle: result.hintBundle,
