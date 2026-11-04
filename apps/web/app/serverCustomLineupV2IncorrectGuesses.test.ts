@@ -108,6 +108,7 @@ describe('private Custom Lineup v2 nonterminal incorrect CAS',()=>{
     result:{kind:'strikeout',strikeCount:cap},revision:cap});
   expect(s.repository.advanceHint).toHaveBeenCalledTimes(cap-1);
   expect(s.repository.advanceTerminal).toHaveBeenCalledOnce();
+  expect(s.dependencies.repository).toHaveBeenCalledWith(expect.anything(),10,cap);
   expect(s.read()?.terminalAtBats).toEqual([{
    pitchNumber:1,initials:'P1',hintsRevealed:0,wrongGuesses:cap,
    resolution:'strikeout',outcome:'K',

@@ -5,6 +5,13 @@
 - [ ] Connect server-signed 1/2/3 strike rules into nonleaking Custom bootstrap/transport and terminal payload decode; then creator setting, guest UI, cohort separation and end-to-end regression. Server CAS resolver and scored-history validators are staged separately; no 1/2 issuance activation yet.
 
 
+
+## #529 private repository integration
+
+- [ ] Wire immutable issued strike cap into all v2 reservation-repository callers, including signed resolution, hint/continuation, completion and bootstrap. The default-three repository cannot admit K1/K2; do not activate creation/flag paths before full integration.
+
+
+
 ## Custom #529 next scoring boundary
 
 - [ ] Integrate immutable strike limits into signed incorrect/terminal progression and public/client bootstrap, then update creator controls and end-to-end browser QA. Durable history and scored-result verification are staged; nondefault issuance remains prohibited. Do not activate production migrations/flags.

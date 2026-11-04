@@ -3,7 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 vi.mock('server-only',()=>({}));
 import {createSupabaseCustomLineupV2ReservationRepository,markCustomLineupV2CreatorSeen}
   from './supabaseCustomLineupV2ReservationRepository';
-import {decodeCustomLineupV2AttemptRow} from './customNineAttemptRowCodec';
+import {decodeCustomLineupV2AttemptRow,normalizeCustomNineAttemptFacts} from './customNineAttemptRowCodec';
 
 const ID='custom-lineup-v2-123e4567-e89b-42d3-a456-426614174000';
 const DIGEST='a'.repeat(64),TOKEN='signed.initial.token';
@@ -169,5 +169,74 @@ describe('v2 exact-N terminal CAS',()=>{
   expect((current.terminal_at_bats as unknown[]).length).toBe(1);
   expect(current.status).toBe(n===1?'completed':'active');
   expect(current.completed_at===null).toBe(n!==1);
+ });
+});
+
+describe('v2 immutable strike-cap row validation and actual terminal CAS (#529)',()=>{
+ const k=(cap:number)=>({pitchNumber:1,initials:'P1',outcome:'K',
+  hintsRevealed:0,wrongGuesses:cap,resolution:'strikeout'});
+ it.each([1,2,3] as const)('decodes cap-%i K facts without changing default-three',cap=>{
+  const saved={...row(),revision:cap,terminal_at_bats:[k(cap)]};
+  expect(normalizeCustomNineAttemptFacts([k(cap)],2,cap)).toMatchObject([{wrongGuesses:cap}]);
+  expect(decodeCustomLineupV2AttemptRow(saved,2,cap).terminalAtBats).toHaveLength(1);
+  if(cap<3)expect(()=>decodeCustomLineupV2AttemptRow(saved,2)).toThrow();
+  for(const other of [1,2,3].filter(n=>n!==cap)){
+   expect(()=>normalizeCustomNineAttemptFacts([k(other)],2,cap)).toThrow();
+  }
+ });
+ it.each([1,2] as const)('reads persisted cap-%i K from the real repository projection',async cap=>{
+  const stored={...row(),revision:cap,terminal_at_bats:[k(cap)]};
+  const maybeSingle=vi.fn().mockResolvedValue({data:stored,error:null});
+  const eq=vi.fn().mockReturnThis();
+  const select=vi.fn().mockReturnValue({eq,maybeSingle});
+  const from=vi.fn().mockReturnValue({select});
+  const repo=createSupabaseCustomLineupV2ReservationRepository(
+   {from} as unknown as SupabaseClient,2,cap);
+  const saved=await repo.getByKey(KEY);
+  expect(saved?.terminalAtBats).toMatchObject([{
+   pitchNumber:1,outcome:'K',resolution:'strikeout',wrongGuesses:cap,
+  }]);
+  expect(from).toHaveBeenCalledWith('custom_nine_attempt_states');
+ });
+ it('rejects malformed cap values and preserves old three-strike normalization',()=>{
+  for(const bad of [0,4,-1,1.5,null,'2']){
+   expect(()=>normalizeCustomNineAttemptFacts([],2,bad as 1|2|3)).toThrow();
+  }
+  expect(()=>normalizeCustomNineAttemptFacts([k(2)],9)).toThrow();
+  expect(normalizeCustomNineAttemptFacts([k(3)],9)).toMatchObject([{wrongGuesses:3}]);
+ });
+ it.each([1,2,3] as const)('commits cap-%i terminal via real repository CAS once',async cap=>{
+  let current={...row()} as Record<string,unknown>;
+  const update=vi.fn((payload:Record<string,unknown>)=>{
+   const predicates:Record<string,unknown>={};
+   const builder={eq:(key:string,value:unknown)=>{predicates[key]=value;return builder;},
+    select:()=>({maybeSingle:async()=>{
+     if(!Object.entries(predicates).every(([key,value])=>current[key]===value))
+      return {data:null,error:null};
+     current={...current,...payload};return {data:{...current},error:null};
+    }})};
+   return builder;
+  });
+  const repo=createSupabaseCustomLineupV2ReservationRepository(
+   {from:()=>({update})} as unknown as SupabaseClient,2,cap);
+  const before=decodeCustomLineupV2AttemptRow(row(),2,cap);
+  const fact={pitchNumber:1,initials:'P1',outcome:'K' as const,
+   hintsRevealed:0 as const,wrongGuesses:cap,resolution:'strikeout' as const};
+  const results=await Promise.all([
+   repo.advanceTerminal(before,'signed.next',fact),
+   repo.advanceTerminal(before,'signed.other',fact),
+  ]);
+  expect(results.map(x=>x.status).sort()).toEqual(['advanced','conflict']);
+  expect(current.terminal_at_bats).toMatchObject([{wrongGuesses:cap,outcome:'K'}]);
+  expect(update).toHaveBeenCalledTimes(2);
+ });
+ it.each([1,2] as const)('blocks cap-%i K if v2 repo still configured as default three',async cap=>{
+  const update=vi.fn();
+  const repo=createSupabaseCustomLineupV2ReservationRepository(
+   {from:()=>({update})} as unknown as SupabaseClient,2);
+  await expect(repo.advanceTerminal(decodeCustomLineupV2AttemptRow(row(),2),
+   'signed.next',{pitchNumber:1,initials:'P1',outcome:'K',hintsRevealed:0,
+   wrongGuesses:cap,resolution:'strikeout'})).rejects.toMatchObject({kind:'invalid-row'});
+  expect(update).not.toHaveBeenCalled();
  });
 });
