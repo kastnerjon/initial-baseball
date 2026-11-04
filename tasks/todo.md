@@ -2,8 +2,7 @@
 
 ## 0. Custom Lineup configurable strike limit (#529)
 
-- [ ] Verify final independent review and migration-history parity for the additive issued-row `strike_limit` schema, rehearsed successfully in isolated QA. Do not apply to production without release approval.
-- [ ] Propagate frozen strike rule through issuance/reader, signed Custom v2 progression and all terminal/score validation; preserve old three-strike challenges and reject client tampering.
+- [ ] Complete frozen strike rule propagation from staged issued row adapters through signed Custom v2 progression and all terminal/score validation; preserve old three-strike challenges and reject client tampering.
 - [ ] Add creator 1/2/3 control, guest strike display, full-length result and difficulty-cohort tests; hosted QA on each limit and mobile acceptance before enabling.
 
 

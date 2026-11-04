@@ -61,6 +61,9 @@ export function createServerCustomLineupV2BootstrapService({
       // Revalidate even injected repositories. No client-controlled length.
       const challenge = cloneCustomLineupIssuedChallenge(row);
       if (challenge.puzzleId !== puzzleId) throw new Error('Custom Lineup challenge identity mismatch.');
+      // Nondefault games are not playable until signed progression, terminal
+      // facts, result validation and UI all honor the persisted rule.
+      if (challenge.strikeLimit !== 3) throw new Error('Custom Lineup strike-limit gameplay unavailable.');
       const puzzle = materializeCustomNineSessionPuzzle(challenge, dependencies.resolvePlayer);
       const tokens = createCustomLineupV2ProgressionTokens(dependencies.getSecret(environment));
       const runtime = createDailyRuntimeService({

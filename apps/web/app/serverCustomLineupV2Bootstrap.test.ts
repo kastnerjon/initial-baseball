@@ -64,6 +64,12 @@ describe('private Custom Lineup v2 signed opening',()=>{
       expect(json).not.toContain(privateValue);
     expect(deps.resolvePlayer).toHaveBeenCalledTimes(n);
   });
+  it.each([1, 2] as const)('refuses to bootstrap an issued %i-strike game before complete progression support', async strikeLimit => {
+    const { service, deps } = setup({ ...challenge(2), strikeLimit });
+    await expect(service.bootstrap(ID)).rejects.toThrow('strike-limit gameplay unavailable');
+    expect(deps.resolvePlayer).not.toHaveBeenCalled();
+    expect(deps.getSecret).not.toHaveBeenCalled();
+  });
   it('rejects short master secrets before deriving the isolated signing key',()=>{
     for(const secret of ['', 'guessable', 'x'.repeat(31)]) {
       expect(()=>createCustomLineupV2ProgressionTokens(secret)).toThrow('at least 32');

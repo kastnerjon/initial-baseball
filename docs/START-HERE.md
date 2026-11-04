@@ -1,5 +1,11 @@
 # Initial Baseball — Start Here
 
+## November 3 — persisted Custom strike-limit row adapters staged (#529)
+
+- Service-role issued adapter now selects/decodes the stored `strike_limit`, validates 1/2/3, rejects explicit NULL/malformed database values, and writes the immutable default 3 on new records. Missing historical test fixtures still default to 3. An explicit Custom v2 bootstrap guard fails closed on 1/2 until the full server progression/terminal/client contract is ready; the issuance writer still rejects 1/2.
+- **Source-only adapter milestone after merged #534; not a playable feature.** Schema was applied and SQL-tested only in isolated QA, not production. No Auth/Custom production flags were changed.
+
+
 ## November 3 — Custom strike-limit persistence schema staged (#529)
 
 - Additive migration `20261104032946_add_custom_v2_issued_strike_limit.sql` and rollback-only SQL acceptance provide an immutable column defaulting to 3, with v1 constrained to 3 and v2 constrained to 1/2/3. Previously issued rows retain three-strike rules. No player or client setting is trusted.
