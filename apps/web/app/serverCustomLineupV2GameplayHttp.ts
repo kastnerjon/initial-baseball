@@ -72,7 +72,7 @@ async function dispatchCustomLineupV2Action(
         }
         case 'completed': return Response.json({
           attemptMode: 'completed', atBats: result.atBats,
-          completedAtBats: result.completedAtBats,
+          strikeLimit: result.strikeLimit, completedAtBats: result.completedAtBats,
           revision: result.revision, completedAt: result.completedAt,
         }, { headers: HEADERS });
       }

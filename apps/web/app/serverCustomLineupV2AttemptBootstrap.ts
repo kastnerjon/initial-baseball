@@ -22,13 +22,13 @@ type Ledger = Pick<ReturnType<typeof createSupabaseCustomLineupV2ReservationRepo
   'getByKey' | 'getOrCreate'>;
 type Dependencies = {
   opening: (id: string, env: Record<string, string | undefined>) => Promise<Opening | null>;
-  repository: (env: Record<string, string | undefined>, n: number) => Ledger;
+  repository: (env: Record<string, string | undefined>, n: number, cap: 1 | 2 | 3) => Ledger;
   readChallenge: (id: string, env: Record<string, string | undefined>) => Promise<CustomLineupIssuedChallenge | null>;
   getSecret: (env: Record<string, string | undefined>) => string;
 };
 const DEFAULT: Dependencies = {
   opening: (id, env) => createServerCustomLineupV2BootstrapService({ environment: env }).bootstrap(id),
-  repository: (env, n) => createSupabaseCustomLineupV2ReservationRepository(createServerSupabaseClient(env), n),
+  repository: (env, n, cap) => createSupabaseCustomLineupV2ReservationRepository(createServerSupabaseClient(env), n, cap),
   readChallenge: (id, env) =>
     createSupabaseCustomLineupV2IssuedReader(createServerSupabaseClient(env)).getById(id),
   getSecret: getDailyProgressionSecret,
@@ -39,7 +39,7 @@ export type CustomLineupV2AttemptProgress = Readonly<{
 }>;
 type Result =
   | { kind: 'not_found' | 'invalid_credential' }
-  | { kind: 'completed'; atBats: Opening['atBats'];
+  | { kind: 'completed'; atBats: Opening['atBats']; strikeLimit: Opening['strikeLimit'];
       completedAtBats: readonly DailyCompletedAtBat[]; revision: number; completedAt: string }
   | { kind: 'preview'; bootstrap: Opening }
   | { kind: 'ready'; bootstrap: Opening; setCookie: string | null;
@@ -69,6 +69,7 @@ export function createServerCustomLineupV2AttemptBootstrap({
       if (opening === null) return { kind: 'not_found' };
       const length = opening.atBats.length;
       if (opening.puzzleId !== puzzleId || opening.rulesetVersion !== 'points-v4'
+        || (opening.strikeLimit !== 1 && opening.strikeLimit !== 2 && opening.strikeLimit !== 3)
         || length < 1 || length > 10
         || opening.atBats.some((ab, i) => ab.pitchNumber !== i + 1)
         || opening.hintBundle.pitchNumber !== 1 || opening.hintBundle.revealedCount !== 0) {
@@ -88,7 +89,7 @@ export function createServerCustomLineupV2AttemptBootstrap({
       };
       if (creator === 'creator' || verifiedOwner) return { kind: 'preview', bootstrap: redacted };
 
-      const repo = dependencies.repository(environment, length);
+      const repo = dependencies.repository(environment, length, opening.strikeLimit);
       const issued = inspected.kind === 'absent' ? credentials.issue(puzzleId, requestUrl) : null;
       const key = {
         challengeId: puzzleId,
@@ -125,7 +126,8 @@ export function createServerCustomLineupV2AttemptBootstrap({
       const row = await dependencies.readChallenge(puzzleId, environment);
       if (row === null) throw new Error('Custom v2 saved challenge unavailable.');
       const challenge = cloneCustomLineupIssuedChallenge(row);
-      if (challenge.puzzleId !== puzzleId || challenge.canonicalPlayerIds.length !== length
+      if (challenge.puzzleId !== puzzleId || challenge.strikeLimit !== opening.strikeLimit
+        || challenge.canonicalPlayerIds.length !== length
         || challenge.clueSnapshot.pitches.some((pitch, index) =>
           pitch.pitchNumber !== opening.atBats[index]?.pitchNumber
           || pitch.initials !== opening.atBats[index]?.initials)
@@ -137,7 +139,7 @@ export function createServerCustomLineupV2AttemptBootstrap({
       if (saved.status === 'completed') {
         if (saved.completedAt === null) throw new Error('Custom v2 completion timestamp missing.');
         return {
-          kind: 'completed', atBats: redacted.atBats,
+          kind: 'completed', atBats: redacted.atBats, strikeLimit: redacted.strikeLimit,
           completedAtBats, revision: saved.revision, completedAt: saved.completedAt,
         };
       }

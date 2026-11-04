@@ -22,14 +22,14 @@ import { createSupabaseCustomLineupV2ReservationRepository } from './supabaseCus
 type Repository = Pick<ReturnType<typeof createSupabaseCustomLineupV2ReservationRepository>, 'getByKey' | 'advanceHint' | 'advanceTerminal'>;
 type Dependencies = {
   readChallenge: (id: string, env: Record<string, string | undefined>) => Promise<CustomLineupIssuedChallenge | null>;
-  repository: (env: Record<string, string | undefined>, n: number) => Repository;
+  repository: (env: Record<string, string | undefined>, n: number, cap: 1 | 2 | 3) => Repository;
   resolvePlayer: (id: string) => Player | null;
   getReveal: (id: string) => CanonicalPlayerReveal;
   getSecret: (env: Record<string, string | undefined>) => string;
 };
 const DEFAULT: Dependencies = {
   readChallenge: (id, env) => createSupabaseCustomLineupV2IssuedReader(createServerSupabaseClient(env)).getById(id),
-  repository: (env, n) => createSupabaseCustomLineupV2ReservationRepository(createServerSupabaseClient(env), n),
+  repository: (env, n, cap) => createSupabaseCustomLineupV2ReservationRepository(createServerSupabaseClient(env), n, cap),
   resolvePlayer: getCanonicalDailyPlayer,
   getReveal: id => getCanonicalRevealReader().getReveal(id),
   getSecret: getDailyProgressionSecret,
@@ -44,11 +44,11 @@ export type CustomLineupV2IncorrectGuessResult =
       progressionToken: string; revision: number; completed: boolean;
       hintBundle: ReturnType<typeof projectCustomNineAttemptHintBundle> | null };
 
-function validScope(claims: DailyProgressionClaims, id: string, n: number): boolean {
+function validScope(claims: DailyProgressionClaims, id: string, n: number, cap: 1 | 2 | 3): boolean {
   return claims.version === 1 && claims.rulesetVersion === 'points-v4'
     && claims.puzzleId === id && claims.puzzleDate === CUSTOM_NINE_SESSION_DATE
     && !claims.completed && claims.pitchNumber >= 1 && claims.pitchNumber <= n
-    && claims.strikeCount >= 0 && claims.strikeCount <= 2;
+    && claims.strikeCount >= 0 && claims.strikeCount < cap;
 }
 function exactIncorrectStep(before: DailyProgressionClaims, after: DailyProgressionClaims): boolean {
   return after.version === before.version && after.rulesetVersion === before.rulesetVersion
@@ -103,9 +103,9 @@ export function createServerCustomLineupV2IncorrectGuessService({
         if (error instanceof DailyProgressionTokenError) return { kind: 'invalid_progression' };
         throw error;
       }
-      if (!validScope(before, puzzleId, n)) return { kind: 'invalid_progression' };
+      if (!validScope(before, puzzleId, n, challenge.strikeLimit)) return { kind: 'invalid_progression' };
 
-      const repository = dependencies.repository(environment, n);
+      const repository = dependencies.repository(environment, n, challenge.strikeLimit);
       const state = await repository.getByKey({
         challengeId: puzzleId, browserKeyDigest: browser.browserKeyDigest,
       });
@@ -121,6 +121,7 @@ export function createServerCustomLineupV2IncorrectGuessService({
           return puzzle;
         },
         progressionTokens: tokens,
+        maxStrikes: challenge.strikeLimit,
         resolveLegacyPlayerId: () => { throw new DailyRuntimeRequestError('Legacy IDs unsupported.'); },
         getCanonicalReveal: id => {
           const reveal = dependencies.getReveal(id);
@@ -170,19 +171,19 @@ export function createServerCustomLineupV2IncorrectGuessService({
         || result.revealedCount !== before.revealCount
         || resolved.reveal === null
         || (final ? resolved.hintBundle !== null : resolved.hintBundle === null)
-        || (result.kind === 'strikeout' && (!giveUp && before.strikeCount !== 2))
+        || (result.kind === 'strikeout' && (!giveUp && before.strikeCount !== challenge.strikeLimit - 1))
         || (result.kind === 'correct' && giveUp)) {
         throw new Error('Invalid Custom v2 signed terminal successor.');
       }
       const fact: DailyCompletedAtBat = {
         pitchNumber: before.pitchNumber, initials: frozenPitch.initials,
         outcome: result.outcome, hintsRevealed: before.revealCount,
-        wrongGuesses: resolution === 'strikeout' ? 3 : before.strikeCount,
+        wrongGuesses: resolution === 'strikeout' ? challenge.strikeLimit : before.strikeCount,
         resolution,
       };
       if (!normalizeDailyTerminalAtBat(fact, {
         pitchNumber: before.pitchNumber, initials: frozenPitch.initials,
-      }).ok) throw new Error('Invalid Custom v2 terminal fact.');
+      }, challenge.strikeLimit).ok) throw new Error('Invalid Custom v2 terminal fact.');
       const committed = await repository.advanceTerminal(state, resolved.progressionToken, fact);
       if (committed.status === 'conflict') return { kind: 'conflict' };
       return {

@@ -50,6 +50,7 @@ describe('private Custom Lineup v2 signed opening',()=>{
     const {service,deps}=setup(challenge(n));
     const result=await service.bootstrap(ID);
     expect(result?.atBats).toHaveLength(n);
+    expect(result?.strikeLimit).toBe(3);
     expect(result?.atBats[n-1]).toEqual({pitchNumber:n,initials:'P'+n});
     expect(result?.hintBundle.pitchNumber).toBe(1);
     expect(result?.hintBundle.hints.map(h=>h.hintValue))

@@ -1,8 +1,34 @@
 # Initial Baseball — Current Work
 
-## Custom #529 source-staged creator selection
+## Custom #529 creator selector release gate
 
-- [ ] The 1/2/3 creator selector and session draft validation are staged behind a default-false prop, so the live public creator still only issues three-strike lineups. Activate only after strict server route, gameplay/receipt and cohort QA pass.
+- [ ] The account creator's 1/2/3 strike setting is staged in session draft state behind a default-false readiness prop. Connect it to strict server issuance only after verified end-to-end nondefault scoring, terminal decoding, browser regression, mobile QA, and explicit release approval.
+
+
+## Custom #529 remaining first-attempt QA
+
+- [ ] Rehearse 1/2/3-issued Custom attempts through stored reservation, cross-browser creator exclusion, resumed K facts, conflict races and full completion on isolated QA. Keep default-off nondefault issuance pending independently reviewed whole-stack integration.
+
+
+## Custom #529 remaining attempts/QA
+
+- [ ] After cap-specific hint/CAS/admission readers are integrated, complete browser transport, one- or two-strike first-attempt refresh, lost-response retry, and real hosted QA before allowing nondefault issuance.
+
+
+## Custom #529 pending browser strike-cap integration
+
+- [ ] Browser transport must validate the immutable strike limit in reserved, preview and completed openings, keep valid active-strike ranges below the cap and pass the cap into terminal-result decoding. Server bootstrap projects the issued rule but still refuses 1/2 at runtime. Preserve historical 3 and complete QA before enabling issuance.
+
+
+## Custom #529 terminal decoder activation
+
+- [ ] The strict Custom terminal decoder can validate issued 1/2/3-strike K receipts; the browser transport must still pass the server-issued cap and complete end-to-end QA before activation.
+
+
+## Custom #529 remaining runtime integration
+
+- [ ] Connect server-signed 1/2/3 strike rules into nonleaking Custom bootstrap/transport and terminal payload decode; then creator setting, guest UI, cohort separation and end-to-end regression. Server CAS resolver and scored-history validators are staged separately; no 1/2 issuance activation yet.
+
 
 
 ## #529 private repository integration
