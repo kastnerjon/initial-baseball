@@ -1,5 +1,10 @@
 # Initial Baseball — Start Here
 
+## November 3 — staged immutable Custom strike-limit primitives (#529)
+
+- Portable Custom v2 issued metadata now validates/freezes a whole-lineup strike limit of 1, 2 or 3, defaulting every historical caller to 3. A server-owned Daily runtime option allows an opt-in 1/2/3 strike cap while preserving all normal Daily/Classic defaults. Tests exercise signed strikeout/reset and forced K behavior.
+- **Source-only foundation, NOT a playable new setting:** existing account-gated issuance still selects only default 3; the v2 issued writer explicitly rejects 1/2 until a reviewed immutable database migration and all Custom progression/codec/UI consumers are complete. No changes to production/QA database migrations, flags, or deployed gameplay. Future work and rollback constraints in issue #529.
+
 ## November 3, 2026 — account browser QA automation staged
 
 - Real QA acceptance (product owner): Google OAuth → independently signed-in browser → account-owned named issuance → My Creations → creator preview → separate Safari private guest completion, saved 2/4 score. Read-only QA SQL reconciled one completed attempt and 2B result (issue #477). Production flags and schema remain untouched.

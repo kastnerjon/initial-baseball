@@ -30,6 +30,8 @@ type CreateDailyRuntimeServiceInput = {
   getCanonicalReveal?: (canonicalPlayerId: string) => CanonicalPlayerReveal;
   createPuzzle: (date: string) => Promise<DailyPuzzle> | DailyPuzzle;
   progressionTokens: DailyProgressionTokenCodec;
+  /** Trusted server-owned setting; Daily remains at three by default. */
+  maxStrikes?: 1 | 2 | 3;
 };
 
 type AuthorizedProgression = {
@@ -47,6 +49,10 @@ export class DailyRuntimeRequestError extends Error {
 
 export function createDailyRuntimeService(input: CreateDailyRuntimeServiceInput): DailyRuntimeService {
   const { canonicalRuntime, createPuzzle, progressionTokens } = input;
+  const maxStrikes = input.maxStrikes ?? 3;
+  if (maxStrikes !== 1 && maxStrikes !== 2 && maxStrikes !== 3) {
+    throw new Error('Unsupported server-owned strike limit.');
+  }
   const resolveLegacyPlayerId = input.resolveLegacyPlayerId
     ?? (playerId => requireConfiguredRuntime(canonicalRuntime).requireCanonicalPlayerId(playerId));
   const getCanonicalReveal = input.getCanonicalReveal
@@ -82,6 +88,9 @@ export function createDailyRuntimeService(input: CreateDailyRuntimeServiceInput)
         throw new DailyRuntimeRequestError('Invalid Daily progression token.');
       }
       throw error;
+    }
+    if (claims.strikeCount >= maxStrikes) {
+      throw new DailyRuntimeRequestError('Progression strike count exceeds the configured limit.');
     }
     if (claims.completed) {
       throw new DailyRuntimeRequestError('This Daily progression token is already complete.');
@@ -189,7 +198,7 @@ export function createDailyRuntimeService(input: CreateDailyRuntimeServiceInput)
         ? {
             kind: 'strikeout' as const,
             revealedCount: authorized.claims.revealCount,
-            strikeCount: 3,
+            strikeCount: maxStrikes,
             outcome: 'K' as const,
             source: 'strikeout' as const,
           }
@@ -197,7 +206,7 @@ export function createDailyRuntimeService(input: CreateDailyRuntimeServiceInput)
             isCorrect,
             revealCount: authorized.claims.revealCount,
             strikeCount: authorized.claims.strikeCount,
-            maxStrikes: 3,
+            maxStrikes,
           });
       const isTerminal = result.kind === 'correct' || result.kind === 'strikeout';
       const successorClaims = createSuccessorClaims(authorized, result);

@@ -25,6 +25,8 @@ export function encodeCustomLineupV2IssuedRow(
   creatorAccountId?: string,
 ) {
   const value = cloneCustomLineupIssuedChallenge(challenge);
+  // Nondefault persistence needs its own reviewed schema migration. Fail closed.
+  if (value.strikeLimit !== 3) throw new CustomLineupV2IssuedWriteError('invalid-row');
   return {
     puzzle_id: value.puzzleId,
     schema_version: value.schemaVersion,

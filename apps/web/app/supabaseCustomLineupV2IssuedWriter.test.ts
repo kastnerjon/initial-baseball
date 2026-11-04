@@ -54,6 +54,16 @@ describe('anonymous management verifier storage', () => {
   });
 });
 
+describe('nondefault strike cap persistence is not yet enabled', () => {
+  it('refuses to silently discard 1- or 2-strike issued metadata', () => {
+    for (const strikeLimit of [1, 2] as const) {
+      expect(() => encodeCustomLineupV2IssuedRow({ ...challenge(1), strikeLimit }))
+        .toThrow('Private Custom Lineup v2 issuance unavailable');
+    }
+    expect(encodeCustomLineupV2IssuedRow(challenge(1))).toHaveProperty('schema_version', 2);
+  });
+});
+
 describe('verified creator account storage', () => {
   it('binds the private account UUID in the same immutable insert and never reads it back', async () => {
     const issued = challenge(2);
