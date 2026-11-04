@@ -1,5 +1,12 @@
 # Initial Baseball — Current Work
 
+## 0. Custom Lineup configurable strike limit (#529)
+
+- [ ] Review/test the additive issued-row `strike_limit` migration and rollback-only SQL fixture in isolated QA. Do not apply to production without release approval.
+- [ ] Propagate frozen strike rule through issuance/reader, signed Custom v2 progression and all terminal/score validation; preserve old three-strike challenges and reject client tampering.
+- [ ] Add creator 1/2/3 control, guest strike display, full-length result and difficulty-cohort tests; hosted QA on each limit and mobile acceptance before enabling.
+
+
 Remaining tasks only; completed verification and production evidence are recorded in `docs/START-HERE.md`. Both production Custom flags remain OFF.
 
 ## 1. Account-gated Custom creation before private-sharing launch (October 26 decision)
