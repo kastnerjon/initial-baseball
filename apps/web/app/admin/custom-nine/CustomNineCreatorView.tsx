@@ -274,8 +274,10 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
           <select id="custom-lineup-strike-limit" value={strikeLimit}
             disabled={!draftEditable}
             onChange={event => {
-              const selected = Number(event.target.value);
-              if (selected === 1 || selected === 2 || selected === 3) setStrikeLimit(selected);
+              if ('value' in event.target && typeof event.target.value === 'string') {
+                const selected = Number(event.target.value);
+                if (selected === 1 || selected === 2 || selected === 3) setStrikeLimit(selected);
+              }
             }}>
             <option value={1}>1 strike</option>
             <option value={2}>2 strikes</option>
