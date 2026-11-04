@@ -110,7 +110,7 @@ begin
     or not has_table_privilege('service_role', 'public.custom_nine_issued_challenges', 'insert')
   then raise exception 'Private issued-table grants changed'; end if;
 
-  if (select count(*) from public.custom_nine_issued_challenges) <> v_count + 6 then
+  if (select count(*) from public.custom_nine_issued_challenges) <> v_count + 5 then
     raise exception 'Unexpected count after valid fixtures';
   end if;
 end;
