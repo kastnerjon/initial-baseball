@@ -104,6 +104,9 @@
 }
 .custom-lineup-suggestions button:hover, .custom-lineup-suggestions button:focus-visible { background: #eaf2ff; }
 .custom-lineup-actions { display: flex; gap: 9px; flex-wrap: wrap; align-items: center; }
+.custom-lineup-actions .give-up-confirmation-question { color: #63738b; }
+.custom-lineup-actions .give-up-confirmation-yes { font-family: inherit; border-radius: 7px; }
+.custom-lineup-actions .give-up-confirmation { max-width: 100%; }
 .custom-lineup-primary, .custom-lineup-secondary, .custom-lineup-quiet {
   min-height: 43px; padding: 10px 15px; border-radius: 7px;
   font: inherit; font-size: 13px; font-weight: 750; cursor: pointer;
@@ -143,5 +146,6 @@
   .custom-lineup-length { padding: 6px 8px; font-size: 11px; }
   .custom-lineup-masthead h1 { font-size: 25px; }
   .custom-lineup-actions { display: grid; grid-template-columns: 1fr 1fr; }
-  .custom-lineup-actions .custom-lineup-quiet { grid-column: 1 / -1; }
+  .custom-lineup-actions .custom-lineup-quiet,
+  .custom-lineup-actions .give-up-confirmation { grid-column: 1 / -1; }
 }
