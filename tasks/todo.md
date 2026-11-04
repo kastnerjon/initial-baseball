@@ -22,6 +22,8 @@ Remaining tasks only; completed verification and production evidence are recorde
 - [ ] Define a reversible **per-mode server play-admission policy**, initially guest-allowed for Custom and always guest-allowed for official Daily Nine. Any activation of other-mode authentication gates is a future owner decision, not authorized now; test in-progress guest attempts and rollback.
 - [ ] Reassess private Custom launch QA and enabled-feature rollback under authenticated creation/guest play. Never treat historical anonymous QA issuance evidence as authenticated creator acceptance.
 
+- [ ] **1/2/3 Custom strikes (issue #529):** portable issued-rule and trusted runtime cap staged; all current games still use 3 and writer fails closed for 1/2. Next requires immutable checked SQL persistence, verified issuance API, Custom signed progress/CAS/fact/decoder rules, creator setting, historical default-3 compatibility, QA and release gating. This source-only milestone is NOT feature completion.
+
 ## 2. Remaining private Custom Lineups release gates
 
 - [ ] Verify signed creator-to-friend gameplay through the *deployed* protected QA origin; GitHub Actions signed Chromium evidence runs against a local Next server, not the live Vercel ingress. Do not treat GET smoke as this acceptance.

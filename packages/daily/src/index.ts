@@ -238,11 +238,13 @@ export {
 export {
   CUSTOM_LINEUP_ISSUED_CHALLENGE_SCHEMA_VERSION,
   CUSTOM_LINEUP_RULESET_VERSION,
+  DEFAULT_CUSTOM_LINEUP_STRIKE_LIMIT,
   createCustomLineupIssuedChallenge,
   cloneCustomLineupIssuedChallenge,
   validateCustomLineupPuzzleId,
   type CustomLineupIssuedChallenge,
   type CustomLineupIssuedChallengeInput,
+  type CustomLineupStrikeLimit,
 } from './customLineupIssuedChallenge';
 
 export {
