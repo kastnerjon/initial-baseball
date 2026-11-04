@@ -199,7 +199,8 @@ function decodeResolution(value: unknown, pitch: number, n: number,
     || !integer(value.revision, 1, Number.MAX_SAFE_INTEGER)) invalid();
   if (value.kind === 'incorrect') {
     if (!integer(value.strikeCount, 1, cap - 1)) invalid();
-    return { kind: 'incorrect', strikeCount: value.strikeCount, revision: value.revision as number,
+    return { kind: 'incorrect', strikeCount: value.strikeCount as 1 | 2,
+      revision: value.revision as number,
       progressionToken: value.progressionToken as string };
   }
   if (value.kind !== 'terminal' || value.completed !== (pitch === n)) invalid();
