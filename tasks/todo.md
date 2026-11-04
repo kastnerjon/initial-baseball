@@ -1,5 +1,10 @@
 # Initial Baseball — Current Work
 
+## Custom #529 issuance transport activation
+
+- [ ] Keep CUSTOM_LINEUP_VARIABLE_STRIKES_ENABLED unset until route parsing, client bootstrap, signed CAS, result codecs and full QA prove 1/2/3 correctness. Wire strict account-only HTTP issuance to the immutable private writer and enable the creator selector together; do not apply production migrations/flags.
+
+
 ## Custom #529 next scoring boundary
 
 - [ ] Integrate immutable strike limits into signed incorrect/terminal progression and public/client bootstrap, then update creator controls and end-to-end browser QA. Durable history and scored-result verification are staged; nondefault issuance remains prohibited. Do not activate production migrations/flags.

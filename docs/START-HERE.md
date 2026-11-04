@@ -1,5 +1,11 @@
 # Initial Baseball — Start Here
 
+## November 3 — immutable Custom variable-strike issuance writer staged (#529)
+
+- The private issue service strictly parses optional 1/2/3 strike metadata, freezing the whole-lineup selection on the issued v2 row. Missing field preserves 3; null, undefined, strings, unknown fields, and malformed caps fail before player/DB access. Only a verified-account issuance with an explicit server-side CUSTOM_LINEUP_VARIABLE_STRIKES_ENABLED=true permits 1/2; legacy admin/anonymous paths remain 3. Writer persists and re-reads the issued rule atomically, without client-trusted IDs.
+- Source-level preparation only. The public create HTTP endpoint still accepts the old two-field payload; the server readiness flag is not configured. Existing 1/2 bootstrap guard and production Custom/Auth flags stay OFF. Nondefault puzzles must not be issued in production; strike schema exists only in isolated QA.
+
+
 ## November 3 — Custom strike-limit durable facts/score checks staged (#529)
 
 - Server-only v2 saved-history validation now derives K strike facts, exact CAS revision history and current active strike bounds from the immutable issued rule (1/2/3), including single-strike no-intermediate resolution. Private completed-result admission uses that same rule and points-v4 scoring for all 1–10 at-bats, even after three outs. Tests cover 1/2/3, no invented Give Up guesses, altered terminal facts and inconsistent revisions.
