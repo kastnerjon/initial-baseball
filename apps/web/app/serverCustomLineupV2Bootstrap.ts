@@ -2,7 +2,7 @@ import 'server-only';
 import { createHmac } from 'node:crypto';
 import {
   cloneCustomLineupIssuedChallenge, validateCustomLineupPuzzleId,
-  type CustomLineupIssuedChallenge,
+  type CustomLineupIssuedChallenge, type CustomLineupStrikeLimit,
 } from '@initial-baseball/daily';
 import type { Player } from '@initial-baseball/shared';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -79,6 +79,9 @@ export function createServerCustomLineupV2BootstrapService({
       return {
         puzzleId: challenge.puzzleId,
         rulesetVersion: challenge.rulesetVersion,
+        // The rollout guard above currently narrows this value to 3;
+        // keep the portable response contract typed for future 1/2 support.
+        strikeLimit: challenge.strikeLimit as CustomLineupStrikeLimit,
         atBats: result.puzzle.pitches.map(p => ({ pitchNumber: p.pitchNumber, initials: p.initials })),
         progressionToken: result.progressionToken,
         hintBundle: result.hintBundle,

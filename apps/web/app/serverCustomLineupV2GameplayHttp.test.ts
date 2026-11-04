@@ -28,7 +28,7 @@ const ID = 'custom-lineup-v2-123e4567-e89b-42d3-a456-426614174000';
 const URL = 'https://example.test/api/custom-lineup/challenges/' + ID + '/attempt/';
 const player = 'ibp_' + 'a'.repeat(20);
 const opening = {
-  puzzleId: ID, rulesetVersion: 'points-v4',
+  puzzleId: ID, rulesetVersion: 'points-v4', strikeLimit: 3,
   atBats: [{ pitchNumber: 1, initials: 'BH' }],
   progressionToken: 'signed-open',
   hintBundle: { pitchNumber: 1, revealedCount: 0, hints: [], checkpoints: [] },
@@ -138,7 +138,7 @@ describe('off-by-default Custom v2 gameplay HTTP transport', () => {
     expect(await preview.json()).toMatchObject({ attemptMode: 'creator_preview' });
     expect(preview.headers.get('set-cookie')).toBeNull();
     bootstrap.mockResolvedValueOnce({
-      kind: 'completed', atBats: opening.atBats,
+      kind: 'completed', atBats: opening.atBats, strikeLimit: 3,
       completedAtBats: [{ pitchNumber: 1, initials: 'BH', outcome: 'HR',
         hintsRevealed: 0, wrongGuesses: 0, resolution: 'correct' }],
       revision: 1, completedAt: '2026-10-15T12:00:00Z',
@@ -146,6 +146,7 @@ describe('off-by-default Custom v2 gameplay HTTP transport', () => {
     const result = await send('bootstrap');
     const json = await result.json() as Record<string, unknown>;
     expect(json.attemptMode).toBe('completed');
+    expect(json.strikeLimit).toBe(3);
     expect(json).not.toHaveProperty('progressionToken');
     expect(json).not.toHaveProperty('hintBundle');
     expect(json).not.toHaveProperty('attemptId');

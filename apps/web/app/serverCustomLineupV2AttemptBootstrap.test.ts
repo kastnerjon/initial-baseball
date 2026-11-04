@@ -39,7 +39,7 @@ const OPEN = tokens.sign({ version:1, rulesetVersion:'points-v4', puzzleId:ID,
   strikeCount:0, outCount:0, completed:false });
 function opening(n: number) {
   return {
-    puzzleId:ID, rulesetVersion:'points-v4' as const,
+    puzzleId:ID, rulesetVersion:'points-v4' as const, strikeLimit:3 as const,
     atBats:Array.from({length:n},(_,i)=>({pitchNumber:i+1,initials:'P'+(i+1)})),
     progressionToken:OPEN,
     hintBundle:{
@@ -97,6 +97,7 @@ describe('private Custom v2 first-attempt reservation',()=>{
     expect(first.kind).toBe('ready');
     if(first.kind!=='ready')throw Error('ready');
     expect(first.bootstrap.atBats).toHaveLength(n);
+    expect(first.bootstrap.strikeLimit).toBe(3);
     expect(first.bootstrap.hintBundle.hints).toEqual([]);
     expect(first.bootstrap.hintBundle.checkpoints).toEqual([]);
     expect(first.bootstrap.progressionToken).toBe(OPEN);
@@ -245,7 +246,7 @@ describe('private Custom v2 first-attempt reservation',()=>{
     const finished=tokens.sign({...tokens.verify(OPEN),pitchNumber:n,completed:true});
     s.map.set(digest,{...saved(digest,finished,'completed',n),terminalAtBats});
     const restored=await s.service.bootstrap(ID,cookie,URL);
-    expect(restored).toMatchObject({kind:'completed',revision:n,
+    expect(restored).toMatchObject({kind:'completed',revision:n,strikeLimit:3,
       completedAt:expect.any(String),completedAtBats:terminalAtBats});
     if(restored.kind!=='completed')throw Error('completed not restored');
     expect(restored.atBats).toHaveLength(n);

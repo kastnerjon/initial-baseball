@@ -1,8 +1,29 @@
 # Initial Baseball — Current Work
 
-## Custom #529 immutable issuance readiness
+## Custom #529 server issuance activation gate
 
-- [ ] The private issuer strictly validates an optional 1/2/3 cap; trusted account issuance of 1/2 requires separate default-off CUSTOM_LINEUP_VARIABLE_STRIKES_ENABLED. Public route remains two-field/default-three until reviewed HTTP/UI+gameplay integration and QA. Production unmodified.
+- [ ] Integrate and review strict public Create HTTP payload handling, creator selector, guest progression/terminal receipt, and 1/2/3-point cohorts in isolated QA before enabling the dedicated nondefault strike server setting. Never treat source-staged private writer acceptance as public issuance authorization.
+
+
+## Custom #529 remaining attempts/QA
+
+- [ ] After cap-specific hint/CAS/admission readers are integrated, complete browser transport, one- or two-strike first-attempt refresh, lost-response retry, and real hosted QA before allowing nondefault issuance.
+
+
+## Custom #529 pending browser strike-cap integration
+
+- [ ] Browser transport must validate the immutable strike limit in reserved, preview and completed openings, keep valid active-strike ranges below the cap and pass the cap into terminal-result decoding. Server bootstrap projects the issued rule but still refuses 1/2 at runtime. Preserve historical 3 and complete QA before enabling issuance.
+
+
+## Custom #529 terminal decoder activation
+
+- [ ] The strict Custom terminal decoder can validate issued 1/2/3-strike K receipts; the browser transport must still pass the server-issued cap and complete end-to-end QA before activation.
+
+
+## Custom #529 remaining runtime integration
+
+- [ ] Connect server-signed 1/2/3 strike rules into nonleaking Custom bootstrap/transport and terminal payload decode; then creator setting, guest UI, cohort separation and end-to-end regression. Server CAS resolver and scored-history validators are staged separately; no 1/2 issuance activation yet.
+
 
 
 ## #529 private repository integration
