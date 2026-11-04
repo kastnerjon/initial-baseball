@@ -69,7 +69,7 @@ function controlledSession(n: number, creator = false) {
     hints: hintDepth ? [{ slot: 1 as const, ...HINT }] : [], checkpoints: [] as never[],
   });
   const open = (): Opening => ({
-    puzzleId: ID, rulesetVersion: 'points-v4', atBats,
+    puzzleId: ID, rulesetVersion: 'points-v4', strikeLimit: 3, atBats,
     progressionToken: token(), hintBundle: activeBundle(),
   });
   const bootstrap = vi.fn(async (_id: unknown, cookie: string | null)
@@ -78,7 +78,7 @@ function controlledSession(n: number, creator = false) {
       return { kind: 'preview', bootstrap: open() };
     }
     if (facts.length === n) {
-      return { kind: 'completed', atBats, completedAtBats: facts,
+      return { kind: 'completed', atBats, strikeLimit: 3, completedAtBats: facts,
         revision, completedAt: '2026-10-15T18:00:00.000Z' };
     }
     return {
