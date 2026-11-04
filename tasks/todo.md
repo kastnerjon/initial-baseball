@@ -1,8 +1,19 @@
 # Initial Baseball — Current Work
 
-## Custom #529 staged nonsecret bootstrap projection
+## Custom #529 pending browser strike-cap integration
 
-- [ ] The issued cap is included in private reserved/creator-preview and completed DTOs, but nondefault gameplay is still rejected at bootstrap until browser transport and UI honor it. QA and release gates unchanged.
+- [ ] Browser transport must validate the immutable strike limit in reserved, preview and completed openings, keep valid active-strike ranges below the cap and pass the cap into terminal-result decoding. Server bootstrap projects the issued rule but still refuses 1/2 at runtime. Preserve historical 3 and complete QA before enabling issuance.
+
+
+## Custom #529 terminal decoder activation
+
+- [ ] The strict Custom terminal decoder can validate issued 1/2/3-strike K receipts; the browser transport must still pass the server-issued cap and complete end-to-end QA before activation.
+
+
+## Custom #529 remaining runtime integration
+
+- [ ] Connect server-signed 1/2/3 strike rules into nonleaking Custom bootstrap/transport and terminal payload decode; then creator setting, guest UI, cohort separation and end-to-end regression. Server CAS resolver and scored-history validators are staged separately; no 1/2 issuance activation yet.
+
 
 
 ## #529 private repository integration
