@@ -1,5 +1,12 @@
 # Initial Baseball — Start Here
 
+## November 3 — Custom strike-limit durable facts/score checks staged (#529)
+
+- Server-only v2 saved-history validation now derives K strike facts, exact CAS revision history and current active strike bounds from the immutable issued rule (1/2/3), including single-strike no-intermediate resolution. Private completed-result admission uses that same rule and points-v4 scoring for all 1–10 at-bats, even after three outs. Tests cover 1/2/3, no invented Give Up guesses, altered terminal facts and inconsistent revisions.
+- **Source only, still NOT playable:** Create issuance, signed incorrect progression, browser payload codecs and creator UI remain gated to three until reviewed end-to-end. Production DB/flags untouched; isolated QA migration only.
+
+
+
 ## November 3 — persisted Custom strike-limit row adapters staged (#529)
 
 - Service-role issued adapter now selects/decodes the stored `strike_limit`, validates 1/2/3, rejects explicit NULL/malformed database values, and writes the immutable default 3 on new records. Missing historical test fixtures still default to 3. An explicit Custom v2 bootstrap guard fails closed on 1/2 until the full server progression/terminal/client contract is ready; the issuance writer still rejects 1/2.

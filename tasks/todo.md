@@ -1,5 +1,11 @@
 # Initial Baseball — Current Work
 
+## Custom #529 next scoring boundary
+
+- [ ] Integrate immutable strike limits into signed incorrect/terminal progression and public/client bootstrap, then update creator controls and end-to-end browser QA. Durable history and scored-result verification are staged; nondefault issuance remains prohibited. Do not activate production migrations/flags.
+
+
+
 ## 0. Custom Lineup configurable strike limit (#529)
 
 - [ ] Complete frozen strike rule propagation from staged issued row adapters through signed Custom v2 progression and all terminal/score validation; preserve old three-strike challenges and reject client tampering.

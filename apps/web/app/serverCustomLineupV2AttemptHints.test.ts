@@ -8,7 +8,7 @@ import { createCustomLineupV2CreatorBrowserMarker } from './customNineCreatorBro
 import type { CustomNineAttemptState } from './customNineAttemptRowCodec';
 import { createCustomLineupV2ProgressionTokens } from './serverCustomLineupV2Bootstrap';
 import { CUSTOM_NINE_SESSION_DATE } from './serverCustomNineBootstrap';
-import { createServerCustomLineupV2AttemptHintService } from './serverCustomLineupV2AttemptHints';
+import { createServerCustomLineupV2AttemptHintService, validCustomLineupV2SavedHistory } from './serverCustomLineupV2AttemptHints';
 import { createCustomNineProgressionTokens } from './serverCustomNineBootstrap';
 import { createDailyProgressionTokenCodec } from './dailyProgressionToken';
 
@@ -96,6 +96,32 @@ describe('private Custom Lineup v2 hint CAS', () => {
     expect(s.read()?.terminalAtBats).toEqual([]);
   });
 
+  it.each([1, 2, 3] as const)('checks frozen %i-strike K facts and exact durable revision', cap => {
+    const frozen = { ...challenge(5), strikeLimit: cap };
+    const first = setup(5).read()!;
+    const terminal = {
+      pitchNumber: 1, initials: 'P1', hintsRevealed: 0 as const,
+      wrongGuesses: cap, outcome: 'K' as const, resolution: 'strikeout' as const,
+    };
+    const next = { ...claims, pitchNumber: 2, outCount: 1 as const };
+    const saved = {
+      ...first, revision: cap, terminalAtBats: [terminal],
+      currentProgressionToken: TOKENS.sign(next),
+    };
+    expect(validCustomLineupV2SavedHistory(saved, next, frozen)).toBe(true);
+    expect(validCustomLineupV2SavedHistory({ ...saved, revision: cap + 1 }, next, frozen)).toBe(false);
+    expect(validCustomLineupV2SavedHistory({
+      ...saved, terminalAtBats: [{ ...terminal, wrongGuesses: cap === 3 ? 2 : cap + 1 }],
+    }, next, frozen)).toBe(false);
+    // Signed tokens permit only preterminal strike counts 0, 1, 2.
+    // Caps 1/2 have an unrepresentable active state at the exact cap.
+    if (cap < 3) {
+      const active = { ...claims, strikeCount: cap as 1 | 2 };
+      expect(validCustomLineupV2SavedHistory({
+        ...first, revision: cap, currentProgressionToken: TOKENS.sign(active),
+      }, active, frozen)).toBe(false);
+    }
+  });
   it('rejects stale replay, and concurrent identical requests have one winner', async () => {
     const s = setup(10);
     const both = await Promise.all([

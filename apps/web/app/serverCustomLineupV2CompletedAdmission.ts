@@ -136,7 +136,7 @@ function scoreCompletedAttempt(
     if (!pitch || pitch.pitchNumber !== index + 1 || game.points.completed) invalidCompletion();
     const normalized = normalizeDailyTerminalAtBat(rawFact, {
       pitchNumber: pitch.pitchNumber, initials: pitch.initials,
-    } as DailyPublicPuzzle['pitches'][number]);
+    } as DailyPublicPuzzle['pitches'][number], challenge.strikeLimit);
     if (!normalized.ok) invalidCompletion();
     const fact = normalized.atBat;
     awardedPoints.push(getDailyAtBatPoints({ ...fact, rulesetVersion: 'points-v4' }));
