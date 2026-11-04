@@ -34,11 +34,11 @@ export type CustomLineupV2AttemptHintResult =
   | { kind: 'not_found' | 'invalid_credential' | 'invalid_progression' | 'completed' | 'conflict' }
   | { kind: 'revealed'; hint: Hint; progressionToken: string; revision: number };
 
-function signedScope(claims: DailyProgressionClaims, id: string, n: number) {
+function signedScope(claims: DailyProgressionClaims, id: string, n: number, cap: 1 | 2 | 3) {
   return claims.version === 1 && claims.puzzleId === id
     && claims.puzzleDate === CUSTOM_NINE_SESSION_DATE && claims.rulesetVersion === 'points-v4'
     && !claims.completed && claims.pitchNumber >= 1 && claims.pitchNumber <= n
-    && claims.revealCount < 4;
+    && claims.revealCount < 4 && claims.strikeCount < cap;
 }
 function oneHintStep(before: DailyProgressionClaims, after: DailyProgressionClaims) {
   return after.version === before.version && after.puzzleId === before.puzzleId
@@ -55,6 +55,7 @@ export function validCustomLineupV2SavedHistory(state: CustomNineAttemptState, c
   challenge: CustomLineupIssuedChallenge) {
   const n = challenge.canonicalPlayerIds.length;
   const completed = state.status === 'completed';
+  if (!completed && claims.strikeCount >= challenge.strikeLimit) return false;
   if (claims.completed !== completed
     || state.terminalAtBats.length !== (completed ? n : claims.pitchNumber - 1)
     || (completed && (claims.pitchNumber !== n || claims.revealCount !== 0
@@ -67,9 +68,9 @@ export function validCustomLineupV2SavedHistory(state: CustomNineAttemptState, c
       || fact.initials !== expected.initials
       || !normalizeDailyTerminalAtBat(fact, {
         pitchNumber: i + 1, initials: expected.initials,
-      } as DailyPublicPuzzle['pitches'][number]).ok) return false;
+      } as DailyPublicPuzzle['pitches'][number], challenge.strikeLimit).ok) return false;
     priorRevisions += 1 + fact.hintsRevealed
-      + (fact.resolution === 'strikeout' ? 2 : fact.wrongGuesses);
+      + (fact.resolution === 'strikeout' ? challenge.strikeLimit - 1 : fact.wrongGuesses);
     if (fact.outcome === 'K') outs += 1;
   }
   return claims.outCount === Math.min(3, outs)
@@ -108,7 +109,7 @@ export function createServerCustomLineupV2AttemptHintService({
         if (error instanceof DailyProgressionTokenError) return { kind: 'invalid_progression' };
         throw error;
       }
-      if (!signedScope(before, puzzleId, n)) return { kind: 'invalid_progression' };
+      if (!signedScope(before, puzzleId, n, challenge.strikeLimit)) return { kind: 'invalid_progression' };
 
       const repository = dependencies.repository(environment, n);
       const state = await repository.getByKey({
@@ -127,6 +128,7 @@ export function createServerCustomLineupV2AttemptHintService({
           return puzzle;
         },
         progressionTokens: tokens,
+        maxStrikes: challenge.strikeLimit,
         resolveLegacyPlayerId: () => { throw new Error('Legacy IDs unsupported.'); },
         getCanonicalReveal: () => { throw new Error('Answer reveal unsupported.'); },
       });
