@@ -2,9 +2,6 @@ name: Isolated Custom Lineup signed browser QA
 
 on:
   workflow_dispatch:
-  push:
-    branches: [test/custom-v2-native-signed-browser-20261023]
-    paths: [.github/workflows/custom-v2-signed-qa.yml]
 
 permissions:
   contents: read
@@ -15,18 +12,26 @@ concurrency:
 
 jobs:
   signed-browser-acceptance:
-    if: github.ref == 'refs/heads/test/custom-v2-native-signed-browser-20261023'
+    if: github.ref == 'refs/heads/main'
+    environment: qa-custom-signed-browser
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
       - uses: pnpm/action-setup@v4
         with:
           version: 9.15.0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: pnpm
+      - name: Require restricted QA Environment secret before installing dependencies
+        env:
+          QA_SERVICE_ROLE: ${{ secrets.QA_CUSTOM_SIGNED_BROWSER_SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          test -n "$QA_SERVICE_ROLE" || { echo 'Missing qa-custom-signed-browser Environment secret'; exit 1; }
       - run: pnpm install --frozen-lockfile
       - name: Build app and canonical runtime data without database credentials
         env:
@@ -52,7 +57,7 @@ jobs:
         env:
           CUSTOM_V2_QA_PROJECT_REF: iklbnlicgsxxhaoiscor
           SUPABASE_URL: https://iklbnlicgsxxhaoiscor.supabase.co
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.CUSTOM_V2_QA_SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.QA_CUSTOM_SIGNED_BROWSER_SUPABASE_SERVICE_ROLE_KEY }}
           CUSTOM_LINEUP_V2_GAMEPLAY_TRANSPORT_ENABLED: 'true'
           CUSTOM_V2_QA_PUBLIC_CREATION: 'true'
           CUSTOM_LINEUP_PUBLIC_CREATION_ENABLED: 'true'

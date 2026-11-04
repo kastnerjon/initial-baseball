@@ -1,5 +1,10 @@
 # Initial Baseball — Current Work
 
+## Security: legacy signed QA workflow (#531)
+
+- [ ] Stage reviewed main-only Environment-bound legacy signed-browser workflow; before invoking its privileged path, GitHub maintainer must create `qa-custom-signed-browser`, restrict deployment branches to precisely `main`, and install only isolated-QA `QA_CUSTOM_SIGNED_BROWSER_SUPABASE_SERVICE_ROLE_KEY` as an Environment secret. Verify a trusted-main pass and untrusted-branch denial; then **delete the old repository-wide** `CUSTOM_V2_QA_SUPABASE_SERVICE_ROLE_KEY` secret. Source-level remediation alone does not remove the exposure from other branches.
+
+
 ## 0. Custom Lineup configurable strike limit (#529)
 
 - [ ] Verify final independent review and migration-history parity for the additive issued-row `strike_limit` schema, rehearsed successfully in isolated QA. Do not apply to production without release approval.
