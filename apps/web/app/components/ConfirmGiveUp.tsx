@@ -39,8 +39,7 @@ export function ConfirmGiveUp({
   return (
     <div className="give-up-confirmation"
       role={confirming ? 'group' : undefined}
-      aria-label={confirming ? 'Confirm give up' : undefined}
->
+      aria-label={confirming ? 'Confirm give up' : undefined}>
       <button type="button" className={className} disabled={disabled}
         aria-busy={pending}
         onClick={() => { setArmed(transitionGiveUpConfirmation(armed, 'toggle').armed); }}>
