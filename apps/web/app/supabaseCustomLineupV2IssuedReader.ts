@@ -3,6 +3,7 @@ import {
   createCustomLineupIssuedChallenge,
   validateCustomLineupPuzzleId,
   type CustomLineupIssuedChallenge,
+  type CustomLineupStrikeLimit,
 } from '@initial-baseball/daily';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import {
@@ -28,13 +29,18 @@ export function decodeCustomLineupV2IssuedRow(value: unknown): CustomLineupIssue
       canonicalPlayerIds: stringArray(row.canonical_player_ids, 'canonical_player_ids'),
       clueSnapshot: decodeIssuedDailyClueSnapshot(row.clue_snapshot, 'custom-v2'),
       issuedAt: timestamp(row.issued_at, 'issued_at'),
+      // Omitted means pre-column historical fixtures only. NULL is malformed,
+      // never a request to use the default.
+      ...(row.strike_limit === undefined ? {} : {
+        strikeLimit: row.strike_limit as CustomLineupStrikeLimit,
+      }),
     });
   } catch {
     throw new CustomLineupV2IssuedReadError('invalid-row');
   }
 }
 
-const COLUMNS = 'puzzle_id,schema_version,ruleset_version,canonical_player_ids,clue_snapshot,issued_at';
+const COLUMNS = 'puzzle_id,schema_version,ruleset_version,canonical_player_ids,clue_snapshot,issued_at,strike_limit';
 const ACCOUNT_ID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
 export function createSupabaseCustomLineupV2IssuedReader(client: SupabaseClient) {
   return {

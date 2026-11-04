@@ -76,6 +76,18 @@ describe('private v2 issued challenge read boundary',()=>{
     expect(from).toHaveBeenCalledWith('custom_nine_issued_challenges');
     expect(match).toHaveBeenCalledWith({puzzle_id:ID,schema_version:2});
   });
+  it.each([1,2,3] as const)('decodes the persisted immutable %i-strike rule', strikeLimit => {
+    const row = { ...fixture(2), strike_limit: strikeLimit };
+    expect(decodeCustomLineupV2IssuedRow(row).strikeLimit).toBe(strikeLimit);
+  });
+  it('defaults omitted historical fixtures to three, but rejects explicit invalid DB caps', () => {
+    expect(decodeCustomLineupV2IssuedRow(fixture(1)).strikeLimit).toBe(3);
+    for (const strike_limit of [null, 0, 4, -1, 1.5, '2', true]) {
+      expect(() => decodeCustomLineupV2IssuedRow({
+        ...fixture(1), strike_limit,
+      })).toThrow('Private Custom Lineup v2 challenge unavailable');
+    }
+  });
   it('rejects v1, 0/11, broken and mismatched challenge records',async()=>{
     const good=fixture(1);
     const invalid=[

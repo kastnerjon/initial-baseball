@@ -10,7 +10,7 @@ import {
 } from './supabaseCustomLineupV2IssuedReader';
 
 const TABLE = 'custom_nine_issued_challenges';
-const COLUMNS = 'puzzle_id,schema_version,ruleset_version,canonical_player_ids,clue_snapshot,issued_at';
+const COLUMNS = 'puzzle_id,schema_version,ruleset_version,canonical_player_ids,clue_snapshot,issued_at,strike_limit';
 
 export class CustomLineupV2IssuedWriteError extends Error {
   constructor(public readonly kind: 'query' | 'invalid-row') {
@@ -31,6 +31,7 @@ export function encodeCustomLineupV2IssuedRow(
     puzzle_id: value.puzzleId,
     schema_version: value.schemaVersion,
     ruleset_version: value.rulesetVersion,
+    strike_limit: value.strikeLimit,
     canonical_player_ids: [...value.canonicalPlayerIds],
     clue_snapshot: {
       schemaVersion: value.clueSnapshot.schemaVersion,

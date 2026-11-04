@@ -61,6 +61,7 @@ describe('nondefault strike cap persistence is not yet enabled', () => {
         .toThrow('Private Custom Lineup v2 issuance unavailable');
     }
     expect(encodeCustomLineupV2IssuedRow(challenge(1))).toHaveProperty('schema_version', 2);
+    expect(encodeCustomLineupV2IssuedRow(challenge(1))).toHaveProperty('strike_limit', 3);
   });
 });
 
