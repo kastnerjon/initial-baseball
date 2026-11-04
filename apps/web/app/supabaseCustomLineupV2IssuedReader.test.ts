@@ -28,7 +28,7 @@ function reader(data:unknown,error:unknown=null) {
   const match=vi.fn().mockReturnValue({maybeSingle});
   const select=vi.fn().mockReturnValue({match});
   const from=vi.fn().mockReturnValue({select});
-  return {repo:createSupabaseCustomLineupV2IssuedReader({from} as unknown as SupabaseClient),from,match};
+  return {repo:createSupabaseCustomLineupV2IssuedReader({from} as unknown as SupabaseClient),from,match,select};
 }
 describe('private v2 issued challenge read boundary',()=>{
   it('reads only narrow account owner metadata and rejects corrupt rows',async()=>{
@@ -71,10 +71,13 @@ describe('private v2 issued challenge read boundary',()=>{
     });
     expect(decoded).toEqual(expected);
     expect(Object.isFrozen(decoded.clueSnapshot.pitches[0]?.hintValues)).toBe(true);
-    const {repo,from,match}=reader(row);
+    const {repo,from,match,select}=reader(row);
     await expect(repo.getById(ID)).resolves.toEqual(expected);
     expect(from).toHaveBeenCalledWith('custom_nine_issued_challenges');
     expect(match).toHaveBeenCalledWith({puzzle_id:ID,schema_version:2});
+    expect(select).toHaveBeenCalledWith(
+      'puzzle_id,schema_version,ruleset_version,canonical_player_ids,clue_snapshot,issued_at,strike_limit',
+    );
   });
   it.each([1,2,3] as const)('decodes the persisted immutable %i-strike rule', strikeLimit => {
     const row = { ...fixture(2), strike_limit: strikeLimit };
