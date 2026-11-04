@@ -2,6 +2,7 @@
 
 import React, { useEffect, useRef, useState, type JSX } from 'react';
 import { parseCustomLineupTitle } from '@initial-baseball/shared';
+import type { CustomLineupStrikeLimit } from '@initial-baseball/daily';
 import { CustomLineupShareLink } from '../custom-lineup/CustomLineupShareLink';
 import { CustomLineupSlotPicker } from './CustomLineupSlotPicker';
 import { CUSTOM_LINEUP_DRAFT_KEY, parseCustomLineupDraft } from './customLineupDraftSession';
@@ -53,10 +54,13 @@ function playerLabel(player: SearchCandidate): string {
 }
 
 /** Reuses the exact tested ordered picker for admin and no-sign-in creators. */
-export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, audience = 'admin' }: {
+export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, audience = 'admin',
+  variableStrikesAvailable = false }: {
   mode?: 'v1' | 'v2';
   gameplayAvailable?: boolean;
   audience?: 'admin' | 'public';
+  /** Do not enable until server issuance and client progression accept this rule. */
+  variableStrikesAvailable?: boolean;
 } = {}): JSX.Element {
   const isV2 = mode === 'v2';
   const isPublic = audience === 'public' && isV2;
@@ -66,6 +70,7 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
     : isV2 ? '/api/custom-lineup/challenges' : '/api/custom-nine/challenges';
   const [query, setQuery] = useState('');
   const [title, setTitle] = useState('');
+  const [strikeLimit, setStrikeLimit] = useState<CustomLineupStrikeLimit>(3);
   const [suggestions, setSuggestions] = useState<SearchCandidate[]>([]);
   const [players, setPlayers] = useState<readonly ChosenCustomNinePlayer[]>([]);
   const [slots, setSlots] = useState<CustomLineupSlots>(() => Array.from({ length: 9 }, () => null));
@@ -90,19 +95,24 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
       const value = creatorDraftStorage()?.getItem(CUSTOM_LINEUP_DRAFT_KEY);
       if (value && value.length <= 6000) {
         const draft = parseCustomLineupDraft(JSON.parse(value));
-        if (draft) { setTitle(draft.title); setSlots(draft.slots); }
+        if (draft) {
+          setTitle(draft.title); setSlots(draft.slots);
+          setStrikeLimit(variableStrikesAvailable ? draft.strikeLimit : 3);
+        }
       }
     } catch { /* Browser may disable storage; unsaved drafting still works. */ }
     setDraftHydrated(true);
-  }, [isPublic]);
+  }, [isPublic, variableStrikesAvailable]);
 
   useEffect(() => {
     if (!isPublic || !draftHydrated) return;
     try {
       if (createdId !== null) creatorDraftStorage()?.removeItem(CUSTOM_LINEUP_DRAFT_KEY);
-      else creatorDraftStorage()?.setItem(CUSTOM_LINEUP_DRAFT_KEY, JSON.stringify({ title, slots }));
+      else creatorDraftStorage()?.setItem(CUSTOM_LINEUP_DRAFT_KEY, JSON.stringify({
+        title, slots, strikeLimit: variableStrikesAvailable ? strikeLimit : 3,
+      }));
     } catch { /* Storage is best-effort and contains only public player selection. */ }
-  }, [isPublic, draftHydrated, createdId, title, slots]);
+  }, [isPublic, draftHydrated, createdId, title, slots, strikeLimit, variableStrikesAvailable]);
 
   useEffect(() => {
     const trimmed = query.trim();
@@ -160,6 +170,7 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
           body: JSON.stringify({
             canonicalPlayerIds: isV2 ? slots.map(player => player!.playerId) : players.map(player => player.playerId),
             ...(isPublic ? { title: parseCustomLineupTitle(title).ok ? title : '' } : {}),
+            ...(isPublic && variableStrikesAvailable ? { strikeLimit } : {}),
           }),
         });
         if (isPublic && response.status === 401) {
@@ -256,6 +267,23 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
             ? <p role="status">Use a name of 3–60 visible characters.</p> : null}
         </section>
       ) : null}
+      {isPublic && variableStrikesAvailable ? (
+        <section className="custom-nine-creator-card" aria-labelledby="custom-lineup-strike-heading">
+          <h2 id="custom-lineup-strike-heading">Game rules</h2>
+          <label htmlFor="custom-lineup-strike-limit">Strikes per out</label>
+          <select id="custom-lineup-strike-limit" value={strikeLimit}
+            disabled={!draftEditable}
+            onChange={event => {
+              const selected = Number(event.target.value);
+              if (selected === 1 || selected === 2 || selected === 3) setStrikeLimit(selected);
+            }}>
+            <option value={1}>1 strike</option>
+            <option value={2}>2 strikes</option>
+            <option value={3}>3 strikes (default)</option>
+          </select>
+          <p>The same strike limit applies to every at-bat in your issued lineup.</p>
+        </section>
+      ) : null}
       <section className="custom-nine-creator-card" aria-labelledby="custom-nine-lineup-heading">
         <div className="custom-nine-creator-heading">
           <h2 id="custom-nine-lineup-heading">Your lineup</h2>
@@ -346,6 +374,7 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
                 setSlots(Array.from({ length: 9 }, () => null));
                 setQuery('');
                 setTitle('');
+                setStrikeLimit(3);
                 setSuggestions([]);
                 setCreatedId(null);
                 setNeedsSignIn(false);

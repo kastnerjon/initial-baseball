@@ -1,5 +1,10 @@
 # Initial Baseball — Current Work
 
+## Custom #529 creator setting activation
+
+- [ ] Connect the default-off creator strike selector to strict account-gated server issuance only after nondefault writer, signed gameplay, receipt decode, client rendering and cohort QA are complete. Avoid displaying the selector while the backend still rejects variable strikes.
+
+
 ## Custom #529 next scoring boundary
 
 - [ ] Integrate immutable strike limits into signed incorrect/terminal progression and public/client bootstrap, then update creator controls and end-to-end browser QA. Durable history and scored-result verification are staged; nondefault issuance remains prohibited. Do not activate production migrations/flags.

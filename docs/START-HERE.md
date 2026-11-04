@@ -1,5 +1,11 @@
 # Initial Baseball — Start Here
 
+## November 3 — gated Custom creator strike-limit draft control staged (#529)
+
+- The creator now stores validated 1/2/3 strike choices in its session draft. Historical two-field drafts default to 3; malformed explicit caps are rejected. An accessible selection control and request-body property are guarded by a default-false readiness prop. Neither the public Create route nor the legacy admin creator passes that prop.
+- This is not playable variable-strike issuance. The server creation route currently rejects the extra property, and the private writer still blocks nondefault caps. Do not expose this control until end-to-end progression, result scoring, cohort semantics, and QA satisfy #529. Production migrations and flags are untouched.
+
+
 ## November 3 — Custom strike-limit durable facts/score checks staged (#529)
 
 - Server-only v2 saved-history validation now derives K strike facts, exact CAS revision history and current active strike bounds from the immutable issued rule (1/2/3), including single-strike no-intermediate resolution. Private completed-result admission uses that same rule and points-v4 scoring for all 1–10 at-bats, even after three outs. Tests cover 1/2/3, no invented Give Up guesses, altered terminal facts and inconsistent revisions.

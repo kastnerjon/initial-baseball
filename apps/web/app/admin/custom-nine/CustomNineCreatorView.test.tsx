@@ -21,6 +21,21 @@ describe('Custom Nine creator initial view', () => {
     expect(html).not.toContain('href="/custom/');
   });
 
+  it("stages the 1/2/3 control only behind explicit source readiness", () => {
+    const hidden = renderToStaticMarkup(<CustomNineCreatorView mode="v2" audience="public" />);
+    expect(hidden).not.toContain("Strikes per out");
+    const html = renderToStaticMarkup(
+      <CustomNineCreatorView mode="v2" audience="public" variableStrikesAvailable />,
+    );
+    expect(html).toContain("Strikes per out");
+    expect(html).toContain("The same strike limit applies to every at-bat");
+    expect(html).toContain('value="1"');
+    expect(html).toContain('value="2"');
+    expect(html).toContain('value="3" selected=""');
+    expect(html).not.toContain("canonicalPlayerIds");
+    expect(renderToStaticMarkup(<CustomNineCreatorView />)).not.toContain("Strikes per out");
+  });
+
   it('shows nine ordered empty places, search and disabled issuance without revealing answers', () => {
     const html = renderToStaticMarkup(<CustomNineCreatorView />);
     expect(html).toContain('Create a Custom Nine');
