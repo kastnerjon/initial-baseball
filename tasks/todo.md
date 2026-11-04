@@ -1,13 +1,45 @@
 # Initial Baseball — Current Work
 
-## Custom #529 HTTP rule rollout
+## Custom #529 optional-strike Create HTTP activation gate
 
-- [ ] Keep CUSTOM_LINEUP_VARIABLE_STRIKES_ENABLED default OFF until the protected issuance route, creator control, signed gameplay and terminal codec have completed integrated QA across 1/2/3. Never activate production Custom/Auth or apply production schema in this milestone.
+- [ ] After strict account-only request validation is merged, do not set the dedicated server strike rollout variable until immutable 1/2/3 gameplay, creator UI, comparison cohorts and isolated hosted/mobile QA pass. Preserve default-three creation/guest play and production migration safety.
 
 
-## Custom #529 issuance transport activation
+## Custom #529 verified-account issuance activation
 
-- [ ] Keep CUSTOM_LINEUP_VARIABLE_STRIKES_ENABLED unset until route parsing, client bootstrap, signed CAS, result codecs and full QA prove 1/2/3 correctness. Wire strict account-only HTTP issuance to the immutable private writer and enable the creator selector together; do not apply production migrations/flags.
+- [ ] Integrate server-only strict 1/2/3 issuance with verified-account HTTP, creator selector and supported browser gameplay. Keep CUSTOM_LINEUP_VARIABLE_STRIKES_ENABLED unset and production owner/strike migrations unapplied until full isolated-QA release acceptance and explicit approval.
+
+
+## Custom #529 remaining first-attempt QA
+
+- [ ] Rehearse 1/2/3-issued Custom attempts through stored reservation, cross-browser creator exclusion, resumed K facts, conflict races and full completion on isolated QA. Keep default-off nondefault issuance pending independently reviewed whole-stack integration.
+
+
+## Custom #529 remaining attempts/QA
+
+- [ ] After cap-specific hint/CAS/admission readers are integrated, complete browser transport, one- or two-strike first-attempt refresh, lost-response retry, and real hosted QA before allowing nondefault issuance.
+
+
+## Custom #529 pending browser strike-cap integration
+
+- [ ] Browser transport must validate the immutable strike limit in reserved, preview and completed openings, keep valid active-strike ranges below the cap and pass the cap into terminal-result decoding. Server bootstrap projects the issued rule but still refuses 1/2 at runtime. Preserve historical 3 and complete QA before enabling issuance.
+
+
+## Custom #529 terminal decoder activation
+
+- [ ] The strict Custom terminal decoder can validate issued 1/2/3-strike K receipts; the browser transport must still pass the server-issued cap and complete end-to-end QA before activation.
+
+
+## Custom #529 remaining runtime integration
+
+- [ ] Connect server-signed 1/2/3 strike rules into nonleaking Custom bootstrap/transport and terminal payload decode; then creator setting, guest UI, cohort separation and end-to-end regression. Server CAS resolver and scored-history validators are staged separately; no 1/2 issuance activation yet.
+
+
+
+## #529 private repository integration
+
+- [ ] Wire immutable issued strike cap into all v2 reservation-repository callers, including signed resolution, hint/continuation, completion and bootstrap. The default-three repository cannot admit K1/K2; do not activate creation/flag paths before full integration.
+
 
 
 ## Custom #529 next scoring boundary

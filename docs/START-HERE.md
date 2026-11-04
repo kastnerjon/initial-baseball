@@ -1,15 +1,23 @@
 # Initial Baseball — Start Here
 
-## November 3 — strict Custom strike-limit HTTP issuance transport staged (#529)
+## November 4 — strict account-only Custom strike-limit HTTP validation staged (#529)
 
-- Account-gated public Create API now optionally validates 1/2/3 strikes only when the matching default-off server variable-strike readiness setting is explicitly enabled. With that setting absent, it preserves the old exact two-field payload. Invalid or extra rule fields fail before rate-limit reservation. Verified Auth UUID remains server-derived; response still contains only the opaque puzzle ID.
-- This is a stacked source-only transport milestone depending on the reviewed private issuance writer. Public /create still does not expose the 1/2 selector; client gameplay and completed cohorts remain gated. Do not enable this server switch or production Custom/Auth flags until all #529 integration and QA gates pass.
+- The public Create HTTP adapter accepts an optional whole-lineup 1/2/3 cap only behind the separate `CUSTOM_LINEUP_VARIABLE_STRIKES_ENABLED=true` server readiness setting, after existing verified-account Auth. With the gate OFF it preserves the legacy exact two-field payload and rejects any submitted cap; malformed caps, unknown fields or spoofed owner IDs fail before quota reservation and private issuance. The owner ID is always resolved from the authenticated account, never the request.
+- **No release activation:** the server switch remains unset, the public creator control is independently gated, and protected 1/2/3 guest gameplay/QA must be verified before any production configuration or migration change.
 
 
-## November 3 — immutable Custom variable-strike issuance writer staged (#529)
+## November 3 — signed Custom v2 variable-strike CAS staged (#529)
 
-- The private issue service strictly parses optional 1/2/3 strike metadata, freezing the whole-lineup selection on the issued v2 row. Missing field preserves 3; null, undefined, strings, unknown fields, and malformed caps fail before player/DB access. Only a verified-account issuance with an explicit server-side CUSTOM_LINEUP_VARIABLE_STRIKES_ENABLED=true permits 1/2; legacy admin/anonymous paths remain 3. Writer persists and re-reads the issued rule atomically, without client-trusted IDs.
-- Source-level preparation only. The public create HTTP endpoint still accepts the old two-field payload; the server readiness flag is not configured. Existing 1/2 bootstrap guard and production Custom/Auth flags stay OFF. Nondefault puzzles must not be issued in production; strike schema exists only in isolated QA.
+- Server-only Custom incorrect-guess resolution now reads the frozen issued cap 1/2/3 and ensures the cap-th wrong guess atomically commits terminal K, without an intermediate incorrect response, with exact real wrong-guess facts and Give Up preserving actual guesses. CAS conflict, signed successor, per-batter reset, and full-lineup continuation under points-v4 remain enforced. Regression tests cover every cap, replay, concurrent one-strike terminals and forbidden active strike states.
+- **Not player-accessible:** the issued writer and bootstrap still block 1/2 until client transport, codec, UI and creator issuance are fully reviewed. No production schema/flag changes.
+
+
+
+## November 3 — Custom attempt repository immutable strike-cap validation staged (#529)
+
+- Private v2 attempt row decoder and CAS repository accept a trusted optional 1/2/3 cap for normalizing/validating terminal K facts on reads and writes, retaining default three for legacy/v1 callers. Tests use a realistic conditional-update mock to verify single-winner K commits for all three caps, invalid values and no malformed default-three acceptance.
+- **Not playable:** all private service callers must pass their issued cap in separate reviewed integration; default-three repository calls correctly reject K1/K2. Production schema/flags untouched.
+
 
 
 ## November 3 — Custom strike-limit durable facts/score checks staged (#529)

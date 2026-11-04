@@ -25,9 +25,9 @@ const INITIAL = TOKENS.sign(claims);
 const issued = createCustomLineupV2AttemptBrowserCredential(SECRET).issue(ID, 'https://test.example/api/custom-lineup/challenges/' + ID);
 const cookie = issued.setCookie.split(';')[0]!;
 
-function challenge(n: number) {
+function challenge(n: number, strikeLimit: 1 | 2 | 3 = 3) {
   return createCustomLineupIssuedChallenge({
-    puzzleId: ID, issuedAt: '2026-10-14T12:00:00Z',
+    puzzleId: ID, issuedAt: '2026-10-14T12:00:00Z', strikeLimit,
     canonicalPlayerIds: IDS.slice(0, n),
     clueSnapshot: createCustomLineupIssuedClueSnapshot({
       hintLayout: [
@@ -44,7 +44,7 @@ function challenge(n: number) {
     }),
   });
 }
-function setup(n: number) {
+function setup(n: number, strikeLimit: 1 | 2 | 3 = 3) {
   let saved: CustomNineAttemptState | null = {
     challengeId: ID, browserKeyDigest: issued.browserKeyDigest,
     attemptId: '123e4567-e89b-42d3-a456-426614174010',
@@ -63,7 +63,7 @@ function setup(n: number) {
     }),
   };
   const dependencies = {
-    readChallenge: vi.fn(async () => challenge(n)),
+    readChallenge: vi.fn(async () => challenge(n, strikeLimit)),
     repository: vi.fn(() => repository),
     resolvePlayer: vi.fn((id: string): Player | null => IDS.includes(id)
       ? { id, fullName: 'SECRET_ANSWER', displayName: 'SECRET_ANSWER',
@@ -76,6 +76,14 @@ function setup(n: number) {
 }
 
 describe('private Custom Lineup v2 hint CAS', () => {
+  it.each([1, 2, 3] as const)('uses immutable cap %i when loading private saved attempts', async strikeLimit => {
+    const s = setup(5, strikeLimit);
+    const result = await s.service.reveal(ID, cookie, INITIAL);
+    expect(result.kind).toBe('revealed');
+    expect(s.dependencies.repository).toHaveBeenCalledWith(expect.anything(), 5, strikeLimit);
+    expect(s.repository.advanceHint).toHaveBeenCalledOnce();
+  });
+
   it.each([1, 5, 9, 10])('reveals exactly one frozen hint for N=%i and preserves privacy', async n => {
     const s = setup(n);
     let token = INITIAL;
