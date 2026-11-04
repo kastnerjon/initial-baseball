@@ -1,5 +1,10 @@
 # Initial Baseball — Current Work
 
+## Custom #529 remaining first-attempt QA
+
+- [ ] Rehearse 1/2/3-issued Custom attempts through stored reservation, cross-browser creator exclusion, resumed K facts, conflict races and full completion on isolated QA. Keep default-off nondefault issuance pending independently reviewed whole-stack integration.
+
+
 ## Custom #529 remaining attempts/QA
 
 - [ ] After cap-specific hint/CAS/admission readers are integrated, complete browser transport, one- or two-strike first-attempt refresh, lost-response retry, and real hosted QA before allowing nondefault issuance.
