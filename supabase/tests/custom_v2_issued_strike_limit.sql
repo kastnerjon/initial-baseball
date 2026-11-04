@@ -56,6 +56,20 @@ begin
     if v_seen <> v_n then raise exception 'Explicit v2 cap % was not stored', v_n; end if;
   end loop;
 
+  -- Explicit NULL must not silently fall back to the column default.
+  v_rejected := false;
+  begin
+    insert into public.custom_nine_issued_challenges (
+      puzzle_id, schema_version, ruleset_version, strike_limit,
+      canonical_player_ids, clue_snapshot, issued_at
+    ) values (
+      'custom-lineup-v2-' || gen_random_uuid()::text,
+      2, 'points-v4', null, v_ids, v_snapshot, now()
+    );
+  exception when not_null_violation then v_rejected := true;
+  end;
+  if not v_rejected then raise exception 'Explicit null cap accepted'; end if;
+
   foreach v_n in array array[0, 4, -1] loop
     v_rejected := false;
     begin

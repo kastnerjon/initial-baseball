@@ -2,8 +2,8 @@
 
 ## November 3 — Custom strike-limit persistence schema staged (#529)
 
-- Additive migration `20261104040000_add_custom_v2_issued_strike_limit.sql` and rollback-only SQL acceptance provide an immutable column defaulting to 3, with v1 constrained to 3 and v2 constrained to 1/2/3. Previously issued rows retain three-strike rules. No player or client setting is trusted.
-- **Not applied in production or isolated QA by this source PR.** Gameplay/issuance of 1/2 remains explicitly blocked in the writer until verified issued-row decoding, signed progression, terminal receipts, client display and result rules are implemented, reviewed and tested. The SQL does not activate anything. QA-only schema rehearsal, independent review and release authorization are separate gates.
+- Additive migration `20261104032946_add_custom_v2_issued_strike_limit.sql` and rollback-only SQL acceptance provide an immutable column defaulting to 3, with v1 constrained to 3 and v2 constrained to 1/2/3. Previously issued rows retain three-strike rules. No player or client setting is trusted.
+- **Applied only to isolated QA** (`iklbnlicgsxxhaoiscor`) under canonical migration history version `20261104032946`. SQL rollback-only acceptance passed; postflight: 93/93 historical issued challenges remain at 3, zero nondefault rows, validated CHECK, same private grants. **Production remains unmigrated.** Gameplay/issuance of 1/2 remains explicitly blocked in the writer until verified issued-row decoding, signed progression, terminal receipts, client display and result rules are implemented, reviewed and tested. The SQL does not activate anything. QA-only schema rehearsal, independent review and release authorization are separate gates.
 
 
 ## November 3 — staged immutable Custom strike-limit primitives (#529)
