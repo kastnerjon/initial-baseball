@@ -1,9 +1,10 @@
 # Initial Baseball — Start Here
 
-## November 3 — immutable Custom variable-strike issuance writer staged (#529)
+## November 3 — Custom attempt repository immutable strike-cap validation staged (#529)
 
-- The private issue service strictly parses optional 1/2/3 strike metadata, freezing the whole-lineup selection on the issued v2 row. Missing field preserves 3; null, undefined, strings, unknown fields, and malformed caps fail before player/DB access. Only a verified-account issuance with an explicit server-side CUSTOM_LINEUP_VARIABLE_STRIKES_ENABLED=true permits 1/2; legacy admin/anonymous paths remain 3. Writer persists and re-reads the issued rule atomically, without client-trusted IDs.
-- Source-level preparation only. The public create HTTP endpoint still accepts the old two-field payload; the server readiness flag is not configured. Existing 1/2 bootstrap guard and production Custom/Auth flags stay OFF. Nondefault puzzles must not be issued in production; strike schema exists only in isolated QA.
+- Private v2 attempt row decoder and CAS repository accept a trusted optional 1/2/3 cap for normalizing/validating terminal K facts on reads and writes, retaining default three for legacy/v1 callers. Tests use a realistic conditional-update mock to verify single-winner K commits for all three caps, invalid values and no malformed default-three acceptance.
+- **Not playable:** all private service callers must pass their issued cap in separate reviewed integration; default-three repository calls correctly reject K1/K2. Production schema/flags untouched.
+
 
 
 ## November 3 — Custom strike-limit durable facts/score checks staged (#529)

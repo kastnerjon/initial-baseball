@@ -1,8 +1,14 @@
 # Initial Baseball — Current Work
 
-## Custom #529 issuance transport activation
+## Custom #529 immutable issuance readiness
 
-- [ ] Keep CUSTOM_LINEUP_VARIABLE_STRIKES_ENABLED unset until route parsing, client bootstrap, signed CAS, result codecs and full QA prove 1/2/3 correctness. Wire strict account-only HTTP issuance to the immutable private writer and enable the creator selector together; do not apply production migrations/flags.
+- [ ] The private issuer strictly validates an optional 1/2/3 cap; trusted account issuance of 1/2 requires separate default-off CUSTOM_LINEUP_VARIABLE_STRIKES_ENABLED. Public route remains two-field/default-three until reviewed HTTP/UI+gameplay integration and QA. Production unmodified.
+
+
+## #529 private repository integration
+
+- [ ] Wire immutable issued strike cap into all v2 reservation-repository callers, including signed resolution, hint/continuation, completion and bootstrap. The default-three repository cannot admit K1/K2; do not activate creation/flag paths before full integration.
+
 
 
 ## Custom #529 next scoring boundary
