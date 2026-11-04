@@ -1,5 +1,10 @@
 # Initial Baseball — Current Work
 
+## Custom #529 remaining attempts/QA
+
+- [ ] After cap-specific hint/CAS/admission readers are integrated, complete browser transport, one- or two-strike first-attempt refresh, lost-response retry, and real hosted QA before allowing nondefault issuance.
+
+
 ## Custom #529 pending browser strike-cap integration
 
 - [ ] Browser transport must validate the immutable strike limit in reserved, preview and completed openings, keep valid active-strike ranges below the cap and pass the cap into terminal-result decoding. Server bootstrap projects the issued rule but still refuses 1/2 at runtime. Preserve historical 3 and complete QA before enabling issuance.
