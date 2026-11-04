@@ -1,8 +1,14 @@
 # Initial Baseball — Current Work
 
-## Custom #529 creator setting activation
+## Custom #529 source-staged creator selection
 
-- [ ] Connect the default-off creator strike selector to strict account-gated server issuance only after nondefault writer, signed gameplay, receipt decode, client rendering and cohort QA are complete. Avoid displaying the selector while the backend still rejects variable strikes.
+- [ ] The 1/2/3 creator selector and session draft validation are staged behind a default-false prop, so the live public creator still only issues three-strike lineups. Activate only after strict server route, gameplay/receipt and cohort QA pass.
+
+
+## #529 private repository integration
+
+- [ ] Wire immutable issued strike cap into all v2 reservation-repository callers, including signed resolution, hint/continuation, completion and bootstrap. The default-three repository cannot admit K1/K2; do not activate creation/flag paths before full integration.
+
 
 
 ## Custom #529 next scoring boundary

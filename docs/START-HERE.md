@@ -1,9 +1,10 @@
 # Initial Baseball — Start Here
 
-## November 3 — gated Custom creator strike-limit draft control staged (#529)
+## November 3 — Custom attempt repository immutable strike-cap validation staged (#529)
 
-- The creator now stores validated 1/2/3 strike choices in its session draft. Historical two-field drafts default to 3; malformed explicit caps are rejected. An accessible selection control and request-body property are guarded by a default-false readiness prop. Neither the public Create route nor the legacy admin creator passes that prop.
-- This is not playable variable-strike issuance. The server creation route currently rejects the extra property, and the private writer still blocks nondefault caps. Do not expose this control until end-to-end progression, result scoring, cohort semantics, and QA satisfy #529. Production migrations and flags are untouched.
+- Private v2 attempt row decoder and CAS repository accept a trusted optional 1/2/3 cap for normalizing/validating terminal K facts on reads and writes, retaining default three for legacy/v1 callers. Tests use a realistic conditional-update mock to verify single-winner K commits for all three caps, invalid values and no malformed default-three acceptance.
+- **Not playable:** all private service callers must pass their issued cap in separate reviewed integration; default-three repository calls correctly reject K1/K2. Production schema/flags untouched.
+
 
 
 ## November 3 — Custom strike-limit durable facts/score checks staged (#529)
