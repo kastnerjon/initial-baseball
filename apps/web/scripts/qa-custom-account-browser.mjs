@@ -214,7 +214,43 @@ try {
   assert.ifError(ae);
   assert.equal(attempts.length,2);
   assert.ok(attempts.every(a=>a.status==='completed'&&!a.creator_seen));
-  console.log('PASS isolated QA signed account -> immutable issue -> cross-browser owner exclusion -> guest/friend completion -> DB readback -> signout');
+
+  // Guest plays first, then proves they are the creator in the SAME browser.
+  // The saved submission must remain immutable, but the browser's attempt
+  // becomes irrevocably noncompetitive even if they sign out again.
+  const beforeCreatorRecognition = results.map(row => JSON.stringify(row.summary)).sort();
+  assert.equal(await login(guest,base,fixtureEmails.owner),ownerId);
+  await bootstrap(guest,base,id,'creator_preview');
+  assert.equal((await guest.request.post(attempt(base,id,'submit'),{
+    headers:{origin:base.origin},
+  })).status(),403,'Creator recognition must refuse even an already-admitted retry');
+  const {data:marked,error:markError}=await admin.from('custom_nine_attempt_states')
+    .select('creator_seen,status').eq('challenge_id',id);
+  assert.ifError(markError);
+  assert.equal(marked.length,2);
+  assert.equal(marked.filter(row=>row.creator_seen===true).length,1,
+    'Exactly the previously guest browser must gain sticky creator provenance');
+  assert.ok(marked.every(row=>row.status==='completed'),
+    'Recognizing the owner must not rewrite completed attempts');
+
+  const signoutGuest=await guest.request.post(new URL('/api/account/auth/signout',base).href,{
+    headers:{origin:base.origin},maxRedirects:0,
+  });
+  assert.equal(signoutGuest.status(),303);
+  assert.deepEqual(await jsonResponse(
+    await guest.request.get(new URL('/api/account/session',base).href),200),{accountId:null});
+  await bootstrap(guest,base,id,'creator_preview');
+  assert.equal((await guest.request.post(attempt(base,id,'submit'),{
+    headers:{origin:base.origin},
+  })).status(),403,'Signout must not erase stored creator exclusion');
+
+  const {data:preserved,error:preserveError}=await admin.from('custom_nine_completed_results')
+    .select('summary').eq('challenge_id',id);
+  assert.ifError(preserveError);
+  assert.equal(preserved.length,2,'Creator recognition must not delete saved results');
+  assert.deepEqual(preserved.map(row=>JSON.stringify(row.summary)).sort(),
+    beforeCreatorRecognition,'Creator recognition must not mutate committed score facts');
+  console.log('PASS isolated QA signed creator -> immutable issue -> cross-browser exclusion -> guest/friend results -> late owner sign-in sticky exclusion -> signout');
   console.log('SCOPE: local Next/Chromium against QA Supabase Auth and DB; NOT live Google OAuth, Vercel ingress or physical mobile QA');
 } finally {
   if(browser) await browser.close();
