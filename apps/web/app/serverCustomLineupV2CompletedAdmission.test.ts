@@ -98,7 +98,7 @@ describe('private authoritative Custom v2 N-batter completed admission', () => {
     expect(result).toMatchObject({ kind: 'admitted', status: 'created', submissionId: ATTEMPT,
       summary: { points: expected, maximumPoints: 4 * n, atBatsCompleted: n,
         totalAtBats: n, completed: true, strikeouts: Math.min(2, Math.max(0, n - 2)) } });
-    expect(s.dependencies.attempt).toHaveBeenCalledWith(ID, BROWSER.browserKeyDigest, n, {});
+    expect(s.dependencies.attempt).toHaveBeenCalledWith(ID, BROWSER.browserKeyDigest, n, 3, {});
     const admission = s.dependencies.admit.mock.calls[0]![0];
     expect(admission).toMatchObject({
       challengeId: ID, browserKeyDigest: BROWSER.browserKeyDigest,
@@ -124,6 +124,7 @@ describe('private authoritative Custom v2 N-batter completed admission', () => {
         totalAtBats: 10, strikeouts: 2, completed: true,
       },
     });
+    expect(s.dependencies.attempt).toHaveBeenCalledWith(ID, BROWSER.browserKeyDigest, 10, cap, {});
     expect(s.dependencies.admit).toHaveBeenCalledOnce();
   });
   it.each([1, 2, 3] as const)('rejects forged %i-strike completion and CAS revision', async cap => {

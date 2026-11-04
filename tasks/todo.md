@@ -1,5 +1,10 @@
 # Initial Baseball — Current Work
 
+## Custom #529 private saved-attempt cap projection
+
+- [ ] The hint and completed-admission service adapters now use immutable issued cap when decoding persisted attempt K facts, preserving historical default-three. Bootstrap service and browser transport/client still require cap propagation and hosted QA before enabling nondefault games.
+
+
 ## #529 private repository integration
 
 - [ ] Wire immutable issued strike cap into all v2 reservation-repository callers, including signed resolution, hint/continuation, completion and bootstrap. The default-three repository cannot admit K1/K2; do not activate creation/flag paths before full integration.
