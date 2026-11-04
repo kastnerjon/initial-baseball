@@ -1,8 +1,13 @@
 # Initial Baseball — Current Work
 
-## Custom #529 server issuance activation gate
+## Custom #529 verified-account issuance activation
 
-- [ ] Integrate and review strict public Create HTTP payload handling, creator selector, guest progression/terminal receipt, and 1/2/3-point cohorts in isolated QA before enabling the dedicated nondefault strike server setting. Never treat source-staged private writer acceptance as public issuance authorization.
+- [ ] Integrate server-only strict 1/2/3 issuance with verified-account HTTP, creator selector and supported browser gameplay. Keep CUSTOM_LINEUP_VARIABLE_STRIKES_ENABLED unset and production owner/strike migrations unapplied until full isolated-QA release acceptance and explicit approval.
+
+
+## Custom #529 remaining first-attempt QA
+
+- [ ] Rehearse 1/2/3-issued Custom attempts through stored reservation, cross-browser creator exclusion, resumed K facts, conflict races and full completion on isolated QA. Keep default-off nondefault issuance pending independently reviewed whole-stack integration.
 
 
 ## Custom #529 remaining attempts/QA

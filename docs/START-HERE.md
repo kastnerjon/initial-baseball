@@ -1,11 +1,5 @@
 # Initial Baseball — Start Here
 
-## November 4 — strictly gated immutable Custom strike issuance authority (#529)
-
-- The account-owned private Custom v2 issuer validates optional numeric strike limits of 1, 2 or 3, defaults omitted historical input to 3, rejects explicit malformed values and extraneous identity data before database access, and persists the immutable limit with its issued clues and owner. Nondefault issuance is allowed only with verified account issuance **and** `CUSTOM_LINEUP_VARIABLE_STRIKES_ENABLED=true`; anonymous and admin legacy issuance remain cap 3. The public Create endpoint and creator selector are separate staged integration work.
-- This source milestone is **not activated**: the additional server setting is unset, Custom/Auth production flags remain OFF, and production creator/strike migrations have not been applied. Validate end-to-end server/client progression and isolated QA before any release approval.
-
-
 ## November 3 — signed Custom v2 variable-strike CAS staged (#529)
 
 - Server-only Custom incorrect-guess resolution now reads the frozen issued cap 1/2/3 and ensures the cap-th wrong guess atomically commits terminal K, without an intermediate incorrect response, with exact real wrong-guess facts and Give Up preserving actual guesses. CAS conflict, signed successor, per-batter reset, and full-lineup continuation under points-v4 remain enforced. Regression tests cover every cap, replay, concurrent one-strike terminals and forbidden active strike states.
