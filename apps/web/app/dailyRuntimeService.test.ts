@@ -83,6 +83,45 @@ describe('Daily canonical runtime service', () => {
     expect(serialized).not.toContain(revealMarker);
   });
 
+  it('keeps on-demand edition bootstrap, resume and next-batter transport spoiler-safe', async () => {
+    const onDemand = createDailyRuntimeService({
+      canonicalRuntime: buildRuntime(),
+      createPuzzle: async puzzleDate => buildPuzzle(puzzleDate),
+      progressionTokens: tokens,
+      hintTransport: 'on-demand',
+    });
+
+    const bootstrap = await onDemand.getBootstrap(date);
+    expect(bootstrap.hintBundle.hints).toEqual([]);
+    expect(bootstrap.hintBundle.checkpoints).toEqual([]);
+    expect(JSON.stringify(bootstrap)).not.toContain(firstHintMarker);
+    expect(JSON.stringify(bootstrap)).not.toContain(secondHintMarker);
+
+    const revealed = await onDemand.revealHint(bootstrap.progressionToken);
+    expect(revealed.hint.hintValue).toBe(firstHintMarker);
+    expect(tokens.verify(revealed.progressionToken).revealCount).toBe(1);
+    const resumed = await onDemand.getHintBundle(revealed.progressionToken);
+    expect(resumed.hintBundle.hints.map(hint => hint.hintValue)).toEqual([firstHintMarker]);
+    expect(resumed.hintBundle.checkpoints).toEqual([]);
+    expect(JSON.stringify(resumed)).not.toContain(secondHintMarker);
+
+    const incorrect = await onDemand.resolveAtBat({
+      progressionToken: bootstrap.progressionToken,
+      submittedPlayerId: otherId,
+    });
+    expect(incorrect.hintBundle?.hints).toEqual([]);
+    expect(incorrect.hintBundle?.checkpoints).toEqual([]);
+    const next = await onDemand.resolveAtBat({
+      progressionToken: revealed.progressionToken,
+      submittedPlayerId: answerId,
+    });
+    expect(next.result.kind).toBe('correct');
+    expect(next.hintBundle?.pitchNumber).toBe(2);
+    expect(next.hintBundle?.hints).toEqual([]);
+    expect(next.hintBundle?.checkpoints).toEqual([]);
+    expect(JSON.stringify(next)).not.toContain(secondHintMarker);
+  });
+
   it('bootstraps Classic with a signed ruleset identity', async () => {
     const bootstrap = await service.getBootstrap(date, CLASSIC_DAILY_RULESET_VERSION);
 

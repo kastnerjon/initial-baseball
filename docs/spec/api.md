@@ -462,3 +462,19 @@ Explicit `POST /admin/daily/archive-beta/issue` remains separately authenticated
 The official Daily publication candidate is server-private. Its clue snapshot includes canonical answers and unrevealed hints. Keep it out of route responses, rendered props and error logs. The server materialization boundary reports only a generic preparation failure. Public routes for additional editions require separate ID-based admission and spoiler-safe projections.
 
 The internal official publication writer takes a trusted editorial occurrence and returns created/existing plus puzzle ID, or conflict. It compares immutable fields and frozen clues on duplicate ID, omitting the database-generated issuance time from replay comparison. A date/edition collision under another ID also yields conflict. Only a future authorized editor action with revision checks may call it.
+
+## Opt-in, spoiler-safe on-demand Daily hint transport (staged)
+
+The shared server Daily runtime supports a new opt-in on-demand hint projection.
+For that mode, bootstrap, resume and next-batter hint bundles contain only
+values already revealed by the signed progression token, and **no presigned
+future reveal checkpoints**. The explicit revealHint command remains the sole
+transport of the next clue and its next signed progression token. Each
+incorrect guess preserves the same partial visibility; an at-bat completion
+never preloads the next batter's clue. The private server may still construct
+complete hint bundles internally for authoritative resolution.
+
+Legacy bundle transport remains the default and unchanged for existing Daily
+clients. No public route activates on-demand mode yet; the secondary exact-ID
+runtime must opt in explicitly. That rollout also requires fresh client-side
+state handling, Pacific date admission, score isolation, and device QA.
