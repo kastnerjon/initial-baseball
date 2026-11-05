@@ -1,7 +1,7 @@
 # Public Daily editorial runtime
 
 Status: Implemented contract
-Last updated: 2026-10-06
+Last updated: 2026-11-05
 
 ## Purpose
 
@@ -31,7 +31,7 @@ This prevents a progression token issued for fallback from silently switching to
 
 The repository client and service-role credentials are server-only. The public puzzle projection contains identity, initials and hint configuration. Current bootstrap and progression responses additionally send active-pitch hint values and signed checkpoints to allow instant local reveals. Removing unrevealed hint values from those responses is an explicit multi-edition release gate.
 
-Hint and resolution requests verify the progression token, reload the same date through the server puzzle source, and release only the hint or terminal reveal authorized by that action. The move to an asynchronous repository-backed source does not change scoring, runner advancement, browser persistence, or progression claims.
+Hint and resolution requests verify the progression token, reload the same date through the server puzzle source, and check puzzle identity. The singular hint action returns one hint; the bulk hints endpoint and successor-pitch responses can carry the active batter’s bundle. The move to an asynchronous repository-backed source does not change scoring, runner advancement, browser persistence, or progression claims.
 
 ## Configuration behavior
 

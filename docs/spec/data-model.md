@@ -5,7 +5,7 @@ Last updated: 2026-11-05
 
 ## Ownership
 
-**Approved addition, pending persistence implementation.** Each new official occurrence owns a stable ID and frozen ordered content, clues and rules. Uniqueness applies to the occurrence on a date and its ID. Identical rosters across occurrences are valid. Existing editorial, result and numbered archive records keep their stored identities.
+**Approved addition, pending persistence implementation.** Each new official occurrence owns a stable ID and frozen ordered content, clues and rules. Enforce uniqueness on (Pacific date, edition key) and separately on the globally unique puzzle ID. Identical rosters across occurrences are valid. Existing editorial, result and numbered archive records keep their stored identities.
 
 | Concern | Authority |
 |---|---|
