@@ -77,8 +77,13 @@ describe('on-demand Daily hint transport for future official editions', () => {
     expect(wrong.hintBundle?.checkpoints).toEqual([]);
     expect(JSON.stringify(wrong)).not.toContain(nextHint);
 
+    const afterWrong = await runtime.getHintBundle(wrong.progressionToken);
+    expect(afterWrong.hintBundle.hints.map(hint => hint.hintValue)).toEqual([firstHint]);
+    expect(afterWrong.hintBundle.checkpoints).toEqual([]);
+    expect(JSON.stringify(afterWrong)).not.toContain(nextHint);
+
     const next = await runtime.resolveAtBat({
-      progressionToken: reveal.progressionToken,
+      progressionToken: wrong.progressionToken,
       submittedPlayerId: answerId,
     });
     expect(next.result.kind).toBe('correct');
