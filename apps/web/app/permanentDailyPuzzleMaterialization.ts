@@ -2,7 +2,9 @@ import 'server-only';
 import type {
   PermanentDailyIssuedPuzzleRecord,
   ArchiveBetaDailyClueFrozenIssuedPuzzle,
+  PermanentDailyIssuedClueSnapshot,
 } from '@initial-baseball/daily';
+import { clonePermanentDailyIssuedClueSnapshot } from '@initial-baseball/daily';
 import {
   DEFAULT_DAILY_HINT_CONFIG,
   DEFAULT_DAILY_STATS_HINT_CONFIG,
@@ -58,8 +60,52 @@ export function materializePermanentDailyIssuedPuzzle(
   };
 }
 
+type ClueFrozenDailyPuzzleInput = Readonly<{
+  puzzleId: string;
+  puzzleDate: string;
+  puzzleNumber: number;
+  canonicalPlayerIds: readonly string[];
+  clueSnapshot: PermanentDailyIssuedClueSnapshot;
+}>;
+
 function materializeClueFrozenIssuedPuzzle(
   issuedPuzzle: Extract<PermanentDailyIssuedPuzzleRecord, { schemaVersion: 2 }> | ArchiveBetaDailyClueFrozenIssuedPuzzle,
+  resolvePlayer: PermanentDailyPlayerResolver,
+): DailyPuzzle {
+  return materializeFrozenDailyPuzzle({
+    puzzleId: issuedPuzzle.puzzleId,
+    puzzleDate: issuedPuzzle.identity.puzzleDate,
+    puzzleNumber: issuedPuzzle.identity.dailyNumber,
+    canonicalPlayerIds: issuedPuzzle.canonicalPlayerIds,
+    clueSnapshot: issuedPuzzle.clueSnapshot,
+  }, resolvePlayer);
+}
+
+/**
+ * Reuse the legacy frozen-clue gameplay adapter for an independently identified
+ * official edition. All hint values and initials come from immutable issuance,
+ * never regenerated baseball data. Caller owns date/ID admission.
+ */
+export function materializeOfficialDailyIssuedPuzzle(
+  input: Readonly<Pick<ClueFrozenDailyPuzzleInput, 'puzzleId' | 'puzzleDate' | 'puzzleNumber' | 'clueSnapshot'>>,
+  resolvePlayer: PermanentDailyPlayerResolver = getCanonicalDailyPlayer,
+): DailyPuzzle {
+  try {
+    const clueSnapshot = clonePermanentDailyIssuedClueSnapshot(input.clueSnapshot);
+    return materializeFrozenDailyPuzzle({
+      ...input,
+      canonicalPlayerIds: clueSnapshot.pitches.map(pitch => pitch.canonicalPlayerId),
+      clueSnapshot,
+    }, resolvePlayer);
+  } catch {
+    // Answers, player IDs and future hints must never enter route errors.
+    throw new Error('Unable to materialize the official Daily edition safely.');
+  }
+}
+
+/** Shared private materializer used by both legacy frozen Dailies and new editions. */
+function materializeFrozenDailyPuzzle(
+  issuedPuzzle: ClueFrozenDailyPuzzleInput,
   resolvePlayer: PermanentDailyPlayerResolver,
 ): DailyPuzzle {
   const { clueSnapshot } = issuedPuzzle;
@@ -103,8 +149,8 @@ function materializeClueFrozenIssuedPuzzle(
 
   return {
     id: issuedPuzzle.puzzleId,
-    puzzleNumber: issuedPuzzle.identity.dailyNumber,
-    puzzleDate: issuedPuzzle.identity.puzzleDate,
+    puzzleNumber: issuedPuzzle.puzzleNumber,
+    puzzleDate: issuedPuzzle.puzzleDate,
     status: 'published',
     hintConfig: clueSnapshot.hintLayout.map((slot) => {
       const currentSlot = DEFAULT_DAILY_HINT_CONFIG.find(
@@ -123,7 +169,7 @@ function materializeClueFrozenIssuedPuzzle(
 }
 
 function requirePlayer(
-  issuedPuzzle: PermanentDailyIssuedPuzzleRecord | ArchiveBetaDailyClueFrozenIssuedPuzzle,
+  issuedPuzzle: Pick<ClueFrozenDailyPuzzleInput, 'puzzleId'>,
   canonicalPlayerId: string,
   resolvePlayer: PermanentDailyPlayerResolver,
 ): Player {

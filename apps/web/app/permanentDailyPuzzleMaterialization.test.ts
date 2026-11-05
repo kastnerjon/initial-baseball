@@ -16,7 +16,7 @@ import { describe, expect, it, vi } from 'vitest';
 vi.mock('server-only', () => ({}));
 
 import { createDailyPuzzlePitch } from './dailyPuzzleAdapters';
-import { materializePermanentDailyIssuedPuzzle } from './permanentDailyPuzzleMaterialization';
+import { materializeOfficialDailyIssuedPuzzle, materializePermanentDailyIssuedPuzzle } from './permanentDailyPuzzleMaterialization';
 
 const CANONICAL_IDS = Array.from({ length: 9 }, (_, index) => `canonical-player-${index + 1}`);
 const PLAYERS = new Map(
@@ -135,6 +135,44 @@ describe('permanent Daily puzzle materialization', () => {
     )).toThrow(
       `Permanent Daily ${issuedPuzzle.puzzleId} references unavailable canonical player ${unavailableId}.`,
     );
+  });
+
+  it('materializes an independent edition using the same frozen-clue gameplay logic', () => {
+    const frozen = createClueFrozenIssuedPuzzle();
+    const edition = {
+      puzzleId: 'daily-ed-v1-907f33db-c38f-43c3-8e6b-a3aaf19bbd08',
+      puzzleDate: frozen.identity.puzzleDate,
+      puzzleNumber: frozen.identity.dailyNumber,
+      clueSnapshot: frozen.clueSnapshot,
+    };
+    const resolve = (canonicalPlayerId: string) => PLAYERS.get(canonicalPlayerId) ?? null;
+    const legacy = materializePermanentDailyIssuedPuzzle(frozen, resolve);
+    const official = materializeOfficialDailyIssuedPuzzle(edition, resolve);
+
+    expect(official.id).toBe(edition.puzzleId);
+    expect(official.puzzleDate).toBe(edition.puzzleDate);
+    expect(official.puzzleNumber).toBe(edition.puzzleNumber);
+    expect(official.status).toBe('published');
+    expect(official.pitches).toEqual(legacy.pitches);
+    expect(official.hintConfig).toEqual(legacy.hintConfig);
+    expect(official.pitches[0]?.hints.stats).toBe('Frozen stats clue');
+    expect(official.pitches[0]?.player.initials).toBe('F1');
+  });
+
+  it('redacts unavailable frozen player identities and corrupted snapshots', () => {
+    const frozen = createClueFrozenIssuedPuzzle();
+    const edition = {
+      puzzleId: 'daily-ed-v1-907f33db-c38f-43c3-8e6b-a3aaf19bbd08',
+      puzzleDate: frozen.identity.puzzleDate,
+      puzzleNumber: frozen.identity.dailyNumber,
+      clueSnapshot: frozen.clueSnapshot,
+    };
+    expect(() => materializeOfficialDailyIssuedPuzzle(edition, () => null))
+      .toThrow(/^Unable to materialize the official Daily edition safely\.$/);
+    expect(() => materializeOfficialDailyIssuedPuzzle({
+      ...edition, clueSnapshot: { ...edition.clueSnapshot, pitches: edition.clueSnapshot.pitches.slice(1) },
+    }, canonicalPlayerId => PLAYERS.get(canonicalPlayerId) ?? null))
+      .toThrow(/^Unable to materialize the official Daily edition safely\.$/);
   });
 
   it('fails closed when frozen clue identity does not match the issued batting order', () => {
