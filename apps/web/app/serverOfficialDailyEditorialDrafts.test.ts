@@ -68,6 +68,15 @@ describe('official Daily editorial drafts', () => {
     expect(db.from).toHaveBeenCalledWith('official_daily_editorial_drafts');
   });
 
+  it('does not reserve an edition if any canonical player or clue is unavailable', async () => {
+    const db = fakeDb();
+    vi.mocked(prepareServerOfficialDailyPublication)
+      .mockImplementationOnce(() => { throw new Error('private-player-do-not-leak'); });
+    await expect(createOfficialDailyEditorialDraft(db.client, input, 'editor', NOW))
+      .rejects.toThrowError(expect.objectContaining({ kind: 'invalid' }));
+    expect(db.from).not.toHaveBeenCalled();
+  });
+
   it('validates canonical clues before a revision-CAS scheduling update', async () => {
     const db = fakeDb();
     expect(await scheduleOfficialDailyEditorialDraft(db.client, ID, 0, 'editor', NOW))

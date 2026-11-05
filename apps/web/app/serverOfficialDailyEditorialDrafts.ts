@@ -5,6 +5,7 @@ import {
 } from '@initial-baseball/daily';
 import { parseCustomLineupTitle } from '@initial-baseball/shared';
 import { isDeepStrictEqual } from 'node:util';
+import { randomUUID } from 'node:crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { getPacificDailyDateString } from './getPacificDailyDateString';
 import { prepareServerOfficialDailyPublication } from './materializePermanentDailyIssuedClueSnapshot';
@@ -91,7 +92,19 @@ export async function createOfficialDailyEditorialDraft(
   client: SupabaseClient, value: unknown, actorId: string, now: Date = new Date(),
 ) {
   const input = parseOfficialDailyDraftInput(value, now);
+  // Do not reserve a date/edition key for unknown or clue-incomplete players.
+  // The provisional ID is minted server-side, and stays stable for this insert.
+  const occurrenceId = randomUUID();
+  try {
+    prepareServerOfficialDailyPublication({
+      occurrenceId, editionKey: input.editionKey, editionNumber: input.editionNumber,
+      title: input.title,
+      editorial: { puzzleDate: input.puzzleDate, puzzleNumber: input.puzzleNumber,
+        status: 'scheduled', selections: input.selections },
+    });
+  } catch { invalid(); }
   const row = {
+    occurrence_id: occurrenceId,
     puzzle_date: input.puzzleDate, puzzle_number: input.puzzleNumber,
     edition_key: input.editionKey, edition_number: input.editionNumber,
     title: input.title, selections: input.selections,
