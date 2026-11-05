@@ -1,0 +1,44 @@
+name: Official Daily publication storage
+on:
+  pull_request:
+    paths:
+      - 'supabase/migrations/20261105221000_create_official_daily_publications.sql'
+      - 'supabase/tests/official_daily_publications.sql'
+      - '.github/workflows/official-daily-publications.yml'
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/migrations/20261105221000_create_official_daily_publications.sql'
+      - 'supabase/tests/official_daily_publications.sql'
+      - '.github/workflows/official-daily-publications.yml'
+permissions:
+  contents: read
+jobs:
+  publication-storage:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    services:
+      postgres:
+        image: postgres:17
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready --health-interval 5s --health-timeout 3s --health-retries 10
+    env:
+      PGHOST: 127.0.0.1
+      PGDATABASE: postgres
+      PGUSER: postgres
+      PGPASSWORD: postgres
+    steps:
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683
+        with:
+          persist-credentials: false
+      - name: Verify exact migration on disposable PostgreSQL
+        run: |
+          set -euo pipefail
+          psql -v ON_ERROR_STOP=1 -c "create role anon; create role authenticated; create role service_role bypassrls;"
+          psql -v ON_ERROR_STOP=1 -c "alter default privileges in schema public grant all on tables to anon, authenticated, service_role;"
+          psql -v ON_ERROR_STOP=1 -f supabase/migrations/20261105221000_create_official_daily_publications.sql
+          psql -v ON_ERROR_STOP=1 -f supabase/tests/official_daily_publications.sql
