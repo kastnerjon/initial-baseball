@@ -62,6 +62,7 @@ function request(ids: string[] = ['ibp_00000000000000000001'], headers: Record<s
 
 describe('default-disabled, account-gated Custom v2 creation', () => {
   it('keeps optional strike-limit HTTP input closed by default before quota reservation', async () => {
+    vi.stubEnv('CUSTOM_LINEUP_VARIABLE_STRIKES_ENABLED', '');
     const ids = ['ibp_00000000000000000001'];
     for (const strikeLimit of [1, 2, 3]) {
       const original = request(ids);
