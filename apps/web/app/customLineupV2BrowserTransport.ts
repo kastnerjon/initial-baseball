@@ -1,4 +1,5 @@
 import { normalizeDailyTerminalAtBat } from '@initial-baseball/engine';
+import type { CustomLineupStrikeLimit } from '@initial-baseball/daily';
 import type { DailyCompletedAtBat, DailyGuessResult } from '@initial-baseball/shared';
 import type { CanonicalRevealViewModel } from './canonicalRevealViewModel';
 import { decodeCustomNineTerminalResult, decodeCustomNineTerminalReveal }
@@ -9,12 +10,14 @@ const V2_ID = /^custom-lineup-v2-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9
 const TYPES = new Set(['main_decade', 'teams', 'position', 'stats']);
 export type CustomLineupV2PublicAtBat = Readonly<{ pitchNumber: number; initials: string }>;
 type Opening = Readonly<{ puzzleId: string; atBats: readonly CustomLineupV2PublicAtBat[];
-  rulesetVersion: 'points-v4'; progressionToken: string; hintBundle: DailyHintBundle }>;
+  rulesetVersion: 'points-v4'; strikeLimit: CustomLineupStrikeLimit;
+  progressionToken: string; hintBundle: DailyHintBundle }>;
 export type CustomLineupV2BrowserState =
   | (Opening & { attemptMode: 'reserved';
     attemptProgress: { strikeCount: 0 | 1 | 2; completedAtBats: readonly DailyCompletedAtBat[] } })
   | (Opening & { attemptMode: 'creator_preview' })
-  | Readonly<{ attemptMode: 'completed'; atBats: readonly CustomLineupV2PublicAtBat[];
+  | Readonly<{ attemptMode: 'completed'; strikeLimit: CustomLineupStrikeLimit;
+    atBats: readonly CustomLineupV2PublicAtBat[];
     completedAtBats: readonly DailyCompletedAtBat[]; revision: number; completedAt: string }>;
 export type CustomLineupV2BrowserResolution =
   | Readonly<{ kind: 'incorrect'; progressionToken: string; strikeCount: 1 | 2; revision: number }>
@@ -50,6 +53,9 @@ export function createCustomLineupV2BrowserTransport(
     typeof navigator === 'undefined' ? null
       : (navigator as Navigator & { locks?: BootstrapLockPort }).locks ?? null,
 ) {
+  // Only a successfully decoded server bootstrap establishes the challenge rule.
+  // No caller may supply an arbitrary cap when validating later terminal receipts.
+  const issuedCaps = new Map<string, CustomLineupStrikeLimit>();
   async function post(id: string, action: Action, body?: Record<string, unknown>): Promise<unknown> {
     if (!V2_ID.test(id)) invalid('invalid_request');
     let reply: Response;
@@ -80,11 +86,17 @@ export function createCustomLineupV2BrowserTransport(
       // no cross-tab lock support must not create an unreliable first attempt.
       if (!bootstrapLocks) invalid('unsupported_browser');
       try {
-        return await bootstrapLocks.request(
+        const state = await bootstrapLocks.request(
           'initial-baseball:custom-lineup-v2:bootstrap:' + id,
           { mode: 'exclusive' },
           async () => decodeBootstrap(await post(id, 'bootstrap'), id),
         );
+        const previouslyIssued = issuedCaps.get(id);
+        if (previouslyIssued !== undefined && previouslyIssued !== state.strikeLimit) {
+          invalid('invalid_response');
+        }
+        issuedCaps.set(id, state.strikeLimit);
+        return state;
       } catch (error) {
         if (error instanceof CustomLineupV2TransportError) throw error;
         invalid('unavailable');
@@ -98,8 +110,10 @@ export function createCustomLineupV2BrowserTransport(
       if (!integer(totalAtBats, 1, 10) || !integer(currentPitch, 1, totalAtBats)
         || !signed(token) || ('submittedPlayerId' in action
           && !/^ibp_[0-9a-f]{20}$/.test(action.submittedPlayerId))) invalid('invalid_request');
+      const cap = issuedCaps.get(id);
+      if (cap === undefined) invalid('invalid_request');
       return decodeResolution(await post(id, 'resolve', { progressionToken: token, ...action }),
-        currentPitch, totalAtBats);
+        currentPitch, totalAtBats, cap);
     },
     submit: async (id: string): Promise<'created' | 'existing'> => {
       const data = await post(id, 'submit');
@@ -110,16 +124,18 @@ export function createCustomLineupV2BrowserTransport(
 }
 
 function decodeBootstrap(value: unknown, id: string): CustomLineupV2BrowserState {
-  if (!record(value) || !Array.isArray(value.atBats)) invalid();
+  if (!record(value) || !Array.isArray(value.atBats)
+    || (value.strikeLimit !== 1 && value.strikeLimit !== 2 && value.strikeLimit !== 3)) invalid();
+  const cap: CustomLineupStrikeLimit = value.strikeLimit;
   const atBats = pitches(value.atBats);
   const n = atBats.length;
   if (value.attemptMode === 'completed') {
-    const facts = terminalFacts(value.completedAtBats, atBats, true);
+    const facts = terminalFacts(value.completedAtBats, atBats, true, cap);
     if (!integer(value.revision, n, Number.MAX_SAFE_INTEGER)
       || typeof value.completedAt !== 'string'
       || !Number.isFinite(Date.parse(value.completedAt)) || 'progressionToken' in value
       || 'hintBundle' in value || 'attemptProgress' in value) invalid();
-    return { attemptMode: 'completed', atBats, completedAtBats: facts,
+    return { attemptMode: 'completed', strikeLimit: cap, atBats, completedAtBats: facts,
       revision: value.revision as number, completedAt: value.completedAt };
   }
   if (value.puzzleId !== id || value.rulesetVersion !== 'points-v4'
@@ -129,14 +145,14 @@ function decodeBootstrap(value: unknown, id: string): CustomLineupV2BrowserState
     if ('attemptProgress' in value || bundle.pitchNumber !== 1
       || bundle.revealedCount !== 0 || bundle.hints.length !== 0) invalid();
     return { attemptMode: 'creator_preview', puzzleId: id, rulesetVersion: 'points-v4',
-      atBats, progressionToken: value.progressionToken as string, hintBundle: bundle };
+      strikeLimit: cap, atBats, progressionToken: value.progressionToken as string, hintBundle: bundle };
   }
   if (value.attemptMode !== 'reserved' || !record(value.attemptProgress)
-    || !integer(value.attemptProgress.strikeCount, 0, 2)) invalid();
-  const facts = terminalFacts(value.attemptProgress.completedAtBats, atBats, false);
+    || !integer(value.attemptProgress.strikeCount, 0, cap - 1)) invalid();
+  const facts = terminalFacts(value.attemptProgress.completedAtBats, atBats, false, cap);
   if (bundle.pitchNumber !== facts.length + 1) invalid();
   return { attemptMode: 'reserved', puzzleId: id, rulesetVersion: 'points-v4',
-    atBats, progressionToken: value.progressionToken as string, hintBundle: bundle,
+    strikeLimit: cap, atBats, progressionToken: value.progressionToken as string, hintBundle: bundle,
     attemptProgress: { strikeCount: value.attemptProgress.strikeCount as 0 | 1 | 2,
       completedAtBats: facts } };
 }
@@ -148,11 +164,11 @@ function pitches(value: readonly unknown[]): CustomLineupV2PublicAtBat[] {
   });
 }
 function terminalFacts(value: unknown, atBats: readonly CustomLineupV2PublicAtBat[],
-  completed: boolean): DailyCompletedAtBat[] {
+  completed: boolean, cap: CustomLineupStrikeLimit): DailyCompletedAtBat[] {
   if (!Array.isArray(value) || (completed ? value.length !== atBats.length
     : value.length >= atBats.length)) invalid();
   return value.map((fact: unknown, index: number) => {
-    const result = normalizeDailyTerminalAtBat(fact, atBats[index]);
+    const result = normalizeDailyTerminalAtBat(fact, atBats[index], cap);
     if (!result.ok) invalid();
     return result.atBat;
   });
@@ -181,20 +197,21 @@ function decodeHint(value: unknown) {
     hintLabel: hint.hintLabel as string, hintValue: hint.hintValue as string },
   progressionToken: value.progressionToken as string, revision: value.revision as number };
 }
-function decodeResolution(value: unknown, pitch: number, n: number):
-  CustomLineupV2BrowserResolution {
+function decodeResolution(value: unknown, pitch: number, n: number,
+  cap: CustomLineupStrikeLimit): CustomLineupV2BrowserResolution {
   if (!record(value) || !signed(value.progressionToken)
     || !integer(value.revision, 1, Number.MAX_SAFE_INTEGER)) invalid();
   if (value.kind === 'incorrect') {
-    if (value.strikeCount !== 1 && value.strikeCount !== 2) invalid();
-    return { kind: 'incorrect', strikeCount: value.strikeCount, revision: value.revision as number,
+    if (!integer(value.strikeCount, 1, cap - 1)) invalid();
+    return { kind: 'incorrect', strikeCount: value.strikeCount as 1 | 2,
+      revision: value.revision as number,
       progressionToken: value.progressionToken as string };
   }
   if (value.kind !== 'terminal' || value.completed !== (pitch === n)) invalid();
   let result: Exclude<DailyGuessResult, {kind: 'incorrect'}>;
   let reveal: CanonicalRevealViewModel;
   try {
-    result = decodeCustomNineTerminalResult(value.result);
+    result = decodeCustomNineTerminalResult(value.result, cap);
     reveal = decodeCustomNineTerminalReveal(value.reveal);
   } catch { invalid(); }
   const next = value.hintBundle === null ? null : readBundle(value.hintBundle, n);

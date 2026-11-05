@@ -6,6 +6,10 @@ const player = { playerId: 'ibp_00000000000000000001', displayName: 'Babe Ruth',
 describe('session-only Custom creator draft decoding', () => {
   it('round trips a partial, ordered 1–10-player draft without server issuance', () => {
     const value = { title: '  All-time Yankees ', slots: [null, player, null] };
+    expect(parseCustomLineupDraft(JSON.parse(JSON.stringify(value)))).toEqual({ ...value, strikeLimit: 3 });
+  });
+  it.each([1, 2, 3] as const)('round-trips immutable draft %i-strike setting', strikeLimit => {
+    const value = { title: 'All-time Yankees', slots: [player], strikeLimit };
     expect(parseCustomLineupDraft(JSON.parse(JSON.stringify(value)))).toEqual(value);
   });
   it('rejects malformed, oversized, duplicated and untrusted local data', () => {
@@ -17,6 +21,9 @@ describe('session-only Custom creator draft decoding', () => {
       { title: 'abc', slots: [{ ...player, playerId: '../spoof' }] },
       { title: 'abc', slots: [{ ...player, label: '' }] },
       { title: 'abc', slots: [player], ownerCapability: 'secret' },
+      ...[null, 0, 4, -1, '2', 1.5, false].map(strikeLimit => ({
+        title: 'abc', slots: [player], strikeLimit,
+      })),
     ]) expect(parseCustomLineupDraft(value)).toBeNull();
   });
 });

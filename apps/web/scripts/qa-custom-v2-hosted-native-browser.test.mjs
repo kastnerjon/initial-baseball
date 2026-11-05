@@ -35,7 +35,7 @@ test('accept localhost loopback before module preflight', async () => {
 // must still enforce the module path and fail before creating any real fixture.
 const qaScript = fileURLToPath(new URL('./qa-custom-v2-hosted.mjs', import.meta.url));
 for (const [mode, modulePath, expected] of [
-  ['false', '/qa/playwright/index.mjs', /Exactly ten fixture IDs are required/],
+  ['false', '/qa/playwright/index.mjs', /CUSTOM_V2_QA_PLAYER_IDS must be explicitly configured/],
   ['true', '', /requires a nonempty Playwright module path/],
 ]) {
   test('requested native QA fails before fixtures with invalid flags: ' + mode,

@@ -51,7 +51,7 @@ afterEach(() => vi.unstubAllEnvs());
 
 /** Actual browser DTO + actual Next HTTP handler, with controlled private services.
  * This is contract integration, not a hosted-DB or physical-browser E2E claim. */
-function controlledSession(n: number, creator = false) {
+function controlledSession(n: number, creator = false, cap: 1 | 2 | 3 = 3) {
   const atBats = Array.from({ length: n }, (_, i) => ({
     pitchNumber: i + 1, initials: 'P' + (i + 1),
   }));
@@ -69,7 +69,7 @@ function controlledSession(n: number, creator = false) {
     hints: hintDepth ? [{ slot: 1 as const, ...HINT }] : [], checkpoints: [] as never[],
   });
   const open = (): Opening => ({
-    puzzleId: ID, rulesetVersion: 'points-v4', strikeLimit: 3, atBats,
+    puzzleId: ID, rulesetVersion: 'points-v4', strikeLimit: cap, atBats,
     progressionToken: token(), hintBundle: activeBundle(),
   });
   const bootstrap = vi.fn(async (_id: unknown, cookie: string | null)
@@ -78,7 +78,7 @@ function controlledSession(n: number, creator = false) {
       return { kind: 'preview', bootstrap: open() };
     }
     if (facts.length === n) {
-      return { kind: 'completed', atBats, strikeLimit: 3, completedAtBats: facts,
+      return { kind: 'completed', atBats, strikeLimit: cap, completedAtBats: facts,
         revision, completedAt: '2026-10-15T18:00:00.000Z' };
     }
     return {
@@ -104,9 +104,10 @@ function controlledSession(n: number, creator = false) {
     const guess = payload as { progressionToken: string; submittedPlayerId?: string; giveUp?: true };
     if (guess.progressionToken !== token()) return { kind: 'conflict' };
     const correct = guess.submittedPlayerId === RIGHT;
-    if (!correct) strikes++;
+    const giveUp = guess.giveUp === true;
+    if (!correct && !giveUp) strikes++;
     revision++;
-    if (!correct && strikes < 3 && guess.giveUp !== true) {
+    if (!correct && !giveUp && strikes < cap) {
       return { kind: 'incorrect', strikeCount: strikes as 1 | 2, revision,
         progressionToken: token() };
     }
@@ -114,15 +115,15 @@ function controlledSession(n: number, creator = false) {
     const outcome = strikeout ? 'K' : hintDepth ? '3B' : 'HR';
     const result: Extract<CustomLineupV2IncorrectGuessResult, {kind:'terminal'}>['result'] = strikeout
       ? { kind: 'strikeout', revealedCount: hintDepth as 0 | 1, outcome: 'K',
-          strikeCount: 3, source: 'strikeout' }
+          strikeCount: cap, source: 'strikeout' }
       : { kind: 'correct', revealedCount: hintDepth as 0 | 1,
           outcome: hintDepth ? '3B' : 'HR',
           source: hintDepth ? 1 : 'initials' };
     facts.push({
       pitchNumber: facts.length + 1, initials: atBats[facts.length]!.initials,
       outcome, hintsRevealed: hintDepth as 0 | 1,
-      wrongGuesses: (strikeout ? 3 : strikes) as 0 | 1 | 2 | 3,
-      resolution: strikeout ? 'strikeout' : 'correct',
+      wrongGuesses: strikes as 0 | 1 | 2 | 3,
+      resolution: strikeout ? giveUp ? 'give_up' : 'strikeout' : 'correct',
     });
     strikes = 0;
     hintDepth = 0;
@@ -278,6 +279,56 @@ describe('Custom Lineup v2 browser-to-HTTP contract acceptance', () => {
     expect(s.submit).not.toHaveBeenCalled();
   });
 
+  it.each([1, 2, 3] as const)('completes cap-%i whole-lineup K and Give Up via actual browser/HTTP adapters', async cap => {
+    const s = controlledSession(2, false, cap);
+    const opening = await s.client.bootstrap(ID);
+    if (opening.attemptMode !== 'reserved') throw Error('Expected reserved');
+    expect(opening.strikeLimit).toBe(cap);
+    let signed = opening.progressionToken;
+    for (let count = 1; count <= cap; count++) {
+      const step = await s.client.resolve(ID, signed, 1, 2, { submittedPlayerId: WRONG });
+      signed = step.progressionToken;
+      if (count < cap) expect(step).toMatchObject({ kind: 'incorrect', strikeCount: count });
+      else expect(step).toMatchObject({kind: 'terminal',completed:false,
+        result: { kind: 'strikeout', outcome: 'K', strikeCount: cap }});
+    }
+    const resumed = await s.client.bootstrap(ID);
+    if (resumed.attemptMode !== 'reserved') throw Error('Expected resumed second batter');
+    expect(resumed.strikeLimit).toBe(cap);
+    expect(resumed.attemptProgress.strikeCount).toBe(0);
+    expect(resumed.attemptProgress.completedAtBats[0]).toMatchObject({
+      resolution: 'strikeout', wrongGuesses: cap, outcome: 'K',
+    });
+    const giveUp = await s.client.resolve(ID, signed, 2, 2, { giveUp: true });
+    expect(giveUp).toMatchObject({ kind: 'terminal', completed: true,
+      result: { kind: 'strikeout', strikeCount: cap } });
+    const complete = await s.client.bootstrap(ID);
+    if (complete.attemptMode !== 'completed') throw Error('Expected completed');
+    expect(complete.strikeLimit).toBe(cap);
+    expect(complete.completedAtBats).toHaveLength(2);
+    expect(complete.completedAtBats[1]).toMatchObject({
+      resolution: 'give_up', wrongGuesses: 0, outcome: 'K',
+    });
+    expect(await s.client.submit(ID)).toBe('created');
+    expect(await s.client.submit(ID)).toBe('existing');
+    expect(s.attempt).toHaveBeenCalledTimes(cap + 1);
+    expect(JSON.stringify(s.wire)).not.toContain('PRIVATE_ATTEMPT_UUID');
+  });
+
+  it('uses actual wrong guesses on mid-at-bat Give Up instead of fabricating a cap', async () => {
+    const s = controlledSession(1, false, 2);
+    const initial = await s.client.bootstrap(ID);
+    if (initial.attemptMode !== 'reserved') throw Error('Expected reserved');
+    const wrong = await s.client.resolve(ID, initial.progressionToken, 1, 1,
+      { submittedPlayerId: WRONG });
+    if (wrong.kind !== 'incorrect') throw Error('Expected first wrong guess');
+    await s.client.resolve(ID, wrong.progressionToken, 1, 1, { giveUp: true });
+    const saved = await s.client.bootstrap(ID);
+    if (saved.attemptMode !== 'completed') throw Error('Expected completed');
+    expect(saved.completedAtBats[0]).toMatchObject({
+      outcome: 'K', wrongGuesses: 1, resolution: 'give_up',
+    });
+  });
   it('preserves atomic third-strike terminal semantics and removes live tokens at completion', async () => {
     const s = controlledSession(1);
     const opening = await s.client.bootstrap(ID);
