@@ -66,6 +66,8 @@ describe('official Daily editorial drafts', () => {
     const db = fakeDb();
     expect(await createOfficialDailyEditorialDraft(db.client, input, 'editor', NOW))
       .toEqual({ status: 'created', occurrenceId: ID, revision: 0 });
+    expect(prepareServerOfficialDailyPublication).toHaveBeenCalledWith(
+      expect.objectContaining({ editorial: expect.objectContaining({ selections }) }));
     expect(db.from).toHaveBeenCalledWith('official_daily_editorial_drafts');
   });
 
@@ -84,7 +86,7 @@ describe('official Daily editorial drafts', () => {
       .toEqual({ status: 'scheduled', occurrenceId: ID, revision: 1 });
     expect(prepareServerOfficialDailyPublication).toHaveBeenCalledWith(
       expect.objectContaining({ occurrenceId: ID, editionKey: 'modern',
-        editorial: expect.objectContaining({ status: 'scheduled', puzzleNumber: 194 }) }));
+        editorial: expect.objectContaining({ status: 'scheduled', puzzleNumber: 194, selections }) }));
     expect(db.updateQuery.eq).toHaveBeenCalledWith('revision', 0);
     expect(db.updateQuery.eq).toHaveBeenCalledWith('status', 'draft');
   });
