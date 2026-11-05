@@ -3,7 +3,7 @@
 Status: Living product source of truth  
 Last updated: 2026-11-05
 
-## November 5 approved official editions
+## November 5 approved official editions (pending implementation)
 
 Every Pacific game date can have one or more independently curated official Daily Nines. The editor controls names, order, rosters and primary selection. Default to Puzzle 1, Puzzle 2, etc. One archive lists Date – Puzzle title. All editions share Daily gameplay and completion; each has independent progress, scores and links. Visitors may play every edition without signing in. [Delivery plan](../../tasks/plans/multiple-official-dailies.md).
 
