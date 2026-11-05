@@ -1,5 +1,10 @@
 # Initial Baseball — Current Work
 
+## Custom #529 immutable issued-game resume boundary
+
+- [ ] Verify that existing 1/2/3-strike Custom challenges remain playable when the **new issuance** variable-strike flag is switched OFF, including after refresh, cross-device sign-in changes, guest completion and retry. The bootstrap adapter now reads the immutable issued cap without consulting issuance readiness; this is source-only and does not enable production Custom/Auth or run hosted QA.
+
+
 ## Custom #529 browser whole-lineup QA before enabling
 
 - [ ] Verify 1/2/3-strike Custom browser/HTTP completion, actual Give Up guesses, guest and creator separation, lost-response retries, refresh, two-tab CAS, private data redaction, and mobile. Keep nondefault production issuance disabled pending separate release approval.

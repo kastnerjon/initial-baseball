@@ -65,9 +65,28 @@ describe('private Custom Lineup v2 signed opening',()=>{
       expect(json).not.toContain(privateValue);
     expect(deps.resolvePlayer).toHaveBeenCalledTimes(n);
   });
-  it.each([1, 2] as const)('refuses to bootstrap an issued %i-strike game before complete progression support', async strikeLimit => {
-    const { service, deps } = setup({ ...challenge(2), strikeLimit });
-    await expect(service.bootstrap(ID)).rejects.toThrow('strike-limit gameplay unavailable');
+  it.each([1, 2, 3] as const)('bootstraps an already-issued %i-strike lineup without using an issuance rollout flag', async strikeLimit => {
+    const { service, deps } = setup({ ...challenge(10), strikeLimit });
+    const result = await service.bootstrap(ID);
+    expect(result?.strikeLimit).toBe(strikeLimit);
+    expect(result?.atBats).toHaveLength(10);
+    expect(result?.hintBundle.pitchNumber).toBe(1);
+    const signed = createCustomLineupV2ProgressionTokens(SECRET);
+    expect(signed.verify(result!.progressionToken)).toMatchObject({
+      puzzleId: ID, pitchNumber: 1, strikeCount: 0,
+      rulesetVersion: 'points-v4', completed: false,
+    });
+    expect(deps.getSecret).toHaveBeenCalledOnce();
+    expect(deps.resolvePlayer).toHaveBeenCalledTimes(10);
+    const json = JSON.stringify(result);
+    for (const privateValue of ['PRIVATE_FUTURE_CLUE', 'PRIVATE_ANSWER_NAME',
+      'canonicalPlayerIds', 'clueSnapshot', ...IDS]) {
+      expect(json).not.toContain(privateValue);
+    }
+  });
+  it.each([null, 0, 4, '2'])('rejects malformed private issued strike settings before resolving answers', async invalid => {
+    const { service, deps } = setup({ ...challenge(2), strikeLimit: invalid });
+    await expect(service.bootstrap(ID)).rejects.toThrow();
     expect(deps.resolvePlayer).not.toHaveBeenCalled();
     expect(deps.getSecret).not.toHaveBeenCalled();
   });
