@@ -17,6 +17,7 @@ const nextHint = 'PRIVATE_NEXT_BATTER_HINT_MARKER';
 const date = '2026-11-06';
 const tokens = createDailyProgressionTokenCodec('on-demand-daily-hint-test-secret-0123456789');
 
+/** Return one nine-pitch test puzzle with distinct first and future hint markers. */
 function puzzle(): DailyPuzzle {
   return {
     id: 'daily-' + date,
@@ -69,11 +70,12 @@ describe('on-demand Daily hint transport for future official editions', () => {
     expect(JSON.stringify(resume)).not.toContain(nextHint);
 
     const wrong = await runtime.resolveAtBat({
-      progressionToken: boot.progressionToken,
+      progressionToken: reveal.progressionToken,
       submittedPlayerId: 'ibp_cd000000000000000000',
     });
-    expect(wrong.hintBundle?.hints).toEqual([]);
+    expect(wrong.hintBundle?.hints.map(hint => hint.hintValue)).toEqual([firstHint]);
     expect(wrong.hintBundle?.checkpoints).toEqual([]);
+    expect(JSON.stringify(wrong)).not.toContain(nextHint);
 
     const next = await runtime.resolveAtBat({
       progressionToken: reveal.progressionToken,
