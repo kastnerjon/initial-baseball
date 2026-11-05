@@ -5,9 +5,10 @@
 - [ ] After strict account-only request validation is merged, do not set the dedicated server strike rollout variable until immutable 1/2/3 gameplay, creator UI, comparison cohorts and isolated hosted/mobile QA pass. Preserve default-three creation/guest play and production migration safety.
 
 
-## Custom #529 verified-account issuance activation
 
-- [ ] Integrate server-only strict 1/2/3 issuance with verified-account HTTP, creator selector and supported browser gameplay. Keep CUSTOM_LINEUP_VARIABLE_STRIKES_ENABLED unset and production owner/strike migrations unapplied until full isolated-QA release acceptance and explicit approval.
+## Custom #529 creator selector release gate
+
+- [ ] The account creator's 1/2/3 strike setting is staged in session draft state behind a default-false readiness prop. Connect it to strict server issuance only after verified end-to-end nondefault scoring, terminal decoding, browser regression, mobile QA, and explicit release approval.
 
 
 ## Custom #529 remaining first-attempt QA

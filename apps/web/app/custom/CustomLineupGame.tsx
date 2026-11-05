@@ -8,6 +8,7 @@ import {
 import { createDailyGameplayRequestController } from '../dailyGameplayRequestController';
 import { CustomLineupScorecard } from './CustomLineupScorecard';
 import { CustomLineupTerminalPanel } from './CustomLineupTerminalPanel';
+import { ConfirmGiveUp } from '../components/ConfirmGiveUp';
 
 type Candidate = { playerId: string; displayName: string };
 function isCandidate(value: unknown): value is Candidate {
@@ -292,8 +293,12 @@ function CustomLineupGameSession({ puzzleId, displayTitle }: {
                     <button type="button" className="custom-lineup-secondary"
                       disabled={busy || game.hintBundle.revealedCount === 4}
                       onClick={() => { void revealHint(); }}>Reveal clue</button>
-                    <button type="button" className="custom-lineup-quiet" disabled={busy}
-                      onClick={() => { void resolve({ giveUp: true }); }}>Give up</button>
+                    <ConfirmGiveUp
+                      key={`${currentPitch}:${game.progressionToken}:${selected?.playerId ?? ''}:${query}`}
+                      className="custom-lineup-quiet"
+                      disabled={busy}
+                      onConfirm={() => { void resolve({ giveUp: true }); }}
+                    />
                   </div>
                 </form>
                 {error ? <p className="custom-lineup-error" role="alert">{error}</p> : null}
