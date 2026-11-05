@@ -23,7 +23,7 @@ import {
 } from '../../../../serverOfficialDailyEditorialDrafts';
 import { createServerSupabaseClient } from '../../../../serverSupabaseClient';
 
-const URL = 'https://initial.test/admin/daily/editions/drafts';
+const BASE_URL = 'https://initial.test/admin/daily/editions/drafts';
 const USER = 'daily-editor';
 const PASSWORD = 'a-secure-admin-password-with-32-chars';
 const AUTH = 'Basic ' + Buffer.from(USER + ':' + PASSWORD).toString('base64');
@@ -33,7 +33,7 @@ const body = { puzzleDate: '2026-12-05', editionKey: 'modern',
   editionNumber: 2, canonicalPlayerIds: PLAYERS };
 
 function request(method: string, payload: unknown, headers: Record<string, string> = {},
-                 url = URL): Request {
+                 url = BASE_URL): Request {
   return new Request(url, { method,
     headers: { origin: new URL(url).origin, 'content-type': 'application/json',
       authorization: AUTH, ...headers },
@@ -109,8 +109,9 @@ describe('default-disabled official Daily secondary draft admin API', () => {
     );
     const response = await PATCH(request('PATCH', { occurrenceId: ID, expectedRevision: 0 }));
     expect(response.status).toBe(409);
+    const serialized = await response.clone().text();
     expect(await response.json()).toEqual({ error: 'editorial_conflict' });
-    expect(await response.text()).not.toContain('private-player-and-hint');
+    expect(serialized).not.toContain('private-player-and-hint');
   });
 
   it('rejects oversized JSON bodies before private work', async () => {

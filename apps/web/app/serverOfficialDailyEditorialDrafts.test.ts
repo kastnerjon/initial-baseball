@@ -26,7 +26,7 @@ const saved = {
 };
 
 function fakeDb(row: Record<string, unknown> | null = saved) {
-  const read = { eq: vi.fn().mockReturnThis(), maybeSingle: vi.fn(async () => ({ data: row, error: null })) };
+  const read = { eq: vi.fn().mockReturnThis(), maybeSingle: vi.fn(async () => ({ data: row, error: null as { message: string } | null })) };
   const write = { select: vi.fn().mockReturnThis(), single: vi.fn(async () => ({ data: row, error: null })) };
   const updateQuery = { eq: vi.fn().mockReturnThis(), select: vi.fn().mockReturnThis(),
     maybeSingle: vi.fn(async () => ({ data: row === null ? null : { ...row, status: 'scheduled', revision: 1 }, error: null })) };
