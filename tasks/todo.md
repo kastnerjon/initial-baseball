@@ -80,3 +80,8 @@ These gates are separate from Custom Lineups Phase 1. Keep them active until eac
 ## Official Daily publication storage
 
 - [ ] Rehearse the additive official_daily_publications migration on an isolated production-shaped Daily database after review. The migration file and disposable PostgreSQL test alone do not enable publication. Verify service-only append/read privileges, same-date identical rosters, collision handling and old-reader compatibility before connecting the restricted admin writer. Preserve the existing primary and numbered archive.
+
+## Official Daily edition browser-save separation (staged)
+
+- [ ] After public exact-ID gameplay is wired, exercise two same-date edition tabs plus the legacy primary: hints, wrong guesses, local saves, refresh, reset and switching must not read or delete another edition's state.
+- [ ] Confirm the shared completed-result/at-bat journal stays scoped to immutable puzzle ID and ruleset; enforce authoritative per-edition score and first-attempt admission before rollout.
