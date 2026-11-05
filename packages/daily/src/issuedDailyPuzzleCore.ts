@@ -126,7 +126,7 @@ function createIssuedDailyPuzzleBase<I extends IssuedDailyIdentity>(
   };
 }
 
-function requireCluesMatchFrozenOrder(
+export function requireCluesMatchFrozenOrder(
   label: string,
   canonicalPlayerIds: readonly string[],
   snapshot: PermanentDailyIssuedClueSnapshot,

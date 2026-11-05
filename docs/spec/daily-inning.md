@@ -4,13 +4,17 @@
 
 Daily Inning is the web-first daily puzzle and top-of-funnel product for Initial Baseball.
 
-The user plays one inning against a computer-selected sequence of canonical players. The user sees initials, may reveal hints, guesses the player, and scores baseball outcomes based on how many hints were used.
+The user plays one inning against an ordered lineup of canonical players. The user sees initials, may reveal hints, guesses the player, and scores baseball outcomes based on how many hints were used.
 
 ## Product relationship
 
 - **Daily Inning**: no-login daily web puzzle, fast sharing, aggregate crowd comparison.
 - **Initial Baseball H2H**: later mobile app for friend games, random opponents, chat, records, and leagues.
 - Both use the same player database, same engine, same hint logic, same guess matching, same eventual account.
+
+## Official edition preparation
+
+The private preparation step consumes a server-allocated occurrence UUID and a scheduled or published nine-slot editorial selection. It orders slots, validates the publication date, assigns a default Puzzle N title when omitted, and freezes the dated clue snapshot under points-v4. Equal ordered rosters may produce distinct puzzle IDs. The prepared payload contains answers and stays on the server. Database issuance, admin authorization and public play are separate delivery steps.
 
 ## Identity model
 

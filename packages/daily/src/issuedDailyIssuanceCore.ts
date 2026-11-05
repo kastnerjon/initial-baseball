@@ -17,6 +17,13 @@ export function resolveIssuedDailyIssuanceLineup(
     );
   }
 
+  return resolveScheduledDailyLineup(puzzle, seriesLabel);
+}
+
+export function resolveScheduledDailyLineup(
+  puzzle: IssuedDailyIssuanceEditorialPuzzle,
+  seriesLabel: string,
+): readonly string[] {
   if (puzzle.status !== 'scheduled' && puzzle.status !== 'published') {
     throw new Error(
       `${seriesLabel} issuance requires a scheduled or published editorial puzzle; received ${puzzle.status}.`,

@@ -456,3 +456,7 @@ Explicit `POST /admin/daily/archive-beta/issue` remains separately authenticated
 ## Completed-day archive rollover
 
 `POST /admin/daily/archive-beta/rollover` accepts existing Basic administrator authorization or the existing `DAILY_CHATOPS_TOKEN` Bearer principal. Cross-origin requests are rejected and authorization completes before repository access. No date, lineup, or cutoff is supplied by the caller: the server determines completed Pacific dates from the explicit beta epoch. It returns metadata-only cutoff/created/preserved/remaining counts and sanitized per-date failure categories, with `private, no-store`; complete runs return 200 and incomplete/unavailable runs 503. Missing/incorrect credentials fail closed with 401/503. Publication and immutable copy/read-back are separate writes; failed copies retry against committed publication without another audit revision. Existing copies/timestamps are retained without clue regeneration. Public catalog/gameplay GETs remain read-only. Scheduler activation belongs to the following private-transport migration, not this endpoint release.
+
+## Official edition issuance boundary
+
+The official Daily publication candidate is server-private. Its clue snapshot includes canonical answers and unrevealed hints. Keep it out of route responses, rendered props and error logs. The server materialization boundary reports only a generic preparation failure. Public routes for additional editions require separate ID-based admission and spoiler-safe projections.
