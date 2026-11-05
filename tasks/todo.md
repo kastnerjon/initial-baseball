@@ -1,8 +1,13 @@
 # Initial Baseball — Current Work
 
-## Custom #529 browser integration QA
+## Custom #529 browser whole-lineup QA before enabling
 
-- [ ] Run 1/2/3-strike signed browser/HTTP acceptance with the issued strike-cap adapter, including 10 at-bats, Give Up actual guesses, lost responses, refresh, two-tab CAS, owner exclusion and mobile. Do not activate nondefault issuance or production Custom flags before separately approved QA and migration release.
+- [ ] Verify 1/2/3-strike Custom browser/HTTP completion, actual Give Up guesses, guest and creator separation, lost-response retries, refresh, two-tab CAS, private data redaction, and mobile. Keep nondefault production issuance disabled pending separate release approval.
+
+
+## Custom #529 creator selector release gate
+
+- [ ] The account creator's 1/2/3 strike setting is staged in session draft state behind a default-false readiness prop. Connect it to strict server issuance only after verified end-to-end nondefault scoring, terminal decoding, browser regression, mobile QA, and explicit release approval.
 
 
 ## Custom #529 remaining first-attempt QA

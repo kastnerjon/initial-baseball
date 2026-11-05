@@ -18,6 +18,7 @@ import { PlayerRevealCard } from './PlayerRevealCard';
 import { ResultDisplay } from './ResultDisplay';
 import { ResultsDropdown } from './ResultsDropdown';
 import { SearchInput } from './SearchInput';
+import { ConfirmGiveUp } from './ConfirmGiveUp';
 
 type AtBatCardProps = {
   atBat: DailyPublicPuzzlePitch;
@@ -185,15 +186,13 @@ export function AtBatCard({
       {requestError === null ? null : <p className="request-error" role="alert">{requestError}</p>}
 
       <div className="at-bat-actions">
-        <button
-          type="button"
+        <ConfirmGiveUp
+          key={`${atBat.pitchNumber}:${state.revealCount}:${state.strikeCount}:${state.selectedPlayerId ?? ''}:${state.query}`}
           className="button-secondary button-give-up"
-          onClick={onGiveUp}
+          onConfirm={onGiveUp}
           disabled={requestPending}
-          aria-busy={giveUpPending}
-        >
-          {giveUpPending ? 'Revealing…' : 'Give up'}
-        </button>
+          pending={giveUpPending}
+        />
         <div className="at-bat-actions-right">
           <button
             type="button"

@@ -49,6 +49,16 @@ describe('AtBatCard pending resolution feedback', () => {
     expect(html).not.toContain('Who is the player?');
   });
 
+  it.each(['points-v4', 'points-v3', 'classic-inning-v1'] as const)(
+    'protects Give Up in the %s at-bat before a terminal request', rulesetVersion => {
+      const html = renderCard({ requestPending: false, giveUpPending: false, rulesetVersion });
+      expect(html).toContain('class="give-up-confirmation"');
+      expect(html).toContain('Give up</button>');
+      expect(html).not.toContain('Yes, give up');
+      expect(html).not.toContain('Are you sure?');
+    },
+  );
+
   it('groups Reveal Next Hint beside Submit Guess without moving Give up', () => {
     const html = renderCard({
       requestPending: false, giveUpPending: false,
@@ -406,7 +416,7 @@ function renderCard(input: {
   giveUpPending: boolean;
   selectedPlayerId?: string | null;
   query?: string;
-  rulesetVersion?: 'points-v2' | 'points-v3' | 'points-v4';
+  rulesetVersion?: 'points-v2' | 'points-v3' | 'points-v4' | 'classic-inning-v1';
   submittedResult?: {
     kind: 'strikeout';
     revealedCount: 0;
