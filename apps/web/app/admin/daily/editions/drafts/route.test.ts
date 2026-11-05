@@ -32,6 +32,7 @@ const PLAYERS = Array.from({ length: 9 }, (_, i) => 'fixture-' + (i + 1));
 const body = { puzzleDate: '2026-12-05', editionKey: 'modern',
   editionNumber: 2, canonicalPlayerIds: PLAYERS };
 
+/** Build an authenticated JSON admin mutation for route boundary tests. */
 function request(method: string, payload: unknown, headers: Record<string, string> = {},
                  url = BASE_URL): Request {
   return new Request(url, { method,

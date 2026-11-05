@@ -32,17 +32,22 @@ type NewDraft = {
   puzzleDate: string; puzzleNumber: number; editionKey: string;
   editionNumber: number; title: string; selections: DailyEditorialSelection[];
 };
+/** Reject untrusted editorial input without reflecting user-supplied IDs. */
 function invalid(): never { throw new OfficialDailyDraftError('invalid'); }
+/** Hide provider details and private clue material on storage failures. */
 function unavailable(): never { throw new OfficialDailyDraftError('unavailable'); }
+/** Narrow a decoded JSON object without permitting array values. */
 function record(value: unknown): value is Record<string, unknown> {
   return value !== null && typeof value === 'object' && !Array.isArray(value);
 }
+/** Accept only real calendar dates in the canonical date representation. */
 function validDate(value: unknown): value is string {
   if (typeof value !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
   const timestamp = Date.parse(value + 'T00:00:00.000Z');
   return Number.isFinite(timestamp) && new Date(timestamp).toISOString().slice(0, 10) === value;
 }
 
+/** Validate a future secondary draft using portable nine-slot rules. */
 export function parseOfficialDailyDraftInput(value: unknown, now: Date): NewDraft {
   if (!record(value) || Object.keys(value).some(key =>
       !['puzzleDate','editionKey','editionNumber','title','canonicalPlayerIds'].includes(key))) invalid();
@@ -72,6 +77,7 @@ export function parseOfficialDailyDraftInput(value: unknown, now: Date): NewDraf
   };
 }
 
+/** Fail closed when the database does not return a valid private draft. */
 function readDraft(value: unknown): Draft {
   if (!record(value) || typeof value.occurrence_id !== 'string' || !UUID.test(value.occurrence_id)
       || !validDate(value.puzzle_date) || value.puzzle_number !== getDailyPuzzleNumber(value.puzzle_date)
@@ -88,6 +94,7 @@ function readDraft(value: unknown): Draft {
   return value as unknown as Draft;
 }
 
+/** Create a server-owned draft; recover identical retries by date and edition key. */
 export async function createOfficialDailyEditorialDraft(
   client: SupabaseClient, value: unknown, actorId: string, now: Date = new Date(),
 ) {
@@ -135,6 +142,7 @@ export async function createOfficialDailyEditorialDraft(
   }
 }
 
+/** Validate clues privately before a revision-checked scheduling update. */
 export async function scheduleOfficialDailyEditorialDraft(
   client: SupabaseClient, occurrenceId: string, expectedRevision: number,
   actorId: string, now: Date = new Date(),

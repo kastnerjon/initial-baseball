@@ -25,6 +25,7 @@ const saved = {
   selections, status: 'draft', revision: 0, created_by: 'editor',
 };
 
+/** Minimal transactional query mock for draft creation and revision CAS. */
 function fakeDb(row: Record<string, unknown> | null = saved) {
   const read = { eq: vi.fn().mockReturnThis(), maybeSingle: vi.fn(async () => ({ data: row, error: null as { message: string } | null })) };
   const write = { select: vi.fn().mockReturnThis(), single: vi.fn(async () => ({ data: row, error: null })) };

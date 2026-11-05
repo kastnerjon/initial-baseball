@@ -15,6 +15,7 @@ const HEADERS = { 'cache-control': 'private, no-store' } as const;
 const BODY_LIMIT = 8192;
 type Action = 'create' | 'schedule';
 
+/** Return a private error envelope without exposing input or provider failures. */
 function reply(status: number, error: string) {
   return NextResponse.json({ error }, { status, headers: HEADERS });
 }
@@ -74,5 +75,7 @@ async function mutate(request: Request, action: Action): Promise<NextResponse> {
   }
 }
 
+/** Create one future secondary Daily editorial draft. */
 export async function POST(request: Request) { return mutate(request, 'create'); }
+/** Schedule an existing draft using an explicit expected revision. */
 export async function PATCH(request: Request) { return mutate(request, 'schedule'); }
