@@ -1,6 +1,8 @@
 import 'server-only';
 import {
   createCustomLineupIssuedClueSnapshot,
+  prepareOfficialDailyPublication,
+  type OfficialDailyPublicationInput,
   createPermanentDailyIssuedClueSnapshot,
   type PermanentDailyIssuedClueSnapshot,
 } from '@initial-baseball/daily';
@@ -57,6 +59,17 @@ export function materializeArchiveBetaDailyIssuedClueSnapshot(
   );
 }
 
+/** Prepare the scheduled edition with the canonical hints valid on its game date. */
+export function prepareServerOfficialDailyPublication(input: OfficialDailyPublicationInput) {
+  try {
+    return prepareOfficialDailyPublication(input, (ids, date) =>
+      materializeIssuedDailyClueSnapshot(ids, 'Official Daily', date, getCanonicalDailyPlayer, createDailyPuzzlePitch));
+  } catch {
+    // Lower-level diagnostics may contain a future answer ID.
+    throw new Error('Unable to prepare this official Daily edition. Check its metadata, selections and clues.');
+  }
+}
+
 /** Private v2 issuance uses the same canonical lookup and default Daily hint values. */
 export function materializeCustomLineupV2IssuedClueSnapshot(
   orderedCanonicalPlayerIds: readonly string[],
@@ -70,7 +83,7 @@ export function materializeCustomLineupV2IssuedClueSnapshot(
 
 function materializeIssuedDailyClueSnapshot(
   orderedCanonicalPlayerIds: readonly string[],
-  seriesLabel: 'Permanent Daily' | 'Archive beta Daily' | 'Custom Lineup',
+  seriesLabel: 'Official Daily' | 'Permanent Daily' | 'Archive beta Daily' | 'Custom Lineup',
   puzzleDate: string | undefined,
   resolvePlayer: IssuedDailyCluePlayerResolver,
   createPitch: DailyPitchFactory,

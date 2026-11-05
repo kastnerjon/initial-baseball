@@ -268,3 +268,5 @@ export {
   type CustomNineIssuedChallengeInsertResult,
   type CustomNineIssuedChallengeIssueResult,
 } from './customNineIssuedChallengeService';
+
+export { prepareOfficialDailyPublication, type OfficialDailyPublicationInput } from './officialDailyPublication';
