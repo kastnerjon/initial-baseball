@@ -2,7 +2,7 @@
 
 ## Custom #529 — remaining variable-strike integration and release gates
 
-- [ ] Merge the reviewed, default-off account-gated Custom Create HTTP rule (#545); connect the staged creator 1/2/3 selector only after the same source rollout gate and full signed gameplay path are ready. Never trust client rule or owner identifiers.
+- [ ] Run isolated hosted QA of the source-wired, default-OFF creator 1/2/3 selector. Confirm its visibility follows only the trusted issuance-readiness flag; verify the old two-field/three-strike path when OFF and secure account-only 1/2/3 issuance when ON. Do not set production flags or trust client rule/owner identifiers.
 - [ ] Verify the immutable issued-game bootstrap update (#550): existing 1/2/3-strike challenges remain playable after disabling new variable-strike issuance, without changing scores, client rule identity, creator exclusion or historical three-strike games.
 - [ ] Run **isolated hosted QA** across 1, 2 and 3 strikes and lineup sizes 1–10: authorized issuance, creator preview, guest/friend play, hints, first-strike K, exact Give Up wrong guesses, full nine/ten-batter completion after three outs, refresh, lost-response retry, cross-tab CAS, noncompetitive owner exclusion and authoritative saved results.
 - [ ] Verify per-challenge comparisons remain keyed to immutable issued puzzle ID/cap; cross-challenge public leaderboards must stratify by strike limit, ruleset and roster length before launch.
