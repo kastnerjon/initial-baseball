@@ -65,5 +65,12 @@ describe('legacy signed Custom QA workflow isolated admin-credential gate (#531)
     const runner = readFileSync(new URL('./qa-custom-v2-hosted.mjs', import.meta.url), 'utf8');
     assert.ok(runner.includes('if (env.CUSTOM_V2_QA_PLAYWRIGHT_MODULE) {'));
     assert.ok(runner.includes('testPublicCreatorUi: publicCreatorQa'));
+    assert.ok(workflow.includes('set -euo pipefail'));
+    assert.ok(workflow.includes('node apps/web/scripts/qa-custom-v2-hosted.mjs 2>&1 | tee "$qa_log"'));
+    for (const n of [1, 10]) {
+      assert.ok(workflow.includes(
+        "grep -Fq 'PASS actual Chromium UI + isolated Supabase signed continuity N=" + n + "'",
+      ), 'The privileged QA job must fail if native Chromium continuity is skipped');
+    }
   });
 });
