@@ -462,3 +462,28 @@ Explicit `POST /admin/daily/archive-beta/issue` remains separately authenticated
 The official Daily publication candidate is server-private. Its clue snapshot includes canonical answers and unrevealed hints. Keep it out of route responses, rendered props and error logs. The server materialization boundary reports only a generic preparation failure. Public routes for additional editions require separate ID-based admission and spoiler-safe projections.
 
 The server-only exact-ID reader validates each immutable official v1 row and clones its private issued clue snapshot before any gameplay projection. Invalid IDs return no match; malformed stored records and provider failures use a generic error without answers. This reader is deliberately not a public endpoint: future public admission must check the Pacific game date, signed progression, archive practice context, and spoiler-safe one-hint transport before exposing any data.
+
+## Restricted private official Daily issuance command (staged, default OFF)
+
+POST /admin/daily/editions/issue is a separate authenticated server-only
+command accepting exactly {occurrenceId, expectedRevision}; the JSON body is
+capped at 2048 bytes, requires same-origin Daily administrator Basic auth, and
+must not include query parameters. Both
+OFFICIAL_DAILY_EDITOR_DRAFTS_ENABLED=true and
+OFFICIAL_DAILY_EDITOR_ISSUANCE_ENABLED=true are required; otherwise the route
+responds with 404 before reading credentials or data. These switches remain
+OFF in production.
+
+The server loads the stable editorial occurrence and expected revision, then
+prepares private frozen clues and calls the atomic PostgreSQL issuer from the
+staged official_daily_editorial_drafts migration. It verifies the immutable
+publication by exact ID and frozen clue content before returning only
+{status, puzzleId}. A retry of an issued draft verifies the existing frozen
+publication without rematerializing clues from potentially updated baseball
+data. Conflicts and storage failures return generic private no-store errors.
+No public puzzle loader, hints, player identities, guesses, archive admission,
+or scoring behavior is activated by this command.
+
+The transaction migration (#559), draft-admin path (#560), exact-ID reader
+(#558), hosted QA and independent release checks are separate prerequisites.
+Production migration/activation still requires release approval.
