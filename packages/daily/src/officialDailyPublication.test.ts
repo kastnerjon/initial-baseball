@@ -43,6 +43,7 @@ describe('official edition publication', () => {
   it.each<Partial<OfficialDailyPublicationInput>>([
     { occurrenceId: [input.occurrenceId] as unknown as string }, { occurrenceId: 'legacy' }, { editionKey: 'Mixed/Modern' }, { editionNumber: 0 }, { title: '<invalid>' },
     { editorial: { ...input.editorial, status: 'draft' } },
+    { editorial: { ...input.editorial, puzzleNumber: 193 } },
     { editorial: { ...input.editorial, puzzleDate: '2026-02-30' } },
     { editorial: { ...input.editorial, selections: selections.slice(1) } },
   ])('rejects invalid editorial input before materializing clues', overrides => {

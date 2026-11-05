@@ -1,4 +1,5 @@
 import { parseCustomLineupTitle, POINTS_V4_DAILY_RULESET_VERSION } from '@initial-baseball/shared';
+import { getDailyPuzzleNumber } from './dailyPuzzleSelection';
 import { requireCluesMatchFrozenOrder, validateIssuedDailyCalendarDate } from './issuedDailyPuzzleCore';
 import { resolveScheduledDailyLineup, type IssuedDailyIssuanceEditorialPuzzle } from './issuedDailyIssuanceCore';
 import {
@@ -39,6 +40,9 @@ export function prepareOfficialDailyPublication(
   const title = parseCustomLineupTitle(input.title === undefined ? `Puzzle ${editionNumber}` : input.title);
   if (!title.ok) throw new Error('Invalid official Daily title.');
   validateIssuedDailyCalendarDate(editorial.puzzleDate);
+  if (editorial.puzzleNumber !== getDailyPuzzleNumber(editorial.puzzleDate)) {
+    throw new Error('Official Daily puzzle number must match its editorial date.');
+  }
   const ordered = resolveScheduledDailyLineup(editorial, 'Official Daily');
   const clueSnapshot = clonePermanentDailyIssuedClueSnapshot(materialize(ordered, editorial.puzzleDate));
   requireCluesMatchFrozenOrder('Official Daily', ordered, clueSnapshot);
