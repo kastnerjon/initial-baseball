@@ -80,3 +80,8 @@ These gates are separate from Custom Lineups Phase 1. Keep them active until eac
 ## Official Daily publication storage
 
 - [ ] Rehearse the additive official_daily_publications migration on an isolated production-shaped Daily database after review. The migration file and disposable PostgreSQL test alone do not enable publication. Verify service-only append/read privileges, same-date identical rosters, collision handling and old-reader compatibility before connecting the restricted admin writer. Preserve the existing primary and numbered archive.
+
+## Official Daily secondary-editorial scheduling (staged)
+
+- [ ] Review and rehearse the additive `official_daily_editorial_drafts` table and atomic `issue_official_daily_editorial_draft` service-role function on an isolated production-shaped QA Daily schema. Source and disposable CI alone do not authorize production migration.
+- [ ] Build a server-authorized, explicit-revision editor action to create, update and schedule secondary draft editions; prohibit editing issued records and avoid coupling the legacy primary writer. Connect the trusted server-only clue materializer to the transactional issuance RPC, then implement exact-ID play and spoiler-safe hints behind separate gates.
