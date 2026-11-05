@@ -1,9 +1,11 @@
 # Data Model Spec
 
 Status: Current persistence contract and approved next entities  
-Last updated: 2026-10-24
+Last updated: 2026-11-05
 
 ## Ownership
+
+**Approved addition, pending persistence implementation.** Each new official occurrence owns a stable ID and frozen ordered content, clues and rules. Uniqueness applies to the occurrence on a date and its ID. Identical rosters across occurrences are valid. Existing editorial, result and numbered archive records keep their stored identities.
 
 | Concern | Authority |
 |---|---|

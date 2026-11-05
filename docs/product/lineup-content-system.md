@@ -1,7 +1,11 @@
 # Lineup Content System
 
 Status: Approved product and architecture direction; not yet implemented  
-Last updated: 2026-09-17
+Last updated: 2026-11-05
+
+## Official edition curation
+
+The editor may assign era-themed titles or a mixed roster to any official occurrence. Overlap, including identical ordered rosters across occurrences, is valid. Era describes content; the editor retains control of each slot.
 
 ## Purpose
 

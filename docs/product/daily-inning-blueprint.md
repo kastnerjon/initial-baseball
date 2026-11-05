@@ -1,7 +1,11 @@
 # Daily Inning end-to-end blueprint
 
 Status: Living product source of truth  
-Last updated: 2026-10-26
+Last updated: 2026-11-05
+
+## November 5 approved official editions
+
+Every Pacific game date can have one or more independently curated official Daily Nines. The editor controls names, order, rosters and primary selection. Default to Puzzle 1, Puzzle 2, etc. One archive lists Date – Puzzle title. All editions share Daily gameplay and completion; each has independent progress, scores and links. Visitors may play every edition without signing in. [Delivery plan](../../tasks/plans/multiple-official-dailies.md).
 
 **Current Custom creation and play access contract — October 26, 2026 (supersedes earlier no-account creation text):** A visitor may select, name, reorder and locally preview an **unsaved draft** without signing in. **Saving/issuing and sharing a new Custom Lineup requires a verified account** (Google, Apple or email one-time code), at which point the immutable private/unlisted challenge is owned by a stable account ID. The pre-authentication draft must survive a legitimate authentication redirect without becoming an issued playable challenge. Guest recipients may **play issued Custom challenges without an account at initial launch**. Official editor-published Daily Nine remains free to play permanently. A later, independently approved per-game guest-play policy may gate other modes without changing scoring, puzzle records or private ownership. Publishing, unpublishing and creator metrics require authenticated owner authorization; old anonymous challenges remain valid and may be claimed only with the separate original owner capability. Production Custom flags stay OFF until authenticated creation, hosted QA, mobile and enabled-feature rollback pass. The current anonymous creator API is a default-off staging artifact **not eligible for production activation unchanged**. See #477, #441 and #478.
 

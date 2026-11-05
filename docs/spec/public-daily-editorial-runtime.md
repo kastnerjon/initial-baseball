@@ -5,6 +5,8 @@ Last updated: 2026-10-06
 
 ## Purpose
 
+This document describes the legacy primary reader. For new official editions the approved [multi-Daily plan](../../tasks/plans/multiple-official-dailies.md) requires explicit puzzle-ID lookup and private single-hint delivery.
+
 Define how the public Daily game chooses its nine answers when editorial records coexist with deterministic generation. This policy is portable Daily behavior; persistence and HTTP composition remain adapters.
 
 ## Ownership
@@ -27,7 +29,7 @@ This prevents a progression token issued for fallback from silently switching to
 
 ## Security and transport
 
-The repository client and service-role credentials are server-only. The initial browser payload remains limited to puzzle identity, date/number/status, public hint configuration, initials, and an opaque signed progression token. It contains no canonical answer IDs, answer names, hint values, reveal data, database credentials, or repository state.
+The repository client and service-role credentials are server-only. The public puzzle projection contains identity, initials and hint configuration. Current bootstrap and progression responses additionally send active-pitch hint values and signed checkpoints to allow instant local reveals. Removing unrevealed hint values from those responses is an explicit multi-edition release gate.
 
 Hint and resolution requests verify the progression token, reload the same date through the server puzzle source, and release only the hint or terminal reveal authorized by that action. The move to an asynchronous repository-backed source does not change scoring, runner advancement, browser persistence, or progression claims.
 

@@ -1,7 +1,11 @@
 # Architecture and launch-scale plan
 
 Status: Living architecture source of truth  
-Last updated: 2026-10-26
+Last updated: 2026-11-05
+
+## Official Daily publication identity
+
+Add a private official publication store for new occurrences. Date groups the catalog, title labels an occurrence, and immutable puzzle ID selects content, progression, results and cohorts. Preserve the legacy single-date adapter. Reuse the Daily runtime, pure scoring and validated clue snapshots across official editions. Keep Custom ownership and issuance separate. See [delivery and cutover](../tasks/plans/multiple-official-dailies.md).
 
 ## Server-verified Custom creator exclusion across devices (October 26 staged HTTP layer)
 

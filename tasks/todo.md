@@ -1,5 +1,11 @@
 # Initial Baseball — Current Work
 
+## Official Daily editions — approved November 5
+
+- [ ] A1: issuance identity, frozen nine-player content, service-only persistence and restricted editor action.
+- [ ] A2–A4: exact-ID play and hint privacy, result isolation, share links, one Archive and device QA.
+- [ ] B: arbitrary-count editor workflow and primary selection. Run account-provider QA alongside Daily development. [Sequence and rollout](plans/multiple-official-dailies.md).
+
 ## Custom #528 — secure completion display identity (source policy staged)
 
 - [ ] Stage a separate service-role-only first-write-wins name/privacy projection bound to the server-admitted Custom v2 submission (never to a caller-chosen submission ID). Use the portable `parseCompletionDisplayName` boundary, but retain the verified attempt-cookie/creator-exclusion and independent nickname authorization. This remains incomplete until reviewed additive QA-only database migration, endpoint and UI tests, real Safari QA and explicit release authorization.
