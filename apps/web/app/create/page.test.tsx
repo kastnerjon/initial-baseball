@@ -22,6 +22,7 @@ describe('default-off no-sign-in Custom creation screen', () => {
   it('reuses the accessible ordered picker but requires a name and hides admin UI', () => {
     vi.stubEnv('CUSTOM_LINEUP_PUBLIC_CREATION_ENABLED', 'true');
     vi.stubEnv('CUSTOM_LINEUP_V2_GAMEPLAY_TRANSPORT_ENABLED', 'true');
+    vi.stubEnv('CUSTOM_LINEUP_VARIABLE_STRIKES_ENABLED', '');
     const html = renderToStaticMarkup(<CreateLineupPage />);
     expect(html).toContain('Create a Lineup');
     expect(html).toContain('href="/"');
@@ -36,5 +37,32 @@ describe('default-off no-sign-in Custom creation screen', () => {
     expect(html).not.toContain('/admin/daily');
     expect(html).not.toContain('Admin-only staging');
     expect(html).not.toContain('href="/custom/');
+    expect(html).not.toContain('Strikes per out');
+  });
+
+  it.each(['', 'false', 'TRUE', ' true'])(
+    'keeps variable strikes invisible for rollout setting %s', flag => {
+      vi.stubEnv('CUSTOM_LINEUP_PUBLIC_CREATION_ENABLED', 'true');
+      vi.stubEnv('CUSTOM_LINEUP_V2_GAMEPLAY_TRANSPORT_ENABLED', 'true');
+      vi.stubEnv('CUSTOM_LINEUP_VARIABLE_STRIKES_ENABLED', flag);
+      const html = renderToStaticMarkup(<CreateLineupPage />);
+      expect(html).not.toContain('Strikes per out');
+      expect(html).not.toContain('custom-lineup-strike-limit');
+    },
+  );
+
+  it('renders the issued-strike selector only when the exact server rollout flag is true', () => {
+    vi.stubEnv('CUSTOM_LINEUP_PUBLIC_CREATION_ENABLED', 'true');
+    vi.stubEnv('CUSTOM_LINEUP_V2_GAMEPLAY_TRANSPORT_ENABLED', 'true');
+    vi.stubEnv('CUSTOM_LINEUP_VARIABLE_STRIKES_ENABLED', 'true');
+    const html = renderToStaticMarkup(<CreateLineupPage />);
+    expect(html).toContain('Strikes per out');
+    expect(html).toContain('id="custom-lineup-strike-limit"');
+    expect(html).toContain('<option value="1">1 strike</option>');
+    expect(html).toContain('<option value="2">2 strikes</option>');
+    expect(html).toContain('<option value="3" selected="">3 strikes (default)</option>');
+    expect(html).toContain('The same strike limit applies to every at-bat');
+    expect(html).not.toContain('canonicalPlayerIds');
+    expect(html).not.toContain('creatorAccountId');
   });
 });

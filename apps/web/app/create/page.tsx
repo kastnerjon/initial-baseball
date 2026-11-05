@@ -10,5 +10,6 @@ export const dynamic = 'force-dynamic';
 export default function CreateLineupPage(): JSX.Element {
   if (process.env.CUSTOM_LINEUP_PUBLIC_CREATION_ENABLED !== 'true'
     || !isCustomLineupV2GameplayTransportEnabled()) notFound();
-  return <CustomNineCreatorView mode="v2" audience="public" gameplayAvailable />;
+  return <CustomNineCreatorView mode="v2" audience="public" gameplayAvailable
+    variableStrikesAvailable={process.env.CUSTOM_LINEUP_VARIABLE_STRIKES_ENABLED === 'true'} />;
 }

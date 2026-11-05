@@ -1,5 +1,11 @@
 # Initial Baseball — Start Here
 
+## November 4 — default-off Custom creator strike selector wired to issuance readiness (#529)
+
+- The public `/create` page now passes the already-reviewed 1/2/3-strike selector through only when the **exact server-side** `CUSTOM_LINEUP_VARIABLE_STRIKES_ENABLED=true` setting is active, in addition to the existing page-level Custom/gameplay access gates. Otherwise the creator stays on the historical three-strike/two-field issuance path. The account-gated HTTP adapter and private issuer independently validate the same readiness boundary before using the rule; no game rules were added to React.
+- Static-render tests explicitly cover absent, false and noncanonical rollout values and the enabled 1/2/3 choices with three selected by default. **This is source wiring only:** the production flag remains OFF, the production strike/owner migrations are not applied, and hosted/physical QA plus release approval are still required.
+
+
 ## November 4 — strict account-only Custom strike-limit HTTP validation staged (#529)
 
 - The public Create HTTP adapter accepts an optional whole-lineup 1/2/3 cap only behind the separate `CUSTOM_LINEUP_VARIABLE_STRIKES_ENABLED=true` server readiness setting, after existing verified-account Auth. With the gate OFF it preserves the legacy exact two-field payload and rejects any submitted cap; malformed caps, unknown fields or spoofed owner IDs fail before quota reservation and private issuance. The owner ID is always resolved from the authenticated account, never the request.
