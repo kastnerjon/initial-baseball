@@ -54,6 +54,35 @@ begin
       using errcode = '23514';
   end if;
   if new.status = 'issued' then
+    -- A direct service-role UPDATE must never mark a draft issued unless a
+    -- matching, immutable publication already exists. The transactional issuer
+    -- inserts that publication before changing the draft status.
+    if not exists (
+      select 1 from public.official_daily_publications p
+      where p.puzzle_id = 'daily-ed-v1-' || new.occurrence_id::text
+        and p.puzzle_date = new.puzzle_date
+        and p.puzzle_number = new.puzzle_number
+        and p.edition_key = new.edition_key
+        and p.edition_number = new.edition_number
+        and p.title = new.title
+        and p.schema_version = 1
+        and p.ruleset_version = 'points-v4'
+        and jsonb_typeof(p.clue_snapshot -> 'pitches') = 'array'
+        and jsonb_array_length(p.clue_snapshot -> 'pitches') = 9
+        and not exists (
+          select 1
+          from jsonb_array_elements(new.selections) with ordinality s(selection, slot)
+          join jsonb_array_elements(p.clue_snapshot -> 'pitches')
+            with ordinality q(pitch, slot) using (slot)
+          where s.selection ->> 'canonicalPlayerId'
+                is distinct from q.pitch ->> 'canonicalPlayerId'
+             or s.selection ->> 'slot' is distinct from s.slot::text
+             or q.pitch ->> 'pitchNumber' is distinct from q.slot::text
+        )
+    ) then
+      raise exception 'Issued official Daily drafts require a matching immutable publication.'
+        using errcode = '23514';
+    end if;
     if old.status <> 'scheduled' or new.revision <> old.revision
        or new.issued_at is null
        or (to_jsonb(new) - 'status' - 'issued_at')

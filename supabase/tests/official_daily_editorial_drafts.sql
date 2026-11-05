@@ -71,6 +71,20 @@ begin
     from public.issue_official_daily_editorial_draft(first_id,1,invalid_snapshot) x;
   if result_status is distinct from 'conflict' or result_id is not null then raise exception 'Wrong batting-order clues succeeded'; end if;
 
+  -- A direct UPDATE without an immutable publication must not strand a draft
+  -- in issued state and prevent a later legitimate retry/issuance.
+  begin
+    update public.official_daily_editorial_drafts
+      set status = 'issued', issued_at = now()
+      where occurrence_id = first_id;
+    raise exception 'Direct issuance without publication was accepted';
+  exception when check_violation then null;
+  end;
+  if (select status from public.official_daily_editorial_drafts
+      where occurrence_id = first_id) <> 'scheduled' then
+    raise exception 'Rejected direct issuance changed the draft';
+  end if;
+
   select x.status, x.puzzle_id into result_status,result_id
     from public.issue_official_daily_editorial_draft(first_id,1,snapshot) x;
   if result_status is distinct from 'created'
@@ -128,7 +142,7 @@ begin
   select x.status,x.puzzle_id into result_status,result_id
     from public.issue_official_daily_editorial_draft(second_id,1,snapshot) x;
   if result_status is distinct from 'created'
-     or result_id = 'daily-ed-v1-' || first_id::text then
+     or result_id is distinct from ('daily-ed-v1-' || second_id::text) then
     raise exception 'Second edition was not independent';
   end if;
   select count(*) into row_count_after_issue
