@@ -1,5 +1,10 @@
 # Initial Baseball — Current Work
 
+## Security #531 — legacy signed browser QA environment cutover
+
+- [ ] Configure GitHub Environment `qa-custom-signed-browser` with **main-only** deployment restrictions and isolated-QA-only secret `QA_CUSTOM_SIGNED_BROWSER_SUPABASE_SERVICE_ROLE_KEY`. Verify a successful trusted-main Chromium signed-guest run and rejected untrusted-branch invocation before deleting the legacy repository-wide `CUSTOM_V2_QA_SUPABASE_SERVICE_ROLE_KEY`. Source uses the existing localhost admin-fixture route, not obsolete anonymous Create. Consider QA-key rotation after cutover; no production secrets or migrations.
+
+
 ## Custom #528 — secure completion display identity (source policy staged)
 
 - [ ] Stage a separate service-role-only first-write-wins name/privacy projection bound to the server-admitted Custom v2 submission (never to a caller-chosen submission ID). Use the portable `parseCompletionDisplayName` boundary, but retain the verified attempt-cookie/creator-exclusion and independent nickname authorization. This remains incomplete until reviewed additive QA-only database migration, endpoint and UI tests, real Safari QA and explicit release authorization.

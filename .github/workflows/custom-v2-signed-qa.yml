@@ -2,9 +2,6 @@ name: Isolated Custom Lineup signed browser QA
 
 on:
   workflow_dispatch:
-  push:
-    branches: [test/custom-v2-native-signed-browser-20261023]
-    paths: [.github/workflows/custom-v2-signed-qa.yml]
 
 permissions:
   contents: read
@@ -15,18 +12,26 @@ concurrency:
 
 jobs:
   signed-browser-acceptance:
-    if: github.ref == 'refs/heads/test/custom-v2-native-signed-browser-20261023'
+    if: github.ref == 'refs/heads/main'
+    environment: qa-custom-signed-browser
     runs-on: ubuntu-latest
     timeout-minutes: 30
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          persist-credentials: false
       - uses: pnpm/action-setup@v4
         with:
           version: 9.15.0
-      - uses: actions/setup-node@v4
+      - uses: actions/setup-node@49933ea5288caeca8642d1e84afbd3f7d6820020 # v4.4.0
         with:
           node-version: 22
           cache: pnpm
+      - name: Require restricted QA Environment secret before installing dependencies
+        env:
+          QA_SERVICE_ROLE: ${{ secrets.QA_CUSTOM_SIGNED_BROWSER_SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          test -n "$QA_SERVICE_ROLE" || { echo 'Missing qa-custom-signed-browser Environment secret'; exit 1; }
       - run: pnpm install --frozen-lockfile
       - name: Build app and canonical runtime data without database credentials
         env:
@@ -52,16 +57,22 @@ jobs:
         env:
           CUSTOM_V2_QA_PROJECT_REF: iklbnlicgsxxhaoiscor
           SUPABASE_URL: https://iklbnlicgsxxhaoiscor.supabase.co
-          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.CUSTOM_V2_QA_SUPABASE_SERVICE_ROLE_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.QA_CUSTOM_SIGNED_BROWSER_SUPABASE_SERVICE_ROLE_KEY }}
           CUSTOM_LINEUP_V2_GAMEPLAY_TRANSPORT_ENABLED: 'true'
-          CUSTOM_V2_QA_PUBLIC_CREATION: 'true'
-          CUSTOM_LINEUP_PUBLIC_CREATION_ENABLED: 'true'
-          CUSTOM_V2_QA_SIMULATED_VERCEL_INGRESS: 'true'
+          CUSTOM_V2_QA_PUBLIC_CREATION: 'false'
+          CUSTOM_LINEUP_PUBLIC_CREATION_ENABLED: 'false'
           CUSTOM_V2_QA_PLAYWRIGHT_MODULE: /tmp/custom-v2-qa/node_modules/playwright/index.mjs
           CUSTOM_V2_QA_PLAYER_IDS: ${{ steps.fixtures.outputs.player_ids }}
         run: |
+          set -euo pipefail
+          qa_log="$(mktemp)"
+          trap 'rm -f "$qa_log"' EXIT
           export DAILY_PROGRESSION_SECRET="$(openssl rand -hex 32)"
-          export CUSTOM_LINEUP_CREATION_BUDGET_SECRET="$(openssl rand -hex 32)"
+          export DAILY_ADMIN_USERNAME=qa-signed-browser
+          export DAILY_ADMIN_PASSWORD="$(openssl rand -hex 32)"
           echo "::add-mask::$DAILY_PROGRESSION_SECRET"
-          echo "::add-mask::$CUSTOM_LINEUP_CREATION_BUDGET_SECRET"
-          node apps/web/scripts/qa-custom-v2-hosted.mjs
+          echo "::add-mask::$DAILY_ADMIN_PASSWORD"
+          # Do not accept an HTTP-only green run when real Chromium was requested.
+          node apps/web/scripts/qa-custom-v2-hosted.mjs 2>&1 | tee "$qa_log"
+          grep -Fxq 'PASS actual Chromium UI + isolated Supabase signed continuity N=1' "$qa_log"
+          grep -Fxq 'PASS actual Chromium UI + isolated Supabase signed continuity N=10' "$qa_log"
