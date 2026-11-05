@@ -33,18 +33,16 @@ revoke all on table public.official_daily_editorial_drafts
   from public, anon, authenticated, service_role;
 grant select, insert, update on table public.official_daily_editorial_drafts to service_role;
 
--- A scheduled draft can be edited only with a bumped revision. Issuance locks
--- every content field and the revision, and an issued draft can never change.
+-- Draft order, title and selections can be edited with a bumped revision;
+-- the occurrence, date and key are stable. Issuance locks all fields.
 create function public.guard_official_daily_editorial_draft_update()
 returns trigger language plpgsql security invoker set search_path = ''
 as $guard$
 begin
   if old.status = 'issued'
-     or row(new.occurrence_id, new.puzzle_date, new.puzzle_number,
-            new.edition_key, new.edition_number)
+     or row(new.occurrence_id, new.puzzle_date, new.puzzle_number, new.edition_key)
         is distinct from
-        row(old.occurrence_id, old.puzzle_date, old.puzzle_number,
-            old.edition_key, old.edition_number) then
+        row(old.occurrence_id, old.puzzle_date, old.puzzle_number, old.edition_key) then
     raise exception 'Official Daily editorial identity is immutable.'
       using errcode = '23514';
   end if;

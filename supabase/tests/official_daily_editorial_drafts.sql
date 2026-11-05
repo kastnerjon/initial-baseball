@@ -51,7 +51,7 @@ begin
     (occurrence_id,puzzle_date,puzzle_number,edition_key,edition_number,title,
       selections,created_by,updated_by)
   values
-    (first_id,'2099-04-09',90,'modern',2,'Modern',selections,'fixture-admin','fixture-admin');
+    (first_id,'2099-04-09',90,'modern',4,'Modern',selections,'fixture-admin','fixture-admin');
 
   select x.status, x.puzzle_id into result_status,result_id
     from public.issue_official_daily_editorial_draft(first_id,0,snapshot) x;
@@ -60,7 +60,7 @@ begin
   end if;
 
   update public.official_daily_editorial_drafts
-     set status='scheduled', revision=1, updated_at=now()
+     set status='scheduled', edition_number=2, revision=1, updated_at=now()
    where occurrence_id=first_id;
 
   select x.status into result_status
