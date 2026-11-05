@@ -1,58 +1,12 @@
 # Initial Baseball — Current Work
 
-## Custom #529 browser whole-lineup QA before enabling
+## Custom #529 — remaining variable-strike integration and release gates
 
-- [ ] Verify 1/2/3-strike Custom browser/HTTP completion, actual Give Up guesses, guest and creator separation, lost-response retries, refresh, two-tab CAS, private data redaction, and mobile. Keep nondefault production issuance disabled pending separate release approval.
-
-
-## Custom #529 creator selector release gate
-
-- [ ] The account creator's 1/2/3 strike setting is staged in session draft state behind a default-false readiness prop. Connect it to strict server issuance only after verified end-to-end nondefault scoring, terminal decoding, browser regression, mobile QA, and explicit release approval.
-
-
-## Custom #529 remaining first-attempt QA
-
-- [ ] Rehearse 1/2/3-issued Custom attempts through stored reservation, cross-browser creator exclusion, resumed K facts, conflict races and full completion on isolated QA. Keep default-off nondefault issuance pending independently reviewed whole-stack integration.
-
-
-## Custom #529 remaining attempts/QA
-
-- [ ] After cap-specific hint/CAS/admission readers are integrated, complete browser transport, one- or two-strike first-attempt refresh, lost-response retry, and real hosted QA before allowing nondefault issuance.
-
-
-## Custom #529 pending browser strike-cap integration
-
-- [ ] Browser transport must validate the immutable strike limit in reserved, preview and completed openings, keep valid active-strike ranges below the cap and pass the cap into terminal-result decoding. Server bootstrap projects the issued rule but still refuses 1/2 at runtime. Preserve historical 3 and complete QA before enabling issuance.
-
-
-## Custom #529 terminal decoder activation
-
-- [ ] The strict Custom terminal decoder can validate issued 1/2/3-strike K receipts; the browser transport must still pass the server-issued cap and complete end-to-end QA before activation.
-
-
-## Custom #529 remaining runtime integration
-
-- [ ] Connect server-signed 1/2/3 strike rules into nonleaking Custom bootstrap/transport and terminal payload decode; then creator setting, guest UI, cohort separation and end-to-end regression. Server CAS resolver and scored-history validators are staged separately; no 1/2 issuance activation yet.
-
-
-
-## #529 private repository integration
-
-- [ ] Wire immutable issued strike cap into all v2 reservation-repository callers, including signed resolution, hint/continuation, completion and bootstrap. The default-three repository cannot admit K1/K2; do not activate creation/flag paths before full integration.
-
-
-
-## Custom #529 next scoring boundary
-
-- [ ] Integrate immutable strike limits into signed incorrect/terminal progression and public/client bootstrap, then update creator controls and end-to-end browser QA. Durable history and scored-result verification are staged; nondefault issuance remains prohibited. Do not activate production migrations/flags.
-
-
-
-## 0. Custom Lineup configurable strike limit (#529)
-
-- [ ] Complete frozen strike rule propagation from staged issued row adapters through signed Custom v2 progression and all terminal/score validation; preserve old three-strike challenges and reject client tampering.
-- [ ] Add creator 1/2/3 control, guest strike display, full-length result and difficulty-cohort tests; hosted QA on each limit and mobile acceptance before enabling.
-
+- [ ] Merge the reviewed, default-off account-gated Custom Create HTTP rule (#545); connect the staged creator 1/2/3 selector only after the same source rollout gate and full signed gameplay path are ready. Never trust client rule or owner identifiers.
+- [ ] Verify the immutable issued-game bootstrap update (#550): existing 1/2/3-strike challenges remain playable after disabling new variable-strike issuance, without changing scores, client rule identity, creator exclusion or historical three-strike games.
+- [ ] Run **isolated hosted QA** across 1, 2 and 3 strikes and lineup sizes 1–10: authorized issuance, creator preview, guest/friend play, hints, first-strike K, exact Give Up wrong guesses, full nine/ten-batter completion after three outs, refresh, lost-response retry, cross-tab CAS, noncompetitive owner exclusion and authoritative saved results.
+- [ ] Verify per-challenge comparisons remain keyed to immutable issued puzzle ID/cap; cross-challenge public leaderboards must stratify by strike limit, ruleset and roster length before launch.
+- [ ] Complete real mobile Safari/Android acceptance, production-clone migration rehearsal, rollback/monitoring review and **explicit production release authorization**. Production Custom/Auth/variable-strike flags remain OFF, with creator/strike migrations unapplied; QA-only migration rehearsal is not production parity.
 
 Remaining tasks only; completed verification and production evidence are recorded in `docs/START-HERE.md`. Both production Custom flags remain OFF.
 
@@ -76,7 +30,6 @@ Remaining tasks only; completed verification and production evidence are recorde
 - [ ] Define a reversible **per-mode server play-admission policy**, initially guest-allowed for Custom and always guest-allowed for official Daily Nine. Any activation of other-mode authentication gates is a future owner decision, not authorized now; test in-progress guest attempts and rollback.
 - [ ] Reassess private Custom launch QA and enabled-feature rollback under authenticated creation/guest play. Never treat historical anonymous QA issuance evidence as authenticated creator acceptance.
 
-- [ ] **1/2/3 Custom strikes (issue #529):** portable issued-rule and trusted runtime cap staged; all current games still use 3 and writer fails closed for 1/2. Next requires immutable checked SQL persistence, verified issuance API, Custom signed progress/CAS/fact/decoder rules, creator setting, historical default-3 compatibility, QA and release gating. This source-only milestone is NOT feature completion.
 
 ## 2. Remaining private Custom Lineups release gates
 
