@@ -70,6 +70,12 @@ begin
         and jsonb_typeof(p.clue_snapshot -> 'pitches') = 'array'
         and jsonb_array_length(p.clue_snapshot -> 'pitches') = 9
         and not exists (
+          select 1 from jsonb_array_elements(new.selections) s(selection)
+          where nullif(btrim(s.selection ->> 'canonicalPlayerId'), '') is null
+        )
+        and (select count(distinct s.selection ->> 'canonicalPlayerId')
+             from jsonb_array_elements(new.selections) s(selection)) = 9
+        and not exists (
           select 1
           from jsonb_array_elements(new.selections) with ordinality s(selection, slot)
           join jsonb_array_elements(p.clue_snapshot -> 'pitches')

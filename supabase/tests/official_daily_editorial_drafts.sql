@@ -30,6 +30,12 @@ declare
   result_status text;
   result_id text;
   row_count_after_issue integer;
+  bad_id uuid;
+  bad_key text;
+  bad_edition integer;
+  bad_selections jsonb;
+  bad_snapshot jsonb;
+  bad_player_id text;
 begin
   selections := (select jsonb_agg(jsonb_build_object(
       'slot', n, 'canonicalPlayerId', 'fixture-' || n, 'source', 'manual') order by n)
@@ -148,6 +154,43 @@ begin
   select count(*) into row_count_after_issue
     from public.official_daily_publications;
   if row_count_after_issue <> 2 then raise exception 'Multiple editions were not stored'; end if;
+
+  -- Even a privileged direct UPDATE cannot turn forged duplicate or blank
+  -- canonical player IDs into an issued draft, despite a matching publication.
+  for bad_edition in 4..5 loop
+    bad_id := case when bad_edition = 4
+      then '00000000-0000-4000-8000-000000000013'::uuid
+      else '00000000-0000-4000-8000-000000000014'::uuid end;
+    bad_key := case when bad_edition = 4 then 'duplicate' else 'blank' end;
+    bad_player_id := case when bad_edition = 4 then 'fixture-1' else '' end;
+    bad_selections := jsonb_set(selections, '{8,canonicalPlayerId}', to_jsonb(bad_player_id));
+    bad_snapshot := jsonb_set(snapshot, '{pitches,8,canonicalPlayerId}', to_jsonb(bad_player_id));
+
+    insert into public.official_daily_editorial_drafts
+      (occurrence_id,puzzle_date,puzzle_number,edition_key,edition_number,title,
+       selections,created_by,updated_by)
+    values (bad_id,'2099-04-09',90,bad_key,bad_edition,'Invalid',
+      bad_selections,'fixture-admin','fixture-admin');
+    update public.official_daily_editorial_drafts
+      set status='scheduled', revision=1, updated_at=now()
+      where occurrence_id=bad_id;
+    insert into public.official_daily_publications
+      (puzzle_id,puzzle_date,puzzle_number,edition_key,edition_number,title,
+       schema_version,ruleset_version,clue_snapshot)
+    values ('daily-ed-v1-' || bad_id::text,'2099-04-09',90,bad_key,bad_edition,
+      'Invalid',1,'points-v4',bad_snapshot);
+    begin
+      update public.official_daily_editorial_drafts
+        set status='issued', issued_at=now()
+        where occurrence_id=bad_id;
+      raise exception 'Forged issued draft accepted for %',bad_key;
+    exception when check_violation then null;
+    end;
+    if (select status from public.official_daily_editorial_drafts
+        where occurrence_id = bad_id) <> 'scheduled' then
+      raise exception 'Forged issuance modified the draft for %',bad_key;
+    end if;
+  end loop;
 
   begin
     insert into public.official_daily_editorial_drafts
