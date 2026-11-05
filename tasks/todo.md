@@ -80,3 +80,9 @@ These gates are separate from Custom Lineups Phase 1. Keep them active until eac
 ## Official Daily publication storage
 
 - [ ] Rehearse the additive official_daily_publications migration on an isolated production-shaped Daily database after review. The migration file and disposable PostgreSQL test alone do not enable publication. Verify service-only append/read privileges, same-date identical rosters, collision handling and old-reader compatibility before connecting the restricted admin writer. Preserve the existing primary and numbered archive.
+
+## Secondary Daily date discovery integration (staged)
+
+- [ ] Integrate the private, metadata-only official edition catalog with a date-grouped Archive view; paginate by immutable edition number until all editions for a requested date are loaded.
+- [ ] Combine the separate legacy-primary entry without converting its existing ID or scoring population; never expose frozen clue snapshots through the date catalog.
+- [ ] Verify future Pacific dates, 1/2/100+ editions, cursor changes during issuance, empty and malformed pages, and share-link identity on physical mobile devices before a public browse route is enabled.

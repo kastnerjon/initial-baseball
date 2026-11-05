@@ -462,3 +462,29 @@ Explicit `POST /admin/daily/archive-beta/issue` remains separately authenticated
 The official Daily publication candidate is server-private. Its clue snapshot includes canonical answers and unrevealed hints. Keep it out of route responses, rendered props and error logs. The server materialization boundary reports only a generic preparation failure. Public routes for additional editions require separate ID-based admission and spoiler-safe projections.
 
 The server-only exact-ID reader validates each immutable official v1 row and clones its private issued clue snapshot before any gameplay projection. Invalid IDs return no match; malformed stored records and provider failures use a generic error without answers. This reader is deliberately not a public endpoint: future public admission must check the Pacific game date, signed progression, archive practice context, and spoiler-safe one-hint transport before exposing any data.
+
+## Private official-edition date catalog (staged, no public route)
+
+The web server now has a private metadata-only date catalog reader for
+immutable official Daily publications. It accepts a valid Pacific game
+date and pages by increasing editionNumber, returning up to 100 records
+per request and an edition-number cursor if more results exist. It does
+not impose a maximum number of editions per date: consumers must continue
+through the pages for complete archive/date discovery.
+
+The database projection is restricted to puzzle_id, puzzle_date,
+puzzle_number, edition_key, edition_number, title, schema_version and
+ruleset_version. It never reads frozen clue snapshots, canonical player
+IDs or hint values. Each row is validated against the existing Daily
+identity, date/number, slug, title and ruleset rules. Provider failures
+and malformed metadata are sanitized; the reader fails closed rather
+than returning partially verified pages. Future Pacific dates return
+empty results without querying the database.
+
+This is only a server-private discovery adapter: it does not activate
+public browsing, a share link, editor access, public gameplay, Archive
+routing, or secondary edition score admission. The legacy primary is
+not included or changed. Public date/edition browsing and full
+archive grouping require separately reviewed UI and server admission;
+the immutable official publication store and rollout flags remain
+release-gated.
