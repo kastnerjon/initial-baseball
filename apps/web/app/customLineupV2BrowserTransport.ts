@@ -91,6 +91,10 @@ export function createCustomLineupV2BrowserTransport(
           { mode: 'exclusive' },
           async () => decodeBootstrap(await post(id, 'bootstrap'), id),
         );
+        const previouslyIssued = issuedCaps.get(id);
+        if (previouslyIssued !== undefined && previouslyIssued !== state.strikeLimit) {
+          invalid('invalid_response');
+        }
         issuedCaps.set(id, state.strikeLimit);
         return state;
       } catch (error) {

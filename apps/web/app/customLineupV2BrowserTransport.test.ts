@@ -49,6 +49,21 @@ describe('Custom Lineup v2 strict browser transport, 1–10',()=>{
     expect(JSON.stringify(s.request.mock.calls)).not.toContain('attemptId');
   });
 
+  it('rejects a changed immutable strike limit across successful bootstraps',async()=>{
+    const s=setup([ok(opening(2,1)),ok(opening(2,2)),ok(opening(2,1))]);
+    await expect(s.client.bootstrap(ID)).resolves.toMatchObject({strikeLimit:1});
+    await expect(s.client.bootstrap(ID)).rejects.toMatchObject({kind:'invalid_response'});
+    // A malformed second response must not overwrite the authoritative first cap.
+    await expect(s.client.bootstrap(ID)).resolves.toMatchObject({strikeLimit:1});
+    expect(s.request).toHaveBeenCalledTimes(3);
+  });
+
+  it('accepts repeated bootstraps when the immutable strike limit agrees',async()=>{
+    const s=setup([ok(opening(2,2)),ok(opening(2,2))]);
+    await s.client.bootstrap(ID);
+    expect(await s.client.bootstrap(ID)).toMatchObject({strikeLimit:2});
+  });
+
   it.each([1,5,9,10])('restores N=%i accepted signed depth/strikes at current batter',async n=>{
     const pre=Math.min(n-1,2);
     const expected={
