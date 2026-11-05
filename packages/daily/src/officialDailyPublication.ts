@@ -8,14 +8,21 @@ import {
 } from './permanentDailyIssuedClueSnapshot';
 
 /** Shared private-issuer format checks; public routes still require authorization. */
+/** Accept only the canonical UUIDv4 shape allocated for a single occurrence. */
 export function isOfficialDailyOccurrenceId(value: unknown): value is string {
   return typeof value === 'string'
     && /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(value);
 }
 
+/** Restrict editor-defined edition keys to the canonical lowercase slug. */
 export function isOfficialDailyEditionKey(value: unknown): value is string {
   return typeof value === 'string' && value.length <= 64
     && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value);
+}
+
+/** Validate all positive edition/display numbers without integer overflow. */
+export function isOfficialDailyPositiveNumber(value: unknown): value is number {
+  return Number.isSafeInteger(value) && (value as number) >= 1;
 }
 
 export type OfficialDailyPublicationInput = {
@@ -44,8 +51,8 @@ export function prepareOfficialDailyPublication(
   if (!isOfficialDailyEditionKey(editionKey)) {
     throw new Error('Invalid official Daily edition key.');
   }
-  if (!Number.isSafeInteger(editionNumber) || editionNumber < 1
-    || !Number.isSafeInteger(editorial.puzzleNumber) || editorial.puzzleNumber < 1) {
+  if (!isOfficialDailyPositiveNumber(editionNumber)
+    || !isOfficialDailyPositiveNumber(editorial.puzzleNumber)) {
     throw new Error('Official Daily display numbers must be positive integers.');
   }
   const title = parseCustomLineupTitle(input.title === undefined ? `Puzzle ${editionNumber}` : input.title);

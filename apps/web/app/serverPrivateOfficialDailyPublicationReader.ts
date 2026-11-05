@@ -4,6 +4,8 @@ import {
   getDailyPuzzleNumber,
   isOfficialDailyOccurrenceId,
   isOfficialDailyEditionKey,
+  isOfficialDailyPositiveNumber,
+  validateIssuedDailyCalendarDate,
   type PermanentDailyIssuedClueSnapshot,
 } from '@initial-baseball/daily';
 import { parseCustomLineupTitle, POINTS_V4_DAILY_RULESET_VERSION } from '@initial-baseball/shared';
@@ -45,14 +47,13 @@ export async function readPrivateOfficialDailyPublication(
 
     const row = data as Record<string, unknown>;
     const date = row.puzzle_date;
-    if (row.puzzle_id !== puzzleId || typeof date !== 'string' ||
-      !/^\d{4}-\d{2}-\d{2}$/.test(date)) throw new Error('Invalid identity.');
-    const timestamp = Date.parse(date + 'T00:00:00.000Z');
-    if (!Number.isFinite(timestamp) || new Date(timestamp).toISOString().slice(0, 10) !== date) {
-      throw new Error('Invalid date.');
+    if (row.puzzle_id !== puzzleId || typeof date !== 'string') {
+      throw new Error('Invalid identity.');
     }
-    if (!Number.isSafeInteger(row.puzzle_number) || row.puzzle_number !== getDailyPuzzleNumber(date) ||
-      !Number.isSafeInteger(row.edition_number) || (row.edition_number as number) < 1 ||
+    validateIssuedDailyCalendarDate(date);
+    if (!isOfficialDailyPositiveNumber(row.puzzle_number)
+      || row.puzzle_number !== getDailyPuzzleNumber(date)
+      || !isOfficialDailyPositiveNumber(row.edition_number) ||
       row.schema_version !== 1 || row.ruleset_version !== POINTS_V4_DAILY_RULESET_VERSION) {
       throw new Error('Invalid publication metadata.');
     }
