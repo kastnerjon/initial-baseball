@@ -69,7 +69,7 @@ describe('legacy signed Custom QA workflow isolated admin-credential gate (#531)
     assert.ok(workflow.includes('node apps/web/scripts/qa-custom-v2-hosted.mjs 2>&1 | tee "$qa_log"'));
     for (const n of [1, 10]) {
       assert.ok(workflow.includes(
-        "grep -Fq 'PASS actual Chromium UI + isolated Supabase signed continuity N=" + n + "'",
+        "grep -Fxq 'PASS actual Chromium UI + isolated Supabase signed continuity N=" + n + "'",
       ), 'The privileged QA job must fail if native Chromium continuity is skipped');
     }
   });

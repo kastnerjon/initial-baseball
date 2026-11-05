@@ -74,5 +74,5 @@ jobs:
           echo "::add-mask::$DAILY_ADMIN_PASSWORD"
           # Do not accept an HTTP-only green run when real Chromium was requested.
           node apps/web/scripts/qa-custom-v2-hosted.mjs 2>&1 | tee "$qa_log"
-          grep -Fq 'PASS actual Chromium UI + isolated Supabase signed continuity N=1' "$qa_log"
-          grep -Fq 'PASS actual Chromium UI + isolated Supabase signed continuity N=10' "$qa_log"
+          grep -Fxq 'PASS actual Chromium UI + isolated Supabase signed continuity N=1' "$qa_log"
+          grep -Fxq 'PASS actual Chromium UI + isolated Supabase signed continuity N=10' "$qa_log"
