@@ -357,6 +357,9 @@ describe('Custom Lineup v2 browser-to-HTTP contract acceptance', () => {
         expect(restored.attemptProgress.strikeCount).toBe(0);
         expect(restored.attemptProgress.completedAtBats).toHaveLength(pitch);
         expect(restored.hintBundle.pitchNumber).toBe(pitch + 1);
+        // A newly decoded server receipt, not the preceding terminal response,
+        // is the authority for the next signed progression step.
+        token = restored.progressionToken;
       } else {
         if (restored.attemptMode !== 'completed') throw Error('Expected completed lineup');
         expect(restored.strikeLimit).toBe(cap);
