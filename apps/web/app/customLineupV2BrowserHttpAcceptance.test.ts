@@ -348,6 +348,8 @@ describe('Custom Lineup v2 browser-to-HTTP contract acceptance', () => {
         expect(resolved).toMatchObject({ kind: 'terminal', completed: pitch === n });
         token = resolved.progressionToken;
       }
+      // One immutable fact per finished batter, regardless of cap.
+      expect(s.facts).toHaveLength(pitch);
       const restored = await s.client.bootstrap(ID);
       if (pitch < n) {
         if (restored.attemptMode !== 'reserved') throw Error('Expected remaining at-bats');
