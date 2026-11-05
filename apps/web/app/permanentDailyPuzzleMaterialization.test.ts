@@ -194,6 +194,7 @@ describe('permanent Daily puzzle materialization', () => {
   });
 });
 
+/** Build a legacy v1 issued Daily fixture without frozen hints. */
 function createIssuedPuzzle(): PermanentDailyIssuedPuzzle {
   const identity = resolvePermanentDailyIdentityForDate(
     '2030-04-05',
@@ -208,6 +209,7 @@ function createIssuedPuzzle(): PermanentDailyIssuedPuzzle {
   });
 }
 
+/** Build a legacy v2 fixture with intentionally drift-resistant frozen clues. */
 function createClueFrozenIssuedPuzzle(): PermanentDailyClueFrozenIssuedPuzzle {
   const identity = resolvePermanentDailyIdentityForDate(
     '2030-04-05',
@@ -241,6 +243,7 @@ function createClueFrozenIssuedPuzzle(): PermanentDailyClueFrozenIssuedPuzzle {
   });
 }
 
+/** Create a canonical-compatible player fixture for frozen snapshot verification. */
 function buildPlayer(index: number): Player {
   return {
     id: `legacy-player-${index}`,

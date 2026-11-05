@@ -68,6 +68,7 @@ type ClueFrozenDailyPuzzleInput = Readonly<{
   clueSnapshot: PermanentDailyIssuedClueSnapshot;
 }>;
 
+/** Preserve historic issued IDs while delegating frozen clues to the shared adapter. */
 function materializeClueFrozenIssuedPuzzle(
   issuedPuzzle: Extract<PermanentDailyIssuedPuzzleRecord, { schemaVersion: 2 }> | ArchiveBetaDailyClueFrozenIssuedPuzzle,
   resolvePlayer: PermanentDailyPlayerResolver,
@@ -168,6 +169,7 @@ function materializeFrozenDailyPuzzle(
   };
 }
 
+/** Resolve one canonical identity or stop private game materialization. */
 function requirePlayer(
   issuedPuzzle: Pick<ClueFrozenDailyPuzzleInput, 'puzzleId'>,
   canonicalPlayerId: string,
