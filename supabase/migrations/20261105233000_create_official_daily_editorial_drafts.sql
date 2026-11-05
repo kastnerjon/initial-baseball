@@ -35,10 +35,17 @@ grant select, insert, update on table public.official_daily_editorial_drafts to 
 
 -- Draft order, title and selections can be edited with a bumped revision;
 -- the occurrence, date and key are stable. Issuance locks all fields.
-create function public.guard_official_daily_editorial_draft_update()
+create function public.guard_official_daily_editorial_draft_write()
 returns trigger language plpgsql security invoker set search_path = ''
 as $guard$
 begin
+  if tg_op = 'INSERT' then
+    if new.status <> 'draft' or new.revision <> 0 or new.issued_at is not null then
+      raise exception 'New official Daily editorial drafts must start unissued at revision zero.'
+        using errcode = '23514';
+    end if;
+    return new;
+  end if;
   if old.status = 'issued'
      or row(new.occurrence_id, new.puzzle_date, new.puzzle_number, new.edition_key)
         is distinct from
@@ -63,11 +70,11 @@ begin
 end;
 $guard$;
 
-revoke all on function public.guard_official_daily_editorial_draft_update()
+revoke all on function public.guard_official_daily_editorial_draft_write()
   from public, anon, authenticated;
 create trigger guard_official_daily_editorial_draft
-before update on public.official_daily_editorial_drafts
-for each row execute function public.guard_official_daily_editorial_draft_update();
+before insert or update on public.official_daily_editorial_drafts
+for each row execute function public.guard_official_daily_editorial_draft_write();
 
 -- An atomic, server-only schedule/issuance transaction. Canonical clue values
 -- are constructed and validated by packages/daily on the server, not in SQL.

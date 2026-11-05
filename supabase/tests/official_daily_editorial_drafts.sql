@@ -104,13 +104,27 @@ begin
   exception when insufficient_privilege then null;
   end;
 
+  -- No writer may fabricate an already-issued draft without a frozen row.
+  begin
+    insert into public.official_daily_editorial_drafts
+      (puzzle_date,puzzle_number,edition_key,edition_number,title,
+       selections,status,revision,created_by,updated_by,issued_at)
+    values ('2099-04-10',91,'invalid',2,'Invalid',selections,
+      'issued',1,'fixture-admin','fixture-admin',now());
+    raise exception 'Forged issued draft accepted';
+  exception when check_violation then null;
+  end;
+
   -- Identical rosters on the same date have distinct IDs and cohorts.
   insert into public.official_daily_editorial_drafts
     (occurrence_id,puzzle_date,puzzle_number,edition_key,edition_number,title,
-      selections,status,revision,created_by,updated_by)
+      selections,created_by,updated_by)
   values
     (second_id,'2099-04-09',90,'mixed',3,'Mixed',
-      selections,'scheduled',1,'fixture-admin','fixture-admin');
+      selections,'fixture-admin','fixture-admin');
+  update public.official_daily_editorial_drafts
+    set status='scheduled', revision=1, updated_at=now()
+    where occurrence_id=second_id;
   select x.status,x.puzzle_id into result_status,result_id
     from public.issue_official_daily_editorial_draft(second_id,1,snapshot) x;
   if result_status <> 'created'
