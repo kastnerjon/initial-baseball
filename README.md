@@ -95,6 +95,14 @@ corepack pnpm build:web
 
 `build:web` regenerates and strictly validates the complete canonical runtime payload before building Next.js.
 
+**Workspace package changes:** the direct `@initial-baseball/web` `dev` and `test` commands
+do not automatically rebuild `@initial-baseball/shared`. After pulling new exports
+(such as the shared completion-display-name parser), build the changed workspace
+package first with `corepack pnpm --filter @initial-baseball/shared build`.
+The root `corepack pnpm test` command already uses Turbo's `^build` prerequisite.
+For a fresh local environment that also needs the generated baseball runtime data,
+run `corepack pnpm build:web` before starting the direct web dev server.
+
 Vercel deployment notes:
 
 - Deploy the monorepo as the existing Next.js project.
