@@ -2,7 +2,7 @@
 
 ## Custom #529 immutable issued-game resume boundary
 
-- [ ] Verify that existing 1/2/3-strike Custom challenges remain playable when the **new issuance** variable-strike flag is switched OFF, including after refresh, cross-device sign-in changes, guest completion and retry. The bootstrap adapter now reads the immutable issued cap without consulting issuance readiness; this is source-only and does not enable production Custom/Auth or run hosted QA.
+- [ ] Hosted QA: an already-issued 1/2/3-strike Custom game must remain playable after switching off new variable-strike issuance, across refresh, guest completion, signed-in creator exclusion, and replay. Bootstrap uses its immutable issued cap, not the current issuance readiness flag; production release still requires separate authorization.
 
 
 ## Custom #529 browser whole-lineup QA before enabling

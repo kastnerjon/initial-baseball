@@ -3,7 +3,7 @@
 ## November 3 — signed Custom v2 variable-strike CAS staged (#529)
 
 - Server-only Custom incorrect-guess resolution now reads the frozen issued cap 1/2/3 and ensures the cap-th wrong guess atomically commits terminal K, without an intermediate incorrect response, with exact real wrong-guess facts and Give Up preserving actual guesses. CAS conflict, signed successor, per-batter reset, and full-lineup continuation under points-v4 remain enforced. Regression tests cover every cap, replay, concurrent one-strike terminals and forbidden active strike states.
-- **Not player-accessible:** the issued writer and bootstrap still block 1/2 until client transport, codec, UI and creator issuance are fully reviewed. No production schema/flag changes.
+- **Not player-accessible:** the issuance service requires verified-account ownership and `CUSTOM_LINEUP_VARIABLE_STRIKES_ENABLED=true` before permitting 1/2; the writer persists the validated immutable limit. Bootstrap, transport, UI and QA remain separate release gates. No production schema/flag changes.
 
 
 
@@ -23,20 +23,20 @@
 
 ## November 3 — persisted Custom strike-limit row adapters staged (#529)
 
-- Service-role issued adapter now selects/decodes the stored `strike_limit`, validates 1/2/3, rejects explicit NULL/malformed database values, and writes the immutable default 3 on new records. Missing historical test fixtures still default to 3. An explicit Custom v2 bootstrap guard fails closed on 1/2 until the full server progression/terminal/client contract is ready; the issuance writer still rejects 1/2.
+- Service-role issued adapter now selects/decodes the stored `strike_limit`, validates 1/2/3, rejects explicit NULL/malformed database values, and writes the immutable issued limit (default 3) on new records. Missing historical test fixtures still default to 3. An explicit Custom v2 bootstrap guard fails closed on 1/2 until the full server progression/terminal/client contract is ready; the issuance service separately gates 1/2 behind verified-account issuance and the default-off variable-strikes flag. The writer persists validated caps.
 - **Source-only adapter milestone after merged #534; not a playable feature.** Schema was applied and SQL-tested only in isolated QA, not production. No Auth/Custom production flags were changed.
 
 
 ## November 3 — Custom strike-limit persistence schema staged (#529)
 
 - Additive migration `20261104032946_add_custom_v2_issued_strike_limit.sql` and rollback-only SQL acceptance provide an immutable column defaulting to 3, with v1 constrained to 3 and v2 constrained to 1/2/3. Previously issued rows retain three-strike rules. No player or client setting is trusted.
-- **Applied only to isolated QA** (`iklbnlicgsxxhaoiscor`) under canonical migration history version `20261104032946`. SQL rollback-only acceptance passed; postflight: 93/93 historical issued challenges remain at 3, zero nondefault rows, validated CHECK, same private grants. **Production remains unmigrated.** Gameplay/issuance of 1/2 remains explicitly blocked in the writer until verified issued-row decoding, signed progression, terminal receipts, client display and result rules are implemented, reviewed and tested. The SQL does not activate anything. QA-only schema rehearsal, independent review and release authorization are separate gates.
+- **Applied only to isolated QA** (`iklbnlicgsxxhaoiscor`) under canonical migration history version `20261104032946`. SQL rollback-only acceptance passed; postflight: 93/93 historical issued challenges remain at 3, zero nondefault rows, validated CHECK, same private grants. **Production remains unmigrated.** Issuance of 1/2 requires verified-account service authorization plus `CUSTOM_LINEUP_VARIABLE_STRIKES_ENABLED=true` (default OFF); the writer persists the validated cap. Player gameplay and release remain gated pending integrated bootstrap, client, terminal and result QA. The SQL does not activate anything. QA-only schema rehearsal, independent review and release authorization are separate gates.
 
 
 ## November 3 — staged immutable Custom strike-limit primitives (#529)
 
 - Portable Custom v2 issued metadata now validates/freezes a whole-lineup strike limit of 1, 2 or 3, defaulting every historical caller to 3. A server-owned Daily runtime option allows an opt-in 1/2/3 strike cap while preserving all normal Daily/Classic defaults. Tests exercise signed strikeout/reset and forced K behavior.
-- **Source-only foundation, NOT a playable new setting:** existing account-gated issuance still selects only default 3; the v2 issued writer explicitly rejects 1/2 until a reviewed immutable database migration and all Custom progression/codec/UI consumers are complete. No changes to production/QA database migrations, flags, or deployed gameplay. Future work and rollback constraints in issue #529.
+- **Source-only foundation, NOT a playable new setting:** this foundation alone did not expose 1/2. Subsequent issuance-service code gates nondefault strikes to verified accounts with `CUSTOM_LINEUP_VARIABLE_STRIKES_ENABLED=true`, while the issued writer stores validated caps. Public gameplay and release remain gated. At that foundation checkpoint, no database or gameplay activation occurred. The later migration was rehearsed only in isolated QA; production migrations and flags remain untouched. Future work and rollback constraints in issue #529.
 
 ## November 3, 2026 — account browser QA automation staged
 

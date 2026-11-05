@@ -5,6 +5,7 @@ import {
   createCustomLineupIssuedChallenge,
   createCustomLineupSelection,
   type CustomLineupIssuedChallenge,
+  type CustomLineupStrikeLimit,
   type PermanentDailyIssuedClueSnapshot,
 } from '@initial-baseball/daily';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -59,7 +60,13 @@ export function createServerCustomLineupV2CreationService({
         || !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(creatorAccountId))) {
         throw new ServerCustomLineupV2CreationError('invalid_selection');
       }
-      const ids = readSelection(payload);
+      const { ids, strikeLimit } = readSelection(payload);
+      // This server-owned rollout gate is independent of the public Custom/Auth flags.
+      // Never issue an unplayable nondefault rule before reviewed progression is ready.
+      if (strikeLimit !== 3 && (ownerMode !== 'account'
+        || environment.CUSTOM_LINEUP_VARIABLE_STRIKES_ENABLED !== 'true')) {
+        throw new ServerCustomLineupV2CreationError('invalid_selection');
+      }
       const parsedTitle = displayTitle === undefined ? null : parseCustomLineupTitle(displayTitle);
       if ((ownerMode !== 'none' && !parsedTitle?.ok) || (parsedTitle !== null && !parsedTitle.ok)) {
         throw new ServerCustomLineupV2CreationError('invalid_selection');
@@ -70,6 +77,7 @@ export function createServerCustomLineupV2CreationService({
         requested = createCustomLineupIssuedChallenge({
           puzzleId: `custom-lineup-v2-${dependencies.mintUuid()}`,
           canonicalPlayerIds: ids,
+          strikeLimit,
           clueSnapshot,
           issuedAt: dependencies.issuedAt(),
         });
@@ -125,15 +133,26 @@ export function createServerCustomLineupV2CreationService({
   };
 }
 
-function readSelection(payload: unknown): readonly string[] {
-  if (payload === null || typeof payload !== 'object' || Array.isArray(payload)
-    || Object.keys(payload).length !== 1
-    || !Object.prototype.hasOwnProperty.call(payload, 'canonicalPlayerIds')) {
+function readSelection(payload: unknown): { ids: readonly string[]; strikeLimit: CustomLineupStrikeLimit } {
+  if (payload === null || typeof payload !== 'object' || Array.isArray(payload)) {
     throw new ServerCustomLineupV2CreationError('invalid_selection');
   }
-  const ids = (payload as { canonicalPlayerIds: unknown }).canonicalPlayerIds;
+  const fields = Object.keys(payload);
+  if (!Object.hasOwn(payload, 'canonicalPlayerIds') || fields.length > 2
+    || fields.some(field => field !== 'canonicalPlayerIds' && field !== 'strikeLimit')) {
+    throw new ServerCustomLineupV2CreationError('invalid_selection');
+  }
+  // Only absent strikeLimit defaults to three. Explicit null/undefined and strings fail.
+  const input = payload as Record<string, unknown>;
+  const strikeLimit = Object.hasOwn(input, 'strikeLimit') ? input.strikeLimit : 3;
+  if (strikeLimit !== 1 && strikeLimit !== 2 && strikeLimit !== 3) {
+    throw new ServerCustomLineupV2CreationError('invalid_selection');
+  }
   try {
-    return createCustomLineupSelection(ids as readonly string[]).canonicalPlayerIds;
+    const ids = createCustomLineupSelection(
+      input.canonicalPlayerIds as readonly string[],
+    ).canonicalPlayerIds;
+    return { ids, strikeLimit };
   } catch {
     throw new ServerCustomLineupV2CreationError('invalid_selection');
   }

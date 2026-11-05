@@ -54,14 +54,22 @@ describe('anonymous management verifier storage', () => {
   });
 });
 
-describe('nondefault strike cap persistence is not yet enabled', () => {
-  it('refuses to silently discard 1- or 2-strike issued metadata', () => {
-    for (const strikeLimit of [1, 2] as const) {
-      expect(() => encodeCustomLineupV2IssuedRow({ ...challenge(1), strikeLimit }))
-        .toThrow('Private Custom Lineup v2 issuance unavailable');
+describe('persist immutable whole-lineup strike cap under the approved schema (#529)', () => {
+  it.each([1, 2, 3] as const)('inserts and reads back a cap-%i frozen challenge', async strikeLimit => {
+    const proposed = { ...challenge(2), strikeLimit };
+    const encoded = encodeCustomLineupV2IssuedRow(proposed);
+    expect(encoded.strike_limit).toBe(strikeLimit);
+    const { client, insert } = clientForInsert(encoded);
+    await expect(createSupabaseCustomLineupV2IssuedWriter(client).insertIfAbsent(proposed))
+      .resolves.toEqual({ status: 'inserted', challenge: proposed });
+    expect(insert).toHaveBeenCalledWith(expect.objectContaining({ strike_limit: strikeLimit }));
+  });
+  it('keeps all historical callers at three, and rejects invalid metadata', () => {
+    expect(encodeCustomLineupV2IssuedRow(challenge(1))).toMatchObject({ schema_version: 2, strike_limit: 3 });
+    for (const strikeLimit of [0, 4, null, '2', 1.5]) {
+      expect(() => encodeCustomLineupV2IssuedRow({ ...challenge(1), strikeLimit: strikeLimit as 1 | 2 | 3 }))
+        .toThrow('strike limit');
     }
-    expect(encodeCustomLineupV2IssuedRow(challenge(1))).toHaveProperty('schema_version', 2);
-    expect(encodeCustomLineupV2IssuedRow(challenge(1))).toHaveProperty('strike_limit', 3);
   });
 });
 
