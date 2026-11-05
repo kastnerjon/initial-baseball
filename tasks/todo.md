@@ -2,12 +2,12 @@
 
 ## Security #531 — legacy signed browser QA environment cutover
 
-- [ ] Protected-main-only `qa-custom-signed-browser` GitHub Environment and its **isolated-QA-only** `QA_CUSTOM_SIGNED_BROWSER_SUPABASE_SERVICE_ROLE_KEY` secret must be configured by an authorized maintainer. Verify a real trusted-main signed Chromium run and denial for untrusted branches before deleting the old repository-wide `CUSTOM_V2_QA_SUPABASE_SERVICE_ROLE_KEY` secret (then consider QA-key rotation). Source now invokes the current localhost admin-fixture QA contract, not retired anonymous Custom creation. This source milestone is not proof of Environment configuration or secret removal.
+- [ ] Configure GitHub Environment `qa-custom-signed-browser` with **main-only** deployment restrictions and isolated-QA-only secret `QA_CUSTOM_SIGNED_BROWSER_SUPABASE_SERVICE_ROLE_KEY`. Verify a successful trusted-main Chromium signed-guest run and rejected untrusted-branch invocation before deleting the legacy repository-wide `CUSTOM_V2_QA_SUPABASE_SERVICE_ROLE_KEY`. Source uses the existing localhost admin-fixture route, not obsolete anonymous Create. Consider QA-key rotation after cutover; no production secrets or migrations.
 
 
 ## Custom #529 — remaining variable-strike integration and release gates
 
-- [ ] Merge the reviewed, default-off account-gated Custom Create HTTP rule (#545); connect the staged creator 1/2/3 selector only after the same source rollout gate and full signed gameplay path are ready. Never trust client rule or owner identifiers.
+- [ ] Run isolated hosted QA of the source-wired, default-OFF creator 1/2/3 selector. Confirm its visibility follows only the trusted issuance-readiness flag; verify the old two-field/three-strike path when OFF and secure account-only 1/2/3 issuance when ON. Do not set production flags or trust client rule/owner identifiers.
 - [ ] Verify the immutable issued-game bootstrap update (#550): existing 1/2/3-strike challenges remain playable after disabling new variable-strike issuance, without changing scores, client rule identity, creator exclusion or historical three-strike games.
 - [ ] Run **isolated hosted QA** across 1, 2 and 3 strikes and lineup sizes 1–10: authorized issuance, creator preview, guest/friend play, hints, first-strike K, exact Give Up wrong guesses, full nine/ten-batter completion after three outs, refresh, lost-response retry, cross-tab CAS, noncompetitive owner exclusion and authoritative saved results.
 - [ ] Verify per-challenge comparisons remain keyed to immutable issued puzzle ID/cap; cross-challenge public leaderboards must stratify by strike limit, ruleset and roster length before launch.
