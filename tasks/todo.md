@@ -70,3 +70,7 @@ These gates are separate from Custom Lineups Phase 1. Keep them active until eac
 ## Independent security follow-up (not a Custom launch gate)
 
 - [ ] Resume staged RLS helper EXECUTE hardening in draft PR #494 only after matched hosted Supabase staging verifies event-trigger and DDL behavior. Never apply the migration to production on local-only evidence.
+
+## Official Daily publication storage
+
+- [ ] Rehearse the additive official_daily_publications migration on an isolated production-shaped Daily database after review. The migration file and disposable PostgreSQL test alone do not enable publication. Verify service-only append/read privileges, same-date identical rosters, collision handling and old-reader compatibility before connecting the restricted admin writer. Preserve the existing primary and numbered archive.
