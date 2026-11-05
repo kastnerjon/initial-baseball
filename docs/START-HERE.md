@@ -7,6 +7,7 @@
 
 
 
+
 ## November 3 — signed Custom v2 variable-strike CAS staged (#529)
 
 - Server-only Custom incorrect-guess resolution now reads the frozen issued cap 1/2/3 and ensures the cap-th wrong guess atomically commits terminal K, without an intermediate incorrect response, with exact real wrong-guess facts and Give Up preserving actual guesses. CAS conflict, signed successor, per-batter reset, and full-lineup continuation under points-v4 remain enforced. Regression tests cover every cap, replay, concurrent one-strike terminals and forbidden active strike states.

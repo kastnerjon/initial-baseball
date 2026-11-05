@@ -184,13 +184,15 @@ export async function verifyNativeBrowserContinuity({ base, createChallenge, pla
           bootstrapRequestListeners.set(tab, onBootstrapRequest);
           tab.on('request', onBootstrapRequest);
         }
+        // Each page retains its validated issued cap across later signed actions.
+        // A navigation creates a fresh page transport and reboots that cap.
         // Start two first opens together in the same real browser context.
         let first;
         let second;
         let cookieHeaderReads;
         try {
           [first, second] = await Promise.all([a, b].map(page => page.evaluate(async puzzleId =>
-            window.IBNativeCustomQA.createCustomLineupV2BrowserTransport().bootstrap(puzzleId), id)));
+            (window.IBNativeCustomQA.qaTransport ??= window.IBNativeCustomQA.createCustomLineupV2BrowserTransport()).bootstrap(puzzleId), id)));
         } finally {
           for (const [tab, listener] of bootstrapRequestListeners) tab.off('request', listener);
           cookieHeaderReads = await Promise.allSettled(bootstrapCookiePresence);
@@ -210,10 +212,10 @@ export async function verifyNativeBrowserContinuity({ base, createChallenge, pla
           'One first request must lack this challenge cookie; the second must reuse it');
         // Advance one actual signed attempt through the same transported browser API.
         const hinted = await b.evaluate(async ({ puzzleId, token }) =>
-          window.IBNativeCustomQA.createCustomLineupV2BrowserTransport().revealHint(puzzleId, token),
+          (window.IBNativeCustomQA.qaTransport ??= window.IBNativeCustomQA.createCustomLineupV2BrowserTransport()).revealHint(puzzleId, token),
         { puzzleId: id, token: second.progressionToken });
         const restored = await a.evaluate(async puzzleId =>
-          window.IBNativeCustomQA.createCustomLineupV2BrowserTransport().bootstrap(puzzleId), id);
+          (window.IBNativeCustomQA.qaTransport ??= window.IBNativeCustomQA.createCustomLineupV2BrowserTransport()).bootstrap(puzzleId), id);
         assert.equal(restored.attemptMode, 'reserved');
         assert.equal(restored.hintBundle.revealedCount, 1);
         assertSameSignedProgression(restored.progressionToken, hinted.progressionToken,
@@ -235,7 +237,7 @@ export async function verifyNativeBrowserContinuity({ base, createChallenge, pla
           let responseWasLost = false;
           try {
             await a.evaluate(async ({ puzzleId, progressionToken, playerId }) =>
-              window.IBNativeCustomQA.createCustomLineupV2BrowserTransport()
+              (window.IBNativeCustomQA.qaTransport ??= window.IBNativeCustomQA.createCustomLineupV2BrowserTransport())
                 .resolve(puzzleId, progressionToken, 1, 10, { submittedPlayerId: playerId }),
             { puzzleId: id, progressionToken: token, playerId: players[0] });
           } catch {
@@ -257,7 +259,7 @@ export async function verifyNativeBrowserContinuity({ base, createChallenge, pla
             .waitFor({ state: 'visible', timeout: 15_000 });
           await a.addScriptTag({ content: output.outputFiles[0].text });
           const afterRefresh = await a.evaluate(async puzzleId =>
-            window.IBNativeCustomQA.createCustomLineupV2BrowserTransport().bootstrap(puzzleId), id);
+            (window.IBNativeCustomQA.qaTransport ??= window.IBNativeCustomQA.createCustomLineupV2BrowserTransport()).bootstrap(puzzleId), id);
           assert.equal(afterRefresh.attemptMode, 'reserved');
           assert.equal(afterRefresh.attemptProgress.completedAtBats.length, 1,
             'Refresh must preserve the server-committed first pitch');
@@ -271,7 +273,7 @@ export async function verifyNativeBrowserContinuity({ base, createChallenge, pla
             .waitFor({ state: 'visible', timeout: 15_000 });
           await a.addScriptTag({ content: output.outputFiles[0].text });
           const afterNavigation = await a.evaluate(async puzzleId =>
-            window.IBNativeCustomQA.createCustomLineupV2BrowserTransport().bootstrap(puzzleId), id);
+            (window.IBNativeCustomQA.qaTransport ??= window.IBNativeCustomQA.createCustomLineupV2BrowserTransport()).bootstrap(puzzleId), id);
           assert.equal(afterNavigation.attemptProgress.completedAtBats.length, 1,
             'Navigating away and back must preserve the committed pitch');
           assertSameSignedProgression(afterNavigation.progressionToken,
@@ -284,7 +286,7 @@ export async function verifyNativeBrowserContinuity({ base, createChallenge, pla
             .waitFor({ state: 'visible', timeout: 15_000 });
           await reopened.addScriptTag({ content: output.outputFiles[0].text });
           const afterReopen = await reopened.evaluate(async puzzleId =>
-            window.IBNativeCustomQA.createCustomLineupV2BrowserTransport().bootstrap(puzzleId), id);
+            (window.IBNativeCustomQA.qaTransport ??= window.IBNativeCustomQA.createCustomLineupV2BrowserTransport()).bootstrap(puzzleId), id);
           assert.equal(afterReopen.attemptProgress.completedAtBats.length, 1,
             'Reopening the same challenge must keep the previously recorded pitch');
           assertSameSignedProgression(afterReopen.progressionToken,
@@ -296,7 +298,7 @@ export async function verifyNativeBrowserContinuity({ base, createChallenge, pla
         }
         for (let pitch = firstPitch; pitch <= n; pitch++) {
           const resolved = await b.evaluate(async ({ puzzleId, progressionToken, currentPitch,
-            totalAtBats, playerId }) => window.IBNativeCustomQA.createCustomLineupV2BrowserTransport()
+            totalAtBats, playerId }) => (window.IBNativeCustomQA.qaTransport ??= window.IBNativeCustomQA.createCustomLineupV2BrowserTransport())
             .resolve(puzzleId, progressionToken, currentPitch, totalAtBats,
               { submittedPlayerId: playerId }),
           { puzzleId: id, progressionToken: token, currentPitch: pitch, totalAtBats: n,
@@ -306,15 +308,15 @@ export async function verifyNativeBrowserContinuity({ base, createChallenge, pla
           token = resolved.progressionToken;
         }
         const finished = await playPage.evaluate(async puzzleId =>
-          window.IBNativeCustomQA.createCustomLineupV2BrowserTransport().bootstrap(puzzleId), id);
+          (window.IBNativeCustomQA.qaTransport ??= window.IBNativeCustomQA.createCustomLineupV2BrowserTransport()).bootstrap(puzzleId), id);
         assert.equal(finished.attemptMode, 'completed');
         assert.equal(finished.completedAtBats.length, n);
         assert.equal('progressionToken' in finished, false);
         const submit = await b.evaluate(async puzzleId =>
-          window.IBNativeCustomQA.createCustomLineupV2BrowserTransport().submit(puzzleId), id);
+          (window.IBNativeCustomQA.qaTransport ??= window.IBNativeCustomQA.createCustomLineupV2BrowserTransport()).submit(puzzleId), id);
         assert.equal(submit, 'created');
         const duplicateSubmit = await playPage.evaluate(async puzzleId =>
-          window.IBNativeCustomQA.createCustomLineupV2BrowserTransport().submit(puzzleId), id);
+          (window.IBNativeCustomQA.qaTransport ??= window.IBNativeCustomQA.createCustomLineupV2BrowserTransport()).submit(puzzleId), id);
         assert.equal(duplicateSubmit, 'existing', 'A second browser must not admit another result');
         if (n === 1) await playPage.goto(challengeUrl);
         else await playPage.reload();
@@ -322,7 +324,7 @@ export async function verifyNativeBrowserContinuity({ base, createChallenge, pla
           .waitFor({ state: 'visible', timeout: 15_000 });
         await playPage.addScriptTag({ content: output.outputFiles[0].text });
         const persisted = await playPage.evaluate(async puzzleId =>
-          window.IBNativeCustomQA.createCustomLineupV2BrowserTransport().bootstrap(puzzleId), id);
+          (window.IBNativeCustomQA.qaTransport ??= window.IBNativeCustomQA.createCustomLineupV2BrowserTransport()).bootstrap(puzzleId), id);
         assert.equal(persisted.attemptMode, 'completed');
         assert.equal(persisted.completedAtBats.length, n);
         console.log('PASS actual Chromium UI + isolated Supabase signed continuity N=' + n);

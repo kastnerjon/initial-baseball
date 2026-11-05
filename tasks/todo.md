@@ -1,9 +1,8 @@
 # Initial Baseball — Current Work
 
-## Custom #529 optional-strike Create HTTP activation gate
+## Custom #529 browser whole-lineup QA before enabling
 
-- [ ] After strict account-only request validation is merged, do not set the dedicated server strike rollout variable until immutable 1/2/3 gameplay, creator UI, comparison cohorts and isolated hosted/mobile QA pass. Preserve default-three creation/guest play and production migration safety.
-
+- [ ] Verify 1/2/3-strike Custom browser/HTTP completion, actual Give Up guesses, guest and creator separation, lost-response retries, refresh, two-tab CAS, private data redaction, and mobile. Keep nondefault production issuance disabled pending separate release approval.
 
 
 ## Custom #529 creator selector release gate
