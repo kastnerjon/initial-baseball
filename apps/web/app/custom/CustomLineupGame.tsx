@@ -241,7 +241,7 @@ function CustomLineupGameSession({ puzzleId, displayTitle }: {
                 <div className="custom-lineup-active-heading">
                   <span className="custom-lineup-kicker">At bat {currentPitch} of {pitches.length}</span>
                   <span className="custom-lineup-strikes" aria-live="polite">
-                    {game.attemptProgress.strikeCount} / 3 strikes
+                    {game.attemptProgress.strikeCount} / {game.strikeLimit} {game.strikeLimit === 1 ? 'strike' : 'strikes'}
                   </span>
                 </div>
                 <div className="custom-lineup-big-initials" aria-label={'Player initials '+pitches[facts.length]?.initials}>
