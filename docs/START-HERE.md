@@ -1,5 +1,11 @@
 # Initial Baseball — Start Here
 
+## November 4 — variable-strike full-lineup after-three-outs browser/HTTP contract regression (#529)
+
+- The controlled browser-to-real-HTTP-adapter acceptance now exercises **1/2/3 strikes across nine- and ten-player Custom lineups**, including three consecutive K at-bats followed by correct guesses on all remaining batters. It asserts every signed transition, saved/resumed strike reset, completed roster length, authoritative points-v4 totals, first-write-wins completion status, and hidden-answer/attempt redaction.
+- This test intentionally controls the private persistence services. It verifies contract composition but is **not** isolated hosted Supabase/Chrome QA, a production-clone migration rehearsal, or physical mobile acceptance. Production nondefault issuance and Custom/Auth remain OFF.
+
+
 ## November 4 — default-off Custom creator strike selector wired to issuance readiness (#529)
 
 - The public `/create` page now passes the already-reviewed 1/2/3-strike selector through only when the **exact server-side** `CUSTOM_LINEUP_VARIABLE_STRIKES_ENABLED=true` setting is active, in addition to the existing page-level Custom/gameplay access gates. Otherwise the creator stays on the historical three-strike/two-field issuance path. The account-gated HTTP adapter and private issuer independently validate the same readiness boundary before using the rule; no game rules were added to React.

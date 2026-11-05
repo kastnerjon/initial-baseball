@@ -315,6 +315,67 @@ describe('Custom Lineup v2 browser-to-HTTP contract acceptance', () => {
     expect(JSON.stringify(s.wire)).not.toContain('PRIVATE_ATTEMPT_UUID');
   });
 
+  it.each([
+    [1, 9], [2, 9], [3, 9],
+    [1, 10], [2, 10], [3, 10],
+  ] as const)('continues all %i-strike at-bats through a %i-player lineup after three outs', async (cap, n) => {
+    const s = controlledSession(n, false, cap);
+    const started = await s.client.bootstrap(ID);
+    if (started.attemptMode !== 'reserved') throw Error('Expected reserved challenge');
+    expect(started.strikeLimit).toBe(cap);
+    let token = started.progressionToken;
+
+    // These are three consecutive strikeout at-bats, NOT an inning-ending
+    // condition for Custom points-v4; remaining immutable slots stay playable.
+    for (let pitch = 1; pitch <= n; pitch++) {
+      if (pitch <= 3) {
+        for (let strike = 1; strike <= cap; strike++) {
+          const resolved = await s.client.resolve(ID, token, pitch, n,
+            { submittedPlayerId: WRONG });
+          token = resolved.progressionToken;
+          if (strike !== cap) {
+            expect(resolved).toMatchObject({ kind: 'incorrect', strikeCount: strike });
+          } else {
+            expect(resolved).toMatchObject({
+              kind: 'terminal', completed: false,
+              result: { kind: 'strikeout', outcome: 'K', strikeCount: cap },
+            });
+          }
+        }
+      } else {
+        const resolved = await s.client.resolve(ID, token, pitch, n,
+          { submittedPlayerId: RIGHT });
+        expect(resolved).toMatchObject({ kind: 'terminal', completed: pitch === n });
+        token = resolved.progressionToken;
+      }
+      const restored = await s.client.bootstrap(ID);
+      if (pitch < n) {
+        if (restored.attemptMode !== 'reserved') throw Error('Expected remaining at-bats');
+        expect(restored.strikeLimit).toBe(cap);
+        expect(restored.attemptProgress.strikeCount).toBe(0);
+        expect(restored.attemptProgress.completedAtBats).toHaveLength(pitch);
+        expect(restored.hintBundle.pitchNumber).toBe(pitch + 1);
+      } else {
+        if (restored.attemptMode !== 'completed') throw Error('Expected completed lineup');
+        expect(restored.strikeLimit).toBe(cap);
+        expect(restored.completedAtBats).toHaveLength(n);
+        expect(restored.completedAtBats.slice(0, 3).every(f =>
+          f.outcome === 'K' && f.wrongGuesses === cap
+          && f.resolution === 'strikeout')).toBe(true);
+        expect(restored.completedAtBats.slice(3).every(f =>
+          f.outcome === 'HR' && f.wrongGuesses === 0)).toBe(true);
+        const points = restored.completedAtBats.reduce((total, fact) =>
+          total + getDailyAtBatPoints({ ...fact, rulesetVersion: 'points-v4' }), 0);
+        expect(points).toBe(4 * (n - 3));
+      }
+    }
+    expect(await s.client.submit(ID)).toBe('created');
+    expect(await s.client.submit(ID)).toBe('existing');
+    expect(s.facts).toHaveLength(n);
+    expect(JSON.stringify(s.wire)).not.toContain('PRIVATE_ATTEMPT_UUID');
+    expect(JSON.stringify(s.wire)).not.toContain('canonicalPlayerIds');
+  });
+
   it('uses actual wrong guesses on mid-at-bat Give Up instead of fabricating a cap', async () => {
     const s = controlledSession(1, false, 2);
     const initial = await s.client.bootstrap(ID);
