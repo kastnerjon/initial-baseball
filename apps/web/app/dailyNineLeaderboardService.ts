@@ -1,3 +1,5 @@
+import { parseCompletionDisplayName } from '@initial-baseball/shared';
+
 export type LeaderboardIdentity = {
   puzzleId: string;
   puzzleDate: string;
@@ -87,10 +89,10 @@ function readSubmissionId(input: unknown): string | null {
 function readSubmission(input: unknown): { submissionId: string; displayName: string } | null {
   if (!record(input)) return null;
   const id = readSubmissionId(input);
-  if (id === null || typeof input.displayName !== 'string') return null;
-  const name = input.displayName.trim();
-  if (name.length < 1 || name.length > 32 || /[\x00-\x1f\x7f-\x9f]/.test(name)) return null;
-  return { submissionId: id, displayName: name };
+  if (id === null) return null;
+  const parsed = parseCompletionDisplayName(input.displayName);
+  if (!parsed.ok) return null;
+  return { submissionId: id, displayName: parsed.displayName };
 }
 
 function formatLeaderboard(rows: readonly DailyNineLeaderboardRow[]): DailyNineLeaderboardView {
