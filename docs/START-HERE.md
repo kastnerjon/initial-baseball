@@ -1,5 +1,11 @@
 # Initial Baseball — Start Here
 
+## November 4 — portable completion display-name policy staged for #528
+
+- The existing Daily Nine post-completion 1–32-character trim/control-rejection contract is now a portable, pure `@initial-baseball/shared` parser with dedicated boundary tests. Daily's already-authorized name submission delegates to it without changing validation, score eligibility or leaderboard persistence. Historical JavaScript UTF-16 length semantics are deliberately preserved, avoiding a silent Daily behavior migration.
+- **Not a Custom display-name feature:** Custom guest display-name persistence, first-write-wins name/Anonymous projection, signed attempt-cookie authorization, verified account nickname linkage and completion UI remain future separately reviewed milestones. The parser does not grant identity/eligibility or sanitize HTML for unsafe insertion contexts; user strings must be rendered as escaped text. No production database or feature flags changed.
+
+
 ## November 4 — default-off Custom creator strike selector wired to issuance readiness (#529)
 
 - The public `/create` page now passes the already-reviewed 1/2/3-strike selector through only when the **exact server-side** `CUSTOM_LINEUP_VARIABLE_STRIKES_ENABLED=true` setting is active, in addition to the existing page-level Custom/gameplay access gates. Otherwise the creator stays on the historical three-strike/two-field issuance path. The account-gated HTTP adapter and private issuer independently validate the same readiness boundary before using the rule; no game rules were added to React.
