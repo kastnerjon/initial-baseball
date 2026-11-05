@@ -269,4 +269,4 @@ export {
   type CustomNineIssuedChallengeIssueResult,
 } from './customNineIssuedChallengeService';
 
-export { prepareOfficialDailyPublication, type OfficialDailyPublicationInput } from './officialDailyPublication';
+export { prepareOfficialDailyPublication, isOfficialDailyOccurrenceId, isOfficialDailyEditionKey, type OfficialDailyPublicationInput } from './officialDailyPublication';
