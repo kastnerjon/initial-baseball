@@ -1,5 +1,9 @@
 # Initial Baseball — Start Here
 
+## November 5 — multi-Daily implementation authorized
+
+Main at approval: 6b39525f, push CI 41966926633 successful and matching READY production. The November 6 primary was scheduled at revision 10 with nine slots. Multi-edition play is pending. Follow [the approved implementation sequence](../tasks/plans/multiple-official-dailies.md); keep Custom/Auth disabled until its separate release gates pass.
+
 ## November 4 — portable completion display-name policy staged for #528
 
 - The existing Daily Nine post-completion 1–32-character trim/control-rejection contract is now a portable, pure `@initial-baseball/shared` parser with dedicated boundary tests. Daily's already-authorized name submission delegates to it without changing validation, score eligibility or leaderboard persistence. Historical JavaScript UTF-16 length semantics are deliberately preserved, avoiding a silent Daily behavior migration.
