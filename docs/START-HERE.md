@@ -1,5 +1,13 @@
 # Initial Baseball — Start Here
 
+## November 4 — strict account-only Custom strike-limit HTTP validation staged (#529)
+
+- The public Create HTTP adapter accepts an optional whole-lineup 1/2/3 cap only behind the separate `CUSTOM_LINEUP_VARIABLE_STRIKES_ENABLED=true` server readiness setting, after existing verified-account Auth. With the gate OFF it preserves the legacy exact two-field payload and rejects any submitted cap; malformed caps, unknown fields or spoofed owner IDs fail before quota reservation and private issuance. The owner ID is always resolved from the authenticated account, never the request.
+- **No release activation:** the server switch remains unset, the public creator control is independently gated, and protected 1/2/3 guest gameplay/QA must be verified before any production configuration or migration change.
+
+
+
+
 ## November 3 — signed Custom v2 variable-strike CAS staged (#529)
 
 - Server-only Custom incorrect-guess resolution now reads the frozen issued cap 1/2/3 and ensures the cap-th wrong guess atomically commits terminal K, without an intermediate incorrect response, with exact real wrong-guess facts and Give Up preserving actual guesses. CAS conflict, signed successor, per-batter reset, and full-lineup continuation under points-v4 remain enforced. Regression tests cover every cap, replay, concurrent one-strike terminals and forbidden active strike states.
