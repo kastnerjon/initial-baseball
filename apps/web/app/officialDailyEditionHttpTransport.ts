@@ -1,6 +1,5 @@
 import { isOfficialDailyOccurrenceId, validateIssuedDailyCalendarDate } from '@initial-baseball/daily';
 import { POINTS_V4_DAILY_RULESET_VERSION } from '@initial-baseball/shared';
-import { postDailyGameplayJson } from './dailyGameplayRequestController';
 import type {
   DailyBootstrap,
   DailyHintBundle,
@@ -21,12 +20,11 @@ const HITTER_FIELDS = new Set(['bwar', 'hr', 'rbi', 'ba', 'obp', 'slg', 'ops', '
 const PITCHER_FIELDS = new Set(['bwar', 'w', 'l', 'era', 'whip', 'k', 'sv', 'ip']);
 
 export class OfficialDailyEditionHttpError extends Error {
-  constructor(readonly kind: 'not_found' | 'unavailable' | 'invalid_response') {
+  constructor(readonly kind: 'not_found' | 'invalid_request' | 'unavailable' | 'invalid_response') {
     super('Official Daily edition request failed.');
     this.name = 'OfficialDailyEditionHttpError';
   }
 }
-
 
 function incompatible(): never {
   throw new Error('Official Daily edition response is incompatible.');
@@ -117,15 +115,29 @@ function validProgressionToken(value: string): void {
   if (typeof value !== 'string' || value.length < 1 || value.length > 4096) incompatible();
 }
 
-async function defaultGetJson(path: string): Promise<unknown> {
+/** Keep HTTP status and transport failures typed without exposing server error details. */
+async function requestEditionJson(
+  path: string,
+  body?: Record<string, unknown>,
+): Promise<unknown> {
   let response: Response;
   try {
-    response = await fetch(path, { credentials: 'same-origin' });
+    response = await fetch(path, body === undefined
+      ? { credentials: 'same-origin' }
+      : {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(body),
+        });
   } catch {
     throw new OfficialDailyEditionHttpError('unavailable');
   }
   if (!response.ok) {
-    throw new OfficialDailyEditionHttpError(response.status === 404 ? 'not_found' : 'unavailable');
+    const kind = response.status === 404 ? 'not_found'
+      : response.status >= 400 && response.status < 500 ? 'invalid_request'
+        : 'unavailable';
+    throw new OfficialDailyEditionHttpError(kind);
   }
   try {
     return await response.json() as unknown;
@@ -133,6 +145,9 @@ async function defaultGetJson(path: string): Promise<unknown> {
     throw new OfficialDailyEditionHttpError('invalid_response');
   }
 }
+
+const defaultGetJson: GetJson = path => requestEditionJson(path);
+const defaultPostJson: PostJson = (path, body) => requestEditionJson(path, body);
 
 /**
  * Source-only browser transport for one immutable official Daily occurrence.
@@ -142,7 +157,7 @@ async function defaultGetJson(path: string): Promise<unknown> {
 export function createOfficialDailyEditionHttpTransport(
   puzzleId: string,
   getJson: GetJson = defaultGetJson,
-  postJson: PostJson = (path, body) => postDailyGameplayJson<unknown>(path, body),
+  postJson: PostJson = defaultPostJson,
 ) {
   if (typeof puzzleId !== 'string' || !puzzleId.startsWith(EDITION_PREFIX)
       || !isOfficialDailyOccurrenceId(puzzleId.slice(EDITION_PREFIX.length))) {
