@@ -99,3 +99,9 @@ These gates are separate from Custom Lineups Phase 1. Keep them active until eac
 
 - [ ] Verify the source-staged `official_daily_editorial_drafts` table and atomic `issue_official_daily_editorial_draft` function against isolated QA. Retain the completed rollback-only rehearsal evidence; no production migration without explicit release approval.
 - [ ] Integrate the default-OFF, authenticated secondary draft administration from #560 with the reviewed private issuer (#561) and exact-ID publication readback; preserve existing primary issuance, editorial revision checks and immutable retries. Public gameplay, competitive result admission and release still require their separate gates.
+
+## Secondary Daily date discovery integration (staged)
+
+- [ ] Integrate the private, metadata-only official edition catalog with a date-grouped Archive view; paginate by immutable edition number until all editions for a requested date are loaded.
+- [ ] Combine the separate legacy-primary entry without converting its existing ID or scoring population; never expose frozen clue snapshots through the date catalog.
+- [ ] Verify future Pacific dates, 1/2/100+ editions, cursor changes during issuance, empty and malformed pages, and share-link identity on physical mobile devices before a public browse route is enabled.

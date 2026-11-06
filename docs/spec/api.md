@@ -533,3 +533,29 @@ or scoring behavior is activated by this command.
 The transaction migration (#559), draft-admin path (#560), exact-ID reader
 (#558), hosted QA and independent release checks are separate prerequisites.
 Production migration/activation still requires release approval.
+
+## Private official-edition date catalog (staged, no public route)
+
+The web server now has a private metadata-only date catalog reader for
+immutable official Daily publications. It accepts a valid Pacific game
+date and pages by increasing editionNumber, returning up to 100 records
+per request and an edition-number cursor if more results exist. It does
+not impose a maximum number of editions per date: consumers must continue
+through the pages for complete archive/date discovery.
+
+The database projection is restricted to puzzle_id, puzzle_date,
+puzzle_number, edition_key, edition_number, title, schema_version and
+ruleset_version. It never reads frozen clue snapshots, canonical player
+IDs or hint values. Each row is validated against the existing Daily
+identity, date/number, slug, title and ruleset rules. Provider failures
+and malformed metadata are sanitized; the reader fails closed rather
+than returning partially verified pages. Future Pacific dates return
+empty results without querying the database.
+
+This is only a server-private discovery adapter: it does not activate
+public browsing, a share link, editor access, public gameplay, Archive
+routing, or secondary edition score admission. The legacy primary is
+not included or changed. Public date/edition browsing and full
+archive grouping require separately reviewed UI and server admission;
+the immutable official publication store and rollout flags remain
+release-gated.
