@@ -111,7 +111,7 @@ describe('default-OFF exact-ID official Daily HTTP adapter', () => {
     });
     const failure = await GET(get(), context('bootstrap'));
     expect(failure.status).toBe(503);
-    expect(await failure.json()).toEqual({ error: 'unavailable' });
     expect(await failure.clone().text()).not.toContain('PRIVATE_DB_ERROR_OR_TOKEN');
+    expect(await failure.json()).toEqual({ error: 'unavailable' });
   });
 });
