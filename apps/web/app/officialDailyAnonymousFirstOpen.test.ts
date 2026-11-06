@@ -165,6 +165,20 @@ describe('source-only official Daily anonymous first-open coordination', () => {
     expect(await task).toEqual({ status: 'reconciliation_required' });
   });
 
+  it('reconciles if the lock layer fails after a possible successful server reservation', async () => {
+    const input = steps({
+      request: async <T>(_name: string, _options: { mode: 'exclusive'; signal: AbortSignal },
+        callback: (lock: object | null) => Promise<T>): Promise<T> => {
+        await callback({ name: OFFICIAL_DAILY_CREDENTIAL_LOCK_NAME });
+        throw new Error('PRIVATE_LOCK_RELEASE_FAILURE');
+      },
+    });
+    expect(await attemptOfficialDailyAnonymousFirstOpen(input)).toEqual({
+      status: 'reconciliation_required',
+    });
+    expect(input.requestServerStart).toHaveBeenCalledTimes(1);
+  });
+
   it('fails closed when a lock provider rejects or gives no actual exclusive lock', async () => {
     const input = steps({
       request: async <T>(_name: string, _options: { mode: 'exclusive'; signal: AbortSignal },

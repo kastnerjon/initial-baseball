@@ -55,6 +55,7 @@ export async function attemptOfficialDailyAnonymousFirstOpen<T>(
     return practiceOnly('locking_unavailable');
   }
 
+  let startRequested = false;
   try {
     return await input.locks.request(
       OFFICIAL_DAILY_CREDENTIAL_LOCK_NAME,
@@ -79,6 +80,7 @@ export async function attemptOfficialDailyAnonymousFirstOpen<T>(
         if (!confirmed) return practiceOnly('credential_unconfirmed');
 
         try {
+          startRequested = true;
           const response = await input.requestServerStart();
           if (input.signal.aborted) return { status: 'reconciliation_required' };
           return { status: 'start_response', response };
@@ -90,6 +92,7 @@ export async function attemptOfficialDailyAnonymousFirstOpen<T>(
       },
     );
   } catch {
+    if (startRequested) return { status: 'reconciliation_required' };
     return input.signal.aborted
       ? practiceOnly('aborted')
       : practiceOnly('locking_unavailable');
