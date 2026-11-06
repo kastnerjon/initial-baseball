@@ -4,13 +4,17 @@
 
 Daily Inning is the web-first daily puzzle and top-of-funnel product for Initial Baseball.
 
-The user plays one inning against a computer-selected sequence of canonical players. The user sees initials, may reveal hints, guesses the player, and scores baseball outcomes based on how many hints were used.
+The user plays one inning against an ordered lineup of canonical players. The user sees initials, may reveal hints, guesses the player, and scores baseball outcomes based on how many hints were used.
 
 ## Product relationship
 
 - **Daily Inning**: no-login daily web puzzle, fast sharing, aggregate crowd comparison.
 - **Initial Baseball H2H**: later mobile app for friend games, random opponents, chat, records, and leagues.
 - Both use the same player database, same engine, same hint logic, same guess matching, same eventual account.
+
+## Official edition preparation
+
+The private preparation step consumes a server-allocated occurrence UUID and a scheduled or published nine-slot editorial selection. It orders slots, validates the publication date, assigns a default Puzzle N title when omitted, and freezes the dated clue snapshot under points-v4. Equal ordered rosters may produce distinct puzzle IDs. The prepared payload contains answers and stays on the server. Database issuance, admin authorization and public play are separate delivery steps.
 
 ## Identity model
 
@@ -172,3 +176,41 @@ Future monetization:
 - No daily custom settings.
 - No public comments/chat.
 - No player-name spoilers in share text.
+
+## Private frozen edition materialization (staged, not a public route)
+
+A newly issued official secondary edition is stored by an immutable occurrence
+ID with nine frozen canonical player IDs, exact initials, date-specific hint
+labels/order and all four frozen clue values per pitch. The server-only
+materialization adapter reuses the *same* frozen-clue composition as legacy
+permanent/archive Daily puzzles, producing a standard DailyPuzzle for the
+existing shared engine. Current canonical baseball records supply the player
+identity, but stored initials and hint values always override current
+regenerated values. No second scoring or gameplay engine is introduced.
+
+This capability is not a public admission decision. Until a separately reviewed
+exact-ID runtime and single-hint transport are deployed, no endpoint may return
+its private DailyPuzzle or unrevealed answers. Validate signed progression
+against exact puzzle ID and date; keep future editions undiscoverable; isolate
+score and browser-state cohorts by immutable edition ID. The legacy primary
+materialization path retains identical behavior.
+
+## Secondary official Daily browser-save identity (staged, source only)
+
+An independently issued official edition uses a dedicated browser gameplay-save
+namespace keyed by its immutable daily-ed-v1 occurrence ID, scoring ruleset
+and game date. Two same-date editions may have identical batting orders and
+still retain independent saves, resets and resume state. The new namespace
+never adopts the old date-only/pre-scoped Daily save, even when that old value
+is corrupted or has an unknown puzzle identity. Resetting an edition never
+deletes an older Daily Nine or other edition's save.
+
+Previously shipped primary points-v4 migration fallback, Classic keys,
+permanent/archive keys, and the existing identity-keyed at-bat journals and
+completed-result outbox are unchanged. Official editions also require an
+exact scoring-ruleset match when loading a saved game; historical points-v3
+cross-version compatibility applies only to historic current Daily saves.
+
+This is a browser-side storage boundary, not public gameplay or scoring
+admission. Server-side result isolation, signed exact-ID progression, lost
+response handling, multi-tab play and mobile QA remain release gates.

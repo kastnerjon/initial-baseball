@@ -456,3 +456,80 @@ Explicit `POST /admin/daily/archive-beta/issue` remains separately authenticated
 ## Completed-day archive rollover
 
 `POST /admin/daily/archive-beta/rollover` accepts existing Basic administrator authorization or the existing `DAILY_CHATOPS_TOKEN` Bearer principal. Cross-origin requests are rejected and authorization completes before repository access. No date, lineup, or cutoff is supplied by the caller: the server determines completed Pacific dates from the explicit beta epoch. It returns metadata-only cutoff/created/preserved/remaining counts and sanitized per-date failure categories, with `private, no-store`; complete runs return 200 and incomplete/unavailable runs 503. Missing/incorrect credentials fail closed with 401/503. Publication and immutable copy/read-back are separate writes; failed copies retry against committed publication without another audit revision. Existing copies/timestamps are retained without clue regeneration. Public catalog/gameplay GETs remain read-only. Scheduler activation belongs to the following private-transport migration, not this endpoint release.
+
+## Official edition issuance boundary
+
+The official Daily publication candidate is server-private. Its clue snapshot includes canonical answers and unrevealed hints. Keep it out of route responses, rendered props and error logs. The server materialization boundary reports only a generic preparation failure. Public routes for additional editions require separate ID-based admission and spoiler-safe projections.
+
+The internal official publication writer takes a trusted editorial occurrence and returns created/existing plus puzzle ID, or conflict. It compares immutable fields and frozen clues on duplicate ID, omitting the database-generated issuance time from replay comparison. A date/edition collision under another ID also yields conflict. Only a future authorized editor action with revision checks may call it.
+
+The server-only exact-ID reader validates each immutable official v1 row and clones its private issued clue snapshot before any gameplay projection. Invalid IDs return no match; malformed stored records and provider failures use a generic error without answers. This reader is deliberately not a public endpoint: future public admission must check the Pacific game date, signed progression, archive practice context, and spoiler-safe one-hint transport before exposing any data.
+
+## Restricted secondary official Daily editorial drafts (source staged, default OFF)
+
+POST /admin/daily/editions/drafts creates one future-date, independently named
+nine-player secondary editorial draft. PATCH on the same endpoint schedules an
+existing draft by occurrenceId and expectedRevision, after private canonical
+clue verification and an optimistic revision compare-and-swap. Creation accepts
+puzzleDate, editionKey, editionNumber (2 or greater while legacy primary is
+authoritative), optional title, and an ordered canonicalPlayerIds array of nine.
+The server allocates the occurrence UUID and derives the date's editorial number.
+The authenticated principal, not the request body, supplies audit identity.
+
+Both methods require exact server flag OFFICIAL_DAILY_EDITOR_DRAFTS_ENABLED=true,
+existing Daily administrator Basic authorization, same-origin mutation,
+application/json, a bounded 8192-byte body, and no URL query parameters.
+Responses contain only occurrenceId, revision and status with private, no-store.
+Invalid inputs, revision races and unavailable storage are sanitized; no hidden
+answers or hints are returned. Public play, issued publication, Archive and
+the legacy primary remain unaffected. The new editorial database migration,
+hosted QA and physical acceptance are separate prerequisites; production
+activation requires explicit release approval.
+
+## Official secondary Daily result admission: fail-closed until signed evidence
+
+The existing anonymous Daily at-bat and completed-game submission HTTP
+services must not admit \`daily-ed-v1-\` puzzle IDs. Both server-side routing
+boundaries reject these reserved edition IDs as invalid_puzzle **before**
+authoritative puzzle lookup, score normalization, or database access.
+The browser-side result-collection policy agrees and does not create a
+competitive attempt for those IDs. Current Daily Nine, Classic, archive-beta
+and permanent Archive behavior remains unchanged.
+
+This is a deliberate temporary release gate, **not** final edition scoring.
+The current engine validates submitted facts against the chosen authoritative
+puzzle but cannot establish which of two identical-roster editions generated
+the anonymous attempt. Before activation, separately implement signed
+per-edition result evidence, single-attempt/idempotency guarantees and
+delayed-live-versus-archive admission as tracked in GitHub issue #566.
+Never enable a secondary leaderboard or score-write path merely by teaching
+the authoritative loader to find new IDs.
+
+## Server-only released official Daily reader (staged)
+
+Private gameplay reads apply a server-clock Pacific date ceiling in the exact-ID publication query. Missing and future editions produce no puzzle. Only a validated, released snapshot reaches the shared frozen materializer. Unrestricted private editorial readback remains available for scheduling. Gameplay reads alone confer no scoring eligibility.
+
+## Restricted private official Daily issuance command (staged, default OFF)
+
+POST /admin/daily/editions/issue is a separate authenticated server-only
+command accepting exactly {occurrenceId, expectedRevision}; the JSON body is
+capped at 2048 bytes, requires same-origin Daily administrator Basic auth, and
+must not include query parameters. Both
+OFFICIAL_DAILY_EDITOR_DRAFTS_ENABLED=true and
+OFFICIAL_DAILY_EDITOR_ISSUANCE_ENABLED=true are required; otherwise the route
+responds with 404 before reading credentials or data. These switches remain
+OFF in production.
+
+The server loads the stable editorial occurrence and expected revision, then
+prepares private frozen clues and calls the atomic PostgreSQL issuer from the
+staged official_daily_editorial_drafts migration. It verifies the immutable
+publication by exact ID and frozen clue content before returning only
+{status, puzzleId}. A retry of an issued draft verifies the existing frozen
+publication without rematerializing clues from potentially updated baseball
+data. Conflicts and storage failures return generic private no-store errors.
+No public puzzle loader, hints, player identities, guesses, archive admission,
+or scoring behavior is activated by this command.
+
+The transaction migration (#559), draft-admin path (#560), exact-ID reader
+(#558), hosted QA and independent release checks are separate prerequisites.
+Production migration/activation still requires release approval.
