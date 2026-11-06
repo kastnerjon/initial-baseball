@@ -28,8 +28,14 @@ export function isArchiveBetaDailyPuzzleId(puzzleId?: string): boolean {
   return puzzleId?.startsWith('archive-beta-v1-daily-') === true;
 }
 
+/** Reserve secondary official edition IDs until signed, exact-ID result admission ships. */
+export function isSecondaryOfficialDailyEditionId(puzzleId?: string): boolean {
+  return puzzleId?.startsWith('daily-ed-v1-') === true;
+}
+
 export function isDailyResultCollectionEnabled(puzzleId?: string): boolean {
-  return !isArchiveDailyPuzzleId(puzzleId) || isArchiveBetaDailyPuzzleId(puzzleId);
+  return !isSecondaryOfficialDailyEditionId(puzzleId)
+    && (!isArchiveDailyPuzzleId(puzzleId) || isArchiveBetaDailyPuzzleId(puzzleId));
 }
 
 export function canPersistCurrentDailyGameplay({
