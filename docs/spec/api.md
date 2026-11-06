@@ -503,7 +503,11 @@ the anonymous attempt. Before activation, separately implement signed
 per-edition result evidence, single-attempt/idempotency guarantees and
 delayed-live-versus-archive admission as tracked in GitHub issue #566.
 Never enable a secondary leaderboard or score-write path merely by teaching
-the authoritative loader to find new IDs.
+the authoritative loader to find new IDs. The existing named Daily leaderboard
+service independently rejects reserved `daily-ed-v1-` puzzle IDs on public
+reads, and rejects name submission and rank lookup if a stored completion has
+that identity. This is defense in depth, not signed edition eligibility;
+existing primary, permanent Archive and archive-beta policies are preserved.
 
 ## Server-only released official Daily reader (staged)
 
