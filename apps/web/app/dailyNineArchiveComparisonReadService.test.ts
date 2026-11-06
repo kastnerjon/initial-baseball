@@ -76,6 +76,36 @@ describe('archive comparison authoritative routing', () => {
     expect(comparison.getCompletedGames).not.toHaveBeenCalled();
   });
 
+  it.each([
+    'daily-ed-v1-907f33db-c38f-43c3-8e6b-a3aaf19bbd08',
+    'daily-ed-v1-not-an-issued-identity',
+  ])('denies reserved secondary %s before either population read', async puzzleId => {
+    const { service, comparison, loadAuthoritativePuzzle } = setup();
+    const request = { ...REQUEST, puzzleId };
+    await expect(service.readAtBat({ ...request, pitchNumber: '1' }))
+      .rejects.toMatchObject({ code: 'invalid_puzzle' });
+    await expect(service.readCompleted(request))
+      .rejects.toMatchObject({ code: 'invalid_puzzle' });
+    expect(loadAuthoritativePuzzle).not.toHaveBeenCalled();
+    expect(comparison.getAtBat).not.toHaveBeenCalled();
+    expect(comparison.getCompletedGames).not.toHaveBeenCalled();
+  });
+
+  it('rejects an implicitly loaded secondary edition before aggregate reads', async () => {
+    const { service, comparison, loadAuthoritativePuzzle } = setup();
+    const secondary = {
+      ...DAILY, id: 'daily-ed-v1-907f33db-c38f-43c3-8e6b-a3aaf19bbd08',
+    };
+    loadAuthoritativePuzzle.mockResolvedValue(secondary);
+    await expect(service.readAtBat({ ...REQUEST, puzzleId: null, pitchNumber: '1' }))
+      .rejects.toMatchObject({ code: 'invalid_puzzle' });
+    await expect(service.readCompleted({ ...REQUEST, puzzleId: null }))
+      .rejects.toMatchObject({ code: 'invalid_puzzle' });
+    expect(loadAuthoritativePuzzle).toHaveBeenCalledTimes(2);
+    expect(comparison.getAtBat).not.toHaveBeenCalled();
+    expect(comparison.getCompletedGames).not.toHaveBeenCalled();
+  });
+
   it('propagates an unissued puzzle failure without touching aggregates', async () => {
     const { service, comparison, loadAuthoritativePuzzle } = setup();
     const failure = new Error('unissued');
