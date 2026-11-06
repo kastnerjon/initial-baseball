@@ -138,6 +138,43 @@ describe('source-only official Daily anonymous first-open coordination', () => {
     expect(input.requestServerStart).not.toHaveBeenCalled();
   });
 
+  it('keeps the origin-wide lock held until the first start response settles', async () => {
+    const { locks } = exclusiveLocks();
+    const pendingStart = deferred();
+    const startEntered = deferred();
+    const firstStart = vi.fn(async () => {
+      startEntered.resolve();
+      await pendingStart.promise;
+      return { edition: 'modern' };
+    });
+    const secondConfirm = vi.fn(async () => true);
+    const secondStart = vi.fn(async () => ({ edition: 'retro' }));
+    const first = attemptOfficialDailyAnonymousFirstOpen({
+      locks, signal: new AbortController().signal,
+      confirmServerCookie: vi.fn(async () => true),
+      initializeServerCookie: vi.fn(async (): Promise<void> => undefined),
+      requestServerStart: firstStart,
+    });
+    await startEntered.promise;
+    const second = attemptOfficialDailyAnonymousFirstOpen({
+      locks, signal: new AbortController().signal,
+      confirmServerCookie: secondConfirm,
+      initializeServerCookie: vi.fn(async (): Promise<void> => undefined),
+      requestServerStart: secondStart,
+    });
+    await Promise.resolve();
+    await Promise.resolve();
+    expect(secondConfirm).not.toHaveBeenCalled();
+    expect(secondStart).not.toHaveBeenCalled();
+    pendingStart.resolve();
+    expect(await Promise.all([first, second])).toEqual([
+      { status: 'start_response', response: { edition: 'modern' } },
+      { status: 'start_response', response: { edition: 'retro' } },
+    ]);
+    expect(secondConfirm).toHaveBeenCalledTimes(1);
+    expect(secondStart).toHaveBeenCalledTimes(1);
+  });
+
   it('marks a lost first-start response as requiring reconciliation, not practice', async () => {
     const { locks } = exclusiveLocks();
     const input = steps(locks);
