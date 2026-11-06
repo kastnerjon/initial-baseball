@@ -575,3 +575,5 @@ The browser transport additionally validates the discriminator-specific at-bat r
 ### Browser-safe edition identity dependency
 
 The exact-ID browser transport resolves its immutable occurrence-ID and strict real-date validators through the narrow `@initial-baseball/daily/official-edition-identity` export, not the `@initial-baseball/daily` barrel. That isolated module has no selection, clue snapshot, canonical player-data or server imports, preventing browser chunk inclusion of private player catalogs. The original Daily private issuer exports delegate to precisely the same validators; no published identity format or existing ID/date validation changes. The production hidden-answer bundle QA must pass before this is mergeable.
+
+The browser bootstrap decoder also rejects non-positive or unsafe puzzle numbers and metadata statuses other than released `published` / `archived`. Metadata scalar validation occurs before any payload reaches the shared gameplay UI; objects containing answer data are never accepted as number or status fields.

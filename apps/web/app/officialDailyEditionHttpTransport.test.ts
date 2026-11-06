@@ -69,6 +69,12 @@ describe('source-staged official Daily exact-ID browser HTTP transport', () => {
     const cases = [
       bootstrap(OTHER),
       bootstrap(ID, '2026-11-05'),
+      { ...bootstrap(), puzzle: { ...bootstrap().puzzle, puzzleNumber: { answers: ['PRIVATE_FUTURE_HINT'] } } },
+      { ...bootstrap(), puzzle: { ...bootstrap().puzzle, status: { answers: ['PRIVATE_FUTURE_HINT'] } } },
+      { ...bootstrap(), puzzle: { ...bootstrap().puzzle, puzzleNumber: 0 } },
+      { ...bootstrap(), puzzle: { ...bootstrap().puzzle, puzzleNumber: Number.MAX_SAFE_INTEGER + 1 } },
+      { ...bootstrap(), puzzle: { ...bootstrap().puzzle, status: 'draft' } },
+      { ...bootstrap(), puzzle: { ...bootstrap().puzzle, status: 'scheduled' } },
       { ...bootstrap(), puzzle: { ...bootstrap().puzzle, answers: ['PRIVATE_FUTURE_HINT'] } },
       { ...bootstrap(), puzzle: { ...bootstrap().puzzle,
         pitches: [{ ...bootstrap().puzzle.pitches[0], fullName: 'PRIVATE_FUTURE_HINT' },

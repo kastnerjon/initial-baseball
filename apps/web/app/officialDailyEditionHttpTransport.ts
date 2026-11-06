@@ -180,6 +180,9 @@ function validateBootstrap(value: unknown, puzzleId: string, date: string): Dail
       || !isRecord(value.puzzle)
       || !hasKeys(value.puzzle, ['id', 'puzzleNumber', 'puzzleDate', 'status', 'hintConfig', 'statsHintConfig', 'pitches'])
       || value.puzzle.id !== puzzleId || value.puzzle.puzzleDate !== date
+      || !Number.isSafeInteger(value.puzzle.puzzleNumber)
+      || (value.puzzle.puzzleNumber as number) < 1
+      || (value.puzzle.status !== 'published' && value.puzzle.status !== 'archived')
       || !validatePublicHintConfig(value.puzzle.hintConfig)
       || !validatePublicStatsHintConfig(value.puzzle.statsHintConfig)
       || !Array.isArray(value.puzzle.pitches) || value.puzzle.pitches.length !== 9
