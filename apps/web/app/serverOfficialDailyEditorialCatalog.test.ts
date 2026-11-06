@@ -111,7 +111,7 @@ describe('private official Daily editorial metadata catalog', () => {
     [{ revision: -1 }, 'negative revision'],
     [{ status: 'deleted' }, 'unknown status'],
     [{ title: '  Private  ' }, 'noncanonical title'],
-  ] as const)('fails closed on %s (%s)', async (change) => {
+  ] as const)('fails closed on %s (%s)', async (change, _label) => {
     const db = database([{ ...draft(2), ...change }]);
     await expect(listPrivateOfficialDailyEditorialDrafts(db.client, { puzzleDate: DATE }))
       .rejects.toBeInstanceOf(OfficialDailyEditorialCatalogError);
