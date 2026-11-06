@@ -7,12 +7,9 @@ import {
   type PermanentDailyIssuedClueSnapshot,
 } from './permanentDailyIssuedClueSnapshot';
 
-/** Shared private-issuer format checks; public routes still require authorization. */
-/** Accept only the canonical UUIDv4 shape allocated for a single occurrence. */
-export function isOfficialDailyOccurrenceId(value: unknown): value is string {
-  return typeof value === 'string'
-    && /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(value);
-}
+/** Preserve private issuer's existing export from the portable, browser-safe validator. */
+export { isOfficialDailyOccurrenceId } from './officialDailyBrowserIdentity';
+import { isOfficialDailyOccurrenceId } from './officialDailyBrowserIdentity';
 
 /** Restrict editor-defined edition keys to the canonical lowercase slug. */
 export function isOfficialDailyEditionKey(value: unknown): value is string {

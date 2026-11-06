@@ -1,4 +1,4 @@
-import { isOfficialDailyOccurrenceId, validateIssuedDailyCalendarDate } from '@initial-baseball/daily';
+import { isOfficialDailyOccurrenceId, validateIssuedDailyCalendarDate } from '@initial-baseball/daily/official-edition-identity';
 import { POINTS_V4_DAILY_RULESET_VERSION } from '@initial-baseball/shared';
 import type {
   DailyBootstrap,
