@@ -538,7 +538,8 @@ Production migration/activation still requires release approval.
 
 Both existing anonymous Daily AVG/BEAT comparison GET service paths reject
 `daily-ed-v1-` puzzle IDs before authoritative puzzle lookup or aggregate
-repository access. An exact issued roster is insufficient to establish an
+repository access. The omitted-ID primary fallback is also checked against
+its resolved authoritative ID before any aggregate read. An exact issued roster is insufficient to establish an
 eligible competitive population without signed per-edition attempt evidence.
 This remains a temporary fail-closed gate under issue #566; current primary,
 permanent Archive and archive-beta comparison behavior is unchanged. Public

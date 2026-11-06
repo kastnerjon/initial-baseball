@@ -57,7 +57,9 @@ export function createDailyNineComparisonReadService({
 }: CreateDailyNineComparisonReadServiceInput) {
   async function loadComparisonPuzzle(puzzleDate: string, puzzleId?: string): Promise<DailyPublicPuzzle> {
     const puzzle = await loadAuthoritativePuzzle(puzzleDate, puzzleId);
-    if (puzzle.puzzleDate !== puzzleDate || (puzzleId !== undefined && puzzle.id !== puzzleId)) {
+    // The omitted-ID primary route must not turn into an implicit edition cohort.
+    if (isSecondaryOfficialDailyEditionId(puzzle.id)
+      || puzzle.puzzleDate !== puzzleDate || (puzzleId !== undefined && puzzle.id !== puzzleId)) {
       throw new DailyNineComparisonRequestError(
         'invalid_puzzle',
         'Authoritative Daily puzzle does not match requested identity.',
