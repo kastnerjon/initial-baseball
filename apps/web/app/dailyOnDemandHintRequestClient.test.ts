@@ -43,7 +43,8 @@ describe('source-only official Daily on-demand hint request lifecycle', () => {
     }, post);
 
     expect(await client.reveal(request(onSuccess))).toBe(true);
-    expect(post).toHaveBeenCalledExactlyOnceWith('predecessor');
+    expect(post).toHaveBeenCalledTimes(1);
+    expect(post).toHaveBeenCalledWith('predecessor');
     expect(onSuccess).toHaveBeenCalledWith(expect.objectContaining({
       reveal: expect.objectContaining({ progressionToken: 'successor', revealedCount: 1 }),
       hintBundle: expect.objectContaining({ revealedCount: 1, checkpoints: [] }),
