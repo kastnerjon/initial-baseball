@@ -11,6 +11,8 @@ import {
 import { parseCustomLineupTitle, POINTS_V4_DAILY_RULESET_VERSION } from '@initial-baseball/shared';
 import type { SupabaseClient } from '@supabase/supabase-js';
 
+import { getPacificDailyDateString } from './getPacificDailyDateString';
+
 const TABLE = 'official_daily_publications';
 const COLUMNS = 'puzzle_id,puzzle_date,puzzle_number,edition_key,edition_number,title,schema_version,ruleset_version,clue_snapshot';
 const PUZZLE_PREFIX = 'daily-ed-v1-';
@@ -35,13 +37,16 @@ export type PrivateOfficialDailyPublication = Readonly<{
 export async function readPrivateOfficialDailyPublication(
   client: SupabaseClient,
   puzzleId: string,
+  releasedAsOf?: Date,
 ): Promise<PrivateOfficialDailyPublication | null> {
   if (typeof puzzleId !== 'string' || !puzzleId.startsWith(PUZZLE_PREFIX)
       || !isOfficialDailyOccurrenceId(puzzleId.slice(PUZZLE_PREFIX.length))) return null;
 
   try {
-    const { data, error } = await client.from(TABLE).select(COLUMNS)
-      .eq('puzzle_id', puzzleId).maybeSingle();
+    const latestDate = releasedAsOf === undefined ? undefined : getPacificDailyDateString(releasedAsOf);
+    let query = client.from(TABLE).select(COLUMNS).eq('puzzle_id', puzzleId);
+    if (latestDate !== undefined) query = query.lte('puzzle_date', latestDate);
+    const { data, error } = await query.maybeSingle();
     if (error !== null) throw new Error('Read failed.');
     if (data === null) return null;
 
@@ -51,6 +56,7 @@ export async function readPrivateOfficialDailyPublication(
       throw new Error('Invalid identity.');
     }
     validateIssuedDailyCalendarDate(date);
+    if (latestDate !== undefined && date > latestDate) return null;
     if (!isOfficialDailyPositiveNumber(row.puzzle_number)
       || row.puzzle_number !== getDailyPuzzleNumber(date)
       || !isOfficialDailyPositiveNumber(row.edition_number) ||
