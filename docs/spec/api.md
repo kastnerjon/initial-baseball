@@ -463,6 +463,8 @@ The official Daily publication candidate is server-private. Its clue snapshot in
 
 The internal official publication writer takes a trusted editorial occurrence and returns created/existing plus puzzle ID, or conflict. It compares immutable fields and frozen clues on duplicate ID, omitting the database-generated issuance time from replay comparison. A date/edition collision under another ID also yields conflict. Only a future authorized editor action with revision checks may call it.
 
+The server-only exact-ID reader validates each immutable official v1 row and clones its private issued clue snapshot before any gameplay projection. Invalid IDs return no match; malformed stored records and provider failures use a generic error without answers. This reader is deliberately not a public endpoint: future public admission must check the Pacific game date, signed progression, archive practice context, and spoiler-safe one-hint transport before exposing any data.
+
 ## Restricted secondary official Daily editorial drafts (source staged, default OFF)
 
 POST /admin/daily/editions/drafts creates one future-date, independently named
@@ -483,6 +485,25 @@ answers or hints are returned. Public play, issued publication, Archive and
 the legacy primary remain unaffected. The new editorial database migration,
 hosted QA and physical acceptance are separate prerequisites; production
 activation requires explicit release approval.
+
+## Official secondary Daily result admission: fail-closed until signed evidence
+
+The existing anonymous Daily at-bat and completed-game submission HTTP
+services must not admit \`daily-ed-v1-\` puzzle IDs. Both server-side routing
+boundaries reject these reserved edition IDs as invalid_puzzle **before**
+authoritative puzzle lookup, score normalization, or database access.
+The browser-side result-collection policy agrees and does not create a
+competitive attempt for those IDs. Current Daily Nine, Classic, archive-beta
+and permanent Archive behavior remains unchanged.
+
+This is a deliberate temporary release gate, **not** final edition scoring.
+The current engine validates submitted facts against the chosen authoritative
+puzzle but cannot establish which of two identical-roster editions generated
+the anonymous attempt. Before activation, separately implement signed
+per-edition result evidence, single-attempt/idempotency guarantees and
+delayed-live-versus-archive admission as tracked in GitHub issue #566.
+Never enable a secondary leaderboard or score-write path merely by teaching
+the authoritative loader to find new IDs.
 
 ## Opt-in, spoiler-safe on-demand Daily hint transport (staged)
 

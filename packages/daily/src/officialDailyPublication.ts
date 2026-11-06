@@ -7,6 +7,24 @@ import {
   type PermanentDailyIssuedClueSnapshot,
 } from './permanentDailyIssuedClueSnapshot';
 
+/** Shared private-issuer format checks; public routes still require authorization. */
+/** Accept only the canonical UUIDv4 shape allocated for a single occurrence. */
+export function isOfficialDailyOccurrenceId(value: unknown): value is string {
+  return typeof value === 'string'
+    && /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(value);
+}
+
+/** Restrict editor-defined edition keys to the canonical lowercase slug. */
+export function isOfficialDailyEditionKey(value: unknown): value is string {
+  return typeof value === 'string' && value.length <= 64
+    && /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(value);
+}
+
+/** Validate all positive edition/display numbers without integer overflow. */
+export function isOfficialDailyPositiveNumber(value: unknown): value is number {
+  return Number.isSafeInteger(value) && (value as number) >= 1;
+}
+
 export type OfficialDailyPublicationInput = {
   /** Allocated by the server once for this editorial occurrence, before any issue retries. */
   occurrenceId: string;
@@ -27,14 +45,14 @@ export function prepareOfficialDailyPublication(
   materialize: OfficialDailyClueMaterializer,
 ) {
   const { occurrenceId, editionKey, editionNumber, editorial } = input;
-  if (typeof occurrenceId !== 'string' || !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(occurrenceId)) {
+  if (!isOfficialDailyOccurrenceId(occurrenceId)) {
     throw new Error('Official Daily requires a canonical UUIDv4 occurrence ID.');
   }
-  if (typeof editionKey !== 'string' || !/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(editionKey) || editionKey.length > 64) {
+  if (!isOfficialDailyEditionKey(editionKey)) {
     throw new Error('Invalid official Daily edition key.');
   }
-  if (!Number.isSafeInteger(editionNumber) || editionNumber < 1
-    || !Number.isSafeInteger(editorial.puzzleNumber) || editorial.puzzleNumber < 1) {
+  if (!isOfficialDailyPositiveNumber(editionNumber)
+    || !isOfficialDailyPositiveNumber(editorial.puzzleNumber)) {
     throw new Error('Official Daily display numbers must be positive integers.');
   }
   const title = parseCustomLineupTitle(input.title === undefined ? `Puzzle ${editionNumber}` : input.title);
