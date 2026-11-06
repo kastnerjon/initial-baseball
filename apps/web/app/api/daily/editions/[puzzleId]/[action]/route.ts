@@ -8,6 +8,41 @@ export const dynamic = 'force-dynamic';
 type Context = { params: Promise<{ puzzleId: string; action: string }> };
 type Action = 'bootstrap' | 'hints' | 'hint' | 'resolve';
 
+const MAX_POST_BODY_BYTES = 8192;
+
+/** Reject bodies by bytes actually read, regardless of any declared Content-Length. */
+async function readBoundedJson(request: Request): Promise<unknown> {
+  const reader = request.body?.getReader();
+  if (!reader) invalid();
+  const chunks: Uint8Array[] = [];
+  let total = 0;
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > MAX_POST_BODY_BYTES) {
+        void reader.cancel().catch(() => undefined);
+        invalid();
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  const bytes = new Uint8Array(total);
+  let offset = 0;
+  for (const chunk of chunks) {
+    bytes.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+  try {
+    return JSON.parse(new TextDecoder('utf-8', { fatal: true }).decode(bytes)) as unknown;
+  } catch {
+    invalid();
+  }
+}
+
 function respond(value: unknown, status = 200): NextResponse {
   return NextResponse.json(value, {
     status,
@@ -89,7 +124,7 @@ async function handle(request: Request, context: Context, method: 'GET' | 'POST'
         invalid();
       }
       let body: unknown;
-      try { body = await request.json(); } catch { invalid(); }
+      try { body = await readBoundedJson(request); } catch { invalid(); }
       token = parseBody(body, action);
     }
 
