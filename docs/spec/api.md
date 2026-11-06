@@ -551,3 +551,9 @@ runtime must opt in explicitly. That rollout also requires fresh client-side
 state handling, Pacific date admission, score isolation, and device QA.
 
 The private exact-ID adapter binds a runtime to one frozen publication and the issued points-v4 ruleset. Its reader must enforce Pacific release eligibility and return the exact materialized puzzle or null. Signed continuation tokens for another edition or ruleset fail before publication lookup. Bootstrap, continuation and terminal play use the shared Daily runtime with incremental hints. Competitive admission is gated separately by #566.
+
+## Default-OFF private exact-ID Daily server runtime composition
+
+The web server can compose a private official edition runtime from the existing immutable release-aware reader and the shared exact-ID, points-v4, on-demand hint service. The composition factory validates the canonical daily-ed-v1 occurrence ID and requires the exact server-only setting OFFICIAL_DAILY_EDITION_PRIVATE_RUNTIME_ENABLED=true **before** obtaining a service-role client or canonical runtime. Every gameplay read re-evaluates release eligibility using the server Pacific clock; future and missing publications yield no puzzle.
+
+This is source-only composition. No public route, bootstrap HTML, browser transport or scoring authority calls it. Even with the private factory flag on, the existing fail-closed secondary score and comparison admission remain active. The independently reviewed signed-attempt design in issue #566 is required before public competitive starts. The existing primary Daily, Classic and archive-beta runtime selection and their legacy token/hint contracts remain unchanged.
