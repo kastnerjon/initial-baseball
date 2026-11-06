@@ -177,6 +177,24 @@ Future monetization:
 - No public comments/chat.
 - No player-name spoilers in share text.
 
+## Private frozen edition materialization (staged, not a public route)
+
+A newly issued official secondary edition is stored by an immutable occurrence
+ID with nine frozen canonical player IDs, exact initials, date-specific hint
+labels/order and all four frozen clue values per pitch. The server-only
+materialization adapter reuses the *same* frozen-clue composition as legacy
+permanent/archive Daily puzzles, producing a standard DailyPuzzle for the
+existing shared engine. Current canonical baseball records supply the player
+identity, but stored initials and hint values always override current
+regenerated values. No second scoring or gameplay engine is introduced.
+
+This capability is not a public admission decision. Until a separately reviewed
+exact-ID runtime and single-hint transport are deployed, no endpoint may return
+its private DailyPuzzle or unrevealed answers. Validate signed progression
+against exact puzzle ID and date; keep future editions undiscoverable; isolate
+score and browser-state cohorts by immutable edition ID. The legacy primary
+materialization path retains identical behavior.
+
 ## Secondary official Daily browser-save identity (staged, source only)
 
 An independently issued official edition uses a dedicated browser gameplay-save
