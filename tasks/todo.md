@@ -89,3 +89,8 @@ These gates are separate from Custom Lineups Phase 1. Keep them active until eac
 - [ ] Integrate the private exact-ID reader with the shared frozen-clue DailyPuzzle materializer under explicit server admission and date checks. This source-only adapter does not create public gameplay.
 - [ ] Replace any bulk release of unrevealed hints in secondary edition bootstrap, resume, next-pitch and hint-bundle endpoints with single authorized reveal transport. Preserve the existing primary until parity checks.
 - [ ] Verify edition-scoped progression, scores, share links, browser persistence and historical/archived practice before enabling public routes.
+
+## Official Daily edition browser-save separation (staged)
+
+- [ ] After public exact-ID gameplay is wired, exercise two same-date edition tabs plus the legacy primary: hints, wrong guesses, local saves, refresh, reset and switching must not read or delete another edition's state.
+- [ ] Confirm the shared completed-result/at-bat journal stays scoped to immutable puzzle ID and ruleset; enforce authoritative per-edition score and first-attempt admission before rollout.

@@ -194,3 +194,23 @@ its private DailyPuzzle or unrevealed answers. Validate signed progression
 against exact puzzle ID and date; keep future editions undiscoverable; isolate
 score and browser-state cohorts by immutable edition ID. The legacy primary
 materialization path retains identical behavior.
+
+## Secondary official Daily browser-save identity (staged, source only)
+
+An independently issued official edition uses a dedicated browser gameplay-save
+namespace keyed by its immutable daily-ed-v1 occurrence ID, scoring ruleset
+and game date. Two same-date editions may have identical batting orders and
+still retain independent saves, resets and resume state. The new namespace
+never adopts the old date-only/pre-scoped Daily save, even when that old value
+is corrupted or has an unknown puzzle identity. Resetting an edition never
+deletes an older Daily Nine or other edition's save.
+
+Previously shipped primary points-v4 migration fallback, Classic keys,
+permanent/archive keys, and the existing identity-keyed at-bat journals and
+completed-result outbox are unchanged. Official editions also require an
+exact scoring-ruleset match when loading a saved game; historical points-v3
+cross-version compatibility applies only to historic current Daily saves.
+
+This is a browser-side storage boundary, not public gameplay or scoring
+admission. Server-side result isolation, signed exact-ID progression, lost
+response handling, multi-tab play and mobile QA remain release gates.
