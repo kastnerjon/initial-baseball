@@ -104,3 +104,8 @@ These gates are separate from Custom Lineups Phase 1. Keep them active until eac
 
 - [ ] Wire new exact-ID editions to the on-demand Daily hint transport. Never reuse legacy bulk hint bundles or exposed future signed checkpoints for newly issued editions.
 - [ ] Verify bootstrap, resume, reveal, incorrect guess and next-batter UI/client handling under on-demand semantics; preserve legacy primary behavior until separately approved cutover.
+
+## Official Daily exact-ID private server composition (staged)
+
+- [ ] Integrate the default-OFF private exact-ID runtime factory with independently reviewed edition-specific HTTP/page admission, ensuring Pacific release checks, single-hint transport, same-edition token verification, no unclaimed future hints and no hidden answer in SSR props.
+- [ ] Before any new public competitive start, implement and verify issue #566 signed, server-stored first-attempt authority. Preserve primary/Classic/Archive gameplay and score cohorts; finish real Safari/Android refresh and two-sibling-tab QA.
