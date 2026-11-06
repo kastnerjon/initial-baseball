@@ -1,11 +1,13 @@
+import type { CanonicalRuntimeAccessor } from '@initial-baseball/baseball-data/runtime';
 import {
+  CLASSIC_DAILY_RULESET_VERSION,
   DEFAULT_DAILY_HINT_CONFIG,
   DEFAULT_DAILY_STATS_HINT_CONFIG,
   type DailyPuzzle,
 } from '@initial-baseball/shared';
 import { describe, expect, it, vi } from 'vitest';
 import { createDailyProgressionTokenCodec } from './dailyProgressionToken';
-import { createDailyRuntimeService } from './dailyRuntimeService';
+import { createDailyRuntimeService, createExactIdDailyRuntimeService } from './dailyRuntimeService';
 
 vi.mock('./canonicalRevealViewModel', () => ({
   createCanonicalRevealViewModel: () => ({ playerId: 'ibp_ab000000000000000000' }),
@@ -91,5 +93,42 @@ describe('on-demand Daily hint transport for future official editions', () => {
     expect(next.hintBundle?.hints).toEqual([]);
     expect(next.hintBundle?.checkpoints).toEqual([]);
     expect(JSON.stringify(next)).not.toContain(nextHint);
+  });
+});
+
+describe('exact-ID official runtime', () => {
+  const canonicalRuntime = { getReveal: vi.fn(() => ({})) } as unknown as CanonicalRuntimeAccessor;
+  const first = 'daily-ed-v1-907f33db-c38f-43c3-8e6b-a3aaf19bbd08';
+  const second = 'daily-ed-v1-907f33db-c38f-43c3-8e6b-a3aaf19bbd09';
+
+  it('rejects sibling and invalid tokens before reading an identical roster', async () => {
+    const readEligiblePuzzle = vi.fn(async (id: string) => ({ ...puzzle(), id }));
+    const edition = (puzzleId: string) => createExactIdDailyRuntimeService({
+      puzzleId, canonicalRuntime, progressionTokens: tokens, readEligiblePuzzle,
+    });
+    const boot = await edition(first).getBootstrap(date);
+    expect(readEligiblePuzzle).toHaveBeenCalledWith(first);
+    expect(boot.hintBundle.hints).toEqual([]);
+    expect(boot.hintBundle.checkpoints).toEqual([]);
+    expect((await edition(first).revealHint(boot.progressionToken)).hint.hintValue).toBe(firstHint);
+    const correct = await edition(first).resolveAtBat({ progressionToken: boot.progressionToken, submittedPlayerId: answerId });
+    expect(correct.result.kind).toBe('correct');
+    expect(canonicalRuntime.getReveal).toHaveBeenCalledWith(answerId);
+    readEligiblePuzzle.mockClear();
+    await expect(edition(first).getBootstrap(date, CLASSIC_DAILY_RULESET_VERSION)).rejects.toThrow();
+    const wrongRuleset = tokens.sign({ ...tokens.verify(boot.progressionToken), rulesetVersion: 'points-v3' });
+    await expect(edition(first).getHintBundle(wrongRuleset)).rejects.toThrow();
+    await expect(edition(second).revealHint(boot.progressionToken)).rejects.toThrow();
+    await expect(edition(second).getHintBundle('invalid')).rejects.toThrow();
+    expect(readEligiblePuzzle).not.toHaveBeenCalled();
+  });
+
+  it('refuses unavailable, mismatched and wrong-date publications', async () => {
+    for (const publication of [null, { ...puzzle(), id: second }, { ...puzzle(), id: first, puzzleDate: '2026-11-07' }]) {
+      const runtime = createExactIdDailyRuntimeService({
+        puzzleId: first, canonicalRuntime, progressionTokens: tokens, readEligiblePuzzle: async () => publication,
+      });
+      await expect(runtime.getBootstrap(date)).rejects.toThrow();
+    }
   });
 });

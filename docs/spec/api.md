@@ -549,3 +549,5 @@ Legacy bundle transport remains the default and unchanged for existing Daily
 clients. No public route activates on-demand mode yet; the secondary exact-ID
 runtime must opt in explicitly. That rollout also requires fresh client-side
 state handling, Pacific date admission, score isolation, and device QA.
+
+The private exact-ID adapter binds a runtime to one frozen publication and the issued points-v4 ruleset. Its reader must enforce Pacific release eligibility and return the exact materialized puzzle or null. Signed continuation tokens for another edition or ruleset fail before publication lookup. Bootstrap, continuation and terminal play use the shared Daily runtime with incremental hints. Competitive admission is gated separately by #566.
