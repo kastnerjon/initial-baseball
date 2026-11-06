@@ -1,5 +1,6 @@
 import type { CanonicalRuntimeAccessor } from '@initial-baseball/baseball-data/runtime';
 import {
+  CLASSIC_DAILY_RULESET_VERSION,
   DEFAULT_DAILY_HINT_CONFIG,
   DEFAULT_DAILY_STATS_HINT_CONFIG,
   type DailyPuzzle,
@@ -114,7 +115,7 @@ describe('exact-ID official runtime', () => {
     expect(correct.result.kind).toBe('correct');
     expect(canonicalRuntime.getReveal).toHaveBeenCalledWith(answerId);
     readEligiblePuzzle.mockClear();
-    await expect(edition(first).getBootstrap(date, 'points-v3')).rejects.toThrow();
+    await expect(edition(first).getBootstrap(date, CLASSIC_DAILY_RULESET_VERSION)).rejects.toThrow();
     const wrongRuleset = tokens.sign({ ...tokens.verify(boot.progressionToken), rulesetVersion: 'points-v3' });
     await expect(edition(first).getHintBundle(wrongRuleset)).rejects.toThrow();
     await expect(edition(second).revealHint(boot.progressionToken)).rejects.toThrow();
