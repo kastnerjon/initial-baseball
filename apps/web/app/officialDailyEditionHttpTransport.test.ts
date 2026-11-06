@@ -132,6 +132,44 @@ describe('source-staged official Daily exact-ID browser HTTP transport', () => {
     expect(new OfficialDailyEditionHttpError('unavailable').message).not.toContain('PRIVATE');
   });
 
+  it('preserves sanitized POST status and network failures across the exact-ID endpoint', async () => {
+    const transport = createOfficialDailyEditionHttpTransport(ID);
+    for (const [status, kind] of [[400, 'invalid_request'], [404, 'not_found'], [503, 'unavailable']] as const) {
+      vi.stubGlobal('fetch', vi.fn(async () => new Response(
+        JSON.stringify({ error: 'PRIVATE_DB_CREDENTIAL' }), { status },
+      )));
+      await expect(transport.hint('signed-start')).rejects.toMatchObject({
+        name: 'OfficialDailyEditionHttpError', kind,
+        message: 'Official Daily edition request failed.',
+      });
+    }
+    vi.stubGlobal('fetch', vi.fn(async () => { throw new Error('PRIVATE_NETWORK_TOKEN'); }));
+    await expect(transport.hint('signed-start')).rejects.toMatchObject({
+      kind: 'unavailable', message: 'Official Daily edition request failed.',
+    });
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('{', { status: 200 })));
+    await expect(transport.hint('signed-start')).rejects.toMatchObject({
+      kind: 'invalid_response', message: 'Official Daily edition request failed.',
+    });
+  });
+
+  it('uses same-origin JSON POST and accepts a valid exact-ID hint response', async () => {
+    const payload = {
+      hint: { hintType: 'main_decade', hintLabel: DEFAULT_DAILY_HINT_CONFIG[0]!.displayLabel,
+        hintValue: 'AUTHORIZED_FIRST_HINT' },
+      progressionToken: 'signed-next',
+    };
+    const send = vi.fn(async () => new Response(JSON.stringify(payload), { status: 200 }));
+    vi.stubGlobal('fetch', send);
+    const transport = createOfficialDailyEditionHttpTransport(ID);
+    expect(await transport.hint('signed-start')).toEqual(payload);
+    expect(send).toHaveBeenCalledWith(URL + 'hint', {
+      method: 'POST', credentials: 'same-origin',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ progressionToken: 'signed-start' }),
+    });
+  });
+
   it('rejects invalid dates before requesting any bootstrap response', async () => {
     const { transport, get } = setup();
     for (const date of ['2026-02-30', '2026-11-06?includeAnswers=1', '', '2026-11-06/../07']) {
