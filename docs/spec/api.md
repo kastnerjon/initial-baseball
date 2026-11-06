@@ -509,6 +509,31 @@ the authoritative loader to find new IDs.
 
 Private gameplay reads apply a server-clock Pacific date ceiling in the exact-ID publication query. Missing and future editions produce no puzzle. Only a validated, released snapshot reaches the shared frozen materializer. Unrestricted private editorial readback remains available for scheduling. Gameplay reads alone confer no scoring eligibility.
 
+## Restricted private official Daily issuance command (staged, default OFF)
+
+POST /admin/daily/editions/issue is a separate authenticated server-only
+command accepting exactly {occurrenceId, expectedRevision}; the JSON body is
+capped at 2048 bytes, requires same-origin Daily administrator Basic auth, and
+must not include query parameters. Both
+OFFICIAL_DAILY_EDITOR_DRAFTS_ENABLED=true and
+OFFICIAL_DAILY_EDITOR_ISSUANCE_ENABLED=true are required; otherwise the route
+responds with 404 before reading credentials or data. These switches remain
+OFF in production.
+
+The server loads the stable editorial occurrence and expected revision, then
+prepares private frozen clues and calls the atomic PostgreSQL issuer from the
+staged official_daily_editorial_drafts migration. It verifies the immutable
+publication by exact ID and frozen clue content before returning only
+{status, puzzleId}. A retry of an issued draft verifies the existing frozen
+publication without rematerializing clues from potentially updated baseball
+data. Conflicts and storage failures return generic private no-store errors.
+No public puzzle loader, hints, player identities, guesses, archive admission,
+or scoring behavior is activated by this command.
+
+The transaction migration (#559), draft-admin path (#560), exact-ID reader
+(#558), hosted QA and independent release checks are separate prerequisites.
+Production migration/activation still requires release approval.
+
 ## Opt-in, spoiler-safe on-demand Daily hint transport (staged)
 
 The shared server Daily runtime supports a new opt-in on-demand hint projection.
