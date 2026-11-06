@@ -95,6 +95,11 @@ These gates are separate from Custom Lineups Phase 1. Keep them active until eac
 - [ ] After public exact-ID gameplay is wired, exercise two same-date edition tabs plus the legacy primary: hints, wrong guesses, local saves, refresh, reset and switching must not read or delete another edition's state.
 - [ ] Confirm the shared completed-result/at-bat journal stays scoped to immutable puzzle ID and ruleset; enforce authoritative per-edition score and first-attempt admission before rollout.
 
+## Official Daily secondary-editorial transaction (source staged)
+
+- [ ] Verify the source-staged `official_daily_editorial_drafts` table and atomic `issue_official_daily_editorial_draft` function against isolated QA. Retain the completed rollback-only rehearsal evidence; no production migration without explicit release approval.
+- [ ] Integrate the default-OFF, authenticated secondary draft administration from #560 with the reviewed private issuer (#561) and exact-ID publication readback; preserve existing primary issuance, editorial revision checks and immutable retries. Public gameplay, competitive result admission and release still require their separate gates.
+
 ## Secondary Daily date discovery integration (staged)
 
 - [ ] Integrate the private, metadata-only official edition catalog with a date-grouped Archive view; paginate by immutable edition number until all editions for a requested date are loaded.
