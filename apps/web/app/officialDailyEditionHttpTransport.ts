@@ -5,6 +5,7 @@ import type {
   DailyBootstrap,
   DailyHintBundle,
   DailyHintBundleResponse,
+  DailyHintResponse,
   DailyResolutionRequest,
   DailyResolutionResponse,
 } from './dailyRuntimeContracts';
@@ -13,6 +14,19 @@ type PostJson = (path: string, body: Record<string, unknown>) => Promise<unknown
 type GetJson = (path: string) => Promise<unknown>;
 
 const EDITION_PREFIX = 'daily-ed-v1-';
+
+const HINT_TYPES = new Set(['main_decade', 'teams', 'position', 'stats']);
+const RESULTS = new Set(['triple', 'double', 'single', 'walk']);
+const HITTER_FIELDS = new Set(['bwar', 'hr', 'rbi', 'ba', 'obp', 'slg', 'ops', 'sb']);
+const PITCHER_FIELDS = new Set(['bwar', 'w', 'l', 'era', 'whip', 'k', 'sv', 'ip']);
+
+export class OfficialDailyEditionHttpError extends Error {
+  constructor(readonly kind: 'not_found' | 'unavailable' | 'invalid_response') {
+    super('Official Daily edition request failed.');
+    this.name = 'OfficialDailyEditionHttpError';
+  }
+}
+
 
 function incompatible(): never {
   throw new Error('Official Daily edition response is incompatible.');
@@ -24,6 +38,39 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function hasKeys(value: Record<string, unknown>, keys: readonly string[]): boolean {
   return Object.keys(value).sort().join(',') === [...keys].sort().join(',');
+}
+
+/** Accept only public, declarative hint settings; no nested answers or future hint blobs. */
+function validatePublicHintConfig(value: unknown): boolean {
+  return Array.isArray(value) && value.length === 4
+    && value.every((slot, index) => isRecord(slot)
+      && hasKeys(slot, ['slot', 'result', 'hintType', 'displayLabel'])
+      && slot.slot === index + 1
+      && RESULTS.has(slot.result as string)
+      && HINT_TYPES.has(slot.hintType as string)
+      && typeof slot.displayLabel === 'string' && slot.displayLabel.length > 0
+      && slot.displayLabel.length <= 120);
+}
+
+function validateStatFields(value: unknown, allowed: Set<string>): boolean {
+  return Array.isArray(value) && value.length <= 8
+    && value.every(field => typeof field === 'string' && allowed.has(field));
+}
+
+function validatePublicStatsHintConfig(value: unknown): boolean {
+  return isRecord(value) && hasKeys(value, ['hitter', 'pitcher'])
+    && validateStatFields(value.hitter, HITTER_FIELDS)
+    && validateStatFields(value.pitcher, PITCHER_FIELDS);
+}
+
+function validateSingleHint(value: unknown): value is DailyHintResponse {
+  if (!isRecord(value) || !hasKeys(value, ['hint', 'progressionToken'])
+      || typeof value.progressionToken !== 'string' || value.progressionToken.length === 0
+      || value.progressionToken.length > 4096 || !isRecord(value.hint)
+      || !hasKeys(value.hint, ['hintType', 'hintLabel', 'hintValue'])) return false;
+  return HINT_TYPES.has(value.hint.hintType as string)
+    && typeof value.hint.hintLabel === 'string' && value.hint.hintLabel.length > 0
+    && typeof value.hint.hintValue === 'string' && value.hint.hintValue.length > 0;
 }
 
 function validateOnDemandBundle(value: unknown): value is DailyHintBundle {
@@ -53,6 +100,8 @@ function validateBootstrap(value: unknown, puzzleId: string, date: string): Dail
       || !isRecord(value.puzzle)
       || !hasKeys(value.puzzle, ['id', 'puzzleNumber', 'puzzleDate', 'status', 'hintConfig', 'statsHintConfig', 'pitches'])
       || value.puzzle.id !== puzzleId || value.puzzle.puzzleDate !== date
+      || !validatePublicHintConfig(value.puzzle.hintConfig)
+      || !validatePublicStatsHintConfig(value.puzzle.statsHintConfig)
       || !Array.isArray(value.puzzle.pitches) || value.puzzle.pitches.length !== 9
       || !value.puzzle.pitches.every((pitch: unknown, index: number) =>
         isRecord(pitch) && hasKeys(pitch, ['pitchNumber', 'initials'])
@@ -69,9 +118,20 @@ function validProgressionToken(value: string): void {
 }
 
 async function defaultGetJson(path: string): Promise<unknown> {
-  const response = await fetch(path, { credentials: 'same-origin' });
-  if (!response.ok) throw new Error('Official Daily edition request failed.');
-  return response.json();
+  let response: Response;
+  try {
+    response = await fetch(path, { credentials: 'same-origin' });
+  } catch {
+    throw new OfficialDailyEditionHttpError('unavailable');
+  }
+  if (!response.ok) {
+    throw new OfficialDailyEditionHttpError(response.status === 404 ? 'not_found' : 'unavailable');
+  }
+  try {
+    return await response.json() as unknown;
+  } catch {
+    throw new OfficialDailyEditionHttpError('invalid_response');
+  }
 }
 
 /**
@@ -98,9 +158,11 @@ export function createOfficialDailyEditionHttpTransport(
       const value = await getJson(path + 'bootstrap?date=' + encodeURIComponent(date));
       return validateBootstrap(value, puzzleId, date);
     },
-    async hint(progressionToken: string): Promise<unknown> {
+    async hint(progressionToken: string): Promise<DailyHintResponse> {
       validProgressionToken(progressionToken);
-      return post('hint', { progressionToken });
+      const value = await post('hint', { progressionToken });
+      if (!validateSingleHint(value)) incompatible();
+      return value;
     },
     async hints(progressionToken: string): Promise<DailyHintBundleResponse> {
       validProgressionToken(progressionToken);
