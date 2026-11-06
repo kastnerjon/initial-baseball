@@ -89,6 +89,88 @@ function validateOnDemandBundle(value: unknown): value is DailyHintBundle {
     && typeof hint.hintValue === 'string');
 }
 
+const HITTER_DISPLAY_FIELDS = ['AB', 'H', 'HR', 'BA', 'R', 'RBI', 'SB', 'OBP', 'SLG', 'OPS'] as const;
+const PITCHER_DISPLAY_FIELDS = ['W', 'L', 'SV', 'ERA', 'WHIP', 'K', 'IP'] as const;
+
+function validatePublicResult(value: unknown): boolean {
+  if (!isRecord(value) || !Number.isInteger(value.revealedCount)
+      || (value.revealedCount as number) < 0 || (value.revealedCount as number) > 4) return false;
+  if (value.kind === 'incorrect') {
+    return hasKeys(value, ['kind', 'revealedCount', 'strikeCount', 'remainingStrikes'])
+      && Number.isInteger(value.strikeCount) && (value.strikeCount as number) >= 1
+      && (value.strikeCount as number) <= 2
+      && Number.isInteger(value.remainingStrikes) && (value.remainingStrikes as number) >= 1
+      && (value.remainingStrikes as number) <= 2;
+  }
+  if (value.kind === 'correct') {
+    return hasKeys(value, ['kind', 'revealedCount', 'outcome', 'source'])
+      && ['HR', '3B', '2B', '1B', 'BB'].includes(value.outcome as string)
+      && (value.source === 'initials'
+        || (Number.isInteger(value.source) && (value.source as number) >= 1
+          && (value.source as number) <= 4));
+  }
+  return value.kind === 'strikeout'
+    && hasKeys(value, ['kind', 'revealedCount', 'strikeCount', 'outcome', 'source'])
+    && value.outcome === 'K' && value.source === 'strikeout'
+    && Number.isInteger(value.strikeCount) && (value.strikeCount as number) >= 1
+    && (value.strikeCount as number) <= 3;
+}
+
+function publicTeamIds(value: unknown): boolean {
+  return Array.isArray(value) && value.length <= 50
+    && value.every(id => typeof id === 'string' && id.length > 0 && id.length <= 64);
+}
+
+function validateStatLines(value: unknown): boolean {
+  return Array.isArray(value) && value.length <= 2
+    && value.every(line => {
+      if (!isRecord(line) || !hasKeys(line, ['kind', 'stats'])
+          || !isRecord(line.stats)) return false;
+      const allowed = line.kind === 'hitter' ? HITTER_DISPLAY_FIELDS
+        : line.kind === 'pitcher' ? PITCHER_DISPLAY_FIELDS : null;
+      if (allowed === null || !hasKeys(line.stats, allowed)) return false;
+      return Object.values(line.stats).every(stat =>
+        (typeof stat === 'number' && Number.isFinite(stat))
+        || (typeof stat === 'string'
+          && (stat === '—' || /^-?(?:[0-9]+(?:\.[0-9]+)?|\.[0-9]+)$/.test(stat))));
+    });
+}
+
+function validatePeak(value: unknown): boolean {
+  return value === null || (isRecord(value) && hasKeys(value, ['season', 'value'])
+    && Number.isSafeInteger(value.season) && (value.season as number) > 0
+    && Number.isSafeInteger(value.value) && (value.value as number) >= 0);
+}
+
+function validatePublicReveal(value: unknown): boolean {
+  if (!isRecord(value)
+      || !hasKeys(value, ['playerId', 'displayName', 'playerType', 'primaryPosition',
+        'yearsPlayedDisplay', 'teamIds', 'career', 'seasons'])
+      || typeof value.playerId !== 'string' || !value.playerId.startsWith('ibp_')
+      || typeof value.displayName !== 'string' || value.displayName.length === 0
+      || value.displayName.length > 180
+      || !['hitter', 'pitcher', 'two-way'].includes(value.playerType as string)
+      || (value.primaryPosition !== null && typeof value.primaryPosition !== 'string')
+      || typeof value.yearsPlayedDisplay !== 'string'
+      || !publicTeamIds(value.teamIds)
+      || !isRecord(value.career)
+      || !Array.isArray(value.seasons) || value.seasons.length > 200) return false;
+  const career = value.career;
+  if (!validateStatLines(career.lines)
+      || !(hasKeys(career, ['lines']) || hasKeys(career, ['lines', 'regularSeasonPeaks']))) {
+    return false;
+  }
+  if (Object.hasOwn(career, 'regularSeasonPeaks')) {
+    const peaks = career.regularSeasonPeaks;
+    if (!isRecord(peaks) || !hasKeys(peaks, ['homeRuns', 'strikeouts'])
+        || !validatePeak(peaks.homeRuns) || !validatePeak(peaks.strikeouts)) return false;
+  }
+  return value.seasons.every(season => isRecord(season)
+    && hasKeys(season, ['season', 'teamIds', 'lines'])
+    && Number.isSafeInteger(season.season) && (season.season as number) > 0
+    && publicTeamIds(season.teamIds) && validateStatLines(season.lines));
+}
+
 function validateBootstrap(value: unknown, puzzleId: string, date: string): DailyBootstrap {
   if (!isRecord(value)
       || !hasKeys(value, ['rulesetVersion', 'puzzle', 'progressionToken', 'hintBundle'])
@@ -200,6 +282,9 @@ export function createOfficialDailyEditionHttpTransport(
       if (!isRecord(value) || !hasKeys(value, ['result', 'reveal', 'progressionToken', 'hintBundle'])
           || typeof value.progressionToken !== 'string'
           || value.progressionToken.length === 0 || value.progressionToken.length > 4096
+          || !validatePublicResult(value.result)
+          || (isRecord(value.result) && (value.result.kind === 'incorrect'
+            ? value.reveal !== null : !validatePublicReveal(value.reveal)))
           || (value.hintBundle !== null && !validateOnDemandBundle(value.hintBundle))) {
         incompatible();
       }
