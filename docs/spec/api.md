@@ -533,3 +533,13 @@ or scoring behavior is activated by this command.
 The transaction migration (#559), draft-admin path (#560), exact-ID reader
 (#558), hosted QA and independent release checks are separate prerequisites.
 Production migration/activation still requires release approval.
+
+## Reserved secondary official Daily comparison reads (source-only safeguard)
+
+Both existing anonymous Daily AVG/BEAT comparison GET service paths reject
+`daily-ed-v1-` puzzle IDs before authoritative puzzle lookup or aggregate
+repository access. An exact issued roster is insufficient to establish an
+eligible competitive population without signed per-edition attempt evidence.
+This remains a temporary fail-closed gate under issue #566; current primary,
+permanent Archive and archive-beta comparison behavior is unchanged. Public
+secondary comparison is not enabled by private publication/read adapters.

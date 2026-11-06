@@ -12,7 +12,7 @@ import {
   type DailyNineCompletedComparisonApiResponse,
   type DailyPublicPuzzle,
 } from '@initial-baseball/shared';
-import { isArchiveBetaDailyPuzzleId } from './dailyGameplayPersistenceAuthority';
+import { isArchiveBetaDailyPuzzleId, isSecondaryOfficialDailyEditionId } from './dailyGameplayPersistenceAuthority';
 
 export type DailyNineComparisonRequestErrorCode = Exclude<
   DailyNineComparisonApiErrorCode,
@@ -149,6 +149,13 @@ function requireBaseRequest(
   const puzzleId = request.puzzleId ?? undefined;
   if (puzzleId !== undefined && (puzzleId.trim().length === 0 || puzzleId.length > 200)) {
     invalidRequest('puzzleId must be a non-empty identity of at most 200 characters.');
+  }
+  // A valid roster is not evidence of an admitted competitive edition.
+  if (isSecondaryOfficialDailyEditionId(puzzleId)) {
+    throw new DailyNineComparisonRequestError(
+      'invalid_puzzle',
+      'Secondary official Daily comparisons are not enabled.',
+    );
   }
   if (isArchiveBetaDailyPuzzleId(puzzleId)
     && request.rulesetVersion !== POINTS_V4_DAILY_RULESET_VERSION) {
