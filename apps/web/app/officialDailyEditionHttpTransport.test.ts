@@ -1,6 +1,9 @@
 import { DEFAULT_DAILY_HINT_CONFIG, DEFAULT_DAILY_STATS_HINT_CONFIG } from '@initial-baseball/shared';
-import { describe, expect, it, vi } from 'vitest';
-import { createOfficialDailyEditionHttpTransport } from './officialDailyEditionHttpTransport';
+import { afterEach, describe, expect, it, vi } from 'vitest';
+import {
+  createOfficialDailyEditionHttpTransport,
+  OfficialDailyEditionHttpError,
+} from './officialDailyEditionHttpTransport';
 
 const ID = 'daily-ed-v1-907f33db-c38f-43c3-8e6b-a3aaf19bbd08';
 const OTHER = 'daily-ed-v1-6077ee21-9370-4cf3-aa21-74c50b485591';
@@ -21,9 +24,16 @@ function bootstrap(id = ID, date = DATE) {
 }
 function setup(initial: unknown = bootstrap()) {
   const get = vi.fn(async () => initial);
-  const post = vi.fn(async (_path: string, _body: Record<string, unknown>): Promise<unknown> => ({ hintBundle: bundle }));
+  const post = vi.fn(async (path: string, _body: Record<string, unknown>): Promise<unknown> =>
+    path.endsWith('/hint')
+      ? { hint: { hintType: 'main_decade',
+          hintLabel: DEFAULT_DAILY_HINT_CONFIG[0]!.displayLabel,
+          hintValue: 'AUTHORIZED_FIRST_HINT' }, progressionToken: 'signed-next' }
+      : { hintBundle: bundle });
   return { get, post, transport: createOfficialDailyEditionHttpTransport(ID, get, post) };
 }
+
+afterEach(() => vi.unstubAllGlobals());
 
 describe('source-staged official Daily exact-ID browser HTTP transport', () => {
   it('rejects invalid IDs before constructing any URL or making I/O', () => {
@@ -58,6 +68,68 @@ describe('source-staged official Daily exact-ID browser HTTP transport', () => {
       const { transport } = setup(value);
       await expect(transport.bootstrap(DATE)).rejects.toThrow(/incompatible/i);
     }
+  });
+
+  it('rejects answers injected into nested public configuration objects', async () => {
+    const base = bootstrap();
+    const cases = [
+      { ...base, puzzle: { ...base.puzzle,
+        hintConfig: base.puzzle.hintConfig.map((entry, index) =>
+          index === 0 ? { ...entry, answers: ['PRIVATE_FUTURE_HINT'] } : entry) } },
+      { ...base, puzzle: { ...base.puzzle,
+        statsHintConfig: { ...base.puzzle.statsHintConfig, answers: ['PRIVATE_FUTURE_HINT'] } } },
+      { ...base, puzzle: { ...base.puzzle,
+        statsHintConfig: { ...base.puzzle.statsHintConfig, hitter: [{ stat: 'hr', answer: 'PRIVATE_FUTURE_HINT' }] } } },
+      { ...base, puzzle: { ...base.puzzle,
+        hintConfig: [{ ...base.puzzle.hintConfig[0]!, displayLabel: 'Safe', hintValue: 'PRIVATE_FUTURE_HINT' },
+          ...base.puzzle.hintConfig.slice(1)] } },
+    ];
+    for (const value of cases) {
+      const { transport } = setup(value);
+      await expect(transport.bootstrap(DATE)).rejects.toThrow(/incompatible/i);
+    }
+  });
+
+  it('accepts one authorized hint but rejects extra future clues or checkpoints', async () => {
+    const { transport, post } = setup();
+    const valid = await transport.hint('signed-start');
+    expect(valid.hint.hintValue).toBe('AUTHORIZED_FIRST_HINT');
+    expect(valid.progressionToken).toBe('signed-next');
+    expect(Object.keys(valid).sort()).toEqual(['hint', 'progressionToken']);
+    const cases = [
+      { ...valid, checkpoints: [{ revealedCount: 4, progressionToken: 'FUTURE' }] },
+      { ...valid, futureHints: ['PRIVATE_FUTURE_HINT'] },
+      { ...valid, hint: { ...valid.hint, answer: 'PRIVATE_FUTURE_HINT' } },
+      { ...valid, hint: { ...valid.hint, hintType: 'unknown' } },
+      { ...valid, hint: { ...valid.hint, hintValue: '' } },
+      { ...valid, progressionToken: '' },
+    ];
+    for (const value of cases) {
+      post.mockResolvedValueOnce(value);
+      await expect(transport.hint('signed-start')).rejects.toThrow(/incompatible/i);
+    }
+  });
+
+  it('categorizes bootstrap 404, provider outage, network failure and malformed JSON safely', async () => {
+    const transport = createOfficialDailyEditionHttpTransport(ID);
+    for (const [status, kind] of [[404, 'not_found'], [503, 'unavailable']] as const) {
+      vi.stubGlobal('fetch', vi.fn(async () => new Response(
+        JSON.stringify({ error: 'PRIVATE_PROVIDER_MESSAGE' }), { status },
+      )));
+      await expect(transport.bootstrap(DATE)).rejects.toMatchObject({
+        name: 'OfficialDailyEditionHttpError', kind,
+        message: 'Official Daily edition request failed.',
+      });
+    }
+    vi.stubGlobal('fetch', vi.fn(async () => { throw new Error('PRIVATE_NETWORK_TOKEN'); }));
+    await expect(transport.bootstrap(DATE)).rejects.toMatchObject({
+      kind: 'unavailable', message: 'Official Daily edition request failed.',
+    });
+    vi.stubGlobal('fetch', vi.fn(async () => new Response('{bad json', { status: 200 })));
+    await expect(transport.bootstrap(DATE)).rejects.toMatchObject({
+      kind: 'invalid_response', message: 'Official Daily edition request failed.',
+    });
+    expect(new OfficialDailyEditionHttpError('unavailable').message).not.toContain('PRIVATE');
   });
 
   it('rejects invalid dates before requesting any bootstrap response', async () => {
