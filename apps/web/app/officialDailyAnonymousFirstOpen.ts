@@ -15,7 +15,7 @@ export type OfficialDailyExclusiveLockManager = {
 };
 
 export type OfficialDailyFirstOpenResult<T> =
-  | { status: 'server_accepted'; response: T }
+  | { status: 'start_response'; response: T }
   | {
       status: 'practice_only';
       reason: 'locking_unavailable' | 'aborted' | 'handshake_unavailable' | 'credential_unconfirmed';
@@ -80,7 +80,8 @@ export async function attemptOfficialDailyAnonymousFirstOpen<T>(
 
         try {
           const response = await input.requestServerStart();
-          return { status: 'server_accepted', response };
+          if (input.signal.aborted) return { status: 'reconciliation_required' };
+          return { status: 'start_response', response };
         } catch {
           // The reservation may have committed despite a lost HTTP response.
           // Never infer eligibility or mint a second anonymous identity.

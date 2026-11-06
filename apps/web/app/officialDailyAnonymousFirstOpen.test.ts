@@ -38,7 +38,7 @@ function deferred() {
 function steps(locks: OfficialDailyExclusiveLockManager | null) {
   const signal = new AbortController().signal;
   const confirmServerCookie = vi.fn(async () => true);
-  const initializeServerCookie = vi.fn(async () => undefined);
+  const initializeServerCookie = vi.fn(async (): Promise<void> => undefined);
   const requestServerStart = vi.fn(async () => ({ attempt: 'server-reserved' }));
   return { locks, signal, confirmServerCookie, initializeServerCookie, requestServerStart };
 }
@@ -58,7 +58,7 @@ describe('source-only official Daily anonymous first-open coordination', () => {
     const { locks, seen } = exclusiveLocks();
     const input = steps(locks);
     expect(await attemptOfficialDailyAnonymousFirstOpen(input)).toEqual({
-      status: 'server_accepted', response: { attempt: 'server-reserved' },
+      status: 'start_response', response: { attempt: 'server-reserved' },
     });
     expect(input.confirmServerCookie).toHaveBeenCalledTimes(1);
     expect(input.initializeServerCookie).not.toHaveBeenCalled();
@@ -92,8 +92,8 @@ describe('source-only official Daily anonymous first-open coordination', () => {
     expect(secondStart).not.toHaveBeenCalled();
     gate.resolve();
     expect(await Promise.all([first, second])).toEqual([
-      { status: 'server_accepted', response: { edition: 'modern' } },
-      { status: 'server_accepted', response: { edition: 'retro' } },
+      { status: 'start_response', response: { edition: 'modern' } },
+      { status: 'start_response', response: { edition: 'retro' } },
     ]);
     expect(initializeServerCookie).toHaveBeenCalledTimes(1);
     expect(confirmServerCookie).toHaveBeenCalledTimes(3);
@@ -146,6 +146,23 @@ describe('source-only official Daily anonymous first-open coordination', () => {
       status: 'reconciliation_required',
     });
     expect(input.initializeServerCookie).not.toHaveBeenCalled();
+  });
+
+  it('requires reconciliation after navigation aborts an in-flight server start', async () => {
+    const { locks } = exclusiveLocks();
+    const controller = new AbortController();
+    const gate = deferred();
+    const input = steps(locks);
+    input.requestServerStart.mockImplementation(async () => {
+      await gate.promise;
+      return { attempt: 'server-reserved' };
+    });
+    const task = attemptOfficialDailyAnonymousFirstOpen({ ...input, signal: controller.signal });
+    for (let index = 0; index < 5; index += 1) await Promise.resolve();
+    expect(input.requestServerStart).toHaveBeenCalledTimes(1);
+    controller.abort();
+    gate.resolve();
+    expect(await task).toEqual({ status: 'reconciliation_required' });
   });
 
   it('fails closed when a lock provider rejects or gives no actual exclusive lock', async () => {
