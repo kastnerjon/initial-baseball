@@ -4,6 +4,9 @@
 
 - [ ] A1: issuance identity, frozen nine-player content, service-only persistence and restricted editor action.
 - [ ] A2–A4: exact-ID play and hint privacy, result isolation, share links, one Archive and device QA.
+
+- [ ] **A3 signed score release gate — issue #566:** reserved official daily-ed-v1 IDs currently fail closed for browser collection and both server scoring submissions. Implement and independently verify exact-ID, ruleset, attempt and live-purpose binding before enabling scoring, especially for identical-roster editions; keep delayed legitimate live writes and historical primary results compatible.
+
 - [ ] B: arbitrary-count editor workflow and primary selection. Run account-provider QA alongside Daily development. [Sequence and rollout](plans/multiple-official-dailies.md).
 
 ## Custom #528 — secure completion display identity (source policy staged)
