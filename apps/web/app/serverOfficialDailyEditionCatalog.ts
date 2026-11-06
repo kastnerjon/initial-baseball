@@ -153,3 +153,57 @@ export async function listPrivateOfficialDailyEditionsByDate(
     throw new OfficialDailyCatalogError('unavailable');
   }
 }
+
+type ArchiveCursor = Readonly<{ puzzleDate: string; editionNumber: number }>;
+type ArchiveEditionGroup = { puzzleDate: string; editions: OfficialDailyCatalogEdition[] };
+
+/** Read answer-free archive metadata newest date first, continuing within arbitrarily large dates. */
+export async function listPrivateOfficialDailyArchivePage(
+  client: SupabaseClient,
+  input: Readonly<{ after?: ArchiveCursor; pageSize?: number }> = {},
+  now: Date = new Date(),
+): Promise<{ dates: ArchiveEditionGroup[]; nextCursor: ArchiveCursor | null }> {
+  const today = getPacificDailyDateString(now);
+  if (!input || typeof input !== 'object' || Array.isArray(input)) throw new OfficialDailyCatalogError('invalid');
+  const after = input.after;
+  if (after !== undefined && (!after || typeof after !== 'object' || Array.isArray(after))) throw new OfficialDailyCatalogError('invalid');
+  const { pageSize } = parseQuery({
+    puzzleDate: after === undefined ? today : after.puzzleDate,
+    ...(after === undefined ? {} : { afterEditionNumber: after.editionNumber }),
+    ...(input.pageSize === undefined ? {} : { pageSize: input.pageSize }),
+  });
+  if (after !== undefined && (!isOfficialDailyPositiveNumber(after.editionNumber) || after.puzzleDate > today)) {
+    throw new OfficialDailyCatalogError('invalid');
+  }
+  try {
+    let query = client.from(TABLE).select(COLUMNS).lte('puzzle_date', today)
+      .order('puzzle_date', { ascending: false }).order('edition_number', { ascending: true });
+    if (after !== undefined) {
+      // Both interpolated values passed strict calendar/integer validation above.
+      query = query.or(`puzzle_date.lt.${after.puzzleDate},and(puzzle_date.eq.${after.puzzleDate},edition_number.gt.${after.editionNumber})`);
+    }
+    const { data, error } = await query.limit(pageSize + 1);
+    if (error !== null || !Array.isArray(data) || data.length > pageSize + 1) throw new OfficialDailyCatalogError('unavailable');
+    const dates: ArchiveEditionGroup[] = [];
+    let previous = after;
+    let lastReturned: ArchiveCursor | null = null;
+    for (const [index, row] of data.entries()) {
+      if (typeof row?.puzzle_date !== 'string' || row.puzzle_date > today) throw new OfficialDailyCatalogError('unavailable');
+      validateIssuedDailyCalendarDate(row.puzzle_date);
+      const edition = parseRow(row, row.puzzle_date);
+      if (previous && (edition.puzzleDate > previous.puzzleDate ||
+        (edition.puzzleDate === previous.puzzleDate && edition.editionNumber <= previous.editionNumber))) {
+        throw new OfficialDailyCatalogError('unavailable');
+      }
+      previous = { puzzleDate: edition.puzzleDate, editionNumber: edition.editionNumber };
+      if (index === pageSize) break;
+      lastReturned = previous;
+      const group = dates.at(-1);
+      if (group?.puzzleDate === edition.puzzleDate) group.editions.push(edition);
+      else dates.push({ puzzleDate: edition.puzzleDate, editions: [edition] });
+    }
+    return { dates, nextCursor: data.length > pageSize ? lastReturned : null };
+  } catch {
+    throw new OfficialDailyCatalogError('unavailable');
+  }
+}
