@@ -533,3 +533,19 @@ or scoring behavior is activated by this command.
 The transaction migration (#559), draft-admin path (#560), exact-ID reader
 (#558), hosted QA and independent release checks are separate prerequisites.
 Production migration/activation still requires release approval.
+
+## Opt-in, spoiler-safe on-demand Daily hint transport (staged)
+
+The shared server Daily runtime supports a new opt-in on-demand hint projection.
+For that mode, bootstrap, resume and next-batter hint bundles contain only
+values already revealed by the signed progression token, and **no presigned
+future reveal checkpoints**. The explicit revealHint command remains the sole
+transport of the next clue and its next signed progression token. Each
+incorrect guess preserves the same partial visibility; an at-bat completion
+never preloads the next batter's clue. The private server may still construct
+complete hint bundles internally for authoritative resolution.
+
+Legacy bundle transport remains the default and unchanged for existing Daily
+clients. No public route activates on-demand mode yet; the secondary exact-ID
+runtime must opt in explicitly. That rollout also requires fresh client-side
+state handling, Pacific date admission, score isolation, and device QA.

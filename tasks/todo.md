@@ -99,3 +99,8 @@ These gates are separate from Custom Lineups Phase 1. Keep them active until eac
 
 - [ ] Verify the source-staged `official_daily_editorial_drafts` table and atomic `issue_official_daily_editorial_draft` function against isolated QA. Retain the completed rollback-only rehearsal evidence; no production migration without explicit release approval.
 - [ ] Integrate the default-OFF, authenticated secondary draft administration from #560 with the reviewed private issuer (#561) and exact-ID publication readback; preserve existing primary issuance, editorial revision checks and immutable retries. Public gameplay, competitive result admission and release still require their separate gates.
+
+## Official Daily incremental hint transport (staged)
+
+- [ ] Wire new exact-ID editions to the on-demand Daily hint transport. Never reuse legacy bulk hint bundles or exposed future signed checkpoints for newly issued editions.
+- [ ] Verify bootstrap, resume, reveal, incorrect guess and next-batter UI/client handling under on-demand semantics; preserve legacy primary behavior until separately approved cutover.
