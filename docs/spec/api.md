@@ -1,394 +1,503 @@
-import {
-  isCanonicalPlayerIdFormat,
-  type CanonicalPlayerReveal,
-  type CanonicalRuntimeAccessor,
-} from '@initial-baseball/baseball-data/runtime';
-import { getGuessOutcome, isDailyGameComplete } from '@initial-baseball/engine';
-import {
-  CURRENT_DAILY_RULESET_VERSION,
-  POINTS_V4_DAILY_RULESET_VERSION,
-  type DailyGuessResult,
-  type DailyPuzzle,
-  type DailyPublicPuzzle,
-  type DailyRevealCount,
-} from '@initial-baseball/shared';
-import { createCanonicalRevealViewModel } from './canonicalRevealViewModel';
-import {
-  DailyProgressionTokenError,
-  type DailyProgressionClaims,
-  type DailyProgressionTokenCodec,
-} from './dailyProgressionToken';
-import type {
-  DailyBootstrapRulesetVersion,
-  DailyHintBundle,
-  DailyResolutionRequest,
-  DailyRuntimeService,
-} from './dailyRuntimeContracts';
+# Daily web API specification
 
-type CreateDailyRuntimeServiceInput = {
-  canonicalRuntime?: CanonicalRuntimeAccessor;
-  resolveLegacyPlayerId?: (playerId: string) => string;
-  getCanonicalReveal?: (canonicalPlayerId: string) => CanonicalPlayerReveal;
-  createPuzzle: (date: string) => Promise<DailyPuzzle> | DailyPuzzle;
-  progressionTokens: DailyProgressionTokenCodec;
-  /** Trusted server-owned setting; Daily remains at three by default. */
-  maxStrikes?: 1 | 2 | 3;
-  /** Future exact-ID editions use incremental server-authorized clue revelation. */
-  hintTransport?: 'legacy-bundle' | 'on-demand';
-};
+Status: Living source of truth  
+Last updated: 2026-10-15
 
-type AuthorizedProgression = {
-  claims: DailyProgressionClaims;
-  puzzle: DailyPuzzle;
-  pitch: DailyPuzzle['pitches'][number];
-};
+Daily routes are thin Next.js adapters over canonical baseball data, engine rules, and portable Daily logic. Answer-integrity rationale is in `docs/decisions/0001-daily-answer-integrity.md`.
 
-export class DailyRuntimeRequestError extends Error {
-  constructor(message: string) {
-    super(message);
-    this.name = 'DailyRuntimeRequestError';
+## General rules
+
+Every route must validate input, return sanitized data, keep rules in their owning packages, avoid per-action persistence, and never reflect secrets or hidden answer data in errors. Public search returns canonical player IDs. Daily resolution may compare a syntactically canonical submitted ID directly with the server-only canonical answer ID; legacy/noncanonical IDs cross the canonical redirect boundary before comparison.
+
+## Default-disabled anonymous Custom creator HTTP boundary (PR #440)
+
+`POST /api/custom-lineup/create` is a staged, **default-OFF** Web-only issuer
+for `{canonicalPlayerIds, title}`: an ordered selection of 1–10 canonical baseball player IDs and a required 3–60-character sanitized human title. It returns
+an opaque v2 puzzle ID, a one-time random owner management code in a private no-store JSON body, and a scoped HttpOnly signed creator
+preview/exclusion cookie, not roster identities, hints, signed answer material
+or public indexed metadata. The title is normalized/validated before reserving creation quota, and is persisted with the immutable issued challenge in its same row insert. A random 32-byte owner management capability is minted only for the anonymous issuer; its SHA-256 digest is persisted in that same insert, and its plaintext is returned once only to the creator. The friend link and creator-preview cookie are never management credentials. Publishing and owner verification are not enabled. The body is UTF-8 JSON-only, 4,096-byte bounded,
+exact-same-origin with no query parameters. A 1–10 player selection is validated
+by the existing immutable v2 issuing service; there is no parallel game rule.
+Both server-only flags `CUSTOM_LINEUP_PUBLIC_CREATION_ENABLED=true` and
+`CUSTOM_LINEUP_V2_GAMEPLAY_TRANSPORT_ENABLED=true` are required; otherwise
+it responds with a generic 404 before any budget/issuance request.
+
+When intentionally activated after separate approval, this route requires a
+verified single Vercel ingress client IP, separate server-only budget HMAC
+secret, and service-role-only Supabase atomic reservation before issuing a
+challenge. The two-argument budget RPC verifies the HMAC's claimed UTC day
+against the DB's UTC day **after** the advisory lock; one zero-quota-cost
+server-derived rehash/retry is allowed for clock skew/midnight. Absent or
+untrusted ingress, key, database, or inconsistent response fails closed
+with sanitized 503. Quota denials are 429 with Retry-After; the 10/10-minute
+client budget and 1,000/day global cap remain database-authoritative.
+Caught unexpected 503 creation failures emit a sanitized server-side JSON diagnostic
+(`event: custom_lineup_creation_unavailable`, `stage: signing|budget|issuance`,
+`status: 503`) for launch triage. The event never contains an IP address,
+request body, owner capability, player IDs, error message/stack or hidden clues.
+Expected 4xx responses, valid quota denial and disabled-route requests stay silent.
+The public 503 body and no-store headers do not change.
+
+The staged no-sign-in creator UI treats an unexpected HTTP 5xx, transport
+failure, or unreadable successful response as **ambiguous issuance**: the
+request may have committed even though the creator did not receive the owner
+code. The client preserves its draft, makes no automatic replay, and explains
+that a manual retry is a new immutable issuance consuming another creation
+attempt; it does not recover the prior owner code. Explicit known validation
+and quota failures (400, 422, 429) retain their specific messages. The
+server's immutable-conflict 409 is a definitive non-issuance and retains
+the existing generic failure message. This is
+client feedback only, not an idempotency guarantee or a new server response.
+The owner approved this Phase 1 behavior in #471: an explicit retry after an ambiguous response may create another private immutable challenge, consume another quota admission, and mint a distinct one-time owner capability; the original capability cannot be recovered. No idempotency or owner-code recovery is in scope. #471 remains open only for credential-backed isolated-QA browser evidence of committed response loss, no automatic duplicate, and the disclosed manual retry.
+
+This is staging, not permission to activate anonymous creation. Newly issued anonymous Custom Lineups now require the bounded name under the shared contract (#442) and store it in the private issued table (#444). The actual creator UI (#441), safe title read/view, browser/mobile QA, and creator management/public publishing remain separate.
+Do not enable this route without naming, WAF/privacy review, hosted browser
+and mobile QA and controlled release approval. The legacy admin creator is
+unchanged and existing v1 games remain compatible.
+
+## Disabled-by-default Custom Lineup v2 gameplay transport (PR #414)
+
+Four `POST /api/custom-lineup/challenges/{puzzleId}/attempt/{bootstrap|hint|resolve|submit}` transports are staged behind server-only `CUSTOM_LINEUP_V2_GAMEPLAY_TRANSPORT_ENABLED=true`. The default/unset/other values respond `404 {"error":"not_found"}` **before** challenge validation, cookie inspection, storage or server service access. The gameplay transport itself does not issue challenges; a separate default-OFF anonymous creator route is staged above. No public Custom Lineup UI or flag activation occurs in this stage.
+
+Every enabled POST requires exact same-origin `Origin` (including rejecting a missing Origin: 403), no query string (400), v2-only opaque challenge UUID, and `Cache-Control: private, no-store; Vary: Cookie`. Nonempty `bootstrap` or `submit` body is rejected (400). JSON hint/resolve request bodies are UTF-8 byte-bounded by the existing Custom Nine reader (4096 bytes) and strict keyed-shape validators: hint accepts only `{progressionToken}`, resolve accepts only `{progressionToken,submittedPlayerId}` with canonical player ID or `{progressionToken,giveUp:true}`. The token is signed by the separate v2 domain. Neither an attempt ID nor player ID from a browser can be used as a result authority.
+
+The bootstrap service returns sanitized `attemptMode:'reserved'` with redacted current-batter hints and completed-at-bat outcomes, setting a scoped HttpOnly browser cookie only on first reservation; `creator_preview` is noncompetitive. Already completed games return `attemptMode:'completed'` and saved outcomes/timestamp/revision **without** a live progression token. Hints produce only one successfully CAS-committed hint/token/revision. **All** guesses, including correct, incorrect, third strike and give-up, are sent to the **same** v2 atomic guess service; failed-CAS requests cannot reveal a tested answer. Terminal results expose only the canonical reveal view-model whitelist after successful mutation, plus next-batter redacted hint bundle when applicable. Bodyless submit calls the installed service-role-only atomic completed admission service, returning only `{status:'created'|'existing'}` (201/200). Errors return sanitized 400/403/404/409/503. The legacy Daily/Classic and Custom Nine v1 routes are untouched.
+
+## Guarded Custom Nine comparison read (disabled by default)
+
+`GET /api/custom-nine/challenges/{puzzleId}/attempt/comparison` is a server-only, challenge-scoped read of **accepted** Custom Nine points-v4 results. It returns 404 without a service/database call unless both server-only `CUSTOM_NINE_COMPARISON_READ_ENABLED=true` and `CUSTOM_NINE_RESULT_SUBMISSION_ENABLED=true` are explicitly configured. These are **not** activated by this code stage.
+
+When separately activated, the URL supplies only an immutable issued challenge ID. No query parameters, arbitrary excluded submission ID, scores, clue metadata, or browser-chosen result selection are permitted (400); foreign Origin/cross-site fetch metadata is rejected (403). The reader verifies signed noncreator challenge-scoped attempt cookie, completed private ledger and exact admitted first-attempt result before any peer read. Missing/creator/invalid/unadmitted credentials return 403, incomplete attempts 409, unknown challenge 404, provider failures 503, with generic bodies.
+
+Success body: `{schemaVersion:1, rulesetVersion:'points-v4', completed:{completedGameCount,averageTotalPoints,scoreHistogram}, atBats:[{pitchNumber,resolvedAtBatCount,averagePoints,scoreHistogram}]}` with nine ABs. Only aggregate histograms, counts and averages are returned, never answer, identity, terminal facts, browser credentials, result UUID or hidden clues. Every response uses `Cache-Control: private, no-store` and `Vary: Cookie`. Score rules and histogram calculations stay with the existing portable Daily/engine-owned implementation. The endpoint does not accept or trigger score submission.
+
+## Guarded Custom Nine completed-result submission (disabled by default)
+
+`POST /api/custom-nine/challenges/{puzzleId}/attempt/submit` is a **bodyless, same-origin, signed-cookie-only** transport for the existing private Custom Nine completed-result admission service. It is dormant unless the server-only `CUSTOM_NINE_RESULT_SUBMISSION_ENABLED` setting is exactly `true`; absent, disabled and nonmatching values all return `404 {"error":"not_found"}` before any database/service work. Deploying the route **does not authorize switching it on**. No Vercel setting is changed as part of this stage.
+
+If a future separately approved environment enables it, the endpoint requires an explicit same-site browser Origin equal to the request origin (missing or foreign Origin: 403) and rejects every nonempty request body (400). No submitted score, chosen submission/attempt ID, token, receipt, guess, hint depth or JSON is accepted. Only the URL puzzle ID and retained HttpOnly cookie go to `createServerCustomNineCompletedAdmissionService`. This service rejects verified creators, absent/invalid/duplicate creator/attempt credentials and cross-challenge attempts; requires one server-monotonic, signed, completed nine-fact ledger and immutable issued challenge; recomputes points-v4 summary and all nine awards in `packages/engine`. The service-role-only database transaction derives the immutable result ID from the server-created attempt and atomically stores the completion plus nine scored at-bats. Exact retries return the existing winner.
+
+A successful first write responds 201 `{"status":"created"}`, and an exact retry 200 `{"status":"existing"}`. No private attempt UUID, score details, identity, unrevealed hints or answer enters the response. Unknown challenge is 404, bad cookie/creator 403, unfinished attempt 409 `{"error":"attempt_incomplete"}`, and unexpected private/provider corruption 503 `{"error":"submission_unavailable"}`. Every response is `Cache-Control: private, no-store`. This is **not a public Custom competitive rollout**: the server feature flag stays off, comparison readers/UI/creation safeguards are separate, and cookies/new devices and noncompetitive stateless Custom play prevent unique-human or cheat-proof first-play guarantees.
+
+## Staged private Custom Nine challenge issuance
+
+`POST /api/custom-nine/challenges` is an **administrator-authenticated, same-origin creation endpoint**, not a public creator flow. It accepts a JSON object containing only `canonicalPlayerIds`: an explicitly ordered array of exactly nine distinct canonical IDs. Requests are bounded to 4,096 bytes. The existing Basic admin principal must be authorized **before** request body processing or any persistence connection. Invalid credentials return 401, missing admin configuration 503, cross-origin mutations 403.
+
+The server validates exact ordered selection, resolves all nine against its canonical gameplay-ready player source, materializes the existing four Daily hints in that order, creates a fresh cryptographically random UUIDv4 puzzle ID with `custom-nine-v1-` prefix, freezes the ruleset `points-v4`, and first-write-wins inserts the complete answer-bearing snapshot through the existing service-role-only private repository. Success returns HTTP 201 with **only** `{ "puzzleId": "custom-nine-v1-<uuidv4>" }` and `Cache-Control: private, no-store`. The 201 response also sets a host-only, HttpOnly, SameSite=Strict, exact-challenge-path-scoped creating-browser cookie (Secure over HTTPS). Its value is a server-signed Custom-specific HMAC marker bound to that immutable puzzle ID; no browser `isCreator` flag is trusted. Signing configuration is preflighted before immutable issuance. A future result admission boundary must block a verified creator marker and treat malformed or duplicated markers as invalid, not as proof of a non-creator. There is still **no Custom Nine results POST endpoint** and this marker does not itself gate a write. Cookies can be removed, expire or be evicted; anonymous cross-device identity cannot be established without authentication. The creating browser is not an account-grade identity. There is no public creator UI, shareable/playable URL or gameplay transition in this checkpoint. Repeating the same lineup request deliberately mints another challenge; no idempotency key has yet been implemented.
+
+Invalid selection or JSON returns 400 (oversized 413), unknown player/unsupported hints 422, immutable ID conflict 409, and storage/unexpected failures 503. Errors are generic and must never expose canonical IDs, future hints, credentials, or provider details. All created challenge records remain server-private. **Public anonymous creation is deferred** until a separate explicit write-abuse/rate-limit and creator-exclusion decision; opening this admin-only write endpoint does not make account-free creators operational.
+
+## Custom Nine redacted public challenge metadata
+
+`GET /api/custom-nine/challenges/{puzzleId}` is a public, read-only metadata endpoint. The URL contains the **opaque, versioned UUIDv4 challenge ID**; it is not an authorization token for hint progression or result contribution. Valid IDs are checked against the existing `custom-nine-v1-<uuidv4>` contract *before* connecting to the server-only Supabase client. Invalid or unknown challenge IDs return identical HTTP 404 JSON `{ "error": "not_found" }`. Store errors, corrupt or incompatible records, or missing server configuration return sanitized HTTP 503 `{ "error": "challenge_unavailable" }`; raw provider exceptions are never returned.
+
+An existing challenge returns HTTP 200 with an explicitly projected shape: `{ "puzzleId": "...", "rulesetVersion": "points-v4", "atBats": [{ "pitchNumber": 1, "initials": "..." }, ...] }`. `atBats` contains exactly nine records in their **frozen selected order**, exposing only the same pre-play initials that Daily Nine already displays. No canonical player IDs, full names, hint layout/values, issuance timestamp, answer records, service-role information, or progression tokens are serialized. All responses carry `Cache-Control: private, no-store`.
+
+The underlying private repository still reads and validates the full immutable record on the server. This endpoint has **no writes**, no game bootstrap, and **does not make the challenge playable**; signed active-at-bat hint progression and spoiler-safe resolution are later bounded work. Do not treat a client-supplied `puzzleId` as an authority for scoring or answer revelation.
+
+## Custom Nine signed opening session (staged)
+
+`GET /api/custom-nine/challenges/{puzzleId}/bootstrap` is a read-only, **anonymous but signed** opening-session bootstrap for an already-issued challenge. It validates the opaque `custom-nine-v1-<uuidv4>` before any Supabase access, then reads the immutable record through the existing private service-role repository. Invalid or nonexistent IDs return `404 { "error": "not_found" }`; missing configuration, corrupt records or provider faults return sanitized `503 { "error": "session_unavailable" }`. Every response is `Cache-Control: private, no-store`.
+
+The 200 JSON has only `puzzleId`, fixed `rulesetVersion: "points-v4"`, ordered public `atBats: [{pitchNumber, initials}]`, a signed opening `progressionToken`, and `hintBundle` **for batter one only** (the same four currently active hint values and the four signed reveal-depth checkpoints used by the Daily runtime). No canonical player IDs, names, future batters' hint values, issue timestamp or private challenge record are serialized. The shared Daily runtime is reused solely to create the session and active bundle from the **frozen issued** clue snapshot; no clue values are regenerated for this request.
+
+Custom Nine HMAC signatures are **domain-separated** from Universal Daily/Classic/Archive, derived from the existing server-side `DAILY_PROGRESSION_SECRET` using a fixed Custom Nine v1 context. Tokens are not accepted by the Universal Daily endpoints or vice versa. The standard Daily claims schema uses an internal non-calendar sentinel `1970-01-01` for Custom Nine and the exact challenge ID for binding; the sentinel is not an issue date and is not returned in the API body. This checkpoint **does not yet expose hint-advancement, guessing, answer reveal, submission, sharing or creator UI endpoints**. A valid signed opening token alone does not authorize competitive results; those require separate exact-challenge checks and creator-exclusion policy.
+
+## Custom Nine nonterminal wrong-guess persistence (private, staged)
+
+The Web server-only `createServerCustomNineIncorrectGuessService` composes existing canonical Custom guess resolution with signed active-token validation, the challenge/creator/attempt-cookie checks and private attempt-ledger CAS. For an active signed guess at zero or one prior strikes, an **incorrect** engine result increments only strike count by one, verifies a separately signed successor with unchanged pitch, hint depth and out count, and commits it under the previous token and revision. Replay/race conflicts return only a private conflict; correct guesses or third-strike terminal actions return a private `terminal_pending` marker without mutation. Persisted at-bat terminal facts do not change.
+
+There is **no public incorrect-guess POST**: such a partial endpoint would disclose whether a proposed answer was correct while refusing to commit terminal outcomes. No client or scoring/result route is wired to this seam. The follow-up must implement the full correct/incorrect/third-strike/Give Up transaction and then expose an appropriately protected single stateful route. Existing stateless Custom endpoints remain legacy/noncompetitive.
+
+## Custom Nine scored resolution POST (staged)
+
+`POST /api/custom-nine/challenges/{puzzleId}/attempt/resolve` is a **single combined** scored guess and Give Up endpoint, separate from the older stateless `POST /resolve`. It requires same-origin bounded JSON with exactly `progressionToken` and either `submittedPlayerId` (nonblank bounded canonical guess) or `giveUp: true`. No browser-selected score, hint count, attempt ID or terminal facts can be accepted. A guess first uses the private nonterminal incorrect service (#372). That service persists a first/second incorrect strike via signed one-step CAS, returning `kind:"incorrect"`, `strikeCount`, `progressionToken` and committed `revision`. If the private service returns `terminal_pending`, the server must invoke the separately verified **terminal-only** resolver before returning any answer. An explicit Give Up invokes only that terminal path.
+
+The terminal-only service checks exact issued-challenge identity, signed creator/attempt cookie, Custom-only signed predecessor, active stored token and next terminal pitch; obtains the engine-calculated frozen-puzzle resolution; verifies a signed successor (one pitch advance, strike/hint reset, capped K out increment, ninth completed) and HMAC terminal receipt binding the precise predecessor/successor digests, ordered initials, ruleset-correct outcome, revealed hint and wrong-guess counts, and resolution (correct/strikeout/give_up). It atomically appends the single normalized at-bat fact and updates revision/token/status. Success returns `kind:"terminal"`, `result`, the server-authorized terminal `reveal`, newly persisted `progressionToken`, committed `revision`, and a next-batter hint bundle stripped of future hints and pre-signed checkpoints. A losing/stale attempt receives 409 with **no** answer or successor. Ninth terminal completion has no next hint bundle and future attempts cannot change it.
+
+Missing/invalid creator or attempt cookie 403; malformed signed progression 400; unknown challenge 404; stale/completed 409; sanitized provider or invalid server-transition error 503; all responses `Cache-Control: private, no-store`. Competitive Custom result rows and comparison APIs remain **disabled**. The old stateless Custom routes remain noncompetitive, and anonymous cookie resets/new devices can bypass continuity. Separate result-admission and creator-exclusion review is still required before public scores.
+
+## Custom Nine opt-in stateful hint reveal (staged)
+
+A new, separate `POST /api/custom-nine/challenges/{puzzleId}/attempt/hint` accepts exactly `{"progressionToken":"<prior signed token>"}` in a bounded JSON body. The server inspects both exact-challenge signed creator and attempt cookies, rejects any invalid/missing/creator identity from this scored attempt route (403), and verifies Custom-domain HMAC, challenge identity, points-v4, noncalendar Custom sentinel date and unfinished reveal depth. It then checks that the presented token equals the private attempt ledger's exact active saved token, invokes the existing server-frozen Custom hint resolver, independently checks the signed successor increments only revealCount by one, and commits via a conditional revision/current-token/attempt-ID UPDATE.
+
+A **single winner** receives HTTP 200 containing the one `hint`, its signed successor `progressionToken` and committed `revision`. Replays, races and stale presented tokens are HTTP 409 `conflict` with **no hint**. Unknown challenges are 404, malformed/forged progression 400, completed attempts 409, and faults sanitized 503. Same-origin restriction and `Cache-Control: private, no-store` apply. No browser-supplied score, hint depth or at-bat fact can be committed.
+
+On the opt-in `/attempt/bootstrap` path, reserved noncreator sessions now receive `hintBundle.hints` truncated to slots already revealed by their authoritative signed state, with `hintBundle.checkpoints: []`; this prevents that specific path from leaking the four unrevealed hint values or pre-signed reveal-depth branches. Verified creators remain preview-only and never contribute. Previous **stateless** Custom GET/hints/hint/resolve paths retain their existing behavior and are deliberately **not competitive evidence**. Their continued visibility means hint-use honesty is not globally provable; no result writes are enabled by this stage.
+
+**Headless Custom Nine browser integration (staged):** `apps/web/app/customNineGameplayTransport.ts` is a checked client of the existing POST attempt bootstrap, hint and resolve routes below. It uses challenge-scoped same-origin credentials, sends no browser-chosen attempt ID, distinguishes `reserved` from `creator_preview`, validates resumed public facts and only currently authorized hints, and maps completed-versus-stale 409 responses to distinct nonauthoritative client errors. Network-ambiguous action outcomes must be reconciled by a fresh server bootstrap rather than optimistic local replay. It adds no API endpoint, scoring rule, persisted field or competition activation. See `tasks/plans/custom-nine-browser-transport.md`.
+
+## Custom Nine opt-in browser attempt bootstrap (staged)
+
+`POST /api/custom-nine/challenges/{puzzleId}/attempt/bootstrap` is a new **same-origin bodyless reservation** route. Existing stateless `GET /bootstrap`, `POST /hint`, `POST /hints` and `POST /resolve` remain unchanged. The additional POST validates the exact challenge and checks separate creator/attempt cookies before any new persisted attempt. Duplicate, malformed or forged cookie of either type causes HTTP 403. A valid creator marker receives opening signed frozen hints and `attemptMode: "creator_preview"`, without a Set-Cookie or database attempt. An unmarked browser receives a cryptographically random 32-byte nonce and domain-separated HMAC in a host-only, HttpOnly, SameSite Strict cookie under the exact challenge API path (Secure for HTTPS, one-year Max-Age). Only a domain-separated SHA-256 hex digest is the private ledger browser key. The signed bearer credential is never echoed in the JSON body.
+
+Reserved success additionally returns `attemptProgress: {strikeCount, completedAtBats}` from the existing server-saved, Custom-signed current token and ordered terminal facts. `strikeCount` is only current-batter wrong guesses (0–2); `completedAtBats` contains the already-terminal public result facts (slot, initials, result, hints revealed, wrong guesses, resolution), not answer IDs or future clues. The server verifies the challenge/ruleset/date, current pitch/reveal and capped out state against saved facts and current authorized bundle. Inconsistent or forged private continuation fails closed. This projection is omitted for `creator_preview`; it does not create or advance any attempt.
+
+Only after successful `getOrCreate` insert into `custom_nine_attempt_states` does the response include Set-Cookie and `attemptMode: "reserved"`. The same retained signed cookie performs an exact ledger read to resume the original current signed progression token and matching active-batter frozen hint bundle, not a new opening. Valid cookies whose row is missing return 403; completed attempts return 409. Unknown/malformed challenges return 404; cross-origin requests 403; a nonempty request body 400; store/signing or corrupt continuation errors 503. All responses use private no-store and never return player IDs, future hints or private attempt UUIDs. This endpoint does **not** record hints/guesses, award points or submit completed/AB results.
+
+**Security limitation:** This opt-in browser reservation is not unique-human or honest-first-play proof: existing Custom stateless routes remain accessible and replayable before this POST; cookie deletion and device changes allow new credentials. Future stateful Custom hint/guess/resolve and result admission must reject those older stateless branches before competitive contributions are enabled.
+
+## Custom Nine signed current-batter hints (staged)
+
+`POST /api/custom-nine/challenges/{puzzleId}/hints` restores the authorized active batter's frozen four-hint bundle and remaining signed reveal-depth checkpoints; `POST /api/custom-nine/challenges/{puzzleId}/hint` returns **one next hint** and the signed successor token. Both accept **only** `{ "progressionToken": "opaque-signed-token" }` as a JSON object (max 4,096 request bytes), and neither allows guessing, batter advancement, answer reveal, result contribution or browser UI access. The client can also advance locally with the signed checkpoints already present in the bundle, identical to existing Daily Nine.
+
+Both endpoints check the URL challenge ID, then cryptographically verify the token with the **Custom-only HMAC signing domain** and require claims bound to exactly that ID, the non-calendar Custom sentinel date, an incomplete session and the immutable `points-v4` ruleset **before** reading the private issued challenge. They load and validate the server's frozen clue snapshot and reuse Daily runtime hint selection/checkpoint issuance; they do not recompute hints from live facts. Only the token-authorized batter's hint values can be returned. The full private challenge and canonical names/answer IDs are never serialized.
+
+Malformed/forged/cross-domain/cross-challenge/cross-ruleset/completed tokens return `400 { "error": "invalid_progression" }`, invalid/unknown challenge IDs return `404 { "error": "not_found" }` and unavailable configuration/provider/private records return sanitized `503 { "error": "session_unavailable" }`. Every status, including errors, is `Cache-Control: private, no-store`. Tokens are stateless and replayable (the existing anonymous-game limitation); these endpoints never write to Supabase. Custom results, creator exclusion, resolution and public creator UI remain later stages.
+
+## Custom Nine signed guess resolution (staged)
+
+`POST /api/custom-nine/challenges/{puzzleId}/resolve` accepts a bounded (4,096-byte) JSON object with **exactly** a signed `progressionToken` and one action: `submittedPlayerId` (nonempty string, maximum 200 characters) **or** `giveUp: true`. Extra client claims, simultaneous actions, arbitrary score/out counts and other fields are rejected. It uses the **Custom Nine-only** signature domain from opening bootstrap and exact versioned challenge ID, fixed sentinel date, immutable `points-v4` ruleset and incomplete signed session; token checks occur before private Supabase reads. Universal, Classic, Archive and other Custom challenge tokens cannot authorize resolution.
+
+The server reads the immutable, private issued challenge and constructs the same frozen nine-batter puzzle used by bootstrap/hint hydration. It delegates guesses, strikes, score-policy facts, Give Up, next-batter advancement and ninth-batter completion to the **existing Daily runtime**. Ordinary canonical IDs compare directly with the current frozen answer ID; legacy IDs use the existing canonical redirect boundary. Incorrect guesses return `{ result, reveal: null, progressionToken, hintBundle }` with refreshed current-batter state. A correct guess, third strike or Give Up includes a canonical reveal of the **terminally resolved current batter only** and a Custom-signed successor token. `hintBundle` includes the now-authorized next batter only, or `null` after the ninth batter. No future answer ID/name or later-batter clue is serialized, and errors never reflect private content.
+
+Malformed requests, forged/wrong-domain/wrong-challenge/wrong-ruleset/completed tokens return sanitized `400 { "error": "invalid_progression" }`; malformed/unknown challenge IDs return `404 { "error": "not_found" }`; provider, configuration or reveal-read failures return `503 { "error": "session_unavailable" }`. All responses use `Cache-Control: private, no-store`. These calls **do not persist attempts, completed results, comparisons or leaderboards**. Stateless signed-token replay remains the existing anonymous-game limitation. Custom creator participation limits, results isolation and browser UI are separate stages.
+
+## Custom Nine server-signed terminal evidence (staged)
+
+The existing Custom Nine `POST /api/custom-nine/challenges/{puzzleId}/resolve` adds `terminalReceipt` to its successful response: `null` for an incorrect, nonterminal guess, and a server-signed `cnr1` receipt for a terminal correct guess, third strike or Give Up. The receipt binds the exact challenge, terminal pitch number and frozen initials, engine-derived outcome, token-authorized hint depth, signed wrong-guess count and resolution type. It also commits to SHA-256 digests of the signed pre- and post-resolution progression tokens. Its HMAC key is domain-separated from Universal Daily progression and other Custom cookie/progression keys. It does not contain canonical answer IDs, names, raw progression tokens or future hints.
+
+Receipts are **not** competitive result submissions and not a proof of one uninterrupted honest first play. Custom progression remains stateless and replayable, so independently valid terminal receipts can be replayed/branched. Before enabling result storage, a distinct admission stage must address whole-attempt continuity/first-write-wins, reject creator or invalid creator-browser markers, verify signed terminal facts against the frozen issued puzzle, and derive points on the server. This stage adds no public results-write API, DB writes, comparison read, public creator UI or new access grant.
+
+## Private Custom Nine complete-attempt evidence verification (staged)
+
+The server-only `createCustomNineAttemptEvidenceVerifier` validates a bounded envelope of exactly nine ordered records, each containing a `cnr1` terminal receipt and its before/after signed progression tokens. It checks receipt HMACs and token HMACs in their separate Custom-only domains, hashes against each receipt's predecessor/successor commitments, exact challenge and `points-v4` identity, frozen ordered initials, token-authorized hint depth and strike counts, engine-correct terminal outcomes, strikeout/Give Up out-count effects, between-batter continuity (pitch number and out count), and ninth-batter completion. It passes only the verified terminal facts to the existing engine `validateDailyCompletedResult` to derive native normalized points-v4 scoring. This verifier performs no database I/O or HTTP handling; malformed evidence raises a generic error, never private puzzle information.
+
+**Limitation, enforced by the release sequence:** The current stateless HMAC protocol can issue more than one legitimate signed branch from an earlier checkpoint. Two independently valid branches can pass this nine-batter consistency verifier; it **does not prove first play, unique session identity, or replay resistance**. A future competitive write must introduce a separately reviewed authoritative monotonic-attempt/first-write policy (or an explicit acceptance of weaker anonymous integrity), plus creator-browser exclusion, before exposing any result submission. No private result table writes, new public routes or anonymous grants are enabled by this checkpoint.
+
+## Public bootstrap
+
+The Daily server runtime can create a new-session bootstrap for exactly one of two approved current modes: default Daily Nine `points-v3` or Classic Inning `classic-inning-v1`. The selected ruleset is returned explicitly as `rulesetVersion` and is signed into the first progression token and every authorized hint checkpoint. The public `/` page requests `points-v3`; `/classic` requests `classic-inning-v1`. Both routes use the same Pacific date/puzzle and shared browser game implementation, while their local persistence namespaces remain separate.
+
+A bootstrap receives:
+
+- `rulesetVersion` for the authorized new session;
+- puzzle ID, number, date, status, hint configuration, and nine public initials;
+- one opaque signed progression token for the first pitch;
+- one authorized hint bundle for the first pitch only.
+
+The active hint bundle contains:
+
+- current pitch number and already revealed depth;
+- all four current-batter hint labels/values;
+- signed checkpoints for only the later reveal depths still available from the current claims.
+
+It contains no answer ID, answer name, reveal record, or future-batter hint. Existing valid `points-v2`, `points-v1`, and `legacy-inning-v1` signed sessions retain their own policies even though those compatibility rulesets are not selectable for a new bootstrap.
+
+## Canonical player search
+
+### `GET /api/players/search`
+
+Returns sanitized canonical candidates. Search aliases help retrieval but do not define reveal names. Genuine duplicate visible names receive career years only; teams and positions are not shown in public guess results.
+
+Normalized queries consisting solely of two or more separated single letters return HTTP 200 with `{ "results": [] }` through the shared engine search policy. Direct HTTP calls receive the same initials-shortcut restriction as the browser. Ordinary name fragments and aliases retain the existing response contract.
+
+Search-candidate construction is owned by the search route/runtime path. It is not initialized merely because `/api/daily/resolve` is invoked.
+
+## Active hint-bundle restoration
+
+### `POST /api/daily/hints`
+
+Request:
+
+```json
+{ "progressionToken": "opaque-signed-token" }
+```
+
+The server verifies the token and returns the bundle for exactly the authorized current pitch, strike count, reveal depth, and signed ruleset.
+
+```json
+{
+  "hintBundle": {
+    "pitchNumber": 3,
+    "revealedCount": 2,
+    "hints": [
+      { "slot": 1, "hintType": "main_decade", "hintLabel": "Main decade played in", "hintValue": "2000s" }
+    ],
+    "checkpoints": [
+      { "revealedCount": 3, "progressionToken": "opaque-token" },
+      { "revealedCount": 4, "progressionToken": "opaque-token" }
+    ]
   }
 }
+```
 
-/**
- * Resolve Daily play against server-owned puzzles and signed progression.
- * Legacy clients receive bundled hints; on-demand clients must explicitly
- * reveal the next clue and resume with its successor token.
- */
-export function createDailyRuntimeService(input: CreateDailyRuntimeServiceInput): DailyRuntimeService {
-  return buildDailyRuntimeService(input);
+The response is `private, no-store`. It is used only to restore a compatible saved at-bat whose current bundle is no longer in memory. It rejects invalid, completed, cross-date, cross-puzzle, or arbitrary-future claims.
+
+## Legacy one-hint route
+
+### `POST /api/daily/hint`
+
+This compatibility route still verifies one token and returns one hint plus one successor token. The active web client no longer calls it when the player presses Hint. Production build QA rejects the exact legacy route string from client chunks.
+
+## Daily resolution
+
+### `POST /api/daily/resolve`
+
+Guess:
+
+```json
+{
+  "progressionToken": "opaque-signed-token",
+  "submittedPlayerId": "canonical-or-legacy-player-id"
 }
+```
 
-/** Bind a shared gameplay runtime to one publication. The reader owns release-date eligibility. */
-export function createExactIdDailyRuntimeService(
-  input: Pick<CreateDailyRuntimeServiceInput, 'progressionTokens'> & {
-    canonicalRuntime: CanonicalRuntimeAccessor;
-    puzzleId: string;
-    readEligiblePuzzle: (puzzleId: string) => Promise<DailyPuzzle | null>;
-  },
-): DailyRuntimeService {
-  const { puzzleId, readEligiblePuzzle, canonicalRuntime, progressionTokens } = input;
-  return buildDailyRuntimeService({
-    canonicalRuntime,
-    progressionTokens,
-    hintTransport: 'on-demand',
-    async createPuzzle() {
-      const puzzle = await readEligiblePuzzle(puzzleId);
-      if (!puzzle || puzzle.id !== puzzleId) {
-        throw new DailyRuntimeRequestError('Official Daily edition unavailable.');
-      }
-      return puzzle;
-    },
-  }, puzzleId);
+Give Up:
+
+```json
+{
+  "progressionToken": "opaque-signed-token",
+  "giveUp": true
 }
+```
 
-function buildDailyRuntimeService(
-  input: CreateDailyRuntimeServiceInput,
-  expectedPuzzleId?: string,
-): DailyRuntimeService {
-  const { canonicalRuntime, createPuzzle, progressionTokens } = input;
-  const maxStrikes = input.maxStrikes ?? 3;
-  const hintTransport = input.hintTransport ?? 'legacy-bundle';
-  if (hintTransport !== 'legacy-bundle' && hintTransport !== 'on-demand') {
-    throw new Error('Unsupported Daily hint transport policy.');
-  }
-  if (maxStrikes !== 1 && maxStrikes !== 2 && maxStrikes !== 3) {
-    throw new Error('Unsupported server-owned strike limit.');
-  }
-  const resolveLegacyPlayerId = input.resolveLegacyPlayerId
-    ?? (playerId => requireConfiguredRuntime(canonicalRuntime).requireCanonicalPlayerId(playerId));
-  const getCanonicalReveal = input.getCanonicalReveal
-    ?? (playerId => requireConfiguredRuntime(canonicalRuntime).getReveal(playerId));
+Response:
 
-  async function createCanonicalPuzzle(date: string): Promise<DailyPuzzle> {
-    const puzzle = await createPuzzle(date);
-    if (puzzle.puzzleDate !== date) {
-      throw new DailyRuntimeRequestError(`Daily puzzle ${puzzle.id} does not match requested date ${date}.`);
-    }
-    if (puzzle.pitches.every(pitch => isCanonicalPlayerIdFormat(pitch.player.playerId))) return puzzle;
-    if (canonicalRuntime === undefined) {
-      throw new DailyRuntimeRequestError(`Daily puzzle ${puzzle.id} contains a non-canonical player ID.`);
-    }
-    return {
-      ...puzzle,
-      pitches: puzzle.pitches.map(pitch => ({
-        ...pitch,
-        player: {
-          ...pitch.player,
-          playerId: canonicalRuntime.requireCanonicalPlayerId(pitch.player.playerId),
-        },
-      })),
-    };
-  }
-
-  async function requireAuthorizedProgression(progressionToken: string): Promise<AuthorizedProgression> {
-    let claims: DailyProgressionClaims;
-    try {
-      claims = progressionTokens.verify(progressionToken);
-    } catch (error) {
-      if (error instanceof DailyProgressionTokenError) {
-        throw new DailyRuntimeRequestError('Invalid Daily progression token.');
-      }
-      throw error;
-    }
-    if (expectedPuzzleId !== undefined && (
-      claims.puzzleId !== expectedPuzzleId || claims.rulesetVersion !== POINTS_V4_DAILY_RULESET_VERSION
-    )) {
-      throw new DailyRuntimeRequestError('Daily progression token does not match its puzzle.');
-    }
-    if (claims.strikeCount >= maxStrikes) {
-      throw new DailyRuntimeRequestError('Progression strike count exceeds the configured limit.');
-    }
-    if (claims.completed) {
-      throw new DailyRuntimeRequestError('This Daily progression token is already complete.');
-    }
-    const puzzle = await createCanonicalPuzzle(claims.puzzleDate);
-    if (puzzle.id !== claims.puzzleId || puzzle.puzzleDate !== claims.puzzleDate) {
-      throw new DailyRuntimeRequestError('Daily progression token does not match its puzzle.');
-    }
-    return { claims, puzzle, pitch: requirePitch(puzzle, claims.pitchNumber) };
-  }
-
-  function createHintBundle(authorized: AuthorizedProgression): DailyHintBundle {
-    const hints = authorized.puzzle.hintConfig.map((hintSlot) => {
-      const hintValue = authorized.pitch.hints[hintSlot.hintType];
-      if (hintValue === undefined) {
-        throw new DailyRuntimeRequestError(
-          `Hint ${hintSlot.hintType} is unavailable for pitch ${authorized.claims.pitchNumber}.`,
-        );
-      }
-      return {
-        slot: hintSlot.slot,
-        hintType: hintSlot.hintType,
-        hintLabel: hintSlot.displayLabel,
-        hintValue,
-      };
-    });
-    const checkpoints = hints
-      .filter(hint => hint.slot > authorized.claims.revealCount)
-      .map(hint => ({
-        revealedCount: hint.slot as DailyRevealCount,
-        progressionToken: progressionTokens.sign({
-          ...authorized.claims,
-          revealCount: hint.slot as DailyProgressionClaims['revealCount'],
-        }),
-      }));
-    return {
-      pitchNumber: authorized.pitch.pitchNumber,
-      revealedCount: authorized.claims.revealCount,
-      hints,
-      checkpoints,
-    };
-  }
-
-  /**
-   * The on-demand transport never releases future hint values or pre-signed
-   * reveal checkpoints. The legacy transport remains untouched for existing
-   * clients until an independently reviewed migration to the secure protocol.
-   */
-  function projectHintBundle(bundle: DailyHintBundle): DailyHintBundle {
-    return hintTransport === 'legacy-bundle'
-      ? bundle
-      : {
-          pitchNumber: bundle.pitchNumber,
-          revealedCount: bundle.revealedCount,
-          hints: bundle.hints.filter(hint => hint.slot <= bundle.revealedCount),
-          checkpoints: [],
-        };
-  }
-
-  return {
-    async getPublicPuzzle(date) {
-      return toPublicPuzzle(await createCanonicalPuzzle(date));
-    },
-
-    async getBootstrap(
-      date,
-      rulesetVersion: DailyBootstrapRulesetVersion = CURRENT_DAILY_RULESET_VERSION,
-    ) {
-      if (expectedPuzzleId !== undefined && rulesetVersion !== POINTS_V4_DAILY_RULESET_VERSION) {
-        throw new DailyRuntimeRequestError('Unsupported official edition ruleset.');
-      }
-      const puzzle = await createCanonicalPuzzle(date);
-      const firstPitch = puzzle.pitches[0];
-      if (firstPitch === undefined) {
-        throw new DailyRuntimeRequestError(`Daily puzzle ${puzzle.id} has no pitches.`);
-      }
-      const claims: DailyProgressionClaims = {
-        version: 1,
-        rulesetVersion,
-        puzzleId: puzzle.id,
-        puzzleDate: puzzle.puzzleDate,
-        pitchNumber: firstPitch.pitchNumber,
-        revealCount: 0,
-        strikeCount: 0,
-        outCount: 0,
-        completed: false,
-      };
-      return {
-        rulesetVersion,
-        puzzle: toPublicPuzzle(puzzle),
-        progressionToken: progressionTokens.sign(claims),
-        hintBundle: projectHintBundle(createHintBundle({ claims, puzzle, pitch: firstPitch })),
-      };
-    },
-
-    async getHintBundle(progressionToken) {
-      const authorized = await requireAuthorizedProgression(progressionToken);
-      return { hintBundle: projectHintBundle(createHintBundle(authorized)) };
-    },
-
-    async revealHint(progressionToken) {
-      const authorized = await requireAuthorizedProgression(progressionToken);
-      const bundle = createHintBundle(authorized);
-      const hint = bundle.hints[authorized.claims.revealCount];
-      const checkpoint = bundle.checkpoints.find(
-        candidate => candidate.revealedCount === authorized.claims.revealCount + 1,
-      );
-      if (hint === undefined || checkpoint === undefined) {
-        throw new DailyRuntimeRequestError(
-          `No additional hint exists for pitch ${authorized.claims.pitchNumber}.`,
-        );
-      }
-      return {
-        hint: { hintType: hint.hintType, hintLabel: hint.hintLabel, hintValue: hint.hintValue },
-        progressionToken: checkpoint.progressionToken,
-      };
-    },
-
-    async resolveAtBat(request) {
-      const authorized = await requireAuthorizedProgression(request.progressionToken);
-      const submittedPlayerId = resolveSubmittedPlayerId(request, resolveLegacyPlayerId);
-      const isCorrect = submittedPlayerId === authorized.pitch.player.playerId;
-      const result = request.giveUp === true
-        ? {
-            kind: 'strikeout' as const,
-            revealedCount: authorized.claims.revealCount,
-            strikeCount: maxStrikes,
-            outcome: 'K' as const,
-            source: 'strikeout' as const,
-          }
-        : getGuessOutcome({
-            isCorrect,
-            revealCount: authorized.claims.revealCount,
-            strikeCount: authorized.claims.strikeCount,
-            maxStrikes,
-          });
-      const isTerminal = result.kind === 'correct' || result.kind === 'strikeout';
-      const successorClaims = createSuccessorClaims(authorized, result);
-      const progressionToken = progressionTokens.sign(successorClaims);
-      const successorBundle = successorClaims.completed
-        ? null
-        : createHintBundle({
-            claims: successorClaims,
-            puzzle: authorized.puzzle,
-            pitch: requirePitch(authorized.puzzle, successorClaims.pitchNumber),
-          });
-      return {
-        result,
-        reveal: isTerminal
-          ? createCanonicalRevealViewModel(getCanonicalReveal(authorized.pitch.player.playerId))
-          : null,
-        progressionToken,
-        hintBundle: successorBundle === null ? null : projectHintBundle(successorBundle),
-      };
-    },
-  };
+```json
+{
+  "result": {},
+  "reveal": null,
+  "progressionToken": "next-opaque-token",
+  "hintBundle": null
 }
+```
 
-export function toPublicPuzzle(puzzle: DailyPuzzle): DailyPublicPuzzle {
-  return {
-    id: puzzle.id,
-    puzzleNumber: puzzle.puzzleNumber,
-    puzzleDate: puzzle.puzzleDate,
-    status: puzzle.status,
-    hintConfig: puzzle.hintConfig,
-    statsHintConfig: puzzle.statsHintConfig,
-    pitches: puzzle.pitches.map(pitch => ({
-      pitchNumber: pitch.pitchNumber,
-      initials: pitch.player.initials,
-    })),
-  };
+Every resolution response, including rejected requests, includes a diagnostic `Server-Timing` header of the form:
+
+```text
+Server-Timing: daily-resolve;dur=<milliseconds>
+```
+
+`daily-resolve` measures route-handler processing after the serverless module has initialized. Comparing it with real-browser end-to-end latency therefore helps isolate remaining browser/network/platform-startup overhead. It does not change the JSON contract, does not make the response cacheable, and contains no puzzle, player, answer, reveal, credential, or signing data.
+
+Behavior:
+
+- incorrect guess: no reveal, successor token with one additional strike, refreshed bundle for the same pitch and strike count;
+- correct guess: current reveal, successor token, next-pitch bundle unless complete;
+- third strike/Give Up: current reveal, recorded out, successor token, next-pitch bundle unless complete;
+- all point rulesets complete after the scheduled ninth at-bat, even if three strikeouts have already been recorded;
+- `classic-inning-v1` and `legacy-inning-v1` use the engine-owned non-points completion policy: third recorded out or scheduled ninth at-bat, whichever comes first;
+- every completed successor token returns `hintBundle: null`, so Classic never authorizes a later batter after out three.
+
+The server transport delegates this completion decision to engine `isDailyGameComplete`; routes and React do not duplicate the three-out rule.
+
+Canonical-format submitted IDs are compared directly with the server-only canonical answer ID. This avoids loading the full canonical player index for the ordinary public-search path. A noncanonical/legacy submitted ID is still validated through the canonical redirect boundary; unknown or excluded legacy IDs are rejected. A syntactically valid but nonexistent canonical ID is simply an incorrect anonymous guess. This does not expose the answer or create a score advantage, and it avoids turning full-universe identity validation into a per-guess hot-path cost.
+
+Terminal responses load only the deterministic reveal shard for the canonical answer ID. They do not require the full player index solely to locate that shard. Search and legacy redirect behavior continue to use the full canonical runtime when those capabilities are actually needed.
+
+The browser does not submit pitch, hint depth, strike count, out count, or ruleset version independently. The signed progression token remains authoritative for those claims. After a terminal response, the browser derives the awarded point display from the engine policy and the server-verified reveal/strike facts. For points-v3, a correct resolution awards max(0, 7 - hints revealed - wrong guesses); a third wrong guess or Give Up records K and 0. The route does not duplicate a client-trusted point value.
+
+## Local Hint action
+
+The active client performs no HTTP request on Hint click. It:
+
+1. finds the next current-batter hint in the already authorized bundle;
+2. reveals it locally;
+3. replaces the current progression token with the matching signed checkpoint.
+
+The checkpoint preserves the server-selected ruleset as well as pitch, strike, and reveal claims. Scoring/completion therefore still uses server-verifiable progression on the later resolution request.
+
+## Token contract
+
+Claims contain only contract/ruleset version, puzzle ID/date, current pitch, reveal count, strike count, recorded outs, and completion. Tokens contain no hints or answers.
+
+Valid pre-ruleset tokens normalize to `legacy-inning-v1`. Valid `classic-inning-v1`, `points-v1`, `points-v2`, `points-v3`, and `points-v4` claims round-trip without reinterpretation. Ruleset identity is signed and cannot be changed by a client without invalidating the token signature. Tokens are stateless and replayable; anonymous scoring is not tamper-proof. The runtime now issues points-v4 bootstrap claims for `/` and Classic claims for `/classic`; historical signed claims keep their original exact ruleset.
+
+## Completed-game result submission
+
+### `POST /api/daily/results`
+
+This anonymous endpoint accepts exactly one completed-game submission for an exact supported result ruleset: `points-v3`, `points-v4`, or `classic-inning-v1`. It is not called per hint, guess, or at-bat. H3 permits exact v3/v4 browser completed-result delivery records (plus retained Classic where enabled) under separate ruleset keys; after H5b the ordinary public Daily creates v4 records while existing v3 records remain immutable and separately keyed.
+
+Request contract:
+
+```json
+{
+  "schemaVersion": 1,
+  "submissionId": "stable-client-id",
+  "puzzleId": "stable-puzzle-id",
+  "puzzleDate": "2026-09-17",
+  "puzzleNumber": 144,
+  "rulesetVersion": "points-v3",
+  "completedAtBats": []
 }
+```
 
-function createSuccessorClaims(
-  authorized: AuthorizedProgression,
-  result: DailyGuessResult,
-): DailyProgressionClaims {
-  if (result.kind === 'incorrect') {
-    return { ...authorized.claims, strikeCount: result.strikeCount as 1 | 2 };
-  }
-  const nextOutCount = result.kind === 'strikeout'
-    ? incrementOutCount(authorized.claims.outCount)
-    : authorized.claims.outCount;
-  const currentPitchIndex = authorized.puzzle.pitches.findIndex(
-    candidate => candidate.pitchNumber === authorized.claims.pitchNumber,
-  );
-  if (currentPitchIndex < 0) {
-    throw new DailyRuntimeRequestError(
-      `Unknown pitch ${authorized.claims.pitchNumber} for ${authorized.puzzle.puzzleDate}.`,
-    );
-  }
-  const atBatsCompleted = currentPitchIndex + 1;
-  const completed = isDailyGameComplete(
-    authorized.claims.rulesetVersion,
-    atBatsCompleted,
-    authorized.puzzle.pitches.length,
-    nextOutCount,
-  );
-  const nextPitch = authorized.puzzle.pitches[currentPitchIndex + 1];
-  if (!completed && nextPitch === undefined) {
-    throw new DailyRuntimeRequestError(
-      `Daily progression could not advance after pitch ${authorized.claims.pitchNumber}.`,
-    );
-  }
-  return {
-    version: 1,
-    rulesetVersion: authorized.claims.rulesetVersion,
-    puzzleId: authorized.claims.puzzleId,
-    puzzleDate: authorized.claims.puzzleDate,
-    pitchNumber: completed ? authorized.claims.pitchNumber : nextPitch!.pitchNumber,
-    revealCount: 0,
-    strikeCount: 0,
-    outCount: nextOutCount,
-    completed,
-  };
-}
+The route performs only transport handling. Server composition first rejects unsupported schema/ruleset values, invalid calendar dates, and future Pacific dates before loading a puzzle. It then loads the same authoritative public puzzle used by gameplay through the server Daily runtime using the exact routed ruleset, without minting a progression token or building an active hint bundle.
 
-function requirePitch(puzzle: DailyPuzzle, pitchNumber: number): DailyPuzzle['pitches'][number] {
-  const pitch = puzzle.pitches.find(candidate => candidate.pitchNumber === pitchNumber);
-  if (pitch === undefined) {
-    throw new DailyRuntimeRequestError(`Unknown pitch ${pitchNumber} for ${puzzle.puzzleDate}.`);
-  }
-  return pitch;
-}
+Engine `validateDailyCompletedResult` remains the authority for puzzle identity, ordered native facts, completion consistency, and summary derivation. Client-supplied totals, answer fields, and unknown extras are never persisted as authority. A successful normalized result flows through the 4B first-write-wins service and the server-only Supabase provider.
 
-function resolveSubmittedPlayerId(
-  request: DailyResolutionRequest,
-  resolveLegacyPlayerId: (playerId: string) => string,
-): string | null {
-  if (request.giveUp === true) return null;
-  const submittedPlayerId = request.submittedPlayerId?.trim();
-  if (!submittedPlayerId) {
-    throw new DailyRuntimeRequestError('submittedPlayerId is required for a guess.');
-  }
-  if (isCanonicalPlayerIdFormat(submittedPlayerId)) return submittedPlayerId;
-  try {
-    return resolveLegacyPlayerId(submittedPlayerId);
-  } catch {
-    throw new DailyRuntimeRequestError('submittedPlayerId does not resolve to a canonical player.');
+Responses expose only status/error codes:
+
+- `201 {"status":"created"}`: first successful insert for the submission ID;
+- `200 {"status":"existing"}`: identical idempotent retry;
+- `409 {"error":"idempotency_conflict"}`: the ID already belongs to a different normalized result;
+- `400 {"error":"..."}`: malformed, unsupported, inconsistent, incomplete, future, or mismatched submission;
+- `503 {"error":"completed_result_unavailable"}`: known provider/configuration unavailability;
+- `500 {"error":"completed_result_unavailable"}`: unexpected server fault.
+
+Every response is `private, no-store`. The route does not return normalized at-bat facts, score summaries, answer IDs/names, hints, credentials, or provider details.
+
+The endpoint is consistency-authoritative, not proof of honest anonymous play. It deliberately does not introduce an account, durable gameplay session, per-action event log, or stronger anti-cheat model. The browser client adapter owns a separate immutable delivery record containing the exact schema-1 payload, one stable `submissionId`, and local delivery status. H3 permits exact v3/v4 browser completion delivery under ruleset-keyed records; gameplay activation is still gated by browser-local provenance, so only a genuine current-session native completion may create a new record while an already-persisted pending record may retry without recreating facts.
+
+## Resolved-at-bat result submission
+
+### `POST /api/daily/at-bats`
+
+This anonymous server boundary accepts one terminal Daily Nine AB observation for exactly `points-v3` or `points-v4`. It is separate from `/api/daily/resolve`; gameplay resolution never waits for this persistence path. H3 permits the browser journal/outbox to produce exact v3/v4 observations under separate ruleset identity. The ordinary public game still produces v3 today because `CURRENT_DAILY_RULESET_VERSION` remains v3.
+
+Request contract:
+
+```json
+{
+  "schemaVersion": 1,
+  "attemptId": "stable-run-id",
+  "puzzleId": "stable-puzzle-id",
+  "puzzleDate": "2026-09-18",
+  "puzzleNumber": 145,
+  "rulesetVersion": "points-v3",
+  "atBat": {
+    "pitchNumber": 7,
+    "initials": "RH",
+    "outcome": "3B",
+    "hintsRevealed": 1,
+    "wrongGuesses": 1,
+    "resolution": "correct"
   }
 }
+```
 
-function requireConfiguredRuntime(runtime: CanonicalRuntimeAccessor | undefined): CanonicalRuntimeAccessor {
-  if (runtime === undefined) {
-    throw new DailyRuntimeRequestError('Canonical runtime capability is unavailable.');
-  }
-  return runtime;
-}
+Server composition preflights only object/schema/date/ruleset fields required to route the request and rejects future Pacific dates before puzzle loading. It then loads the same authoritative cached public puzzle used by gameplay using the exact routed ruleset, calls engine `validateDailyAtBatResult` with that exact version, and stores the normalized result through the Daily first-write-wins service and server-only Supabase provider. Client points, answers, timestamps and unknown extras are discarded; the engine derives `awardedPoints`.
 
-function incrementOutCount(
-  value: DailyProgressionClaims['outCount'],
-): DailyProgressionClaims['outCount'] {
-  return Math.min(value + 1, 3) as DailyProgressionClaims['outCount'];
+Responses expose only status/error codes:
+
+- `201 {"status":"created"}`: first insert for the observation key;
+- `200 {"status":"existing"}`: identical immutable retry;
+- `409 {"error":"idempotency_conflict"}`: the key already belongs to different normalized facts/metadata;
+- `400 {"error":"..."}`: malformed, unsupported, inconsistent, future or mismatched observation;
+- `503 {"error":"at_bat_result_unavailable"}`: known provider/configuration unavailability;
+- `500 {"error":"at_bat_result_unavailable"}`: unexpected server fault.
+
+Every response is `private, no-store` and contains no normalized facts, points, answer IDs/names, hints, credentials or provider details. This consistency boundary is not proof of a unique person or honest play. Browser attempt identity, atomic cross-tab ownership, immutable outbox/retry and reset/legacy behavior remain authoritative for whether the app sends observations. H3 widens those browser producer paths to exact-version points-v3/points-v4 while preserving the same schema-1 payload and ruleset-keyed journal/lock identity; this is still compatibility infrastructure because the public default remains points-v3.
+
+## Daily Nine comparison reads
+
+### `GET /api/daily/comparison/at-bat`
+### `GET /api/daily/comparison/completed`
+
+These read-only adapters accept exact Daily Nine comparison rulesets `points-v3` or `points-v4`. They take routing fields only (`date`, `ruleset`, and `pitch` for the at-bat route), load authoritative puzzle identity server-side, and read the exact puzzle + exact ruleset population. Classic, legacy, points-v1 and points-v2 are unsupported at this comparison boundary.
+
+Schema 1 carries exact ruleset identity. At-bat responses return resolved count plus nullable average points. Completed responses return completed count, nullable average total points, and an offset histogram interpreted by the exact ruleset: v3 has 64 slots for 0..63 in one-point steps; v4 has 73 slots for 0..36 in 0.5-point steps. The browser requires response identity to match the request exactly. Fractional v4 values are valid numbers, not rounded integers.
+
+Comparison reads remain `private, no-store`, asynchronous, fail-quiet and off gameplay's critical path. Active-slot prefetch may begin before terminal resolution, but comparison data remains hidden until the user's engine-derived own points exist. Provider/read failures do not block gameplay or result persistence.
+
+## Browser persistence
+
+The browser persists public gameplay state and the current opaque token, not the full authorized hint bundle. On ordinary transitions, the server response supplies the next bundle. On refresh, `/api/daily/hints` hydrates the bundle before the restored at-bat becomes interactive. The historical pre-v4 Daily family (`legacy-inning-v1`, points-v1, points-v2, points-v3) keeps the existing `initial-baseball:daily:<date>` key so already-started old sessions can still restore under the current points-v3 compatibility policy. Current-Daily points-v4 uses `initial-baseball:daily:ruleset:points-v4:<date>:puzzle:<encoded-puzzle-id>`. Its prior date/ruleset key is a backward-compatible read fallback: matching puzzle identity can restore, known other-puzzle identity is ignored, and unclassifiable values remain present/unusable so contribution fails closed. Reset clears the scoped value and matching/unidentified fallback while preserving known other-puzzle state. Future rulesets require an explicit storage/compatibility decision. Points-v4 therefore cannot read, overwrite, clear or reset the historical v3-era value, and points-v3 explicitly rejects a v4 payload. Classic remains in its distinct `initial-baseball:daily:classic:<date>` namespace, while permanent archive saves remain puzzle+ruleset keyed. No H2 path copies, deletes or rewrites an existing save. Persistence is a browser adapter concern; the signed token remains authoritative for ruleset/pitch/strike/reveal claims. Completed-result retry bookkeeping uses the separate `initial-baseball:daily-result-submission:v1:<ruleset>:<date>:<puzzle>` namespace and never mutates the Daily save. The record is written before the first POST and stores the exact submission payload, not merely the ID. A pending record survives refresh and retries the same ID **and the same raw facts** even if current gameplay/replay state differs. The client exposes `allowCreate=false` so activation code can retry an existing record without retroactively creating one from an old completed save. Gameplay reset preserves the independent delivery identity across local replay because a server aggregate row cannot be un-submitted. Resetting local gameplay therefore cannot mint another browser contribution for the same puzzle/ruleset. Terminal delivery status is local bookkeeping, not gameplay or aggregate authority.
+
+Before `POST /api/daily/at-bats` is called from gameplay, a separate version-1 points-v3/points-v4 attempt journal/outbox is persisted under its exact puzzle/ruleset namespace. One long-lived exclusive Web Lock with the same exact ruleset identity owns the contributing run across tabs. Only the owner may write the shared gameplay save or journal; another tab remains passive until takeover, then reloads durable state before continuing. Each terminal commit persists gameplay first, appends the exact immutable schema-1 request second, and only then starts the POST. Reset after any local observation retires the journal before clearing gameplay. Hydration mismatches retire contribution without reconstructing facts. Pre-rollout saves remain completion-only, and existing completed-result records are never rewritten. Missing lock/storage/random-ID capability disables new AB contribution rather than weakening identity. Detailed implementation sequence: `tasks/plans/resolved-at-bat-browser-lifecycle.md`.
+
+## Caching and privacy
+
+- Bootstrap/public page data may use safe revalidation.
+- The fully materialized server-only public Daily puzzle is cached by puzzle date with a 300-second safety revalidation window; successful authenticated admin saves invalidate that cache.
+- The materialized cache may contain server-only answer IDs and hint data required for authorized resolution, but it is never itself a public response and does not alter bootstrap serialization rules.
+- Hint-bundle, one-hint, and resolution responses are `private, no-store`; resolution responses themselves are never cached.
+- Resolution responses may expose only the diagnostic `daily-resolve` timing duration above in addition to their normal sanitized body/headers.
+- Logs must not include signing secrets, answer IDs, credentials, or full reveals.
+- No Redis, replay cache, per-action database write, or durable anonymous session is required.
+
+## Private Daily lineup ChatOps
+
+### `POST /admin/daily/chatops`
+
+This is a server-to-server operational adapter, not a browser or public gameplay API. It exists so an authorized assistant transport can apply one exact future nine-player lineup without manually replacing nine admin slots.
+
+Authorization uses `Authorization: Bearer <DAILY_CHATOPS_TOKEN>`. The token is server-only, must be at least 32 characters, and is checked before privileged Supabase repository construction. Successful operations use the fixed audit actor `chatops:assistant`.
+
+Request:
+
+```json
+{
+  "puzzleDate": "2026-09-18",
+  "canonicalPlayerIds": ["canonical-1", "canonical-2", "canonical-3", "canonical-4", "canonical-5", "canonical-6", "canonical-7", "canonical-8", "canonical-9"],
+  "schedule": true
 }
+```
+
+The request requires exactly nine unique, reviewed canonical Daily candidate IDs in batting order and an explicit schedule boolean. The route rejects malformed input, unknown candidates, and current/past dates. It ensures a draft exists for the future date, then delegates one atomic lineup replacement to the existing Daily workflow/lifecycle. Published and archived records remain immutable. Replacing a scheduled future puzzle returns it to draft before an explicit schedule transition.
+
+The response returns the persisted puzzle date/number/status/revision, the ordered canonical IDs/display names for readback, and the existing lineup validation result so the assistant can surface repeat/recognizability warnings rather than silently weakening them. It is `private, no-store`.
+
+Supabase remains persistence only. The concrete connected-assistant transport is the non-exposed `private.dispatch_daily_lineup_chatops(text, text[], boolean)` function installed by `supabase/migrations/20260916130000_enable_daily_chatops_transport.sql`. It is `SECURITY INVOKER`, retrieves the bearer token from Supabase Vault at dispatch time, and uses `pg_net` only to POST the JSON request to this route. Execution is revoked from `public`, `anon`, and `authenticated`. The function contains no lineup/lifecycle rules and never writes `daily_editorial_puzzles` directly. Because this repository is public, future lineup payloads must not be transported through GitHub issues, commits, pull requests, or public Actions inputs. Operational details and credential setup are in `docs/operations/daily-lineup-chatops.md`.
+
+## Private admin attempt report
+
+`GET /admin/daily/attempts` renders the private anonymous-attempt table; `GET /admin/daily/attempts/export` downloads the same filtered page as CSV. Both require existing Daily admin Basic credentials before any DB read. CSV returns a 401 Basic challenge for unauthorized callers, 400 for invalid filters, 503 for unavailable reports, and `private, no-store` / `nosniff` on every response. The page is force-dynamic and redirects unauthorized callers to `/admin/auth`; report failures expose no raw provider error.
+
+Filters: `date` defaults to the current Pacific day; optional `puzzleId` selects one exact edition (blank defaults to the stored editorial lineup); `ruleset` is points-v3 or points-v4, default v4. `abAfter` and `completedAfter` are independent opaque attempt/submission ID cursors produced by the report links. Reads scan up to 50 AB attempts and 50 completions per page, join only matching IDs and include completion-only rows separately. The CSV exports this bounded page only, with quoted/formula-neutralized cells, per-slot source and UTC receipt time; the grid displays Eastern receipt times. No named identity, mutation, hidden answer or aggregate recalculation is part of this endpoint.
+
+## Deferred APIs
+
+Completed-result aggregate/percentile reads, accounts, authoritative streaks/leaderboards, and head-to-head/social APIs require separate decisions. Browser result submission/retry is a client workflow over the completed-game POST endpoint, not a separate public API.
+
+
+## Authenticated archive-beta publication completion
+
+Public archive composition lives at `/archive` (metadata-only recent issued catalog) and `/archive/N` (issued beta bootstrap). Pre-epoch, current/future, malformed-number and missing-record requests fail closed; rendering never issues or regenerates a row. Existing `/api/daily/hints`, hint and resolution transports verify the signed progression token before dispatching beta IDs to the issued-puzzle runtime. That runtime independently verifies exact puzzle ID/date and retains current redaction, hint authorization and scoring. No answer IDs or future-batter hint values enter bootstrap props. Browser saves include exact beta puzzle/ruleset identity; archive gameplay does not submit to current-Daily result APIs or read current-Daily comparison populations. No new API endpoint, schema or permanent launch configuration is introduced.
+
+`POST /admin/daily/lifecycle` retains existing Basic administrator authentication and same-origin mutation admission. For `action=publish` and dates in the explicitly configured disposable beta epoch, it commits the portable editorial publication first, then invokes immutable archive-beta issuance and verifies exact persisted content by date and number. Future published dates may be frozen; this operation exposes no public archive content or future availability.
+
+A successful operation returns a metadata-only 303 redirect with `private, no-store`. A failed archive copy/read-back after publication returns sanitized 503 with a Verify archive copy retry instruction. Retrying the publish operation for an already published beta-eligible record skips the editorial transition and preserves its revision/audit fields, while immutable issuance preserves the first timestamp/content or rejects a conflict. Scheduling and pre-epoch publication retain the existing lifecycle path. Beta-eligible archiving verifies the copy before retiring the published retry path; a failed verification keeps the lineup published. Immutable-content conflict is a sanitized 409 requiring editorial review, not a retryable 503. This is a two-write completion operation, not a distributed transaction; publication is not rolled back after archive failure.
+
+Explicit `POST /admin/daily/archive-beta/issue` remains separately authenticated and restricted to the beta start through the current Pacific date. Both operations share the same server-only issuance/read-back composition; neither serializes answer IDs, clues or provider error payloads. Public route renders never issue puzzles.
+
+## Completed-day archive rollover
+
+`POST /admin/daily/archive-beta/rollover` accepts existing Basic administrator authorization or the existing `DAILY_CHATOPS_TOKEN` Bearer principal. Cross-origin requests are rejected and authorization completes before repository access. No date, lineup, or cutoff is supplied by the caller: the server determines completed Pacific dates from the explicit beta epoch. It returns metadata-only cutoff/created/preserved/remaining counts and sanitized per-date failure categories, with `private, no-store`; complete runs return 200 and incomplete/unavailable runs 503. Missing/incorrect credentials fail closed with 401/503. Publication and immutable copy/read-back are separate writes; failed copies retry against committed publication without another audit revision. Existing copies/timestamps are retained without clue regeneration. Public catalog/gameplay GETs remain read-only. Scheduler activation belongs to the following private-transport migration, not this endpoint release.
+
+## Official edition issuance boundary
+
+The official Daily publication candidate is server-private. Its clue snapshot includes canonical answers and unrevealed hints. Keep it out of route responses, rendered props and error logs. The server materialization boundary reports only a generic preparation failure. Public routes for additional editions require separate ID-based admission and spoiler-safe projections.
+
+The internal official publication writer takes a trusted editorial occurrence and returns created/existing plus puzzle ID, or conflict. It compares immutable fields and frozen clues on duplicate ID, omitting the database-generated issuance time from replay comparison. A date/edition collision under another ID also yields conflict. Only a future authorized editor action with revision checks may call it.
+
+## Restricted secondary official Daily editorial drafts (source staged, default OFF)
+
+POST /admin/daily/editions/drafts creates one future-date, independently named
+nine-player secondary editorial draft. PATCH on the same endpoint schedules an
+existing draft by occurrenceId and expectedRevision, after private canonical
+clue verification and an optimistic revision compare-and-swap. Creation accepts
+puzzleDate, editionKey, editionNumber (2 or greater while legacy primary is
+authoritative), optional title, and an ordered canonicalPlayerIds array of nine.
+The server allocates the occurrence UUID and derives the date's editorial number.
+The authenticated principal, not the request body, supplies audit identity.
+
+Both methods require exact server flag OFFICIAL_DAILY_EDITOR_DRAFTS_ENABLED=true,
+existing Daily administrator Basic authorization, same-origin mutation,
+application/json, a bounded 8192-byte body, and no URL query parameters.
+Responses contain only occurrenceId, revision and status with private, no-store.
+Invalid inputs, revision races and unavailable storage are sanitized; no hidden
+answers or hints are returned. Public play, issued publication, Archive and
+the legacy primary remain unaffected. The new editorial database migration,
+hosted QA and physical acceptance are separate prerequisites; production
+activation requires explicit release approval.
+
+## Opt-in, spoiler-safe on-demand Daily hint transport (staged)
+
+The shared server Daily runtime supports a new opt-in on-demand hint projection.
+For that mode, bootstrap, resume and next-batter hint bundles contain only
+values already revealed by the signed progression token, and **no presigned
+future reveal checkpoints**. The explicit revealHint command remains the sole
+transport of the next clue and its next signed progression token. Each
+incorrect guess preserves the same partial visibility; an at-bat completion
+never preloads the next batter's clue. The private server may still construct
+complete hint bundles internally for authoritative resolution.
+
+Legacy bundle transport remains the default and unchanged for existing Daily
+clients. No public route activates on-demand mode yet; the secondary exact-ID
+runtime must opt in explicitly. That rollout also requires fresh client-side
+state handling, Pacific date admission, score isolation, and device QA.
+
+The private exact-ID adapter binds a runtime to one frozen publication and the issued points-v4 ruleset. Its reader must enforce Pacific release eligibility and return the exact materialized puzzle or null. Signed continuation tokens for another edition or ruleset fail before publication lookup. Bootstrap, continuation and terminal play use the shared Daily runtime with incremental hints. Competitive admission is gated separately by #566.
