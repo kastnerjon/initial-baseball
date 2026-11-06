@@ -105,6 +105,28 @@ describe('default-OFF exact-ID official Daily HTTP adapter', () => {
     noRuntime();
   });
 
+  it('rejects oversized POST bodies even if Content-Length is absent or forged', async () => {
+    const oversized = JSON.stringify({ progressionToken: 'x'.repeat(9000) });
+    for (const headers of [
+      { 'content-type': 'application/json' },
+      { 'content-type': 'application/json', 'content-length': '12' },
+    ]) {
+      const response = await POST(new Request(URL + 'hint', {
+        method: 'POST', headers, body: oversized,
+      }), context('hint'));
+      expect(response.status).toBe(400);
+      expect(await response.json()).toEqual({ error: 'invalid_request' });
+    }
+    noRuntime();
+  });
+
+  it('permits a correctly-sized maximum-length signed token envelope', async () => {
+    const token = 'x'.repeat(4096);
+    const response = await POST(post('hint', { progressionToken: token }), context('hint'));
+    expect(response.status).toBe(200);
+    expect(runtime.revealHint).toHaveBeenCalledWith(token);
+  });
+
   it('redacts backend diagnostics and refuses malformed edition IDs through the private composer', async () => {
     vi.mocked(createServerOfficialDailyEditionRuntime).mockImplementationOnce(() => {
       throw new Error('PRIVATE_DB_ERROR_OR_TOKEN');
