@@ -34,7 +34,7 @@ function database(rows: unknown[], error: unknown = null) {
   const query = {
     select: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
-    lte: vi.fn().mockReturnThis(),
+    lt: vi.fn().mockReturnThis(),
     or: vi.fn().mockReturnThis(),
     order: vi.fn().mockReturnThis(),
     gt: vi.fn().mockReturnThis(),
@@ -159,13 +159,32 @@ describe('private cross-date Archive catalog', () => {
     expect(first.nextCursor).toEqual({ puzzleDate: DATE, editionNumber: 2 });
     expect(first.dates.map(group => group.editions.map(item => item.puzzleId))).toEqual([[edition(2).puzzle_id]]);
     expect(db.query.select).toHaveBeenCalledWith(expect.not.stringContaining('clue_snapshot'));
-    expect(db.query.lte).toHaveBeenCalledWith('puzzle_date', '2026-11-07');
+    expect(db.query.lt).toHaveBeenCalledWith('puzzle_date', '2026-11-07');
     expect(db.query.order.mock.calls).toEqual([['puzzle_date', { ascending: false }], ['edition_number', { ascending: true }]]);
     const next = database([edition(3), older]);
     const page = await listPrivateOfficialDailyArchivePage(next.client, { after: first.nextCursor!, pageSize: 2 }, NOW);
     expect(next.query.or).toHaveBeenCalledWith('puzzle_date.lt.2026-11-06,and(puzzle_date.eq.2026-11-06,edition_number.gt.2)');
     expect(page.dates.map(group => group.puzzleDate)).toEqual([DATE, older.puzzle_date]);
     expect(page.nextCursor).toBeNull();
+  });
+
+  it('never includes a current-day edition in the Archive, even with a bad provider response', async () => {
+    const current = new Date('2026-11-06T12:00:00.000Z');
+    const badProvider = database([edition(2)]);
+    await expect(listPrivateOfficialDailyArchivePage(badProvider.client, {}, current))
+      .rejects.toMatchObject({ kind: 'unavailable' });
+    expect(badProvider.query.lt).toHaveBeenCalledWith('puzzle_date', DATE);
+
+    const cursorProvider = database([]);
+    await expect(listPrivateOfficialDailyArchivePage(cursorProvider.client, {
+      after: { puzzleDate: DATE, editionNumber: 2 },
+    }, current)).rejects.toMatchObject({ kind: 'invalid' });
+    expect(cursorProvider.from).not.toHaveBeenCalled();
+
+    const completed = database([edition(2)]);
+    const pastPage = await listPrivateOfficialDailyArchivePage(completed.client, {}, NOW);
+    expect(pastPage.dates[0]?.editions[0]?.puzzleId).toBe(edition(2).puzzle_id);
+    expect(completed.query.lt).toHaveBeenCalledWith('puzzle_date', '2026-11-07');
   });
 
   it('rejects invalid cursors before query construction and future or stale rows before projection', async () => {

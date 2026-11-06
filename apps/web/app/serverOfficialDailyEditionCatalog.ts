@@ -157,7 +157,7 @@ export async function listPrivateOfficialDailyEditionsByDate(
 type ArchiveCursor = Readonly<{ puzzleDate: string; editionNumber: number }>;
 type ArchiveEditionGroup = { puzzleDate: string; editions: OfficialDailyCatalogEdition[] };
 
-/** Read answer-free archive metadata newest date first, continuing within arbitrarily large dates. */
+/** Read completed-Pacific-day archive metadata newest first, continuing within arbitrarily large dates. */
 export async function listPrivateOfficialDailyArchivePage(
   client: SupabaseClient,
   input: Readonly<{ after?: ArchiveCursor; pageSize?: number }> = {},
@@ -172,11 +172,11 @@ export async function listPrivateOfficialDailyArchivePage(
     ...(after === undefined ? {} : { afterEditionNumber: after.editionNumber }),
     ...(input.pageSize === undefined ? {} : { pageSize: input.pageSize }),
   });
-  if (after !== undefined && (!isOfficialDailyPositiveNumber(after.editionNumber) || after.puzzleDate > today)) {
+  if (after !== undefined && (!isOfficialDailyPositiveNumber(after.editionNumber) || after.puzzleDate >= today)) {
     throw new OfficialDailyCatalogError('invalid');
   }
   try {
-    let query = client.from(TABLE).select(COLUMNS).lte('puzzle_date', today)
+    let query = client.from(TABLE).select(COLUMNS).lt('puzzle_date', today)
       .order('puzzle_date', { ascending: false }).order('edition_number', { ascending: true });
     if (after !== undefined) {
       // Both interpolated values passed strict calendar/integer validation above.
@@ -188,7 +188,7 @@ export async function listPrivateOfficialDailyArchivePage(
     let previous = after;
     let lastReturned: ArchiveCursor | null = null;
     for (const [index, row] of data.entries()) {
-      if (typeof row?.puzzle_date !== 'string' || row.puzzle_date > today) throw new OfficialDailyCatalogError('unavailable');
+      if (typeof row?.puzzle_date !== 'string' || row.puzzle_date >= today) throw new OfficialDailyCatalogError('unavailable');
       validateIssuedDailyCalendarDate(row.puzzle_date);
       const edition = parseRow(row, row.puzzle_date);
       if (previous && (edition.puzzleDate > previous.puzzleDate ||
