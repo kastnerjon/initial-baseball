@@ -533,3 +533,15 @@ or scoring behavior is activated by this command.
 The transaction migration (#559), draft-admin path (#560), exact-ID reader
 (#558), hosted QA and independent release checks are separate prerequisites.
 Production migration/activation still requires release approval.
+
+## On-demand Daily hint browser reconciliation (source staged, no route activation)
+
+The web-only on-demand hint reconciler accepts one server reveal response at a
+time, checks its exact next hint slot against the public hint configuration,
+rejects replayed or mismatched responses and any preloaded future hint/checkpoint,
+and derives the next visible hint bundle without manufacturing a signed token.
+Existing Daily and Classic clients continue to use the legacy local checkpoint
+transport unchanged. The returned opaque progression token is not verified in
+the browser; the server validates it on the next action. Request-generation
+fencing, exact edition routing, player UI, private hosted QA and physical mobile
+verification remain prerequisites before activation.
