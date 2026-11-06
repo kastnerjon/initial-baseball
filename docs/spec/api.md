@@ -533,3 +533,7 @@ or scoring behavior is activated by this command.
 The transaction migration (#559), draft-admin path (#560), exact-ID reader
 (#558), hosted QA and independent release checks are separate prerequisites.
 Production migration/activation still requires release approval.
+
+### Source-only anonymous secondary Daily first-open coordination (A3 gate)
+
+The browser-only `attemptOfficialDailyAnonymousFirstOpen` helper stages an origin-wide exclusive Web Lock for anonymous credential establishment across **all** official Daily editions, not a per-puzzle lock. Under that lock it first asks the server to confirm an existing HttpOnly cookie. When absent, it calls the separate noncompetitive initialization transport and then **requires a second server-confirmed cookie readback** before asking the server to start a live attempt. No browser-supplied credential, account identity or player/score fact conveys eligibility. Unavailable locks, failed confirmation, cancellation and initialization errors block live start; a lost start response requires reconciliation rather than an automatic new attempt. The helper has no default HTTP URLs, registered UI consumer, new database schema, score writer, route or active flag. Its injected functions are future server-authorized transports; the retained cooperating-browser guarantee is not one-attempt-per-human. It does not resolve the durable reservation, transactional scoring, signing-key rotation or physical two-tab QA gates of issue #566.
