@@ -171,7 +171,8 @@ function validatePublicReveal(value: unknown): boolean {
     && publicTeamIds(season.teamIds) && validateStatLines(season.lines));
 }
 
-function validateBootstrap(value: unknown, puzzleId: string, date: string): DailyBootstrap {
+/** Strict public-only contract used before both HTTP returns and SSR client-prop serialization. */
+export function validateOfficialDailyEditionBootstrap(value: unknown, puzzleId: string, date: string): DailyBootstrap {
   if (!isRecord(value)
       || !hasKeys(value, ['rulesetVersion', 'puzzle', 'progressionToken', 'hintBundle'])
       || value.rulesetVersion !== POINTS_V4_DAILY_RULESET_VERSION
@@ -256,7 +257,7 @@ export function createOfficialDailyEditionHttpTransport(
     async bootstrap(date: string): Promise<DailyBootstrap> {
       try { validateIssuedDailyCalendarDate(date); } catch { incompatible(); }
       const value = await getJson(path + 'bootstrap?date=' + encodeURIComponent(date));
-      return validateBootstrap(value, puzzleId, date);
+      return validateOfficialDailyEditionBootstrap(value, puzzleId, date);
     },
     async hint(progressionToken: string): Promise<DailyHintResponse> {
       validProgressionToken(progressionToken);
