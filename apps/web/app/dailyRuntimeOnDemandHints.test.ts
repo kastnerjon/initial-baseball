@@ -109,6 +109,9 @@ describe('exact-ID official runtime', () => {
     expect(boot.hintBundle.checkpoints).toEqual([]);
     expect((await edition(first).revealHint(boot.progressionToken)).hint.hintValue).toBe(firstHint);
     readEligiblePuzzle.mockClear();
+    await expect(edition(first).getBootstrap(date, 'points-v3')).rejects.toThrow();
+    const wrongRuleset = tokens.sign({ ...tokens.verify(boot.progressionToken), rulesetVersion: 'points-v3' });
+    await expect(edition(first).getHintBundle(wrongRuleset)).rejects.toThrow();
     await expect(edition(second).revealHint(boot.progressionToken)).rejects.toThrow();
     await expect(edition(second).getHintBundle('invalid')).rejects.toThrow();
     expect(readEligiblePuzzle).not.toHaveBeenCalled();
