@@ -461,7 +461,31 @@ Explicit `POST /admin/daily/archive-beta/issue` remains separately authenticated
 
 The official Daily publication candidate is server-private. Its clue snapshot includes canonical answers and unrevealed hints. Keep it out of route responses, rendered props and error logs. The server materialization boundary reports only a generic preparation failure. Public routes for additional editions require separate ID-based admission and spoiler-safe projections.
 
+The internal official publication writer takes a trusted editorial occurrence and returns created/existing plus puzzle ID, or conflict. It compares immutable fields and frozen clues on duplicate ID, omitting the database-generated issuance time from replay comparison. A date/edition collision under another ID also yields conflict. Only a future authorized editor action with revision checks may call it.
+
 The server-only exact-ID reader validates each immutable official v1 row and clones its private issued clue snapshot before any gameplay projection. Invalid IDs return no match; malformed stored records and provider failures use a generic error without answers. This reader is deliberately not a public endpoint: future public admission must check the Pacific game date, signed progression, archive practice context, and spoiler-safe one-hint transport before exposing any data.
+
+## Restricted secondary official Daily editorial drafts (source staged, default OFF)
+
+POST /admin/daily/editions/drafts creates one future-date, independently named
+nine-player secondary editorial draft. PATCH on the same endpoint schedules an
+existing draft by occurrenceId and expectedRevision, after private canonical
+clue verification and an optimistic revision compare-and-swap. Creation accepts
+puzzleDate, editionKey, editionNumber (2 or greater while legacy primary is
+authoritative), optional title, and an ordered canonicalPlayerIds array of nine.
+The server allocates the occurrence UUID and derives the date's editorial number.
+The authenticated principal, not the request body, supplies audit identity.
+
+Both methods require exact server flag OFFICIAL_DAILY_EDITOR_DRAFTS_ENABLED=true,
+existing Daily administrator Basic authorization, same-origin mutation,
+application/json, a bounded 8192-byte body, and no URL query parameters.
+Responses contain only occurrenceId, revision and status with private, no-store.
+Invalid inputs, revision races and unavailable storage are sanitized; no hidden
+answers or hints are returned. Public play, issued publication, Archive and
+the legacy primary remain unaffected. The new editorial database migration,
+hosted QA and physical acceptance are separate prerequisites; production
+activation requires explicit release approval.
+
 
 ## Private official-edition date catalog (staged, no public route)
 
