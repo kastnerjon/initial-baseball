@@ -80,3 +80,9 @@ These gates are separate from Custom Lineups Phase 1. Keep them active until eac
 ## Official Daily publication storage
 
 - [ ] Rehearse the additive official_daily_publications migration on an isolated production-shaped Daily database after review. The migration file and disposable PostgreSQL test alone do not enable publication. Verify service-only append/read privileges, same-date identical rosters, collision handling and old-reader compatibility before connecting the restricted admin writer. Preserve the existing primary and numbered archive.
+
+## Official Daily exact-ID gameplay: frozen materializer (staged)
+
+- [ ] Integrate the private exact-ID reader with the shared frozen-clue DailyPuzzle materializer under explicit server admission and date checks. This source-only adapter does not create public gameplay.
+- [ ] Replace any bulk release of unrevealed hints in secondary edition bootstrap, resume, next-pitch and hint-bundle endpoints with single authorized reveal transport. Preserve the existing primary until parity checks.
+- [ ] Verify edition-scoped progression, scores, share links, browser persistence and historical/archived practice before enabling public routes.
