@@ -505,6 +505,10 @@ delayed-live-versus-archive admission as tracked in GitHub issue #566.
 Never enable a secondary leaderboard or score-write path merely by teaching
 the authoritative loader to find new IDs.
 
+## Server-only released official Daily reader (staged)
+
+Private gameplay reads apply a server-clock Pacific date ceiling in the exact-ID publication query. Missing and future editions produce no puzzle. Only a validated, released snapshot reaches the shared frozen materializer. Unrestricted private editorial readback remains available for scheduling. Gameplay reads alone confer no scoring eligibility.
+
 ## Opt-in, spoiler-safe on-demand Daily hint transport (staged)
 
 The shared server Daily runtime supports a new opt-in on-demand hint projection.
