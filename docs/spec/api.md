@@ -559,3 +559,5 @@ not included or changed. Public date/edition browsing and full
 archive grouping require separately reviewed UI and server admission;
 the immutable official publication store and rollout flags remain
 release-gated.
+
+The private cross-date official Archive catalog groups metadata for completed Pacific dates only (strictly before the current Pacific game date), descending by date and ascending by edition number. Its cursor contains the last returned date and edition number so a single date may span pages. The public Archive must also retain historical numbered entries and their device-local results. This private query does not issue play links or change the public Archive.

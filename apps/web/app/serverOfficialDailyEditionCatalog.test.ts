@@ -5,6 +5,7 @@ vi.mock('server-only', () => ({}));
 
 import {
   listPrivateOfficialDailyEditionsByDate,
+  listPrivateOfficialDailyArchivePage,
   OfficialDailyCatalogError,
 } from './serverOfficialDailyEditionCatalog';
 
@@ -33,6 +34,8 @@ function database(rows: unknown[], error: unknown = null) {
   const query = {
     select: vi.fn().mockReturnThis(),
     eq: vi.fn().mockReturnThis(),
+    lt: vi.fn().mockReturnThis(),
+    or: vi.fn().mockReturnThis(),
     order: vi.fn().mockReturnThis(),
     gt: vi.fn().mockReturnThis(),
     limit: vi.fn(async () => ({ data: rows, error })),
@@ -144,6 +147,55 @@ describe('private official Daily date catalog', () => {
       expect(error).toBeInstanceOf(OfficialDailyCatalogError);
       expect(String(error)).not.toContain('private-player');
       expect(String(error)).not.toContain('secret-hint');
+    }
+  });
+});
+
+describe('private cross-date Archive catalog', () => {
+  const older = { ...edition(4), puzzle_date: '2026-11-05', puzzle_number: 193 };
+  it('continues a partially returned day before moving to older dates', async () => {
+    const db = database([edition(2), edition(3)]);
+    const first = await listPrivateOfficialDailyArchivePage(db.client, { pageSize: 1 }, NOW);
+    expect(first.nextCursor).toEqual({ puzzleDate: DATE, editionNumber: 2 });
+    expect(first.dates.map(group => group.editions.map(item => item.puzzleId))).toEqual([[edition(2).puzzle_id]]);
+    expect(db.query.select).toHaveBeenCalledWith(expect.not.stringContaining('clue_snapshot'));
+    expect(db.query.lt).toHaveBeenCalledWith('puzzle_date', '2026-11-07');
+    expect(db.query.order.mock.calls).toEqual([['puzzle_date', { ascending: false }], ['edition_number', { ascending: true }]]);
+    const next = database([edition(3), older]);
+    const page = await listPrivateOfficialDailyArchivePage(next.client, { after: first.nextCursor!, pageSize: 2 }, NOW);
+    expect(next.query.or).toHaveBeenCalledWith('puzzle_date.lt.2026-11-06,and(puzzle_date.eq.2026-11-06,edition_number.gt.2)');
+    expect(page.dates.map(group => group.puzzleDate)).toEqual([DATE, older.puzzle_date]);
+    expect(page.nextCursor).toBeNull();
+  });
+
+  it('never includes a current-day edition in the Archive, even with a bad provider response', async () => {
+    const current = new Date('2026-11-06T12:00:00.000Z');
+    const badProvider = database([edition(2)]);
+    await expect(listPrivateOfficialDailyArchivePage(badProvider.client, {}, current))
+      .rejects.toMatchObject({ kind: 'unavailable' });
+    expect(badProvider.query.lt).toHaveBeenCalledWith('puzzle_date', DATE);
+
+    const cursorProvider = database([]);
+    await expect(listPrivateOfficialDailyArchivePage(cursorProvider.client, {
+      after: { puzzleDate: DATE, editionNumber: 2 },
+    }, current)).rejects.toMatchObject({ kind: 'invalid' });
+    expect(cursorProvider.from).not.toHaveBeenCalled();
+
+    const completed = database([edition(2)]);
+    const pastPage = await listPrivateOfficialDailyArchivePage(completed.client, {}, NOW);
+    expect(pastPage.dates[0]?.editions[0]?.puzzleId).toBe(edition(2).puzzle_id);
+    expect(completed.query.lt).toHaveBeenCalledWith('puzzle_date', '2026-11-07');
+  });
+
+  it('rejects invalid cursors before query construction and future or stale rows before projection', async () => {
+    const db = database([]);
+    for (const after of [{ puzzleDate: '2026-11-06,or', editionNumber: 2 }, { puzzleDate: DATE, editionNumber: 0 }]) {
+      await expect(listPrivateOfficialDailyArchivePage(db.client, { after }, NOW)).rejects.toMatchObject({ kind: 'invalid' });
+    }
+    expect(db.from).not.toHaveBeenCalled();
+    for (const rows of [[edition(2)], [older, edition(3)], [{ ...edition(3), puzzle_date: '2026-11-08' }]]) {
+      await expect(listPrivateOfficialDailyArchivePage(database(rows).client,
+        { after: { puzzleDate: DATE, editionNumber: 2 } }, NOW)).rejects.toMatchObject({ kind: 'unavailable' });
     }
   });
 });
