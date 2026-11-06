@@ -56,14 +56,15 @@ export function createDailyRuntimeService(input: CreateDailyRuntimeServiceInput)
 
 /** Bind a shared gameplay runtime to one publication. The reader owns release-date eligibility. */
 export function createExactIdDailyRuntimeService(
-  input: Pick<CreateDailyRuntimeServiceInput, 'canonicalRuntime' | 'progressionTokens'> & {
+  input: Pick<CreateDailyRuntimeServiceInput, 'progressionTokens'> & {
+    canonicalRuntime: CanonicalRuntimeAccessor;
     puzzleId: string;
     readEligiblePuzzle: (puzzleId: string) => Promise<DailyPuzzle | null>;
   },
 ): DailyRuntimeService {
   const { puzzleId, readEligiblePuzzle, canonicalRuntime, progressionTokens } = input;
   return buildDailyRuntimeService({
-    ...(canonicalRuntime === undefined ? {} : { canonicalRuntime }),
+    canonicalRuntime,
     progressionTokens,
     hintTransport: 'on-demand',
     async createPuzzle() {
