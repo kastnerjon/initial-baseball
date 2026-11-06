@@ -1,3 +1,4 @@
+import type { CanonicalRuntimeAccessor } from '@initial-baseball/baseball-data/runtime';
 import {
   DEFAULT_DAILY_HINT_CONFIG,
   DEFAULT_DAILY_STATS_HINT_CONFIG,
@@ -95,19 +96,23 @@ describe('on-demand Daily hint transport for future official editions', () => {
 });
 
 describe('exact-ID official runtime', () => {
+  const canonicalRuntime = { getReveal: vi.fn(() => ({})) } as unknown as CanonicalRuntimeAccessor;
   const first = 'daily-ed-v1-907f33db-c38f-43c3-8e6b-a3aaf19bbd08';
   const second = 'daily-ed-v1-907f33db-c38f-43c3-8e6b-a3aaf19bbd09';
 
   it('rejects sibling and invalid tokens before reading an identical roster', async () => {
     const readEligiblePuzzle = vi.fn(async (id: string) => ({ ...puzzle(), id }));
     const edition = (puzzleId: string) => createExactIdDailyRuntimeService({
-      puzzleId, progressionTokens: tokens, readEligiblePuzzle,
+      puzzleId, canonicalRuntime, progressionTokens: tokens, readEligiblePuzzle,
     });
     const boot = await edition(first).getBootstrap(date);
     expect(readEligiblePuzzle).toHaveBeenCalledWith(first);
     expect(boot.hintBundle.hints).toEqual([]);
     expect(boot.hintBundle.checkpoints).toEqual([]);
     expect((await edition(first).revealHint(boot.progressionToken)).hint.hintValue).toBe(firstHint);
+    const correct = await edition(first).resolveAtBat({ progressionToken: boot.progressionToken, submittedPlayerId: answerId });
+    expect(correct.result.kind).toBe('correct');
+    expect(canonicalRuntime.getReveal).toHaveBeenCalledWith(answerId);
     readEligiblePuzzle.mockClear();
     await expect(edition(first).getBootstrap(date, 'points-v3')).rejects.toThrow();
     const wrongRuleset = tokens.sign({ ...tokens.verify(boot.progressionToken), rulesetVersion: 'points-v3' });
@@ -120,7 +125,7 @@ describe('exact-ID official runtime', () => {
   it('refuses unavailable, mismatched and wrong-date publications', async () => {
     for (const publication of [null, { ...puzzle(), id: second }, { ...puzzle(), id: first, puzzleDate: '2026-11-07' }]) {
       const runtime = createExactIdDailyRuntimeService({
-        puzzleId: first, progressionTokens: tokens, readEligiblePuzzle: async () => publication,
+        puzzleId: first, canonicalRuntime, progressionTokens: tokens, readEligiblePuzzle: async () => publication,
       });
       await expect(runtime.getBootstrap(date)).rejects.toThrow();
     }
