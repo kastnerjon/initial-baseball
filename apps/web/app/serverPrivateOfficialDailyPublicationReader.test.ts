@@ -2,9 +2,13 @@ import { createPermanentDailyIssuedClueSnapshot } from '@initial-baseball/daily'
 import { DEFAULT_DAILY_HINT_CONFIG } from '@initial-baseball/shared';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { describe, expect, it, vi } from 'vitest';
+import { readReleasedOfficialDailyPuzzle } from './serverReleasedOfficialDailyPuzzle';
+import { materializeOfficialDailyIssuedPuzzle } from './permanentDailyPuzzleMaterialization';
 import { readPrivateOfficialDailyPublication } from './serverPrivateOfficialDailyPublicationReader';
 
 vi.mock('server-only', () => ({}));
+
+vi.mock('./permanentDailyPuzzleMaterialization', () => ({ materializeOfficialDailyIssuedPuzzle: vi.fn() }));
 
 const puzzleId = 'daily-ed-v1-907f33db-c38f-43c3-8e6b-a3aaf19bbd08';
 const snapshot = createPermanentDailyIssuedClueSnapshot({
@@ -30,10 +34,11 @@ const row: Record<string, unknown> = {
 
 function database(data: Record<string, unknown> | null, error: unknown = null) {
   const maybeSingle = vi.fn(async () => ({ data, error }));
-  const eq = vi.fn(() => ({ maybeSingle }));
+  const query = { maybeSingle, lte: vi.fn().mockReturnThis() };
+  const eq = vi.fn(() => query);
   const select = vi.fn(() => ({ eq }));
   const from = vi.fn(() => ({ select }));
-  return { client: { from } as unknown as SupabaseClient, from, select, eq };
+  return { client: { from } as unknown as SupabaseClient, from, select, eq, lte: query.lte };
 }
 
 describe('private official Daily exact-ID read', () => {
@@ -82,4 +87,15 @@ describe('private official Daily exact-ID read', () => {
     await expect(readPrivateOfficialDailyPublication(db.client, puzzleId))
       .rejects.toThrow(/^Unable to read official Daily publication\.$/);
   });
+});
+
+it('releases a frozen publication only at Pacific midnight', async () => {
+  const db = database(row);
+  const midnight = new Date('2026-11-06T08:00:00Z');
+  expect(await readReleasedOfficialDailyPuzzle(db.client, puzzleId, new Date(midnight.getTime() - 1))).toBeNull();
+  expect(db.lte).toHaveBeenCalledWith('puzzle_date', '2026-11-05');
+  expect(materializeOfficialDailyIssuedPuzzle).not.toHaveBeenCalled();
+  await readReleasedOfficialDailyPuzzle(db.client, puzzleId, midnight);
+  expect(db.lte).toHaveBeenCalledWith('puzzle_date', '2026-11-06');
+  expect(materializeOfficialDailyIssuedPuzzle).toHaveBeenCalledWith(expect.objectContaining({ puzzleId, clueSnapshot: snapshot }));
 });
