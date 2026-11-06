@@ -533,3 +533,9 @@ or scoring behavior is activated by this command.
 The transaction migration (#559), draft-admin path (#560), exact-ID reader
 (#558), hosted QA and independent release checks are separate prerequisites.
 Production migration/activation still requires release approval.
+
+## Private secondary official Daily editorial catalog (source staged, default OFF)
+
+The restricted editor GET `/admin/daily/editions/catalog?puzzleDate=YYYY-MM-DD` returns a bounded, metadata-only page of secondary editorial drafts for that exact date. Optional `pageSize` (1–100, default 50) and `afterEditionNumber` (positive integer cursor) support arbitrarily many same-date editions without silently truncating the editor’s list. Keyset ordering is by immutable edition number ascending; returned status is draft, scheduled or issued with occurrence ID and revision for subsequent authenticated actions. The route validates each URL parameter and stored row, rejects malformed or duplicated rows, and maps provider failures to sanitized no-store responses.
+
+The database selects only occurrence ID, date/number, edition key/number, title, status and revision. It does not select ordered player IDs, selections, private authors, frozen clues or hint snapshots. Access requires the existing Daily Basic administrator principal, same-origin/absent-origin request admission, and the exact server flag `OFFICIAL_DAILY_EDITOR_DRAFTS_ENABLED=true`; otherwise it fails closed before database access. The response is private/no-store and varies by Authorization. It is **not a public edition discovery route** and does not issue, edit, publish or activate any puzzle. The future admin UI, isolated hosted/physical QA, separate scoring admission and production release approval remain pending.
