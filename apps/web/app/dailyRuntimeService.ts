@@ -6,6 +6,7 @@ import {
 import { getGuessOutcome, isDailyGameComplete } from '@initial-baseball/engine';
 import {
   CURRENT_DAILY_RULESET_VERSION,
+  POINTS_V4_DAILY_RULESET_VERSION,
   type DailyGuessResult,
   type DailyPuzzle,
   type DailyPublicPuzzle,
@@ -124,7 +125,9 @@ function buildDailyRuntimeService(
       }
       throw error;
     }
-    if (expectedPuzzleId !== undefined && claims.puzzleId !== expectedPuzzleId) {
+    if (expectedPuzzleId !== undefined && (
+      claims.puzzleId !== expectedPuzzleId || claims.rulesetVersion !== POINTS_V4_DAILY_RULESET_VERSION
+    )) {
       throw new DailyRuntimeRequestError('Daily progression token does not match its puzzle.');
     }
     if (claims.strikeCount >= maxStrikes) {
@@ -197,6 +200,9 @@ function buildDailyRuntimeService(
       date,
       rulesetVersion: DailyBootstrapRulesetVersion = CURRENT_DAILY_RULESET_VERSION,
     ) {
+      if (expectedPuzzleId !== undefined && rulesetVersion !== POINTS_V4_DAILY_RULESET_VERSION) {
+        throw new DailyRuntimeRequestError('Unsupported official edition ruleset.');
+      }
       const puzzle = await createCanonicalPuzzle(date);
       const firstPitch = puzzle.pitches[0];
       if (firstPitch === undefined) {
