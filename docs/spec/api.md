@@ -545,3 +545,14 @@ transport unchanged. The returned opaque progression token is not verified in
 the browser; the server validates it on the next action. Request-generation
 fencing, exact edition routing, player UI, private hosted QA and physical mobile
 verification remain prerequisites before activation.
+
+## On-demand Daily hint request lifecycle (source staged)
+
+The future edition browser owns one in-flight hint reveal through the existing
+Daily generation-fenced request controller. Explicit invalidation on puzzle,
+at-bat or session replacement suppresses stale responses; concurrent reveals
+cannot dispatch duplicate calls. The caller must supply an edition-bound server
+transport, and the browser then applies the strict single-hint reconciler.
+Neither this source module nor the existing primary client is wired to a new
+public endpoint. An actual edition-specific URL, authenticated server
+admission, physical concurrent-tab testing and scoring isolation remain gates.
