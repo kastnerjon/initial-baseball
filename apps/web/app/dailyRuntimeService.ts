@@ -50,6 +50,35 @@ export class DailyRuntimeRequestError extends Error {
 }
 
 export function createDailyRuntimeService(input: CreateDailyRuntimeServiceInput): DailyRuntimeService {
+  return buildDailyRuntimeService(input);
+}
+
+/** Bind a shared gameplay runtime to one publication. The reader owns release-date eligibility. */
+export function createExactIdDailyRuntimeService(
+  input: Pick<CreateDailyRuntimeServiceInput, 'canonicalRuntime' | 'progressionTokens'> & {
+    puzzleId: string;
+    readEligiblePuzzle: (puzzleId: string) => Promise<DailyPuzzle | null>;
+  },
+): DailyRuntimeService {
+  const { puzzleId, readEligiblePuzzle, canonicalRuntime, progressionTokens } = input;
+  return buildDailyRuntimeService({
+    ...(canonicalRuntime === undefined ? {} : { canonicalRuntime }),
+    progressionTokens,
+    hintTransport: 'on-demand',
+    async createPuzzle() {
+      const puzzle = await readEligiblePuzzle(puzzleId);
+      if (!puzzle || puzzle.id !== puzzleId) {
+        throw new DailyRuntimeRequestError('Official Daily edition unavailable.');
+      }
+      return puzzle;
+    },
+  }, puzzleId);
+}
+
+function buildDailyRuntimeService(
+  input: CreateDailyRuntimeServiceInput,
+  expectedPuzzleId?: string,
+): DailyRuntimeService {
   const { canonicalRuntime, createPuzzle, progressionTokens } = input;
   const maxStrikes = input.maxStrikes ?? 3;
   const hintTransport = input.hintTransport ?? 'legacy-bundle';
@@ -94,6 +123,9 @@ export function createDailyRuntimeService(input: CreateDailyRuntimeServiceInput)
         throw new DailyRuntimeRequestError('Invalid Daily progression token.');
       }
       throw error;
+    }
+    if (expectedPuzzleId !== undefined && claims.puzzleId !== expectedPuzzleId) {
+      throw new DailyRuntimeRequestError('Daily progression token does not match its puzzle.');
     }
     if (claims.strikeCount >= maxStrikes) {
       throw new DailyRuntimeRequestError('Progression strike count exceeds the configured limit.');
