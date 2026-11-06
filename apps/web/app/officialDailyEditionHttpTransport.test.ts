@@ -22,6 +22,19 @@ function bootstrap(id = ID, date = DATE) {
     }, hintBundle: bundle,
   };
 }
+function publicReveal() {
+  return {
+    playerId: 'ibp_ab000000000000000000', displayName: 'Test Player',
+    playerType: 'hitter', primaryPosition: 'CF', yearsPlayedDisplay: '1995–2004',
+    teamIds: ['NYM'],
+    career: { lines: [{ kind: 'hitter', stats: {
+      AB: 500, H: 140, HR: 20, BA: '.280', R: 80, RBI: 70, SB: 8,
+      OBP: '.340', SLG: '.450', OPS: '.790',
+    } }] },
+    seasons: [],
+  };
+}
+
 function setup(initial: unknown = bootstrap()) {
   const get = vi.fn(async () => initial);
   const post = vi.fn(async (path: string, _body: Record<string, unknown>): Promise<unknown> =>
@@ -185,7 +198,8 @@ describe('source-staged official Daily exact-ID browser HTTP transport', () => {
     await transport.hints('signed-after');
     expect(post).toHaveBeenCalledWith(URL + 'hints', { progressionToken: 'signed-after' });
     post.mockResolvedValueOnce({
-      result: { kind: 'incorrect' }, reveal: null, progressionToken: 'next',
+      result: { kind: 'incorrect', revealedCount: 0, strikeCount: 1, remainingStrikes: 2 },
+      reveal: null, progressionToken: 'next',
       hintBundle: bundle,
     });
     await transport.resolve({ progressionToken: 'signed-after', submittedPlayerId: 'ibp_ab000000000000000000' });
@@ -193,7 +207,8 @@ describe('source-staged official Daily exact-ID browser HTTP transport', () => {
       progressionToken: 'signed-after', submittedPlayerId: 'ibp_ab000000000000000000',
     });
     post.mockResolvedValueOnce({
-      result: { kind: 'strikeout' }, reveal: null, progressionToken: 'next',
+      result: { kind: 'strikeout', revealedCount: 0, strikeCount: 3, outcome: 'K', source: 'strikeout' },
+      reveal: publicReveal(), progressionToken: 'next',
       hintBundle: null,
     });
     await transport.resolve({ progressionToken: 'signed-after', giveUp: true });
@@ -214,10 +229,51 @@ describe('source-staged official Daily exact-ID browser HTTP transport', () => {
     await expect(transport.hints('x')).rejects.toThrow(/incompatible/i);
   });
 
+  it('accepts a canonical public terminal reveal without hidden answer fields', async () => {
+    const { transport, post } = setup();
+    const result = {
+      result: { kind: 'correct', revealedCount: 0, outcome: 'HR', source: 'initials' },
+      reveal: publicReveal(), progressionToken: 'successor', hintBundle: null,
+    };
+    post.mockResolvedValueOnce(result);
+    expect(await transport.resolve({ progressionToken: 'signed', submittedPlayerId: 'ibp_ab000000000000000000' }))
+      .toEqual(result);
+  });
+
+  it('rejects unexpected answer-bearing fields in incorrect and terminal results', async () => {
+    const { transport, post } = setup();
+    const incorrect = {
+      result: { kind: 'incorrect', revealedCount: 0, strikeCount: 1, remainingStrikes: 2 },
+      reveal: null, progressionToken: 'successor', hintBundle: bundle,
+    };
+    const correct = {
+      result: { kind: 'correct', revealedCount: 0, outcome: 'HR', source: 'initials' },
+      reveal: publicReveal(), progressionToken: 'successor', hintBundle: null,
+    };
+    const malformed = [
+      { ...incorrect, reveal: publicReveal() },
+      { ...incorrect, result: { ...incorrect.result, futureAnswers: ['PRIVATE_FUTURE_HINT'] } },
+      { ...correct, reveal: { ...publicReveal(), futureAnswers: ['PRIVATE_FUTURE_HINT'] } },
+      { ...correct, reveal: { ...publicReveal(),
+        career: { ...publicReveal().career, hiddenRoster: ['PRIVATE_FUTURE_HINT'] } } },
+      { ...correct, reveal: { ...publicReveal(),
+        career: { lines: [{ kind: 'hitter', stats: {
+          ...publicReveal().career.lines[0]!.stats,
+          FUTURE_HINT: 'PRIVATE_FUTURE_HINT',
+        } }] } } },
+    ];
+    for (const value of malformed) {
+      post.mockResolvedValueOnce(value);
+      await expect(transport.resolve({ progressionToken: 'signed', giveUp: true }))
+        .rejects.toThrow(/incompatible/i);
+    }
+  });
+
   it('does not return unsafe future checkpoint bundles from resolution', async () => {
     const { transport, post } = setup();
     post.mockResolvedValueOnce({
-      result: { kind: 'correct' }, reveal: null, progressionToken: 'successor',
+      result: { kind: 'correct', revealedCount: 0, outcome: 'HR', source: 'initials' },
+      reveal: publicReveal(), progressionToken: 'successor',
       hintBundle: { ...bundle, hints: [{ slot: 1, hintType: 'stats', hintLabel: 'Stats', hintValue: 'PRIVATE_FUTURE_HINT' }] },
     });
     await expect(transport.resolve({ progressionToken: 'x', giveUp: true }))
