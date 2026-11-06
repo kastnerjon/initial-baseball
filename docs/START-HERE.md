@@ -4,6 +4,11 @@
 
 Main at approval: 6b39525f, push CI 41966926633 successful and matching READY production. The November 6 primary was scheduled at revision 10 with nine slots. Multi-edition play is pending. Follow [the approved implementation sequence](../tasks/plans/multiple-official-dailies.md); keep Custom/Auth disabled until its separate release gates pass.
 
+## November 4 — variable-strike full-lineup after-three-outs browser/HTTP contract regression (#529)
+
+- The controlled browser-to-real-HTTP-adapter acceptance now exercises **1/2/3 strikes across nine- and ten-player Custom lineups**, including three consecutive K at-bats followed by correct guesses on all remaining batters. It asserts every signed transition, saved/resumed strike reset, completed roster length, authoritative points-v4 totals, first-write-wins completion status, and hidden-answer/attempt redaction.
+- This test intentionally controls the private persistence services. It verifies contract composition but is **not** isolated hosted Supabase/Chrome QA, a production-clone migration rehearsal, or physical mobile acceptance. Production nondefault issuance and Custom/Auth remain OFF.
+
 ## November 4 — portable completion display-name policy staged for #528
 
 - The existing Daily Nine post-completion 1–32-character trim/control-rejection contract is now a portable, pure `@initial-baseball/shared` parser with dedicated boundary tests. Daily's already-authorized name submission delegates to it without changing validation, score eligibility or leaderboard persistence. Historical JavaScript UTF-16 length semantics are deliberately preserved, avoiding a silent Daily behavior migration.

@@ -17,8 +17,8 @@
 ## Custom #529 — remaining variable-strike integration and release gates
 
 - [ ] Run isolated hosted QA of the source-wired, default-OFF creator 1/2/3 selector. Confirm its visibility follows only the trusted issuance-readiness flag; verify the old two-field/three-strike path when OFF and secure account-only 1/2/3 issuance when ON. Do not set production flags or trust client rule/owner identifiers.
-- [ ] Verify the immutable issued-game bootstrap update (#550): existing 1/2/3-strike challenges remain playable after disabling new variable-strike issuance, without changing scores, client rule identity, creator exclusion or historical three-strike games.
-- [ ] Run **isolated hosted QA** across 1, 2 and 3 strikes and lineup sizes 1–10: authorized issuance, creator preview, guest/friend play, hints, first-strike K, exact Give Up wrong guesses, full nine/ten-batter completion after three outs, refresh, lost-response retry, cross-tab CAS, noncompetitive owner exclusion and authoritative saved results.
+- [ ] Revalidate previously issued 1/2/3-strike Custom challenges in isolated hosted QA after disabling new variable-strike issuance, including refresh, creator exclusion and historical three-strike compatibility.
+- [ ] Complete isolated hosted QA for 1/2/3 strikes and 1–10 players: verified issuance, creator and friend play, hints, strikeouts, exact Give Up guesses, nine/ten-batter completion after three outs, refresh, lost-response retries, cross-tab CAS, noncompetitive owner exclusion, and authoritative stored results.
 - [ ] Verify per-challenge comparisons remain keyed to immutable issued puzzle ID/cap; cross-challenge public leaderboards must stratify by strike limit, ruleset and roster length before launch.
 - [ ] Complete real mobile Safari/Android acceptance, production-clone migration rehearsal, rollback/monitoring review and **explicit production release authorization**. Production Custom/Auth/variable-strike flags remain OFF, with creator/strike migrations unapplied; QA-only migration rehearsal is not production parity.
 
