@@ -26,3 +26,44 @@ For a terminal at-bat, write the server-derived observation in the same transact
 - Exercise last-minute live start and delayed retry after Pacific midnight, first archive practice, two empty tabs, cookie loss, malformed credentials, and a browser previously used for Custom. Confirm legacy primary and historical result behavior.
 - Demonstrate that browser roles cannot write the ledger or its projections directly. Accept only server-authorized transitions. Rehearse additive migrations in isolated QA and exercise rollback with issued games and queued retries.
 - A separate architecture review must settle initial browser credential convergence, recovery/expiry and atomic persistence before modifying submission authority. Production schema, public activation and physical-device acceptance remain separate release gates.
+
+## Proposed A3 resolution: anonymous credential convergence and atomic admission
+
+This is a **proposal for independent architecture/security review**, not approval to enable secondary edition score writes. The existing Daily Nine, Classic and Archive paths retain their current rules and historical identities.
+
+### Two empty tabs and one retained browser credential
+
+The server mints a high-entropy, host-only, HttpOnly, Secure, SameSite=Lax anonymous Daily browser credential. The private repository stores a domain-separated HMAC digest of this capability, never its raw value. It represents a retained browser profile, not a person, verified account, device fingerprint, or cross-device identity.
+
+Before its first competitive edition bootstrap, a supported browser obtains an **origin-wide exclusive Web Lock**, then performs an initialization request followed by a separate server-confirmed cookie round trip. The lock is held across the complete Set-Cookie/readback handshake. A second tab must wait and reuse the established cookie rather than minting a competing credential. Existing per-puzzle Web Locks do not suffice for two first opens of *different* editions; the credential initialization lock must be global across new Daily editions. Ordinary page rendering, prefetch and read-only Archive discovery never initialize credentials.
+
+If exclusive locking, cookie persistence/readback or required browser storage/abort capabilities are unavailable, the browser may still play practice mode but must **not** start a competitive anonymous attempt. Verify this with actual two-tab Safari/Android/browser races, delayed first responses, abort and refresh. A malicious client can bypass browser locks, and users can clear cookies; one-attempt-per-human is unattainable without stronger identity. This design protects against accidental cooperating-browser races, not all anonymous abuse.
+
+### Durable reservation and separated signed authority
+
+1. Resolve a frozen publication by immutable exact puzzle ID and its server-authoritative Pacific date. Live admission is allowed only on that edition's date; a new start after midnight is practice-only. A reservation that began live retains its originally recorded eligibility for subsequent delayed retries.
+2. A service-role transaction reserves or reads exactly one immutable attempt under a database unique key over credential digest, exact puzzle ID and points-v4 ruleset. Server-allocated attempt UUID, revision, purpose, start timestamp and canonical puzzle date are not browser choices. The title, ordered roster hash, edition display number and request fields cannot confer eligibility.
+3. Use a new versioned, purpose-domain-separated signed progression envelope containing attempt ID, exact puzzle ID, date, ruleset, revision, purpose and signing key ID. Do not widen the existing primary Daily v1 token verifier into a competitive secondary authority. Verify the envelope and retained HttpOnly credential against the **stored reservation** before any score population lookup or write.
+4. Both per-batter and completed results derive from the same accepted server attempt. The current fail-closed secondary guards remain enabled until the entire replacement is reviewed and released.
+
+### One atomic, idempotent transition
+
+Every hint or guess command has an idempotency command ID and signed predecessor revision. The server resolves it using the existing engine and exact frozen edition. One private SQL transaction row-locks the attempt, verifies its bound identity/revision and persists the accepted command, normalized successor state and sanitized retry response. Terminal at-bat observations and eventual completed points-v4 projection commit inside that **same transaction**. Score and competition key are derived from the stored attempt, never a caller-selected scorecard or roster.
+
+An identical retry returns the already accepted response; a different command against a losing predecessor conflicts without disclosing whether a guess was correct. No losing tab may write a second eligible observation. Enforce uniqueness for (attempt ID, pitch number) and one completion per attempt; rollback must leave neither new state nor partial score projection. A signed token alone is not enough: match stored revision, idempotency ledger, browser credential and exact immutable publication on every mutation.
+
+### Recovery, expiry and signing-key decisions still outstanding
+
+A lost response retries its original idempotency ID, or reconciles via a cookie-authorized state read. Never reconstruct an accepted competitive score solely from local unverified facts. Delayed live attempt reconciliation after Pacific rollover is based on the stored live reservation, not on today's date or practice admission.
+
+Use purpose-specific signing keys with key IDs and a verified key-rotation procedure. A retained browser credential must support safe server-side state refresh if an old progression key expires. Before any schema change, explicitly settle the maximum raw-token retry interval, refresh grace period, cookie lifetime/renewal, lost-cookie handling and emergency rotation. Do not silently make historical accepted results mutable or reclassify an archived practice attempt as live.
+
+### Required adversarial proof
+
+- **Convergence:** two clean tabs, same and different editions, delayed Set-Cookie, lock cancellation, unavailable Web Locks, cookie-blocking, tab crash and browser reload. No accidental duplicate live reservation within a cooperating retained browser.
+- **Cross-edition:** identical nine players and identical hints in two editions; swap exact ID, token, credential, attempt, date, ruleset and scored command independently. Neither aggregate may receive a relabeled fact.
+- **Atomicity:** racing identical/different commands, lost-success replay, failed transaction after terminal fact, final completion failure, concurrent submit and process restart. Inspect durable rows and their actual constraints.
+- **Timing:** final-minute Pacific live start, delayed after-midnight completion and per-batter replay, archived practice first and cookie loss. Existing primary, Classic, archive-beta and Custom creator contexts must remain unaffected.
+- **Release:** service-only grants, RLS, no answer material in HTML/bootstrap/errors/logs, signing-key retention, exact-head CI and independent reviews, isolated production-shaped QA, physical Safari/Android and explicit production approval.
+
+**Release gate:** This proposal cannot activate score writes. Independent review must resolve the credential-convergence proof, key lifetime and transactional projection policy before any A3 submission-authority or production-schema change.
