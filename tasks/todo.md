@@ -102,5 +102,5 @@ These gates are separate from Custom Lineups Phase 1. Keep them active until eac
 
 ## Official Daily secondary-editorial catalog (staged)
 
-- [ ] Connect the authenticated editor UI to the default-OFF metadata-only date catalog; paginate all editions rather than assuming a fixed count, and reuse each returned revision for create/schedule/issue controls.
+- [ ] Extend the default-OFF, read-only secondary edition workbench with authorized create/edit/schedule/issue controls and revision-aware conflicts. Preserve metadata-only listing and read-only pagination without assuming a fixed edition count; never expose the nine answer IDs in the listing.
 - [ ] Verify list/issue/schedule/readback on hosted isolated QA, including 1/2/100+ editions, same-date duplicate keys, stale revision conflicts, future-date access, long-pagination changes and mobile editor access. Keep official scoring, public Archive and production migrations disabled pending their own gates.
