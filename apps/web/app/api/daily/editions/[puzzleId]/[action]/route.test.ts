@@ -63,7 +63,7 @@ describe('default-OFF exact-ID official Daily HTTP adapter', () => {
 
   it('supports single-hint, resume and unsigned-practice resolution without result submission', async () => {
     const hint = await POST(post('hint', { progressionToken: 'before' }), context('hint'));
-    expect((await hint.json()).hint.hintValue).toBe('AUTHORIZED_HINT');
+    expect(await hint.json()).toMatchObject({ hint: { hintValue: 'AUTHORIZED_HINT' } });
     expect(runtime.revealHint).toHaveBeenCalledWith('before');
     expect((await POST(post('hints', { progressionToken: 'after' }), context('hints'))).status).toBe(200);
     expect(runtime.getHintBundle).toHaveBeenCalledWith('after');
