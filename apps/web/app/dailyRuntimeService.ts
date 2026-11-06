@@ -50,6 +50,11 @@ export class DailyRuntimeRequestError extends Error {
   }
 }
 
+/**
+ * Resolve Daily play against server-owned puzzles and signed progression.
+ * Legacy clients receive bundled hints; on-demand clients must explicitly
+ * reveal the next clue and resume with its successor token.
+ */
 export function createDailyRuntimeService(input: CreateDailyRuntimeServiceInput): DailyRuntimeService {
   return buildDailyRuntimeService(input);
 }
