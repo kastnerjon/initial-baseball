@@ -462,3 +462,22 @@ Explicit `POST /admin/daily/archive-beta/issue` remains separately authenticated
 The official Daily publication candidate is server-private. Its clue snapshot includes canonical answers and unrevealed hints. Keep it out of route responses, rendered props and error logs. The server materialization boundary reports only a generic preparation failure. Public routes for additional editions require separate ID-based admission and spoiler-safe projections.
 
 The internal official publication writer takes a trusted editorial occurrence and returns created/existing plus puzzle ID, or conflict. It compares immutable fields and frozen clues on duplicate ID, omitting the database-generated issuance time from replay comparison. A date/edition collision under another ID also yields conflict. Only a future authorized editor action with revision checks may call it.
+
+## Official secondary Daily result admission: fail-closed until signed evidence
+
+The existing anonymous Daily at-bat and completed-game submission HTTP
+services must not admit \`daily-ed-v1-\` puzzle IDs. Both server-side routing
+boundaries reject these reserved edition IDs as invalid_puzzle **before**
+authoritative puzzle lookup, score normalization, or database access.
+The browser-side result-collection policy agrees and does not create a
+competitive attempt for those IDs. Current Daily Nine, Classic, archive-beta
+and permanent Archive behavior remains unchanged.
+
+This is a deliberate temporary release gate, **not** final edition scoring.
+The current engine validates submitted facts against the chosen authoritative
+puzzle but cannot establish which of two identical-roster editions generated
+the anonymous attempt. Before activation, separately implement signed
+per-edition result evidence, single-attempt/idempotency guarantees and
+delayed-live-versus-archive admission as tracked in GitHub issue #566.
+Never enable a secondary leaderboard or score-write path merely by teaching
+the authoritative loader to find new IDs.

@@ -3,7 +3,7 @@ import {
   createDailyAtBatResultService,
   type DailyAtBatResultRepository,
 } from '@initial-baseball/daily';
-import { isArchiveBetaDailyPuzzleId } from './dailyGameplayPersistenceAuthority';
+import { isArchiveBetaDailyPuzzleId, isSecondaryOfficialDailyEditionId } from './dailyGameplayPersistenceAuthority';
 import {
   DAILY_AT_BAT_RESULT_SCHEMA_VERSION,
   POINTS_V3_DAILY_RULESET_VERSION,
@@ -82,6 +82,8 @@ function readRoutingFields(
   if (puzzleDate > currentDailyDate) return reject('invalid_puzzle');
   const puzzleId = readPuzzleId(submission.puzzleId);
   if (puzzleId === null) return reject('invalid_submission');
+  // Never admit unproven cross-edition results when a new exact-ID reader lands.
+  if (isSecondaryOfficialDailyEditionId(puzzleId)) return reject('invalid_puzzle');
   if (submission.rulesetVersion !== POINTS_V3_DAILY_RULESET_VERSION
     && submission.rulesetVersion !== POINTS_V4_DAILY_RULESET_VERSION) {
     return reject('unsupported_ruleset');
