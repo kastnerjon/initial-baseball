@@ -99,3 +99,8 @@ These gates are separate from Custom Lineups Phase 1. Keep them active until eac
 
 - [ ] Verify the source-staged `official_daily_editorial_drafts` table and atomic `issue_official_daily_editorial_draft` function against isolated QA. Retain the completed rollback-only rehearsal evidence; no production migration without explicit release approval.
 - [ ] Integrate the default-OFF, authenticated secondary draft administration from #560 with the reviewed private issuer (#561) and exact-ID publication readback; preserve existing primary issuance, editorial revision checks and immutable retries. Public gameplay, competitive result admission and release still require their separate gates.
+
+## Official Daily secondary-editorial catalog (staged)
+
+- [ ] Connect the authenticated editor UI to the default-OFF metadata-only date catalog; paginate all editions rather than assuming a fixed count, and reuse each returned revision for create/schedule/issue controls.
+- [ ] Verify list/issue/schedule/readback on hosted isolated QA, including 1/2/100+ editions, same-date duplicate keys, stale revision conflicts, future-date access, long-pagination changes and mobile editor access. Keep official scoring, public Archive and production migrations disabled pending their own gates.
