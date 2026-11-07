@@ -69,7 +69,7 @@ describe('default-OFF exact-draft editor preview route', () => {
 
   it('returns nine named selections and revision without hidden hint data', async () => {
     const response = await GET(req());
-    const body = await response.json();
+    const body = await response.json() as { selections: unknown[]; occurrenceId: string; revision: number; canSchedule: boolean };
     expect(response.status).toBe(200);
     expect(response.headers.get('cache-control')).toBe('private, no-store');
     expect(response.headers.get('vary')).toBe('Authorization');
