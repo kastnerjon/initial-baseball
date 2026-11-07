@@ -40,7 +40,7 @@ function parseInput(input: Query, today: string): { afterDate?: string; pageSize
     catch { throw new LegacyPrimaryArchiveError('invalid'); }
     if (input.afterDate >= today) throw new LegacyPrimaryArchiveError('invalid');
   }
-  return { afterDate: input.afterDate, pageSize };
+  return { pageSize, ...(input.afterDate === undefined ? {} : { afterDate: input.afterDate }) };
 }
 
 function parseRow(value: unknown, today: string, now: Date): LegacyPrimaryPublication {
