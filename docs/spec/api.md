@@ -572,10 +572,22 @@ The exact-ID browser transport independently validates nested public hint and st
 
 The browser transport additionally validates the discriminator-specific at-bat result and the post-terminal canonical public reveal projection (stat lines, seasons, career peaks and known fields). Incorrect guesses must have a null player reveal. Unexpected nested answer-bearing fields are rejected rather than forwarded. This does not validate the server's signed competitive eligibility; issue #566 remains the authority for that later integration.
 
+### Source-staged shared Daily UI for exact-ID practice
+
+The existing Daily Nine component can be rendered with `officialEditionPractice` for an immutable `daily-ed-v1-` ID. In this mode its resolution, on-demand hint reveal, and saved-game restoration use the edition-bound server transport, not legacy primary endpoints. Reveals remain on demand; there are no local future hint checkpoints. Secondary-edition leaderboard/comparison reads and score submissions remain suppressed. Local saves and share links use the edition ID. The separate server-rendered practice route and default-OFF activation gates are implemented, but are not publicly enabled. No competitive admission, database writes, or new scoring rules are introduced; primary Daily and Classic keep their previous behavior.
+
+### Default-OFF official Daily practice route
+
+`/daily/editions/:puzzleId?date=YYYY-MM-DD` is a private, no-index, noncompetitive acceptance page using the existing Daily Nine UI. It requires all three exact server settings `OFFICIAL_DAILY_EDITION_PRACTICE_UI_ENABLED=true`, `OFFICIAL_DAILY_EDITION_HTTP_ENABLED=true`, and `OFFICIAL_DAILY_EDITION_PRIVATE_RUNTIME_ENABLED=true`, each OFF by default. It rejects invalid IDs, malformed dates, query extras, unreleased/future editions before rendering an answer-free bootstrap. Gameplay and local saves remain edition-bound; results and comparison populations are not admitted. This page is staged for hosted QA only, not enabled on production or approved for public activation.
+
 ### Browser-safe edition identity dependency
 
 The exact-ID browser transport resolves its immutable occurrence-ID and strict real-date validators through the narrow `@initial-baseball/daily/official-edition-identity` export, not the `@initial-baseball/daily` barrel. That isolated module has no selection, clue snapshot, canonical player-data or server imports, preventing browser chunk inclusion of private player catalogs. The original Daily private issuer exports delegate to precisely the same validators; no published identity format or existing ID/date validation changes. The production hidden-answer bundle QA must pass before this is mergeable.
 
 The browser bootstrap decoder also rejects non-positive or unsafe puzzle numbers and metadata statuses other than released `published` / `archived`. Metadata scalar validation occurs before any payload reaches the shared gameplay UI; objects containing answer data are never accepted as number or status fields.
+
+### Server-rendered edition bootstrap boundary
+
+The gated official edition practice page reuses the exact strict public bootstrap decoder before passing any payload into the shared client-side Daily game. Private clue-layout fields, additional player identities, invalid status/number fields and future hint checkpoints are rejected at the React server-component boundary. Tests assert that malicious bootstrap fixtures never reach the `DailyInningGame` client props. This preserves the hidden-answer invariant for initial HTML/RSC, not merely subsequent HTTP responses.
 
 The strict `validateOfficialDailyEditionBootstrap` schema is exported for reuse at the Next.js server-to-client render boundary. A server-rendered official practice page must validate the full public puzzle, hint configurations, nine public pitches, signed progression token, and zero future hints/checkpoints **before** passing the bootstrap as serialized client props. Unexpected nested private fields fail closed rather than being forwarded.
