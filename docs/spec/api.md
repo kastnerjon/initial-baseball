@@ -537,3 +537,7 @@ Production migration/activation still requires release approval.
 ## Reserved official Daily result-admission namespace (#566, defensive source change)
 
 The legacy Daily at-bat/completion submission adapters and browser result collection now fail closed for **all** IDs beginning with `daily-ed-`, not solely `daily-ed-v1-`. Future format versions must not become competitive by introducing a new ID suffix before explicit signed, exact-ID A3 admission. This is a reserved namespace check, not proof of game identity and not a score eligibility grant; existing primary, Classic and Archive beta result behavior is unchanged. The official secondary edition practice transport remains separately default-OFF. Production database, schemas, and flags are not changed.
+
+## Reserved official edition Daily comparisons (#566, read-side safeguard)
+
+The legacy Daily at-bat and completed-game comparison read service rejects the reserved `daily-ed-` family, including unknown future version suffixes, **before** authoritative puzzle loading or comparison repository reads. These requests return sanitized `invalid_puzzle` (404 via the existing HTTP adapter). Primary Daily, Classic and Archive beta comparison policies remain unchanged. No server authority can be inferred from a syntactically well-formed secondary puzzle ID; competitive comparison remains disabled until the signed exact-ID A3 admission workflow is explicitly reviewed and activated. This change is source-only and does not alter database, deployed flags, scoring rules or historical results.
