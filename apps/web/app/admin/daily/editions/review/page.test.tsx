@@ -95,7 +95,7 @@ describe('read-only authenticated exact secondary editor review page', () => {
     expect(html).not.toContain('hintValues');
     expect(html).toContain('Confirm lineup and schedule');
     expect(html).toContain('name="expectedRevision" value="3"');
-    expect(html).toContain('name="confirmed" value="yes" required');
+    expect(html).toContain('type="checkbox" required="" name="confirmed" value="yes"');
     expect(readOfficialDailyEditorialDraftPreview)
       .toHaveBeenCalledWith(expect.anything(), ID);
   });
