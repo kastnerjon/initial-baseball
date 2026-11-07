@@ -75,6 +75,38 @@ describe('Daily Nine leaderboard submission and read orchestration', () => {
       .resolves.toEqual({ ok: false, error: 'name_conflict' });
   });
 
+  it.each([
+    'daily-ed-v1-907f33db-c38f-43c3-8e6b-a3aaf19bbd08',
+    'daily-ed-v2-unknown-future-type',
+    'daily-ed-unknown-reserved-type',
+  ])('never reads leaderboard aggregates for reserved official edition %s', async puzzleId => {
+    const repo = fakeRepository();
+    await expect(createDailyNineLeaderboardService(repo).read({ ...IDENTITY, puzzleId }))
+      .resolves.toEqual({ ok: false, error: 'not_eligible' });
+    expect(repo.read).not.toHaveBeenCalled();
+    expect(repo.findCompletion).not.toHaveBeenCalled();
+    expect(repo.insertName).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    'daily-ed-v1-907f33db-c38f-43c3-8e6b-a3aaf19bbd08',
+    'daily-ed-v2-unknown-future-type',
+    'daily-ed-unknown-reserved-type',
+  ])('does not name, rank or read a reserved edition completion %s', async puzzleId => {
+    const repo = fakeRepository();
+    vi.mocked(repo.findCompletion).mockResolvedValue({
+      ...IDENTITY, puzzleId, submissionId: 'attempt1',
+    });
+    const service = createDailyNineLeaderboardService(repo);
+    await expect(service.submit({ submissionId: 'attempt1', displayName: 'Yoni' }))
+      .resolves.toEqual({ ok: false, error: 'not_eligible' });
+    await expect(service.rank({ submissionId: 'attempt1' }))
+      .resolves.toEqual({ ok: false, error: 'not_eligible' });
+    expect(repo.findCompletion).toHaveBeenCalledTimes(2);
+    expect(repo.insertName).not.toHaveBeenCalled();
+    expect(repo.read).not.toHaveBeenCalled();
+  });
+
   it('reads personal rank only through an explicit submission ID, without exposing IDs', async () => {
     const repo = fakeRepository();
     vi.mocked(repo.read).mockResolvedValueOnce([

@@ -1,4 +1,5 @@
 import { parseCompletionDisplayName } from '@initial-baseball/shared';
+import { isSecondaryOfficialDailyEditionId } from './dailyGameplayPersistenceAuthority';
 
 export type LeaderboardIdentity = {
   puzzleId: string;
@@ -36,6 +37,10 @@ export function createDailyNineLeaderboardService(repository: DailyNineLeaderboa
     async read(input: unknown): Promise<Result<DailyNineLeaderboardView>> {
       const identity = readIdentity(input);
       if (identity === null) return { ok: false, error: 'invalid_request' };
+      // Future edition ID versions are never implicitly eligible for legacy rankings.
+      if (isSecondaryOfficialDailyEditionId(identity.puzzleId)) {
+        return { ok: false, error: 'not_eligible' };
+      }
       return { ok: true, value: formatLeaderboard(await repository.read(identity, null)) };
     },
     async submit(input: unknown): Promise<Result<DailyNineLeaderboardView>> {
@@ -76,7 +81,8 @@ function readIdentity(input: unknown): LeaderboardIdentity | null {
 
 function eligibleCompletion(completion: StoredLeaderboardCompletion): boolean {
   return completion.rulesetVersion === 'points-v4'
-    && !completion.puzzleId.startsWith('archive-beta-v1-daily-');
+    && !completion.puzzleId.startsWith('archive-beta-v1-daily-')
+    && !isSecondaryOfficialDailyEditionId(completion.puzzleId);
 }
 
 function readSubmissionId(input: unknown): string | null {
