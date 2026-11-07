@@ -15,14 +15,14 @@ import {
 } from '../../../../../serverOfficialDailyEditorialDrafts';
 import { createServerSupabaseClient } from '../../../../../serverSupabaseClient';
 
-const URL = 'https://initial.test/admin/daily/editions/review/confirm';
+const BASE_URL = 'https://initial.test/admin/daily/editions/review/confirm';
 const ID = '907f33db-c38f-43c3-8e6b-a3aaf19bbd08';
 const USER = 'daily-editor';
 const PASSWORD = 'a-secure-admin-password-with-32-chars';
 const AUTH = 'Basic ' + Buffer.from(USER + ':' + PASSWORD).toString('base64');
 const payload = { occurrenceId: ID, expectedRevision: '3', confirmed: 'yes' };
 function req(data: Record<string, string> | URLSearchParams = payload,
-  header: Record<string,string> = {}, url = URL) {
+  header: Record<string,string> = {}, url = BASE_URL) {
   return new Request(url, {
     method: 'POST', headers: {
       authorization: AUTH, origin: new URL(url).origin, ...header,
@@ -62,7 +62,7 @@ describe('explicit private editor review-confirm scheduling adapter', () => {
     dup.append('confirmed', 'yes');
     for (const request of [
       req(payload, { 'content-type': 'application/json' }),
-      req(payload, {}, URL + '?spoof=1'),
+      req(payload, {}, BASE_URL + '?spoof=1'),
       req(dup),
       req({ ...payload, extra: 'x' }),
       req({ ...payload, confirmed: 'no' }),
