@@ -104,3 +104,5 @@ These gates are separate from Custom Lineups Phase 1. Keep them active until eac
 
 - [ ] Verify the source-staged `official_daily_editorial_drafts` table and atomic `issue_official_daily_editorial_draft` function against isolated QA. Retain the completed rollback-only rehearsal evidence; no production migration without explicit release approval.
 - [ ] Integrate the default-OFF, authenticated secondary draft administration from #560 with the reviewed private issuer (#561) and exact-ID publication readback; preserve existing primary issuance, editorial revision checks and immutable retries. Public gameplay, competitive result admission and release still require their separate gates.
+
+- [ ] Consolidate #587's secondary-only Archive presentation with the staged unified date-grouped component after composing #590/#591/#571 server readers; remove the duplicate component in the integration PR. Leave primary replay explicitly unavailable until historical clue and gameplay-ID proof, and preserve beta history separately.
