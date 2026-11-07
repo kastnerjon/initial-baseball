@@ -43,7 +43,7 @@ beforeEach(() => {
   vi.stubEnv('OFFICIAL_DAILY_EDITOR_DRAFTS_ENABLED', 'true');
   vi.stubEnv('DAILY_ADMIN_USERNAME', USER);
   vi.stubEnv('DAILY_ADMIN_PASSWORD', PASSWORD);
-  vi.mocked(headers).mockResolvedValue(new Headers({ authorization: AUTH }) as never);
+  vi.mocked(headers).mockResolvedValue(new Headers({ authorization: AUTH, 'sec-fetch-site': 'same-origin' }) as never);
   vi.mocked(listPrivateOfficialDailyEditorialDrafts).mockResolvedValue(PAGE);
 });
 afterEach(() => { vi.unstubAllEnvs(); vi.clearAllMocks(); });
@@ -62,6 +62,27 @@ describe('secondary official Daily editor catalog page', () => {
     await expect(Page(props({ puzzleDate: '2026-11-06' }))).rejects.toThrow('NEXT_REDIRECT');
     expect(redirect).toHaveBeenCalledWith('/admin/auth');
     expect(createServerSupabaseClient).not.toHaveBeenCalled();
+  });
+
+  it('denies cross-site and ambiguous navigation without private editorial I/O', async () => {
+    for (const site of ['cross-site', 'same-site', null]) {
+      vi.mocked(headers).mockResolvedValueOnce(new Headers({
+        authorization: AUTH,
+        ...(site === null ? {} : { 'sec-fetch-site': site }),
+      }) as never);
+      await expect(Page(props({ puzzleDate: '2026-11-06' })))
+        .rejects.toThrow('NEXT_NOT_FOUND');
+    }
+    expect(createServerSupabaseClient).not.toHaveBeenCalled();
+    expect(listPrivateOfficialDailyEditorialDrafts).not.toHaveBeenCalled();
+  });
+
+  it('permits direct first-party navigation with site none', async () => {
+    vi.mocked(headers).mockResolvedValueOnce(new Headers({
+      authorization: AUTH, 'sec-fetch-site': 'none',
+    }) as never);
+    expect(renderToStaticMarkup(await Page(props({ puzzleDate: '2026-11-06' }))))
+      .toContain('Secondary editorial editions');
   });
 
   it('shows an authenticated empty date-selection form without querying Supabase', async () => {

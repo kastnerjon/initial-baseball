@@ -37,7 +37,7 @@ const RESPONSE = {
 function request(query = '?puzzleDate=2026-11-06', headers: Record<string, string> = {}) {
   return new Request(BASE_URL + query, {
     method: 'GET',
-    headers: { authorization: AUTH, ...headers },
+    headers: { authorization: AUTH, 'sec-fetch-site': 'same-origin', ...headers },
   });
 }
 
@@ -64,6 +64,27 @@ describe('default-disabled official Daily editorial metadata GET', () => {
     expect(unauthorized.status).toBe(401);
     expect(unauthorized.headers.get('www-authenticate')).toContain('Daily Admin');
     expect(createServerSupabaseClient).not.toHaveBeenCalled();
+  });
+
+  it('denies origin-less cross-site, same-site and unclassified metadata requests', async () => {
+    for (const site of ['cross-site', 'same-site', null]) {
+      const request = new Request(BASE_URL + '?puzzleDate=2026-11-06', {
+        headers: {
+          authorization: AUTH,
+          ...(site === null ? {} : { 'sec-fetch-site': site }),
+        },
+      });
+      expect((await GET(request)).status).toBe(403);
+    }
+    expect(createServerSupabaseClient).not.toHaveBeenCalled();
+    expect(listPrivateOfficialDailyEditorialDrafts).not.toHaveBeenCalled();
+  });
+
+  it('allows a direct first-party admin catalog lookup with Fetch Metadata none', async () => {
+    const request = new Request(BASE_URL + '?puzzleDate=2026-11-06', {
+      headers: { authorization: AUTH, 'sec-fetch-site': 'none' },
+    });
+    expect((await GET(request)).status).toBe(200);
   });
 
   it('uses the bounded page request with a server-derived authenticated session', async () => {

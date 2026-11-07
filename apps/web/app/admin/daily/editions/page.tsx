@@ -6,6 +6,7 @@ import {
   requireDailyAdminPrincipal,
 } from '../../../dailyAdminAuthorization';
 import { DAILY_ADMIN_AUTH_PATH } from '../../../dailyAdminPaths';
+import { isFirstPartyDailyAdminNavigation } from '../../../dailyAdminRequestSecurity';
 import { validateIssuedDailyCalendarDate } from '@initial-baseball/daily';
 import {
   listPrivateOfficialDailyEditorialDrafts,
@@ -57,8 +58,11 @@ export default async function OfficialDailyEditionAdminPage({
 }): Promise<JSX.Element> {
   if (process.env.OFFICIAL_DAILY_EDITOR_DRAFTS_ENABLED !== 'true') notFound();
 
+  let fetchSite: string | null = null;
   try {
-    requireDailyAdminPrincipal((await headers()).get('authorization'));
+    const requestHeaders = await headers();
+    requireDailyAdminPrincipal(requestHeaders.get('authorization'));
+    fetchSite = requestHeaders.get('sec-fetch-site');
   } catch (error) {
     if (error instanceof DailyAdminAuthorizationError && error.kind === 'unauthorized') {
       redirect(DAILY_ADMIN_AUTH_PATH);
@@ -68,6 +72,7 @@ export default async function OfficialDailyEditionAdminPage({
       <p>Administrator configuration is unavailable.</p>
     </section></main>;
   }
+  if (!isFirstPartyDailyAdminNavigation(fetchSite)) notFound();
 
   const selection = parseSelection(await searchParams);
   let page: PrivateOfficialDailyEditorialPage | null = null;
