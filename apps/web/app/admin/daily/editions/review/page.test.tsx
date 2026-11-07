@@ -39,7 +39,7 @@ beforeEach(() => {
   vi.stubEnv('OFFICIAL_DAILY_EDITOR_DRAFTS_ENABLED', 'true');
   vi.stubEnv('DAILY_ADMIN_USERNAME', USER);
   vi.stubEnv('DAILY_ADMIN_PASSWORD', PASSWORD);
-  vi.mocked(headers).mockResolvedValue(new Headers({ authorization: AUTH }) as never);
+  vi.mocked(headers).mockResolvedValue(new Headers({ authorization: AUTH, 'sec-fetch-site': 'same-origin' }) as never);
   vi.mocked(readOfficialDailyEditorialDraftPreview).mockResolvedValue(PREVIEW);
 });
 afterEach(() => { vi.unstubAllEnvs(); vi.clearAllMocks(); });
@@ -60,6 +60,26 @@ describe('read-only authenticated exact secondary editor review page', () => {
     await expect(Page(props({ occurrenceId: ID }))).rejects.toThrow('NEXT_REDIRECT');
     expect(redirect).toHaveBeenCalledWith('/admin/auth');
     expect(createServerSupabaseClient).not.toHaveBeenCalled();
+  });
+
+  it('rejects cross-site, same-site and missing-context private roster navigations', async () => {
+    for (const site of ['cross-site', 'same-site', null]) {
+      vi.mocked(headers).mockResolvedValueOnce(new Headers({
+        authorization: AUTH,
+        ...(site === null ? {} : { 'sec-fetch-site': site }),
+      }) as never);
+      await expect(Page(props({ occurrenceId: ID }))).rejects.toThrow('NEXT_NOT_FOUND');
+    }
+    expect(createServerSupabaseClient).not.toHaveBeenCalled();
+    expect(readOfficialDailyEditorialDraftPreview).not.toHaveBeenCalled();
+  });
+
+  it('supports direct first-party navigation with Fetch Metadata none', async () => {
+    vi.mocked(headers).mockResolvedValueOnce(new Headers({
+      authorization: AUTH, 'sec-fetch-site': 'none',
+    }) as never);
+    expect(renderToStaticMarkup(await Page(props({ occurrenceId: ID }))))
+      .toContain('Reviewed secondary Daily roster');
   });
 
   it('renders a manual draft-lookup form without reading a draft', async () => {
