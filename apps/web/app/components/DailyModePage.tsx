@@ -10,6 +10,7 @@ import { DailyHowToDialog } from './DailyHowToDialog';
 import { DailyInningGame } from './DailyInningGame';
 import { DailyModeNavigation } from './DailyModeNavigation';
 import { DailyFooter } from './DailyFooter';
+import { isOfficialDailyEditionChooserVisible } from '../serverOfficialDailyEditionChoice';
 
 type DailyModePageProps = {
   rulesetVersion: DailyBootstrapRulesetVersion;
@@ -53,6 +54,11 @@ export async function DailyModePage({ rulesetVersion }: DailyModePageProps): Pro
           currentPath={mode.path}
           classicInningEnabled={isClassicInningEnabled()}
         />
+        {mode.path === '/' && isOfficialDailyEditionChooserVisible() ? (
+          <nav aria-label="More official Daily lineups">
+            <a href="/daily/editions">Choose another official Daily puzzle</a>
+          </nav>
+        ) : null}
 
         <DailyInningGame
           puzzle={bootstrap.puzzle}
