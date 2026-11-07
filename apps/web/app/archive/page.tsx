@@ -8,11 +8,11 @@ import { OfficialEditionArchiveSection } from './OfficialEditionArchiveSection';
 export const dynamic = 'force-dynamic';
 
 type ArchivePageProps = {
-  searchParams?: Promise<Record<string, string | string[] | undefined>>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
 /** Preserve the existing beta archive while staging immutable official editions on the same page. */
-export default async function ArchivePage({ searchParams = Promise.resolve({}) }: ArchivePageProps = {}): Promise<JSX.Element> {
+export default async function ArchivePage({ searchParams }: ArchivePageProps): Promise<JSX.Element> {
   const puzzles = await listAvailableArchiveBetaPuzzles();
   const officialArchiveEnabled = isOfficialDailyArchiveVisible();
   let official: OfficialDailyArchivePage | null = null;

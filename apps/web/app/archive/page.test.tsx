@@ -26,7 +26,7 @@ beforeEach(() => {
 
 describe('shared Archive route', () => {
   it('keeps the legacy beta page and does not read official metadata while gated off', async () => {
-    const html = renderToStaticMarkup(await ArchivePage());
+    const html = renderToStaticMarkup(await ArchivePage({ searchParams: Promise.resolve({}) }));
     expect(html).toContain('Archive beta');
     expect(html).toContain('Play an earlier lineup');
     expect(html).toContain('beta-results');
