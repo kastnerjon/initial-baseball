@@ -8,6 +8,7 @@ import { isDeepStrictEqual } from 'node:util';
 import { randomUUID } from 'node:crypto';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { getPacificDailyDateString } from './getPacificDailyDateString';
+import { getCanonicalDailyPlayer } from './canonicalDailyPlayerLookup';
 import { prepareServerOfficialDailyPublication } from './materializePermanentDailyIssuedClueSnapshot';
 
 const TABLE = 'official_daily_editorial_drafts';
@@ -185,6 +186,67 @@ export async function scheduleOfficialDailyEditorialDraft(
     if (scheduled.occurrence_id !== occurrenceId || scheduled.status !== 'scheduled'
         || scheduled.revision !== expectedRevision + 1) unavailable();
     return { status: 'scheduled' as const, occurrenceId, revision: scheduled.revision };
+  } catch (error) {
+    if (error instanceof OfficialDailyDraftError) throw error;
+    unavailable();
+  }
+}
+
+
+/** Exact private editorial roster preview; neither public clue transport nor issuance. */
+export type OfficialDailyDraftPreview = Readonly<{
+  occurrenceId: string; puzzleDate: string; puzzleNumber: number;
+  editionKey: string; editionNumber: number; title: string;
+  status: 'draft' | 'scheduled' | 'issued'; revision: number;
+  canSchedule: boolean;
+  selections: readonly Readonly<{
+    slot: number; canonicalPlayerId: string; displayName: string | null;
+  }>[];
+}>;
+
+/** Auth and feature admission are enforced by the private HTTP adapter. */
+export async function readOfficialDailyEditorialDraftPreview(
+  client: SupabaseClient, occurrenceId: string, now: Date = new Date(),
+): Promise<OfficialDailyDraftPreview> {
+  if (typeof occurrenceId !== 'string' || !UUID.test(occurrenceId)
+      || !Number.isFinite(now.getTime())) invalid();
+  try {
+    const found = await client.from(TABLE).select(COLUMNS)
+      .eq('occurrence_id', occurrenceId).maybeSingle();
+    if (found.error !== null) unavailable();
+    if (found.data === null) throw new OfficialDailyDraftError('conflict');
+    const draft = readDraft(found.data);
+    if (draft.occurrence_id !== occurrenceId) unavailable();
+    const selections = [...draft.selections].sort((a, b) => a.slot - b.slot)
+      .map(({ slot, canonicalPlayerId }) => ({
+        slot, canonicalPlayerId,
+        displayName: getCanonicalDailyPlayer(canonicalPlayerId)?.displayName ?? null,
+      }));
+    let canSchedule = false;
+    if (draft.status === 'draft' && draft.puzzle_date > getPacificDailyDateString(now)
+        && selections.every(selection => selection.displayName !== null)) {
+      try {
+        // Reuse the existing writer's canonical clue materializer. Do not
+        // return the hidden snapshot or any diagnostic exception.
+        prepareServerOfficialDailyPublication({
+          occurrenceId: draft.occurrence_id, editionKey: draft.edition_key,
+          editionNumber: draft.edition_number, title: draft.title,
+          editorial: {
+            puzzleDate: draft.puzzle_date, puzzleNumber: draft.puzzle_number,
+            status: 'scheduled', selections: draft.selections,
+          },
+        });
+        canSchedule = true;
+      } catch {
+        // A preview cannot override the revision-checked scheduling validator.
+      }
+    }
+    return {
+      occurrenceId: draft.occurrence_id, puzzleDate: draft.puzzle_date,
+      puzzleNumber: draft.puzzle_number, editionKey: draft.edition_key,
+      editionNumber: draft.edition_number, title: draft.title,
+      status: draft.status, revision: draft.revision, canSchedule, selections,
+    };
   } catch (error) {
     if (error instanceof OfficialDailyDraftError) throw error;
     unavailable();

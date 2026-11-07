@@ -533,3 +533,10 @@ or scoring behavior is activated by this command.
 The transaction migration (#559), draft-admin path (#560), exact-ID reader
 (#558), hosted QA and independent release checks are separate prerequisites.
 Production migration/activation still requires release approval.
+
+
+## Restricted secondary Daily editor exact-draft preview (staged)
+
+With OFFICIAL_DAILY_EDITOR_DRAFTS_ENABLED=true and the existing same-origin and Basic admin authentication, GET /admin/daily/editions/preview?occurrenceId=UUID returns a private draft's date, edition metadata, revision, nine ordered canonical player IDs and resolved display names. The canonical clue materializer is invoked server-side to derive a non-authoritative canSchedule indicator for a future draft, but no frozen hint values, snapshot, actor metadata or provider diagnostics are returned. Responses are private, no-store and vary by Authorization; invalid IDs fail before private DB construction.
+
+The preview does not schedule, issue, publish or authorize competitive results. The existing revision-CAS PATCH independently validates clues on the mutation. A later UI milestone must present all nine choices and obtain explicit review/confirmation; this GET alone is not a release. Production flags and schema remain unchanged.
