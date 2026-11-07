@@ -1,4 +1,4 @@
-import type { JSX } from 'react';
+import React, { type JSX } from 'react';
 import { CLASSIC_DAILY_RULESET_VERSION } from '@initial-baseball/shared';
 import type { DailyBootstrapRulesetVersion } from '../dailyRuntimeContracts';
 import { isClassicInningEnabled } from '../gameAvailability';
