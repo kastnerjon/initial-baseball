@@ -23,6 +23,7 @@ type GameCompleteViewProps = {
   atBatComparisons?: DailyNineScorecardComparisons;
   inningScoreboard?: InningScoreboardProps;
   onResetToday?: () => void;
+  practiceOnly?: boolean;
   leaderboard?: {
     puzzle: Pick<DailyPublicPuzzle, 'id' | 'puzzleDate' | 'puzzleNumber'>;
     completedAtBats: DailyCompletedAtBat[];
@@ -40,10 +41,13 @@ export function GameCompleteView({
   inningScoreboard,
   onResetToday,
   leaderboard,
+  practiceOnly = false,
 }: GameCompleteViewProps): JSX.Element {
   const isPointsGame = isDailyPointsRulesetVersion(shareResult.rulesetVersion);
   const performanceLayout = isYourNineEnabled(shareResult.rulesetVersion);
-  const shareCardText = isPointsGame
+  const shareCardText = practiceOnly
+    ? `Practice — scores are not submitted\n${shareText}`
+    : isPointsGame
     ? createDailyNineScorecardShareText(
         shareText,
         shareResult.points.points,
@@ -57,26 +61,28 @@ export function GameCompleteView({
 
   return (
     <div className="game-shell">
+      {practiceOnly ? <p className="daily-practice-notice">Practice — scores are not submitted</p> : null}
       {performanceLayout ? (
         <ResultsDisclosure title="Summary">
           <section className="complete-card complete-card-daily">
             <h2>{'Daily #' + shareResult.puzzleNumber}</h2>
             <DailyNineCompletedComparison points={shareResult.points.points}
-              state={comparison} currentPointsV4 />
+              state={comparison} currentPointsV4 practiceOnly={practiceOnly} />
           </section>
         </ResultsDisclosure>
       ) : (
         <section className={isPointsGame ? 'complete-card complete-card-daily' : 'complete-card'}>
           <h2>{isPointsGame ? 'Daily #' + shareResult.puzzleNumber : 'Game Complete'}</h2>
           {isPointsGame ? (
-            <DailyNineCompletedComparison points={shareResult.points.points} state={comparison} />
+            <DailyNineCompletedComparison points={shareResult.points.points} state={comparison} practiceOnly={practiceOnly} />
           ) : (
             <ScoreLine summary={shareResult.summary} />
           )}
         </section>
       )}
-      {!performanceLayout && inningScoreboard !== undefined ? <InningScoreboard {...inningScoreboard} /> : null}
+      {!practiceOnly && !performanceLayout && inningScoreboard !== undefined ? <InningScoreboard {...inningScoreboard} /> : null}
       <PitchResultList
+        practiceOnly={practiceOnly}
         answers={scorecardAnswers}
         {...(performanceLayout ? {
           performanceLayout,
@@ -93,12 +99,12 @@ export function GameCompleteView({
         title={isPointsGame ? 'Scoreboard' : 'At-bat Results'}
         emptyLabel="No at-bat results were recorded."
       />
-      {leaderboard === undefined ? null : (
+      {practiceOnly || leaderboard === undefined ? null : (
         <ResultsDisclosure title="Top 10">
           <DailyNineLeaderboard {...leaderboard} showHeading={false} />
         </ResultsDisclosure>
       )}
-      {shareResult.rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION ? (
+      {!practiceOnly && shareResult.rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION ? (
         <DailyNineScoreDistributionCharts
           points={atBatPoints} comparisons={atBatComparisons}
           completedComparison={comparison}

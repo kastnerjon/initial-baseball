@@ -8,15 +8,16 @@ type DailyNineCompletedComparisonProps = {
   points: number;
   state: DailyNineCompletedComparisonState;
   currentPointsV4?: boolean;
+  practiceOnly?: boolean;
 };
 
-export function DailyNineCompletedComparison({ points, state, currentPointsV4 = false }: DailyNineCompletedComparisonProps): JSX.Element {
+export function DailyNineCompletedComparison({ points, state, currentPointsV4 = false, practiceOnly = false }: DailyNineCompletedComparisonProps): JSX.Element {
   const presentation = state.status === 'idle' ? null : createDailyNineCompletedComparisonPresentation(state);
   const inclusivePercentile = currentPointsV4 ? formatDailyNineCompletedPercentile(state) : null;
 
   return (
-    <section className="completed-comparison" aria-label="Final score comparison" aria-live="polite">
-      <div className="completed-comparison-metrics">
+    <section className="completed-comparison" aria-label={practiceOnly ? 'Practice final score' : 'Final score comparison'} aria-live="polite">
+      <div className={practiceOnly ? 'completed-comparison-metrics completed-comparison-metrics-practice' : 'completed-comparison-metrics'}>
         <div className="completed-comparison-tile completed-comparison-tile-score">
           <span className="completed-comparison-label">Final Score</span>
           <div className="completed-comparison-score-line">
@@ -24,6 +25,7 @@ export function DailyNineCompletedComparison({ points, state, currentPointsV4 = 
             <span className="completed-comparison-points-unit">PTS</span>
           </div>
         </div>
+        {practiceOnly ? null : <>
         <div className="completed-comparison-tile">
           <span className="completed-comparison-label">Average</span>
           <strong className="completed-comparison-value">{presentation?.average ?? '—'}</strong>
@@ -39,14 +41,15 @@ export function DailyNineCompletedComparison({ points, state, currentPointsV4 = 
             </span>
           ) : null}
         </div>
+        </>}
       </div>
-      {currentPointsV4 ? (
+      {!practiceOnly && currentPointsV4 ? (
         <div className="completed-comparison-extra">
           <span>BEAT <strong>{presentation?.beat ?? '—'}</strong></span>
           <span>Percentile <strong>{inclusivePercentile === null ? '—' : formatDailyNinePercentileOrdinal(Number(inclusivePercentile))}</strong></span>
         </div>
       ) : null}
-      {presentation === null ? null : <p className="completed-comparison-note">{presentation.note}</p>}
+      {practiceOnly || presentation === null ? null : <p className="completed-comparison-note">{presentation.note}</p>}
     </section>
   );
 }

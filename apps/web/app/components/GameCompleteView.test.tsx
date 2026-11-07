@@ -26,6 +26,50 @@ const shareResult: DailyShareResult = {
   url: 'https://example.test/',
 };
 
+describe('Official Daily noncompetitive practice completion', () => {
+  it('renders earned points and spoiler-safe sharing without peer metrics, even if supplied', () => {
+    const html = renderToStaticMarkup(<GameCompleteView
+      practiceOnly
+      shareResult={{
+        ...shareResult, rulesetVersion: 'points-v4',
+        points: { points: 4, maximumPoints: 36, atBatsCompleted: 9, totalAtBats: 9, completed: true },
+      }}
+      shareText={shareText}
+      scorecardAnswers={{ 1: 'Jackie Robinson', 2: 'FUTURE_PRIVATE_PLAYER' }}
+      atBatPoints={{ 1: 4 }}
+      comparison={{ status: 'success', ownPoints: 4, completedGameCount: 1,
+        averageTotalPoints: 2.5, strictLowerFinishRate: 1, inclusiveFinishPercentile: 1 }}
+      atBatComparisons={{ 1: { status: 'success', resolvedAtBatCount: 3, averagePoints: 2.5 } }}
+    />);
+    expect(html).toContain('Practice — scores are not submitted');
+    expect(html).toContain('Practice final score');
+    expect(html).toContain('Final Score');
+    expect(html).toContain('Your Nine');
+    expect(html).toContain('Reveal players');
+    expect(html).toContain('Spoiler-free share card');
+    for (const unavailable of ['AVG', 'Average', 'BEAT', 'Percentile',
+      'Loading comparison', 'Loading score distribution', 'Final Score Distribution',
+      'At-Bat Score Distribution', 'How everyone scored', 'score distribution']) {
+      expect(html).not.toContain(unavailable);
+    }
+    expect(html).not.toContain('Jackie Robinson');
+    expect(html).not.toContain('FUTURE_PRIVATE_PLAYER');
+    expect(html).not.toContain('2.5');
+  });
+
+  it('keeps ordinary competitive v4 comparisons and distributions unchanged', () => {
+    const html = renderToStaticMarkup(<GameCompleteView
+      shareResult={{ ...shareResult, rulesetVersion: 'points-v4' }}
+      shareText={shareText} atBatPoints={{ 1: 4 }}
+      comparison={{ status: 'loading', ownPoints: 4 }}
+    />);
+    expect(html).toContain('Percentile');
+    expect(html).toContain('Final Score Distribution');
+    expect(html).toContain('At-Bat Score Distribution');
+    expect(html).not.toContain('Practice — scores are not submitted');
+  });
+});
+
 describe('Completed scorecard section order', () => {
   it('shows five default-open disclosures in the requested order, and lineup initials', () => {
     const html = renderToStaticMarkup(<GameCompleteView

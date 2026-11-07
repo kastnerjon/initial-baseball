@@ -37,6 +37,20 @@ const props = {
 };
 
 describe('DailyNineDetailedScoreboard', () => {
+  it('hides unavailable peer columns and retains practice outcomes and totals', () => {
+    const html = renderToStaticMarkup(<DailyNineDetailedScoreboardTable
+      {...props} practiceOnly revealAnswers={false} />);
+    expect(html).toContain('HR - 4');
+    expect(html).toContain('K - 0');
+    expect(html).toContain('aria-label="Total points">4');
+    expect(html).not.toContain('Bryce Harper');
+    expect(html).not.toContain('AVG');
+    expect(html).not.toContain('BEAT');
+    expect(html).not.toContain('Completed-game average');
+    expect((html.match(/<col\/>/g) ?? []).length).toBe(3);
+  });
+
+
   it('keeps answered names out of the default scoreboard markup and retains exact row outcomes', () => {
     const html = renderToStaticMarkup(<DailyNineDetailedScoreboard {...props} compact={false} />);
     expect(html).toContain('daily-nine-detail-card');
