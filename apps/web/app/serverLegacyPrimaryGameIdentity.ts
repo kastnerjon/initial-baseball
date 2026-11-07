@@ -62,7 +62,7 @@ export async function verifyPublishedLegacyPrimaryGameIdentity(
     // Do not infer a roster hash for pre-launch dates whose production policy
     // selects deterministic fallback even when an editorial row is published.
     const selection = resolvePublicDailyPuzzleSelection(publication.puzzleDate, record);
-    if (selection.kind !== 'editorial') invalid();
+    if (selection.kind !== 'editorial') throw new LegacyPrimaryIdentityVerificationError();
     return {
       puzzleDate: publication.puzzleDate,
       puzzleNumber: publication.puzzleNumber,
