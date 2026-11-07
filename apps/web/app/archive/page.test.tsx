@@ -10,7 +10,9 @@ vi.mock('../serverArchiveBetaRuntime', () => ({
 }));
 vi.mock('../serverOfficialDailyArchiveSection', () => ({
   isOfficialDailyArchiveVisible: mocked.visible,
-  readPrivateOfficialDailyArchive: mocked.archive,
+}));
+vi.mock('../serverUnifiedOfficialDailyArchiveSection', () => ({
+  readPrivateUnifiedOfficialDailyArchive: mocked.archive,
 }));
 vi.mock('./ArchiveLocalResults', () => ({
   ArchiveLocalResults: () => React.createElement('div', { 'data-testid': 'beta-results' }),
@@ -37,15 +39,24 @@ describe('shared Archive route', () => {
   it('renders official editions in the same Archive without removing beta results', async () => {
     mocked.visible.mockReturnValue(true);
     mocked.archive.mockResolvedValue({ dates: [{
-      puzzleDate: '2026-11-05', editions: [{
-        puzzleId: 'daily-ed-v1-907f33db-c38f-43c3-8e6b-a3aaf19bbd08',
-        puzzleDate: '2026-11-05', puzzleNumber: 194, editionNumber: 1,
-        editionKey: 'puzzle-1', title: 'Modern',
-      }],
+      puzzleDate: '2026-11-05', editions: [
+        { kind: 'legacy-primary', puzzleId: null, puzzleDate: '2026-11-05',
+          puzzleNumber: 193, editionNumber: 1, title: 'Puzzle 1' },
+        { kind: 'official-secondary',
+          puzzleId: 'daily-ed-v1-907f33db-c38f-43c3-8e6b-a3aaf19bbd08',
+          puzzleDate: '2026-11-05', puzzleNumber: 193, editionNumber: 2,
+          title: 'Modern',
+        },
+      ],
     }], nextCursor: null });
     const html = renderToStaticMarkup(await ArchivePage({ searchParams: Promise.resolve({}) }));
     expect(html).toContain('Past Daily lineups');
+    expect(html).toContain('2026-11-05 – Puzzle 1');
+    expect(html).toContain('Historical replay unavailable');
     expect(html).toContain('2026-11-05 – Modern');
+    expect(html).toContain('/daily/editions/daily-ed-v1-907f33db-c38f-43c3-8e6b-a3aaf19bbd08?date=2026-11-05');
+    expect(html).not.toContain('href="/daily/editions/null');
+    expect(html).not.toContain('daily-2026-11-05-v1');
     expect(html).toContain('beta-results');
     expect(mocked.archive).toHaveBeenCalledWith({});
   });

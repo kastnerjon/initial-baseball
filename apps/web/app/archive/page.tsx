@@ -1,9 +1,10 @@
 import React, { type JSX } from 'react';
 import { listAvailableArchiveBetaPuzzles } from '../serverArchiveBetaRuntime';
-import { readPrivateOfficialDailyArchive, isOfficialDailyArchiveVisible } from '../serverOfficialDailyArchiveSection';
-import type { OfficialDailyArchivePage } from '../serverOfficialDailyArchiveSection';
+import { isOfficialDailyArchiveVisible } from '../serverOfficialDailyArchiveSection';
+import { readPrivateUnifiedOfficialDailyArchive } from '../serverUnifiedOfficialDailyArchiveSection';
+import type { UnifiedArchivePage } from '../unifiedOfficialDailyArchiveMerge';
 import { ArchiveLocalResults } from './ArchiveLocalResults';
-import { OfficialEditionArchiveSection } from './OfficialEditionArchiveSection';
+import { UnifiedOfficialDailyArchiveSection } from './UnifiedOfficialDailyArchiveSection';
 
 export const dynamic = 'force-dynamic';
 
@@ -11,17 +12,17 @@ type ArchivePageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
-/** Preserve the existing beta archive while staging immutable official editions on the same page. */
+/** One default-OFF historical official Archive above the existing separate beta series. */
 export default async function ArchivePage({ searchParams }: ArchivePageProps): Promise<JSX.Element> {
   const puzzles = await listAvailableArchiveBetaPuzzles();
   const officialArchiveEnabled = isOfficialDailyArchiveVisible();
-  let official: OfficialDailyArchivePage | null = null;
+  let official: UnifiedArchivePage | null = null;
   let officialUnavailable = false;
   if (officialArchiveEnabled) {
     try {
       const query = await searchParams;
       // Navigation analytics are not Archive cursor authority. Preserve only cursor fields.
-      official = await readPrivateOfficialDailyArchive({
+      official = await readPrivateUnifiedOfficialDailyArchive({
         ...(query.afterDate === undefined ? {} : { afterDate: query.afterDate }),
         ...(query.afterEdition === undefined ? {} : { afterEdition: query.afterEdition }),
       });
@@ -35,7 +36,7 @@ export default async function ArchivePage({ searchParams }: ArchivePageProps): P
       <section className="daily-card">
         <p className="eyebrow">Initial Baseball · {officialArchiveEnabled ? 'Archive' : 'Archive beta'}</p>
         <h1>{officialArchiveEnabled ? 'Past Daily lineups' : 'Play an earlier lineup'}</h1>
-        {official !== null ? <OfficialEditionArchiveSection page={official} /> : null}
+        {official !== null ? <UnifiedOfficialDailyArchiveSection page={official} /> : null}
         {officialUnavailable ? (
           <section aria-label="Official Daily archive">
             <h2>Official Daily editions</h2>
