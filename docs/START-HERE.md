@@ -1,5 +1,12 @@
 # Initial Baseball — Start Here
 
+## November 7 — secondary official Daily scoring ID family fail-closed in production (#594)
+
+- Verified `main` commit `795f33cfd3bce6946772cf53e159983f18f648ca`, squash-merged PR #594 after exact-head CI `42336148841` SUCCESS, READY Preview, clean final-head Codex, and completed CodeRabbit review with no code findings. Matching production Vercel deployment `dpl_BuSRnUkEruRkUe4jrZ5vGUNiS1uE` was observed READY. This changes only source-level result admission for the reserved full `daily-ed-*` ID family, including unknown future versions; it does **not** grant competitive secondary scoring. Existing primary, Classic and Archive beta score handling was preserved by the reviewed tests.
+- PRs #572 (leaderboard) and #573 (comparison reads) remain open and must be independently reviewed and reconciled against the widened shared guard before merging. The signed exact-ID result contract and #566 remain a distinct release requirement, especially when two editions have identical rosters. Do not enable secondary scoring on the basis of this guard alone.
+- Restricted editor improvements remain **staged**: PR #599 adds authenticated exact-draft nine-player private preview (CI success on combined head `26aea8e2`, matching READY Preview; final-head independent review still required). Stacked PR #600 adds a read-only server-rendered editor review page, subject to its own CI and reviews. Neither adds a scheduling control or changes production flags/schema. Existing #574/#575 catalog/workbench remain separately staged; link integration is not complete.
+- Unified A4 Archive route staged in #598, not merged or released, with legacy primary editorial identity intentionally unlinked pending historical gameplay-ID and clue continuity proof. Physical Safari/Android navigation, 100+ same-date editions in hosted QA and signed competition remain blockers. Production official publication/editor-draft schema is not applied; isolated QA `iklbnlicgsxxhaoiscor` remains separate. No production migration or new feature-flag activation was performed in this session.
+
 ## November 5 — multi-Daily implementation authorized
 
 Main at approval: 6b39525f, push CI 41966926633 successful and matching READY production. The November 6 primary was scheduled at revision 10 with nine slots. Multi-edition play is pending. Follow [the approved implementation sequence](../tasks/plans/multiple-official-dailies.md); keep Custom/Auth disabled until its separate release gates pass.
