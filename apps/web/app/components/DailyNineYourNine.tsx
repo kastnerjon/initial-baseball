@@ -23,6 +23,7 @@ export type DailyNineYourNineProps = {
   puzzleNumber?: number;
   totalAtBats: number;
   completedComparison?: DailyNineCompletedComparisonState;
+  practiceOnly?: boolean;
   currentAtBatNumber?: number | null;
   currentAtBatInitials?: string;
 };
@@ -31,7 +32,7 @@ export function DailyNineYourNine(props: DailyNineYourNineProps): JSX.Element {
   const [revealPlayers, setRevealPlayers] = useState(false);
   const [expanded, setExpanded] = useState(true);
   const bodyId = useId();
-  const gameAverage = props.completedComparison === undefined || props.completedComparison.status === 'idle'
+  const gameAverage = props.practiceOnly || props.completedComparison === undefined || props.completedComparison.status === 'idle'
     ? null : createDailyNineCompletedComparisonPresentation(props.completedComparison).average;
   return (
     <section className="your-nine" aria-label="Your Nine at-bat results">
@@ -81,6 +82,7 @@ export function DailyNineYourNine(props: DailyNineYourNineProps): JSX.Element {
 
 export function DailyNineYourNineRows({
   rows, answers, points, comparisons, totalAtBats, currentAtBatNumber, currentAtBatInitials, revealPlayers,
+  practiceOnly = false,
   initialExpandedAtBat = null,
 }: DailyNineYourNineProps & { revealPlayers: boolean; initialExpandedAtBat?: number | null }): JSX.Element {
   const [expandedAtBat, setExpandedAtBat] = useState<number | null>(initialExpandedAtBat);
@@ -98,7 +100,7 @@ export function DailyNineYourNineRows({
     <div className="your-nine-list">
       {rows.map(row => {
         const awardedPoints = points[row.pitchNumber];
-        const comparison = comparisons[row.pitchNumber];
+        const comparison = practiceOnly ? undefined : comparisons[row.pitchNumber];
         const rawAverage = comparison?.status === 'success' && comparison.resolvedAtBatCount > 0
           ? comparison.averagePoints : null;
         const status = rawAverage === null || awardedPoints === undefined ? 'pending'
@@ -106,7 +108,7 @@ export function DailyNineYourNineRows({
         const fill = awardedPoints === undefined || MAX_POINTS_PER_AT_BAT <= 0 ? 0
           : Math.min(100, Math.max(0, (awardedPoints / MAX_POINTS_PER_AT_BAT) * 100));
         const answer = revealPlayers ? answers[row.pitchNumber] : undefined;
-        const expanded = expandedAtBat === row.pitchNumber;
+        const expanded = !practiceOnly && expandedAtBat === row.pitchNumber;
         const accessibleAverage = row.average === '—' ? 'unavailable' : `${row.average} points`;
         const percentile = createDailyNineScorecardAtBatPercentile(awardedPoints, comparison) ?? '—';
         const accessiblePercentile = percentile === '—' ? 'percentile unavailable' : `${percentile} percentile`;
@@ -123,10 +125,14 @@ export function DailyNineYourNineRows({
             <button
               type="button"
               className="your-nine-row-toggle"
-              aria-expanded={expanded}
-              aria-controls={expanded ? panelId : undefined}
-              aria-label={`At-bat ${row.pitchNumber}: ${row.initials}${answer ? ` - ${answer}` : ''}, ${row.outcome}, ${row.score} points, average ${accessibleAverage}, ${accessiblePercentile}. ${expanded ? 'Hide' : 'Show'} score distribution`}
-              onClick={() => setExpandedAtBat(current => current === row.pitchNumber ? null : row.pitchNumber)}
+              aria-expanded={practiceOnly ? undefined : expanded}
+              aria-controls={practiceOnly ? undefined : expanded ? panelId : undefined}
+              aria-label={practiceOnly
+                ? `Practice at-bat ${row.pitchNumber}: ${row.initials}${answer ? ` - ${answer}` : ''}, ${row.outcome}, ${row.score} points`
+                : `At-bat ${row.pitchNumber}: ${row.initials}${answer ? ` - ${answer}` : ''}, ${row.outcome}, ${row.score} points, average ${accessibleAverage}, ${accessiblePercentile}. ${expanded ? 'Hide' : 'Show'} score distribution`}
+              disabled={practiceOnly}
+              onClick={practiceOnly ? undefined
+                : () => setExpandedAtBat(current => current === row.pitchNumber ? null : row.pitchNumber)}
             >
               <span className="your-nine-ab">{String(row.pitchNumber).padStart(2, '0')}</span>
               <span className="your-nine-row-main">
@@ -145,15 +151,15 @@ export function DailyNineYourNineRows({
                     <span>{`${row.score} PTS`}</span>
                   </span>
                 </span>
-                <span className="your-nine-comparison">
+                {practiceOnly ? null : <span className="your-nine-comparison">
                   <span className="your-nine-avg">{`AVG ${row.average}`}</span>
                   <span className="your-nine-track" aria-hidden="true">
                     <span className="your-nine-fill" style={{ width: `${fill}%` }} />
                   </span>
                   <strong className="your-nine-beat">{percentile === '—' ? 'Percentile —' : `${percentile} Percentile`}</strong>
-                </span>
+                </span>}
               </span>
-              <span className="your-nine-expand-icon" aria-hidden="true">{expanded ? '−' : '+'}</span>
+              {practiceOnly ? null : <span className="your-nine-expand-icon" aria-hidden="true">{expanded ? '−' : '+'}</span>}
             </button>
             {expanded ? (
               <div id={panelId} className="your-nine-distribution" role="region" aria-label={`At-bat ${row.pitchNumber} score distribution`}>

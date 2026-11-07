@@ -14,6 +14,7 @@ type PitchResultListProps = {
   title: string;
   emptyLabel: string;
   compact?: boolean;
+  practiceOnly?: boolean;
   answers?: DailyScorecardAnswers;
   points?: DailyScorecardPoints;
   comparisons?: DailyNineScorecardComparisons;
@@ -31,6 +32,7 @@ export function PitchResultList({
   title,
   emptyLabel,
   compact = false,
+  practiceOnly = false,
   answers = {},
   points,
   comparisons = {},
@@ -49,6 +51,7 @@ export function PitchResultList({
   if (dailyNineRows !== null && performanceLayout) {
     return <DailyNineYourNine
       rows={dailyNineRows}
+      practiceOnly={practiceOnly}
       answers={answers}
       points={points!}
       comparisons={comparisons}
@@ -64,6 +67,7 @@ export function PitchResultList({
   if (dailyNineRows !== null) {
     return <DailyNineDetailedScoreboard
       rows={dailyNineRows}
+      practiceOnly={practiceOnly}
       answers={answers}
       points={points!}
       comparisons={comparisons}

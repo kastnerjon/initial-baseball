@@ -189,6 +189,7 @@ export function DailyInningGame({
       : undefined;
     return (
       <GameCompleteView
+        practiceOnly={editionPractice}
         scorecardAnswers={scorecardAnswers}
         shareResult={shareResult}
         shareText={`${archive ? 'Archive beta\n' : ''}${formatDailyShareText(shareResult)}`}
@@ -291,6 +292,7 @@ export function DailyInningGame({
       />
       {performanceLayout || gameState.completedPitchLines.length > 0 ? (
         <PitchResultList
+          practiceOnly={editionPractice}
           answers={scorecardAnswers}
           {...(performanceLayout ? {
             performanceLayout,

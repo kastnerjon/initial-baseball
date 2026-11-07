@@ -220,3 +220,34 @@ describe('Daily Nine Your Nine presentation', () => {
     expect(html).not.toContain('Upcoming');
   });
 });
+
+
+describe('practice-only Your Nine results', () => {
+  it('retains personal at-bat and total scores while hiding all competitive comparison widgets', () => {
+    const html = renderToStaticMarkup(<DailyNineYourNine
+      {...props} practiceOnly comparisons={{}} completedComparison={{ status: 'idle' }}
+    />);
+    expect(html).toContain('6.5');
+    expect(html).toContain('2B');
+    expect(html).toContain('4 PTS');
+    expect(html).toContain('Reveal players');
+    expect(html).not.toContain('AVG');
+    expect(html).not.toContain('Percentile');
+    expect(html).not.toContain('Loading score distribution');
+    expect(html).not.toContain('Show score distribution');
+    expect(html).not.toContain('Future answer must not appear');
+  });
+
+  it('does not expose any distributions even with a stale pre-expanded row selection', () => {
+    const html = renderToStaticMarkup(<DailyNineYourNineRows
+      {...props} practiceOnly comparisons={{}}
+      initialExpandedAtBat={1} revealPlayers={false}
+    />);
+    expect(html).not.toContain('Loading score distribution');
+    expect(html).not.toContain('At-bat 1 score distribution');
+    expect(html).not.toContain('AVG 1.3');
+    expect(html).not.toContain('Percentile');
+    expect(html).toContain('Practice at-bat 1: BH, 2B, 2 points');
+    expect(html).not.toContain('Bryce Harper');
+  });
+});

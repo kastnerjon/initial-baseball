@@ -3,7 +3,7 @@ import { isDailyPointsRulesetVersion, POINTS_V4_DAILY_RULESET_VERSION, type Dail
 import { PitchResultList } from './PitchResultList';
 import { DailyShareCard } from './DailyShareCard';
 import { DailyNineLeaderboard } from './DailyNineLeaderboard';
-import type { DailyScorecardAnswers, DailyScorecardPoints } from '../dailyScorecard';
+import { formatDailyScorecardPoints, type DailyScorecardAnswers, type DailyScorecardPoints } from '../dailyScorecard';
 import type { DailyNineCompletedComparisonState } from '../useDailyNineCompletedComparison';
 import type { DailyNineScorecardComparisons } from '../useDailyNineScorecardComparisons';
 import { createDailyNineScorecardShareText } from '../dailyNineScorecardComparisonPresentation';
@@ -23,6 +23,7 @@ type GameCompleteViewProps = {
   atBatComparisons?: DailyNineScorecardComparisons;
   inningScoreboard?: InningScoreboardProps;
   onResetToday?: () => void;
+  practiceOnly?: boolean;
   leaderboard?: {
     puzzle: Pick<DailyPublicPuzzle, 'id' | 'puzzleDate' | 'puzzleNumber'>;
     completedAtBats: DailyCompletedAtBat[];
@@ -40,10 +41,11 @@ export function GameCompleteView({
   inningScoreboard,
   onResetToday,
   leaderboard,
+  practiceOnly = false,
 }: GameCompleteViewProps): JSX.Element {
   const isPointsGame = isDailyPointsRulesetVersion(shareResult.rulesetVersion);
   const performanceLayout = isYourNineEnabled(shareResult.rulesetVersion);
-  const shareCardText = isPointsGame
+  const shareCardText = isPointsGame && !practiceOnly
     ? createDailyNineScorecardShareText(
         shareText,
         shareResult.points.points,
@@ -55,21 +57,28 @@ export function GameCompleteView({
       )
     : shareText;
 
+  const scoreSummary = practiceOnly
+    ? <section className="completed-comparison" aria-label="Practice final score">
+        <span>Final Score</span>
+        <strong>{formatDailyScorecardPoints(shareResult.points.points)} PTS</strong>
+      </section>
+    : <DailyNineCompletedComparison points={shareResult.points.points}
+        state={comparison} currentPointsV4={performanceLayout} />;
+
   return (
     <div className="game-shell">
       {performanceLayout ? (
         <ResultsDisclosure title="Summary">
           <section className="complete-card complete-card-daily">
             <h2>{'Daily #' + shareResult.puzzleNumber}</h2>
-            <DailyNineCompletedComparison points={shareResult.points.points}
-              state={comparison} currentPointsV4 />
+            {scoreSummary}
           </section>
         </ResultsDisclosure>
       ) : (
         <section className={isPointsGame ? 'complete-card complete-card-daily' : 'complete-card'}>
           <h2>{isPointsGame ? 'Daily #' + shareResult.puzzleNumber : 'Game Complete'}</h2>
           {isPointsGame ? (
-            <DailyNineCompletedComparison points={shareResult.points.points} state={comparison} />
+            {scoreSummary}
           ) : (
             <ScoreLine summary={shareResult.summary} />
           )}
@@ -77,6 +86,7 @@ export function GameCompleteView({
       )}
       {!performanceLayout && inningScoreboard !== undefined ? <InningScoreboard {...inningScoreboard} /> : null}
       <PitchResultList
+        practiceOnly={practiceOnly}
         answers={scorecardAnswers}
         {...(performanceLayout ? {
           performanceLayout,
@@ -93,12 +103,12 @@ export function GameCompleteView({
         title={isPointsGame ? 'Scoreboard' : 'At-bat Results'}
         emptyLabel="No at-bat results were recorded."
       />
-      {leaderboard === undefined ? null : (
+      {leaderboard === undefined || practiceOnly ? null : (
         <ResultsDisclosure title="Top 10">
           <DailyNineLeaderboard {...leaderboard} showHeading={false} />
         </ResultsDisclosure>
       )}
-      {shareResult.rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION ? (
+      {shareResult.rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION && !practiceOnly ? (
         <DailyNineScoreDistributionCharts
           points={atBatPoints} comparisons={atBatComparisons}
           completedComparison={comparison}
