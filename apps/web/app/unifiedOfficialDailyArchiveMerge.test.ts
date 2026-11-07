@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+vi.mock('server-only', () => ({}));
 import type { LegacyPrimaryPublicationPage } from './serverLegacyPrimaryDailyArchiveCatalog';
 import {
   mergePrivateOfficialDailyArchive, UnifiedDailyArchiveError,
@@ -142,6 +143,31 @@ describe('private primary-plus-secondary Archive cursor merger', () => {
       await expect(mergePrivateOfficialDailyArchive(fixture(
         [primary('2026-11-05', 193)], extras,
       ), {}, NOW)).rejects.toBeInstanceOf(UnifiedDailyArchiveError);
+    }
+  });
+
+  it('rejects a secondary source that returns more than the requested lookahead limit', async () => {
+    const base = fixture([], []);
+    const sources: UnifiedArchiveSources = {
+      primary: base.primary,
+      secondary: vi.fn(async () => ({
+        dates: [{ puzzleDate: '2026-11-05',
+          editions: Array.from({ length: 32 }, (_, index) =>
+            secondary('2026-11-05', 193, index + 2)) }],
+        nextCursor: null,
+      })),
+    };
+    await expect(mergePrivateOfficialDailyArchive(sources, { pageSize: 30 }, NOW))
+      .rejects.toMatchObject({ kind: 'unavailable' });
+  });
+
+  it('rejects secondary exact-ID aliasing across different edition numbers, including lookahead', async () => {
+    const first = secondary('2026-11-05', 193, 2);
+    const second = { ...secondary('2026-11-05', 193, 3), puzzleId: first.puzzleId };
+    for (const size of [1, 30]) {
+      await expect(mergePrivateOfficialDailyArchive(
+        fixture([], [first, second]), { pageSize: size }, NOW,
+      )).rejects.toMatchObject({ kind: 'unavailable' });
     }
   });
 

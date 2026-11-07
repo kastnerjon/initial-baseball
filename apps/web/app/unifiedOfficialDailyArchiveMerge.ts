@@ -1,3 +1,4 @@
+import 'server-only';
 import {
   getDailyPuzzleNumber, isOfficialDailyOccurrenceId, validateIssuedDailyCalendarDate,
 } from '@initial-baseball/daily';
@@ -107,8 +108,11 @@ export async function mergePrivateOfficialDailyArchive(
       kind: 'legacy-primary', puzzleDate: record.puzzleDate,
       puzzleNumber: record.puzzleNumber, editionNumber: 1, title: 'Puzzle 1', puzzleId: null,
     }));
+    let secondaryCount = 0;
     for (const group of secondary.dates) {
       if (!Array.isArray(group.editions)) throw new UnifiedDailyArchiveError('unavailable');
+      secondaryCount += group.editions.length;
+      if (secondaryCount > limit) throw new UnifiedDailyArchiveError('unavailable');
       for (const edition of group.editions) {
         if (edition.puzzleDate !== group.puzzleDate) throw new UnifiedDailyArchiveError('unavailable');
         entries.push({ kind: 'official-secondary', puzzleDate: edition.puzzleDate,
@@ -124,6 +128,14 @@ export async function mergePrivateOfficialDailyArchive(
       }
     }
     entries.sort(compare);
+    // The immutable ID cannot alias two distinct edition slots, including lookahead.
+    const seenSecondaryIds = new Set<string>();
+    for (const entry of entries) {
+      if (entry.kind === 'official-secondary') {
+        if (seenSecondaryIds.has(entry.puzzleId)) throw new UnifiedDailyArchiveError('unavailable');
+        seenSecondaryIds.add(entry.puzzleId);
+      }
+    }
     for (let i = 1; i < entries.length; i++) {
       if (compare(entries[i - 1]!, entries[i]!) === 0) {
         throw new UnifiedDailyArchiveError('unavailable');
