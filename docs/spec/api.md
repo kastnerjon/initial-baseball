@@ -533,3 +533,9 @@ or scoring behavior is activated by this command.
 The transaction migration (#559), draft-admin path (#560), exact-ID reader
 (#558), hosted QA and independent release checks are separate prerequisites.
 Production migration/activation still requires release approval.
+
+## Private legacy-primary Daily publication catalog (#589, source only)
+
+A server-only historical primary reader returns strictly verified publication metadata from the legacy daily_editorial_puzzles table for past-Pacific-day, already-published nine-player contract-v1 records. It selects only id, puzzle_date, puzzle_number, version, lineup_contract_version, status, published_at. It never selects selections, roster, player identities, hints, clues, actor details or results. It validates timestamps against the request clock, published status, immutable date/number consistency and descending unique dates. A 1–100 row (default 30) exclusive date cursor supports bounded pagination. Invalid input fails before private provider I/O; bad provider data fails closed without partial output.
+
+The stored editorial ID (daily-YYYY-MM-DD-v1) is NOT necessarily the legacy gameplay/result puzzle ID, which can be roster-fingerprint or deterministic-fallback based. The reader deliberately exposes editorialRecordId, not puzzleId; it must not be linked or used for competitive admission without proving the historical authoritative identity and preserving existing results. This is source-only with no route, migration or activation, and not a completed unified Archive.

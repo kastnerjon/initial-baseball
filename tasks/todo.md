@@ -1,3 +1,8 @@
+## Historical primary Daily and unified Archive (#589)
+
+- [ ] Reconcile 33 published historical primary editorial dates with their true authoritative gameplay/result IDs, including roster-fingerprint and fallback behavior, before enabling any primary Archive play URLs.
+- [ ] Combine verified primary metadata with immutable secondary editions using one bounded chronological cursor supporting arbitrary editions per date; preserve accepted primary results and separate disposable Archive-beta history. A private publication catalog alone is not A4 launch readiness.
+
 # Initial Baseball — Current Work
 
 ## Official Daily editions — approved November 5
