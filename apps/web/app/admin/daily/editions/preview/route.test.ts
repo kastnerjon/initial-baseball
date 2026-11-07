@@ -47,6 +47,8 @@ describe('default-OFF exact-draft editor preview route', () => {
       vi.stubEnv('OFFICIAL_DAILY_EDITOR_DRAFTS_ENABLED', value);
       expect((await GET(req())).status).toBe(404);
     }
+    delete process.env.OFFICIAL_DAILY_EDITOR_DRAFTS_ENABLED;
+    expect((await GET(req())).status).toBe(404);
     expect(createServerSupabaseClient).not.toHaveBeenCalled();
   });
 
@@ -57,6 +59,30 @@ describe('default-OFF exact-draft editor preview route', () => {
     expect(unauthorized.status).toBe(401);
     expect(unauthorized.headers.get('www-authenticate')).toContain('Daily Admin');
     expect(createServerSupabaseClient).not.toHaveBeenCalled();
+  });
+
+  it('denies a cross-site Basic-authenticated subresource GET even without Origin', async () => {
+    const bare = (site?: string) => new Request(BASE + '?occurrenceId=' + ID, {
+      headers: {
+        authorization: AUTH,
+        ...(site === undefined ? {} : { 'sec-fetch-site': site }),
+      },
+    });
+    for (const request of [bare('cross-site'), bare('same-site'), bare()]) {
+      expect((await GET(request)).status).toBe(403);
+    }
+    expect(createServerSupabaseClient).not.toHaveBeenCalled();
+    expect(readOfficialDailyEditorialDraftPreview).not.toHaveBeenCalled();
+  });
+
+  it('allows first-party authenticated GET and user-initiated direct navigation without Origin', async () => {
+    for (const site of ['same-origin', 'none']) {
+      const request = new Request(BASE + '?occurrenceId=' + ID, {
+        headers: { authorization: AUTH, 'sec-fetch-site': site },
+      });
+      expect((await GET(request)).status).toBe(200);
+    }
+    expect(createServerSupabaseClient).toHaveBeenCalledTimes(2);
   });
 
   it('rejects duplicate, malformed or unexpected query fields before private I/O', async () => {
