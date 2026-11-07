@@ -54,6 +54,9 @@ export function DailyAdministrationView({
           <h1 style={{ marginBottom: 8 }}>Daily lineup administration</h1>
           <p style={{ margin: 0 }}>Review, edit, approve, publish, and archive Daily lineups through the portable editorial lifecycle.</p>
           <p><a href="/admin/daily/attempts" style={textLinkStyle}>Attempt scores · AB 1–9</a></p>
+          {process.env.OFFICIAL_DAILY_EDITOR_DRAFTS_ENABLED === 'true' ? (
+            <p><a href="/admin/daily/editions" style={textLinkStyle}>Secondary Daily editions (staging)</a></p>
+          ) : null}
           <p><a href="/admin/custom-nine" style={textLinkStyle}>Create a Custom Nine</a></p>
           <p><a href="/admin/daily-five" style={textLinkStyle}>Future Daily Five draft workbench (staging)</a></p>
         </div>

@@ -18,3 +18,9 @@ export function isSameOriginDailyAdminRead(request: Request): boolean {
   // first-party admin read. Direct navigation has site=none.
   return site === 'same-origin' || site === 'none';
 }
+
+
+/** Browser-visible private admin pages accept only first-party navigation contexts. */
+export function isFirstPartyDailyAdminNavigation(site: string | null): boolean {
+  return site === 'same-origin' || site === 'none';
+}
