@@ -1,5 +1,10 @@
 # Initial Baseball — Start Here
 
+## November 7 — unified one-Archive route staged, not activated (#589)
+
+- The source-only integration branch combines the published legacy-primary and immutable secondary catalogs under a shared server-only read client/clock and one strict cursor. The existing /archive page now stages one official historical section of primary placeholders and exact-ID secondary practice links behind the existing four default-OFF flags; Archive beta remains unchanged when OFF.
+- Historical primary IDs are not synthesized from editorial IDs, and primary replay remains unavailable pending clue/ID/result continuity evidence. CodeRabbit, exact-head CI, isolated hosted and physical mobile QA remain release gates. No production database, flag or scoring change was made.
+
 ## November 6 — production read-only primary Archive evidence and identity gap (#589)
 
 - Read-only production SQL verified 33 published legacy editorial Daily records (version 1 / lineup contract 1, July 31–November 5, 2026), zero permanent-v1 primary issued rows, and 32 separately issued archive-beta-v1 rows. The secondary official_daily_publications table is absent in production. Isolated QA has no permanent-v1 or Archive-beta rows in the permanent issuer table. No production schema or configuration was modified by this inspection.

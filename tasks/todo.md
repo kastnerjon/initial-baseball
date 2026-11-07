@@ -118,7 +118,7 @@ These gates are separate from Custom Lineups Phase 1. Keep them active until eac
 
 ## Unified Archive source composition (#589)
 
-- [ ] Swap the old secondary-only /archive section for the unified primary+secondary presentation after private reader integrations; remove the duplicate UI and retain the existing beta Archive. Keep legacy primary replay unavailable until ID, clue, and accepted results are verified.
+- [ ] Verify the source-staged one-Archive route on protected isolated QA and real Safari/Android navigation before any production enablement; beta remains separate.
 - [ ] Rehearse the full unified metadata reader against isolated hosted QA with 100+ editions per date, Pacific rollover, invalid cursors and backfilled primary publication data before any activation.
 
-- [ ] Consolidate #587's secondary-only Archive presentation with the staged unified date-grouped component after composing #590/#591/#571 server readers; remove the duplicate component in the integration PR. Leave primary replay explicitly unavailable until historical clue and gameplay-ID proof, and preserve beta history separately.
+- [ ] Independently review and validate the unified historical /archive view against isolated hosted metadata; confirm default-OFF parity, 100+ editions/date, source outage fallback and Pacific rollover. Keep historical primaries unlinked until clue and gameplay-ID proof.
