@@ -4,7 +4,7 @@ import {
   DAILY_ADMIN_AUTH_CHALLENGE, DailyAdminAuthorizationError,
   requireDailyAdminPrincipal,
 } from '../../../../dailyAdminAuthorization';
-import { isSameOriginDailyAdminMutation } from '../../../../dailyAdminRequestSecurity';
+import { isSameOriginDailyAdminRead } from '../../../../dailyAdminRequestSecurity';
 import {
   OfficialDailyDraftError, readOfficialDailyEditorialDraftPreview,
 } from '../../../../serverOfficialDailyEditorialDrafts';

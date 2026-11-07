@@ -194,6 +194,7 @@ describe('restricted exact-draft preview', () => {
 
   it('sanitizes missing, mismatched, malformed and provider-error records', async () => {
     for (const row of [null, { ...saved, occurrence_id: 'bad' },
+      { ...saved, occurrence_id: '907f33db-c38f-43c3-8e6b-a3aaf19bbd09' },
       { ...saved, selections: selections.slice(1) }]) {
       await expect(readOfficialDailyEditorialDraftPreview(fakeDb(row).client, ID, NOW))
         .rejects.toBeInstanceOf(OfficialDailyDraftError);
