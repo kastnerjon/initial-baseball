@@ -24,7 +24,7 @@ export async function GET(request: Request): Promise<NextResponse> {
   if (process.env.OFFICIAL_DAILY_EDITOR_DRAFTS_ENABLED !== 'true') {
     return reply(404, 'not_found');
   }
-  if (!isSameOriginDailyAdminMutation(request)) return reply(403, 'forbidden');
+  if (!isSameOriginDailyAdminRead(request)) return reply(403, 'forbidden');
   try {
     requireDailyAdminPrincipal(request.headers.get('authorization'));
   } catch (error) {
