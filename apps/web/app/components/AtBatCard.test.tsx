@@ -19,7 +19,6 @@ const sampleReveal: CanonicalRevealViewModel = {
   seasons: [],
 };
 
-
 describe('AtBatCard pending resolution feedback', () => {
   it('preserves the historical v3 question prompt', () => {
     const html = renderCard({ requestPending: false, giveUpPending: false, rulesetVersion: 'points-v3' });
@@ -482,7 +481,6 @@ function renderCard(input: {
     />,
   );
 }
-
 
 function renderTerminalComparison(comparison: DailyNineAtBatComparisonState): string {
   return renderCard({
