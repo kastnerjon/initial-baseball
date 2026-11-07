@@ -51,9 +51,19 @@ function EditorialPreview({ preview }: { preview: OfficialDailyDraftPreview }) {
           ? 'All nine players have canonical clue material available for scheduling review.'
           : 'This edition is not currently ready to schedule. Check the player records, clues, date and editorial status.'}
       </p>
-      <p>This is a read-only review. No scheduling, issuance or public puzzle changes
-        occur here. A later confirmation must use this exact occurrence ID and current revision,
-        and the server will recheck the clues.</p>
+      <p>Review all nine selected players before confirming. Scheduling is separate
+        from issuance or publication, and the server will recheck the clues.</p>
+      {preview.status === 'draft' && preview.canSchedule ? (
+        <form method="post" action="/admin/daily/editions/review/confirm">
+          <input type="hidden" name="occurrenceId" value={preview.occurrenceId} />
+          <input type="hidden" name="expectedRevision" value={String(preview.revision)} />
+          <label>
+            <input type="checkbox" name="confirmed" value="yes" required />{' '}
+            I reviewed all nine players and confirm this exact lineup and revision.
+          </label>
+          <button type="submit">Confirm lineup and schedule</button>
+        </form>
+      ) : null}
     </section>
   );
 }

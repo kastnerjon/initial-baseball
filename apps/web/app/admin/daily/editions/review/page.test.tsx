@@ -93,7 +93,9 @@ describe('read-only authenticated exact secondary editor review page', () => {
     expect(html).not.toContain('<script>UNTRUSTED</script>');
     expect(html).toContain('All nine players have canonical clue material');
     expect(html).not.toContain('hintValues');
-    expect(html).not.toContain('Schedule now');
+    expect(html).toContain('Confirm lineup and schedule');
+    expect(html).toContain('name="expectedRevision" value="3"');
+    expect(html).toContain('name="confirmed" value="yes" required');
     expect(readOfficialDailyEditorialDraftPreview)
       .toHaveBeenCalledWith(expect.anything(), ID);
   });
@@ -104,7 +106,7 @@ describe('read-only authenticated exact secondary editor review page', () => {
     });
     const html = renderToStaticMarkup(await Page(props({ occurrenceId: ID })));
     expect(html).toContain('not currently ready to schedule');
-    expect(html).not.toContain('Schedule now');
+    expect(html).not.toContain('Confirm lineup and schedule');
   });
 
   it('sanitizes private provider errors and does not echo answer details', async () => {
