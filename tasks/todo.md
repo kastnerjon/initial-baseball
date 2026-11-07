@@ -1,5 +1,11 @@
 # Initial Baseball — Current Work
 
+## Historical primary Daily and unified Archive (#589)
+
+- [ ] Reconcile 33 published historical primary editorial dates with their true authoritative gameplay/result IDs, including roster-fingerprint and fallback behavior, before enabling any primary Archive play URLs.
+- [ ] Combine verified primary metadata with immutable secondary editions using one bounded chronological cursor supporting arbitrary editions per date; preserve accepted primary results and separate disposable Archive-beta history. A private publication catalog alone is not A4 launch readiness.
+
+
 ## Official Daily editions — approved November 5
 
 - [ ] A1: issuance identity, frozen nine-player content, service-only persistence and restricted editor action.
@@ -109,3 +115,10 @@ These gates are separate from Custom Lineups Phase 1. Keep them active until eac
 ## Official Daily one-Archive staged browse section (A4)
 
 - [ ] Integrate the default-OFF metadata-only official editions section on the existing `/archive` page with the exact-ID practice route after its parent PRs merge. Verify more than 100 editions on one date, continuation cursors, two identical-roster editions, current-day exclusion, preserved beta archive, permanent share links and real mobile browsers. Public discovery remains disabled until the signed A3 result-admission gate #566 and explicit rollout approval.
+
+## Unified Archive source composition (#589)
+
+- [ ] Swap the old secondary-only /archive section for the unified primary+secondary presentation after private reader integrations; remove the duplicate UI and retain the existing beta Archive. Keep legacy primary replay unavailable until ID, clue, and accepted results are verified.
+- [ ] Rehearse the full unified metadata reader against isolated hosted QA with 100+ editions per date, Pacific rollover, invalid cursors and backfilled primary publication data before any activation.
+
+- [ ] Consolidate #587's secondary-only Archive presentation with the staged unified date-grouped component after composing #590/#591/#571 server readers; remove the duplicate component in the integration PR. Leave primary replay explicitly unavailable until historical clue and gameplay-ID proof, and preserve beta history separately.

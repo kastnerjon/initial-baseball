@@ -1,5 +1,12 @@
 # Initial Baseball — Start Here
 
+## November 6 — production read-only primary Archive evidence and identity gap (#589)
+
+- Read-only production SQL verified 33 published legacy editorial Daily records (version 1 / lineup contract 1, July 31–November 5, 2026), zero permanent-v1 primary issued rows, and 32 separately issued archive-beta-v1 rows. The secondary official_daily_publications table is absent in production. Isolated QA has no permanent-v1 or Archive-beta rows in the permanent issuer table. No production schema or configuration was modified by this inspection.
+- The editorial record ID has the form daily-YYYY-MM-DD-v1, but the existing public Daily can assign a roster-derived or deterministic gameplay ID. These IDs are not interchangeable. The new server-only primary publication metadata reader is NOT proof of a permanent issued puzzle or a playable archive entry.
+- #589 tracks identity reconciliation and one date-grouped primary-plus-secondary Archive. #587/#588 are staged default-OFF secondary Archive/chooser UI; the A2 practice and A3 signed admission (#566) gates remain separate. Keep all new flags OFF and no production Daily schema promotion.
+
+
 ## November 5 — multi-Daily implementation authorized
 
 Main at approval: 6b39525f, push CI 41966926633 successful and matching READY production. The November 6 primary was scheduled at revision 10 with nine slots. Multi-edition play is pending. Follow [the approved implementation sequence](../tasks/plans/multiple-official-dailies.md); keep Custom/Auth disabled until its separate release gates pass.
