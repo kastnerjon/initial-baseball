@@ -85,6 +85,20 @@ describe('secondary official Daily editor catalog page', () => {
       .toContain('Secondary editorial editions');
   });
 
+  it('renders a nine-slot create form only after authenticated first-party admission', async () => {
+    const html = renderToStaticMarkup(await Page(props({ puzzleDate: '2026-12-05' })));
+    expect(html).toContain('Create a secondary Daily draft');
+    expect(html).toContain('/admin/daily/editions/create');
+    expect(html).toContain('Save draft and review players');
+    expect(html).toContain('name="editionNumber"');
+    expect(html).toContain('name="puzzleDate"');
+    for (let slot = 1; slot <= 9; slot++) {
+      expect(html).toContain('name="canonicalPlayerId' + slot + '"');
+    }
+    expect(html).not.toContain('canonicalPlayerIds');
+    expect(html).not.toContain('PRIVATE_HINT_MARKER');
+  });
+
   it('shows an authenticated empty date-selection form without querying Supabase', async () => {
     const html = renderToStaticMarkup(await Page(props({})));
     expect(html).toContain('Pacific game date');

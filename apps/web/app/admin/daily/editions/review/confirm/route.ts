@@ -4,7 +4,8 @@ import {
   DAILY_ADMIN_AUTH_CHALLENGE, DailyAdminAuthorizationError,
   requireDailyAdminPrincipal,
 } from '../../../../../dailyAdminAuthorization';
-import { isSameOriginDailyAdminMutation } from '../../../../../dailyAdminRequestSecurity';
+import { isFirstPartyDailyAdminForm } from '../../../../../dailyAdminRequestSecurity';
+import { readBoundedDailyAdminFormText } from '../../../../../dailyAdminBoundedForm';
 import {
   OfficialDailyDraftError, scheduleOfficialDailyEditorialDraft,
 } from '../../../../../serverOfficialDailyEditorialDrafts';
@@ -18,39 +19,6 @@ const HEADERS = {
 } as const;
 function reply(status: number, code: string): NextResponse {
   return NextResponse.json({ error: code }, { status, headers: HEADERS });
-}
-
-/** Bound actual payload bytes, not only the untrusted Content-Length header. */
-async function readBoundedFormText(request: Request): Promise<string | null> {
-  const declared = request.headers.get('content-length');
-  if (declared !== null && /^\d+$/.test(declared) && Number(declared) > MAX_FORM_BYTES) {
-    return null;
-  }
-  if (request.body === null) return null;
-  const reader = request.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let total = 0;
-  try {
-    while (true) {
-      const { done, value } = await reader.read();
-      if (done) break;
-      total += value.byteLength;
-      if (total > MAX_FORM_BYTES) {
-        await reader.cancel().catch(() => {});
-        return null;
-      }
-      chunks.push(value);
-    }
-  } catch { return null; }
-  finally { reader.releaseLock(); }
-  const joined = new Uint8Array(total);
-  let offset = 0;
-  for (const chunk of chunks) {
-    joined.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
-  try { return new TextDecoder('utf-8', { fatal: true }).decode(joined); }
-  catch { return null; }
 }
 
 type Confirmed = { occurrenceId: string; expectedRevision: number };
@@ -75,7 +43,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   if (process.env.OFFICIAL_DAILY_EDITOR_DRAFTS_ENABLED !== 'true') {
     return reply(404, 'not_found');
   }
-  if (!isSameOriginDailyAdminMutation(request)) return reply(403, 'forbidden');
+  if (!isFirstPartyDailyAdminForm(request)) return reply(403, 'forbidden');
   if (new URL(request.url).search !== '' ||
       request.headers.get('content-type')?.split(';', 1)[0]
         ?.trim().toLowerCase() !== 'application/x-www-form-urlencoded') {
@@ -94,7 +62,7 @@ export async function POST(request: Request): Promise<NextResponse> {
     return reply(503, 'unavailable');
   }
 
-  const text = await readBoundedFormText(request);
+  const text = await readBoundedDailyAdminFormText(request, MAX_FORM_BYTES);
   if (text === null) return reply(413, 'invalid_request');
   const confirmed = parseConfirmedForm(text);
   if (confirmed === null) return reply(400, 'invalid_request');
