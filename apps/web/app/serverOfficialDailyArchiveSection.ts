@@ -4,6 +4,7 @@ import {
 } from './serverOfficialDailyEditionCatalog';
 import { createServerSupabaseClient } from './serverSupabaseClient';
 import { validateIssuedDailyCalendarDate } from '@initial-baseball/daily';
+import { getPacificDailyDateString } from './getPacificDailyDateString';
 
 export type OfficialDailyArchivePage = Awaited<ReturnType<typeof listPrivateOfficialDailyArchivePage>>;
 type ArchiveQuery = Record<string, string | string[] | undefined>;
@@ -54,9 +55,14 @@ export async function readPrivateOfficialDailyArchive(
 ): Promise<OfficialDailyArchivePage | null> {
   if (!isOfficialDailyArchiveVisible(options.environment)) return null;
   const cursor = parseOfficialDailyArchiveCursor(query);
+  const now = options.now ?? new Date();
+  // Invalid/current/future cursors must not even construct a privileged client.
+  if (cursor.after !== undefined && cursor.after.puzzleDate >= getPacificDailyDateString(now)) {
+    throw new OfficialDailyCatalogError('invalid');
+  }
   return listPrivateOfficialDailyArchivePage(
     (options.createClient ?? createServerSupabaseClient)(),
     { ...cursor, pageSize: 30 },
-    options.now ?? new Date(),
+    now,
   );
 }

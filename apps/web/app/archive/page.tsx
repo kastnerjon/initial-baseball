@@ -19,7 +19,12 @@ export default async function ArchivePage({ searchParams }: ArchivePageProps): P
   let officialUnavailable = false;
   if (officialArchiveEnabled) {
     try {
-      official = await readPrivateOfficialDailyArchive(await searchParams);
+      const query = await searchParams;
+      // Navigation analytics are not Archive cursor authority. Preserve only cursor fields.
+      official = await readPrivateOfficialDailyArchive({
+        ...(query.afterDate === undefined ? {} : { afterDate: query.afterDate }),
+        ...(query.afterEdition === undefined ? {} : { afterEdition: query.afterEdition }),
+      });
     } catch {
       // Never reflect service-role errors or a caller's malformed cursor to public HTML.
       officialUnavailable = true;

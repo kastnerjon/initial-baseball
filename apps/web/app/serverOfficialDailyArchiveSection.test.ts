@@ -57,6 +57,23 @@ describe('default-off official Daily Archive section', () => {
     );
   });
 
+  it('rejects current or future Pacific-day cursors before constructing the privileged client', async () => {
+    const today = new Date('2026-11-06T20:00:00.000Z');
+    for (const afterDate of ['2026-11-06', '2026-11-07']) {
+      await expect(readPrivateOfficialDailyArchive(
+        { afterDate, afterEdition: '2' },
+        { environment: ENABLED, now: today },
+      )).rejects.toMatchObject({ kind: 'invalid' });
+    }
+    expect(mocked.client).not.toHaveBeenCalled();
+    expect(mocked.catalog).not.toHaveBeenCalled();
+    await readPrivateOfficialDailyArchive(
+      { afterDate: '2026-11-05', afterEdition: '2' },
+      { environment: ENABLED, now: today },
+    );
+    expect(mocked.client).toHaveBeenCalledTimes(1);
+  });
+
   it('rejects malicious or malformed cursors before service-role access', async () => {
     const invalid: Array<Record<string, string | string[] | undefined>> = [
       { afterDate: '2026-11-05' },

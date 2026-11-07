@@ -50,6 +50,24 @@ describe('shared Archive route', () => {
     expect(mocked.archive).toHaveBeenCalledWith({});
   });
 
+  it('ignores unrelated tracking parameters without discarding incomplete cursor validation', async () => {
+    mocked.visible.mockReturnValue(true);
+    await ArchivePage({ searchParams: Promise.resolve({
+      utm_source: 'newsletter', afterDate: '2026-11-05', afterEdition: '2',
+    }) });
+    expect(mocked.archive).toHaveBeenCalledWith({
+      afterDate: '2026-11-05', afterEdition: '2',
+    });
+    mocked.archive.mockClear();
+    await ArchivePage({ searchParams: Promise.resolve({ utm_source: 'newsletter' }) });
+    expect(mocked.archive).toHaveBeenCalledWith({});
+    mocked.archive.mockClear();
+    await ArchivePage({ searchParams: Promise.resolve({
+      afterDate: '2026-11-05', utm_source: 'newsletter',
+    }) });
+    expect(mocked.archive).toHaveBeenCalledWith({ afterDate: '2026-11-05' });
+  });
+
   it('preserves beta results and avoids leaking private provider errors', async () => {
     mocked.visible.mockReturnValue(true);
     mocked.archive.mockRejectedValue(new Error('PRIVATE_SERVICE_ROLE_CREDENTIAL'));
