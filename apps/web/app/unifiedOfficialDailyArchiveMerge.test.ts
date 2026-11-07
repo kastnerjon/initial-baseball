@@ -11,10 +11,11 @@ const primary = (date: string, number: number) => ({
   editorialRecordId: 'daily-' + date + '-v1', puzzleDate: date, puzzleNumber: number,
   publishedAt: '2026-11-06T08:00:00.000Z',
 });
-const id = (n: number) => 'daily-ed-v1-' + n.toString(16).padStart(8, '0')
+const id = (n: number, date = '2026-11-05') => 'daily-ed-v1-'
+  + n.toString(16).padStart(6, '0') + date.slice(-2)
   + '-c38f-43c3-8e6b-a3aaf19bbd08';
 const secondary = (date: string, number: number, editionNumber: number) => ({
-  puzzleId: id(editionNumber), puzzleDate: date, puzzleNumber: number,
+  puzzleId: id(editionNumber, date), puzzleDate: date, puzzleNumber: number,
   editionNumber, title: 'Puzzle ' + editionNumber,
 });
 type Primary = ReturnType<typeof primary>;
