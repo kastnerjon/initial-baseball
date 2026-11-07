@@ -21,6 +21,7 @@ import { requireHintBundle, requireReveal } from '../dailyRuntimeResponseRequire
 import { createOfficialDailyEditionHttpTransport } from '../officialDailyEditionHttpTransport';
 import { createOfficialEditionResolutionTransport } from '../officialEditionResolutionTransport';
 import { createDailyOnDemandHintRequestClient } from '../dailyOnDemandHintRequestClient';
+import { createDailyGameplayRequestController } from '../dailyGameplayRequestController';
 import type { CanonicalRevealViewModel } from '../canonicalRevealViewModel';
 import { type DailyAtBatUiState, createInitialAtBatUiState, createInitialDailyGameState, withConfirmedIncorrectGuess } from '../dailyClientState';
 import type {
@@ -82,11 +83,15 @@ export function DailyInningGame({
   const [bundlePending, setBundlePending] = useState(false);
   const [hintPending, setHintPending] = useState(false);
   const [requestError, setRequestError] = useState<string | null>(null);
+  const [editionRequests] = useState(() => editionTransport === null
+    ? undefined : createDailyGameplayRequestController());
   const [onDemandHints] = useState(() => editionTransport === null ? null
     : createDailyOnDemandHintRequestClient({
         onPendingChange: setHintPending, onErrorChange: setRequestError,
-      }, token => editionTransport.hint(token)));
-  const resolutionRequests = useDailyGameplayResolutionRequests(setRequestError, editionResolution);
+      }, token => editionTransport.hint(token), editionRequests));
+  const resolutionRequests = useDailyGameplayResolutionRequests(
+    setRequestError, editionResolution, editionRequests,
+  );
   const [savedGameRestoreController] = useState(() => createDailySavedGameRestoreController(
     editionTransport === null ? undefined : token => editionTransport.hints(token),
   ));
@@ -152,29 +157,26 @@ export function DailyInningGame({
       : scorecardComparisons.comparisons[atBatComparisonInput.key.pitchNumber],
     atBatComparisonInput?.ownPoints ?? null,
   );
+
   useEffect(() => () => {
     savedGameRestoreController.invalidate();
     onDemandHints?.invalidateSilently();
   }, [savedGameRestoreController, onDemandHints]);
-
   const performanceLayout = isYourNineEnabled(gameState.rulesetVersion);
   const isPuzzleComplete = currentPitchIndex >= puzzle.pitches.length;
   const isGameComplete = gameState.points.completed || gameState.score.completed || isPuzzleComplete;
   const requestPending = resolutionRequests.pendingAction !== null || hintPending;
   const isRestoringActiveHints = hasLoadedSavedState && hintBundle === null
     && pendingAdvance === null && !isGameComplete;
-
   const shareResult = useMemo(
     () => createCompletedDailyShareResult(gameState, isGameComplete, archivePath),
     [gameState, isGameComplete, archivePath],
   );
-
   if (gameplayPersistence.access === 'checking'
     || gameplayPersistence.access === 'follower'
     || gameplayPersistence.access === 'blocked') {
     return <DailyGameplayOwnershipMessage access={gameplayPersistence.access} />;
   }
-
   if (shareResult !== null) {
     const completedInningScoreboard = isDailyPointsRulesetVersion(gameState.rulesetVersion) && !performanceLayout
       ? createDailyNineInningScoreboardPresentation({
@@ -239,7 +241,6 @@ export function DailyInningGame({
   const terminalAwardedPoints = pendingAdvance === null
     ? null
     : pendingAdvance.points.points - gameState.points.points;
-
   return (
     <div className="game-shell">
       {gameState.rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION &&
@@ -318,7 +319,6 @@ export function DailyInningGame({
       </button>
     </div>
   );
-
   async function handleSubmit(): Promise<void> {
     if (hintPending || atBatState.selectedPlayerId === null) return;
     // Capture the actual selected player before an asynchronous response can arrive.

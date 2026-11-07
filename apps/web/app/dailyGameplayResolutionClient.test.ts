@@ -1,4 +1,7 @@
+import { DEFAULT_DAILY_HINT_CONFIG } from '@initial-baseball/shared';
 import { describe, expect, it, vi } from 'vitest';
+import { createDailyGameplayRequestController } from './dailyGameplayRequestController';
+import { createDailyOnDemandHintRequestClient } from './dailyOnDemandHintRequestClient';
 import type { DailyResolutionResponse } from './dailyRuntimeContracts';
 import { createDailyGameplayResolutionClient } from './dailyGameplayResolutionClient';
 
@@ -42,6 +45,62 @@ describe('daily gameplay resolution client', () => {
       progressionToken: 'edition-token', giveUp: true,
     });
     expect(postJson.mock.calls.flat().join(' ')).not.toContain('/api/daily/resolve');
+  });
+
+  it('prevents a guess from overtaking a pending authorized hint request', async () => {
+    const shared = createDailyGameplayRequestController();
+    const slow = deferred<unknown>();
+    const revealPost = vi.fn(() => slow.promise);
+    const resolvePost = vi.fn(async () => buildResolutionResponse());
+    const reveal = createDailyOnDemandHintRequestClient({
+      onPendingChange: () => undefined, onErrorChange: () => undefined,
+    }, revealPost, shared);
+    const resolution = createDailyGameplayResolutionClient({
+      onPendingActionChange: () => undefined, onErrorChange: () => undefined,
+    }, resolvePost, '/api/daily/editions/exact-id/resolve', shared);
+    const hint = reveal.reveal({
+      progressionToken: 'signed-before',
+      hintBundle: { pitchNumber: 1, revealedCount: 0, hints: [], checkpoints: [] },
+      hintConfig: DEFAULT_DAILY_HINT_CONFIG, onSuccess: () => undefined,
+    });
+    expect(await resolution.resolveAtBat({
+      progressionToken: 'signed-before', action: { giveUp: true }, onSuccess: () => undefined,
+    })).toBe(false);
+    expect(resolvePost).not.toHaveBeenCalled();
+    slow.resolve({
+      hint: { hintType: 'main_decade',
+        hintLabel: DEFAULT_DAILY_HINT_CONFIG[0]!.displayLabel, hintValue: 'AUTHORIZED_HINT' },
+      progressionToken: 'signed-after',
+    });
+    await hint;
+    expect(await resolution.resolveAtBat({
+      progressionToken: 'signed-after', action: { giveUp: true }, onSuccess: () => undefined,
+    })).toBe(true);
+    expect(resolvePost).toHaveBeenCalledTimes(1);
+  });
+
+  it('prevents a hint request from overtaking a pending signed resolution', async () => {
+    const shared = createDailyGameplayRequestController();
+    const slow = deferred<DailyResolutionResponse>();
+    const resolvePost = vi.fn(() => slow.promise);
+    const revealPost = vi.fn(async () => ({}));
+    const reveal = createDailyOnDemandHintRequestClient({
+      onPendingChange: () => undefined, onErrorChange: () => undefined,
+    }, revealPost, shared);
+    const resolution = createDailyGameplayResolutionClient({
+      onPendingActionChange: () => undefined, onErrorChange: () => undefined,
+    }, resolvePost, '/api/daily/editions/exact-id/resolve', shared);
+    const pending = resolution.resolveAtBat({
+      progressionToken: 'signed-before', action: { giveUp: true }, onSuccess: () => undefined,
+    });
+    expect(await reveal.reveal({
+      progressionToken: 'signed-before',
+      hintBundle: { pitchNumber: 1, revealedCount: 0, hints: [], checkpoints: [] },
+      hintConfig: DEFAULT_DAILY_HINT_CONFIG, onSuccess: () => undefined,
+    })).toBe(false);
+    expect(revealPost).not.toHaveBeenCalled();
+    slow.resolve(buildResolutionResponse());
+    await pending;
   });
 
   it('maps give up to the dedicated pending action', async () => {

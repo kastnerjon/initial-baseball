@@ -1,6 +1,7 @@
 import type { DailyResolutionResponse } from './dailyRuntimeContracts';
 import {
   createDailyGameplayRequestController,
+  type DailyGameplayRequestController,
   postDailyGameplayJson,
 } from './dailyGameplayRequestController';
 
@@ -36,8 +37,8 @@ export function createDailyGameplayResolutionClient(
   callbacks: DailyGameplayResolutionClientCallbacks,
   postJson: PostDailyResolutionJson = (path, body) => postDailyGameplayJson<DailyResolutionResponse>(path, body),
   endpointPath = '/api/daily/resolve',
+  requestController: DailyGameplayRequestController = createDailyGameplayRequestController(),
 ): DailyGameplayResolutionClient {
-  const requestController = createDailyGameplayRequestController();
 
   return {
     resolveAtBat,
