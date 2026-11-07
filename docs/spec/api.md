@@ -534,6 +534,9 @@ The transaction migration (#559), draft-admin path (#560), exact-ID reader
 (#558), hosted QA and independent release checks are separate prerequisites.
 Production migration/activation still requires release approval.
 
+## Reserved official Daily result-admission namespace (#566, defensive source change)
+
+The legacy Daily at-bat/completion submission adapters and browser result collection now fail closed for **all** IDs beginning with `daily-ed-`, not solely `daily-ed-v1-`. Future format versions must not become competitive by introducing a new ID suffix before explicit signed, exact-ID A3 admission. This is a reserved namespace check, not proof of game identity and not a score eligibility grant; existing primary, Classic and Archive beta result behavior is unchanged. The official secondary edition practice transport remains separately default-OFF. Production database, schemas, and flags are not changed.
 
 ## Restricted secondary Daily editor exact-draft preview (staged)
 
