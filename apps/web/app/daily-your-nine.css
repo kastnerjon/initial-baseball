@@ -92,6 +92,9 @@
   cursor: pointer;
 }
 .your-nine-row-toggle:hover { background: #f4f6f3; }
+.your-nine-row-practice { grid-template-columns: 27px minmax(0, 1fr); cursor: default; }
+.your-nine-row-practice:hover { background: transparent; }
+.your-nine-row-practice .your-nine-comparison { grid-template-columns: minmax(0, 1fr); }
 .your-nine-row-toggle:focus-visible {
   outline: 2px solid var(--clubhouse);
   outline-offset: 2px;
@@ -217,6 +220,7 @@
   .your-nine-heading { font-size: 24px; }
   .your-nine-total strong { font-size: 25px; }
   .your-nine-row-toggle { gap: 8px; grid-template-columns: 22px minmax(0, 1fr) 16px; }
+  .your-nine-row-practice { grid-template-columns: 22px minmax(0, 1fr); }
   .your-nine-distribution { margin-left: 30px; }
   .your-nine-row-main { gap: 8px; }
   .your-nine-player { font-size: 13px; }

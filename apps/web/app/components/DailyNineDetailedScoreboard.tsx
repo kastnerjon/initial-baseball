@@ -16,6 +16,7 @@ type ScoreboardProps = {
   totalPoints: number | undefined;
   completedComparison: DailyNineCompletedComparisonState | undefined;
   compact: boolean;
+  practiceOnly?: boolean;
 };
 
 export function DailyNineDetailedScoreboard(props: ScoreboardProps): JSX.Element {
@@ -61,14 +62,15 @@ export function DailyNineDetailedScoreboardTable({
   revealAnswers,
   totalPoints,
   completedComparison,
+  practiceOnly = false,
 }: Omit<ScoreboardProps, 'compact'> & { revealAnswers: boolean }): JSX.Element {
-  const summary = completedComparison === undefined || completedComparison.status === 'idle'
+  const summary = practiceOnly || completedComparison === undefined || completedComparison.status === 'idle'
     ? null
     : createDailyNineCompletedComparisonPresentation(completedComparison);
   return (
     <div className="daily-nine-detail-scroll" role="region" aria-label="Detailed scores by at-bat" tabIndex={0}>
       <table className="daily-nine-detail-table" aria-label="Daily Nine detailed scoreboard">
-        <colgroup><col /><col /><col /><col /><col /></colgroup>
+        <colgroup><col /><col /><col />{practiceOnly ? null : <><col /><col /></>}</colgroup>
         <thead>
           <tr>
             <th scope="col">AB</th>
@@ -77,8 +79,7 @@ export function DailyNineDetailedScoreboardTable({
               <span className="daily-nine-detail-result-desktop">Outcome-Score</span>
               <span className="daily-nine-detail-result-mobile">Result</span>
             </th>
-            <th scope="col">AVG</th>
-            <th scope="col">BEAT %</th>
+            {practiceOnly ? null : <><th scope="col">AVG</th><th scope="col">BEAT %</th></>}
           </tr>
         </thead>
         <tbody>
@@ -105,8 +106,10 @@ export function DailyNineDetailedScoreboardTable({
                 <td className="daily-nine-detail-outcome" aria-label={`Outcome ${row.outcome}, score ${row.score}`}>
                   {row.outcome} - {row.score}
                 </td>
-                <td aria-label={`At-bat average ${row.average}`}>{row.average}</td>
-                <td className={beatClass(beat)} aria-label={`At-bat BEAT ${beat}`}>{beat}</td>
+                {practiceOnly ? null : <>
+                  <td aria-label={`At-bat average ${row.average}`}>{row.average}</td>
+                  <td className={beatClass(beat)} aria-label={`At-bat BEAT ${beat}`}>{beat}</td>
+                </>}
               </tr>
             );
           })}
@@ -117,10 +120,12 @@ export function DailyNineDetailedScoreboardTable({
               <span>TOTAL</span><span aria-hidden="true">—</span>
             </th>
             <td aria-label="Total points">{totalPoints === undefined ? '—' : formatDailyScorecardPoints(totalPoints)}</td>
-            <td aria-label="Completed-game average">{summary?.average ?? '—'}</td>
-            <td className={beatClass(summary?.beat ?? '—')} aria-label="Completed-game BEAT">
-              {summary?.beat ?? '—'}
-            </td>
+            {practiceOnly ? null : <>
+              <td aria-label="Completed-game average">{summary?.average ?? '—'}</td>
+              <td className={beatClass(summary?.beat ?? '—')} aria-label="Completed-game BEAT">
+                {summary?.beat ?? '—'}
+              </td>
+            </>}
           </tr>
         </tfoot>
       </table>

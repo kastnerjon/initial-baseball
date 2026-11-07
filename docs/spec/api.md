@@ -595,3 +595,7 @@ The strict `validateOfficialDailyEditionBootstrap` schema is exported for reuse 
 ### Single-flight official edition requests
 
 For an official Daily practice edition, authorized clue reveal and signed guess/give-up operations now share the same browser request controller. Admission is synchronous, so a rapid double action cannot dispatch both on the same progression token before React re-renders. Both controllers preserve the existing generation invalidation on reset/unmount; primary Daily and Classic retain their historical defaults. Server-side A3 revision/CAS authority remains a separate requirement.
+
+### Practice-only score presentation
+
+The shared Daily Nine UI accepts an explicit private-edition practice-only display policy: earned at-bat/final scores, frozen outcomes, reveal controls, and a spoiler-safe practice share link remain visible. It hides leaderboard, AVG, BEAT, percentile, peer distributions and their loading placeholders in both active and completed scorecards; noninteractive practice rows do not offer unavailable peer-distribution actions. Share text explicitly says scores are not submitted. The historical Daily/Classic/Archive defaults and server's reserved-ID fail-closed scoring authority remain unchanged. This is A2 UI work, not A3 result eligibility or production activation.

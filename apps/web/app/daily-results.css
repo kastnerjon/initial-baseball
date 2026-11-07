@@ -597,6 +597,7 @@
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 12px;
 }
+.completed-comparison-metrics-practice { grid-template-columns: minmax(0, 1fr); }
 .completed-comparison-tile {
   display: flex;
   min-width: 0;

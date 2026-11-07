@@ -36,6 +36,26 @@ const props: DailyNineYourNineProps = {
 };
 
 describe('Daily Nine Your Nine presentation', () => {
+  it('keeps practice rows noninteractive with only personal points and no peer data', () => {
+    const html = renderToStaticMarkup(<DailyNineYourNineRows {...props}
+      practiceOnly initialExpandedAtBat={1} revealPlayers={false} />);
+    expect(html).toContain('At-bat 1: BH, 2B, 2 points');
+    expect(html).toContain('your-nine-row-practice');
+    expect(html).toContain('width:50%');
+    expect(html).not.toContain('Bryce Harper');
+    expect(html).not.toContain('Future answer must not appear');
+    expect(html).not.toContain('score distribution');
+    expect(html).not.toContain('aria-expanded=');
+    expect(html).not.toContain('AVG');
+    expect(html).not.toContain('Percentile');
+    const header = renderToStaticMarkup(<DailyNineYourNine {...props} practiceOnly
+      completedComparison={{ status: 'success', ownPoints: 6.5,
+        completedGameCount: 1, averageTotalPoints: 15, strictLowerFinishRate: 0 }} />);
+    expect(header).toContain('Your Nine');
+    expect(header).not.toContain('GAME AVG');
+  });
+
+
   it('shows one compact running score, all completed outcomes and current progress without an old table', () => {
     const html = renderToStaticMarkup(<DailyNineYourNine {...props} />);
     expect(html).toContain('Your Nine');

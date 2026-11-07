@@ -24,6 +24,7 @@ type PitchResultListProps = {
   totalAtBats?: number;
   currentAtBatNumber?: number | null;
   currentAtBatInitials?: string;
+  practiceOnly?: boolean;
 };
 
 export function PitchResultList({
@@ -41,6 +42,7 @@ export function PitchResultList({
   totalAtBats = 9,
   currentAtBatNumber,
   currentAtBatInitials,
+  practiceOnly = false,
 }: PitchResultListProps): JSX.Element {
   const dailyNineRows = points === undefined
     ? null
@@ -48,6 +50,7 @@ export function PitchResultList({
 
   if (dailyNineRows !== null && performanceLayout) {
     return <DailyNineYourNine
+      practiceOnly={practiceOnly}
       rows={dailyNineRows}
       answers={answers}
       points={points!}
@@ -63,6 +66,7 @@ export function PitchResultList({
 
   if (dailyNineRows !== null) {
     return <DailyNineDetailedScoreboard
+      practiceOnly={practiceOnly}
       rows={dailyNineRows}
       answers={answers}
       points={points!}
