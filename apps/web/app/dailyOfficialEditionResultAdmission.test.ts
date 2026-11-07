@@ -34,6 +34,8 @@ describe('secondary official edition result admission remains fail-closed', () =
     PUZZLE_ID,
     'daily-ed-v1-invalid-user-puzzle-id',
     'daily-ed-v1-6077ee21-9370-4cf3-aa21-74c50b485591',
+    'daily-ed-v2-unknown-future-type',
+    'daily-ed-unknown-reserved-type',
   ])('rejects both scoring submission paths for reserved edition ID %s', async id => {
     const context = services();
     const base = {
@@ -60,11 +62,14 @@ describe('secondary official edition result admission remains fail-closed', () =
 
   it('preserves primary, Classic and Archive collection policy', () => {
     expect(isSecondaryOfficialDailyEditionId(PUZZLE_ID)).toBe(true);
+    expect(isSecondaryOfficialDailyEditionId('daily-ed-v2-unknown-future-type')).toBe(true);
+    expect(isSecondaryOfficialDailyEditionId('daily-ed-unknown-reserved-type')).toBe(true);
     expect(isSecondaryOfficialDailyEditionId(primaryId)).toBe(false);
     expect(isDailyResultCollectionEnabled(primaryId)).toBe(true);
     expect(isDailyResultCollectionEnabled(undefined)).toBe(true);
     expect(isDailyResultCollectionEnabled('archive-beta-v1-daily-194')).toBe(true);
     expect(isDailyResultCollectionEnabled('permanent-v1-daily-194')).toBe(false);
-    expect(isDailyResultCollectionEnabled('daily-ed-v2-unknown-future-type')).toBe(true);
+    expect(isDailyResultCollectionEnabled('daily-ed-v2-unknown-future-type')).toBe(false);
+    expect(isDailyResultCollectionEnabled('daily-ed-unknown-reserved-type')).toBe(false);
   });
 });
