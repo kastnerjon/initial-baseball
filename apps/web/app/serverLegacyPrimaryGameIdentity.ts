@@ -50,7 +50,8 @@ export async function verifyPublishedLegacyPrimaryGameIdentity(
 
   try {
     const record = await readEditorial(publication.puzzleDate);
-    if (record === null || record.status !== 'published' || record.version !== 1
+    if (record === null) throw new LegacyPrimaryIdentityVerificationError();
+    if (record.status !== 'published' || record.version !== 1
       || record.id !== publication.editorialRecordId
       || record.puzzleDate !== publication.puzzleDate
       || record.puzzleNumber !== publication.puzzleNumber
@@ -66,5 +67,5 @@ export async function verifyPublishedLegacyPrimaryGameIdentity(
         publication.puzzleDate, slots.map(slot => slot.canonicalPlayerId),
       ),
     };
-  } catch { invalid(); }
+  } catch { throw new LegacyPrimaryIdentityVerificationError(); }
 }
