@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import type { DailyPuzzleEditorialRecord } from '@initial-baseball/daily';
+import { getDailyPuzzleNumber, type DailyPuzzleEditorialRecord } from '@initial-baseball/daily';
 import { verifyPublishedLegacyPrimaryGameIdentity } from './serverLegacyPrimaryGameIdentity';
 
 vi.mock('server-only', () => ({}));
@@ -72,6 +72,20 @@ describe('read-only verified historical primary gameplay identity', () => {
       )).rejects.toThrow('could not be verified');
     }
     expect(read).not.toHaveBeenCalled();
+  });
+
+  it('refuses pre-launch published editorial records that are deterministic fallback in production', async () => {
+    const date = '2026-07-20';
+    const early = {
+      ...publication, puzzleDate: date,
+      puzzleNumber: getDailyPuzzleNumber(date), editorialRecordId: 'daily-' + date + '-v1',
+    };
+    const matching = { ...record, id: early.editorialRecordId,
+      puzzleDate: date, puzzleNumber: early.puzzleNumber };
+    const read = vi.fn(async () => matching);
+    await expect(verifyPublishedLegacyPrimaryGameIdentity(early, read, NOW))
+      .rejects.toThrow('could not be verified');
+    expect(read).toHaveBeenCalledWith(date);
   });
 
   it('rejects stale or altered authoritative records without returning a guessed identifier', async () => {

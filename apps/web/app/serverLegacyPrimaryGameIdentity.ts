@@ -2,6 +2,7 @@ import 'server-only';
 import {
   createEditorialDailyPuzzleId,
   getDailyPuzzleNumber,
+  resolvePublicDailyPuzzleSelection,
   validateDailyEditorialSelectionsForContract,
   validateIssuedDailyCalendarDate,
   type DailyPuzzleEditorialRecord,
@@ -58,13 +59,15 @@ export async function verifyPublishedLegacyPrimaryGameIdentity(
       || record.publishedAt === null
       || Date.parse(record.publishedAt) !== publishedAt) invalid();
     validateDailyEditorialSelectionsForContract(record.selections, 1);
-    const slots = [...record.selections].sort((a, b) => a.slot - b.slot);
-    if (slots.length !== 9 || slots.some((slot, index) => slot.slot !== index + 1)) invalid();
+    // Do not infer a roster hash for pre-launch dates whose production policy
+    // selects deterministic fallback even when an editorial row is published.
+    const selection = resolvePublicDailyPuzzleSelection(publication.puzzleDate, record);
+    if (selection.kind !== 'editorial') invalid();
     return {
       puzzleDate: publication.puzzleDate,
       puzzleNumber: publication.puzzleNumber,
       puzzleId: createEditorialDailyPuzzleId(
-        publication.puzzleDate, slots.map(slot => slot.canonicalPlayerId),
+        publication.puzzleDate, selection.canonicalPlayerIds,
       ),
     };
   } catch { throw new LegacyPrimaryIdentityVerificationError(); }
