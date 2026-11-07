@@ -109,3 +109,7 @@ These gates are separate from Custom Lineups Phase 1. Keep them active until eac
 ## Official Daily one-Archive staged browse section (A4)
 
 - [ ] Integrate the default-OFF metadata-only official editions section on the existing `/archive` page with the exact-ID practice route after its parent PRs merge. Verify more than 100 editions on one date, continuation cursors, two identical-roster editions, current-day exclusion, preserved beta archive, permanent share links and real mobile browsers. Public discovery remains disabled until the signed A3 result-admission gate #566 and explicit rollout approval.
+
+## Official Daily edition chooser staged (A4)
+
+- [ ] Integrate the default-OFF current-Pacific-day secondary edition chooser with the existing primary Daily Nine after exact-ID A2 stack lands. Test arbitrary-count same-date pagination, published-only discovery, identical-roster editions, Pacific rollover, no answer leakage, no production feature flag, shared gameplay parity and physical Safari/Android before activation. Signed A3 #566 remains independent and mandatory for competition.
