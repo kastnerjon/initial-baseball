@@ -105,3 +105,7 @@ These gates are separate from Custom Lineups Phase 1. Keep them active until eac
 - [ ] Integrate the private, metadata-only official edition catalog with a date-grouped Archive view; paginate by immutable edition number until all editions for a requested date are loaded.
 - [ ] Combine the separate legacy-primary entry without converting its existing ID or scoring population; never expose frozen clue snapshots through the date catalog.
 - [ ] Verify future Pacific dates, 1/2/100+ editions, cursor changes during issuance, empty and malformed pages, and share-link identity on physical mobile devices before a public browse route is enabled.
+
+## Official Daily one-Archive staged browse section (A4)
+
+- [ ] Integrate the default-OFF metadata-only official editions section on the existing `/archive` page with the exact-ID practice route after its parent PRs merge. Verify more than 100 editions on one date, continuation cursors, two identical-roster editions, current-day exclusion, preserved beta archive, permanent share links and real mobile browsers. Public discovery remains disabled until the signed A3 result-admission gate #566 and explicit rollout approval.
