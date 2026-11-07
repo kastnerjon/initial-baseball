@@ -78,7 +78,7 @@ export function GameCompleteView({
         <section className={isPointsGame ? 'complete-card complete-card-daily' : 'complete-card'}>
           <h2>{isPointsGame ? 'Daily #' + shareResult.puzzleNumber : 'Game Complete'}</h2>
           {isPointsGame ? (
-            {scoreSummary}
+            scoreSummary
           ) : (
             <ScoreLine summary={shareResult.summary} />
           )}
