@@ -2,6 +2,7 @@ import type { DailyHintConfig } from '@initial-baseball/shared';
 import type { DailyHintBundle } from './dailyRuntimeContracts';
 import {
   createDailyGameplayRequestController,
+  type DailyGameplayRequestController,
 } from './dailyGameplayRequestController';
 import {
   applyOnDemandDailyHintReveal,
@@ -27,8 +28,8 @@ type Callbacks = {
 export function createDailyOnDemandHintRequestClient(
   callbacks: Callbacks,
   postAuthorizedReveal: (progressionToken: string) => Promise<unknown>,
+  controller: DailyGameplayRequestController = createDailyGameplayRequestController(),
 ) {
-  const controller = createDailyGameplayRequestController();
   return {
     reveal(request: HintRequest): Promise<boolean> {
       return controller.request({
