@@ -1,5 +1,14 @@
 # Initial Baseball — Start Here
 
+## November 8 — default-OFF native Chromium smoke in production CI (#622)
+
+- PR #622 was squash-merged as `3466e0867414ac38a69d456ee2c45ccb11d693a9`. Exact-commit push CI `42515601447` completed SUCCESS, including the browser smoke; matching Vercel production deployment `dpl_D54kUUKCSoVadN122d8fmCJu1Yjy` was observed READY. The PR's final-head CI and Preview passed before merge. CodeRabbit completed one independent review and its actionable findings were fixed and all threads resolved; final-head Codex review was clean. CodeRabbit's incremental final-head re-review was quota-limited and that limitation was documented.
+- The normal PR CI now runs a pinned QA-only Chromium smoke after the canonical data and production web build. It checks public Daily Nine and Results navigation, disabled Custom/Auth/Classic routes, mobile/desktop viewports, no uncaught browser errors, credential-free Next child environment, implicit dotenv-file rejection (including case variants), bounded waits and child-owned readiness. The public Daily signing test key is pinned consistently for build and runtime; **no production signing key, Supabase credential or new feature flag was used**. This is not hosted Supabase QA or full scoring/OAuth/device acceptance.
+- PR #628 adds signed Daily hint persistence/reload/next-hint browser coverage; a previous stacked exact-head Chromium run passed after fixing the QA-only build/runtime key mismatch. It is now rebased onto main and still requires exact-head CI/Preview and independent final review before merging.
+- PR #624 (read-only open-PR overlap audit and bounded parallel-agent protocol) and stacked #627 (portable verified-resumption skill) remain staged. A true parallel coding swarm has **not** run. CodeRabbit review remains a gate for unreviewed implementation PRs; no forced merge or policy bypass.
+- Cross-stack risk: #617 and #620 are distinct direct-to-main PRs with byte-identical contents across their five changed files, including a Custom completion-name database migration. Select one canonical migration lineage and reconcile descendants before integration; neither production migration nor Custom/Auth/secondary-Daily scoring activation occurred in this workflow session.
+
+
 ## November 7 — secondary official Daily scoring ID family fail-closed in production (#594)
 
 - Verified `main` commit `795f33cfd3bce6946772cf53e159983f18f648ca`, squash-merged PR #594 after exact-head CI `42336148841` SUCCESS, READY Preview, clean final-head Codex, and completed CodeRabbit review with no code findings. Matching production Vercel deployment `dpl_BuSRnUkEruRkUe4jrZ5vGUNiS1uE` was observed READY. This changes only source-level result admission for the reserved full `daily-ed-*` ID family, including unknown future versions; it does **not** grant competitive secondary scoring. Existing primary, Classic and Archive beta score handling was preserved by the reviewed tests.
