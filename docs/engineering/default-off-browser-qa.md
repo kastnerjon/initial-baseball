@@ -24,10 +24,14 @@ No browser writes to Supabase. The isolated Next child process receives an
 allowlisted environment, with no production or QA DB URLs/keys, CI tokens,
 Vercel credentials, or inherited product-release settings. Before startup,
 the runner also refuses local .env, .env.local, .env.production and
-.env.production.local files in apps/web, because Next.js would otherwise load
-those credentials independently of the allowlisted process environment. All
+.env.production.local files in apps/web (including differently cased variants),
+because Next.js could otherwise load those credentials on case-insensitive
+filesystems independently of the allowlisted process environment. All
 browser requests must stay on the runner's ephemeral loopback origin; browser
-locator, action and navigation waits have bounded timeouts.
+locator, action and navigation waits have bounded timeouts. The runner only
+accepts a healthy HTTP response after its own spawned Next process emits
+its startup readiness marker, preventing a recycled loopback port from
+mistakenly passing against an unrelated process.
 `qa-default-off-browser-safety.test.mjs` asserts these guardrails.
 
 ## Run locally
