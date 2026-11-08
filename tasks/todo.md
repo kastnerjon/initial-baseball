@@ -15,6 +15,7 @@
 
 ## Custom #528 — secure completion display identity (source policy staged)
 
+- [ ] Review the default-OFF signed Custom v2 completion display readback adapter after private SQL reader #625 and write projection #620. It must restore the original named or Anonymous choice using the exact noncreator signed browser without revealing score IDs; no public GET route is authorized until source tests, isolated QA and CSRF/cache/security QA pass.
 - [ ] #528 source-only DB projection: complete independent review and rollback-only isolated QA rehearsal of the immutable noncreator, already-admitted Custom v2 completion name/Anonymous table and service-only first-write-wins RPC. Then implement server cookie-authenticated API/reader, nickname/privacy linkage and guest completion UI separately; do not deploy this migration or enable production flags yet.
 - [ ] Stage a separate service-role-only first-write-wins name/privacy projection bound to the server-admitted Custom v2 submission (never to a caller-chosen submission ID). Use the portable `parseCompletionDisplayName` boundary, but retain the verified attempt-cookie/creator-exclusion and independent nickname authorization. This remains incomplete until reviewed additive QA-only database migration, endpoint and UI tests, real Safari QA and explicit release authorization.
 

@@ -1,5 +1,9 @@
 # Initial Baseball — Start Here
 
+## November 8 — signed Custom v2 completion display readback port staged (#528)
+
+- Stacked Web-only readback service and provider adapter restore named or Anonymous projection only for a validated v2 signed first-attempt cookie; all missing/invalid/creator/duplicate/foreign credentials and unexpected private provider values are denied/redacted. Readback is exact-true gated OFF by default, returns no submission IDs/scores, and introduces no public route or UI. This source depends on the independently reviewed, still-unapplied SQL write #620 and SQL readback #625. Full CI, review, isolated QA and later physical Safari/Android release acceptance remain required.
+
 ## November 8 — Custom v2 first-write-wins completion display projection staged (#528)
 
 - Additive SQL-only source milestone: `custom_lineup_v2_completion_displays` stores an immutable named/Anonymous choice only after the exact browser-credential-bound noncreator first Custom v2 result is atomically admitted, including all N per-batter results. Submission identity derives solely from the server-owned completed attempt; no browser-selected submission ID or cross-puzzle relabeling. The private writer locks the same attempt row as the admission RPC and verifies creator exclusion.
