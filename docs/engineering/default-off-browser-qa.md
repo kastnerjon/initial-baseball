@@ -37,8 +37,12 @@ mistakenly passing against an unrelated process.
 ## Run locally
 
 After `corepack pnpm install --frozen-lockfile`, build the full web app
-using the repository's standard `corepack pnpm build:web` command and a
-nonproduction `DAILY_PROGRESSION_SECRET`. Then:
+using the repository's standard `corepack pnpm build:web` command with the
+**same pinned nonproduction signing key** as the smoke child. A pre-rendered
+Daily page signs its initial hint checkpoints during build; using a different
+runtime key causes the restore API to reject those checkpoints. For this QA
+workflow only, set `DAILY_PROGRESSION_SECRET=ci-only-daily-progression-secret-0123456789abcdef`
+when running the build. Never use a production signing key. Then:
 
 ```sh
 npm install --prefix /tmp/ib-default-off-smoke --no-package-lock playwright@1.56.1
