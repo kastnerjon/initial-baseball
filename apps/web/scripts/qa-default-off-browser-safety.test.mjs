@@ -18,6 +18,7 @@ test('native smoke child receives no production or hosted QA credentials', () =>
     CREATOR_AUTH_ENABLED: 'true',
     CUSTOM_LINEUP_PUBLIC_CREATION_ENABLED: 'true',
     CUSTOM_LINEUP_V2_GAMEPLAY_TRANSPORT_ENABLED: 'true',
+    CUSTOM_V2_COMPLETION_DISPLAY_ENABLED: 'true',
     CUSTOM_LINEUP_VARIABLE_STRIKES_ENABLED: 'true',
     CLASSIC_INNING_ENABLED: 'true',
   }, 47651);
@@ -35,6 +36,7 @@ test('native smoke child receives no production or hosted QA credentials', () =>
   for (const flag of ['CREATOR_AUTH_ENABLED', 'CLASSIC_INNING_ENABLED',
     'CUSTOM_LINEUP_PUBLIC_CREATION_ENABLED',
     'CUSTOM_LINEUP_V2_GAMEPLAY_TRANSPORT_ENABLED',
+    'CUSTOM_V2_COMPLETION_DISPLAY_ENABLED',
     'CUSTOM_LINEUP_VARIABLE_STRIKES_ENABLED']) {
     assert.equal(environment[flag], 'false', flag + ' must remain OFF');
   }

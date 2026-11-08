@@ -104,6 +104,19 @@ try {
       await page.getByRole('link', { name: /Back to today.*Daily/ }).click();
       await page.getByRole('heading', { name: 'Daily Nine', exact: true }).waitFor();
 
+      // Both identity flags remain OFF, including when a later source PR adds
+      // GET/POST routes. No signed browser cookie or private DB is available.
+      const challenge = 'custom-lineup-v2-123e4567-e89b-42d3-a456-426614174000';
+      const displayUrl = base + '/api/custom-lineup/challenges/' + challenge
+        + '/completion/display';
+      const hiddenGet = await context.request.get(displayUrl, { timeout: 15_000 });
+      assert.equal(hiddenGet.status(), 404, 'Completion display GET must remain default-OFF');
+      const hiddenPost = await context.request.post(displayUrl, {
+        data: { mode: 'named', displayName: 'QA Guest' },
+        headers: { origin: base }, timeout: 15_000,
+      });
+      assert.equal(hiddenPost.status(), 404, 'Completion display POST must remain default-OFF');
+
       for (const path of ['/create', '/account']) {
         const response = await context.request.get(base + path, { timeout: 15_000 });
         assert.equal(response.status(), 404, path + ' must remain default-OFF');
@@ -117,7 +130,7 @@ try {
       await context.close();
     }
   }
-  console.log('PASS default-OFF native Chromium: Daily, Results, disabled routes, mobile/desktop viewports');
+  console.log('PASS default-OFF native Chromium: Daily, Results, disabled Custom identity GET/POST, mobile/desktop viewports');
   console.log('Hosted Supabase, scoring, OAuth and physical-device acceptance are NOT established.');
 } finally {
   await browser?.close();
