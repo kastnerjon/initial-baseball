@@ -176,6 +176,50 @@ try {
         'Second authorized hint should render, not just increment progress');
 
 
+
+      // Resolve one real server-signed terminal at-bat without knowing or
+      // logging the hidden answer, then advance with the shared Daily engine.
+      const signedGiveUpResponse = page.waitForResponse(response =>
+        new URL(response.url()).pathname === '/api/daily/resolve'
+          && response.request().method() === 'POST', { timeout: 15_000 });
+      await page.getByRole('button', { name: 'Give up', exact: true }).click();
+      await page.getByRole('button', { name: 'Yes, give up', exact: true }).click();
+      assert.equal((await signedGiveUpResponse).status(), 200,
+        'Signed Daily terminal give-up must be accepted before advancing');
+      await page.getByRole('button', { name: 'Next At Bat', exact: true }).click();
+      await page.locator('.at-bat-progress-step[aria-current="step"]')
+        .getAttribute('aria-label').then(value =>
+          assert.equal(value, 'At-bat 2: current', 'Terminal result must advance one at-bat'));
+      assert.equal(await page.locator('[aria-label="At-bat 1: completed"]').count(), 1,
+        'Completed first at-bat must be retained');
+      await page.getByText('0/4 hints', { exact: true }).waitFor();
+      assert.equal(await page.locator('.revealed-hint').count(), 0,
+        'New at-bat must not inherit previously revealed hints');
+      await page.waitForFunction(() => {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (!key?.startsWith('initial-baseball:daily:')) continue;
+          try {
+            const saved = JSON.parse(localStorage.getItem(key) ?? '');
+            if (saved?.currentPitchIndex === 1
+              && saved?.pendingAdvance === null
+              && saved?.atBatState?.revealCount === 0
+              && saved?.gameState?.completedAtBats?.length === 1) return true;
+          } catch { /* Ignore unrelated local keys. */ }
+        }
+        return false;
+      }, null, { timeout: 10_000 });
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      await page.getByRole('button', { name: 'Got it', exact: true }).click();
+      await page.getByText('0/4 hints', { exact: true }).waitFor();
+      assert.equal(await page.locator('.at-bat-progress-step[aria-current="step"]')
+        .getAttribute('aria-label'), 'At-bat 2: current',
+      'Reload must preserve advancement to the exact next at-bat');
+      assert.equal(await page.locator('[aria-label="At-bat 1: completed"]').count(), 1,
+        'Reload must preserve the earlier terminal result');
+      assert.equal(await page.locator('.revealed-hint').count(), 0,
+        'Reload must not expose prior at-bat hints on the next player');
+
       // Both identity flags remain OFF, including when a later source PR adds
       // GET/POST routes. No signed browser cookie or private DB is available.
       const challenge = 'custom-lineup-v2-123e4567-e89b-42d3-a456-426614174000';
@@ -202,7 +246,7 @@ try {
       await context.close();
     }
   }
-  console.log('PASS default-OFF native Chromium: Daily signed hint restore, Results, disabled Custom identity GET/POST, mobile/desktop viewports');
+  console.log('PASS default-OFF native Chromium: Daily signed hint/terminal advance/reload, Results, disabled Custom identity GET/POST, mobile/desktop viewports');
   console.log('Hosted Supabase, scoring, OAuth and physical-device acceptance are NOT established.');
 } finally {
   await browser?.close();

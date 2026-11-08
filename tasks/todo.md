@@ -3,6 +3,7 @@
 ## Engineering workflow — native default-OFF smoke pilot (November 8)
 
 - [ ] Verify #628 exact-head real Chromium signed Daily hint/save/reload/second-hint continuation while preserving #633 disabled Custom GET/POST 404 at both viewports; this remains local and without hosted credentials, scoring, OAuth, Archive or device acceptance.
+- [ ] Stage and verify one signed default-OFF Daily terminal give-up, next-at-bat state transition, and persisted exact-at-bat reload in real Chromium after #628; this remains a local 1-of-9 gameplay regression, not competitive scoring or hosted QA.
 - [ ] After a successful pilot, compare CI runtime and false-failure rate. Keep the browser gate if it catches real route regressions without significant overhead; otherwise optimize its placement rather than weakening isolation. See \`docs/engineering/default-off-browser-qa.md\`.
 
 
