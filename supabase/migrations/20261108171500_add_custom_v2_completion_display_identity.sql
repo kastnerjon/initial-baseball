@@ -97,6 +97,17 @@ begin
         and result.schema_version = 2
         and result.ruleset_version = 'points-v4'
         and result.completed_at_bats = v_attempt.terminal_at_bats
+        -- A matching terminal fact does not by itself establish the accepted
+        -- awarded-point sum. Defense in depth against a privileged partial or
+        -- inconsistent score insertion that bypassed the atomic admission RPC.
+        and (result.summary ->> 'points')::numeric = (
+          select coalesce(sum(ab.awarded_points), 0)
+          from public.custom_nine_at_bat_results ab
+          where ab.attempt_id = v_attempt.attempt_id::text
+            and ab.challenge_id = p_challenge_id
+            and ab.schema_version = 2
+            and ab.ruleset_version = 'points-v4'
+        )
     )
     or (select count(*) from public.custom_nine_at_bat_results ab
       where ab.attempt_id = v_attempt.attempt_id::text
