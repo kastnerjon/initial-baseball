@@ -1,5 +1,11 @@
 # Initial Baseball — Start Here
 
+## November 8 — Custom v2 first-write-wins completion display projection staged (#528)
+
+- Additive SQL-only source milestone: `custom_lineup_v2_completion_displays` stores an immutable named/Anonymous choice only after the exact browser-credential-bound noncreator first Custom v2 result is atomically admitted, including all N per-batter results. Submission identity derives solely from the server-owned completed attempt; no browser-selected submission ID or cross-puzzle relabeling. The private writer locks the same attempt row as the admission RPC and verifies creator exclusion.
+- The display name is presentation only, never account proof. Anonymous choices store no name. Server callers must separately apply the existing JS UTF-16 `parseCompletionDisplayName` policy and verify the original signed cookie; this migration does not add or authorize a public endpoint, account nickname, submission action, leaderboard reader or UI. No existing score tables or result facts are altered.
+- Rollback-only `supabase/tests/custom_v2_completion_displays.sql` covers absent/partial admission, guest named/Anonymous, exact retries, rename refusal, creator exclusion, grants and unchanged scores. This source must undergo independent review, disposable Postgres verification, production-shaped isolated QA migration rehearsal and explicit production authorization. No production/QA DDL or feature flags are changed by this PR.
+
 ## November 7 — secondary official Daily scoring ID family fail-closed in production (#594)
 
 - Verified `main` commit `795f33cfd3bce6946772cf53e159983f18f648ca`, squash-merged PR #594 after exact-head CI `42336148841` SUCCESS, READY Preview, clean final-head Codex, and completed CodeRabbit review with no code findings. Matching production Vercel deployment `dpl_BuSRnUkEruRkUe4jrZ5vGUNiS1uE` was observed READY. This changes only source-level result admission for the reserved full `daily-ed-*` ID family, including unknown future versions; it does **not** grant competitive secondary scoring. Existing primary, Classic and Archive beta score handling was preserved by the reviewed tests.
