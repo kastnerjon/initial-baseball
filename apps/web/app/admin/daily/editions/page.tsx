@@ -88,8 +88,8 @@ export default async function OfficialDailyEditionAdminPage({
       <section className="daily-card">
         <p className="eyebrow">Restricted Daily administration</p>
         <h1>Secondary Daily editions</h1>
-        <p>This read-only workbench lists edition metadata, not players or clues.
-          The existing primary Daily remains managed separately.</p>
+        <p>The date catalog shows only edition metadata, not players or clues.
+          Creating a draft does not schedule or publish it. The primary Daily remains managed separately.</p>
         <p><a href="/admin/daily">Primary Daily editor</a></p>
         <form action="/admin/daily/editions" method="get">
           <label htmlFor="edition-date">Pacific game date</label>
@@ -98,6 +98,41 @@ export default async function OfficialDailyEditionAdminPage({
             required />
           <button type="submit">View editions</button>
         </form>
+
+        <section aria-label="Create secondary Daily editorial draft">
+          <h2>Create a secondary Daily draft</h2>
+          <p>Enter nine canonical player IDs in batting order. Creation validates
+            the private clues but does not schedule or issue the lineup.
+            Review all nine players on the following screen before scheduling.</p>
+          <form method="post" action="/admin/daily/editions/create">
+            <label htmlFor="new-secondary-date">Future Pacific game date</label>
+            <input id="new-secondary-date" name="puzzleDate" type="date"
+              defaultValue={selection !== 'empty' && selection !== 'invalid'
+                ? selection.puzzleDate : ''} required />
+            <label htmlFor="new-secondary-number">Edition number (2 or greater)</label>
+            <input id="new-secondary-number" name="editionNumber"
+              type="number" min={2} max={2147483647} step={1} required />
+            <label htmlFor="new-secondary-key">Edition key</label>
+            <input id="new-secondary-key" name="editionKey" required maxLength={64}
+              placeholder="modern" />
+            <label htmlFor="new-secondary-title">Title (optional)</label>
+            <input id="new-secondary-title" name="title" maxLength={60}
+              placeholder="Puzzle 2" />
+            <ol>
+              {Array.from({ length: 9 }, (_, i) => (
+                <li key={i}>
+                  <label htmlFor={'secondary-player-' + (i + 1)}>
+                    Player {i + 1} canonical ID
+                  </label>
+                  <input id={'secondary-player-' + (i + 1)}
+                    name={'canonicalPlayerId' + (i + 1)}
+                    required autoComplete="off" />
+                </li>
+              ))}
+            </ol>
+            <button type="submit">Save draft and review players</button>
+          </form>
+        </section>
 
         {selection === 'invalid' ? <p role="alert">Invalid date or page cursor.</p> : null}
         {unavailable ? <p role="alert">Edition metadata is temporarily unavailable.</p> : null}
