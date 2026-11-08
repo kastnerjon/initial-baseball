@@ -33,6 +33,7 @@ begin
     or has_table_privilege('authenticated','public.custom_lineup_v2_completion_displays','SELECT')
     or has_table_privilege('anon','public.custom_lineup_v2_completion_displays','INSERT')
     or has_table_privilege('authenticated','public.custom_lineup_v2_completion_displays','INSERT')
+    or has_table_privilege('service_role','public.custom_lineup_v2_completion_displays','INSERT')
     or has_table_privilege('service_role','public.custom_lineup_v2_completion_displays','UPDATE')
     or has_table_privilege('service_role','public.custom_lineup_v2_completion_displays','DELETE')
     or has_function_privilege('anon',
@@ -41,7 +42,12 @@ begin
       'public.record_custom_lineup_v2_completion_display(text,text,text,text)','EXECUTE')
     or not has_function_privilege('service_role',
       'public.record_custom_lineup_v2_completion_display(text,text,text,text)','EXECUTE')
-  then raise exception 'Guest/consumer privilege leaked or private writer unavailable'; end if;
+    or not exists (
+      select 1 from pg_proc p
+      where p.oid = 'public.record_custom_lineup_v2_completion_display(text,text,text,text)'::regprocedure
+        and p.prosecdef
+    )
+  then raise exception 'Guest/consumer privilege leaked, direct INSERT allowed, or private writer unavailable'; end if;
 
   select count(*) into v_before
   from public.custom_lineup_v2_completion_displays;

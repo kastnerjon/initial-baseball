@@ -29,8 +29,11 @@ comment on column public.custom_lineup_v2_completion_displays.display_name is
 alter table public.custom_lineup_v2_completion_displays enable row level security;
 revoke all on table public.custom_lineup_v2_completion_displays
   from public, anon, authenticated, service_role;
-grant select, insert on table public.custom_lineup_v2_completion_displays to service_role;
--- No UPDATE/DELETE grants and no RLS policy: only trusted server/service access.
+grant select on table public.custom_lineup_v2_completion_displays to service_role;
+-- Deliberately do not grant INSERT, UPDATE or DELETE even to service_role.
+-- Service callers must use the eligibility-gated SECURITY DEFINER RPC below;
+-- direct privileged INSERT would otherwise bypass the atomic admission checks.
+-- No RLS policies: anon/authenticated cannot read or write this projection.
 -- The projection has no challenge_id to spoof: the immutable completed-result FK
 -- uniquely determines its challenge; future readers must join on submission_id.
 
@@ -43,7 +46,7 @@ create function public.record_custom_lineup_v2_completion_display(
 returns table (created boolean)
 language plpgsql
 volatile
-security invoker
+security definer
 set search_path = ''
 as $function$
 declare
@@ -170,4 +173,4 @@ grant execute on function public.record_custom_lineup_v2_completion_display(
 comment on function public.record_custom_lineup_v2_completion_display(
   text, text, text, text
 ) is
-  'Service-only, challenge-and-browser-bound first-write-wins display/Anonymous choice for an already admitted noncreator Custom v2 result. Locks the first-attempt row, checks complete N-row score admission and returns only created status. No public HTTP, account nickname or scoring admission.';
+  'Service-only SECURITY DEFINER, challenge-and-browser-bound first-write-wins display/Anonymous choice. Caller has EXECUTE but no direct table INSERT. Locks the first-attempt row, checks full admission and returns only created status. No public HTTP, account nickname or scoring admission.';
