@@ -8,7 +8,7 @@ const IMPLICIT_NEXT_ENV_FILES = new Set([
 
 export async function assertNoImplicitNextEnvironmentFiles(webRoot) {
   const entries = await readdir(webRoot);
-  const found = entries.find(name => IMPLICIT_NEXT_ENV_FILES.has(name));
+  const found = entries.find(name => IMPLICIT_NEXT_ENV_FILES.has(name.toLowerCase()));
   if (found) {
     throw new Error('Default-OFF smoke refuses local Next environment file: ' + found);
   }
