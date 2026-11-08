@@ -1,5 +1,13 @@
 # Initial Baseball — Current Work
 
+## Agent workflow — controlled two-workstream pilot (November 8)
+
+- [ ] Verify the read-only PR workstream audit runs on trusted main, distinguishes direct-to-main from stacked PRs, and reports actual source path overlap without labeling it a merge conflict.
+- [ ] Pilot at most two independent implementation workstreams plus external review; record exact head SHA, test/Preview/review evidence and integration conflicts. This workflow does **not** currently constitute a running coding swarm.
+- [ ] Compare verified throughput, CI/review time, regression rate and coordination overhead against the current single-agent baseline before expanding. See \`docs/engineering/parallel-agent-pilot.md\`.
+
+
+
 ## Engineering workflow — native default-OFF smoke pilot (November 8)
 
 - [ ] Verify the new PR Chromium smoke job succeeds at **the exact tested head** before merging. This adds a default-OFF public Daily/Results browser check with no hosted credentials; it does not complete actual gameplay, account, archive, or secondary-edition QA.
