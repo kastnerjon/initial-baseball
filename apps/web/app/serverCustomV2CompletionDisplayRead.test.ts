@@ -19,8 +19,8 @@ function setup(mode: string | undefined = 'true') {
   const environment = mode === undefined ? {} : { CUSTOM_V2_COMPLETION_DISPLAY_ENABLED: mode };
   const dependencies = {
     getSecret: vi.fn(() => SECRET),
-    read: vi.fn(async (_id: string, _digest: string) => ({ mode: 'named', displayName: 'Guest' }
-      as CustomV2StoredDisplay | null)),
+    read: vi.fn(async (_id: string, _digest: string): Promise<CustomV2StoredDisplay | null> =>
+      ({ mode: 'named', displayName: 'Guest' })),
   };
   return { service: createServerCustomV2CompletionDisplayReadService({
     environment, dependencies,
