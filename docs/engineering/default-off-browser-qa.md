@@ -22,8 +22,12 @@ runtime dependency or make network calls from the web app to a baseball API.
 
 No browser writes to Supabase. The isolated Next child process receives an
 allowlisted environment, with no production or QA DB URLs/keys, CI tokens,
-Vercel credentials, or inherited product-release settings. All requests in the
-browser context must stay on the runner's ephemeral loopback origin.
+Vercel credentials, or inherited product-release settings. Before startup,
+the runner also refuses local .env, .env.local, .env.production and
+.env.production.local files in apps/web, because Next.js would otherwise load
+those credentials independently of the allowlisted process environment. All
+browser requests must stay on the runner's ephemeral loopback origin; browser
+locator, action and navigation waits have bounded timeouts.
 \`qa-default-off-browser-safety.test.mjs\` asserts these guardrails.
 
 ## Run locally
