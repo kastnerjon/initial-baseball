@@ -29,6 +29,11 @@ function parseOccurrenceId(params: Parameters): string | 'empty' | 'invalid' {
 }
 
 function EditorialPreview({ preview }: { preview: OfficialDailyDraftPreview }) {
+  // Issuance must not invite an editor to confirm an incomplete canonical roster.
+  // The server independently revalidates player identity, clues and revision on POST.
+  const scheduledPlayersResolved = preview.selections.length === 9
+    && preview.selections.every(selection =>
+      typeof selection.displayName === 'string' && selection.displayName.trim().length > 0);
   return (
     <section aria-label="Reviewed secondary Daily roster">
       <h2>{preview.title} · Puzzle {preview.editionNumber}</h2>
@@ -48,9 +53,15 @@ function EditorialPreview({ preview }: { preview: OfficialDailyDraftPreview }) {
         ))}
       </ol>
       <p role="status">
-        {preview.canSchedule
-          ? 'All nine players have canonical clue material available for scheduling review.'
-          : 'This edition is not currently ready to schedule. Check the player records, clues, date and editorial status.'}
+        {preview.status === 'draft'
+          ? preview.canSchedule
+            ? 'All nine players have canonical clue material available for scheduling review.'
+            : 'This edition is not currently ready to schedule. Check the player records, clues, date and editorial status.'
+          : preview.status === 'scheduled'
+            ? scheduledPlayersResolved
+              ? 'Scheduled; issuance separately freezes the reviewed lineup and clues.'
+              : 'This scheduled edition cannot be issued until all nine canonical players resolve. Check the player catalog.'
+            : 'This edition has already been issued with immutable frozen clues.'}
       </p>
       <p>Review all nine selected players before confirming. Scheduling is separate
         from issuance or publication, and the server will recheck the clues.</p>
@@ -65,6 +76,21 @@ function EditorialPreview({ preview }: { preview: OfficialDailyDraftPreview }) {
           <button type="submit">Confirm lineup and schedule</button>
         </form>
       ) : null}
+      {preview.status === 'scheduled'
+        && scheduledPlayersResolved
+        && process.env.OFFICIAL_DAILY_EDITOR_ISSUANCE_ENABLED === 'true' ? (
+          <form method="post" action="/admin/daily/editions/review/issue">
+            <input type="hidden" name="occurrenceId" value={preview.occurrenceId} />
+            <input type="hidden" name="expectedRevision" value={String(preview.revision)} />
+            <p>Issuance permanently freezes this lineup's clues and immutable publication identity.
+              It does not enable public gameplay or competitive scoring.</p>
+            <label>
+              <input type="checkbox" name="confirmed" value="yes" required />{' '}
+              I reviewed the scheduled nine players and authorize issuance of this exact revision.
+            </label>
+            <button type="submit">Confirm and issue immutable edition</button>
+          </form>
+        ) : null}
     </section>
   );
 }
