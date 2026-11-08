@@ -28,7 +28,8 @@ type Dependencies = {
 };
 
 /**
- * Private edition runtime composition. No route uses this module yet.
+ * Private edition runtime composition for the separately gated exact-ID
+ * HTTP and server-rendered practice routes. Public activation remains OFF.
  *
  * The feature gate and canonical occurrence format are verified before any
  * service-role client or runtime is constructed. The existing release-aware
