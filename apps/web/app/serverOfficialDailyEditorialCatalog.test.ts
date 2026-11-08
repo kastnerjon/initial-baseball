@@ -110,11 +110,23 @@ describe('private official Daily editorial metadata catalog', () => {
     [{ edition_number: 1 }, 'primary reserved'],
     [{ revision: -1 }, 'negative revision'],
     [{ status: 'deleted' }, 'unknown status'],
-    [{ title: '  Private  ' }, 'noncanonical title'],
+    [{ title: '<Private>' }, 'invalid title'],
   ] as const)('fails closed on %s (%s)', async (change, _label) => {
     const db = database([{ ...draft(2), ...change }]);
     await expect(listPrivateOfficialDailyEditorialDrafts(db.client, { puzzleDate: DATE }))
       .rejects.toBeInstanceOf(OfficialDailyEditorialCatalogError);
+  });
+
+  it('accepts parser-valid stored titles in both visible and lookahead rows', async () => {
+    const db = database([
+      { ...draft(2), title: 'Modern  Era' },
+      { ...draft(3), title: 'Modern  Era' },
+    ]);
+    const page = await listPrivateOfficialDailyEditorialDrafts(db.client, {
+      puzzleDate: DATE, pageSize: 1,
+    });
+    expect(page.editions[0]?.title).toBe('Modern  Era');
+    expect(page.nextCursor).toBe(2);
   });
 
   it('rejects provider reordering and duplicates rather than issuing a false cursor', async () => {

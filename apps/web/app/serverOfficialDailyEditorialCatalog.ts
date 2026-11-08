@@ -86,7 +86,7 @@ function parseRow(value: unknown, puzzleDate: string): PrivateOfficialDailyEdito
     throw new OfficialDailyEditorialCatalogError('unavailable');
   }
   const parsed = parseCustomLineupTitle(title);
-  if (!parsed.ok || parsed.title !== title) {
+  if (!parsed.ok) {
     throw new OfficialDailyEditorialCatalogError('unavailable');
   }
   return {

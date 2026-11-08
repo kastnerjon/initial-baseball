@@ -4,7 +4,7 @@ import {
   DAILY_ADMIN_AUTH_CHALLENGE, DailyAdminAuthorizationError,
   requireDailyAdminPrincipal,
 } from '../../../../../dailyAdminAuthorization';
-import { isSameOriginDailyAdminMutation } from '../../../../../dailyAdminRequestSecurity';
+import { isSameOriginDailyAdminMutation, isSameOriginDailyAdminRead } from '../../../../../dailyAdminRequestSecurity';
 import {
   OfficialDailyDraftError, scheduleOfficialDailyEditorialDraft,
 } from '../../../../../serverOfficialDailyEditorialDrafts';
@@ -75,7 +75,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   if (process.env.OFFICIAL_DAILY_EDITOR_DRAFTS_ENABLED !== 'true') {
     return reply(404, 'not_found');
   }
-  if (!isSameOriginDailyAdminMutation(request)) return reply(403, 'forbidden');
+  if (!isSameOriginDailyAdminMutation(request) || !isSameOriginDailyAdminRead(request)) return reply(403, 'forbidden');
   if (new URL(request.url).search !== '' ||
       request.headers.get('content-type')?.split(';', 1)[0]
         ?.trim().toLowerCase() !== 'application/x-www-form-urlencoded') {

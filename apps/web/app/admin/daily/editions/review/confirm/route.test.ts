@@ -57,6 +57,19 @@ describe('explicit private editor review-confirm scheduling adapter', () => {
     expect(createServerSupabaseClient).not.toHaveBeenCalled();
   });
 
+  it('rejects origin-less cross-site, same-site and unclassified browser forms before DB I/O', async () => {
+    for (const site of ['cross-site', 'same-site', null]) {
+      const request = new Request(BASE_URL, {
+        method: 'POST',
+        headers: { authorization: AUTH, ...(site === null ? {} : { 'sec-fetch-site': site }) },
+        body: new URLSearchParams(payload),
+      });
+      expect((await POST(request)).status).toBe(403);
+    }
+    expect(createServerSupabaseClient).not.toHaveBeenCalled();
+    expect(scheduleOfficialDailyEditorialDraft).not.toHaveBeenCalled();
+  });
+
   it('requires urlencoded form media, no query injection, and no duplicate fields', async () => {
     const dup = new URLSearchParams(payload);
     dup.append('confirmed', 'yes');
