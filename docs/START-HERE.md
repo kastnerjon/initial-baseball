@@ -1,5 +1,10 @@
 # Initial Baseball — Start Here
 
+## November 8 — Custom v2 named/Anonymous HTTP bridge staged (#528)
+
+- A distinct default-OFF `/api/custom-lineup/challenges/:puzzleId/display` GET/POST source route now uses the existing shared Custom account-creator exclusion guard before the new signed-cookie display service. It requires exact first-party browser context, rejects query-selected result identities, bounds JSON POSTs to 512 actual bytes, redacts backend errors, and returns only the player's own saved name/Anonymous preference on refresh. The route never returns submission IDs, scoring facts, clues or owner data. Verified owners are refused even if they first played as guests, with sticky creator marking and Auth refresh handling reused from canonical gameplay.
+- This is **not** user-visible deployment: `CUSTOM_V2_COMPLETION_DISPLAY_ENABLED` remains unset/OFF; the matching #617 migration is not applied and #618 service needs independent review. Real Safari/Android and hosted/authenticated owner acceptance, a completed-result UI, public nickname/account policy and production release remain unresolved.
+
 ## November 8 — Custom v2 signed-browser completion display service source-staged (#528)
 
 - The next bounded source-only layer validates an independently default-OFF `CUSTOM_V2_COMPLETION_DISPLAY_ENABLED` gate, exact v2 puzzle identity, the existing HMAC-bound challenge attempt cookie and absence of creator marker before calling the new private SQL display writer. Browser choice accepts only a named 1–32 UTF-16-code-unit plain-text label (using the shared Daily parser) or explicit Anonymous with no name. Neither result ID, score, creator account, clue nor hidden answer is in the RPC payload.
