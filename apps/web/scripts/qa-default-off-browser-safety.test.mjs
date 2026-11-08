@@ -1,6 +1,9 @@
 import assert from 'node:assert/strict';
 import { test } from 'node:test';
-import { createDefaultOffSmokeEnvironment } from './qa-default-off-browser-safety.mjs';
+import { mkdtemp, rm, writeFile } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { assertNoImplicitNextEnvironmentFiles, createDefaultOffSmokeEnvironment } from './qa-default-off-browser-safety.mjs';
 
 test('native smoke child receives no production or hosted QA credentials', () => {
   const environment = createDefaultOffSmokeEnvironment({
@@ -37,5 +40,20 @@ test('native smoke child receives no production or hosted QA credentials', () =>
 test('refuses unbounded or invalid port values', () => {
   for (const port of [0, -1, 65536, 2.5, NaN, '3000']) {
     assert.throws(() => createDefaultOffSmokeEnvironment({}, port), /loopback port/);
+  }
+});
+
+test('refuses locally loaded Next env files, but allows harmless example templates', async () => {
+  const root = await mkdtemp(join(tmpdir(), 'ib-no-env-'));
+  try {
+    await writeFile(join(root, '.env.example'), 'SUPABASE_URL=placeholder');
+    await assert.doesNotReject(assertNoImplicitNextEnvironmentFiles(root));
+    for (const name of ['.env', '.env.local', '.env.production', '.env.production.local']) {
+      await writeFile(join(root, name), 'SUPABASE_URL=SENSITIVE');
+      await assert.rejects(assertNoImplicitNextEnvironmentFiles(root), /refuses local Next environment file/);
+      await rm(join(root, name));
+    }
+  } finally {
+    await rm(root, { recursive: true, force: true });
   }
 });
