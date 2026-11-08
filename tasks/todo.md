@@ -2,6 +2,8 @@
 
 ## Engineering workflow — native default-OFF smoke pilot (November 8)
 
+- [ ] On the stacked Daily hint-reload browser PR, independently verify local signed hint persistence, exact authorized hint restoration and second-hint continuation on the final head; distinguish this from actual signed guess/scoring acceptance.
+
 - [ ] Verify the new PR Chromium smoke job succeeds at **the exact tested head** before merging. This adds a default-OFF public Daily/Results browser check with no hosted credentials; it does not complete actual gameplay, account, archive, or secondary-edition QA.
 - [ ] After a successful pilot, compare CI runtime and false-failure rate. Keep the browser gate if it catches real route regressions without significant overhead; otherwise optimize its placement rather than weakening isolation. See \`docs/engineering/default-off-browser-qa.md\`.
 

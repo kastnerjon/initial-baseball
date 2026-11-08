@@ -91,7 +91,14 @@ try {
       });
       const page = await context.newPage();
       const pageErrors = [];
+      let restoredHintRequestStatus = null;
       page.on('pageerror', error => pageErrors.push(error.message));
+      page.on('response', response => {
+        if (new URL(response.url()).pathname === '/api/daily/hints'
+          && response.request().method() === 'POST') {
+          restoredHintRequestStatus = response.status();
+        }
+      });
       const home = await page.goto(base + '/', { waitUntil: 'domcontentloaded' });
       assert.equal(home?.status(), 200, 'Default Daily home must return HTTP 200');
       await page.getByRole('heading', { name: 'Daily Nine', exact: true }).waitFor();
@@ -103,6 +110,55 @@ try {
       await page.getByRole('heading', { name: 'My Results', exact: true }).waitFor();
       await page.getByRole('link', { name: /Back to today.*Daily/ }).click();
       await page.getByRole('heading', { name: 'Daily Nine', exact: true }).waitFor();
+      await page.getByRole('button', { name: 'Got it', exact: true }).click();
+
+      // Real signed Daily hint consumption and browser persistence, no hosted DB.
+      const beforeInitials = await page.locator('.initials-value').textContent();
+      await page.getByText('0/4 hints', { exact: true }).waitFor();
+      await page.getByRole('button', { name: 'Reveal Next Hint', exact: true }).click();
+      await page.getByText('1/4 hints', { exact: true }).waitFor();
+      const beforeHint = await page.locator('.revealed-hint .hint-value').first().textContent();
+      assert.ok(beforeHint && beforeHint.trim(), 'First authorized hint should render');
+      // Observe durable save before navigating to avoid testing a React effect race.
+      await page.waitForFunction(() => {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (!key?.startsWith('initial-baseball:daily:')) continue;
+          try {
+            const saved = JSON.parse(localStorage.getItem(key) ?? '');
+            if (saved?.atBatState?.revealCount === 1) return true;
+          } catch { /* Ignore unrelated or corrupted local keys. */ }
+        }
+        return false;
+      }, null, { timeout: 10_000 });
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      await page.getByRole('button', { name: 'Got it', exact: true }).click();
+      try {
+        await page.getByText('1/4 hints', { exact: true }).waitFor();
+      } catch {
+        // State-only diagnostics: do not emit names, hint values or signed tokens.
+        const state = await page.evaluate(() => {
+          const text = document.body.textContent ?? '';
+          return {
+            progress: document.querySelector('.hint-progress')?.textContent ?? null,
+            restoring: text.includes('Restoring today'),
+            restoreError: text.includes('The saved at-bat could not be restored'),
+            follower: text.includes('active in another tab'),
+            blocked: text.includes('could not be restored safely'),
+          };
+        });
+        throw new Error('Signed Daily hint restore failed. State: '
+          + JSON.stringify(state) + '; hint endpoint HTTP: '
+          + String(restoredHintRequestStatus));
+      }
+      assert.ok(await page.locator('.initials-value').textContent() === beforeInitials,
+        'Reload must not change the active player');
+      assert.ok(await page.locator('.revealed-hint .hint-value').first().textContent() === beforeHint,
+        'Reload must preserve the exact authorized hint without exposing it in logs');
+      assert.equal(await page.locator('.revealed-hint').count(), 1,
+        'Reload must not replay or duplicate previous hints');
+      await page.getByRole('button', { name: 'Reveal Next Hint', exact: true }).click();
+      await page.getByText('2/4 hints', { exact: true }).waitFor();
 
       for (const path of ['/create', '/account']) {
         const response = await context.request.get(base + path, { timeout: 15_000 });
