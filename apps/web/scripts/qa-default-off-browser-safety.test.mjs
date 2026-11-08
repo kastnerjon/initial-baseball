@@ -48,7 +48,8 @@ test('refuses locally loaded Next env files, but allows harmless example templat
   try {
     await writeFile(join(root, '.env.example'), 'SUPABASE_URL=placeholder');
     await assert.doesNotReject(assertNoImplicitNextEnvironmentFiles(root));
-    for (const name of ['.env', '.env.local', '.env.production', '.env.production.local']) {
+    for (const name of ['.env', '.env.local', '.env.production', '.env.production.local',
+      '.ENV', '.Env.Local', '.ENV.PRODUCTION.LOCAL']) {
       await writeFile(join(root, name), 'SUPABASE_URL=SENSITIVE');
       await assert.rejects(assertNoImplicitNextEnvironmentFiles(root), /refuses local Next environment file/);
       await rm(join(root, name));
