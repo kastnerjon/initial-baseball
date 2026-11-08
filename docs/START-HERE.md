@@ -1,5 +1,10 @@
 # Initial Baseball — Start Here
 
+## November 8 — Custom v2 signed-browser completion display service source-staged (#528)
+
+- The next bounded source-only layer validates an independently default-OFF `CUSTOM_V2_COMPLETION_DISPLAY_ENABLED` gate, exact v2 puzzle identity, the existing HMAC-bound challenge attempt cookie and absence of creator marker before calling the new private SQL display writer. Browser choice accepts only a named 1–32 UTF-16-code-unit plain-text label (using the shared Daily parser) or explicit Anonymous with no name. Neither result ID, score, creator account, clue nor hidden answer is in the RPC payload.
+- Provider conflicts indicate an immutable already-chosen name/Anonymous identity, not a score problem. Other backend failures are redacted. No HTTP handler, completion screen, profile nickname, public leaderboard, migration application or production flag activation is added; hosted QA and external review remain pending.
+
 ## November 8 — Custom v2 first-write-wins completion display projection staged (#528)
 
 - Additive SQL-only source milestone: `custom_lineup_v2_completion_displays` stores an immutable named/Anonymous choice only after the exact browser-credential-bound noncreator first Custom v2 result is atomically admitted, including all N per-batter results. Submission identity derives solely from the server-owned completed attempt; no browser-selected submission ID or cross-puzzle relabeling. The private writer locks the same attempt row as the admission RPC and verifies creator exclusion.

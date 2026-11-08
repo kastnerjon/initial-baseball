@@ -16,6 +16,7 @@
 ## Custom #528 — secure completion display identity (source policy staged)
 
 - [ ] #528 source-only DB projection: complete independent review and rollback-only isolated QA rehearsal of the immutable noncreator, already-admitted Custom v2 completion name/Anonymous table and service-only first-write-wins RPC. Then implement server cookie-authenticated API/reader, nickname/privacy linkage and guest completion UI separately; do not deploy this migration or enable production flags yet.
+- [ ] #528 private API bridge: independently review the default-OFF signed-cookie service and service-role RPC adapter with negative/browser-cookie tests, then add separate first-party bounded HTTP write/readback and genuine hosted/mobile guest acceptance. No production route or flag activation.
 - [ ] Stage a separate service-role-only first-write-wins name/privacy projection bound to the server-admitted Custom v2 submission (never to a caller-chosen submission ID). Use the portable `parseCompletionDisplayName` boundary, but retain the verified attempt-cookie/creator-exclusion and independent nickname authorization. This remains incomplete until reviewed additive QA-only database migration, endpoint and UI tests, real Safari QA and explicit release authorization.
 
 
