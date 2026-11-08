@@ -156,25 +156,21 @@ export function DailyInningGame({
     savedGameRestoreController.invalidate();
     onDemandHints?.invalidateSilently();
   }, [savedGameRestoreController, onDemandHints]);
-
   const performanceLayout = isYourNineEnabled(gameState.rulesetVersion);
   const isPuzzleComplete = currentPitchIndex >= puzzle.pitches.length;
   const isGameComplete = gameState.points.completed || gameState.score.completed || isPuzzleComplete;
   const requestPending = resolutionRequests.pendingAction !== null || hintPending;
   const isRestoringActiveHints = hasLoadedSavedState && hintBundle === null
     && pendingAdvance === null && !isGameComplete;
-
   const shareResult = useMemo(
     () => createCompletedDailyShareResult(gameState, isGameComplete, archivePath),
     [gameState, isGameComplete, archivePath],
   );
-
   if (gameplayPersistence.access === 'checking'
     || gameplayPersistence.access === 'follower'
     || gameplayPersistence.access === 'blocked') {
     return <DailyGameplayOwnershipMessage access={gameplayPersistence.access} />;
   }
-
   if (shareResult !== null) {
     const completedInningScoreboard = isDailyPointsRulesetVersion(gameState.rulesetVersion) && !performanceLayout
       ? createDailyNineInningScoreboardPresentation({
