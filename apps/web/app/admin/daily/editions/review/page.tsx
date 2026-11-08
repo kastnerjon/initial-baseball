@@ -29,6 +29,10 @@ function parseOccurrenceId(params: Parameters): string | 'empty' | 'invalid' {
 }
 
 function EditorialPreview({ preview }: { preview: OfficialDailyDraftPreview }) {
+  // The server independently revalidates player identity and revision on POST.
+  const scheduledPlayersResolved = preview.selections.length === 9
+    && preview.selections.every(selection =>
+      typeof selection.displayName === 'string' && selection.displayName.trim().length > 0);
   return (
     <section aria-label="Reviewed secondary Daily roster">
       <h2>{preview.title} · Puzzle {preview.editionNumber}</h2>
@@ -78,7 +82,9 @@ function EditorialPreview({ preview }: { preview: OfficialDailyDraftPreview }) {
             ? 'All nine players have canonical clue material available for scheduling review.'
             : 'This edition is not currently ready to schedule. Check the player records, clues, date and editorial status.'
           : preview.status === 'scheduled'
-            ? 'Scheduled; issuance separately freezes the reviewed lineup and clues.'
+            ? scheduledPlayersResolved
+              ? 'Scheduled; issuance separately freezes the reviewed lineup and clues.'
+              : 'This scheduled edition cannot be issued until all nine canonical players resolve. Check the player catalog.'
             : 'This edition has already been issued with immutable frozen clues.'}
       </p>
       <p>Review all nine selected players before confirming. Scheduling is separate
@@ -95,6 +101,7 @@ function EditorialPreview({ preview }: { preview: OfficialDailyDraftPreview }) {
         </form>
       ) : null}
       {preview.status === 'scheduled'
+        && scheduledPlayersResolved
         && process.env.OFFICIAL_DAILY_EDITOR_ISSUANCE_ENABLED === 'true' ? (
           <form method="post" action="/admin/daily/editions/review/issue">
             <input type="hidden" name="occurrenceId" value={preview.occurrenceId} />
