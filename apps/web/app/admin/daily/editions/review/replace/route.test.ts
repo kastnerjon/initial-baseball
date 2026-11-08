@@ -15,14 +15,14 @@ import {
 } from '../../../../../serverOfficialDailyEditorialDrafts';
 import { createServerSupabaseClient } from '../../../../../serverSupabaseClient';
 
-const URL = 'https://initial.test/admin/daily/editions/review/replace';
+const BASE_URL = 'https://initial.test/admin/daily/editions/review/replace';
 const USER = 'editor';
 const AUTH = 'Basic ' + Buffer.from(USER + ':long-development-password-for-testing').toString('base64');
 const ID = '907f33db-c38f-43c3-8e6b-a3aaf19bbd08';
 const FORM = { occurrenceId: ID, expectedRevision: '3', slot: '4',
   canonicalPlayerId: 'fixture-10' };
 function request(form: Record<string,string> | URLSearchParams = FORM,
-  headers: Record<string,string> = {}, url = URL) {
+  headers: Record<string,string> = {}, url = BASE_URL) {
   return new Request(url, { method: 'POST',
     headers: { authorization: AUTH, origin: new URL(url).origin,
       'sec-fetch-site': 'same-origin', ...headers },
@@ -51,7 +51,7 @@ describe('authenticated slot replacement adapter', () => {
   it('rejects cross-site, same-site and ambiguous Origin-less forms', async () => {
     expect((await POST(request(FORM, { origin: 'https://other.test' }))).status).toBe(403);
     for (const site of ['cross-site','same-site',null]) {
-      const req = new Request(URL, { method: 'POST',
+      const req = new Request(BASE_URL, { method: 'POST',
         headers: { authorization: AUTH,
           ...(site === null ? {} : { 'sec-fetch-site': site }) },
         body: new URLSearchParams(FORM),
@@ -65,7 +65,7 @@ describe('authenticated slot replacement adapter', () => {
     expect(denied.status).toBe(401);
     expect(denied.headers.get('www-authenticate')).toContain('Daily Admin');
     expect((await POST(request(FORM, { 'content-type': 'application/json' }))).status).toBe(415);
-    expect((await POST(request(FORM, {}, URL + '?unexpected=1'))).status).toBe(415);
+    expect((await POST(request(FORM, {}, BASE_URL + '?unexpected=1'))).status).toBe(415);
     expect(createServerSupabaseClient).not.toHaveBeenCalled();
   });
   it('rejects extra, duplicate, missing or malformed fields before writer access', async () => {
