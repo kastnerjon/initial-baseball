@@ -18,6 +18,9 @@ runtime dependency or make network calls from the web app to a baseball API.
 - A disabled Custom creator (`/create`) and account page (`/account`) return
   HTTP 404, with no Create a Lineup advertisement.
 - Disabled Classic Inning redirects to the public Daily route.
+- A prospective Custom completion display GET and POST both return HTTP 404
+  with the identity gate forced OFF, even if the app includes those source-only routes.
+  No hosted Supabase, attempt credentials or name result are needed.
 - Revealing the first signed Daily hint persists it in the browser; after a full
   reload the same active player and exact previously authorized hint are restored
   without duplication, and revealing the next hint advances to 2/4.
@@ -61,7 +64,8 @@ Playwright CLI (`install --with-deps chromium`) as CI does.
 
 This is still neither full gameplay completion acceptance nor an isolated hosted QA result.
 It verifies signed local hint continuation, but does **not** verify real guesses, scoring, saved competitive submissions,
-Supabase row policies/migrations, authenticated Custom creation, OAuth, Archive
+Supabase row policies/migrations, authenticated Custom creation, Custom completion-name write/read/identity recovery,
+real-browser enabled-mode CSRF and name-entry flows, OAuth, Archive
 catalogs, secondary official Daily editions, physical Safari, or Android.
 
 Keep the existing credential-gated, isolated Supabase Chromium runners and
