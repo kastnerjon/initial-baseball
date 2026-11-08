@@ -112,6 +112,11 @@ describe('restricted reviewed secondary Daily frozen issuance', () => {
     expect(createServerSupabaseClient).toHaveBeenCalledOnce();
   });
 
+  it('forwards a later reviewed revision unchanged to the canonical issuer', async () => {
+    expect((await POST(request({ ...FORM, expectedRevision: '4' }))).status).toBe(303);
+    expect(issuePrivateOfficialDaily).toHaveBeenCalledWith(expect.anything(), ID, 4);
+  });
+
   it('preserves canonical idempotent readback and redacts all private errors', async () => {
     vi.mocked(issuePrivateOfficialDaily).mockResolvedValueOnce({
       status: 'existing', puzzleId: PUZZLE_ID,
