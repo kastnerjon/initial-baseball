@@ -85,6 +85,7 @@ describe('Daily Nine leaderboard submission and read orchestration', () => {
     await expect(svc.read({ ...IDENTITY, puzzleId: editionId }))
       .resolves.toEqual({ ok: false, error: 'invalid_request' });
     expect(repo.read).not.toHaveBeenCalled();
+    expect(repo.findCompletion).not.toHaveBeenCalled();
     vi.mocked(repo.findCompletion).mockResolvedValue({
       ...IDENTITY, puzzleId: editionId, submissionId: 'attempt1',
     });
