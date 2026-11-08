@@ -122,6 +122,39 @@ describe('read-only authenticated exact secondary editor review page', () => {
       .toHaveBeenCalledWith(expect.anything(), ID);
   });
 
+  it('renders draft-only one-slot edit with all nine choices and current revision', async () => {
+    const html = renderToStaticMarkup(await Page(props({ occurrenceId: ID })));
+    expect(html).toContain('Replace one player');
+    expect(html).toContain('action="/admin/daily/editions/review/replace"');
+    expect(html).toContain('name="expectedRevision" value="3"');
+    expect(html).toContain('name="canonicalPlayerId"');
+    expect(html).toContain('name="slot"');
+    for (let i = 1; i <= 9; i++) {
+      expect(html).toContain('<option value="' + i + '">');
+    }
+    expect(html).not.toContain('PRIVATE_FUTURE_HINT_AND_ROSTER');
+  });
+
+  it('does not offer player edits after scheduling or issuance', async () => {
+    for (const status of ['scheduled', 'issued'] as const) {
+      vi.mocked(readOfficialDailyEditorialDraftPreview).mockResolvedValueOnce({
+        ...PREVIEW, status, canSchedule: false,
+      });
+      const html = renderToStaticMarkup(await Page(props({ occurrenceId: ID })));
+      expect(html).not.toContain('Replace selected player');
+      expect(html).not.toContain('/admin/daily/editions/review/replace');
+    }
+  });
+
+  it('allows correcting a clue-unready draft without exposing a schedule command', async () => {
+    vi.mocked(readOfficialDailyEditorialDraftPreview).mockResolvedValueOnce({
+      ...PREVIEW, canSchedule: false,
+    });
+    const html = renderToStaticMarkup(await Page(props({ occurrenceId: ID })));
+    expect(html).toContain('Replace selected player');
+    expect(html).not.toContain('Confirm lineup and schedule');
+  });
+
   it('labels unready clues without adding a misleading schedule command', async () => {
     vi.mocked(readOfficialDailyEditorialDraftPreview).mockResolvedValueOnce({
       ...PREVIEW, canSchedule: false,

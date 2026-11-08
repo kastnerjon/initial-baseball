@@ -47,6 +47,30 @@ function EditorialPreview({ preview }: { preview: OfficialDailyDraftPreview }) {
           </li>
         ))}
       </ol>
+      {preview.status === 'draft' ? (
+        <section aria-label="Replace a draft player">
+          <h3>Replace one player</h3>
+          <p>A replacement creates a new draft revision. It cannot change a scheduled
+            or issued lineup. Reload this page if another editor changed the draft.</p>
+          <form method="post" action="/admin/daily/editions/review/replace">
+            <input type="hidden" name="occurrenceId" value={preview.occurrenceId} />
+            <input type="hidden" name="expectedRevision" value={String(preview.revision)} />
+            <label htmlFor="draft-replace-slot">Batting-order slot</label>
+            <select id="draft-replace-slot" name="slot" required defaultValue="">
+              <option value="" disabled>Select a player</option>
+              {preview.selections.map(selection => (
+                <option key={selection.slot} value={selection.slot}>
+                  {selection.slot} · {selection.displayName ?? selection.canonicalPlayerId}
+                </option>
+              ))}
+            </select>
+            <label htmlFor="draft-replace-player">Replacement canonical player ID</label>
+            <input id="draft-replace-player" name="canonicalPlayerId"
+              type="text" maxLength={200} required autoComplete="off" />
+            <button type="submit">Replace selected player</button>
+          </form>
+        </section>
+      ) : null}
       <p role="status">
         {preview.status === 'draft'
           ? preview.canSchedule
@@ -87,7 +111,7 @@ function EditorialPreview({ preview }: { preview: OfficialDailyDraftPreview }) {
   );
 }
 
-/** Private read-only secondary lineup inspection; no mutation controls. */
+/** Restricted secondary lineup review with independent revision-bound actions. */
 export default async function OfficialDailyEditionReviewPage({
   searchParams,
 }: {
