@@ -2,8 +2,7 @@
 
 ## Engineering workflow — native default-OFF smoke pilot (November 8)
 
-- [ ] Verify the new PR Chromium smoke job succeeds at **the exact tested head** before merging. This adds a default-OFF public Daily/Results browser check with no hosted credentials; it does not complete actual gameplay, account, archive, or secondary-edition QA.
-- [ ] After a successful pilot, compare CI runtime and false-failure rate. Keep the browser gate if it catches real route regressions without significant overhead; otherwise optimize its placement rather than weakening isolation. See \`docs/engineering/default-off-browser-qa.md\`.
+- [ ] Assess the merged default-OFF Chromium smoke's CI runtime and false-failure rate after several PR runs. Keep the browser gate if it catches real route regressions without significant overhead; otherwise optimize its placement rather than weakening isolation. See `docs/engineering/default-off-browser-qa.md`.
 
 
 ## Security #531 — legacy signed browser QA environment cutover
