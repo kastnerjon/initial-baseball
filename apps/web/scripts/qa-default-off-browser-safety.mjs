@@ -35,6 +35,7 @@ export function createDefaultOffSmokeEnvironment(host, port) {
     CLASSIC_INNING_ENABLED: 'false',
     CUSTOM_LINEUP_PUBLIC_CREATION_ENABLED: 'false',
     CUSTOM_LINEUP_V2_GAMEPLAY_TRANSPORT_ENABLED: 'false',
+    CUSTOM_V2_COMPLETION_DISPLAY_ENABLED: 'false',
     CUSTOM_LINEUP_VARIABLE_STRIKES_ENABLED: 'false',
     CREATOR_AUTH_ENABLED: 'false',
   };
