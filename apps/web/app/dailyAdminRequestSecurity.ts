@@ -18,3 +18,20 @@ export function isSameOriginDailyAdminRead(request: Request): boolean {
   // first-party admin read. Direct navigation has site=none.
   return site === 'same-origin' || site === 'none';
 }
+
+
+/** Browser-visible private admin pages accept only first-party navigation contexts. */
+export function isFirstPartyDailyAdminNavigation(site: string | null): boolean {
+  return site === 'same-origin' || site === 'none';
+}
+
+
+/**
+ * New admin HTML mutations also require first-party browser context, so
+ * Origin-less cross-site forms cannot ride a cached Basic authorization.
+ * Existing canonical JSON mutation routes keep their previous admission.
+ */
+export function isFirstPartyDailyAdminForm(request: Request): boolean {
+  return isSameOriginDailyAdminMutation(request)
+    && isSameOriginDailyAdminRead(request);
+}
