@@ -111,6 +111,27 @@ begin
     (v_first::text,v_puzzle_id,2,'points-v4',1,'FP','HR',0,0,'correct',4),
     (v_second::text,v_puzzle_id,2,'points-v4',1,'FP','HR',0,0,'correct',4);
 
+  -- Simulate a privileged data-corruption case: every immutable terminal
+  -- fact still matches and all N rows exist, but the score total does not.
+  -- The name writer must not bless that inconsistent result.
+  update public.custom_nine_at_bat_results
+  set awarded_points = 0
+  where attempt_id = v_first::text and challenge_id = v_puzzle_id
+    and schema_version = 2 and pitch_number = 1;
+  v_rejected := false;
+  begin
+    perform * from public.record_custom_lineup_v2_completion_display(
+      v_puzzle_id,v_first_digest,'named','Forged Award');
+  exception when invalid_parameter_value then v_rejected := true;
+  end;
+  if not v_rejected then
+    raise exception 'Full-count terminal match with wrong point total was admitted';
+  end if;
+  update public.custom_nine_at_bat_results
+  set awarded_points = 4
+  where attempt_id = v_first::text and challenge_id = v_puzzle_id
+    and schema_version = 2 and pitch_number = 1;
+
   -- Inputs must not be auto-trimmed or treated as authority; malformed or
   -- guessed credentials fail without producing any projection row.
   v_rejected := false;
