@@ -97,6 +97,13 @@ describe('authenticated slot replacement adapter', () => {
     expect(replaceOfficialDailyEditorialDraftPlayer).toHaveBeenCalledWith(
       expect.anything(), ID, 3, 4, 'fixture-10', USER);
   });
+  it('accepts the initial draft revision zero with the final batting-order slot', async () => {
+    const response = await POST(request({ ...FORM, expectedRevision: '0', slot: '9' }));
+    expect(response.status).toBe(303);
+    expect(replaceOfficialDailyEditorialDraftPlayer).toHaveBeenCalledWith(
+      expect.anything(), ID, 0, 9, 'fixture-10', USER);
+  });
+
   it('returns stale revision 409 and sanitized provider errors without leaking clues', async () => {
     for (const [kind, status] of [
       ['conflict',409], ['invalid',400], ['unavailable',503],
