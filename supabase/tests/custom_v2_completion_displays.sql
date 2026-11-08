@@ -19,6 +19,8 @@ declare
   v_created boolean;
   v_rejected boolean;
   v_before bigint;
+  v_observed_mode text;
+  v_observed_name text;
 begin
   if not exists (
     select 1 from pg_class
@@ -42,6 +44,14 @@ begin
     or not has_function_privilege('service_role',
       'public.record_custom_lineup_v2_completion_display(text,text,text,text)','EXECUTE')
   then raise exception 'Guest/consumer privilege leaked or private writer unavailable'; end if;
+
+  if has_function_privilege('anon',
+      'public.read_custom_lineup_v2_completion_display(text,text)','EXECUTE')
+    or has_function_privilege('authenticated',
+      'public.read_custom_lineup_v2_completion_display(text,text)','EXECUTE')
+    or not has_function_privilege('service_role',
+      'public.read_custom_lineup_v2_completion_display(text,text)','EXECUTE')
+  then raise exception 'Completion display reader privileges widened'; end if;
 
   select count(*) into v_before
   from public.custom_lineup_v2_completion_displays;
@@ -78,6 +88,11 @@ begin
     (v_puzzle_id,v_first_digest,v_first,1,'first-token',v_facts,'completed',now()),
     (v_puzzle_id,v_second_digest,v_second,1,'second-token',v_facts,'completed',now()),
     (v_puzzle_id,v_missing_digest,gen_random_uuid(),0,'pending', '[]'::jsonb,'active',null);
+
+  if exists (
+    select 1 from public.read_custom_lineup_v2_completion_display(
+      v_puzzle_id,v_first_digest)
+  ) then raise exception 'Readback revealed incomplete or unadmitted attempt'; end if;
 
   -- A completed attempt alone is not enough. An admitted completion plus
   -- all per-batter score rows must exist before accepting any display choice.
@@ -184,12 +199,32 @@ begin
   end;
   if not v_rejected then raise exception 'Named result reset to anonymous'; end if;
 
+  select display_mode, display_name into v_observed_mode, v_observed_name
+  from public.read_custom_lineup_v2_completion_display(v_puzzle_id,v_first_digest);
+  if not found or v_observed_mode is distinct from 'named'
+    or v_observed_name is distinct from 'Guest Hero'
+  then raise exception 'Named first result was not readable by its exact browser'; end if;
+  if exists (
+    select 1 from public.read_custom_lineup_v2_completion_display(
+      v_puzzle_id,repeat('d',64))
+  ) then raise exception 'Foreign digest read back another guest name'; end if;
+  if exists (
+    select 1 from public.read_custom_lineup_v2_completion_display(
+      'custom-lineup-v2-' || gen_random_uuid()::text,v_first_digest)
+  ) then raise exception 'Another challenge read back guest name'; end if;
+
   select created into v_created from public.record_custom_lineup_v2_completion_display(
     v_puzzle_id,v_second_digest,'anonymous',null);
   if v_created is distinct from true then raise exception 'Anonymous result was not stored'; end if;
   select created into v_created from public.record_custom_lineup_v2_completion_display(
     v_puzzle_id,v_second_digest,'anonymous',null);
   if v_created is distinct from false then raise exception 'Anonymous retry not idempotent'; end if;
+
+  select display_mode, display_name into v_observed_mode, v_observed_name
+  from public.read_custom_lineup_v2_completion_display(v_puzzle_id,v_second_digest);
+  if not found or v_observed_mode is distinct from 'anonymous'
+    or v_observed_name is not null
+  then raise exception 'Anonymous display readback leaked a name'; end if;
 
   if not exists (select 1 from public.custom_lineup_v2_completion_displays
     where submission_id=v_first::text and display_mode='named'
@@ -209,6 +244,10 @@ begin
   exception when invalid_parameter_value then v_rejected := true;
   end;
   if not v_rejected then raise exception 'Creator-excluded retry accepted'; end if;
+  if exists (
+    select 1 from public.read_custom_lineup_v2_completion_display(
+      v_puzzle_id,v_second_digest)
+  ) then raise exception 'Creator-excluded browser can read an old display'; end if;
 
   if not exists (select 1 from public.custom_nine_completed_results
     where submission_id=v_first::text and challenge_id=v_puzzle_id
