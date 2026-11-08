@@ -31,7 +31,7 @@ export function createDefaultOffSmokeEnvironment(host, port) {
     NEXT_TELEMETRY_DISABLED: '1',
     HOSTNAME: '127.0.0.1',
     PORT: String(port),
-    DAILY_PROGRESSION_SECRET: 'isolated-default-off-browser-smoke-only-20261108',
+    DAILY_PROGRESSION_SECRET: 'ci-only-daily-progression-secret-0123456789abcdef',
     CLASSIC_INNING_ENABLED: 'false',
     CUSTOM_LINEUP_PUBLIC_CREATION_ENABLED: 'false',
     CUSTOM_LINEUP_V2_GAMEPLAY_TRANSPORT_ENABLED: 'false',
