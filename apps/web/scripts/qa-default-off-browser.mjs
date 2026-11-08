@@ -46,15 +46,26 @@ async function startNext() {
       stdio: ['ignore', 'pipe', 'pipe'],
       env: createDefaultOffSmokeEnvironment(process.env, port),
     });
-  // Never echo application logs. They can contain signed state or puzzle hints.
-  child.stdout.resume();
+  // A random 200 on the reserved port is not proof that our own Next child
+  // successfully bound it. Require this child's explicit startup readiness.
+  // Never echo application logs: they may include signed state or puzzle hints.
+  let childReady = false;
+  let outputTail = '';
+  child.stdout.on('data', chunk => {
+    outputTail = (outputTail + chunk.toString()).slice(-2048);
+    if (/(?:^|\r|\n)[^\r\n]*\bReady in\s+/.test(outputTail)) childReady = true;
+  });
   child.stderr.resume();
   for (let attempt = 0; attempt < 120; attempt++) {
-    if (child.exitCode !== null) break;
-    try {
-      const response = await fetch(base + '/', { signal: AbortSignal.timeout(1200) });
-      if (response.status === 200) return { child, base };
-    } catch { /* Server is not ready yet. */ }
+    if (child.exitCode !== null || child.signalCode !== null) break;
+    if (childReady) {
+      try {
+        const response = await fetch(base + '/', { signal: AbortSignal.timeout(1200) });
+        if (response.status === 200 && child.exitCode === null && child.signalCode === null) {
+          return { child, base };
+        }
+      } catch { /* Child has not begun responding yet. */ }
+    }
     await delay(250);
   }
   stop(child);
