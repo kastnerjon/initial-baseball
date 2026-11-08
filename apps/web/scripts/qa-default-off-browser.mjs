@@ -114,6 +114,9 @@ try {
 
       // Real signed Daily hint consumption and browser persistence, no hosted DB.
       const beforeInitials = await page.locator('.initials-value').textContent();
+      const beforeAtBat = await page.locator('.at-bat-progress-step[aria-current="step"]')
+        .getAttribute('aria-label');
+      assert.ok(beforeAtBat, 'The initial Daily at-bat must be identifiable');
       await page.getByText('0/4 hints', { exact: true }).waitFor();
       await page.getByRole('button', { name: 'Reveal Next Hint', exact: true }).click();
       await page.getByText('1/4 hints', { exact: true }).waitFor();
@@ -131,6 +134,11 @@ try {
         }
         return false;
       }, null, { timeout: 10_000 });
+      // Register before navigation: earlier hint POSTs must never satisfy
+      // the post-reload authorization proof.
+      const resumedHintResponse = page.waitForResponse(response =>
+        new URL(response.url()).pathname === '/api/daily/hints'
+          && response.request().method() === 'POST', { timeout: 15_000 });
       await page.reload({ waitUntil: 'domcontentloaded' });
       await page.getByRole('button', { name: 'Got it', exact: true }).click();
       try {
@@ -151,14 +159,21 @@ try {
           + JSON.stringify(state) + '; hint endpoint HTTP: '
           + String(restoredHintRequestStatus));
       }
+      assert.equal((await resumedHintResponse).status(), 200,
+        'The post-reload signed Daily hint recovery POST must succeed');
       assert.ok(await page.locator('.initials-value').textContent() === beforeInitials,
         'Reload must not change the active player');
+      assert.equal(await page.locator('.at-bat-progress-step[aria-current="step"]')
+        .getAttribute('aria-label'), beforeAtBat,
+      'Reload must not change the active at-bat');
       assert.ok(await page.locator('.revealed-hint .hint-value').first().textContent() === beforeHint,
         'Reload must preserve the exact authorized hint without exposing it in logs');
       assert.equal(await page.locator('.revealed-hint').count(), 1,
         'Reload must not replay or duplicate previous hints');
       await page.getByRole('button', { name: 'Reveal Next Hint', exact: true }).click();
       await page.getByText('2/4 hints', { exact: true }).waitFor();
+      assert.equal(await page.locator('.revealed-hint').count(), 2,
+        'Second authorized hint should render, not just increment progress');
 
 
       // Both identity flags remain OFF, including when a later source PR adds

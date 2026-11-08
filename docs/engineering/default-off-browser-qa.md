@@ -22,8 +22,9 @@ runtime dependency or make network calls from the web app to a baseball API.
   with the identity gate forced OFF, even if the app includes those source-only routes.
   No hosted Supabase, attempt credentials or name result are needed.
 - Revealing the first signed Daily hint persists it in the browser; after a full
-  reload the same active player and exact previously authorized hint are restored
-  without duplication, and revealing the next hint advances to 2/4.
+  reload the same at-bat/player and exact previously authorized hint are restored
+  without duplication. The post-reload signed hint POST must succeed, and the
+  next authorized hint must actually render (not merely increment to 2/4).
 - No uncaught browser JavaScript exceptions are observed during this flow.
 
 No browser writes to Supabase. The isolated Next child process receives an
