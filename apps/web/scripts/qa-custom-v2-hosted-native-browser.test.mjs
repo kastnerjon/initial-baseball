@@ -31,11 +31,11 @@ test('accept localhost loopback before module preflight', async () => {
 });
 
 // Preflight child processes use fictitious credentials and cannot reach a server.
-// The absence of a configured public-creator mode must never silently skip the
-// requested real-browser acceptance run and report only HTTP suite success.
+// Legacy signed QA now permits admin-fixture native browser acceptance; preflight
+// must still enforce the module path and fail before creating any real fixture.
 const qaScript = fileURLToPath(new URL('./qa-custom-v2-hosted.mjs', import.meta.url));
 for (const [mode, modulePath, expected] of [
-  ['false', '/qa/playwright/index.mjs', /requires CUSTOM_V2_QA_PUBLIC_CREATION=true/],
+  ['false', '/qa/playwright/index.mjs', /CUSTOM_V2_QA_PLAYER_IDS must be explicitly configured/],
   ['true', '', /requires a nonempty Playwright module path/],
 ]) {
   test('requested native QA fails before fixtures with invalid flags: ' + mode,
@@ -47,6 +47,8 @@ for (const [mode, modulePath, expected] of [
           SUPABASE_URL: 'https://iklbnlicgsxxhaoiscor.supabase.co/',
           SUPABASE_SERVICE_ROLE_KEY: 'qa-fictitious-never-contact-server',
           DAILY_PROGRESSION_SECRET: 'x'.repeat(32),
+          DAILY_ADMIN_USERNAME: 'synthetic-qa-fixture',
+          DAILY_ADMIN_PASSWORD: 'synthetic-not-real-password',
           CUSTOM_LINEUP_V2_GAMEPLAY_TRANSPORT_ENABLED: 'true',
           CUSTOM_V2_QA_PUBLIC_CREATION: mode,
           CUSTOM_V2_QA_PLAYWRIGHT_MODULE: modulePath,
