@@ -1,5 +1,9 @@
 # Initial Baseball — Current Work
 
+## Archive beta operational investigation (#615)
+
+- [ ] Preserve accepted October 16 Daily #173 results and original `daily-2026-10-16` identity. Production has no matching editorial row or disposable Archive beta #13; do not fabricate an editorial puzzle. Source-stage bounded 503 diagnostic logging separately, then verify real production event classification and archival-history policy before any remediation.
+
 ## Official Daily editions — approved November 5
 
 - [ ] A1: issuance identity, frozen nine-player content, service-only persistence and restricted editor action.
