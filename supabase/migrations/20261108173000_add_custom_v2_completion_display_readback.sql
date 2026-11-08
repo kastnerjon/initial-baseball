@@ -51,6 +51,16 @@ begin
       and r.ruleset_version = 'points-v4'
       and r.completed_at_bats = v_attempt.terminal_at_bats
     where d.submission_id = v_attempt.attempt_id::text
+      -- Mirror the writer's score-integrity gate even after an approved name
+      -- was saved: corrupt awarded-point totals must fail closed on readback.
+      and (r.summary ->> 'points')::numeric = (
+        select coalesce(sum(ab.awarded_points), 0)
+        from public.custom_nine_at_bat_results ab
+        where ab.attempt_id = v_attempt.attempt_id::text
+          and ab.challenge_id = p_challenge_id
+          and ab.schema_version = 2
+          and ab.ruleset_version = 'points-v4'
+      )
       and (select count(*) from public.custom_nine_at_bat_results ab
         where ab.attempt_id = v_attempt.attempt_id::text
           and ab.challenge_id = p_challenge_id
