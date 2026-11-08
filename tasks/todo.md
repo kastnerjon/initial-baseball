@@ -1,5 +1,11 @@
 # Initial Baseball — Current Work
 
+## Engineering workflow — native default-OFF smoke pilot (November 8)
+
+- [ ] Verify the new PR Chromium smoke job succeeds at **the exact tested head** before merging. This adds a default-OFF public Daily/Results browser check with no hosted credentials; it does not complete actual gameplay, account, archive, or secondary-edition QA.
+- [ ] After a successful pilot, compare CI runtime and false-failure rate. Keep the browser gate if it catches real route regressions without significant overhead; otherwise optimize its placement rather than weakening isolation. See \`docs/engineering/default-off-browser-qa.md\`.
+
+
 ## Security #531 — legacy signed browser QA environment cutover
 
 - [ ] Configure GitHub Environment `qa-custom-signed-browser` with **main-only** deployment restrictions and isolated-QA-only secret `QA_CUSTOM_SIGNED_BROWSER_SUPABASE_SERVICE_ROLE_KEY`. Verify a successful trusted-main Chromium signed-guest run and rejected untrusted-branch invocation before deleting the legacy repository-wide `CUSTOM_V2_QA_SUPABASE_SERVICE_ROLE_KEY`. Source uses the existing localhost admin-fixture route, not obsolete anonymous Create. Consider QA-key rotation after cutover; no production secrets or migrations.
