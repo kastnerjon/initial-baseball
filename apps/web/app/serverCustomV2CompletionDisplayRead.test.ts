@@ -15,8 +15,8 @@ const signed = createCustomLineupV2AttemptBrowserCredential(SECRET).issue(ID,'ht
 const COOKIE = signed.setCookie.split(';')[0]!;
 const CREATOR = createCustomLineupV2CreatorBrowserMarker(SECRET)
   .creatorCookie(ID,'https://example.test').split(';')[0]!;
-function setup(mode: string | undefined = 'true') {
-  const environment = mode === undefined ? {} : { CUSTOM_V2_COMPLETION_DISPLAY_ENABLED: mode };
+function setup(mode: string | null = 'true') {
+  const environment = mode === null ? {} : { CUSTOM_V2_COMPLETION_DISPLAY_ENABLED: mode };
   const dependencies = {
     getSecret: vi.fn(() => SECRET),
     read: vi.fn(async (_id: string, _digest: string): Promise<CustomV2StoredDisplay | null> =>
@@ -28,7 +28,7 @@ function setup(mode: string | undefined = 'true') {
 }
 describe('default-OFF private signed Custom v2 completion readback', () => {
   it('does not contact auth or SQL when flag is unset or malformed', async () => {
-    for (const value of [undefined,'','false','TRUE',' true ']) {
+    for (const value of [null,'','false','TRUE',' true ']) {
       const s = setup(value);
       expect(await s.service.read(ID, COOKIE)).toEqual({ kind: 'disabled' });
       expect(s.dependencies.getSecret).not.toHaveBeenCalled();
