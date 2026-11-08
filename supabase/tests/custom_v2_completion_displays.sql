@@ -35,6 +35,7 @@ begin
     or has_table_privilege('authenticated','public.custom_lineup_v2_completion_displays','SELECT')
     or has_table_privilege('anon','public.custom_lineup_v2_completion_displays','INSERT')
     or has_table_privilege('authenticated','public.custom_lineup_v2_completion_displays','INSERT')
+    or has_table_privilege('service_role','public.custom_lineup_v2_completion_displays','INSERT')
     or has_table_privilege('service_role','public.custom_lineup_v2_completion_displays','UPDATE')
     or has_table_privilege('service_role','public.custom_lineup_v2_completion_displays','DELETE')
     or has_function_privilege('anon',
@@ -43,7 +44,12 @@ begin
       'public.record_custom_lineup_v2_completion_display(text,text,text,text)','EXECUTE')
     or not has_function_privilege('service_role',
       'public.record_custom_lineup_v2_completion_display(text,text,text,text)','EXECUTE')
-  then raise exception 'Guest/consumer privilege leaked or private writer unavailable'; end if;
+    or not exists (
+      select 1 from pg_proc p
+      where p.oid = 'public.record_custom_lineup_v2_completion_display(text,text,text,text)'::regprocedure
+        and p.prosecdef
+    )
+  then raise exception 'Guest/consumer privilege leaked, direct INSERT allowed, or private writer unavailable'; end if;
 
   if has_function_privilege('anon',
       'public.read_custom_lineup_v2_completion_display(text,text)','EXECUTE')
@@ -125,6 +131,27 @@ begin
   ) values
     (v_first::text,v_puzzle_id,2,'points-v4',1,'FP','HR',0,0,'correct',4),
     (v_second::text,v_puzzle_id,2,'points-v4',1,'FP','HR',0,0,'correct',4);
+
+  -- Simulate a privileged data-corruption case: every immutable terminal
+  -- fact still matches and all N rows exist, but the score total does not.
+  -- The name writer must not bless that inconsistent result.
+  update public.custom_nine_at_bat_results
+  set awarded_points = 0
+  where attempt_id = v_first::text and challenge_id = v_puzzle_id
+    and schema_version = 2 and pitch_number = 1;
+  v_rejected := false;
+  begin
+    perform * from public.record_custom_lineup_v2_completion_display(
+      v_puzzle_id,v_first_digest,'named','Forged Award');
+  exception when invalid_parameter_value then v_rejected := true;
+  end;
+  if not v_rejected then
+    raise exception 'Full-count terminal match with wrong point total was admitted';
+  end if;
+  update public.custom_nine_at_bat_results
+  set awarded_points = 4
+  where attempt_id = v_first::text and challenge_id = v_puzzle_id
+    and schema_version = 2 and pitch_number = 1;
 
   -- Inputs must not be auto-trimmed or treated as authority; malformed or
   -- guessed credentials fail without producing any projection row.
@@ -213,6 +240,20 @@ begin
       'custom-lineup-v2-' || gen_random_uuid()::text,v_first_digest)
   ) then raise exception 'Another challenge read back guest name'; end if;
 
+  -- Corruption after saving a name must not authorize its later readback.
+  update public.custom_nine_at_bat_results
+  set awarded_points = 0
+  where attempt_id = v_first::text and challenge_id = v_puzzle_id
+    and schema_version = 2 and pitch_number = 1;
+  if exists (
+    select 1 from public.read_custom_lineup_v2_completion_display(
+      v_puzzle_id,v_first_digest)
+  ) then raise exception 'Readback accepted an inconsistent point total'; end if;
+  update public.custom_nine_at_bat_results
+  set awarded_points = 4
+  where attempt_id = v_first::text and challenge_id = v_puzzle_id
+    and schema_version = 2 and pitch_number = 1;
+
   select created into v_created from public.record_custom_lineup_v2_completion_display(
     v_puzzle_id,v_second_digest,'anonymous',null);
   if v_created is distinct from true then raise exception 'Anonymous result was not stored'; end if;
@@ -244,6 +285,7 @@ begin
   exception when invalid_parameter_value then v_rejected := true;
   end;
   if not v_rejected then raise exception 'Creator-excluded retry accepted'; end if;
+
   if exists (
     select 1 from public.read_custom_lineup_v2_completion_display(
       v_puzzle_id,v_second_digest)
