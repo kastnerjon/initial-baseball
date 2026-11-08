@@ -26,6 +26,9 @@ test('native smoke child receives no production or hosted QA credentials', () =>
     assert.equal(Object.hasOwn(environment, key), false, key + ' must not be forwarded');
   }
   assert.equal(environment.DAILY_PROGRESSION_SECRET.includes('SENSITIVE'), false);
+  assert.equal(environment.DAILY_PROGRESSION_SECRET,
+    'ci-only-daily-progression-secret-0123456789abcdef',
+    'Build-time prerendered Daily tokens and runtime hint API must use the same isolated test key');
   assert.equal(environment.HOSTNAME, '127.0.0.1');
   assert.equal(environment.PORT, '47651');
   assert.equal(environment.NODE_ENV, 'production');
