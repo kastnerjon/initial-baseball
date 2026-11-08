@@ -10,7 +10,7 @@ import { createServer } from 'node:net';
 import { setTimeout as delay } from 'node:timers/promises';
 import { isAbsolute } from 'node:path';
 import { fileURLToPath, pathToFileURL } from 'node:url';
-import { createDefaultOffSmokeEnvironment } from './qa-default-off-browser-safety.mjs';
+import { assertNoImplicitNextEnvironmentFiles, createDefaultOffSmokeEnvironment } from './qa-default-off-browser-safety.mjs';
 
 const playwrightPath = process.env.IB_DEFAULT_OFF_SMOKE_PLAYWRIGHT_MODULE;
 assert.ok(playwrightPath && isAbsolute(playwrightPath)
@@ -36,6 +36,7 @@ function stop(child) {
 }
 
 async function startNext() {
+  await assertNoImplicitNextEnvironmentFiles(webRoot);
   const port = await freePort();
   const base = 'http://127.0.0.1:' + port;
   const child = spawn(process.execPath,
@@ -69,6 +70,8 @@ try {
   browser = await chromium.launch({ headless: true });
   for (const viewport of [{ width: 390, height: 844 }, { width: 1280, height: 800 }]) {
     const context = await browser.newContext({ viewport, serviceWorkers: 'block' });
+    context.setDefaultTimeout(10_000);
+    context.setDefaultNavigationTimeout(20_000);
     try {
       // Disallow requests to analytics, remote APIs and any non-loopback origin.
       await context.route('**/*', route => {
@@ -91,10 +94,10 @@ try {
       await page.getByRole('heading', { name: 'Daily Nine', exact: true }).waitFor();
 
       for (const path of ['/create', '/account']) {
-        const response = await context.request.get(base + path);
+        const response = await context.request.get(base + path, { timeout: 15_000 });
         assert.equal(response.status(), 404, path + ' must remain default-OFF');
       }
-      const classic = await context.request.get(base + '/classic', { maxRedirects: 0 });
+      const classic = await context.request.get(base + '/classic', { maxRedirects: 0, timeout: 15_000 });
       assert.ok([307, 308].includes(classic.status()),
         'Disabled Classic must redirect rather than become another game');
       assert.equal(new URL(classic.headers().location, base).pathname, '/');
