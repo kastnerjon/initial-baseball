@@ -187,9 +187,8 @@ try {
       assert.equal((await signedGiveUpResponse).status(), 200,
         'Signed Daily terminal give-up must be accepted before advancing');
       await page.getByRole('button', { name: 'Next At Bat', exact: true }).click();
-      await page.locator('.at-bat-progress-step[aria-current="step"]')
-        .getAttribute('aria-label').then(value =>
-          assert.equal(value, 'At-bat 2: current', 'Terminal result must advance one at-bat'));
+      await page.locator('.at-bat-progress-step[aria-current="step"][aria-label="At-bat 2: current"]')
+        .waitFor({ timeout: 15_000 });
       assert.equal(await page.locator('[aria-label="At-bat 1: completed"]').count(), 1,
         'Completed first at-bat must be retained');
       await page.getByText('0/4 hints', { exact: true }).waitFor();
