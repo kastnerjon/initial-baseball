@@ -129,6 +129,38 @@ describe('read-only authenticated exact secondary editor review page', () => {
     expect(html).not.toContain('Confirm lineup and schedule');
   });
 
+  it('only presents irreversible issuance for a scheduled nine-player revision with both server gates', async () => {
+    vi.stubEnv('OFFICIAL_DAILY_EDITOR_ISSUANCE_ENABLED', 'true');
+    vi.mocked(readOfficialDailyEditorialDraftPreview).mockResolvedValueOnce({
+      ...PREVIEW, status: 'scheduled', revision: 4, canSchedule: false,
+    });
+    const html = renderToStaticMarkup(await Page(props({ occurrenceId: ID })));
+    expect(html).toContain('Confirm and issue immutable edition');
+    expect(html).toContain('action="/admin/daily/editions/review/issue"');
+    expect(html).toContain('name="expectedRevision" value="4"');
+    expect(html).toContain('name="confirmed" value="yes"');
+    expect(html).not.toContain('Confirm lineup and schedule');
+    expect(html).not.toContain('PRIVATE_FUTURE_HINT_AND_ROSTER');
+  });
+
+  it('does not render issuance for a draft, already-issued edition or disabled issuance gate', async () => {
+    vi.stubEnv('OFFICIAL_DAILY_EDITOR_ISSUANCE_ENABLED', 'true');
+    const draftHtml = renderToStaticMarkup(await Page(props({ occurrenceId: ID })));
+    expect(draftHtml).not.toContain('Confirm and issue immutable edition');
+    vi.mocked(readOfficialDailyEditorialDraftPreview).mockResolvedValueOnce({
+      ...PREVIEW, status: 'issued', revision: 4, canSchedule: false,
+    });
+    const issuedHtml = renderToStaticMarkup(await Page(props({ occurrenceId: ID })));
+    expect(issuedHtml).not.toContain('Confirm and issue immutable edition');
+    expect(issuedHtml).toContain('already been issued');
+    vi.stubEnv('OFFICIAL_DAILY_EDITOR_ISSUANCE_ENABLED', 'false');
+    vi.mocked(readOfficialDailyEditorialDraftPreview).mockResolvedValueOnce({
+      ...PREVIEW, status: 'scheduled', revision: 4, canSchedule: false,
+    });
+    const offHtml = renderToStaticMarkup(await Page(props({ occurrenceId: ID })));
+    expect(offHtml).not.toContain('Confirm and issue immutable edition');
+  });
+
   it('sanitizes private provider errors and does not echo answer details', async () => {
     vi.mocked(readOfficialDailyEditorialDraftPreview)
       .mockRejectedValueOnce(new Error('PRIVATE_FUTURE_HINT_AND_ROSTER'));
