@@ -1,5 +1,11 @@
 # Initial Baseball — Start Here
 
+## November 8 — Guest Custom completion name UI staged (#528)
+
+- Following the SQL (#617), signed-cookie service (#618) and first-party HTTP (#619), the Custom v2 completion screen now contains a separately default-OFF named/Anonymous subview. The server passes the exact `CUSTOM_V2_COMPLETION_DISPLAY_ENABLED` flag into the shared Custom game. The UI appears only after the authoritative completion-submit request returns saved, never for creator previews, active games, unadmitted scores or when the display feature is OFF.
+- After admission, the client first reads the server-owned display choice for the signed challenge cookie. Already saved named/Anonymous results are shown read-only (not renamed); an unselected first result offers a 1–32-code-unit plain-text name or explicit Anonymous selection. Saves are first-write-wins; retries and conflicts recheck the DB winner rather than assume a local save. Any unavailable read fails closed with a retry, preserving the score. Display names are React escaped text, not verified account identity.
+- This source-only UI remains unactivated. Full independent review, CI, isolated QA migration/hosted work and physical iOS/Android acceptance are mandatory. Account nickname linkage and public leaderboard policy remain separate, and no production Custom/Auth flags or schemas are changed.
+
 ## November 8 — Custom v2 named/Anonymous HTTP bridge staged (#528)
 
 - A distinct default-OFF `/api/custom-lineup/challenges/:puzzleId/display` GET/POST source route now uses the existing shared Custom account-creator exclusion guard before the new signed-cookie display service. It requires exact first-party browser context, rejects query-selected result identities, bounds JSON POSTs to 512 actual bytes, redacts backend errors, and returns only the player's own saved name/Anonymous preference on refresh. The route never returns submission IDs, scoring facts, clues or owner data. Verified owners are refused even if they first played as guests, with sticky creator marking and Auth refresh handling reused from canonical gameplay.

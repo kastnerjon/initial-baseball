@@ -149,3 +149,17 @@
   .custom-lineup-actions .custom-lineup-quiet,
   .custom-lineup-actions .give-up-confirmation { grid-column: 1 / -1; }
 }
+.custom-lineup-completion-identity {
+  display: grid; gap: 12px; padding-top: 16px;
+  border-top: 1px solid #dfe8f1;
+}
+.custom-lineup-completion-identity h3 { margin: 0; font-size: 18px; color: #152238; }
+.custom-lineup-completion-identity form { display: grid; gap: 10px; }
+.custom-lineup-completion-identity label { font-size: 13px; font-weight: 700; }
+.custom-lineup-completion-identity input {
+  width: 100%; min-height: 44px; box-sizing: border-box;
+  padding: 10px 12px; border-radius: 7px;
+  border: 1px solid #b8c6d9; font: inherit; font-size: 16px;
+  background: #fff; color: #172b46;
+}
+.custom-lineup-completion-identity .custom-lineup-actions > button { flex: 1 1 170px; }

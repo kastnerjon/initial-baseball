@@ -7,6 +7,7 @@ vi.mock('../customLineupV2BrowserTransport', () => ({
   })),
 }));
 import { CustomLineupGame } from './CustomLineupGame';
+import { CustomLineupCompletionDisplay } from './CustomLineupCompletionDisplay';
 
 describe('Custom Lineup v2 first render', () => {
   it('renders a user title as escaped text, without changing the loading game rules', () => {
@@ -29,5 +30,24 @@ describe('Custom Lineup v2 first render', () => {
     expect(html).not.toContain('progressionToken');
     expect(html).not.toContain('PRIVATE_ANSWER');
     expect(html).not.toContain('Guess player');
+  });
+});
+describe('Custom completion identity presentation remains a gated post-admission subview', () => {
+  it('has an inert loading first render with no stored names or result identity', () => {
+    const html = renderToStaticMarkup(<CustomLineupCompletionDisplay
+      puzzleId="custom-lineup-v2-123e4567-e89b-42d3-a456-426614174000" />);
+    expect(html).toContain('Checking your saved display choice');
+    expect(html).not.toContain('Guest Hero');
+    expect(html).not.toContain('submissionId');
+    expect(html).not.toContain('score');
+    expect(html).not.toContain('<form');
+    expect(html).not.toContain('Save name');
+  });
+  it('does not activate the display component on the initial game render', () => {
+    const html = renderToStaticMarkup(<CustomLineupGame
+      puzzleId="custom-lineup-v2-123e4567-e89b-42d3-a456-426614174000"
+      completionDisplayEnabled />);
+    expect(html).not.toContain('Your name on this result');
+    expect(html).not.toContain('Save name');
   });
 });

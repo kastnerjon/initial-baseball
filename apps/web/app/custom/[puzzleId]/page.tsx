@@ -30,5 +30,6 @@ export default async function CustomLineupPage({
   try { validateCustomLineupPuzzleId(puzzleId); }
   catch { notFound(); }
   const displayTitle = await readCustomLineupV2DisplayTitle(puzzleId);
-  return <CustomLineupGame puzzleId={puzzleId} displayTitle={displayTitle} />;
+  return <CustomLineupGame puzzleId={puzzleId} displayTitle={displayTitle}
+    completionDisplayEnabled={process.env.CUSTOM_V2_COMPLETION_DISPLAY_ENABLED === 'true'} />;
 }

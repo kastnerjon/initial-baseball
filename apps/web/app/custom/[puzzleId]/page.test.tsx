@@ -9,8 +9,11 @@ vi.mock('../../serverCustomLineupV2GameplayHttp', () => ({
   isCustomLineupV2GameplayTransportEnabled: vi.fn(() => false),
 }));
 vi.mock('../CustomLineupGame', () => ({
-  CustomLineupGame: ({ puzzleId, displayTitle }: { puzzleId: string; displayTitle?: string | null }) =>
-    React.createElement('div', {'data-testid':'custom-game'}, puzzleId, displayTitle),
+  CustomLineupGame: ({ puzzleId, displayTitle, completionDisplayEnabled }: {
+    puzzleId: string; displayTitle?: string | null; completionDisplayEnabled?: boolean;
+  }) => React.createElement('div', {
+    'data-testid': 'custom-game', 'data-completion-enabled': String(completionDisplayEnabled),
+  }, puzzleId, displayTitle),
 }));
 vi.mock('../../serverCustomLineupV2DisplayTitle', () => ({
   readCustomLineupV2DisplayTitle: vi.fn(async () => null),
@@ -53,9 +56,22 @@ describe('Custom v2 page release boundary',()=>{
     const page = await CustomLineupPage({params: Promise.resolve({puzzleId: ID})});
     const html = renderToStaticMarkup(page);
     expect(html).toContain('Yankees Legends');
+    expect(html).toContain('data-completion-enabled="false"');
     expect(readCustomLineupV2DisplayTitle).toHaveBeenCalledWith(ID);
     expect(JSON.stringify(metadata)).not.toContain('Yankees Legends');
   });
+  it('passes only exact-true independent display flag to the client', async () => {
+    vi.mocked(isCustomLineupV2GameplayTransportEnabled).mockReturnValue(true);
+    for (const flag of [undefined, '', 'false', 'TRUE', ' true ', 'true']) {
+      vi.stubEnv('CUSTOM_V2_COMPLETION_DISPLAY_ENABLED', flag);
+      const html = renderToStaticMarkup(await CustomLineupPage({
+        params: Promise.resolve({ puzzleId: ID }),
+      }));
+      expect(html).toContain('data-completion-enabled="' + String(flag === 'true') + '"');
+    }
+    vi.unstubAllEnvs();
+  });
+
   it('renders only the opaque authorized challenge ID when explicitly enabled',async()=>{
     vi.mocked(isCustomLineupV2GameplayTransportEnabled).mockReturnValue(true);
     const page=await CustomLineupPage({params:Promise.resolve({puzzleId:ID})});
