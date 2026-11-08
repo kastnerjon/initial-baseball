@@ -37,6 +37,7 @@ function EditorialPreview({ preview }: { preview: OfficialDailyDraftPreview }) {
       <p><strong>Status:</strong> {preview.status}</p>
       <p><strong>Current editorial revision:</strong> {preview.revision}</p>
       <p><strong>Occurrence ID:</strong> <code>{preview.occurrenceId}</code></p>
+      <p><a href="/admin/daily/editions/players">Find canonical player IDs by name</a></p>
       <h3>Selected players (batting order)</h3>
       <ol>
         {preview.selections.map(selection => (

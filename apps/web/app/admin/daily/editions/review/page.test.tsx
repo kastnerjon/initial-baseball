@@ -106,6 +106,7 @@ describe('read-only authenticated exact secondary editor review page', () => {
     const html = renderToStaticMarkup(await Page(props({ occurrenceId: ID })));
     expect(html).toContain('Modern');
     expect(html).toContain('Current editorial revision');
+    expect(html).toContain('/admin/daily/editions/players');
     const orderedPositions = Array.from({ length: 9 }, (_, i) =>
       html.indexOf('<code>fixture-' + (i + 1) + '</code>'));
     expect(orderedPositions.every(position => position >= 0)).toBe(true);
