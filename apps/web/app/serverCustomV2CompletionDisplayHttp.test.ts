@@ -13,7 +13,7 @@ vi.mock('./serverCustomLineupV2AccountCreatorExclusion', () => ({
 import { handleCustomV2CompletionDisplayHttp } from './serverCustomV2CompletionDisplayHttp';
 
 const ID = 'custom-lineup-v2-123e4567-e89b-42d3-a456-426614174000';
-const URL = 'https://initial.test/api/custom-lineup/challenges/' + ID + '/display';
+const BASE_URL = 'https://initial.test/api/custom-lineup/challenges/' + ID + '/display';
 const COOKIE = 'opaque-first-attempt-cookie=token';
 const write = vi.fn();
 const read = vi.fn();
@@ -22,7 +22,7 @@ type Method = 'GET' | 'POST';
 function send(method: Method, body?: unknown, options: {
   headers?: Record<string, string>; url?: string; puzzleId?: string;
 } = {}) {
-  const url = options.url ?? URL;
+  const url = options.url ?? BASE_URL;
   const request = new Request(url, {
     method,
     headers: {
@@ -93,7 +93,7 @@ describe('off-by-default exact-attempt Custom completion display HTTP', () => {
   it('denies URL identity/replay query parameters and malformed puzzle IDs before account checks', async () => {
     for (const method of ['GET','POST'] as const) {
       expect((await send(method, { mode: 'anonymous' }, {
-        url: URL + '?submissionId=forged',
+        url: BASE_URL + '?submissionId=forged',
       })).status).toBe(400);
       expect((await send(method, { mode: 'anonymous' }, {
         puzzleId: 'custom-nine-v1-123e4567-e89b-42d3-a456-426614174000',
