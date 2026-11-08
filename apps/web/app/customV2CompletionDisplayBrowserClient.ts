@@ -48,7 +48,7 @@ export function createCustomV2CompletionDisplayBrowserClient(
     let response: Response;
     try {
       response = await fetchPort(url, {
-        method, credentials: 'same-origin', signal,
+        method, credentials: 'same-origin', ...(signal ? { signal } : {}),
         ...(method === 'POST'
           ? { headers: { 'content-type': 'application/json' },
             body: JSON.stringify(choice) } : {}),
