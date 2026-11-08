@@ -128,7 +128,7 @@ export function CustomLineupCompletionDisplay({ puzzleId }: {
           }}>
             <label htmlFor="custom-completion-display-name">Display name (up to 32 characters)</label>
             <input id="custom-completion-display-name" type="text" maxLength={32}
-              autoComplete="off" value={name} onChange={event => { const value = (event.target as HTMLInputElement).value; if (typeof value === 'string') setName(value); }} />
+              autoComplete="off" value={name} onChange={event => { if ('value' in event.target && typeof event.target.value === 'string') setName(event.target.value); }} />
             <div className="custom-lineup-actions">
               <button className="custom-lineup-primary" type="submit" disabled={!valid}>
                 Save name
