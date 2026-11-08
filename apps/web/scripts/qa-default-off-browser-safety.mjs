@@ -1,3 +1,19 @@
+import { readdir } from 'node:fs/promises';
+
+// next start loads these files even when the inherited process env is allowlisted.
+// Reject instead of accidentally connecting a local production Supabase project.
+const IMPLICIT_NEXT_ENV_FILES = new Set([
+  '.env', '.env.local', '.env.production', '.env.production.local',
+]);
+
+export async function assertNoImplicitNextEnvironmentFiles(webRoot) {
+  const entries = await readdir(webRoot);
+  const found = entries.find(name => IMPLICIT_NEXT_ENV_FILES.has(name));
+  if (found) {
+    throw new Error('Default-OFF smoke refuses local Next environment file: ' + found);
+  }
+}
+
 /**
  * A deliberately credential-free Next runtime for default-OFF Chromium smoke.
  * Never inherit the caller's Supabase, Auth, Vercel, release or CI secrets.
