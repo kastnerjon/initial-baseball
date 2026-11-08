@@ -4,6 +4,14 @@
 
 - [ ] Configure GitHub Environment `qa-custom-signed-browser` with **main-only** deployment restrictions and isolated-QA-only secret `QA_CUSTOM_SIGNED_BROWSER_SUPABASE_SERVICE_ROLE_KEY`. Verify a successful trusted-main Chromium signed-guest run and rejected untrusted-branch invocation before deleting the legacy repository-wide `CUSTOM_V2_QA_SUPABASE_SERVICE_ROLE_KEY`. Source uses the existing localhost admin-fixture route, not obsolete anonymous Create. Consider QA-key rotation after cutover; no production secrets or migrations.
 
+## Official Daily editions — approved November 5
+
+- [ ] A1: issuance identity, frozen nine-player content, service-only persistence and restricted editor action.
+- [ ] A2–A4: exact-ID play and hint privacy, result isolation, share links, one Archive and device QA.
+
+- [ ] **A3 signed score release gate — issue #566:** all reserved official daily-ed-* IDs now fail closed for browser collection and both server scoring submissions. Implement and independently verify exact-ID, ruleset, attempt and live-purpose binding before enabling scoring, especially for identical-roster editions; keep delayed legitimate live writes and historical primary results compatible.
+
+- [ ] B: arbitrary-count editor workflow and primary selection. Complete independent review of the private draft preview API (#599) and read-only review page (#600), then link them to the date-scoped catalog/workbench (#574/#575). Require an explicit nine-player review/confirm plus current occurrence ID/revision before scheduling via the already-existing CAS endpoint; no one-click schedule from an unread catalog row. Run account-provider QA alongside Daily development. [Sequence and rollout](plans/multiple-official-dailies.md).
 
 ## Custom #528 — secure completion display identity (source policy staged)
 
@@ -13,8 +21,8 @@
 ## Custom #529 — remaining variable-strike integration and release gates
 
 - [ ] Run isolated hosted QA of the source-wired, default-OFF creator 1/2/3 selector. Confirm its visibility follows only the trusted issuance-readiness flag; verify the old two-field/three-strike path when OFF and secure account-only 1/2/3 issuance when ON. Do not set production flags or trust client rule/owner identifiers.
-- [ ] Verify the immutable issued-game bootstrap update (#550): existing 1/2/3-strike challenges remain playable after disabling new variable-strike issuance, without changing scores, client rule identity, creator exclusion or historical three-strike games.
-- [ ] Run **isolated hosted QA** across 1, 2 and 3 strikes and lineup sizes 1–10: authorized issuance, creator preview, guest/friend play, hints, first-strike K, exact Give Up wrong guesses, full nine/ten-batter completion after three outs, refresh, lost-response retry, cross-tab CAS, noncompetitive owner exclusion and authoritative saved results.
+- [ ] Revalidate previously issued 1/2/3-strike Custom challenges in isolated hosted QA after disabling new variable-strike issuance, including refresh, creator exclusion and historical three-strike compatibility.
+- [ ] Complete isolated hosted QA for 1/2/3 strikes and 1–10 players: verified issuance, creator and friend play, hints, strikeouts, exact Give Up guesses, nine/ten-batter completion after three outs, refresh, lost-response retries, cross-tab CAS, noncompetitive owner exclusion, and authoritative stored results.
 - [ ] Verify per-challenge comparisons remain keyed to immutable issued puzzle ID/cap; cross-challenge public leaderboards must stratify by strike limit, ruleset and roster length before launch.
 - [ ] Complete real mobile Safari/Android acceptance, production-clone migration rehearsal, rollback/monitoring review and **explicit production release authorization**. Production Custom/Auth/variable-strike flags remain OFF, with creator/strike migrations unapplied; QA-only migration rehearsal is not production parity.
 
@@ -75,3 +83,23 @@ These gates are separate from Custom Lineups Phase 1. Keep them active until eac
 ## Independent security follow-up (not a Custom launch gate)
 
 - [ ] Resume staged RLS helper EXECUTE hardening in draft PR #494 only after matched hosted Supabase staging verifies event-trigger and DDL behavior. Never apply the migration to production on local-only evidence.
+
+## Official Daily publication storage
+
+- [ ] Rehearse the additive official_daily_publications migration on an isolated production-shaped Daily database after review. The migration file and disposable PostgreSQL test alone do not enable publication. Verify service-only append/read privileges, same-date identical rosters, collision handling and old-reader compatibility before connecting the restricted admin writer. Preserve the existing primary and numbered archive.
+
+## Official Daily exact-ID gameplay: frozen materializer (staged)
+
+- [ ] Integrate the private exact-ID reader with the shared frozen-clue DailyPuzzle materializer under explicit server admission and date checks. This source-only adapter does not create public gameplay.
+- [ ] Replace any bulk release of unrevealed hints in secondary edition bootstrap, resume, next-pitch and hint-bundle endpoints with single authorized reveal transport. Preserve the existing primary until parity checks.
+- [ ] Verify edition-scoped progression, scores, share links, browser persistence and historical/archived practice before enabling public routes.
+
+## Official Daily edition browser-save separation (staged)
+
+- [ ] After public exact-ID gameplay is wired, exercise two same-date edition tabs plus the legacy primary: hints, wrong guesses, local saves, refresh, reset and switching must not read or delete another edition's state.
+- [ ] Confirm the shared completed-result/at-bat journal stays scoped to immutable puzzle ID and ruleset; enforce authoritative per-edition score and first-attempt admission before rollout.
+
+## Official Daily secondary-editorial transaction (source staged)
+
+- [ ] Verify the source-staged `official_daily_editorial_drafts` table and atomic `issue_official_daily_editorial_draft` function against isolated QA. Retain the completed rollback-only rehearsal evidence; no production migration without explicit release approval.
+- [ ] Integrate the default-OFF, authenticated secondary draft administration from #560 with the reviewed private issuer (#561) and exact-ID publication readback; preserve existing primary issuance, editorial revision checks and immutable retries. Public gameplay, competitive result admission and release still require their separate gates.

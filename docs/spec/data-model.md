@@ -1,9 +1,13 @@
 # Data Model Spec
 
 Status: Current persistence contract and approved next entities  
-Last updated: 2026-10-24
+Last updated: 2026-11-05
 
 ## Ownership
+
+**Official edition editorial drafts (staged, not publicly enabled).** A separate service-only `official_daily_editorial_drafts` table reserves a stable UUID and unique `(Pacific date, edition key/number)` for each additional edition (number 2 or later while legacy primary remains authoritative). It holds nine ordered selections, draft/scheduled/issued state and optimistic revision. A private database function locks the draft, verifies the caller's expected revision and ordered snapshot, writes the existing append-only `official_daily_publications` record and marks the draft issued in one transaction. Identical retries return its original ID; conflicts do not overwrite. No public access, hosted migration, or new primary cutover is implied by this source change.
+
+**Approved addition, pending persistence implementation.** Each new official occurrence owns a stable ID and frozen ordered content, clues and rules. Enforce uniqueness on (Pacific date, edition key) and separately on the globally unique puzzle ID. Identical rosters across occurrences are valid. Existing editorial, result and numbered archive records keep their stored identities.
 
 | Concern | Authority |
 |---|---|

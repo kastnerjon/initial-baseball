@@ -268,3 +268,6 @@ export {
   type CustomNineIssuedChallengeInsertResult,
   type CustomNineIssuedChallengeIssueResult,
 } from './customNineIssuedChallengeService';
+
+export { prepareOfficialDailyPublication, isOfficialDailyOccurrenceId, isOfficialDailyEditionKey, isOfficialDailyPositiveNumber, type OfficialDailyPublicationInput } from './officialDailyPublication';
+export { validateIssuedDailyCalendarDate } from './issuedDailyPuzzleCore';
