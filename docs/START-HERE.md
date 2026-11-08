@@ -4,6 +4,7 @@
 
 - The next bounded source-only layer validates an independently default-OFF `CUSTOM_V2_COMPLETION_DISPLAY_ENABLED` gate, exact v2 puzzle identity, the existing HMAC-bound challenge attempt cookie and absence of creator marker before calling the new private SQL display writer. Browser choice accepts only a named 1–32 UTF-16-code-unit plain-text label (using the shared Daily parser) or explicit Anonymous with no name. Neither result ID, score, creator account, clue nor hidden answer is in the RPC payload.
 - Provider conflicts indicate an immutable already-chosen name/Anonymous identity, not a score problem. Other backend failures are redacted. No HTTP handler, completion screen, profile nickname, public leaderboard, migration application or production flag activation is added; hosted QA and external review remain pending.
+- The same protected service now stages refresh readback: it verifies the exact signed challenge cookie before a metadata-only service-role lookup of the matching completed attempt and immutable named/Anonymous projection. No guessed result ID, raw scoring facts, owner identities or hidden clue material can be supplied by the caller or returned. The first read returns no choice when no display exists; any corrupted or creator-marked state fails closed. This is not an HTTP implementation or a released feature.
 
 ## November 8 — Custom v2 first-write-wins completion display projection staged (#528)
 

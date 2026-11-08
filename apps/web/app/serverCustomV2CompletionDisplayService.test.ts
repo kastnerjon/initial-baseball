@@ -4,7 +4,10 @@ vi.mock('server-only', () => ({}));
 import { createCustomLineupV2AttemptBrowserCredential } from './customNineAttemptBrowserCredential';
 import { createCustomLineupV2CreatorBrowserMarker } from './customNineCreatorBrowser';
 import { createServerCustomV2CompletionDisplayService } from './serverCustomV2CompletionDisplayService';
-import type { CustomV2CompletionDisplayWrite } from './supabaseCustomV2CompletionDisplayRepository';
+import type {
+  CustomV2CompletionDisplayWrite, CustomV2CompletionDisplayRead,
+  CustomV2CompletionDisplayChoice,
+} from './supabaseCustomV2CompletionDisplayRepository';
 
 const ID = 'custom-lineup-v2-123e4567-e89b-42d3-a456-426614174000';
 const OTHER = 'custom-lineup-v2-123e4567-e89b-42d3-a456-426614174001';
@@ -21,6 +24,8 @@ function setup(flag = 'true') {
     getSecret: vi.fn(() => SECRET),
     write: vi.fn(async (_input: CustomV2CompletionDisplayWrite) =>
       'created' as 'created' | 'existing' | 'conflict'),
+    read: vi.fn(async (_input: CustomV2CompletionDisplayRead) =>
+      null as CustomV2CompletionDisplayChoice | null),
   };
   const service = createServerCustomV2CompletionDisplayService({
     environment: { CUSTOM_V2_COMPLETION_DISPLAY_ENABLED: flag }, dependencies,
@@ -122,5 +127,63 @@ describe('source-only Custom completion display writer', () => {
     s.dependencies.getSecret.mockImplementationOnce(() => { throw Error('PRIVATE_SECRET'); });
     expect(await s.service.write(ID, COOKIE, { mode: 'anonymous' }))
       .toEqual({ kind: 'unavailable' });
+  });
+});
+
+
+describe('source-only Custom display refresh readback', () => {
+  it('never reads from an OFF flag or an invalid puzzle', async () => {
+    const s = setup('false');
+    expect(await s.service.read(ID, COOKIE)).toEqual({ kind: 'disabled' });
+    expect(s.dependencies.getSecret).not.toHaveBeenCalled();
+    expect(s.dependencies.read).not.toHaveBeenCalled();
+    const on = setup();
+    expect(await on.service.read('custom-nine-v1-forged', COOKIE))
+      .toEqual({ kind: 'invalid' });
+    expect(on.dependencies.getSecret).not.toHaveBeenCalled();
+    expect(on.dependencies.read).not.toHaveBeenCalled();
+  });
+
+  it('reads only the exact signed challenge-scoped attempt without exposing identity keys', async () => {
+    const s = setup();
+    s.dependencies.read.mockResolvedValueOnce({ mode: 'named', displayName: 'Guest Hero' });
+    expect(await s.service.read(ID, COOKIE)).toEqual({
+      kind: 'loaded', choice: { mode: 'named', displayName: 'Guest Hero' },
+    });
+    expect(s.dependencies.read).toHaveBeenCalledWith({
+      puzzleId: ID, browserKeyDigest: BROWSER.browserKeyDigest,
+    }, { CUSTOM_V2_COMPLETION_DISPLAY_ENABLED: 'true' });
+    const output = await s.service.read(ID, COOKIE);
+    expect(output).toEqual({ kind: 'loaded', choice: null });
+    expect(JSON.stringify(output)).not.toContain(BROWSER.browserKeyDigest);
+  });
+
+  it('returns an anonymous saved preference without a nickname or account claim', async () => {
+    const s = setup();
+    s.dependencies.read.mockResolvedValueOnce({ mode: 'anonymous', displayName: null });
+    expect(await s.service.read(ID, COOKIE)).toEqual({
+      kind: 'loaded', choice: { mode: 'anonymous', displayName: null },
+    });
+  });
+
+  it('refuses creator, missing, duplicate, tampered or sibling challenge cookies', async () => {
+    const s = setup();
+    for (const cookie of [
+      null, CREATOR, CREATOR + '; ' + COOKIE, COOKIE + '; ' + COOKIE,
+      COOKIE.slice(0, -1) + '!', FOREIGN,
+    ]) {
+      expect(await s.service.read(ID, cookie)).toEqual({ kind: 'unauthorized' });
+    }
+    expect(s.dependencies.read).not.toHaveBeenCalled();
+  });
+
+  it('redacts private provider failures including stored name and SQL details', async () => {
+    const s = setup();
+    s.dependencies.read.mockRejectedValueOnce(new Error('PRIVATE_SQL_OWNER_NAME'));
+    expect(await s.service.read(ID, COOKIE)).toEqual({ kind: 'unavailable' });
+    s.dependencies.getSecret.mockImplementationOnce(() => {
+      throw new Error('PRIVATE_SIGNING_SECRET');
+    });
+    expect(await s.service.read(ID, COOKIE)).toEqual({ kind: 'unavailable' });
   });
 });
