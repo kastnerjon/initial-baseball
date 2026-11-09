@@ -117,25 +117,19 @@ begin
     (v_first::text,v_puzzle_id,2,'points-v4',1,'FP','HR',0,0,'correct',4),
     (v_second::text,v_puzzle_id,2,'points-v4',1,'FP','HR',0,0,'correct',4);
 
-  -- A complete row count and correct point sum must not mask a mismatched
-  -- immutable terminal observation. This is separate from the point-total gate.
-  update public.custom_nine_at_bat_results
-  set initials = 'FX'
-  where attempt_id = v_first::text and challenge_id = v_puzzle_id
-    and schema_version = 2 and pitch_number = 1;
+  -- The existing immutable-AB trigger rejects mismatched terminal facts
+  -- before the completion writer can be called. Assert that earlier gate here.
   v_rejected := false;
   begin
-    perform * from public.record_custom_lineup_v2_completion_display(
-      v_puzzle_id,v_first_digest,'named','Mismatched Terminal');
-  exception when invalid_parameter_value then v_rejected := true;
+    update public.custom_nine_at_bat_results
+    set initials = 'FX'
+    where attempt_id = v_first::text and challenge_id = v_puzzle_id
+      and schema_version = 2 and pitch_number = 1;
+  exception when check_violation then v_rejected := true;
   end;
   if not v_rejected then
-    raise exception 'Mismatched terminal observation was admitted despite matching points';
+    raise exception 'Immutable at-bat trigger accepted terminal initials mismatch';
   end if;
-  update public.custom_nine_at_bat_results
-  set initials = 'FP'
-  where attempt_id = v_first::text and challenge_id = v_puzzle_id
-    and schema_version = 2 and pitch_number = 1;
 
   -- Simulate a privileged data-corruption case: every immutable terminal
   -- fact still matches and all N rows exist, but the score total does not.
