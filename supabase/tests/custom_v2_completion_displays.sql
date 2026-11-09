@@ -132,6 +132,19 @@ begin
     (v_first::text,v_puzzle_id,2,'points-v4',1,'FP','HR',0,0,'correct',4),
     (v_second::text,v_puzzle_id,2,'points-v4',1,'FP','HR',0,0,'correct',4);
 
+  -- Immutable at-bat trigger rejects a terminal fact mismatch before writer access.
+  v_rejected := false;
+  begin
+    update public.custom_nine_at_bat_results
+    set initials = 'FX'
+    where attempt_id = v_first::text and challenge_id = v_puzzle_id
+      and schema_version = 2 and pitch_number = 1;
+  exception when check_violation then v_rejected := true;
+  end;
+  if not v_rejected then
+    raise exception 'Immutable at-bat trigger accepted terminal initials mismatch';
+  end if;
+
   -- Simulate a privileged data-corruption case: every immutable terminal
   -- fact still matches and all N rows exist, but the score total does not.
   -- The name writer must not bless that inconsistent result.
@@ -260,6 +273,15 @@ begin
   select created into v_created from public.record_custom_lineup_v2_completion_display(
     v_puzzle_id,v_second_digest,'anonymous',null);
   if v_created is distinct from false then raise exception 'Anonymous retry not idempotent'; end if;
+  -- The first Anonymous choice cannot be replaced with a name.
+  v_rejected := false;
+  begin
+    perform * from public.record_custom_lineup_v2_completion_display(
+      v_puzzle_id,v_second_digest,'named','Guest Hero');
+  exception when unique_violation then v_rejected := true;
+  end;
+  if not v_rejected then raise exception 'Anonymous result changed to named'; end if;
+
 
   select display_mode, display_name into v_observed_mode, v_observed_name
   from public.read_custom_lineup_v2_completion_display(v_puzzle_id,v_second_digest);
