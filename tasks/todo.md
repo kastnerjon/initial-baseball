@@ -1,10 +1,10 @@
 # Initial Baseball — Current Work
 
-## Engineering workflow — native default-OFF smoke pilot (November 8)
+## Engineering workflow — active integration and acceptance
 
-- [ ] Consolidate the three local default-OFF Daily browser QA milestones #628/#634/#635 as one reviewable #635 source change on current main, without losing #633 disabled Custom identity GET/POST guards: first signed hint → browser save → reload/authorized hint replay → second hint; signed first terminal give-up → next-at-bat reload; remaining eight signed terminal transitions → final nine-row points scorecard → completed-game reload. Require **new exact-head** CI with native Chromium, READY Preview and independent reviews before merge. This verifies real Chromium local Daily progression, not real guesses, hosted competitive scoring, Auth, secondary editions or physical phones.
-- [ ] After a successful pilot, compare CI runtime and false-failure rate. Keep the browser gate if it catches real route regressions without significant overhead; otherwise optimize its placement rather than weakening isolation. See \`docs/engineering/default-off-browser-qa.md\`.
-
+- [ ] Measure CI runtime and false-failure rate of merged #635 native Chromium signed nine-at-bat regression on trusted main; its full CI and matching production are green. This does not establish hosted score, Auth or physical-device acceptance.
+- [ ] Both #624 review findings are fixed at `6ec92b8f`; retain passing exact-head audit/full CI and READY Preview; obtain CodeRabbit review before merge. After reviewed source merge, run the read-only audit from trusted main. Consolidated #627 instructions do not require a second merge or establish an executed agent pilot.
+- [ ] Measure the native Chromium gate's runtime and failure rate after integration; preserve credential isolation while keeping checks useful. See `docs/engineering/default-off-browser-qa.md`.
 
 ## Security #531 — legacy signed browser QA environment cutover
 
@@ -12,27 +12,25 @@
 
 ## Archive beta operational investigation (#615)
 
-- [ ] Preserve accepted October 16 Daily #173 results and original `daily-2026-10-16` identity. Production has no matching editorial row or disposable Archive beta #13; do not fabricate an editorial puzzle. Source-stage bounded 503 diagnostic logging separately, then verify real production event classification and archival-history policy before any remediation.
+- [ ] Preserve accepted October 16 Daily #173 results and original `daily-2026-10-16` identity. Production has no matching editorial row or disposable Archive beta #13; do not fabricate an editorial puzzle. The bounded 503 diagnostic logging is merged in #616; verify real production event classification and archival-history policy before any remediation.
 
 ## Official Daily editions — approved November 5
 
+- [ ] Finish hosted Archive HTTP/UI acceptance for 100+ same-date editions: isolated QA already passed a 121-edition synthetic SQL keyset/uniqueness fixture and rollback-to-zero, recorded on #589. This is not integrated reader/browser/device proof.
+
 - [ ] A1: issuance identity, frozen nine-player content, service-only persistence and restricted editor action.
-- [ ] A2–A4: exact-ID play and hint privacy, result isolation, share links, one Archive and device QA.
+- [ ] A2–A4: integrate stacked #639 after its required CodeRabbit (the exact-head real Chromium save/reset/switch and Web Locks handoff passed), then exact-ID play and hint privacy, result isolation, share links, one Archive and device QA.
 
-- [ ] **A3 signed score release gate — issue #566:** all reserved official daily-ed-* IDs now fail closed for browser collection and both server scoring submissions. Implement and independently verify exact-ID, ruleset, attempt and live-purpose binding before enabling scoring, especially for identical-roster editions; keep delayed legitimate live writes and historical primary results compatible.
+- [ ] **A3 signed score release gate — issue #566:** #641's 13 synthetic diagnostic tests passed exact-head CI but are not browser/SQL admission proof; #576 is still proposed. All reserved official `daily-ed-*` IDs now fail closed for browser collection and both server scoring submissions. Implement and independently verify exact-ID, ruleset, attempt and live-purpose binding before enabling scoring, especially for identical-roster editions; keep delayed legitimate live writes and historical primary results compatible.
 
-- [ ] B: arbitrary-count editor workflow and primary selection. Complete independent review of the private draft preview API (#599) and read-only review page (#600), then link them to the date-scoped catalog/workbench (#574/#575). Require an explicit nine-player review/confirm plus current occurrence ID/revision before scheduling via the already-existing CAS endpoint; no one-click schedule from an unread catalog row. Run account-provider QA alongside Daily development. [Sequence and rollout](plans/multiple-official-dailies.md).
+- [ ] B: finish consolidated #614 restricted draft slot editing/lookup (supersedes #612/#613) after final-head reviews and authenticated hosted/device acceptance. Verify the already-merged #599 private preview and #605/#607 catalog, nine-player review/schedule confirmation and creation form; #574/#575/#600 are closed superseded branches. Continue arbitrary-count ordering/naming and primary selection only after checking those existing consumers. Keep explicit nine-player review plus current occurrence ID/revision before CAS scheduling. [Sequence and rollout](plans/multiple-official-dailies.md).
 
-## Custom #528 — secure completion display identity (source policy staged)
+## Custom #528 — secure completion display identity
 
-- [ ] Review signed private readback adapter #626 after SQL #625. Verify exact challenge/browser cookie and creator-marker boundary, malformed provider rows, named UTF-16 text, Anonymous nullness, default-OFF gate and final-head CI/Preview. No public GET or production enablement without isolated SQL QA and device acceptance.
-
-- [ ] Review private display readback SQL #625 after writer #620. Verify exact-browser, N-row and summary/awarded-point parity, creator exclusion, Anonymous null and least-privilege readback via transaction-rollback isolated QA. No production migration or public API is authorized.
-
-- [ ] Preserve the main native Chromium default-OFF smoke gate for Custom completion-name GET/POST (identity flag forced false even when inherited true). This only verifies HTTP 404 without secrets; it is not signed browser acceptance or migration readiness.
-- [ ] Source checkpoint: #620 immutable first-admitted Custom v2 name/Anonymous write SQL, #623 signed write port, #625 private SQL readback, #626 signed read port, and #629 default-OFF guarded HTTP transport. Confirm final exact-head CI/Preview and independent reviews, then isolated QA rollback rehearsal before any production migration. HTTP is still source-only; front-end UX, nickname linkage, rate/abuse, device QA and explicit release authorization remain undone.
-- [ ] Stage a separate service-role-only first-write-wins name/privacy projection bound to the server-admitted Custom v2 submission (never to a caller-chosen submission ID). Use the portable `parseCompletionDisplayName` boundary, but retain the verified attempt-cookie/creator-exclusion and independent nickname authorization. This remains incomplete until reviewed additive QA-only database migration, endpoint and UI tests, real Safari QA and explicit release authorization.
-
+- [ ] Finish consolidated #632 guest name/Anonymous integration review. SQL writer #620, private SQL reader #625 and signed reader #626 are merged source; #632 contains the remaining signed writer #623, HTTP #629 and UI. Verify the final combined diff before retiring its ancestor PRs; CodeRabbit remains quota-blocked despite clean Codex and passing exact-head CI.
+- [ ] Integrate stacked #638 following CodeRabbit; exact-head native Chromium verified mounted-component acceptance for name/Anonymous first-write behavior, ambiguous POST readback, reload, invalid input and safe rendered text. Mocked HTTP proves browser composition only; separately verify signed GET/POST, exact challenge/browser and creator exclusion against isolated hosted QA.
+- [ ] Preserve the native default-OFF GET/POST 404 smoke with identity forced false even when inherited true. SQL additive migration/adversarial fixtures passed a rollback-only QA rehearsal; neither QA nor production retains the display table/RPCs. Perform production-shaped rehearsal and explicit migration/release approval before persistent deployment.
+- [ ] Complete real Safari/Android acceptance and later account nickname/privacy authorization without deriving a nickname from OAuth email or provider metadata. No public leaderboard, nickname linkage or production identity activation is implied by guest-name source integration.
 
 ## Custom #529 — remaining variable-strike integration and release gates
 
