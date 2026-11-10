@@ -91,6 +91,7 @@ export default async function OfficialDailyEditionAdminPage({
         <p>The date catalog shows only edition metadata, not players or clues.
           Creating a draft does not schedule or publish it. The primary Daily remains managed separately.</p>
         <p><a href="/admin/daily">Primary Daily editor</a></p>
+        <p><a href="/admin/daily/editions/players">Find canonical player IDs by name</a></p>
         <form action="/admin/daily/editions" method="get">
           <label htmlFor="edition-date">Pacific game date</label>
           <input id="edition-date" type="date" name="puzzleDate"
