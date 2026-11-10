@@ -234,7 +234,9 @@ begin
   end if;
   begin
     update public.official_daily_editorial_drafts
-      set revision=1 where occurrence_id=replacement_id;
+      set selections=jsonb_set(replacement_selections, '{3,canonicalPlayerId}',
+            '"fixture-45"'::jsonb),revision=1
+      where occurrence_id=replacement_id;
     raise exception 'No-bump edit bypassed revision trigger';
   exception when check_violation then null;
   end;
