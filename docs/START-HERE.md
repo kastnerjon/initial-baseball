@@ -1,5 +1,10 @@
 # Initial Baseball — Start Here
 
+## November 9 — read-only workstream audit and repository-local resumption skill (#624)
+
+- Source-only operations integration combines the read-only, manual trusted-main GitHub PR path-overlap audit and its pure Node tests with a bounded parallel-agent pilot guide and discoverable Codex/Claude resume skill. It **does not start autonomous agents**, write to GitHub PRs, merge/deploy software, use production credentials or change gameplay/scoring. Any future pilot requires distinct actual coding agents and independent implementation evidence; bot reviews/CI are not counted as coding agents.
+- Source remains a PR pending exact-head CI, independent review and READY Preview. Existing production release flags, DB schema and scoring boundaries are untouched. The audit report is advisory, not merge authorization.
+
 ## November 8 — signed Custom v2 private completion readback service aligned with SQL #625
 
 - Source-only default-OFF server service verifies an exact signed first-attempt browser cookie and creator marker before calling the readback RPC. Database reader now rechecks N terminal rows **and the summary/awarded-point total** under the existing attempt lock. The provider accepts only strict named plain-text or Anonymous null results; errors disclose no score, ID, hint, or private account state.

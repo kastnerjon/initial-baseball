@@ -126,6 +126,16 @@ When any trigger occurs, stop before implementing the expanded work. Record the 
 
 Generated snapshots, migrations, and mechanical outputs may exceed file-count thresholds when they serve one explicitly reviewed concern. The PR must distinguish generated from handwritten changes.
 
+## Parallel-agent execution pilot
+
+When multiple implementation agents are available, use the bounded pilot in
+[parallel-agent-pilot.md](docs/engineering/parallel-agent-pilot.md).
+Allocate separate owners, branch/worktree isolation and nonoverlapping authority
+boundaries. The read-only PR overlap audit is a coordination signal, not merge
+approval. Never describe automated reviewers or CI as implementation agents,
+or bypass exact-head CI, independent review or production release gates to
+increase parallelism.
+
 ## Review and execution limits
 
 - Branch from the latest `main`, never from another agent/Codex feature branch unless the PR is explicitly stacked.

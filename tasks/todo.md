@@ -1,5 +1,11 @@
 # Initial Baseball — Current Work
 
+## Safe parallel workstream coordination (source staged; not an active coding swarm)
+
+- [ ] Review and integrate the read-only PR overlap audit and reusable Codex/Claude engineering resume instructions as the consolidated operational #624. Require exact-head test/docs CI, independent CodeRabbit/Codex, matching Preview and no new repository permissions beyond `contents:read` and `pull-requests:read`.
+- [ ] After source merge, run the audit manually from **trusted main** and verify its report classifies direct-to-main source overlap versus stacked dependencies accurately; never treat overlap as a merge conflict or automate merges.
+- [ ] If separately authorized implementation agents become available, pilot at most two isolated nonoverlapping workstreams using distinct owner/worktree and full review gates; do not claim a parallel coding pilot occurred until there is concrete evidence. See `docs/engineering/parallel-agent-pilot.md`.
+
 ## Engineering workflow — native default-OFF smoke pilot (November 8)
 
 - [ ] Consolidate the three local default-OFF Daily browser QA milestones #628/#634/#635 as one reviewable #635 source change on current main, without losing #633 disabled Custom identity GET/POST guards: first signed hint → browser save → reload/authorized hint replay → second hint; signed first terminal give-up → next-at-bat reload; remaining eight signed terminal transitions → final nine-row points scorecard → completed-game reload. Require **new exact-head** CI with native Chromium, READY Preview and independent reviews before merge. This verifies real Chromium local Daily progression, not real guesses, hosted competitive scoring, Auth, secondary editions or physical phones.
