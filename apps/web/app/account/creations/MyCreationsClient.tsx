@@ -13,9 +13,34 @@ export function isCreation(value: unknown): value is Creation {
     && typeof v.issuedAt === 'string' && !Number.isNaN(Date.parse(v.issuedAt));
 }
 
+/** Build only same-origin guest play links from verified immutable Custom IDs. */
+export function creationShareUrl(puzzleId: string, origin: string): string | null {
+  if (!ID.test(puzzleId)) return null;
+  try {
+    const parsed = new URL(origin);
+    if (parsed.origin !== origin || (parsed.protocol !== 'https:'
+      && !(parsed.protocol === 'http:' && parsed.hostname === 'localhost'))) return null;
+    return parsed.origin + '/custom/' + encodeURIComponent(puzzleId);
+  } catch { return null; }
+}
+
 export default function MyCreationsClient(): JSX.Element {
   const [creations, setCreations] = useState<readonly Creation[] | null>(null);
   const [error, setError] = useState<'sign-in' | 'unavailable' | null>(null);
+  const [copyStatus, setCopyStatus] = useState<{ id: string; ok: boolean } | null>(null);
+  async function copyFriendLink(puzzleId: string): Promise<void> {
+    const url = creationShareUrl(puzzleId, window.location.origin);
+    if (!url || !navigator.clipboard?.writeText) {
+      setCopyStatus({ id: puzzleId, ok: false });
+      return;
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setCopyStatus({ id: puzzleId, ok: true });
+    } catch {
+      setCopyStatus({ id: puzzleId, ok: false });
+    }
+  }
   useEffect(() => {
     const controller = new AbortController();
     void fetch('/api/account/creations', { credentials: 'same-origin', signal: controller.signal })
@@ -46,6 +71,13 @@ export default function MyCreationsClient(): JSX.Element {
         <strong>{creation.title}</strong>
         {' · '}{new Date(creation.issuedAt).toLocaleDateString()}
         {' · '}<a href={'/custom/' + encodeURIComponent(creation.puzzleId)}>Open friend link</a>
+        {' · '}<button type="button" onClick={() => { void copyFriendLink(creation.puzzleId); }}>
+          Copy friend link
+        </button>
+        {copyStatus?.id === creation.puzzleId ? (
+          <span role="status">{copyStatus.ok
+            ? ' Link copied.' : ' Copy unavailable; open the friend link and copy its address.'}</span>
+        ) : null}
       </li>)}
     </ol> : null}
     {creations && creations.length === 40 ? <p>Showing the 40 newest creations. Older creations will be available through pagination later.</p> : null}
