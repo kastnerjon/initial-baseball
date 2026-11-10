@@ -16,6 +16,8 @@
 
 ## Official Daily editions — approved November 5
 
+- [ ] Validate source-only #608 follow-up browser hint-envelope bounds: only canonical hint types, 1–120 labels, 1–4096 values, at-bat 1–9 and contiguous revealed slots; reject malformed signed resume or reveal before React state. Require exact-head CI, independent review and real Safari/Android hint restoration; preserve default-OFF practice and A3 score block.
+
 - [ ] Independently review clean-main source-only A2 exact-ID secondary Daily practice #608: server-signed private runtime, single-hint transport, no answerful SSR/bootstrap, strict immutable ID/date/ruleset, isolated browser saves, shared nine-player game UI, personal-only results with no AVG/BEAT/leaderboards, guest practice and all three default-OFF flags. Require exact-head full CI, hidden-answer production build audit, matching READY Preview, hosted isolated QA/physical mobile tests. Competitive A3 #566 remains denied.
 
 - [ ] A1: issuance identity, frozen nine-player content, service-only persistence and restricted editor action.

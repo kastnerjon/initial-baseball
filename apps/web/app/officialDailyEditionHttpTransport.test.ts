@@ -121,11 +121,35 @@ describe('source-staged official Daily exact-ID browser HTTP transport', () => {
       { ...valid, hint: { ...valid.hint, answer: 'PRIVATE_FUTURE_HINT' } },
       { ...valid, hint: { ...valid.hint, hintType: 'unknown' } },
       { ...valid, hint: { ...valid.hint, hintValue: '' } },
+      { ...valid, hint: { ...valid.hint, hintValue: 'x'.repeat(4097) } },
+      { ...valid, hint: { ...valid.hint, hintLabel: 'x'.repeat(121) } },
       { ...valid, progressionToken: '' },
     ];
     for (const value of cases) {
       post.mockResolvedValueOnce(value);
       await expect(transport.hint('signed-start')).rejects.toThrow(/incompatible/i);
+    }
+  });
+
+  it('rejects out-of-range and answer-shaped hinted resume envelopes before showing them', async () => {
+    const { transport, post } = setup();
+    const hint = { slot: 1, hintType: 'main_decade', hintLabel: 'Decade',
+      hintValue: '2000s' };
+    const authorized = { ...bundle, revealedCount: 1, hints: [hint] };
+    post.mockResolvedValueOnce({ hintBundle: authorized });
+    expect(await transport.hints('signed-start')).toEqual({ hintBundle: authorized });
+
+    for (const badBundle of [
+      { ...authorized, pitchNumber: 10 },
+      { ...authorized, hints: [{ ...hint, hintType: 'private_player_id' }] },
+      { ...authorized, hints: [{ ...hint, hintLabel: '' }] },
+      { ...authorized, hints: [{ ...hint, hintLabel: 'x'.repeat(121) }] },
+      { ...authorized, hints: [{ ...hint, hintValue: '' }] },
+      { ...authorized, hints: [{ ...hint, hintValue: 'x'.repeat(4097) }] },
+      { ...authorized, hints: [{ ...hint, slot: 2 }] },
+    ]) {
+      post.mockResolvedValueOnce({ hintBundle: badBundle });
+      await expect(transport.hints('signed-start')).rejects.toThrow(/incompatible/i);
     }
   });
 
