@@ -41,8 +41,6 @@ const publicCreatorQa = env.CUSTOM_V2_QA_PUBLIC_CREATION === 'true';
 if (env.CUSTOM_V2_QA_PLAYWRIGHT_MODULE !== undefined) {
   assert.ok(env.CUSTOM_V2_QA_PLAYWRIGHT_MODULE.trim(),
     'Native browser QA requires a nonempty Playwright module path');
-  assert.ok(publicCreatorQa,
-    'Native browser QA requires CUSTOM_V2_QA_PUBLIC_CREATION=true');
 }
 if (publicCreatorQa) {
   assert.equal(required('CUSTOM_LINEUP_PUBLIC_CREATION_ENABLED'), 'true',
@@ -478,10 +476,11 @@ try {
   await alternativeFinish('give-up');
   // Optional: native Web Locks + signed Next/Supabase continuity on two real tabs.
   // Only after hard-pinned isolated QA credentials and local server validation.
-  if (publicCreatorQa && env.CUSTOM_V2_QA_PLAYWRIGHT_MODULE) {
+  if (env.CUSTOM_V2_QA_PLAYWRIGHT_MODULE) {
     const { verifyNativeBrowserContinuity } = await import('./qa-custom-v2-native-browser.mjs');
     await verifyNativeBrowserContinuity({
       base, createChallenge, players, modulePath: env.CUSTOM_V2_QA_PLAYWRIGHT_MODULE,
+      testPublicCreatorUi: publicCreatorQa,
     });
   }
   if (publicCreatorQa) await verifyCommittedCreationResponseLoss();

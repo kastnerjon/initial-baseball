@@ -1,16 +1,38 @@
 # Initial Baseball — Current Work
 
+## Engineering workflow — native default-OFF smoke pilot (November 8)
+
+- [ ] Consolidate the three local default-OFF Daily browser QA milestones #628/#634/#635 as one reviewable #635 source change on current main, without losing #633 disabled Custom identity GET/POST guards: first signed hint → browser save → reload/authorized hint replay → second hint; signed first terminal give-up → next-at-bat reload; remaining eight signed terminal transitions → final nine-row points scorecard → completed-game reload. Require **new exact-head** CI with native Chromium, READY Preview and independent reviews before merge. This verifies real Chromium local Daily progression, not real guesses, hosted competitive scoring, Auth, secondary editions or physical phones.
+- [ ] After a successful pilot, compare CI runtime and false-failure rate. Keep the browser gate if it catches real route regressions without significant overhead; otherwise optimize its placement rather than weakening isolation. See \`docs/engineering/default-off-browser-qa.md\`.
+
+
+## Security #531 — legacy signed browser QA environment cutover
+
+- [ ] Configure GitHub Environment `qa-custom-signed-browser` with **main-only** deployment restrictions and isolated-QA-only secret `QA_CUSTOM_SIGNED_BROWSER_SUPABASE_SERVICE_ROLE_KEY`. Verify a successful trusted-main Chromium signed-guest run and rejected untrusted-branch invocation before deleting the legacy repository-wide `CUSTOM_V2_QA_SUPABASE_SERVICE_ROLE_KEY`. Source uses the existing localhost admin-fixture route, not obsolete anonymous Create. Consider QA-key rotation after cutover; no production secrets or migrations.
+
+## Archive beta operational investigation (#615)
+
+- [ ] Preserve accepted October 16 Daily #173 results and original `daily-2026-10-16` identity. Production has no matching editorial row or disposable Archive beta #13; do not fabricate an editorial puzzle. Source-stage bounded 503 diagnostic logging separately, then verify real production event classification and archival-history policy before any remediation.
+
 ## Official Daily editions — approved November 5
+
+- [ ] Independently review clean-main source-only A2 exact-ID secondary Daily practice #608: server-signed private runtime, single-hint transport, no answerful SSR/bootstrap, strict immutable ID/date/ruleset, isolated browser saves, shared nine-player game UI, personal-only results with no AVG/BEAT/leaderboards, guest practice and all three default-OFF flags. Require exact-head full CI, hidden-answer production build audit, matching READY Preview, hosted isolated QA/physical mobile tests. Competitive A3 #566 remains denied.
 
 - [ ] A1: issuance identity, frozen nine-player content, service-only persistence and restricted editor action.
 - [ ] A2–A4: exact-ID play and hint privacy, result isolation, share links, one Archive and device QA.
 
-- [ ] **A3 signed score release gate — issue #566:** reserved official daily-ed-v1 IDs currently fail closed for browser collection and both server scoring submissions. Implement and independently verify exact-ID, ruleset, attempt and live-purpose binding before enabling scoring, especially for identical-roster editions; keep delayed legitimate live writes and historical primary results compatible.
+- [ ] **A3 signed score release gate — issue #566:** all reserved official daily-ed-* IDs now fail closed for browser collection and both server scoring submissions. Implement and independently verify exact-ID, ruleset, attempt and live-purpose binding before enabling scoring, especially for identical-roster editions; keep delayed legitimate live writes and historical primary results compatible.
 
-- [ ] B: arbitrary-count editor workflow and primary selection. Run account-provider QA alongside Daily development. [Sequence and rollout](plans/multiple-official-dailies.md).
+- [ ] B: arbitrary-count editor workflow and primary selection. Complete independent review of the private draft preview API (#599) and read-only review page (#600), then link them to the date-scoped catalog/workbench (#574/#575). Require an explicit nine-player review/confirm plus current occurrence ID/revision before scheduling via the already-existing CAS endpoint; no one-click schedule from an unread catalog row. Run account-provider QA alongside Daily development. [Sequence and rollout](plans/multiple-official-dailies.md).
 
 ## Custom #528 — secure completion display identity (source policy staged)
 
+- [ ] Review signed private readback adapter #626 after SQL #625. Verify exact challenge/browser cookie and creator-marker boundary, malformed provider rows, named UTF-16 text, Anonymous nullness, default-OFF gate and final-head CI/Preview. No public GET or production enablement without isolated SQL QA and device acceptance.
+
+- [ ] Review private display readback SQL #625 after writer #620. Verify exact-browser, N-row and summary/awarded-point parity, creator exclusion, Anonymous null and least-privilege readback via transaction-rollback isolated QA. No production migration or public API is authorized.
+
+- [ ] Preserve the main native Chromium default-OFF smoke gate for Custom completion-name GET/POST (identity flag forced false even when inherited true). This only verifies HTTP 404 without secrets; it is not signed browser acceptance or migration readiness.
+- [ ] Source checkpoint: #620 immutable first-admitted Custom v2 name/Anonymous write SQL, #623 signed write port, #625 private SQL readback, #626 signed read port, and #629 default-OFF guarded HTTP transport. Confirm final exact-head CI/Preview and independent reviews, then isolated QA rollback rehearsal before any production migration. HTTP is still source-only; front-end UX, nickname linkage, rate/abuse, device QA and explicit release authorization remain undone.
 - [ ] Stage a separate service-role-only first-write-wins name/privacy projection bound to the server-admitted Custom v2 submission (never to a caller-chosen submission ID). Use the portable `parseCompletionDisplayName` boundary, but retain the verified attempt-cookie/creator-exclusion and independent nickname authorization. This remains incomplete until reviewed additive QA-only database migration, endpoint and UI tests, real Safari QA and explicit release authorization.
 
 

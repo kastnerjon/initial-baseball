@@ -135,3 +135,19 @@ describe('DailyNineDetailedScoreboard', () => {
     expect(html).toContain('Completed-game BEAT');
   });
 });
+
+
+describe('practice-only legacy detailed scoreboard', () => {
+  it('shows at-bat and total points without peer AVG/BEAT columns', () => {
+    const html = renderToStaticMarkup(<DailyNineDetailedScoreboardTable
+      {...props} practiceOnly revealAnswers={false}
+    />);
+    expect(html).toContain('Daily Nine detailed scoreboard');
+    expect(html).toContain('Total points');
+    expect(html).not.toContain('<th scope="col">AVG</th>');
+    expect(html).not.toContain('>BEAT %</th>');
+    expect(html).not.toContain('Completed-game BEAT');
+    expect(html).not.toContain('At-bat average');
+    expect(html).not.toContain('Private future answer');
+  });
+});
