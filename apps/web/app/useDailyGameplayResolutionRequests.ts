@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import {
   createDailyGameplayResolutionClient,
   type PendingDailyResolutionAction,
+  type PostDailyResolutionJson,
 } from './dailyGameplayResolutionClient';
 
 type DailyGameplayResolutionRequests = {
@@ -12,12 +13,13 @@ type DailyGameplayResolutionRequests = {
 
 export function useDailyGameplayResolutionRequests(
   onErrorChange: (message: string | null) => void,
+  transport?: { path: string; postJson: PostDailyResolutionJson },
 ): DailyGameplayResolutionRequests {
   const [pendingAction, setPendingAction] = useState<PendingDailyResolutionAction | null>(null);
   const [client] = useState(() => createDailyGameplayResolutionClient({
     onPendingActionChange: setPendingAction,
     onErrorChange,
-  }));
+  }, transport?.postJson, transport?.path));
 
   useEffect(() => () => {
     client.invalidateSilently();
