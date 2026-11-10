@@ -486,6 +486,21 @@ the legacy primary remain unaffected. The new editorial database migration,
 hosted QA and physical acceptance are separate prerequisites; production
 activation requires explicit release approval.
 
+### Secondary draft title revision (server service only)
+
+The server-only `renameOfficialDailyEditorialDraft` adapter normalizes a title
+using the same 3–60-character policy as draft creation and changes only that
+title plus revision/audit fields. It requires an exact occurrence UUID, a current
+PostgreSQL integer revision that can be incremented, and a trusted server actor.
+The read and conditional update both require a future Pacific date and
+`status=draft`; scheduled/issued drafts, stale revisions and lost races fail
+closed. Successful writes preserve occurrence/date/edition identity and all nine
+ordered selections, returning only safe status, occurrence ID and new revision.
+Even an identical stale retry must reload the current revision; it cannot infer
+that another editor's write was its own. Provider errors remain redacted.
+This source capability has no HTTP route or UI consumer yet and does not change
+the existing default-OFF editor flag, database schema, issuance, or release gates.
+
 ## Official secondary Daily result admission: fail-closed until signed evidence
 
 The existing anonymous Daily at-bat and completed-game submission HTTP
