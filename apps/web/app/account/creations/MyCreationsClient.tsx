@@ -29,13 +29,17 @@ export default function MyCreationsClient(): JSX.Element {
   const [error, setError] = useState<'sign-in' | 'unavailable' | null>(null);
   const [copyStatus, setCopyStatus] = useState<{ id: string; ok: boolean } | null>(null);
   async function copyFriendLink(puzzleId: string): Promise<void> {
-    const url = creationShareUrl(puzzleId, window.location.origin);
-    if (!url || !navigator.clipboard?.writeText) {
+    const browser = globalThis as typeof globalThis & {
+      location?: { origin: string };
+      navigator?: { clipboard?: { writeText(value: string): Promise<void> } };
+    };
+    const url = creationShareUrl(puzzleId, browser.location?.origin ?? '');
+    if (!url || !browser.navigator?.clipboard?.writeText) {
       setCopyStatus({ id: puzzleId, ok: false });
       return;
     }
     try {
-      await navigator.clipboard.writeText(url);
+      await browser.navigator.clipboard.writeText(url);
       setCopyStatus({ id: puzzleId, ok: true });
     } catch {
       setCopyStatus({ id: puzzleId, ok: false });
