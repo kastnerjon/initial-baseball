@@ -9,3 +9,9 @@
 **Out of scope:** Account/Auth, Custom or edition scoring, server-side anti-cheat, private roster fixtures, production flags, hosted DB, physical Safari and Android. Passing a second-browser demonstration does not prove durable competitive admission.
 
 **Verification:** Require source syntax and line guard, full exact-head GitHub CI and native browser execution, matching READY Vercel Preview and independent final-head review before integration. Review quota is not an excuse to merge without review.
+
+## Documentation-impact CI
+
+The GitHub gate requires the exact PR body heading `## Documentation impact`.
+The corrected PR description retains the source-only documentation exception;
+this amendment does not change QA behavior, application code or release gates.
