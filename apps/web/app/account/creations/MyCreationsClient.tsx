@@ -1,5 +1,5 @@
 'use client';
-import { useEffect, useState, type JSX } from 'react';
+import React, { useEffect, useState, type JSX } from 'react';
 import { parseCustomLineupTitle } from '@initial-baseball/shared';
 
 type Creation = Readonly<{ puzzleId: string; title: string; issuedAt: string }>;
