@@ -2,7 +2,7 @@
 
 ## Engineering workflow — native default-OFF smoke pilot (November 8)
 
-- [ ] Verify the new PR Chromium smoke job succeeds at **the exact tested head** before merging. This adds a default-OFF public Daily/Results browser check with no hosted credentials; it does not complete actual gameplay, account, archive, or secondary-edition QA.
+- [ ] Consolidate the three local default-OFF Daily browser QA milestones #628/#634/#635 as one reviewable #635 source change on current main, without losing #633 disabled Custom identity GET/POST guards: first signed hint → browser save → reload/authorized hint replay → second hint; signed first terminal give-up → next-at-bat reload; remaining eight signed terminal transitions → final nine-row points scorecard → completed-game reload. Require **new exact-head** CI with native Chromium, READY Preview and independent reviews before merge. This verifies real Chromium local Daily progression, not real guesses, hosted competitive scoring, Auth, secondary editions or physical phones.
 - [ ] After a successful pilot, compare CI runtime and false-failure rate. Keep the browser gate if it catches real route regressions without significant overhead; otherwise optimize its placement rather than weakening isolation. See \`docs/engineering/default-off-browser-qa.md\`.
 
 

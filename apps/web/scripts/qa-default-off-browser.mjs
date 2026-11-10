@@ -91,7 +91,14 @@ try {
       });
       const page = await context.newPage();
       const pageErrors = [];
+      let restoredHintRequestStatus = null;
       page.on('pageerror', error => pageErrors.push(error.message));
+      page.on('response', response => {
+        if (new URL(response.url()).pathname === '/api/daily/hints'
+          && response.request().method() === 'POST') {
+          restoredHintRequestStatus = response.status();
+        }
+      });
       const home = await page.goto(base + '/', { waitUntil: 'domcontentloaded' });
       assert.equal(home?.status(), 200, 'Default Daily home must return HTTP 200');
       await page.getByRole('heading', { name: 'Daily Nine', exact: true }).waitFor();
@@ -103,6 +110,176 @@ try {
       await page.getByRole('heading', { name: 'My Results', exact: true }).waitFor();
       await page.getByRole('link', { name: /Back to today.*Daily/ }).click();
       await page.getByRole('heading', { name: 'Daily Nine', exact: true }).waitFor();
+      await page.getByRole('button', { name: 'Got it', exact: true }).click();
+
+      // Real signed Daily hint consumption and browser persistence, no hosted DB.
+      const beforeInitials = await page.locator('.initials-value').textContent();
+      const beforeAtBat = await page.locator('.at-bat-progress-step[aria-current="step"]')
+        .getAttribute('aria-label');
+      assert.ok(beforeAtBat, 'The initial Daily at-bat must be identifiable');
+      await page.getByText('0/4 hints', { exact: true }).waitFor();
+      await page.getByRole('button', { name: 'Reveal Next Hint', exact: true }).click();
+      await page.getByText('1/4 hints', { exact: true }).waitFor();
+      const beforeHint = await page.locator('.revealed-hint .hint-value').first().textContent();
+      assert.ok(beforeHint && beforeHint.trim(), 'First authorized hint should render');
+      // Observe durable save before navigating to avoid testing a React effect race.
+      await page.waitForFunction(() => {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (!key?.startsWith('initial-baseball:daily:')) continue;
+          try {
+            const saved = JSON.parse(localStorage.getItem(key) ?? '');
+            if (saved?.atBatState?.revealCount === 1) return true;
+          } catch { /* Ignore unrelated or corrupted local keys. */ }
+        }
+        return false;
+      }, null, { timeout: 10_000 });
+      // Register before navigation: earlier hint POSTs must never satisfy
+      // the post-reload authorization proof.
+      const resumedHintResponse = page.waitForResponse(response =>
+        new URL(response.url()).pathname === '/api/daily/hints'
+          && response.request().method() === 'POST', { timeout: 15_000 });
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      await page.getByRole('button', { name: 'Got it', exact: true }).click();
+      try {
+        await page.getByText('1/4 hints', { exact: true }).waitFor();
+      } catch {
+        // State-only diagnostics: do not emit names, hint values or signed tokens.
+        const state = await page.evaluate(() => {
+          const text = document.body.textContent ?? '';
+          return {
+            progress: document.querySelector('.hint-progress')?.textContent ?? null,
+            restoring: text.includes('Restoring today'),
+            restoreError: text.includes('The saved at-bat could not be restored'),
+            follower: text.includes('active in another tab'),
+            blocked: text.includes('could not be restored safely'),
+          };
+        });
+        throw new Error('Signed Daily hint restore failed. State: '
+          + JSON.stringify(state) + '; hint endpoint HTTP: '
+          + String(restoredHintRequestStatus));
+      }
+      assert.equal((await resumedHintResponse).status(), 200,
+        'The post-reload signed Daily hint recovery POST must succeed');
+      assert.ok(await page.locator('.initials-value').textContent() === beforeInitials,
+        'Reload must not change the active player');
+      assert.equal(await page.locator('.at-bat-progress-step[aria-current="step"]')
+        .getAttribute('aria-label'), beforeAtBat,
+      'Reload must not change the active at-bat');
+      assert.ok(await page.locator('.revealed-hint .hint-value').first().textContent() === beforeHint,
+        'Reload must preserve the exact authorized hint without exposing it in logs');
+      assert.equal(await page.locator('.revealed-hint').count(), 1,
+        'Reload must not replay or duplicate previous hints');
+      await page.getByRole('button', { name: 'Reveal Next Hint', exact: true }).click();
+      await page.getByText('2/4 hints', { exact: true }).waitFor();
+      assert.equal(await page.locator('.revealed-hint').count(), 2,
+        'Second authorized hint should render, not just increment progress');
+
+
+
+      // Resolve one real server-signed terminal at-bat without knowing or
+      // logging the hidden answer, then advance with the shared Daily engine.
+      const signedGiveUpResponse = page.waitForResponse(response =>
+        new URL(response.url()).pathname === '/api/daily/resolve'
+          && response.request().method() === 'POST', { timeout: 15_000 });
+      await page.getByRole('button', { name: 'Give up', exact: true }).click();
+      await page.getByRole('button', { name: 'Yes, give up', exact: true }).click();
+      assert.equal((await signedGiveUpResponse).status(), 200,
+        'Signed Daily terminal give-up must be accepted before advancing');
+      await page.getByRole('button', { name: 'Next At Bat', exact: true }).click();
+      await page.locator('.at-bat-progress-step[aria-current="step"][aria-label="At-bat 2: current"]')
+        .waitFor({ timeout: 15_000 });
+      assert.equal(await page.locator('[aria-label="At-bat 1: completed"]').count(), 1,
+        'Completed first at-bat must be retained');
+      await page.getByText('0/4 hints', { exact: true }).waitFor();
+      assert.equal(await page.locator('.revealed-hint').count(), 0,
+        'New at-bat must not inherit previously revealed hints');
+      await page.waitForFunction(() => {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (!key?.startsWith('initial-baseball:daily:')) continue;
+          try {
+            const saved = JSON.parse(localStorage.getItem(key) ?? '');
+            if (saved?.currentPitchIndex === 1
+              && saved?.pendingAdvance === null
+              && saved?.atBatState?.revealCount === 0
+              && saved?.gameState?.completedAtBats?.length === 1) return true;
+          } catch { /* Ignore unrelated local keys. */ }
+        }
+        return false;
+      }, null, { timeout: 10_000 });
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      await page.getByRole('button', { name: 'Got it', exact: true }).click();
+      await page.getByText('0/4 hints', { exact: true }).waitFor();
+      assert.equal(await page.locator('.at-bat-progress-step[aria-current="step"]')
+        .getAttribute('aria-label'), 'At-bat 2: current',
+      'Reload must preserve advancement to the exact next at-bat');
+      assert.equal(await page.locator('[aria-label="At-bat 1: completed"]').count(), 1,
+        'Reload must preserve the earlier terminal result');
+      assert.equal(await page.locator('.revealed-hint').count(), 0,
+        'Reload must not expose prior at-bat hints on the next player');
+
+      // Complete the remaining eight at-bats using only real signed Daily
+      // give-up/resolve transitions. The browser may display revealed answers,
+      // but this runner never reads or logs them, or any signed credentials.
+      for (let atBat = 2; atBat <= 9; atBat++) {
+        await page.locator(
+          `.at-bat-progress-step[aria-current="step"][aria-label="At-bat ${atBat}: current"]`,
+        ).waitFor({ timeout: 15_000 });
+        await page.getByText('0/4 hints', { exact: true }).waitFor();
+        const terminalResponse = page.waitForResponse(response =>
+          new URL(response.url()).pathname === '/api/daily/resolve'
+            && response.request().method() === 'POST', { timeout: 15_000 });
+        await page.getByRole('button', { name: 'Give up', exact: true }).click();
+        await page.getByRole('button', { name: 'Yes, give up', exact: true }).click();
+        assert.equal((await terminalResponse).status(), 200,
+          `At-bat ${atBat} must receive authoritative signed terminal admission`);
+        await page.getByRole('button', {
+          name: atBat === 9 ? 'View Results' : 'Next At Bat', exact: true,
+        }).click();
+        if (atBat < 9) {
+          await page.locator(
+            `.at-bat-progress-step[aria-current="step"][aria-label="At-bat ${atBat + 1}: current"]`,
+          ).waitFor({ timeout: 15_000 });
+          assert.equal(await page.locator(
+            `[aria-label="At-bat ${atBat}: completed"]`).count(), 1,
+          'The resolved at-bat must not be lost when advancing');
+        }
+      }
+      await page.locator('.complete-card-daily h2').waitFor({ timeout: 15_000 });
+      await page.getByRole('region', { name: 'Your Nine at-bat results' }).waitFor();
+      await page.getByText('9 of 9 completed', { exact: true }).waitFor();
+      assert.equal(await page.locator('.your-nine-row').count(), 9,
+        'A finished Daily must display every resolved at-bat row');
+      const finishedPoints = await page.locator('.your-nine-total strong').textContent();
+      assert.ok(finishedPoints && finishedPoints.includes('PTS'),
+        'The finished Daily must display a points total');
+      // Final local persistence is independent of any hosted scoring backend.
+      // Never print stored game state: it may contain signed checkpoints.
+      await page.waitForFunction(() => {
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (!key?.startsWith('initial-baseball:daily:')) continue;
+          try {
+            const saved = JSON.parse(localStorage.getItem(key) ?? '');
+            if (saved?.currentPitchIndex === 9
+              && saved?.gameState?.completedAtBats?.length === 9
+              && saved?.gameState?.status === 'completed') return true;
+          } catch { /* Ignore unrelated or corrupted local keys. */ }
+        }
+        return false;
+      }, null, { timeout: 10_000 });
+      await page.reload({ waitUntil: 'domcontentloaded' });
+      await page.getByRole('button', { name: 'Got it', exact: true }).click();
+      await page.locator('.complete-card-daily h2').waitFor({ timeout: 15_000 });
+      await page.getByRole('region', { name: 'Your Nine at-bat results' }).waitFor();
+      await page.getByText('9 of 9 completed', { exact: true }).waitFor();
+      assert.equal(await page.locator('.your-nine-row').count(), 9,
+        'Reload must retain all nine resolved at-bat rows');
+      assert.equal(await page.locator('.your-nine-total strong').textContent(),
+        finishedPoints, 'Reload must preserve the exact completed points total');
+      assert.equal(await page.locator('.at-bat-progress-step[aria-current="step"]').count(),
+        0, 'Completed Daily must not reopen an unfinished at-bat after reload');
 
       // Both identity flags remain OFF, including when a later source PR adds
       // GET/POST routes. No signed browser cookie or private DB is available.
@@ -130,7 +307,7 @@ try {
       await context.close();
     }
   }
-  console.log('PASS default-OFF native Chromium: Daily, Results, disabled Custom identity GET/POST, mobile/desktop viewports');
+  console.log('PASS default-OFF native Chromium: Daily signed hint/terminal advance/reload, Results, disabled Custom identity GET/POST, mobile/desktop viewports');
   console.log('Hosted Supabase, scoring, OAuth and physical-device acceptance are NOT established.');
 } finally {
   await browser?.close();
