@@ -6,6 +6,11 @@
 - Code reconciles original source/test blobs from #623/#629/#632, with the signed writer signing-configuration error-leak fix and server-authoritative first-choice readback after lost/duplicate POST. Earlier #623/#629 branches remain unmerged and must not be integrated independently after this candidate without checking the final tree. Exact-head CI, independent full integrated review, READY Preview, isolated hosted SQL/browser QA and physical Safari/Android remain gates; this is NOT a production release.
 - Archive rollover diagnostics #616 are already merged and production READY, preserving HTTP 503 and historical primary results; missing 2026-10-16 editorial source investigation #615 remains open. A3 official secondary Daily exact-ID signed score admission #566 remains closed to production.
 
+## November 9 — exact-immutable-ID secondary Daily practice gameplay integration (#608)
+
+- A2 source-only branch now combines server-signed per-edition practice runtime and on-demand hint transport, strict answer-free SSR bootstrap, a shared Daily Nine game UI with edition-bound saves, a private `/daily/editions/:id` practice page, and personal-only result presentation. The browser cannot submit/compare/leaderboard secondary scores; A3 exact-ID signed competitive result admission #566 remains separate and mandatory before any competition.
+- All three secondary practice/runtime/HTTP flags remain default OFF. No production migration/feature activation. This clean-main integration preserves existing primary Daily/Classic/Archive and Custom scoring behavior. Fresh exact-head CI/Preview, independent reviews, isolated hosted signed playback, physical Safari/Android and answer-integrity bundle QA remain separate gates.
+
 ## November 8 — signed Custom v2 private completion readback service aligned with SQL #625
 
 - Source-only default-OFF server service verifies an exact signed first-attempt browser cookie and creator marker before calling the readback RPC. Database reader now rechecks N terminal rows **and the summary/awarded-point total** under the existing attempt lock. The provider accepts only strict named plain-text or Anonymous null results; errors disclose no score, ID, hint, or private account state.

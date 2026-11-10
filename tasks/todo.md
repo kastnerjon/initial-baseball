@@ -16,6 +16,8 @@
 
 ## Official Daily editions — approved November 5
 
+- [ ] Independently review clean-main source-only A2 exact-ID secondary Daily practice #608: server-signed private runtime, single-hint transport, no answerful SSR/bootstrap, strict immutable ID/date/ruleset, isolated browser saves, shared nine-player game UI, personal-only results with no AVG/BEAT/leaderboards, guest practice and all three default-OFF flags. Require exact-head full CI, hidden-answer production build audit, matching READY Preview, hosted isolated QA/physical mobile tests. Competitive A3 #566 remains denied.
+
 - [ ] A1: issuance identity, frozen nine-player content, service-only persistence and restricted editor action.
 - [ ] A2–A4: exact-ID play and hint privacy, result isolation, share links, one Archive and device QA.
 
@@ -27,9 +29,8 @@
 
 - [ ] Independently review consolidated default-OFF completion-name integration #632 from latest main: patched signed writer, merged signed readback, dual-gated HTTP GET/POST, creator/Auth exclusion, first-write-wins name/Anonymous UX, missing-secret redaction, no hidden answers or score admission. Verify exact integrated commit CI/Preview and isolated hosted/physical device QA. #623/#629 are retained as reference dependency PRs and should not be merged separately if the integrated candidate lands. No production flag/migration activation.
 
-
 - [ ] Preserve the main native Chromium default-OFF smoke gate for Custom completion-name GET/POST (identity flag forced false even when inherited true). This only verifies HTTP 404 without secrets; it is not signed browser acceptance or migration readiness.
-- [ ] Source checkpoint: #620 immutable first-admitted Custom v2 name/Anonymous write SQL, #623 signed write port, #625 private SQL readback, #626 signed read port, and #629 default-OFF guarded HTTP transport. Confirm final exact-head CI/Preview and independent reviews, then isolated QA rollback rehearsal before any production migration. HTTP is still source-only; front-end UX, nickname linkage, rate/abuse, device QA and explicit release authorization remain undone.
+- [ ] Complete independent review and isolated hosted signed-browser acceptance for the #620/#625 SQL writer/readback plus integrated #632 source-only transport/UI. Preserve first-write-wins, creator exclusion, and no credential or hidden-answer leaks; nickname linkage, abuse tests, mobile devices, production migrations and release authorization remain pending.
 - [ ] Stage a separate service-role-only first-write-wins name/privacy projection bound to the server-admitted Custom v2 submission (never to a caller-chosen submission ID). Use the portable `parseCompletionDisplayName` boundary, but retain the verified attempt-cookie/creator-exclusion and independent nickname authorization. This remains incomplete until reviewed additive QA-only database migration, endpoint and UI tests, real Safari QA and explicit release authorization.
 
 
