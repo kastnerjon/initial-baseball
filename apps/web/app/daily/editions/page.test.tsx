@@ -28,7 +28,7 @@ describe('Daily edition choice page', () => {
     expect(metadata.robots.index).toBe(false);
   });
 
-  it('renders the primary and same-day edition titles without premature practice links', async () => {
+  it('links same-day published editions only to exact-ID noncompetitive practice', async () => {
     mocked.enabled.mockReturnValue(true);
     mocked.read.mockResolvedValue({ puzzleDate: '2026-11-06', editions: [
       { puzzleId: 'daily-ed-v1-907f33db-c38f-43c3-8e6b-a3aaf19bbd08',
@@ -40,12 +40,13 @@ describe('Daily edition choice page', () => {
       afterEdition: '1', cursorDate: '2026-11-06', utm_campaign: 'x',
     })));
     expect(html).toContain('Play today’s primary Daily Nine');
-    expect(html).toContain('Additional editions are listed for reference');
+    expect(html).toContain('Additional published editions can be played for practice');
     expect(html).toContain('Modern');
     expect(html).toContain('70s/80s/90s');
-    expect(html).toContain('Practice replay unavailable');
-    expect(html).not.toContain('/daily/editions/daily-ed-v1-');
-    expect(html).not.toContain('href="/daily/editions/daily-ed-');
+    expect((html.match(/Practice only; scores are not submitted/g) ?? []).length).toBe(2);
+    expect(html).toContain('href="/daily/editions/daily-ed-v1-907f33db-c38f-43c3-8e6b-a3aaf19bbd08?date=2026-11-06"');
+    expect(html).toContain('href="/daily/editions/daily-ed-v1-2a65c93c-3f36-4f4b-853f-92e85bb81648?date=2026-11-06"');
+    expect(html).not.toContain('href="/daily/editions/null');
     expect(html).toContain('/daily/editions?afterEdition=3&amp;cursorDate=2026-11-06');
     expect(mocked.read).toHaveBeenCalledWith({
       afterEdition: '1', cursorDate: '2026-11-06',

@@ -34,7 +34,7 @@ export default async function OfficialDailyEditionChoicePage({ searchParams }: P
       <section className="daily-card">
         <p className="eyebrow">Initial Baseball · Daily Nine</p>
         <h1>Today’s Daily puzzles</h1>
-        <p>The original Daily Nine remains playable without an account. Additional editions are listed for reference; practice replay is not available yet and competitive scores are not submitted.</p>
+        <p>The original Daily Nine remains playable without an account. Additional published editions can be played for practice without an account; competitive scores are not submitted.</p>
         <p><a href="/">Play today’s primary Daily Nine</a></p>
         {unavailable || page === null ? (
           <p role="status">Additional Daily puzzles are temporarily unavailable.
@@ -47,8 +47,10 @@ export default async function OfficialDailyEditionChoicePage({ searchParams }: P
               <ul>
                 {page.editions.map(edition => (
                   <li key={edition.puzzleId}>
-                    <strong>{edition.title}</strong>
-                    {' · Practice replay unavailable'}
+                    <a href={`/daily/editions/${encodeURIComponent(edition.puzzleId)}?date=${encodeURIComponent(page.puzzleDate)}`}>
+                      <strong>{edition.title}</strong>
+                    </a>
+                    {' · Practice only; scores are not submitted'}
                   </li>
                 ))}
               </ul>
