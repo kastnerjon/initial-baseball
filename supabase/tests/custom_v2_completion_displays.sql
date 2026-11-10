@@ -132,8 +132,7 @@ begin
     (v_first::text,v_puzzle_id,2,'points-v4',1,'FP','HR',0,0,'correct',4),
     (v_second::text,v_puzzle_id,2,'points-v4',1,'FP','HR',0,0,'correct',4);
 
-  -- The existing immutable-AB trigger rejects mismatched terminal facts
-  -- before a completion writer or reader can see an inconsistent saved row.
+  -- Immutable at-bat trigger rejects a terminal fact mismatch before writer access.
   v_rejected := false;
   begin
     update public.custom_nine_at_bat_results
@@ -274,7 +273,7 @@ begin
   select created into v_created from public.record_custom_lineup_v2_completion_display(
     v_puzzle_id,v_second_digest,'anonymous',null);
   if v_created is distinct from false then raise exception 'Anonymous retry not idempotent'; end if;
-  -- An Anonymous first write cannot be converted into a named result.
+  -- The first Anonymous choice cannot be replaced with a name.
   v_rejected := false;
   begin
     perform * from public.record_custom_lineup_v2_completion_display(

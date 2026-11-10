@@ -21,6 +21,8 @@
 
 ## Custom #528 — secure completion display identity (source policy staged)
 
+- [ ] Review signed private readback adapter #626 after SQL #625. Verify exact challenge/browser cookie and creator-marker boundary, malformed provider rows, named UTF-16 text, Anonymous nullness, default-OFF gate and final-head CI/Preview. No public GET or production enablement without isolated SQL QA and device acceptance.
+
 - [ ] Review private display readback SQL #625 after writer #620. Verify exact-browser, N-row and summary/awarded-point parity, creator exclusion, Anonymous null and least-privilege readback via transaction-rollback isolated QA. No production migration or public API is authorized.
 
 - [ ] Preserve the main native Chromium default-OFF smoke gate for Custom completion-name GET/POST (identity flag forced false even when inherited true). This only verifies HTTP 404 without secrets; it is not signed browser acceptance or migration readiness.

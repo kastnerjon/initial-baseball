@@ -1,5 +1,11 @@
 # Initial Baseball — Start Here
 
+## November 8 — signed Custom v2 private completion readback service aligned with SQL #625
+
+- Source-only default-OFF server service verifies an exact signed first-attempt browser cookie and creator marker before calling the readback RPC. Database reader now rechecks N terminal rows **and the summary/awarded-point total** under the existing attempt lock. The provider accepts only strict named plain-text or Anonymous null results; errors disclose no score, ID, hint, or private account state.
+- SQL write #620/read #625 independent review, isolated QA rollback migration and the signed HTTP/physical device release gates remain outstanding. No public GET, production DDL or flag activation from this source-only service.
+
+
 ## November 8 — active engineering checkpoint (primary source of truth: live PR state)
 
 - Main `3466e0867414ac38a69d456ee2c45ccb11d693a9` includes #609 reviewed, explicit secondary Daily editor issuance and #622 default-OFF native Chromium smoke harness. Latest queried Vercel production deployment for that main is READY; verify actual head and CI again before releasing anything. Secondary Daily competitive scoring is **not** enabled; exact-ID admission issue #566 remains required. Production editor, secondary Daily play, Custom/Auth and migration activation remain OFF. QA migration history differs materially from production.
