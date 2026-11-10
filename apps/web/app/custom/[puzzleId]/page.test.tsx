@@ -9,8 +9,14 @@ vi.mock('../../serverCustomLineupV2GameplayHttp', () => ({
   isCustomLineupV2GameplayTransportEnabled: vi.fn(() => false),
 }));
 vi.mock('../CustomLineupGame', () => ({
-  CustomLineupGame: ({ puzzleId, displayTitle }: { puzzleId: string; displayTitle?: string | null }) =>
-    React.createElement('div', {'data-testid':'custom-game'}, puzzleId, displayTitle),
+  CustomLineupGame: ({ puzzleId, displayTitle, completionDisplayEnabled }: {
+    puzzleId: string; displayTitle?: string | null; completionDisplayEnabled?: boolean;
+  }) => React.createElement('div', {
+    'data-testid': 'custom-game', 'data-completion-enabled': String(completionDisplayEnabled),
+  }, puzzleId, displayTitle),
+}));
+vi.mock('../../serverCustomV2CompletionDisplayHttp', () => ({
+  isCustomV2CompletionDisplayHttpEnabled: vi.fn(() => false),
 }));
 vi.mock('../../serverCustomLineupV2DisplayTitle', () => ({
   readCustomLineupV2DisplayTitle: vi.fn(async () => null),
@@ -18,10 +24,16 @@ vi.mock('../../serverCustomLineupV2DisplayTitle', () => ({
 import { readCustomLineupV2DisplayTitle } from '../../serverCustomLineupV2DisplayTitle';
 import { isCustomLineupV2GameplayTransportEnabled }
   from '../../serverCustomLineupV2GameplayHttp';
+import { isCustomV2CompletionDisplayHttpEnabled }
+  from '../../serverCustomV2CompletionDisplayHttp';
 import CustomLineupPage, { metadata } from './page';
 
 const ID='custom-lineup-v2-123e4567-e89b-42d3-a456-426614174000';
-beforeEach(()=>{vi.clearAllMocks();vi.mocked(isCustomLineupV2GameplayTransportEnabled).mockReturnValue(false);});
+beforeEach(()=>{
+  vi.clearAllMocks();
+  vi.mocked(isCustomLineupV2GameplayTransportEnabled).mockReturnValue(false);
+  vi.mocked(isCustomV2CompletionDisplayHttpEnabled).mockReturnValue(false);
+});
 describe('Custom v2 page release boundary',()=>{
   it('keeps every unlisted challenge non-indexable without exposing challenge details',()=>{
     expect(metadata.title).toBe('Custom Lineup | Initial Baseball');
@@ -53,9 +65,20 @@ describe('Custom v2 page release boundary',()=>{
     const page = await CustomLineupPage({params: Promise.resolve({puzzleId: ID})});
     const html = renderToStaticMarkup(page);
     expect(html).toContain('Yankees Legends');
+    expect(html).toContain('data-completion-enabled="false"');
     expect(readCustomLineupV2DisplayTitle).toHaveBeenCalledWith(ID);
     expect(JSON.stringify(metadata)).not.toContain('Yankees Legends');
   });
+  it('forwards the separate exact-true completion display release gate, never public by default', async () => {
+    vi.mocked(isCustomLineupV2GameplayTransportEnabled).mockReturnValue(true);
+    let page = await CustomLineupPage({ params: Promise.resolve({ puzzleId: ID }) });
+    expect(renderToStaticMarkup(page)).toContain('data-completion-enabled="false"');
+    vi.mocked(isCustomV2CompletionDisplayHttpEnabled).mockReturnValue(true);
+    page = await CustomLineupPage({ params: Promise.resolve({ puzzleId: ID }) });
+    expect(renderToStaticMarkup(page)).toContain('data-completion-enabled="true"');
+    expect(JSON.stringify(metadata)).not.toContain('completionDisplayEnabled');
+  });
+
   it('renders only the opaque authorized challenge ID when explicitly enabled',async()=>{
     vi.mocked(isCustomLineupV2GameplayTransportEnabled).mockReturnValue(true);
     const page=await CustomLineupPage({params:Promise.resolve({puzzleId:ID})});

@@ -25,9 +25,8 @@
 
 ## Custom #528 — secure completion display identity (source policy staged)
 
-- [ ] Review signed private readback adapter #626 after SQL #625. Verify exact challenge/browser cookie and creator-marker boundary, malformed provider rows, named UTF-16 text, Anonymous nullness, default-OFF gate and final-head CI/Preview. No public GET or production enablement without isolated SQL QA and device acceptance.
+- [ ] Independently review consolidated default-OFF completion-name integration #632 from latest main: patched signed writer, merged signed readback, dual-gated HTTP GET/POST, creator/Auth exclusion, first-write-wins name/Anonymous UX, missing-secret redaction, no hidden answers or score admission. Verify exact integrated commit CI/Preview and isolated hosted/physical device QA. #623/#629 are retained as reference dependency PRs and should not be merged separately if the integrated candidate lands. No production flag/migration activation.
 
-- [ ] Review private display readback SQL #625 after writer #620. Verify exact-browser, N-row and summary/awarded-point parity, creator exclusion, Anonymous null and least-privilege readback via transaction-rollback isolated QA. No production migration or public API is authorized.
 
 - [ ] Preserve the main native Chromium default-OFF smoke gate for Custom completion-name GET/POST (identity flag forced false even when inherited true). This only verifies HTTP 404 without secrets; it is not signed browser acceptance or migration readiness.
 - [ ] Source checkpoint: #620 immutable first-admitted Custom v2 name/Anonymous write SQL, #623 signed write port, #625 private SQL readback, #626 signed read port, and #629 default-OFF guarded HTTP transport. Confirm final exact-head CI/Preview and independent reviews, then isolated QA rollback rehearsal before any production migration. HTTP is still source-only; front-end UX, nickname linkage, rate/abuse, device QA and explicit release authorization remain undone.

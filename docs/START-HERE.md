@@ -1,5 +1,11 @@
 # Initial Baseball — Start Here
 
+## November 9 — Custom guest completion display end-to-end integration candidate (#632)
+
+- The default-OFF source candidate now combines signed guest completion display writing, a private exact-browser readback consumer, same-origin GET/POST route and saved-only named/Anonymous guest UI into one reviewed integration boundary. SQL writer/readback and authorization layers #620/#625/#626 already exist on main; this candidate adds no production DDL or flag changes. No new score authority, browser-selected submission IDs, account nickname binding or hidden player-answer transport.
+- Code reconciles original source/test blobs from #623/#629/#632, with the signed writer signing-configuration error-leak fix and server-authoritative first-choice readback after lost/duplicate POST. Earlier #623/#629 branches remain unmerged and must not be integrated independently after this candidate without checking the final tree. Exact-head CI, independent full integrated review, READY Preview, isolated hosted SQL/browser QA and physical Safari/Android remain gates; this is NOT a production release.
+- Archive rollover diagnostics #616 are already merged and production READY, preserving HTTP 503 and historical primary results; missing 2026-10-16 editorial source investigation #615 remains open. A3 official secondary Daily exact-ID signed score admission #566 remains closed to production.
+
 ## November 8 — signed Custom v2 private completion readback service aligned with SQL #625
 
 - Source-only default-OFF server service verifies an exact signed first-attempt browser cookie and creator marker before calling the readback RPC. Database reader now rechecks N terminal rows **and the summary/awarded-point total** under the existing attempt lock. The provider accepts only strict named plain-text or Anonymous null results; errors disclose no score, ID, hint, or private account state.

@@ -7,6 +7,7 @@ import {
 } from '../customLineupV2BrowserTransport';
 import { createDailyGameplayRequestController } from '../dailyGameplayRequestController';
 import { CustomLineupScorecard } from './CustomLineupScorecard';
+import { CustomLineupCompletionDisplay } from './CustomLineupCompletionDisplay';
 import { CustomLineupTerminalPanel } from './CustomLineupTerminalPanel';
 import { ConfirmGiveUp } from '../components/ConfirmGiveUp';
 
@@ -31,15 +32,18 @@ type Terminal = Extract<CustomLineupV2BrowserResolution, { kind: 'terminal' }>;
 /** Server-authoritative, same-browser Custom v2 game. A refresh reopens the
  * durable first attempt; local state is display-only and never authoritative.
  */
-export function CustomLineupGame({ puzzleId, displayTitle = null }: {
-  puzzleId: string; displayTitle?: string | null;
+export function CustomLineupGame({
+  puzzleId, displayTitle = null, completionDisplayEnabled = false,
+}: {
+  puzzleId: string; displayTitle?: string | null; completionDisplayEnabled?: boolean;
 }): JSX.Element {
   // A different puzzle is a different browser request/state lifetime.
-  return <CustomLineupGameSession key={puzzleId} puzzleId={puzzleId} displayTitle={displayTitle} />;
+  return <CustomLineupGameSession key={puzzleId} puzzleId={puzzleId}
+    displayTitle={displayTitle} completionDisplayEnabled={completionDisplayEnabled} />;
 }
 
-function CustomLineupGameSession({ puzzleId, displayTitle }: {
-  puzzleId: string; displayTitle: string | null;
+function CustomLineupGameSession({ puzzleId, displayTitle, completionDisplayEnabled }: {
+  puzzleId: string; displayTitle: string | null; completionDisplayEnabled: boolean;
 }): JSX.Element {
   const client = useMemo(() => createCustomLineupV2BrowserTransport(), []);
   // Reuse Daily's synchronous single-flight/generation fence, not React's async busy flag.
@@ -232,6 +236,8 @@ function CustomLineupGameSession({ puzzleId, displayTitle }: {
                   className="custom-lineup-secondary" onClick={() => { void submitCompletion(); }}>
                   Retry saving result
                 </button> : null}
+                {completionDisplayEnabled && admission === 'saved'
+                  ? <CustomLineupCompletionDisplay puzzleId={puzzleId} /> : null}
               </section>
             ) : terminal !== null ? (
               <CustomLineupTerminalPanel terminal={terminal} error={error}
