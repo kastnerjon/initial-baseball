@@ -1,4 +1,5 @@
 import { parseCompletionDisplayName } from '@initial-baseball/shared';
+import { isSecondaryOfficialDailyEditionId } from './dailyGameplayPersistenceAuthority';
 
 export type LeaderboardIdentity = {
   puzzleId: string;
@@ -66,6 +67,7 @@ function readIdentity(input: unknown): LeaderboardIdentity | null {
   if (!record(input)) return null;
   const { puzzleId, puzzleDate, puzzleNumber, rulesetVersion } = input;
   if (typeof puzzleId !== 'string' || puzzleId.length === 0 || puzzleId.length > 200
+    || isSecondaryOfficialDailyEditionId(puzzleId)
     || typeof puzzleDate !== 'string' || !/^\d{4}-\d{2}-\d{2}$/.test(puzzleDate)
     || !Number.isFinite(Date.parse(puzzleDate + 'T00:00:00Z'))
     || new Date(puzzleDate + 'T00:00:00Z').toISOString().slice(0, 10) !== puzzleDate
@@ -76,7 +78,8 @@ function readIdentity(input: unknown): LeaderboardIdentity | null {
 
 function eligibleCompletion(completion: StoredLeaderboardCompletion): boolean {
   return completion.rulesetVersion === 'points-v4'
-    && !completion.puzzleId.startsWith('archive-beta-v1-daily-');
+    && !completion.puzzleId.startsWith('archive-beta-v1-daily-')
+    && !isSecondaryOfficialDailyEditionId(completion.puzzleId);
 }
 
 function readSubmissionId(input: unknown): string | null {

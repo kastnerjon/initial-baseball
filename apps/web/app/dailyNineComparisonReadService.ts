@@ -12,7 +12,7 @@ import {
   type DailyNineCompletedComparisonApiResponse,
   type DailyPublicPuzzle,
 } from '@initial-baseball/shared';
-import { isArchiveBetaDailyPuzzleId } from './dailyGameplayPersistenceAuthority';
+import { isArchiveBetaDailyPuzzleId, isSecondaryOfficialDailyEditionId } from './dailyGameplayPersistenceAuthority';
 
 export type DailyNineComparisonRequestErrorCode = Exclude<
   DailyNineComparisonApiErrorCode,
@@ -57,7 +57,9 @@ export function createDailyNineComparisonReadService({
 }: CreateDailyNineComparisonReadServiceInput) {
   async function loadComparisonPuzzle(puzzleDate: string, puzzleId?: string): Promise<DailyPublicPuzzle> {
     const puzzle = await loadAuthoritativePuzzle(puzzleDate, puzzleId);
-    if (puzzle.puzzleDate !== puzzleDate || (puzzleId !== undefined && puzzle.id !== puzzleId)) {
+    // The omitted-ID primary route must not turn into an implicit edition cohort.
+    if (isSecondaryOfficialDailyEditionId(puzzle.id)
+      || puzzle.puzzleDate !== puzzleDate || (puzzleId !== undefined && puzzle.id !== puzzleId)) {
       throw new DailyNineComparisonRequestError(
         'invalid_puzzle',
         'Authoritative Daily puzzle does not match requested identity.',
@@ -149,6 +151,13 @@ function requireBaseRequest(
   const puzzleId = request.puzzleId ?? undefined;
   if (puzzleId !== undefined && (puzzleId.trim().length === 0 || puzzleId.length > 200)) {
     invalidRequest('puzzleId must be a non-empty identity of at most 200 characters.');
+  }
+  // A valid roster is not evidence of an admitted competitive edition.
+  if (isSecondaryOfficialDailyEditionId(puzzleId)) {
+    throw new DailyNineComparisonRequestError(
+      'invalid_puzzle',
+      'Secondary official Daily comparisons are not enabled.',
+    );
   }
   if (isArchiveBetaDailyPuzzleId(puzzleId)
     && request.rulesetVersion !== POINTS_V4_DAILY_RULESET_VERSION) {

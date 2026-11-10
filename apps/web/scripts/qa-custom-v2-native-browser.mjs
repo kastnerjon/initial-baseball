@@ -131,7 +131,8 @@ async function verifyNativeCreatorResponseLoss(browser, base, players) {
   }
 }
 
-export async function verifyNativeBrowserContinuity({ base, createChallenge, players, modulePath }) {
+export async function verifyNativeBrowserContinuity({ base, createChallenge, players, modulePath,
+  testPublicCreatorUi = false }) {
   assert.ok(base.hostname === '127.0.0.1' || base.hostname === 'localhost',
     'Native QA must stay on loopback');
   assert.equal(base.protocol, 'http:', 'Native QA must use the local Next server');
@@ -156,7 +157,9 @@ export async function verifyNativeBrowserContinuity({ base, createChallenge, pla
       'QA Chromium executable must be an absolute path');
     browser = await chromium.launch({ headless: true,
       ...(executablePath ? { executablePath } : {}) });
-    await verifyNativeCreatorResponseLoss(browser, base, players);
+    // Admin-fixture QA verifies signed guest progression without using obsolete
+    // public anonymous issuance. The old creator UI probe is opt-in only.
+    if (testPublicCreatorUi) await verifyNativeCreatorResponseLoss(browser, base, players);
     for (const n of [1, 10]) {
       const id = await createChallenge(n);
       assert.ok(puzzleIdPattern.test(id), 'Expected a newly issued isolated-QA puzzle ID');

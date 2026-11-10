@@ -2,14 +2,19 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 vi.mock('server-only', () => ({}));
+vi.mock('./canonicalDailyPlayerLookup', () => ({
+  getCanonicalDailyPlayer: vi.fn((id: string) => ({ displayName: 'Name ' + id })),
+}));
 vi.mock('./materializePermanentDailyIssuedClueSnapshot', () => ({
   prepareServerOfficialDailyPublication: vi.fn(() => ({ puzzleId: 'private-only' })),
 }));
 
 import { prepareServerOfficialDailyPublication } from './materializePermanentDailyIssuedClueSnapshot';
+import { getCanonicalDailyPlayer } from './canonicalDailyPlayerLookup';
 import {
   createOfficialDailyEditorialDraft, OfficialDailyDraftError,
-  parseOfficialDailyDraftInput, scheduleOfficialDailyEditorialDraft,
+  parseOfficialDailyDraftInput, readOfficialDailyEditorialDraftPreview,
+  scheduleOfficialDailyEditorialDraft,
 } from './serverOfficialDailyEditorialDrafts';
 
 const NOW = new Date('2026-11-05T20:00:00Z');
@@ -128,5 +133,77 @@ describe('official Daily editorial drafts', () => {
       expect(error).toBeInstanceOf(OfficialDailyDraftError);
       expect(String(error)).not.toContain('private-player-and-hint');
     }
+  });
+});
+
+
+describe('restricted exact-draft preview', () => {
+  it('rejects invalid identifiers/clocks before repository access', async () => {
+    const db = fakeDb();
+    for (const id of ['daily-ed-v1-' + ID, ID.toUpperCase(), '../' + ID, '']) {
+      await expect(readOfficialDailyEditorialDraftPreview(db.client, id, NOW))
+        .rejects.toMatchObject({ kind: 'invalid' });
+    }
+    await expect(readOfficialDailyEditorialDraftPreview(db.client, ID, new Date(NaN)))
+      .rejects.toMatchObject({ kind: 'invalid' });
+    expect(db.from).not.toHaveBeenCalled();
+  });
+
+  it('renders nine ordered names and the current revision without a hidden clue snapshot', async () => {
+    const db = fakeDb({ ...saved, selections: [...selections].reverse() });
+    const result = await readOfficialDailyEditorialDraftPreview(db.client, ID, NOW);
+    expect(result).toMatchObject({
+      occurrenceId: ID, puzzleDate: '2026-11-06', editionNumber: 2,
+      status: 'draft', revision: 0, canSchedule: true,
+    });
+    expect(result.selections.map(p => p.slot)).toEqual([1,2,3,4,5,6,7,8,9]);
+    expect(result.selections[0]).toEqual({
+      slot: 1, canonicalPlayerId: 'fixture-1', displayName: 'Name fixture-1',
+    });
+    expect(prepareServerOfficialDailyPublication).toHaveBeenCalledOnce();
+    expect(JSON.stringify(result)).not.toMatch(/hintValues|clueSnapshot|created_by/);
+  });
+
+  it('retains visibility but prevents scheduling readiness on missing players or clues', async () => {
+    const db = fakeDb();
+    vi.mocked(prepareServerOfficialDailyPublication).mockImplementationOnce(() => {
+      throw new Error('private-hint-and-player');
+    });
+    const unready = await readOfficialDailyEditorialDraftPreview(db.client, ID, NOW);
+    expect(unready.canSchedule).toBe(false);
+    expect(JSON.stringify(unready)).not.toContain('private-hint-and-player');
+    vi.mocked(getCanonicalDailyPlayer).mockReturnValueOnce(null);
+    const missing = await readOfficialDailyEditorialDraftPreview(db.client, ID, NOW);
+    expect(missing.canSchedule).toBe(false);
+    expect(missing.selections[0]?.displayName).toBeNull();
+  });
+
+  it('never marks an already scheduled, issued, or elapsed draft as schedulable', async () => {
+    for (const status of ['scheduled', 'issued'] as const) {
+      const result = await readOfficialDailyEditorialDraftPreview(
+        fakeDb({ ...saved, status }).client, ID, NOW,
+      );
+      expect(result.canSchedule).toBe(false);
+    }
+    const past = await readOfficialDailyEditorialDraftPreview(
+      fakeDb().client, ID, new Date('2026-11-06T20:00:00Z'),
+    );
+    expect(past.canSchedule).toBe(false);
+    expect(prepareServerOfficialDailyPublication).not.toHaveBeenCalled();
+  });
+
+  it('sanitizes missing, mismatched, malformed and provider-error records', async () => {
+    for (const row of [null, { ...saved, occurrence_id: 'bad' },
+      { ...saved, occurrence_id: '907f33db-c38f-43c3-8e6b-a3aaf19bbd09' },
+      { ...saved, selections: selections.slice(1) }]) {
+      await expect(readOfficialDailyEditorialDraftPreview(fakeDb(row).client, ID, NOW))
+        .rejects.toBeInstanceOf(OfficialDailyDraftError);
+    }
+    const db = fakeDb();
+    db.read.maybeSingle.mockResolvedValueOnce({
+      data: null, error: { message: 'sensitive-private-answers' },
+    });
+    await expect(readOfficialDailyEditorialDraftPreview(db.client, ID, NOW))
+      .rejects.toMatchObject({ kind: 'unavailable' });
   });
 });
