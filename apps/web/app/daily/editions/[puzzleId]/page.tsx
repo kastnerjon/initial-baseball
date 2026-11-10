@@ -4,6 +4,7 @@ import { isOfficialDailyOccurrenceId, validateIssuedDailyCalendarDate } from '@i
 import { DailyRuntimeRequestError } from '../../../dailyRuntimeService';
 import { validateOfficialDailyEditionBootstrap } from '../../../officialDailyEditionHttpTransport';
 import { createServerOfficialDailyEditionRuntime } from '../../../serverOfficialDailyEditionRuntime';
+import { isOfficialDailyEditionChooserVisible } from '../../../serverOfficialDailyEditionChoice';
 import { DailyInningGame } from '../../../components/DailyInningGame';
 import { DailyHowToDialog } from '../../../components/DailyHowToDialog';
 import { getDailyHowToContent } from '../../../dailyHowTo';
@@ -64,7 +65,13 @@ export default async function OfficialDailyPracticePage({
             content={getDailyHowToContent(bootstrap.rulesetVersion)}
           />
         </header>
-        <nav aria-label="Daily navigation"><a href="/">Today’s Daily</a></nav>
+        <nav aria-label="Daily navigation">
+          <a href="/">Today’s Daily</a>
+          {' · '}<a href="/archive">Archive</a>
+          {isOfficialDailyEditionChooserVisible() ? (
+            <>{' · '}<a href="/daily/editions">More official Daily puzzles</a></>
+          ) : null}
+        </nav>
         <DailyInningGame key={bootstrap.puzzle.id}
           puzzle={bootstrap.puzzle} rulesetVersion={bootstrap.rulesetVersion}
           initialProgressionToken={bootstrap.progressionToken}

@@ -13,6 +13,9 @@ vi.mock('next/navigation', () => ({ notFound: mocked.notFound }));
 vi.mock('../../../serverOfficialDailyEditionRuntime', () => ({
   createServerOfficialDailyEditionRuntime: mocked.createRuntime,
 }));
+vi.mock('../../../serverOfficialDailyEditionChoice', () => ({
+  isOfficialDailyEditionChooserVisible: vi.fn(() => false),
+}));
 vi.mock('../../../components/DailyInningGame', () => ({
   DailyInningGame: (props: unknown) => {
     mocked.dailyGame(props);
@@ -24,6 +27,7 @@ vi.mock('../../../components/DailyHowToDialog', () => ({
 }));
 
 import OfficialDailyPracticePage, { metadata } from './page';
+import { isOfficialDailyEditionChooserVisible } from '../../../serverOfficialDailyEditionChoice';
 const ID = 'daily-ed-v1-907f33db-c38f-43c3-8e6b-a3aaf19bbd08';
 const DATE = '2026-11-06';
 const URL = `/daily/editions/${ID}?date=${DATE}`;
@@ -56,6 +60,7 @@ function safeBootstrap() {
 beforeEach(() => {
   vi.unstubAllEnvs();
   vi.clearAllMocks();
+  vi.mocked(isOfficialDailyEditionChooserVisible).mockReturnValue(false);
   mocked.createRuntime.mockReturnValue({
     getBootstrap: vi.fn(async () => safeBootstrap()),
   });
@@ -116,6 +121,9 @@ describe('default-OFF exact-ID official Daily practice page', () => {
     const html = renderToStaticMarkup(page);
     expect(html).toContain('Practice — scores are not submitted');
     expect(html).toContain('shared-daily-game');
+    expect(html).toContain('href="/archive"');
+    expect(html).toContain('href="/"');
+    expect(html).not.toContain('href="/daily/editions"');
     expect(html).not.toContain('PRIVATE_FUTURE_HINT');
     expect(mocked.createRuntime).toHaveBeenCalledWith(ID);
     expect(mocked.createRuntime.mock.results[0]?.value.getBootstrap).toHaveBeenCalledWith(DATE);
@@ -123,5 +131,15 @@ describe('default-OFF exact-ID official Daily practice page', () => {
       officialEditionPractice: true, archivePath: URL, initialProgressionToken: 'signed-token',
       puzzle: expect.objectContaining({ id: ID }),
     }));
+  });
+  it('offers the edition chooser only when its independent release flags permit it', async () => {
+    enable();
+    vi.mocked(isOfficialDailyEditionChooserVisible).mockReturnValue(true);
+    const html = renderToStaticMarkup(await OfficialDailyPracticePage(input()));
+    expect(html).toContain('href="/daily/editions"');
+    expect(html).toContain('More official Daily puzzles');
+    expect(html).toContain('href="/archive"');
+    expect(html).not.toContain('PRIVATE_FUTURE_HINT');
+    expect(mocked.createRuntime).toHaveBeenCalledOnce();
   });
 });
