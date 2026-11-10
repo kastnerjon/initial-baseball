@@ -27,6 +27,10 @@
     "./comparison": {
       "types": "./dist/dailyNineComparison.d.ts",
       "import": "./dist/dailyNineComparison.js"
+    },
+    "./official-edition-identity": {
+      "types": "./dist/officialDailyBrowserIdentity.d.ts",
+      "import": "./dist/officialDailyBrowserIdentity.js"
     }
   }
 }

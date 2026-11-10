@@ -28,6 +28,7 @@ type AtBatCardProps = {
   giveUpPending: boolean;
   requestError: string | null;
   comparison: DailyNineAtBatComparisonState;
+  practiceOnly?: boolean;
   terminalAwardedPoints: number | null;
   cumulativePoints: number;
   nextActionLabel?: string;
@@ -47,6 +48,7 @@ export function AtBatCard({
   giveUpPending,
   requestError,
   comparison,
+  practiceOnly = false,
   terminalAwardedPoints,
   cumulativePoints,
   nextActionLabel = 'Next At Bat',
@@ -110,6 +112,7 @@ export function AtBatCard({
           )}
           <DailyNineAtBatComparison
             state={comparison}
+            practiceOnly={practiceOnly}
             {...(isPointsV4 && terminalAwardedPoints !== null
               ? { summaryPoints: terminalAwardedPoints, summaryOutcome: resolvedTerminalResult.outcome }
               : {})}

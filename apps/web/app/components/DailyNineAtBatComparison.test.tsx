@@ -7,6 +7,22 @@ import { DailyNineAtBatComparison } from './DailyNineAtBatComparison';
 (globalThis as Record<string, unknown>).React = React;
 
 describe('DailyNineAtBatComparison', () => {
+  it('shows practice-only earned points without indefinite or fabricated peer comparisons', () => {
+    const html = renderToStaticMarkup(<DailyNineAtBatComparison
+      practiceOnly summaryPoints={2.5} summaryOutcome="2B"
+      state={{ status: 'idle' }}
+    />);
+    expect(html).toContain('aria-label="At-bat score"');
+    expect(html).toContain('Your Score');
+    expect(html).toContain('>2.5</strong>');
+    expect(html).toContain('Outcome: 2B');
+    expect((html.match(/class="completed-comparison-tile/g) ?? []).length).toBe(1);
+    expect(html).not.toContain('Loading comparison');
+    expect(html).not.toContain('AVG');
+    expect(html).not.toContain('Percentile');
+    expect(html).not.toContain('How everyone scored');
+  });
+
   it('keeps the selected bucket dark and outlined, including zero-count buckets, on narrow screens', () => {
     const css = readFileSync(new URL('../daily-results.css', import.meta.url), 'utf8');
     expect(css).toMatch(/\.at-bat-distribution-selected\s*\{[^}]*background:[^;]+;[^}]*box-shadow:[^;]+;/);
