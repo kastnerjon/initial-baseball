@@ -142,3 +142,9 @@ jobs:
         env:
           IB_DEFAULT_OFF_SMOKE_PLAYWRIGHT_MODULE: /tmp/ib-default-off-smoke/node_modules/playwright/index.mjs
         run: node apps/web/scripts/qa-default-off-browser.mjs
+      - name: Verify Custom completion display component with simulated HTTP in Chromium
+        env:
+          CUSTOM_DISPLAY_QA_PLAYWRIGHT_MODULE: /tmp/ib-default-off-smoke/node_modules/playwright/index.mjs
+        run: |
+          node --test apps/web/scripts/qa-custom-completion-display-fixture.test.mjs
+          node apps/web/scripts/qa-custom-completion-display-browser.mjs
