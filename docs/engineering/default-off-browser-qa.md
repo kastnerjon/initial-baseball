@@ -76,11 +76,11 @@ Playwright CLI (`install --with-deps chromium`) as CI does.
 
 ## What it does **not** prove
 
-This covers one real incorrect-player guess followed by a full nine-at-bat
-**three-strike first at-bat plus eight give-ups** and local persistence, not complete guess-path gameplay
-acceptance or an isolated hosted QA result. It verifies signed incorrect-strike
-and local hint continuation, nine signed terminal/advance transitions and
-completed-game reload, but does **not** verify correct player guesses, authoritative scoring, saved competitive submissions,
+This covers three real incorrect-player guesses to a signed first-at-bat K,
+followed by eight signed Give Ups and durable nine-at-bat completion. It verifies
+nonterminal answer privacy, strike/hint recovery after reload, terminal
+progression, and final scorecard persistence in local Chromium. It does **not**
+verify correct player guesses, authoritative competitive scoring or admissions,
 Supabase row policies/migrations, authenticated Custom creation, Custom completion-name write/read/identity recovery,
 real-browser enabled-mode CSRF and name-entry flows, OAuth, Archive
 catalogs, secondary official Daily editions, physical Safari, or Android.

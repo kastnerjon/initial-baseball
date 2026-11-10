@@ -5,7 +5,7 @@
 - **Goal:** Extend the real first-batter incorrect-guess recovery of #645 to
   verify the second incorrect guess, signed third-strike K and durable next-batter
   result, without changing runtime behavior or authority.
-- **Owning layer:** Existing default-OFF \`apps/web/scripts\` QA only.
+- **Owning layer:** Existing default-OFF `apps/web/scripts` QA only.
 - **In scope:** Public canonical search of two additional distinct players,
   server-signed nonterminal and terminal assertions, hint/strike privacy,
   ordered completion fact in saved browser progress, next-batter reset,
