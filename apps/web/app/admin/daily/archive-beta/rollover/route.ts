@@ -11,7 +11,20 @@ export async function POST(request: Request): Promise<Response> {
     else requireDailyAdminPrincipal(authorization);
     const result = await runArchiveBetaRollover();
     const status = result.failures.length > 0 || result.remaining > 0 ? 503 : 200;
-    if (status !== 200) console.error(JSON.stringify({ event: 'archive-rollover-incomplete', failed: result.failures.length, remaining: result.remaining }));
+    if (status !== 200) {
+      // Report bounded, already-sanitized date/kind metadata; never provider exceptions,
+      // source player selections, clue material or an unbounded per-day failure list.
+      const failureKinds = { 'missing-source': 0, 'immutable-conflict': 0, unavailable: 0 };
+      for (const failure of result.failures) failureKinds[failure.kind] += 1;
+      console.error(JSON.stringify({
+        event: 'archive-rollover-incomplete',
+        failed: result.failures.length,
+        remaining: result.remaining,
+        failureKinds,
+        sampleFailures: result.failures.slice(0, 5).map(({ puzzleDate, kind }) => ({ puzzleDate, kind })),
+        omittedFailures: Math.max(0, result.failures.length - 5),
+      }));
+    }
     return response(result, status);
   } catch (error) {
     if (error instanceof DailyAdminAuthorizationError || error instanceof DailyChatOpsAuthorizationError) {

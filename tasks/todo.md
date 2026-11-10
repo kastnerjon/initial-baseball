@@ -10,6 +10,10 @@
 
 - [ ] Configure GitHub Environment `qa-custom-signed-browser` with **main-only** deployment restrictions and isolated-QA-only secret `QA_CUSTOM_SIGNED_BROWSER_SUPABASE_SERVICE_ROLE_KEY`. Verify a successful trusted-main Chromium signed-guest run and rejected untrusted-branch invocation before deleting the legacy repository-wide `CUSTOM_V2_QA_SUPABASE_SERVICE_ROLE_KEY`. Source uses the existing localhost admin-fixture route, not obsolete anonymous Create. Consider QA-key rotation after cutover; no production secrets or migrations.
 
+## Archive beta operational investigation (#615)
+
+- [ ] Preserve accepted October 16 Daily #173 results and original `daily-2026-10-16` identity. Production has no matching editorial row or disposable Archive beta #13; do not fabricate an editorial puzzle. Source-stage bounded 503 diagnostic logging separately, then verify real production event classification and archival-history policy before any remediation.
+
 ## Official Daily editions — approved November 5
 
 - [ ] A1: issuance identity, frozen nine-player content, service-only persistence and restricted editor action.
