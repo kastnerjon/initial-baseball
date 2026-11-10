@@ -231,3 +231,39 @@ test('conflicting aliases and key revocation fail closed without a new reservati
   assert.equal(s.reservations.size, 0);
   assert.equal(s.nextIdentity, 1);
 });
+
+test('one edition and browser cannot reuse a reservation across different issued rulesets', () => {
+  const s = new ProtocolModel(), b = new BrowserModel();
+  b.acquire('first'); b.deliver(b.begin(s, 'first', 'generation-a'));
+  const original = s.reserve(b.generation, b.jar, 'edition-a', 'points-v4');
+  const different = s.reserve(b.generation, b.jar, 'edition-a', 'synthetic-ruleset-v5');
+  assert.equal(original.identity, different.identity);
+  assert.notEqual(original.attempt, different.attempt);
+  assert.deepEqual(s.reserve(b.generation, b.jar, 'edition-a', 'points-v4'), original);
+  assert.deepEqual(s.reserve(b.generation, b.jar, 'edition-a', 'synthetic-ruleset-v5'), different);
+  assert.equal(s.reservations.size, 2);
+  // The diagnostic models scoping only; a real issuer must separately validate its issued ruleset.
+});
+
+test('a valid old capability copied under a new generation cookie name fails identity binding', () => {
+  const s = new ProtocolModel(), b = new BrowserModel();
+  b.acquire('first');
+  const old = b.begin(s, 'first', 'generation-old');
+  b.deliver(old);
+  const first = b.start(s);
+  assert.equal(first.mode, 'live');
+  // Storage deletion is identity loss, not recovery of the previous browser identity.
+  b.generation = null;
+  const current = b.begin(s, 'first', 'generation-current');
+  assert.ok(current);
+  b.jar.set(cookieName('generation-current'), old.cookie);
+  assert.equal(b.start(s).mode, 'practice',
+    'Even a genuine prior cookie must match the selected generation identity');
+  assert.equal(s.reservations.size, 1);
+  b.deliver(current);
+  const admitted = b.start(s);
+  assert.equal(admitted.mode, 'live');
+  assert.notEqual(admitted.identity, first.identity);
+  assert.equal(s.reservations.size, 2,
+    'After browser-data loss, a separately confirmed generation can be a new anonymous identity');
+});

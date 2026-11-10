@@ -108,3 +108,11 @@ entropy, key expiry or physical-device acceptance. No retention/renewal policy
 is selected, and the proposal remains unapproved. The concrete lifetime,
 refresh/replay and rotation decisions above remain blocking before schema or
 submission-authority implementation.
+
+
+Additional synthetic assertions isolate reservations by both exact edition and issued
+ruleset, and reject a genuine old credential copied into a newer generation's
+cookie name. The latter explicitly models storage deletion as a **new identity**,
+not a recovery guarantee or protection against malicious cookie replay. These
+test-only assertions do not validate issued-ruleset authorization or a real
+browser's HttpOnly cookie handling.
