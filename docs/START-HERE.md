@@ -1,5 +1,9 @@
 # Initial Baseball — Start Here
 
+## November 9 — verified historical primary ID utility staged (#592)
+
+- Source-only, read-only verification of historical published editorial roster-derived Daily puzzle IDs, including fail-closed deterministic fallback dates. Stacked on #606 unified Archive but does not activate replay links, reconstruct accepted score identity, migrate historical results, or expose the nine-player selections. Exact-head CI, Preview, independent review, and historical replay proof remain gates.
+
 ## November 9 — unified historical official Daily Archive source integration (#606)
 
 - Consolidated one default-OFF official Archive from immutable legacy-primary and arbitrary-count secondary publication metadata, grouped by Pacific date with stable (date, edition) pagination. Neither unverified historical primary editorial IDs nor staged secondary practice links are clickable; this prevents cross-population score relabeling and 404 navigation while #583/#566 remain release gates. The original Archive beta section is preserved; no hidden players, clues, score writes or production flag/DDL changes.
