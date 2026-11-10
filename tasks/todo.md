@@ -2,8 +2,13 @@
 
 ## Engineering workflow — active integration and acceptance
 
+- [ ] Finish #643 → #644 future-draft title service/form integration after exact-head CI/Preview and external reviews. Local combined application/safety tests and rollback-only SQL predicates passed; no release activation. Reconcile both the #614 slot controls and #644 title form, then rerun combined page tests.
+- [ ] Integrate #645 real incorrect-guess Chromium acceptance after exact-head CI/reviews/Preview. Local pinned Chromium390/1280 passed real incorrect resolution, durable strike/history/hint reload, reset and all nine completions. Keep hosted scoring/Auth/device gates separate.
+- [ ] Finish #642 final-head SQL regression review/CI; whole ordered-roster equality and full isolated-QA rollback passed with postflight zero drafts/publications.
+
+
 - [ ] Measure CI runtime and false-failure rate of merged #635 native Chromium signed nine-at-bat regression on trusted main; its full CI and matching production are green. This does not establish hosted score, Auth or physical-device acceptance.
-- [ ] Both #624 review findings are fixed at `6ec92b8f`; retain passing exact-head audit/full CI and READY Preview; obtain CodeRabbit review before merge. After reviewed source merge, run the read-only audit from trusted main. Consolidated #627 instructions do not require a second merge or establish an executed agent pilot.
+- [ ] Both #624 review findings are fixed; current head `41f5959c` requires refreshed-head reviews while retaining passing audit/full CI and READY Preview; obtain CodeRabbit review before merge. After reviewed source merge, run the read-only audit from trusted main. Consolidated #627 instructions do not require a second merge or establish an executed agent pilot.
 - [ ] Measure the native Chromium gate's runtime and failure rate after integration; preserve credential isolation while keeping checks useful. See `docs/engineering/default-off-browser-qa.md`.
 
 ## Security #531 — legacy signed browser QA environment cutover
@@ -29,7 +34,7 @@
 
 - [ ] Finish consolidated #632 guest name/Anonymous integration review. SQL writer #620, private SQL reader #625 and signed reader #626 are merged source; #632 contains the remaining signed writer #623, HTTP #629 and UI. Verify the final combined diff before retiring its ancestor PRs; CodeRabbit remains quota-blocked despite clean Codex and passing exact-head CI.
 - [ ] Integrate stacked #638 following CodeRabbit; exact-head native Chromium verified mounted-component acceptance for name/Anonymous first-write behavior, ambiguous POST readback, reload, invalid input and safe rendered text. Mocked HTTP proves browser composition only; separately verify signed GET/POST, exact challenge/browser and creator exclusion against isolated hosted QA.
-- [ ] Preserve the native default-OFF GET/POST 404 smoke with identity forced false even when inherited true. SQL additive migration/adversarial fixtures passed a rollback-only QA rehearsal; neither QA nor production retains the display table/RPCs. Perform production-shaped rehearsal and explicit migration/release approval before persistent deployment.
+- [ ] Preserve the native default-OFF GET/POST 404 smoke with identity forced false even when inherited true. Both exact merged SQL migrations and complete adversarial fixture passed a fresh November10 BEGIN/ROLLBACK QA rehearsal; postflight neither QA nor production retains the display table/RPCs. Perform production-shaped rehearsal and explicit migration/release approval before persistent deployment.
 - [ ] Complete real Safari/Android acceptance and later account nickname/privacy authorization without deriving a nickname from OAuth email or provider metadata. No public leaderboard, nickname linkage or production identity activation is implied by guest-name source integration.
 
 ## Custom #529 — remaining variable-strike integration and release gates
