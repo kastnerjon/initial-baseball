@@ -16,6 +16,8 @@
 
 ## Official Daily editions — approved November 5
 
+- [ ] Observe exact-head CI's credential-free native Chromium edition persistence/lock acceptance. The runner uses real save/load/reset adapters and Web Locks for two same-date secondary editions plus primary at 390px/1280px; local browser launch is host-blocked. It does not replace React gameplay, signed HTTP, hosted QA, Pacific-midnight or physical-device acceptance. See `docs/engineering/official-daily-browser-isolation-qa.md`.
+
 - [ ] Validate source-only #608 follow-up browser hint-envelope bounds: only canonical hint types, 1–120 labels, 1–4096 values, at-bat 1–9 and contiguous revealed slots; reject malformed signed resume or reveal before React state. Require exact-head CI, independent review and real Safari/Android hint restoration; preserve default-OFF practice and A3 score block.
 
 - [ ] Independently review clean-main source-only A2 exact-ID secondary Daily practice #608: server-signed private runtime, single-hint transport, no answerful SSR/bootstrap, strict immutable ID/date/ruleset, isolated browser saves, shared nine-player game UI, personal-only results with no AVG/BEAT/leaderboards, guest practice and all three default-OFF flags. Require exact-head full CI, hidden-answer production build audit, matching READY Preview, hosted isolated QA/physical mobile tests. Competitive A3 #566 remains denied.
