@@ -1,5 +1,10 @@
 # Initial Baseball — Start Here
 
+## November 9 — default-OFF current-day official Daily edition chooser (#588)
+
+- Source-only /daily/editions date-bound metadata chooser and primary home link are now stacked on the one historical Archive metadata service (#606). It lists arbitrary published secondary editions for the server's Pacific date using a 30-row cursor and shows primary Daily Nine as the guest-playable default. Secondary entries stay unlinked until the exact-ID practice route (#608) is independently integrated and tested. Four exact-true release flags remain OFF, no private hints or scoring authority are exposed and no production schema/flag changes are made.
+- Exact-head CI/Preview, CodeRabbit/Codex review and protected hosted/mobile QA remain required. A3 signed score admission #566 is independently blocked; this metadata-only chooser does not change competitive eligibility.
+
 ## November 9 — unified historical official Daily Archive source integration (#606)
 
 - Consolidated one default-OFF official Archive from immutable legacy-primary and arbitrary-count secondary publication metadata, grouped by Pacific date with stable (date, edition) pagination. Neither unverified historical primary editorial IDs nor staged secondary practice links are clickable; this prevents cross-population score relabeling and 404 navigation while #583/#566 remain release gates. The original Archive beta section is preserved; no hidden players, clues, score writes or production flag/DDL changes.

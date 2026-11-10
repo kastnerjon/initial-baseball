@@ -16,6 +16,8 @@
 
 ## Official Daily editions — approved November 5
 
+- [ ] Review the current-day secondary Daily metadata chooser #588 stacked on clean unified Archive #606: current server-Pacific date, bounded arbitrary-count edition pagination, primary Daily home-link visibility, unlinked secondary titles until verified practice route #608, no score/hints/hidden identity, safe query/cursor rollover, four default-OFF switches, exact-head CI/Preview/independent review and physical QA. Production activation and A3 signed competition remain separately gated.
+
 - [ ] Independently review clean-main unified official Archive #606: published primary metadata placeholder puzzleId:null (not falsely playable), exact-ID numbered secondary metadata unlinked until #583 integration, arbitrary same-date edition keyset, no hidden answer/score writes, original Archive beta retained with errors sanitized and four default-OFF flags. Require exact-head CI/Preview, CodeRabbit/Codex, protected hosted 120+-edition browser acceptance (121-edition rollback-only DB fixture passed), physical responsive Safari/Android and controlled release approval. Primary source issue #589 and A3 signed result admission #566 remain separate blockers.
 
 - [ ] A1: issuance identity, frozen nine-player content, service-only persistence and restricted editor action.
