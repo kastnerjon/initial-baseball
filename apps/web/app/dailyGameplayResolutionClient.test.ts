@@ -30,6 +30,20 @@ describe('daily gameplay resolution client', () => {
     expect(onSuccess).toHaveBeenCalledWith(response);
   });
 
+  it('routes a bound edition resolution without hitting the primary endpoint', async () => {
+    const postJson = vi.fn(async () => buildResolutionResponse());
+    const path = '/api/daily/editions/daily-ed-v1-907f33db-c38f-43c3-8e6b-a3aaf19bbd08/resolve';
+    const client = createDailyGameplayResolutionClient({
+      onPendingActionChange: () => undefined, onErrorChange: () => undefined,
+    }, postJson, path);
+    await client.resolveAtBat({ progressionToken: 'edition-token',
+      action: { giveUp: true }, onSuccess: () => undefined });
+    expect(postJson).toHaveBeenCalledWith(path, {
+      progressionToken: 'edition-token', giveUp: true,
+    });
+    expect(postJson.mock.calls.flat().join(' ')).not.toContain('/api/daily/resolve');
+  });
+
   it('maps give up to the dedicated pending action', async () => {
     const pendingActions: Array<'guess' | 'give_up' | null> = [];
     const client = createDailyGameplayResolutionClient({

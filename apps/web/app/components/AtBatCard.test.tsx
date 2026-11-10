@@ -19,7 +19,6 @@ const sampleReveal: CanonicalRevealViewModel = {
   seasons: [],
 };
 
-
 describe('AtBatCard pending resolution feedback', () => {
   it('preserves the historical v3 question prompt', () => {
     const html = renderCard({ requestPending: false, giveUpPending: false, rulesetVersion: 'points-v3' });
@@ -228,6 +227,24 @@ describe('AtBatCard pending resolution feedback', () => {
     expect(html).not.toContain('at-bat-summary-metrics');
   });
 
+  it('shows only earned points for official edition practice without peer-stat placeholders', () => {
+    const html = renderCard({
+      requestPending: false, giveUpPending: false, rulesetVersion: 'points-v4',
+      practiceOnly: true,
+      submittedResult: {
+        kind: 'strikeout', revealedCount: 0,
+        strikeCount: 3, outcome: 'K', source: 'strikeout',
+      },
+      comparison: { status: 'idle' },
+    });
+    expect(html).toContain('Your Score');
+    expect(html).toContain('aria-label="At-bat score"');
+    expect(html).not.toContain('Loading comparison');
+    expect(html).not.toContain('>AVG<');
+    expect(html).not.toContain('>Percentile<');
+    expect(html).not.toContain('How everyone scored');
+  });
+
   it('uses the supplied terminal action label after a resolved at-bat', () => {
     const html = renderCard({
       requestPending: false,
@@ -425,6 +442,7 @@ function renderCard(input: {
     source: 'strikeout';
   };
   nextActionLabel?: string;
+  practiceOnly?: boolean;
   cumulativePoints?: number;
   revealCount?: 0 | 1 | 2 | 3 | 4;
   reveal?: CanonicalRevealViewModel | null;
@@ -450,6 +468,7 @@ function renderCard(input: {
       giveUpPending={input.giveUpPending}
       requestError={null}
       comparison={input.comparison ?? { status: 'idle' }}
+      practiceOnly={input.practiceOnly ?? false}
       terminalAwardedPoints={input.submittedResult === undefined ? null : 0}
       cumulativePoints={input.cumulativePoints ?? 0}
       {...(input.nextActionLabel === undefined ? {} : { nextActionLabel: input.nextActionLabel })}
@@ -462,7 +481,6 @@ function renderCard(input: {
     />,
   );
 }
-
 
 function renderTerminalComparison(comparison: DailyNineAtBatComparisonState): string {
   return renderCard({

@@ -6,6 +6,7 @@ import {
 import { getGuessOutcome, isDailyGameComplete } from '@initial-baseball/engine';
 import {
   CURRENT_DAILY_RULESET_VERSION,
+  POINTS_V4_DAILY_RULESET_VERSION,
   type DailyGuessResult,
   type DailyPuzzle,
   type DailyPublicPuzzle,
@@ -32,6 +33,8 @@ type CreateDailyRuntimeServiceInput = {
   progressionTokens: DailyProgressionTokenCodec;
   /** Trusted server-owned setting; Daily remains at three by default. */
   maxStrikes?: 1 | 2 | 3;
+  /** Future exact-ID editions use incremental server-authorized clue revelation. */
+  hintTransport?: 'legacy-bundle' | 'on-demand';
 };
 
 type AuthorizedProgression = {
@@ -47,9 +50,48 @@ export class DailyRuntimeRequestError extends Error {
   }
 }
 
+/**
+ * Resolve Daily play against server-owned puzzles and signed progression.
+ * Legacy clients receive bundled hints; on-demand clients must explicitly
+ * reveal the next clue and resume with its successor token.
+ */
 export function createDailyRuntimeService(input: CreateDailyRuntimeServiceInput): DailyRuntimeService {
+  return buildDailyRuntimeService(input);
+}
+
+/** Bind a shared gameplay runtime to one publication. The reader owns release-date eligibility. */
+export function createExactIdDailyRuntimeService(
+  input: Pick<CreateDailyRuntimeServiceInput, 'progressionTokens'> & {
+    canonicalRuntime: CanonicalRuntimeAccessor;
+    puzzleId: string;
+    readEligiblePuzzle: (puzzleId: string) => Promise<DailyPuzzle | null>;
+  },
+): DailyRuntimeService {
+  const { puzzleId, readEligiblePuzzle, canonicalRuntime, progressionTokens } = input;
+  return buildDailyRuntimeService({
+    canonicalRuntime,
+    progressionTokens,
+    hintTransport: 'on-demand',
+    async createPuzzle() {
+      const puzzle = await readEligiblePuzzle(puzzleId);
+      if (!puzzle || puzzle.id !== puzzleId) {
+        throw new DailyRuntimeRequestError('Official Daily edition unavailable.');
+      }
+      return puzzle;
+    },
+  }, puzzleId);
+}
+
+function buildDailyRuntimeService(
+  input: CreateDailyRuntimeServiceInput,
+  expectedPuzzleId?: string,
+): DailyRuntimeService {
   const { canonicalRuntime, createPuzzle, progressionTokens } = input;
   const maxStrikes = input.maxStrikes ?? 3;
+  const hintTransport = input.hintTransport ?? 'legacy-bundle';
+  if (hintTransport !== 'legacy-bundle' && hintTransport !== 'on-demand') {
+    throw new Error('Unsupported Daily hint transport policy.');
+  }
   if (maxStrikes !== 1 && maxStrikes !== 2 && maxStrikes !== 3) {
     throw new Error('Unsupported server-owned strike limit.');
   }
@@ -88,6 +130,11 @@ export function createDailyRuntimeService(input: CreateDailyRuntimeServiceInput)
         throw new DailyRuntimeRequestError('Invalid Daily progression token.');
       }
       throw error;
+    }
+    if (expectedPuzzleId !== undefined && (
+      claims.puzzleId !== expectedPuzzleId || claims.rulesetVersion !== POINTS_V4_DAILY_RULESET_VERSION
+    )) {
+      throw new DailyRuntimeRequestError('Daily progression token does not match its puzzle.');
     }
     if (claims.strikeCount >= maxStrikes) {
       throw new DailyRuntimeRequestError('Progression strike count exceeds the configured limit.');
@@ -134,6 +181,22 @@ export function createDailyRuntimeService(input: CreateDailyRuntimeServiceInput)
     };
   }
 
+  /**
+   * The on-demand transport never releases future hint values or pre-signed
+   * reveal checkpoints. The legacy transport remains untouched for existing
+   * clients until an independently reviewed migration to the secure protocol.
+   */
+  function projectHintBundle(bundle: DailyHintBundle): DailyHintBundle {
+    return hintTransport === 'legacy-bundle'
+      ? bundle
+      : {
+          pitchNumber: bundle.pitchNumber,
+          revealedCount: bundle.revealedCount,
+          hints: bundle.hints.filter(hint => hint.slot <= bundle.revealedCount),
+          checkpoints: [],
+        };
+  }
+
   return {
     async getPublicPuzzle(date) {
       return toPublicPuzzle(await createCanonicalPuzzle(date));
@@ -143,6 +206,9 @@ export function createDailyRuntimeService(input: CreateDailyRuntimeServiceInput)
       date,
       rulesetVersion: DailyBootstrapRulesetVersion = CURRENT_DAILY_RULESET_VERSION,
     ) {
+      if (expectedPuzzleId !== undefined && rulesetVersion !== POINTS_V4_DAILY_RULESET_VERSION) {
+        throw new DailyRuntimeRequestError('Unsupported official edition ruleset.');
+      }
       const puzzle = await createCanonicalPuzzle(date);
       const firstPitch = puzzle.pitches[0];
       if (firstPitch === undefined) {
@@ -163,13 +229,13 @@ export function createDailyRuntimeService(input: CreateDailyRuntimeServiceInput)
         rulesetVersion,
         puzzle: toPublicPuzzle(puzzle),
         progressionToken: progressionTokens.sign(claims),
-        hintBundle: createHintBundle({ claims, puzzle, pitch: firstPitch }),
+        hintBundle: projectHintBundle(createHintBundle({ claims, puzzle, pitch: firstPitch })),
       };
     },
 
     async getHintBundle(progressionToken) {
       const authorized = await requireAuthorizedProgression(progressionToken);
-      return { hintBundle: createHintBundle(authorized) };
+      return { hintBundle: projectHintBundle(createHintBundle(authorized)) };
     },
 
     async revealHint(progressionToken) {
@@ -224,7 +290,7 @@ export function createDailyRuntimeService(input: CreateDailyRuntimeServiceInput)
           ? createCanonicalRevealViewModel(getCanonicalReveal(authorized.pitch.player.playerId))
           : null,
         progressionToken,
-        hintBundle: successorBundle,
+        hintBundle: successorBundle === null ? null : projectHintBundle(successorBundle),
       };
     },
   };
