@@ -36,13 +36,15 @@ const props = (params: Record<string, string | string[] | undefined>) => ({
   searchParams: Promise.resolve(params),
 });
 beforeEach(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date('2026-11-10T20:00:00Z'));
   vi.stubEnv('OFFICIAL_DAILY_EDITOR_DRAFTS_ENABLED', 'true');
   vi.stubEnv('DAILY_ADMIN_USERNAME', USER);
   vi.stubEnv('DAILY_ADMIN_PASSWORD', PASSWORD);
   vi.mocked(headers).mockResolvedValue(new Headers({ authorization: AUTH, 'sec-fetch-site': 'same-origin' }) as never);
   vi.mocked(readOfficialDailyEditorialDraftPreview).mockResolvedValue(PREVIEW);
 });
-afterEach(() => { vi.unstubAllEnvs(); vi.clearAllMocks(); });
+afterEach(() => { vi.useRealTimers(); vi.unstubAllEnvs(); vi.clearAllMocks(); });
 
 describe('read-only authenticated exact secondary editor review page', () => {
   it('stays unreachable and performs no reads unless the server flag is exact true', async () => {
@@ -120,6 +122,30 @@ describe('read-only authenticated exact secondary editor review page', () => {
     expect(html).toContain('type="checkbox" required="" name="confirmed" value="yes"');
     expect(readOfficialDailyEditorialDraftPreview)
       .toHaveBeenCalledWith(expect.anything(), ID);
+  });
+
+  it('renders an escaped title-only form with the exact observed occurrence and revision', async () => {
+    vi.mocked(readOfficialDailyEditorialDraftPreview).mockResolvedValueOnce({
+      ...PREVIEW, title: '<script>UNTRUSTED</script>', canSchedule: false,
+    });
+    const html = renderToStaticMarkup(await Page(props({ occurrenceId: ID })));
+    expect(html).toContain('action="/admin/daily/editions/review/rename"');
+    expect(html).toContain('name="title"');
+    expect(html).toContain('value="&lt;script&gt;UNTRUSTED&lt;/script&gt;"');
+    expect(html).toContain('name="occurrenceId" value="' + ID + '"');
+    expect(html).toContain('name="expectedRevision" value="3"');
+    expect(html).toContain('Save title');
+    expect(html).not.toContain('Confirm lineup and schedule');
+  });
+
+  it.each([
+    { status: 'scheduled' as const }, { status: 'issued' as const },
+    { puzzleDate: '2026-11-10' }, { puzzleDate: '2026-11-09' },
+  ])('hides title editing for nonfuture or frozen drafts: %j', async override => {
+    vi.mocked(readOfficialDailyEditorialDraftPreview).mockResolvedValueOnce({ ...PREVIEW, ...override });
+    const html = renderToStaticMarkup(await Page(props({ occurrenceId: ID })));
+    expect(html).not.toContain('action="/admin/daily/editions/review/rename"');
+    expect(html).not.toContain('Save title');
   });
 
   it('labels unready clues without adding a misleading schedule command', async () => {

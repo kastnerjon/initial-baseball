@@ -498,8 +498,24 @@ closed. Successful writes preserve occurrence/date/edition identity and all nine
 ordered selections, returning only safe status, occurrence ID and new revision.
 Even an identical stale retry must reload the current revision; it cannot infer
 that another editor's write was its own. Provider errors remain redacted.
-This source capability has no HTTP route or UI consumer yet and does not change
+The private form adapter below is its only new consumer. It does not change
 the existing default-OFF editor flag, database schema, issuance, or release gates.
+
+### Restricted draft title form (source staged, default OFF)
+
+The exact-occurrence review page offers a title field only for a future Pacific
+`draft`, independent of clue readiness. `POST /admin/daily/editions/review/rename`
+requires the existing exact-true editor flag, first-party same-origin form
+admission and Basic admin principal. It accepts only occurrenceId,
+expectedRevision and title in a 1 KiB bounded UTF-8 URL-encoded body with no query,
+duplicate or unexpected fields. Invalid title/revision values fail before
+privileged database construction. The server-derived actor is passed to the
+rename service; browser actor/roster/status input is never accepted. Success
+redirects with 303 to exact-occurrence review to obtain the new revision; stale
+or scheduled drafts produce generic 409 responses. All responses are private,
+no-store and vary by Authorization. Rendering the form grants no write authority;
+the service rechecks date, status and revision. No schema, issuance, public link
+or production activation is added. Hosted/physical acceptance remains pending.
 
 ## Official secondary Daily result admission: fail-closed until signed evidence
 
