@@ -1,5 +1,10 @@
 # Initial Baseball — Start Here
 
+## November 9 — unified historical official Daily Archive source integration (#606)
+
+- Consolidated one default-OFF official Archive from immutable legacy-primary and arbitrary-count secondary publication metadata, grouped by Pacific date with stable (date, edition) pagination. Neither unverified historical primary editorial IDs nor staged secondary practice links are clickable; this prevents cross-population score relabeling and 404 navigation while #583/#566 remain release gates. The original Archive beta section is preserved; no hidden players, clues, score writes or production flag/DDL changes.
+- The 14 Archive source/test blobs are carried forward from separately CI-/Codex-reviewed #606; this clean-main integration preserves merged Archive rollover 503 diagnostics #616 and signed Custom reader #626. Require fresh exact-head CI/Preview and independent review, then isolated hosted Archive/physical QA and explicit release approval before any flags are enabled.
+
 ## November 8 — signed Custom v2 private completion readback service aligned with SQL #625
 
 - Source-only default-OFF server service verifies an exact signed first-attempt browser cookie and creator marker before calling the readback RPC. Database reader now rechecks N terminal rows **and the summary/awarded-point total** under the existing attempt lock. The provider accepts only strict named plain-text or Anonymous null results; errors disclose no score, ID, hint, or private account state.
