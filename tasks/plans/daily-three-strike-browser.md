@@ -32,3 +32,10 @@ This is a local real-server HTTP/Chromium regression when executed in CI; it
 does not establish hosted Supabase, competitive admission, Google/Apple Auth,
 physical Safari/Android or production release. No source runtime, package
 boundary, database schema, public API or product rule changes.
+
+## CI documentation gate
+
+The existing documentation-impact check treats the browser QA runner as a material
+file. This source-only test does not alter product behavior or existing
+canonical API/architecture contracts; the PR body records that specific
+exception and the QA acceptance document records the new proof boundary.
