@@ -21,6 +21,9 @@
 
 ## Custom #528 — secure completion display identity (source policy staged)
 
+- [ ] Review #629 clean stacked HTTP GET/POST transport after patched #623 signed writer and merged #626 reader, including exact default-OFF flags, origin/CSRF and 4 KiB bounded payload, creator exclusion, first-write status/readback, no-score/hidden-answer response, no-store headers and private 503 errors. Source-only; require final-head CI, READY Preview, independent reviews and isolated QA/physical browser release gates before public enablement.
+
+
 - [ ] Review clean-main signed writer reconciliation #623 (four unchanged source/test blobs) after merged #620/#625/#626. Require fresh exact-head CI, READY Preview, final-head independent review, and no public flag/DDL. Then reconcile dependent #629 HTTP and #632 UI stacks without losing signed read/write authorization.
 
 
