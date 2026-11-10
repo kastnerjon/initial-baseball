@@ -2,6 +2,8 @@
 
 ## Engineering workflow — active integration and acceptance
 
+- [ ] Integrate #646 exact generated `.next` exclusion after final-head CI/Preview/reviews. Local source-size regressions now execute in the existing QA command; preserve the handwritten limit.
+
 - [ ] Finish #643 → #644 future-draft title service/form integration after exact-head CI/Preview and external reviews. Local combined application/safety tests and rollback-only SQL predicates passed; no release activation. Reconcile both the #614 slot controls and #644 title form, then rerun combined page tests.
 - [ ] Integrate #645 real incorrect-guess Chromium acceptance after exact-head CI/reviews/Preview. Local pinned Chromium390/1280 passed real incorrect resolution, durable strike/history/hint reload, reset and all nine completions. Keep hosted scoring/Auth/device gates separate.
 - [ ] Finish #642 final-head SQL regression review/CI; whole ordered-roster equality and full isolated-QA rollback passed with postflight zero drafts/publications.
