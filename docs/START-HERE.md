@@ -1,4 +1,6 @@
-# Initial Baseball — Start Here
+## November 9 — signed Custom v2 completion display writer reconciliation (#623)
+
+- Stage the existing exact-first-attempt signed guest writer service from #623 directly on current main, preserving its four prior reviewed source/test blobs and avoiding obsolete #620 stack ancestry. Private named/Anonymous write calls bind exact challenge+signed browser digest and defer completed-result/creator-exclusion truth to the service-role SQL writer; no browser-selected submission ID or score is accepted. The write service is default OFF and introduces no HTTP/UI, hosted schema change, or feature activation. Source integration needs fresh exact-head CI/Preview and independent review before merge.
 
 ## November 8 — signed Custom v2 private completion readback service aligned with SQL #625
 
