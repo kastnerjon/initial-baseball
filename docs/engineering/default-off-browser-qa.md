@@ -21,6 +21,16 @@ runtime dependency or make network calls from the web app to a baseball API.
 - A prospective Custom completion display GET and POST both return HTTP 404
   with the identity gate forced OFF, even if the app includes those source-only routes.
   No hosted Supabase, attempt credentials or name result are needed.
+- Revealing the first signed Daily hint persists it in the browser; after a full
+  reload the same at-bat/player and exact previously authorized hint are restored
+  without duplication. The post-reload signed hint POST must succeed, and the
+  next authorized hint must actually render (not merely increment to 2/4).
+- A real server-signed Give up resolves the first at-bat, the shared game advances exactly once to at-bat 2 with no inherited hints, and a second full reload retains the completed first at-bat and current second at-bat. Only state/status is logged; answers and signed tokens never appear in assertions or diagnostics.
+- A complete nine-at-bat local Daily is exercised with signed terminal give-up
+  requests for every remaining at-bat, sequential advancement to the current Your Nine results panel showing nine of
+  nine completed and all nine scorecard rows, and a reload confirming that
+  the completed at-bats and exact final points total remain identical. No hidden answers, tokens or saved payloads are logged. This
+  does not prove competitive server submission or successful hosted scoring.
 - No uncaught browser JavaScript exceptions are observed during this flow.
 
 No browser writes to Supabase. The isolated Next child process receives an
@@ -59,8 +69,8 @@ Playwright CLI (`install --with-deps chromium`) as CI does.
 
 ## What it does **not** prove
 
-This is neither full gameplay acceptance nor an isolated hosted QA result.
-It does **not** verify real guesses, scoring, saved competitive submissions,
+This is a full nine-at-bat **give-up path** and local persistence smoke, not real-guess gameplay acceptance or an isolated hosted QA result.
+It verifies signed local hint continuation and nine terminal give-up/advance transitions plus completed-game reload, but does **not** verify real player guesses, authoritative scoring, saved competitive submissions,
 Supabase row policies/migrations, authenticated Custom creation, Custom completion-name write/read/identity recovery,
 real-browser enabled-mode CSRF and name-entry flows, OAuth, Archive
 catalogs, secondary official Daily editions, physical Safari, or Android.
