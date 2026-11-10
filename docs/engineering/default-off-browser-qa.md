@@ -32,7 +32,7 @@ runtime dependency or make network calls from the web app to a baseball API.
   durable browser save/reload; the next hint remains usable and the next at-bat
   resets both strikes and wrong-guess history. Candidate choice never reads the
   hidden answer, private data or a test fixture.
-- A real server-signed Give up resolves the first at-bat, the shared game advances exactly once to at-bat 2 with no inherited hints, and a second full reload retains the completed first at-bat and current second at-bat. Only state/status is logged; answers and signed tokens never appear in assertions or diagnostics.
+- Two further distinct publicly searched wrong-player guesses complete the first at-bat as an actual signed three-strike K. The second guess must not reveal the answer; only the third receives a terminal reveal. Browser save retains the K and exactly three wrong guesses. The shared game then advances once to at-bat 2 with no inherited strikes or hints, and a second reload preserves the completed first at-bat. The runner never logs answers or signed tokens.
 - A complete nine-at-bat local Daily is exercised with signed terminal give-up
   requests for every remaining at-bat, sequential advancement to the current Your Nine results panel showing nine of
   nine completed and all nine scorecard rows, and a reload confirming that
@@ -77,11 +77,10 @@ Playwright CLI (`install --with-deps chromium`) as CI does.
 ## What it does **not** prove
 
 This covers one real incorrect-player guess followed by a full nine-at-bat
-**give-up path** and local persistence, not complete guess-path gameplay
+**three-strike first at-bat plus eight give-ups** and local persistence, not complete guess-path gameplay
 acceptance or an isolated hosted QA result. It verifies signed incorrect-strike
-and local hint continuation, nine terminal give-up/advance transitions and
-completed-game reload, but does **not** verify correct player guesses,
-three-guess strikeouts, authoritative scoring, saved competitive submissions,
+and local hint continuation, nine signed terminal/advance transitions and
+completed-game reload, but does **not** verify correct player guesses, authoritative scoring, saved competitive submissions,
 Supabase row policies/migrations, authenticated Custom creation, Custom completion-name write/read/identity recovery,
 real-browser enabled-mode CSRF and name-entry flows, OAuth, Archive
 catalogs, secondary official Daily editions, physical Safari, or Android.

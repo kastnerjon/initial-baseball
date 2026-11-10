@@ -214,15 +214,64 @@ try {
 
 
 
-      // Resolve one real server-signed terminal at-bat without knowing or
-      // logging the hidden answer, then advance with the shared Daily engine.
-      const signedGiveUpResponse = page.waitForResponse(response =>
-        new URL(response.url()).pathname === '/api/daily/resolve'
-          && response.request().method() === 'POST', { timeout: 15_000 });
-      await page.getByRole('button', { name: 'Give up', exact: true }).click();
-      await page.getByRole('button', { name: 'Yes, give up', exact: true }).click();
-      assert.equal((await signedGiveUpResponse).status(), 200,
-        'Signed Daily terminal give-up must be accepted before advancing');
+      // Continue with distinct, well-known public players whose initials cannot
+      // match the visible current batter. Never inspect private answer material.
+      const publicIncorrectPool = [
+        { name: 'Babe Ruth', initials: 'BR' },
+        { name: 'Hank Aaron', initials: 'HA' },
+        { name: 'Derek Jeter', initials: 'DJ' },
+        { name: 'Willie Mays', initials: 'WM' },
+      ];
+      const remainingWrongGuesses = publicIncorrectPool
+        .filter(candidate => candidate.initials !== beforeInitials
+          && candidate.name !== incorrectCandidate)
+        .slice(0, 2);
+      assert.equal(remainingWrongGuesses.length, 2,
+        'Public pool must supply two more distinct definitely incorrect names');
+      for (const [index, candidate] of remainingWrongGuesses.entries()) {
+        const searchResponse = page.waitForResponse(response =>
+          new URL(response.url()).pathname === '/api/players/search'
+            && response.request().method() === 'GET', { timeout: 15_000 });
+        await page.getByLabel('Guess the player', { exact: true }).fill(candidate.name);
+        assert.equal((await searchResponse).status(), 200,
+          'Further public canonical player search must succeed');
+        await page.getByRole('list', { name: 'Matching players', exact: true })
+          .getByRole('button', { name: candidate.name, exact: true }).click();
+        const signedGuessResponse = page.waitForResponse(response =>
+          new URL(response.url()).pathname === '/api/daily/resolve'
+            && response.request().method() === 'POST', { timeout: 15_000 });
+        await page.getByRole('button', { name: 'Submit Guess', exact: true }).click();
+        const response = await signedGuessResponse;
+        assert.equal(response.status(), 200,
+          'Further Daily guess must receive an authorized signed response');
+        const resolution = await response.json();
+        if (index === 0) {
+          assert.equal(resolution?.result?.kind, 'incorrect',
+            'Second incorrect guess must remain nonterminal');
+          assert.equal(resolution?.result?.strikeCount, 2,
+            'Second incorrect guess must count exactly two strikes');
+          assert.equal(resolution?.reveal, null,
+            'Second incorrect guess must not reveal the hidden answer');
+          await page.getByRole('img', { name: '2 of 3 strikes', exact: true }).waitFor();
+          await page.getByRole('region', {
+            name: 'Wrong guesses for this at-bat', exact: true,
+          }).getByText(candidate.name, { exact: true }).waitFor();
+          assert.equal(await page.getByRole('region', {
+            name: 'Wrong guesses for this at-bat', exact: true,
+          }).locator('li').count(), 2, 'Second guess must make two wrong-guess entries');
+          await page.getByText('2/4 hints', { exact: true }).waitFor();
+        } else {
+          assert.equal(resolution?.result?.kind, 'strikeout',
+            'Third incorrect guess must resolve a real strikeout');
+          assert.equal(resolution?.result?.strikeCount, 3,
+            'Third incorrect guess must finish with exactly three strikes');
+          assert.equal(resolution?.result?.outcome, 'K',
+            'A signed three-strike resolution must record a K');
+          assert.ok(resolution?.reveal && typeof resolution.reveal === 'object',
+            'Only a terminal strikeout may supply the authorized reveal');
+          await page.getByRole('button', { name: 'Next At Bat', exact: true }).waitFor();
+        }
+      }
       await page.getByRole('button', { name: 'Next At Bat', exact: true }).click();
       await page.locator('.at-bat-progress-step[aria-current="step"][aria-label="At-bat 2: current"]')
         .waitFor({ timeout: 15_000 });
@@ -244,7 +293,10 @@ try {
             if (saved?.currentPitchIndex === 1
               && saved?.pendingAdvance === null
               && saved?.atBatState?.revealCount === 0
-              && saved?.gameState?.completedAtBats?.length === 1) return true;
+              && saved?.gameState?.completedAtBats?.length === 1
+              && saved.gameState.completedAtBats[0]?.resolution === 'strikeout'
+              && saved.gameState.completedAtBats[0]?.wrongGuesses === 3
+              && saved.gameState.completedAtBats[0]?.outcome === 'K') return true;
           } catch { /* Ignore unrelated local keys. */ }
         }
         return false;
@@ -348,7 +400,7 @@ try {
       await context.close();
     }
   }
-  console.log('PASS default-OFF native Chromium: Daily real incorrect guess/strike/hint recovery, signed terminal advance/reload, Results, disabled Custom identity GET/POST, mobile/desktop viewports');
+  console.log('PASS default-OFF native Chromium: Daily three real incorrect guesses/strikeout/hint recovery, signed terminal advance/reload, Results, disabled Custom identity GET/POST, mobile/desktop viewports');
   console.log('Hosted Supabase, scoring, OAuth and physical-device acceptance are NOT established.');
 } finally {
   await browser?.close();
