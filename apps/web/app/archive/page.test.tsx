@@ -90,4 +90,26 @@ describe('shared Archive route', () => {
     expect(html).toContain('beta-results');
     expect(html).not.toContain('PRIVATE_SERVICE_ROLE_CREDENTIAL');
   });
+
+  it('logs only an allowlisted Archive failure class, never provider or hidden details', async () => {
+    mocked.visible.mockReturnValue(true);
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      mocked.archive.mockRejectedValueOnce(new Error('PRIVATE_PROVIDER_TOKEN'));
+      const first = renderToStaticMarkup(await ArchivePage({
+        searchParams: Promise.resolve({}),
+      }));
+      expect(first).toContain('beta-results');
+      expect(first).not.toContain('PRIVATE_PROVIDER_TOKEN');
+      expect(log).toHaveBeenCalledWith('official-daily-archive-read-failed', { kind: 'unknown' });
+      log.mockClear();
+      const badCursor = Object.assign(new Error('PRIVATE_CURSOR_DETAILS'), {
+        name: 'UnifiedDailyArchiveError', kind: 'invalid',
+      });
+      mocked.archive.mockRejectedValueOnce(badCursor);
+      await ArchivePage({ searchParams: Promise.resolve({ afterEdition: 'malformed' }) });
+      expect(log).toHaveBeenCalledWith('official-daily-archive-read-failed', { kind: 'invalid' });
+      expect(JSON.stringify(log.mock.calls)).not.toMatch(/PRIVATE_|TOKEN|DETAILS/);
+    } finally { log.mockRestore(); }
+  });
 });
