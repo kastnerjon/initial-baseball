@@ -46,6 +46,8 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm typecheck
       - run: pnpm test
+      - name: Verify diagnostic secondary Daily credential protocol model
+        run: node --test scripts/qa-secondary-daily-credential-protocol.test.mjs
       - name: Verify isolated Custom QA startup and loopback-origin guards
         run: node --test apps/web/scripts/qa-custom-v2-hosted*.test.mjs
       - name: Verify isolated QA account journey safety and browser runner syntax

@@ -85,3 +85,26 @@ Use purpose-specific progression-signing keys with key IDs and a verified rotati
 - **Release:** service-only grants, RLS, no answer material in HTML/bootstrap/errors/logs, signing-key retention, exact-head CI and independent reviews, isolated production-shaped QA, physical Safari/Android and explicit production approval.
 
 **Release gate:** This proposal cannot activate score writes. Independent review must resolve the credential-convergence proof, key lifetime and transactional projection policy before any A3 submission-authority or production-schema change.
+
+### Executable design diagnostic (not implementation proof)
+
+Run `node --test scripts/qa-secondary-daily-credential-protocol.test.mjs` to
+exercise the proposed protocol's controlled interleavings. Its test-local model
+assumes exclusive origin locks, durable selected generations, atomic unique
+generation/alias/reservation inserts and correct cryptographic key handling.
+It has no application consumer, network/browser integration or database writes.
+
+The diagnostic covers crashed initialization with a stalled/lost first response,
+same-generation duplicate requests, cookie blocking/loss, unsupported locking,
+both old/new generation response orders, exact-edition reservation separation,
+concurrent alias proposals, conflicting aliases and revoked keys. A retained
+generation either converges to one identity/reservation per edition or remains
+practice-only; a cleared generation is explicitly identity loss, not a promise
+of one attempt per person. The source fixture uses synthetic credentials only.
+
+Passing these model assertions does **not** establish actual browser cookie
+ordering, database isolation/uniqueness, signed exact-ID score admission, cookie
+entropy, key expiry or physical-device acceptance. No retention/renewal policy
+is selected, and the proposal remains unapproved. The concrete lifetime,
+refresh/replay and rotation decisions above remain blocking before schema or
+submission-authority implementation.
