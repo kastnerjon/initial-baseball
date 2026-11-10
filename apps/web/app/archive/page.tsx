@@ -26,7 +26,14 @@ export default async function ArchivePage({ searchParams }: ArchivePageProps): P
         ...(query.afterDate === undefined ? {} : { afterDate: query.afterDate }),
         ...(query.afterEdition === undefined ? {} : { afterEdition: query.afterEdition }),
       });
-    } catch {
+    } catch (error) {
+      // Only log an allowlisted classification; not provider errors or clue material.
+      const fault = error instanceof Error ? error as Error & { kind?: unknown } : null;
+      const known = fault && ['UnifiedDailyArchiveError', 'OfficialDailyCatalogError',
+        'LegacyPrimaryArchiveError'].includes(fault.name);
+      const kind = known && (fault.kind === 'invalid' || fault.kind === 'unavailable')
+        ? fault.kind : 'unknown';
+      console.error('official-daily-archive-read-failed', { kind });
       // Never reflect service-role errors or a caller's malformed cursor to public HTML.
       officialUnavailable = true;
     }
