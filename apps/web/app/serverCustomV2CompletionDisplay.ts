@@ -59,22 +59,30 @@ export function createServerCustomV2CompletionDisplayService({
       const parsed = parseChoice(choice);
       if (parsed === null) return { kind: 'invalid_choice' };
 
-      const secret = dependencies.getSecret(environment);
-      const creator = createCustomLineupV2CreatorBrowserMarker(secret).inspect(
-        cookieHeader, puzzleId,
-      );
-      const browser = createCustomLineupV2AttemptBrowserCredential(secret).inspect(
-        cookieHeader, puzzleId,
-      );
-      if (creator !== 'unmarked' || browser.kind !== 'valid') {
-        return { kind: 'invalid_credential' };
+      // Signing configuration and parsing are private server state; never expose
+      // missing/invalid secret diagnostics through a future HTTP consumer.
+      let browserKeyDigest: string;
+      try {
+        const secret = dependencies.getSecret(environment);
+        const creator = createCustomLineupV2CreatorBrowserMarker(secret).inspect(
+          cookieHeader, puzzleId,
+        );
+        const browser = createCustomLineupV2AttemptBrowserCredential(secret).inspect(
+          cookieHeader, puzzleId,
+        );
+        if (creator !== 'unmarked' || browser.kind !== 'valid') {
+          return { kind: 'invalid_credential' };
+        }
+        browserKeyDigest = browser.browserKeyDigest;
+      } catch {
+        throw new Error('Private Custom Lineup v2 completion display unavailable.');
       }
 
       // Fail closed without leaking private RPC/creator/score state to a later
       // HTTP consumer. The database is independently authoritative.
       try {
         const status = await dependencies.record({
-          challengeId: puzzleId, browserKeyDigest: browser.browserKeyDigest,
+          challengeId: puzzleId, browserKeyDigest,
           choice: parsed,
         }, environment);
         if (status !== 'created' && status !== 'existing') throw new Error('Invalid result.');

@@ -106,6 +106,16 @@ describe('default-OFF signed guest Custom v2 completion display service', () => 
     }
     expect(s.dependencies.record).not.toHaveBeenCalled();
   });
+  it('redacts private signing-configuration failures before touching SQL', async () => {
+    const s = setup();
+    s.dependencies.getSecret.mockImplementationOnce(() => {
+      throw new Error('PRIVATE_SIGNING_CONFIGURATION');
+    });
+    await expect(s.service.record(ID, COOKIE, { mode: 'anonymous' })).rejects.toThrow(
+      'Private Custom Lineup v2 completion display unavailable.',
+    );
+    expect(s.dependencies.record).not.toHaveBeenCalled();
+  });
   it('fails closed and does not divulge DB conflict or attempted impersonation details', async () => {
     const s = setup();
     s.dependencies.record.mockRejectedValueOnce(new Error('PRIVATE_DB_CREATOR_OR_SCORE'));
