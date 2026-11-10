@@ -12,10 +12,12 @@ type DailyNineAtBatComparisonProps = {
   /** Present only for resolved points-v4 play; comparison data may still be loading. */
   summaryPoints?: number;
   summaryOutcome?: string;
+  /** No competitive comparison or distribution exists for practice editions. */
+  practiceOnly?: boolean;
 };
 
 export function DailyNineAtBatComparison({
-  state, summaryPoints, summaryOutcome,
+  state, summaryPoints, summaryOutcome, practiceOnly = false,
 }: DailyNineAtBatComparisonProps): JSX.Element | null {
   if (state.status === 'idle' && summaryPoints === undefined) return null;
 
@@ -26,13 +28,14 @@ export function DailyNineAtBatComparison({
 
   if (summaryPoints !== undefined) {
     return (
-      <section className="at-bat-comparison at-bat-comparison-tiles" aria-label="At-bat comparison" aria-live="polite">
+      <section className="at-bat-comparison at-bat-comparison-tiles" aria-label={practiceOnly ? 'At-bat score' : 'At-bat comparison'} aria-live="polite">
         <div className="completed-comparison-metrics at-bat-summary-metrics" aria-label="Your at-bat performance">
           <div className="completed-comparison-tile completed-comparison-tile-score">
             <span className="completed-comparison-label">Your Score</span>
             <strong className="completed-comparison-score">{formatDailyScorecardPoints(summaryPoints)}</strong>
             {summaryOutcome === undefined ? null : <span className="sr-only">{`Outcome: ${summaryOutcome}`}</span>}
           </div>
+          {practiceOnly ? null : <>
           <div className="completed-comparison-tile">
             <span className="completed-comparison-label">AVG</span>
             <strong className="completed-comparison-value">{presentation?.average ?? '—'}</strong>
@@ -41,8 +44,9 @@ export function DailyNineAtBatComparison({
             <span className="completed-comparison-label">Percentile</span>
             <strong className="completed-comparison-value">{presentation?.percentile ?? '—'}</strong>
           </div>
+          </>}
         </div>
-        {distribution !== null ? (
+        {practiceOnly ? null : distribution !== null ? (
           <details className="at-bat-distribution-disclosure">
             <summary>How everyone scored on this at-bat</summary>
             <DailyNineAtBatDistribution presentation={distribution} average={presentation?.average ?? '—'} hideHeading />

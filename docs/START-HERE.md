@@ -5,6 +5,11 @@
 - Consolidated source-only secondary Daily editor workflow integrates revision-checked one-player draft replacement (#612), private name/alias lookup (#613), and contextual slot/candidate picker (#614) into one source candidate on latest main. Reuses existing Basic/first-party editorial authorization, canonical player search, all-nine clue readiness, draft-only revision CAS and explicit review/confirm/issuance. No GET mutation, score admission, hidden clue disclosure, schema change or production flag activation.
 - Earlier isolated hosted QA rollback verified one-slot revision CAS, stale revision denial, scheduled refusal and unique publication identity; it is not production parity or physical device acceptance. Exact-head full CI, READY Preview and independent final-head review remain mandatory before source merge. Old #612/#613 should not be merged separately if this candidate lands.
 
+## November 9 — exact-immutable-ID secondary Daily practice gameplay integration (#608)
+
+- A2 source-only branch now combines server-signed per-edition practice runtime and on-demand hint transport, strict answer-free SSR bootstrap, a shared Daily Nine game UI with edition-bound saves, a private `/daily/editions/:id` practice page, and personal-only result presentation. The browser cannot submit/compare/leaderboard secondary scores; A3 exact-ID signed competitive result admission #566 remains separate and mandatory before any competition.
+- All three secondary practice/runtime/HTTP flags remain default OFF. No production migration/feature activation. This clean-main integration preserves existing primary Daily/Classic/Archive and Custom scoring behavior. Fresh exact-head CI/Preview, independent reviews, isolated hosted signed playback, physical Safari/Android and answer-integrity bundle QA remain separate gates.
+
 ## November 8 — signed Custom v2 private completion readback service aligned with SQL #625
 
 - Source-only default-OFF server service verifies an exact signed first-attempt browser cookie and creator marker before calling the readback RPC. Database reader now rechecks N terminal rows **and the summary/awarded-point total** under the existing attempt lock. The provider accepts only strict named plain-text or Anonymous null results; errors disclose no score, ID, hint, or private account state.
