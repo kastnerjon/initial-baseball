@@ -227,9 +227,9 @@ begin
      or (select d.selections->3->>'canonicalPlayerId'
          from public.official_daily_editorial_drafts d
          where d.occurrence_id=replacement_id)<>'fixture-44'
-     or (select d.selections->4->>'canonicalPlayerId'
+     or (select d.selections
          from public.official_daily_editorial_drafts d
-         where d.occurrence_id=replacement_id)<>'fixture-5' then
+         where d.occurrence_id=replacement_id) is distinct from replacement_selections then
     raise exception 'Slot edit corrupted revision or another slot';
   end if;
   begin
