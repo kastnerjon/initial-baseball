@@ -16,6 +16,8 @@
 
 ## Official Daily editions — approved November 5
 
+- [ ] Independently review combined private editor #614 from current main: one-slot future draft replace under revision CAS, restricted 25-result canonical candidate name search, contextual slot picker returning to explicit review form, Basic/first-party/default-OFF gate, all-nine clue-ready uniqueness, stale-tab protection, 1 KiB strict forms, no issuance/public score mutation. Obtain exact-head CI, READY Preview, protected hosted QA/physical device acceptance. Old #612/#613 remain review references only if combined PR lands.
+
 - [ ] A1: issuance identity, frozen nine-player content, service-only persistence and restricted editor action.
 - [ ] A2–A4: exact-ID play and hint privacy, result isolation, share links, one Archive and device QA.
 

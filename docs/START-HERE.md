@@ -1,5 +1,10 @@
 # Initial Baseball — Start Here
 
+## November 9 — secondary Daily editor one-slot editing and contextual canonical lookup (#614)
+
+- Consolidated source-only secondary Daily editor workflow integrates revision-checked one-player draft replacement (#612), private name/alias lookup (#613), and contextual slot/candidate picker (#614) into one source candidate on latest main. Reuses existing Basic/first-party editorial authorization, canonical player search, all-nine clue readiness, draft-only revision CAS and explicit review/confirm/issuance. No GET mutation, score admission, hidden clue disclosure, schema change or production flag activation.
+- Earlier isolated hosted QA rollback verified one-slot revision CAS, stale revision denial, scheduled refusal and unique publication identity; it is not production parity or physical device acceptance. Exact-head full CI, READY Preview and independent final-head review remain mandatory before source merge. Old #612/#613 should not be merged separately if this candidate lands.
+
 ## November 8 — signed Custom v2 private completion readback service aligned with SQL #625
 
 - Source-only default-OFF server service verifies an exact signed first-attempt browser cookie and creator marker before calling the readback RPC. Database reader now rechecks N terminal rows **and the summary/awarded-point total** under the existing attempt lock. The provider accepts only strict named plain-text or Anonymous null results; errors disclose no score, ID, hint, or private account state.
