@@ -122,6 +122,31 @@ try {
       await page.getByText('1/4 hints', { exact: true }).waitFor();
       const beforeHint = await page.locator('.revealed-hint .hint-value').first().textContent();
       assert.ok(beforeHint && beforeHint.trim(), 'First authorized hint should render');
+      // Choose a guaranteed different player using only publicly shown initials
+      // and two known public search inputs; never inspect the hidden answer.
+      const incorrectCandidate = beforeInitials === 'BR' ? 'Hank Aaron' : 'Babe Ruth';
+      const searchResponse = page.waitForResponse(response =>
+        new URL(response.url()).pathname === '/api/players/search'
+          && response.request().method() === 'GET', { timeout: 15_000 });
+      await page.getByLabel('Guess the player', { exact: true }).fill(incorrectCandidate);
+      assert.equal((await searchResponse).status(), 200, 'Canonical player search must succeed');
+      await page.getByRole('list', { name: 'Matching players', exact: true })
+        .getByRole('button', { name: incorrectCandidate, exact: true }).click();
+      const signedIncorrectResponse = page.waitForResponse(response =>
+        new URL(response.url()).pathname === '/api/daily/resolve'
+          && response.request().method() === 'POST', { timeout: 15_000 });
+      await page.getByRole('button', { name: 'Submit Guess', exact: true }).click();
+      const incorrectResponse = await signedIncorrectResponse;
+      assert.equal(incorrectResponse.status(), 200, 'Real signed incorrect guess must succeed');
+      const incorrect = await incorrectResponse.json();
+      assert.ok(incorrect?.result?.kind === 'incorrect'
+        && incorrect.result.strikeCount === 1 && incorrect.reveal === null,
+      'Real resolve must return one nonterminal strike without revealing the answer');
+      await page.getByRole('img', { name: '1 of 3 strikes', exact: true }).waitFor();
+      await page.getByText('2 strikes left.', { exact: true }).waitFor();
+      await page.getByRole('region', { name: 'Wrong guesses for this at-bat', exact: true })
+        .getByText(incorrectCandidate, { exact: true }).waitFor();
+      await page.getByText('1/4 hints', { exact: true }).waitFor();
       // Observe durable save before navigating to avoid testing a React effect race.
       await page.waitForFunction(() => {
         for (let i = 0; i < localStorage.length; i++) {
@@ -129,7 +154,10 @@ try {
           if (!key?.startsWith('initial-baseball:daily:')) continue;
           try {
             const saved = JSON.parse(localStorage.getItem(key) ?? '');
-            if (saved?.atBatState?.revealCount === 1) return true;
+            if (saved?.currentPitchIndex === 0
+              && saved?.atBatState?.revealCount === 1
+              && saved?.atBatState?.strikeCount === 1
+              && saved?.atBatState?.wrongGuesses?.length === 1) return true;
           } catch { /* Ignore unrelated or corrupted local keys. */ }
         }
         return false;
@@ -170,8 +198,17 @@ try {
         'Reload must preserve the exact authorized hint without exposing it in logs');
       assert.equal(await page.locator('.revealed-hint').count(), 1,
         'Reload must not replay or duplicate previous hints');
+      await page.getByRole('img', { name: '1 of 3 strikes', exact: true }).waitFor();
+      const restoredWrongGuesses = page.getByRole('region', {
+        name: 'Wrong guesses for this at-bat', exact: true,
+      });
+      assert.equal(await restoredWrongGuesses.locator('li').count(), 1,
+        'Reload must retain exactly one wrong guess');
+      assert.ok(await restoredWrongGuesses.locator('li').textContent() === incorrectCandidate,
+        'Reload must preserve the selected public wrong guess without logging it');
       await page.getByRole('button', { name: 'Reveal Next Hint', exact: true }).click();
       await page.getByText('2/4 hints', { exact: true }).waitFor();
+      await page.getByRole('img', { name: '1 of 3 strikes', exact: true }).waitFor();
       assert.equal(await page.locator('.revealed-hint').count(), 2,
         'Second authorized hint should render, not just increment progress');
 
@@ -192,6 +229,10 @@ try {
       assert.equal(await page.locator('[aria-label="At-bat 1: completed"]').count(), 1,
         'Completed first at-bat must be retained');
       await page.getByText('0/4 hints', { exact: true }).waitFor();
+      await page.getByRole('img', { name: '0 of 3 strikes', exact: true }).waitFor();
+      assert.equal(await page.getByRole('region', {
+        name: 'Wrong guesses for this at-bat', exact: true,
+      }).count(), 0, 'New at-bat must not inherit the previous wrong guess');
       assert.equal(await page.locator('.revealed-hint').count(), 0,
         'New at-bat must not inherit previously revealed hints');
       await page.waitForFunction(() => {
@@ -307,7 +348,7 @@ try {
       await context.close();
     }
   }
-  console.log('PASS default-OFF native Chromium: Daily signed hint/terminal advance/reload, Results, disabled Custom identity GET/POST, mobile/desktop viewports');
+  console.log('PASS default-OFF native Chromium: Daily real incorrect guess/strike/hint recovery, signed terminal advance/reload, Results, disabled Custom identity GET/POST, mobile/desktop viewports');
   console.log('Hosted Supabase, scoring, OAuth and physical-device acceptance are NOT established.');
 } finally {
   await browser?.close();
