@@ -654,6 +654,71 @@ Secondary practice sessions use the same shared Daily Nine at-bat/game engine an
 
 The source-stage same-date edition storage regression additionally asserts that exactly identified secondary editions never share browser saves, reset boundaries or gameplay ownership keys with one another, current primary, Classic or Archive beta. Both retained and unknown future `daily-ed-*` IDs remain excluded from competitive result collection. The unit test does not substitute for real multi-tab Safari/Android acceptance.
 
+## Private official-edition date catalog (staged, no public route)
+
+The web server now has a private metadata-only date catalog reader for
+immutable official Daily publications. It accepts a valid Pacific game
+date and pages by increasing editionNumber, returning up to 100 records
+per request and an edition-number cursor if more results exist. It does
+not impose a maximum number of editions per date: consumers must continue
+through the pages for complete archive/date discovery.
+
+The database projection is restricted to puzzle_id, puzzle_date,
+puzzle_number, edition_key, edition_number, title, schema_version and
+ruleset_version. It never reads frozen clue snapshots, canonical player
+IDs or hint values. Each row is validated against the existing Daily
+identity, date/number, slug, title and ruleset rules. Provider failures
+and malformed metadata are sanitized; the reader fails closed rather
+than returning partially verified pages. Future Pacific dates return
+empty results without querying the database.
+
+This is only a server-private discovery adapter: it does not activate
+public browsing, a share link, editor access, public gameplay, Archive
+routing, or secondary edition score admission. The legacy primary is
+not included or changed. Public date/edition browsing and full
+archive grouping require separately reviewed UI and server admission;
+the immutable official publication store and rollout flags remain
+release-gated.
+
+The private cross-date official Archive catalog groups metadata for completed Pacific dates only (strictly before the current Pacific game date), descending by date and ascending by edition number. Publication titles are validated against the shared title parser, preserving parser-valid stored text (including repeated interior spaces) instead of rejecting an entire catalog page; invalid titles still fail closed. Its cursor contains the last returned date and edition number so a single date may span pages. The public Archive must also retain historical numbered entries and their device-local results. This private query does not issue play links or change the public Archive.
+
+### Default-off official Daily Archive section (A4, source staged)
+
+The existing public `/archive` page continues serving legacy Archive beta unchanged when the new feature is OFF. A separately gated official edition section may read only immutable past-Pacific-day publication metadata using the server-only, keyset-paginated catalog from #571. It displays each occurrence as `YYYY-MM-DD – Puzzle title` without a practice link until the now source-integrated exact-ID route is deliberately enabled and independently verified in hosted/browser acceptance; a date may have any number of editions. Its pagination cursor is a validated date/positive edition number pair and never a title or roster hash. The section requires four exact server flags, all default OFF: `OFFICIAL_DAILY_EDITION_ARCHIVE_ENABLED`, `OFFICIAL_DAILY_EDITION_PRACTICE_UI_ENABLED`, `OFFICIAL_DAILY_EDITION_HTTP_ENABLED`, and `OFFICIAL_DAILY_EDITION_PRIVATE_RUNTIME_ENABLED`. When any is OFF the official catalog is not touched; when the catalog fails, only a sanitized availability message renders, preserving historical Archive beta access. The public route does not expose frozen clue snapshots, server service keys, live/current-day editions, scores or comparison populations. This staging depends on the shared edition practice route (#583) and is **not a public-release authorization**; integrated/physical QA, the signed A3 admission gate (#566), independent reviews and rollout approval remain outstanding.
+
+The public Archive view ignores unrelated URL tracking parameters while passing only present `afterDate` and `afterEdition` fields to its strict cursor decoder. Partial or malformed cursor fields still fail closed. Current/future-Pacific-day cursors are rejected **before** the privileged Supabase client is constructed, and the same authoritative clock value is passed to the catalog for its independent cutoff check.
+
+## Private legacy-primary Daily publication catalog (#589, source only)
+
+A server-only historical primary reader returns strictly verified publication metadata from the legacy daily_editorial_puzzles table for past-Pacific-day, already-published nine-player contract-v1 records. It selects only id, puzzle_date, puzzle_number, version, lineup_contract_version, status, published_at. It never selects selections, roster, player identities, hints, clues, actor details or results. It validates timestamps against the request clock, published status, immutable date/number consistency and descending unique dates. A 1–100 row (default 30) exclusive date cursor supports bounded pagination. Invalid input fails before private provider I/O; bad provider data fails closed without partial output.
+
+The stored editorial ID (daily-YYYY-MM-DD-v1) is NOT necessarily the legacy gameplay/result puzzle ID, which can be roster-fingerprint or deterministic-fallback based. The reader deliberately exposes editorialRecordId, not puzzleId; it must not be linked or used for competitive admission without proving the historical authoritative identity and preserving existing results. This reader has no route, migration or release activation of its own; the source-integrated unified Archive consumes its verified publication metadata behind the four existing default-OFF gates. The editorial record ID is still not the historical gameplay/result puzzle ID and cannot authorize competitive admission.
+
+## Private primary-and-secondary Archive read-model merger (#589, source staged)
+
+A private, source-only cross-catalog read model takes verified published primary editorial metadata and immutable secondary official edition metadata, orders by puzzle date descending and edition number ascending, and returns date-grouped pages with one exclusive (date, edition number) cursor. Each source fetches one more than the requested final page size (default 30, maximum 99), so a date containing hundreds of secondary editions can resume without duplicates, skipped dates or fixed edition limits. It checks date/number consistency, source identity collisions, malformed cursors and cross-source duplicate editions before exposing a page, redacting provider errors.
+
+The original primary appears as Puzzle 1 **only when independently published editorial metadata exists**, with kind=legacy-primary and puzzleId=null. This is intentional: editorial record IDs are not authoritative gameplay/result IDs, and this merger does not make primary entries playable, admit scores, or silently combine accepted historical score populations. Secondary entries retain immutable exact IDs and titles. The merger is consumed by the shared server-only Archive composition and the existing default-OFF /archive route; the pure merger itself constructs no privileged client and is not A4 release approval. Preserve the original Archive beta as a separate series.
+
+The read-model merger independently enforces each source's requested row limit and rejects secondary puzzle IDs repeated across different edition numbers, including the lookahead row. These are separate invariants from duplicate (date, edition) detection. The entire module is server-only to prevent client-side use of private source adapters.
+
+## Unified historical official Archive date-grouped presentation (#589, staged)
+
+The source-staged `UnifiedOfficialDailyArchiveSection` renders exactly one historical official Daily Archive from the verified primary/secondary metadata merge, grouped newest Pacific date first, with primary `Puzzle 1` and arbitrarily many immutable secondary editions. Secondary entries are deliberately **unlinked** pending a verified exact-ID practice route; their immutable identities remain server-only read-model fields. Legacy primary editorial publication records are intentionally **unlinked** with an explicit replay-unavailable label until the historical game ID, clue snapshot and result-population continuity are verified. Pagination uses the complete date/edition keyset in `afterDate`/`afterEdition` query fields, including continuation within one date. It renders titles as escaped text, has no direct Supabase access, score writes, hidden answers or comparison aggregates, and is now wired to the single existing default-OFF /archive route. The earlier #587 secondary-only renderer/test have been deleted, rather than shipping two competing official Archive sections.
+
+## Unified official Daily Archive service-only composition (#589)
+
+A distinct server-only unified-Archive reader composes the verified legacy published-primary catalog with immutable secondary publication metadata using **one Supabase service client and one Pacific request clock**. It reuses exactly the existing four default-OFF Archive/practice/HTTP/private-runtime flags and strict date/edition cursor decoding; OFF or invalid/current/future cursors cannot construct a privileged database client. Each catalog queries only publication metadata (not clue snapshots, player selections or score data); the merger keeps unverified historical primaries as unlinked `puzzleId:null` and exact secondary practice IDs intact. The existing default-OFF /archive route now consumes this service and the unified renderer. Historical primaries remain unlinked and beta remains a separate section on the same page. Errors are sanitized and preserve beta listings; route wiring alone is not public release approval. Neither this composition nor metadata discovery grants signed A3 scoring admission.
+
+## Unified official Daily Archive route staging (#589)
+
+The existing `/archive` page preserves the legacy Archive beta experience with all four new server gates OFF and performs zero unified publication access. When all gates are exact true, one official historical section groups verified published primary placeholders and unlinked secondary practice placeholders by Pacific date, using the same date/edition keyset for pages split within one date. It discards unrelated tracking query keys but rejects incomplete/malformed cursor data before privileged client construction. Legacy primary entries remain **unlinked**, marked unavailable for replay until their exact historical gameplay and scoring identity is independently established. The browser never emits a secondary practice URL before the exact-ID route is independently enabled and verified, preventing enabled-flag 404 navigation. A private source error does not reflect secrets or block Archive beta. The former secondary-only renderer/test and private reader were removed; there is no second official Archive implementation. This staged route does not grant A3 score admission, apply a DB migration, or activate production flags.
+
+
+### Practice-link prerequisite (Codex review, source-only)
+
+The unified Archive deliberately renders both legacy primary and official secondary entries as **non-clickable** metadata until their real replay routes are verified. The old stacked UI included links to /daily/editions/<puzzleId> before that route existed in the earlier source baseline, resulting in broken 404 navigation when the Archive gate was enabled. The clean A4 integration removes these unsafe links and keeps the exact immutable occurrence IDs only in server-private models. Restoring secondary practice navigation requires a separately reviewed active-route integration and a real hosted HTTP/physical-browser acceptance test; #608 supplies default-OFF route source but not release acceptance. A historical primary additionally requires authoritative gameplay ID and clue/result continuity proof. No competitive score admission or public enablement follows from the Archive display.
+
 ### Bounded secondary practice hint envelopes (source-only)
 
 The exact-ID edition browser adapter accepts only four known canonical hint types and a 1–120 UTF-16-unit nonempty label plus a 1–4096-unit nonempty hint value, whether the hint arrives from an authorized single reveal or signed resume bundle. Resume bundles must identify a real at-bat 1–9, retain contiguous 1–4 revealed hint slots, and contain zero future checkpoints or extra fields. Unknown hint types, oversized or empty text, out-of-range at-bat indices, or answer-shaped extra fields fail closed before reaching the shared Daily UI. This is defensive projection validation; the server-signed token and private runtime remain authoritative for whether a hint was actually earned. The feature and all production flags remain OFF, and independent reviews, hidden-answer build audit and real-device acceptance remain required.
