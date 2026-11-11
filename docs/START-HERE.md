@@ -1,5 +1,13 @@
 # Initial Baseball — Start Here
 
+## November 10 — My Creations pagination account-switch correction (#654)
+
+- Verified main `dc9a4cff42d3729502552f79af8a4553d6b59281` and matching production `dpl_DtMoJhzqnERyCkqAkEU5D1nXujw9` READY. Main already includes #653 safe friend-link copy and #608 secondary practice; no feature activation from this session.
+- Canonical pagination PR #654 extends the private verified-account list beyond 40 rows. Independent review found cross-tab account switching could combine two account pages; the correction derives a presentation-only account scope from the verified session and clears retained rows/cursor on mismatch. Database ownership remains server-verified.
+- Local correction checks: 14 focused tests, full workspace tests (web 239 files / 1,912 tests), all 10 typecheck tasks, file-size and whitespace checks PASS. Independent source review clean; Codex clean at `740bdc3`. A later credential-free mounted-component Chromium fixture adds eight account/pagination scenarios using the existing pinned CI runner. Local Chromium is blocked by process-singleton socket EPERM: no browser acceptance claimed. New final-head CI, READY Preview and external reviews are required.
+- #652/#650 Archive projection/diagnostic stack independently reviewed clean; focused combined-tree tests 10/10 PASS. CodeRabbit remains an unsatisfied external gate; neither is merged by this checkpoint.
+- Production Auth/Custom and secondary competition remain disabled; no hosted SQL changes or physical-device acceptance. Resume from live #654 review/CI, then the existing integration backlog without weakening release gates.
+
 ## November 9 — exact-immutable-ID secondary Daily practice gameplay integration (#608)
 
 - A2 source-only branch now combines server-signed per-edition practice runtime and on-demand hint transport, strict answer-free SSR bootstrap, a shared Daily Nine game UI with edition-bound saves, a private `/daily/editions/:id` practice page, and personal-only result presentation. The browser cannot submit/compare/leaderboard secondary scores; A3 exact-ID signed competitive result admission #566 remains separate and mandatory before any competition.
