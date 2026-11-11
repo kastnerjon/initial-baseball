@@ -7,14 +7,12 @@ const mocked = vi.hoisted(() => ({
   notFound: vi.fn((): never => { throw new Error('NOT_FOUND'); }),
   createRuntime: vi.fn(),
   dailyGame: vi.fn(),
+  readChoice: vi.fn(),
 }));
 vi.mock('server-only', () => ({}));
 vi.mock('next/navigation', () => ({ notFound: mocked.notFound }));
 vi.mock('../../../serverOfficialDailyEditionRuntime', () => ({
   createServerOfficialDailyEditionRuntime: mocked.createRuntime,
-}));
-vi.mock('../../../serverOfficialDailyEditionChoice', () => ({
-  isOfficialDailyEditionChooserVisible: vi.fn(() => false),
 }));
 vi.mock('../../../components/DailyInningGame', () => ({
   DailyInningGame: (props: unknown) => {
@@ -26,8 +24,15 @@ vi.mock('../../../components/DailyHowToDialog', () => ({
   DailyHowToDialog: () => React.createElement('div', { 'data-testid': 'how-to' }),
 }));
 
+vi.mock('../../../serverOfficialDailyEditionChoice', () => ({
+  isOfficialDailyEditionChooserVisible: vi.fn(() => false),
+  readCurrentOfficialDailyEditionChoice: mocked.readChoice,
+}));
+
 import OfficialDailyPracticePage, { metadata } from './page';
+import ChoicePage from '../page';
 import { isOfficialDailyEditionChooserVisible } from '../../../serverOfficialDailyEditionChoice';
+import { UnifiedOfficialDailyArchiveSection } from '../../../archive/UnifiedOfficialDailyArchiveSection';
 const ID = 'daily-ed-v1-907f33db-c38f-43c3-8e6b-a3aaf19bbd08';
 const DATE = '2026-11-06';
 const URL = `/daily/editions/${ID}?date=${DATE}`;
@@ -39,10 +44,10 @@ function enable() {
   vi.stubEnv('OFFICIAL_DAILY_EDITION_HTTP_ENABLED', 'true');
   vi.stubEnv('OFFICIAL_DAILY_EDITION_PRIVATE_RUNTIME_ENABLED', 'true');
 }
-function safeBootstrap() {
+function safeBootstrap(puzzleId = ID, date = DATE) {
   return {
     puzzle: {
-      id: ID, puzzleDate: DATE, puzzleNumber: 194, status: 'published',
+      id: puzzleId, puzzleDate: date, puzzleNumber: 194, status: 'published',
       hintConfig: DEFAULT_DAILY_HINT_CONFIG.map(slot => ({ ...slot })),
       statsHintConfig: {
         hitter: [...DEFAULT_DAILY_STATS_HINT_CONFIG.hitter],
@@ -141,5 +146,58 @@ describe('default-OFF exact-ID official Daily practice page', () => {
     expect(html).toContain('href="/archive"');
     expect(html).not.toContain('PRIVATE_FUTURE_HINT');
     expect(mocked.createRuntime).toHaveBeenCalledOnce();
+  });
+});
+
+describe('published edition links open their exact practice route', () => {
+  it('keeps two same-day editions and an older Archive edition distinct', async () => {
+    enable();
+    vi.mocked(isOfficialDailyEditionChooserVisible).mockReturnValue(true);
+    const secondId = 'daily-ed-v1-2a65c93c-3f36-4f4b-853f-92e85bb81648';
+    const olderId = 'daily-ed-v1-269b64cf-1242-4775-a2e3-04b999ae088e';
+    const olderDate = '2026-11-04';
+    mocked.readChoice.mockResolvedValueOnce({
+      puzzleDate: DATE, nextCursor: null,
+      editions: [ID, secondId].map((puzzleId, index) => ({
+        puzzleId, puzzleDate: DATE, editionNumber: index + 2,
+        title: 'Edition ' + (index + 2), editionKey: 'edition-' + (index + 2),
+        puzzleNumber: 194,
+      })),
+    });
+    const choiceHtml = renderToStaticMarkup(await ChoicePage({ searchParams: Promise.resolve({}) }));
+    const archiveHtml = renderToStaticMarkup(<UnifiedOfficialDailyArchiveSection page={{
+      nextCursor: null, dates: [{ puzzleDate: olderDate, editions: [
+        { kind: 'legacy-primary', puzzleId: null, puzzleDate: olderDate,
+          editionNumber: 1, title: 'Puzzle 1', puzzleNumber: 192 },
+        { kind: 'official-secondary', puzzleId: olderId, puzzleDate: olderDate,
+          editionNumber: 2, title: 'Retro', puzzleNumber: 192 },
+      ] }],
+    }} />);
+    const links = (html: string) => Array.from(
+      html.matchAll(/href="(\/daily\/editions\/[^"]+)"/g), match => match[1]!,
+    );
+    const chooserLinks = links(choiceHtml);
+    const archiveLinks = links(archiveHtml);
+    expect(chooserLinks).toHaveLength(2);
+    expect(archiveLinks).toHaveLength(1);
+    const published = new Map([[ID, DATE], [secondId, DATE], [olderId, olderDate]]);
+    mocked.createRuntime.mockImplementation((puzzleId: string) => ({
+      getBootstrap: async (date: string) => {
+        if (published.get(puzzleId) !== date) throw new Error('Incorrect publication identity');
+        return safeBootstrap(puzzleId, date);
+      },
+    }));
+    for (const href of [...chooserLinks, ...archiveLinks]) {
+      const url = new globalThis.URL(href, 'https://fixture.invalid');
+      const puzzleId = url.pathname.split('/').at(-1)!;
+      const query = Object.fromEntries(url.searchParams);
+      const html = renderToStaticMarkup(await OfficialDailyPracticePage(input(puzzleId, query)));
+      expect(html).toContain('Practice — scores are not submitted');
+      expect(mocked.dailyGame).toHaveBeenLastCalledWith(expect.objectContaining({
+        archivePath: href, officialEditionPractice: true,
+        puzzle: expect.objectContaining({ id: puzzleId, puzzleDate: query.date }),
+      }));
+    }
+    expect(mocked.createRuntime.mock.calls).toEqual([[ID], [secondId], [olderId]]);
   });
 });
