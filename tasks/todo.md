@@ -1,5 +1,9 @@
 # Initial Baseball — Current Work
 
+## Private My Creations pagination — #654
+
+- [ ] Complete final-head CI including eight mounted Chromium pagination/account-switch cases, READY Preview and Codex/CodeRabbit coverage. The server-derived presentation scope must clear retained account A rows when account B supplies a later page, including an empty page. Local full tests/typecheck and independent source review pass; local Chromium socket permissions prevent browser acceptance. No production activation or hosted Auth acceptance is implied.
+
 ## Engineering workflow — native default-OFF smoke pilot (November 8)
 
 - [ ] Consolidate the three local default-OFF Daily browser QA milestones #628/#634/#635 as one reviewable #635 source change on current main, without losing #633 disabled Custom identity GET/POST guards: first signed hint → browser save → reload/authorized hint replay → second hint; signed first terminal give-up → next-at-bat reload; remaining eight signed terminal transitions → final nine-row points scorecard → completed-game reload. Require **new exact-head** CI with native Chromium, READY Preview and independent reviews before merge. This verifies real Chromium local Daily progression, not real guesses, hosted competitive scoring, Auth, secondary editions or physical phones.
