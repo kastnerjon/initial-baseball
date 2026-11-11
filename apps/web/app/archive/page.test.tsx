@@ -91,6 +91,34 @@ describe('shared Archive route', () => {
     expect(html).not.toContain('PRIVATE_SERVICE_ROLE_CREDENTIAL');
   });
 
+  it('keeps official editions available when the independent beta catalog fails', async () => {
+    mocked.visible.mockReturnValue(true);
+    mocked.beta.mockRejectedValue(new Error('PRIVATE_BETA_PROVIDER_TOKEN'));
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const html = renderToStaticMarkup(await ArchivePage({ searchParams: Promise.resolve({}) }));
+      expect(mocked.archive).toHaveBeenCalledWith({});
+      expect(html).toContain('Official Daily editions');
+      expect(html).toContain('The Archive beta is temporarily unavailable.');
+      expect(html).not.toContain('No archive puzzles have been issued yet.');
+      expect(html).not.toContain('Showing up to 60');
+      expect(html).not.toContain('PRIVATE_BETA_PROVIDER_TOKEN');
+      expect(log).toHaveBeenCalledWith('archive-beta-read-failed');
+      expect(JSON.stringify(log.mock.calls)).not.toContain('PRIVATE_BETA_PROVIDER_TOKEN');
+    } finally { log.mockRestore(); }
+  });
+
+  it('shows a safe beta failure with official archive gated off', async () => {
+    mocked.beta.mockRejectedValue(new Error('PRIVATE_BETA_PROVIDER_TOKEN'));
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const html = renderToStaticMarkup(await ArchivePage({ searchParams: Promise.resolve({}) }));
+      expect(html).toContain('The Archive beta is temporarily unavailable.');
+      expect(html).not.toContain('PRIVATE_BETA_PROVIDER_TOKEN');
+      expect(mocked.archive).not.toHaveBeenCalled();
+    } finally { log.mockRestore(); }
+  });
+
   it('logs only an allowlisted Archive failure class, never provider or hidden details', async () => {
     mocked.visible.mockReturnValue(true);
     const log = vi.spyOn(console, 'error').mockImplementation(() => {});
