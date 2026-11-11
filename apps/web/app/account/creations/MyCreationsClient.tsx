@@ -3,7 +3,9 @@ import React, { useEffect, useRef, useState, type JSX } from 'react';
 import { parseCustomLineupTitle } from '@initial-baseball/shared';
 
 type Creation = Readonly<{ puzzleId: string; title: string; issuedAt: string }>;
-type CreationsPage = Readonly<{ creations: readonly Creation[]; nextCursor: string | null }>;
+type CreationsPage = Readonly<{
+  creations: readonly Creation[]; nextCursor: string | null; accountScope: string;
+}>;
 type CopyStatus = Readonly<{ id: string; ok: boolean }> | null;
 const ID = /^custom-lineup-v2-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 
@@ -18,6 +20,7 @@ export function isCreation(value: unknown): value is Creation {
 export function parseCreationsPage(value: unknown): CreationsPage | null {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return null;
   const payload = value as Record<string, unknown>;
+  if (typeof payload.accountScope !== 'string' || !/^[0-9a-f]{64}$/.test(payload.accountScope)) return null;
   if (!Array.isArray(payload.creations) || payload.creations.length > 40
     || !payload.creations.every(isCreation)) return null;
   if (payload.nextCursor !== null
@@ -25,7 +28,16 @@ export function parseCreationsPage(value: unknown): CreationsPage | null {
       || payload.nextCursor.length > 128 || payload.creations.length !== 40)) return null;
   if (new Set(payload.creations.map((item: Creation) => item.puzzleId)).size
     !== payload.creations.length) return null;
-  return { creations: payload.creations, nextCursor: payload.nextCursor };
+  return { creations: payload.creations, nextCursor: payload.nextCursor, accountScope: payload.accountScope };
+}
+
+/** Never join pages observed under different verified account sessions. */
+export function appendCreationsPage(
+  previous: readonly Creation[], accountScope: string | null, next: CreationsPage,
+): readonly Creation[] | null {
+  if (accountScope === null || accountScope !== next.accountScope) return null;
+  const seen = new Set(previous.map(item => item.puzzleId));
+  return [...previous, ...next.creations.filter(item => !seen.has(item.puzzleId))];
 }
 
 /** Build only same-origin guest play links from verified immutable Custom IDs. */
@@ -60,7 +72,8 @@ export function CreationRow({ creation, copyStatus, onCopy }: {
 export default function MyCreationsClient(): JSX.Element {
   const [creations, setCreations] = useState<readonly Creation[] | null>(null);
   const [nextCursor, setNextCursor] = useState<string | null>(null);
-  const [error, setError] = useState<'sign-in' | 'unavailable' | null>(null);
+  const [error, setError] = useState<'sign-in' | 'unavailable' | 'account-changed' | null>(null);
+  const [accountScope, setAccountScope] = useState<string | null>(null);
   const [olderError, setOlderError] = useState(false);
   const [loadingMore, setLoadingMore] = useState(false);
   const [copyStatus, setCopyStatus] = useState<CopyStatus>(null);
@@ -95,6 +108,7 @@ export default function MyCreationsClient(): JSX.Element {
         if (!page) throw new Error('invalid response');
         if (!controller.signal.aborted) {
           setCreations(page.creations);
+          setAccountScope(page.accountScope);
           setNextCursor(page.nextCursor);
         }
       }).catch(() => {
@@ -104,7 +118,7 @@ export default function MyCreationsClient(): JSX.Element {
   }, []);
 
   async function loadOlder(): Promise<void> {
-    if (!nextCursor || loadingMore) return;
+    if (!nextCursor || !creations || loadingMore) return;
     const controller = new AbortController();
     olderController.current?.abort();
     olderController.current = controller;
@@ -126,11 +140,16 @@ export default function MyCreationsClient(): JSX.Element {
       const page = parseCreationsPage(await response.json());
       if (!page) throw new Error('invalid response');
       if (!controller.signal.aborted) {
-        setCreations(previous => {
-          if (!previous) return page.creations;
-          const seen = new Set(previous.map(item => item.puzzleId));
-          return [...previous, ...page.creations.filter(item => !seen.has(item.puzzleId))];
-        });
+        const appended = appendCreationsPage(creations, accountScope, page);
+        if (appended === null) {
+          setCreations(null);
+          setNextCursor(null);
+          setAccountScope(null);
+          setCopyStatus(null);
+          setError('account-changed');
+          return;
+        }
+        setCreations(appended);
         setNextCursor(page.nextCursor);
       }
     } catch {
@@ -145,6 +164,7 @@ export default function MyCreationsClient(): JSX.Element {
     <p>Private, unlisted Custom Lineups saved by this account. Your friends can play using each sharing link.</p>
     <p><a href="/create">Create another lineup</a> · <a href="/account">Account</a></p>
     {error === 'sign-in' ? <p role="alert">Sign in to view your creations. <a href="/account">Sign in</a></p> : null}
+    {error === 'account-changed' ? <p role="alert">Your account changed. <a href="/account/creations">Reload your creations</a>.</p> : null}
     {error === 'unavailable' ? <p role="alert">Your creations are temporarily unavailable. Try again later.</p> : null}
     {creations === null && error === null ? <p role="status">Loading creations…</p> : null}
     {creations?.length === 0 ? <p>No saved lineups yet.</p> : null}

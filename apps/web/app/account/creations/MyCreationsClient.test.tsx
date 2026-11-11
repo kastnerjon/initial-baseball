@@ -2,10 +2,11 @@ import React from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import MyCreationsClient, {
-  CreationRow, creationShareUrl, isCreation, parseCreationsPage,
+  appendCreationsPage, CreationRow, creationShareUrl, isCreation, parseCreationsPage,
 } from './MyCreationsClient';
 
 const id = 'custom-lineup-v2-123e4567-e89b-42d3-a456-426614174000';
+const accountScope = 'a'.repeat(64);
 const creation = { puzzleId: id, title: 'Mets Legends', issuedAt: '2026-11-10T12:00:00Z' };
 
 describe('private My Creations guest links and paginated readback', () => {
@@ -26,22 +27,39 @@ describe('private My Creations guest links and paginated readback', () => {
   });
 
   it('validates bounded pages, cursor shape and duplicate-free immutable IDs', () => {
-    const page = { creations: [creation], nextCursor: null };
+    const page = { accountScope, creations: [creation], nextCursor: null };
     expect(isCreation(creation)).toBe(true);
     expect(parseCreationsPage(page)).toEqual(page);
     const forty = Array.from({ length: 40 }, (_, i) => ({
       ...creation, puzzleId: 'custom-lineup-v2-123e4567-e89b-42d3-a456-'
         + i.toString(16).padStart(12, '0'),
     }));
-    expect(parseCreationsPage({ creations: forty, nextCursor: 'opaque-cursor' }))
+    expect(parseCreationsPage({ accountScope, creations: forty, nextCursor: 'opaque-cursor' }))
       .not.toBeNull();
     for (const invalid of [
-      { creations: [creation], nextCursor: 'opaque-cursor' },
-      { creations: [creation, creation], nextCursor: null },
-      { creations: [creation], nextCursor: 'x'.repeat(200) },
-      { creations: [{ ...creation, puzzleId: id + '?secret=1' }], nextCursor: null },
-      { creations: [creation] },
+      { accountScope, creations: [creation], nextCursor: 'opaque-cursor' },
+      { accountScope, creations: [creation, creation], nextCursor: null },
+      { accountScope, creations: [creation], nextCursor: 'x'.repeat(200) },
+      { accountScope, creations: [{ ...creation, puzzleId: id + '?secret=1' }], nextCursor: null },
+      { accountScope, creations: [creation] },
+      { creations: [creation], nextCursor: null },
+      { accountScope: 'invalid', creations: [creation], nextCursor: null },
     ]) expect(parseCreationsPage(invalid)).toBeNull();
+  });
+
+  it('never combines a first account page with a later page from another session', () => {
+    const older = { ...creation, puzzleId: id.replace(/0$/, '1'), title: 'Older lineup' };
+    const next = { accountScope, creations: [creation, older], nextCursor: null };
+    expect(appendCreationsPage([creation], accountScope, next)).toEqual([creation, older]);
+    // The server can validly return B's page after account cookies change in another tab.
+    // That page must clear A's retained list, even when B has no older creations.
+    expect(appendCreationsPage([creation], accountScope, {
+      ...next, accountScope: 'b'.repeat(64),
+    })).toBeNull();
+    expect(appendCreationsPage([creation], accountScope, {
+      accountScope: 'b'.repeat(64), creations: [], nextCursor: null,
+    })).toBeNull();
+    expect(appendCreationsPage([creation], null, next)).toBeNull();
   });
 
   it('renders populated metadata without private source, hints or owner tokens', () => {

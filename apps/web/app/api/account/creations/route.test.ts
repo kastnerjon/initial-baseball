@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { NextRequest } from 'next/server';
 vi.mock('server-only', () => ({}));
@@ -53,8 +54,22 @@ describe('verified creator My Creations paginated API', () => {
     vi.mocked(listVerifiedCreatorCreations).mockResolvedValueOnce(page);
     const result = await GET(request());
     expect(result.status).toBe(200);
-    expect(await result.json()).toEqual(page);
+    const payload = await result.json();
+    expect(payload).toEqual({ ...page, accountScope: createHash('sha256')
+      .update('initial-baseball:my-creations:v1:' + UUID).digest('hex') });
+    expect(JSON.stringify(payload)).not.toContain(UUID);
     expect(listVerifiedCreatorCreations).toHaveBeenCalledWith(expect.anything(), UUID, null);
+  });
+
+  it('changes the presentation scope when another verified account pages the list', async () => {
+    const a = await (await GET(request())).json() as { accountScope: string };
+    const other = '123e4567-e89b-42d3-a456-426614174098';
+    vi.mocked(verifiedCreatorAccount).mockResolvedValueOnce({ id: other });
+    const b = await (await GET(request('?cursor=' + encodeURIComponent(CURSOR)))).json() as { accountScope: string };
+    expect(a.accountScope).toMatch(/^[0-9a-f]{64}$/);
+    expect(b.accountScope).not.toBe(a.accountScope);
+    expect(listVerifiedCreatorCreations).toHaveBeenLastCalledWith(expect.anything(), other, CURSOR);
+    expect(JSON.stringify(b)).not.toContain(other);
   });
 
   it('allows a bounded exact cursor without accepting account filters or duplicates', async () => {

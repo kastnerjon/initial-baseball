@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import {
   creatorAuthClient, creatorAuthConfiguration, creatorAuthResponse, verifiedCreatorAccount,
@@ -27,7 +28,10 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     const page = await listVerifiedCreatorCreations(
       createServerSupabaseClient(), account.id, cursor,
     );
-    return auth.finish(NextResponse.json(page));
+    // A presentation continuity marker, never an authorization or database selector.
+    const accountScope = createHash('sha256')
+      .update('initial-baseball:my-creations:v1:' + account.id).digest('hex');
+    return auth.finish(NextResponse.json({ ...page, accountScope }));
   } catch {
     // No DB row contents, account identity, SQL or private clues in error response/logs.
     return auth.finish(fail('creations_unavailable', 503));
