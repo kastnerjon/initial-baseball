@@ -66,10 +66,10 @@ export async function listVerifiedCreatorCreations(
       const [issuedAt, puzzleId] = cursor.split('|');
       // Cursor validation excludes PostgREST filter metacharacters.
       query = query.or('issued_at.lt.' + issuedAt
-        + ',and(issued_at.eq.' + issuedAt + ',puzzle_id.lt.' + puzzleId + ')');
+        + ',and(issued_at.eq.' + issuedAt + ',puzzle_id.gt.' + puzzleId + ')');
     }
     result = await query.order('issued_at', { ascending: false })
-      .order('puzzle_id', { ascending: false }).limit(MAX_CREATIONS_PAGE + 1);
+      .order('puzzle_id', { ascending: true }).limit(MAX_CREATIONS_PAGE + 1);
   } catch { throw new CreatorCreationsReadError(); }
   if (result.error || !Array.isArray(result.data)
     || result.data.length > MAX_CREATIONS_PAGE + 1) throw new CreatorCreationsReadError();

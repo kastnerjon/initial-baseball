@@ -37,14 +37,14 @@ describe('private creator My Creations keyset read', () => {
     expect(db.eq).toHaveBeenCalledWith('creator_account_id', UUID);
     expect(db.eq).toHaveBeenCalledWith('schema_version', 2);
     expect(db.order).toHaveBeenNthCalledWith(1, 'issued_at', { ascending: false });
-    expect(db.order).toHaveBeenNthCalledWith(2, 'puzzle_id', { ascending: false });
+    expect(db.order).toHaveBeenNthCalledWith(2, 'puzzle_id', { ascending: true });
     expect(db.limit).toHaveBeenCalledWith(MAX_CREATIONS_PAGE + 1);
     expect(db.or).not.toHaveBeenCalled();
   });
 
   it('returns a compound cursor after 40 entries, retaining precision and tie ordering', async () => {
     const rows = Array.from({ length: 41 }, (_, i) => row(
-      'custom-lineup-v2-123e4567-e89b-42d3-a456-' + (100 - i).toString(16).padStart(12, '0'),
+      'custom-lineup-v2-123e4567-e89b-42d3-a456-' + i.toString(16).padStart(12, '0'),
     ));
     const db = mockDb(rows);
     const page = await listVerifiedCreatorCreations(db.client, UUID);
@@ -58,7 +58,7 @@ describe('private creator My Creations keyset read', () => {
     });
     const [date, puzzle] = page.nextCursor!.split('|');
     expect(older.or).toHaveBeenCalledWith('issued_at.lt.' + date
-      + ',and(issued_at.eq.' + date + ',puzzle_id.lt.' + puzzle + ')');
+      + ',and(issued_at.eq.' + date + ',puzzle_id.gt.' + puzzle + ')');
   });
 
   it('returns no cursor for an empty or final short page', async () => {
