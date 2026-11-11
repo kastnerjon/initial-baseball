@@ -7,6 +7,19 @@
 - **Status:** documentation decision only. No PR merged, scoring endpoint changed, production database migrated, feature flag enabled, or release authorized by this update. Reverify live PR heads, checks, independent reviews, READY Previews, isolated QA and production state before action.
 
 
+## November 10 — Archive integration refresh after My Creations pagination (#654)
+
+- Main `5fe81616633751cfc56eaf33d7db79b4597132b8` includes merged #654: stable private My Creations keyset pagination, server-derived account-scope continuity and eight mounted-component Chromium scenarios in CI. Exact-merge production deployment `dpl_EyrJoERCYBTmdo9Hk7b647pLQ4k2` is READY; public `/` and `/archive` return 200, while `/account` and `/create` return 404. Main push CI run `42936744355` was in progress at verification. Hosted Auth and physical-device acceptance remain separate gates.
+- Canonical unified Archive #606 is refreshed onto that main. All 14 Archive executable/test blobs are unchanged from `83bfa960ca9ab585fe595947c945696ea6f4b668`; only the three canonical docs reconcile the workstreams. Focused Archive verification on this combined working tree passed 7 files / 65 tests, plus file-size and whitespace checks. Fresh final-head CI, matching READY Preview and independent Codex/CodeRabbit reviews remain required before merging #606.
+- Archive remains default OFF. Primary placeholders stay unlinked pending #589 historical identity/source proof, and secondary entries remain unlinked pending separately accepted exact-ID navigation. Hosted Archive/device acceptance, A3 competition #566 and explicit release approval remain separate. No production schema, flag or scoring change.
+- **Known primary-coverage gap (production read-only audit, November 10):** 16 past-Pacific-day primary editorial records remain `scheduled` with `published_at` NULL. The Archive intentionally requires `published` records, so these 16 rows are absent from the official primary list; this is known upstream publication-history incompleteness, **not** a catalog read failure. The 50 accepted completions spanning 17 result populations do not establish the original frozen gameplay roster or exact replay ID. Preserve those historical scores and #589 source-proof work; do not widen the published filter, synthesize replay links, or change production rows.
+
+
+## November 9 — unified historical official Daily Archive source integration (#606)
+
+- Consolidated one default-OFF official Archive from immutable legacy-primary and arbitrary-count secondary publication metadata, grouped by Pacific date with stable (date, edition) pagination. Neither unverified historical primary editorial IDs nor staged secondary practice links are clickable; this prevents cross-population score relabeling and 404 navigation while #583/#566 remain release gates. The original Archive beta section is preserved; no hidden players, clues, score writes or production flag/DDL changes.
+- The 14 Archive source/test blobs are carried forward from separately CI-/Codex-reviewed #606; this clean-main integration preserves merged Archive rollover 503 diagnostics #616 and signed Custom reader #626. Require fresh exact-head CI/Preview and independent review, then isolated hosted Archive/physical QA and explicit release approval before any flags are enabled.
+
 ## November 10 — My Creations pagination account-switch correction (#654)
 
 - Verified main `dc9a4cff42d3729502552f79af8a4553d6b59281` and matching production `dpl_DtMoJhzqnERyCkqAkEU5D1nXujw9` READY. Main already includes #653 safe friend-link copy and #608 secondary practice; no feature activation from this session.
@@ -17,8 +30,8 @@
 
 ## November 9 — exact-immutable-ID secondary Daily practice gameplay integration (#608)
 
-- A2 source-only branch now combines server-signed per-edition practice runtime and on-demand hint transport, strict answer-free SSR bootstrap, a shared Daily Nine game UI with edition-bound saves, a private `/daily/editions/:id` practice page, and personal-only result presentation. The browser cannot submit/compare/leaderboard secondary scores; A3 exact-ID signed competitive result admission #566 remains separate and mandatory before any competition.
-- All three secondary practice/runtime/HTTP flags remain default OFF. No production migration/feature activation. This clean-main integration preserves existing primary Daily/Classic/Archive and Custom scoring behavior. Fresh exact-head CI/Preview, independent reviews, isolated hosted signed playback, physical Safari/Android and answer-integrity bundle QA remain separate gates.
+- A2 source merged into main (PR #608) now combines server-signed per-edition practice runtime and on-demand hint transport, strict answer-free SSR bootstrap, a shared Daily Nine game UI with edition-bound saves, a private `/daily/editions/:id` practice page, and personal-only result presentation. The browser cannot submit/compare/leaderboard secondary scores; A3 exact-ID signed competitive result admission #566 remains separate and mandatory before any competition.
+- All three secondary practice/runtime/HTTP flags remain default OFF. No production migration/feature activation. This clean-main integration preserves existing primary Daily/Classic/Archive and Custom scoring behavior. Reviewed exact-head CI/Preview passed before the #608 merge; isolated hosted signed playback, physical Safari/Android and answer-integrity bundle QA remain separate release gates. Merged main `3d28f04` deployed READY November 10 with flags absent.
 
 ## November 8 — signed Custom v2 private completion readback service aligned with SQL #625
 
