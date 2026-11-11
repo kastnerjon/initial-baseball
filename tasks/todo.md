@@ -1,5 +1,9 @@
 # Initial Baseball — Current Work
 
+## Private My Creations pagination — #654
+
+- [ ] Complete final-head CI including eight mounted Chromium pagination/account-switch cases, READY Preview and Codex/CodeRabbit coverage. The server-derived presentation scope must clear retained account A rows when account B supplies a later page, including an empty page. Local full tests/typecheck and independent source review pass; local Chromium socket permissions prevent browser acceptance. No production activation or hosted Auth acceptance is implied.
+
 ## Engineering workflow — native default-OFF smoke pilot (November 8)
 
 - [ ] Consolidate the three local default-OFF Daily browser QA milestones #628/#634/#635 as one reviewable #635 source change on current main, without losing #633 disabled Custom identity GET/POST guards: first signed hint → browser save → reload/authorized hint replay → second hint; signed first terminal give-up → next-at-bat reload; remaining eight signed terminal transitions → final nine-row points scorecard → completed-game reload. Require **new exact-head** CI with native Chromium, READY Preview and independent reviews before merge. This verifies real Chromium local Daily progression, not real guesses, hosted competitive scoring, Auth, secondary editions or physical phones.
@@ -17,9 +21,6 @@
 ## Official Daily editions — approved November 5
 
 - [ ] Observe exact-head CI's credential-free native Chromium edition persistence/lock acceptance. The runner uses real save/load/reset adapters and Web Locks for two same-date secondary editions plus primary at 390px/1280px; local browser launch is host-blocked. It does not replace React gameplay, signed HTTP, hosted QA, Pacific-midnight or physical-device acceptance. See `docs/engineering/official-daily-browser-isolation-qa.md`.
-
-- [ ] Validate source-only #608 follow-up browser hint-envelope bounds: only canonical hint types, 1–120 labels, 1–4096 values, at-bat 1–9 and contiguous revealed slots; reject malformed signed resume or reveal before React state. Require exact-head CI, independent review and real Safari/Android hint restoration; preserve default-OFF practice and A3 score block.
-
 - [ ] Independently review clean-main source-only A2 exact-ID secondary Daily practice #608: server-signed private runtime, single-hint transport, no answerful SSR/bootstrap, strict immutable ID/date/ruleset, isolated browser saves, shared nine-player game UI, personal-only results with no AVG/BEAT/leaderboards, guest practice and all three default-OFF flags. Require exact-head full CI, hidden-answer production build audit, matching READY Preview, hosted isolated QA/physical mobile tests. Competitive A3 #566 remains denied.
 
 - [ ] A1: issuance identity, frozen nine-player content, service-only persistence and restricted editor action.

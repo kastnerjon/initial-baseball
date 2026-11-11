@@ -61,25 +61,20 @@ function validatePublicStatsHintConfig(value: unknown): boolean {
     && validateStatFields(value.pitcher, PITCHER_FIELDS);
 }
 
-function boundedHintText(value: unknown, maxLength: number): value is string {
-  return typeof value === 'string' && value.length > 0 && value.length <= maxLength;
-}
-
 function validateSingleHint(value: unknown): value is DailyHintResponse {
   if (!isRecord(value) || !hasKeys(value, ['hint', 'progressionToken'])
       || typeof value.progressionToken !== 'string' || value.progressionToken.length === 0
       || value.progressionToken.length > 4096 || !isRecord(value.hint)
       || !hasKeys(value.hint, ['hintType', 'hintLabel', 'hintValue'])) return false;
   return HINT_TYPES.has(value.hint.hintType as string)
-    && boundedHintText(value.hint.hintLabel, 120)
-    && boundedHintText(value.hint.hintValue, 4096);
+    && typeof value.hint.hintLabel === 'string' && value.hint.hintLabel.length > 0
+    && typeof value.hint.hintValue === 'string' && value.hint.hintValue.length > 0;
 }
 
 function validateOnDemandBundle(value: unknown): value is DailyHintBundle {
   if (!isRecord(value)
       || !hasKeys(value, ['pitchNumber', 'revealedCount', 'hints', 'checkpoints'])
-      || !Number.isSafeInteger(value.pitchNumber)
-      || (value.pitchNumber as number) < 1 || (value.pitchNumber as number) > 9
+      || !Number.isSafeInteger(value.pitchNumber) || (value.pitchNumber as number) < 1
       || !Number.isInteger(value.revealedCount)
       || (value.revealedCount as number) < 0 || (value.revealedCount as number) > 4
       || !Array.isArray(value.hints) || value.hints.length !== value.revealedCount
@@ -89,9 +84,9 @@ function validateOnDemandBundle(value: unknown): value is DailyHintBundle {
   return value.hints.every((hint, index) =>
     isRecord(hint) && hasKeys(hint, ['slot', 'hintType', 'hintLabel', 'hintValue'])
     && hint.slot === index + 1
-    && HINT_TYPES.has(hint.hintType as string)
-    && boundedHintText(hint.hintLabel, 120)
-    && boundedHintText(hint.hintValue, 4096));
+    && typeof hint.hintType === 'string'
+    && typeof hint.hintLabel === 'string'
+    && typeof hint.hintValue === 'string');
 }
 
 const HITTER_DISPLAY_FIELDS = ['AB', 'H', 'HR', 'BA', 'R', 'RBI', 'SB', 'OBP', 'SLG', 'OPS'] as const;
