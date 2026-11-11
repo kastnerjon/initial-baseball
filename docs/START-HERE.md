@@ -1,5 +1,12 @@
 # Initial Baseball — Start Here
 
+## November 10 — multi-Daily delivery decision (documentation only)
+
+- Updated [the canonical multi-Daily plan](../tasks/plans/multiple-official-dailies.md) after independent architecture review. Prioritize integrating existing player/admin PR stacks and exact-ID secondary competitive admission at current primary parity; do not block launch on the larger #566 browser-identity proposal. No zero-overlap roster requirement; legacy primary stays Puzzle 1 for initial release.
+- Separate urgent follow-up: server-authoritative scoring for **all** official Daily editions. Existing stateless progression and client-authored result payloads are not proof of honest play. One mutable per-attempt CAS table is a candidate design, not yet reviewed or shipped.
+- **Status:** documentation decision only. No PR merged, scoring endpoint changed, production database migrated, feature flag enabled, or release authorized by this update. Reverify live PR heads, checks, independent reviews, READY Previews, isolated QA and production state before action.
+
+
 ## November 10 — My Creations pagination account-switch correction (#654)
 
 - Verified main `dc9a4cff42d3729502552f79af8a4553d6b59281` and matching production `dpl_DtMoJhzqnERyCkqAkEU5D1nXujw9` READY. Main already includes #653 safe friend-link copy and #608 secondary practice; no feature activation from this session.
