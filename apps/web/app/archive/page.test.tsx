@@ -94,11 +94,16 @@ describe('shared Archive route', () => {
   it('keeps official editions available when the independent beta catalog fails', async () => {
     mocked.visible.mockReturnValue(true);
     mocked.beta.mockRejectedValue(new Error('PRIVATE_BETA_PROVIDER_TOKEN'));
+    mocked.archive.mockResolvedValue({ dates: [{ puzzleDate: '2026-11-05', editions: [{
+      kind: 'official-secondary', puzzleId: 'daily-ed-v1-907f33db-c38f-43c3-8e6b-a3aaf19bbd08',
+      puzzleDate: '2026-11-05', puzzleNumber: 193, editionNumber: 2, title: 'Modern',
+    }] }], nextCursor: null });
     const log = vi.spyOn(console, 'error').mockImplementation(() => {});
     try {
       const html = renderToStaticMarkup(await ArchivePage({ searchParams: Promise.resolve({}) }));
       expect(mocked.archive).toHaveBeenCalledWith({});
       expect(html).toContain('Official Daily editions');
+      expect(html).toContain('2026-11-05 – Modern');
       expect(html).toContain('The Archive beta is temporarily unavailable.');
       expect(html).not.toContain('No archive puzzles have been issued yet.');
       expect(html).not.toContain('Showing up to 60');
