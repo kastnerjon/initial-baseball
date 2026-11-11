@@ -485,7 +485,6 @@ answers or hints are returned. Public play, issued publication, Archive and
 the legacy primary remain unaffected. The new editorial database migration,
 hosted QA and physical acceptance are separate prerequisites; production
 activation requires explicit release approval.
-
 ### Secondary draft title revision (server service only)
 
 The server-only `renameOfficialDailyEditorialDraft` adapter normalizes a title
@@ -516,6 +515,7 @@ or scheduled drafts produce generic 409 responses. All responses are private,
 no-store and vary by Authorization. Rendering the form grants no write authority;
 the service rechecks date, status and revision. No schema, issuance, public link
 or production activation is added. Hosted/physical acceptance remains pending.
+
 
 ## Official secondary Daily result admission: fail-closed until signed evidence
 
@@ -685,6 +685,17 @@ Secondary practice sessions use the same shared Daily Nine at-bat/game engine an
 
 The source-stage same-date edition storage regression additionally asserts that exactly identified secondary editions never share browser saves, reset boundaries or gameplay ownership keys with one another, current primary, Classic or Archive beta. Both retained and unknown future `daily-ed-*` IDs remain excluded from competitive result collection. The unit test does not substitute for real multi-tab Safari/Android acceptance.
 
+
+## Private account My Creations keyset pagination (source-stage, default OFF)
+
+The existing verified-account-only `GET /api/account/creations` returns a first page of up to 40 immutable Custom v2 challenges. The same endpoint accepts one optional `cursor` query parameter to request older entries; any other, duplicate, empty or malformed parameter fails closed with HTTP 404. All pages require the existing trusted Origin/Auth configuration and a server-verified nonanonymous creator account; missing authentication returns 401. The account ID is taken exclusively from the verified session and never from a query or a browser-supplied owner ID.
+
+Response: `{ "creations": [{ "puzzleId", "title", "issuedAt" }], "nextCursor": string | null, "accountScope": string }`. The 64-character SHA-256 presentation marker is purpose-separated from other account uses and derived exclusively from the verified account UUID. It is not an authorization token or database filter and does not expose the UUID. Only safe, typed display metadata is projected from `custom_nine_issued_challenges`; hidden players, clue snapshots, owner capabilities, creator UUIDs and private result data are excluded. `nextCursor: null` means no older page. The server performs deterministic keyset traversal by `issued_at DESC, puzzle_id ASC`, matching the isolated-QA `custom_v2_verified_creator_recent_idx` index (the second key breaks same-timestamp ties); the two-key cursor avoids skipped or duplicated entries when multiple lineups share an issuance timestamp and avoids offset drift if a newer lineup is created. The cursor is bounded and carries only the previously returned timestamp and immutable puzzle ID. It is **not an authorization token**; every page rechecks the verified account and scopes the service-role SQL to that account and schema version 2. The reader fetches at most 41 projected rows to determine whether another 40-row page exists.
+
+The private account UI appends older lineups on demand, validates response structure, deduplicates IDs defensively and provides a retry path for later-page failures. A newly expired account session clears its displayed list instead of retaining private metadata. If another tab switches accounts between page requests, a changed `accountScope` clears all retained rows and the cursor and asks the visitor to reload; pages from two accounts are never appended together. Source integration does not enable account creation, Custom publication, guest scores or production flags. Hosted authenticated QA, device acceptance and explicit launch authorization remain separate gates.
+
+
+`scripts/qa-my-creations-pagination-browser.mjs` bundles the actual My Creations component and browser fetch path using the existing Vitest/Vite toolchain, then verifies eight mounted Chromium scenarios: 390px and 1280px viewports, unchanged or switched account scope, and empty or populated later pages. It uses a fresh browser context per case, an ephemeral loopback-only HTTP fixture and synthetic metadata; external requests and service workers are blocked. CI reuses the existing pinned QA-only Playwright installation. It does not sign in, use database credentials, exercise hosted ingress, capture screenshots/traces, or establish physical-device acceptance. A browser/fixture failure fails this verification.
 ## Restricted revision-checked secondary Daily draft player replacement (source-staged)
 
 An authenticated editor may change **one selected player** of a future, still-unpublished secondary Daily draft on the exact nine-player review page. POST `/admin/daily/editions/review/replace` accepts exactly four unique URL-encoded fields: occurrence UUID, the presently reviewed draft revision (zero or greater), a batting-order slot 1–9, and a nonempty trimmed canonical player ID. The form body is bounded to 1024 actual UTF-8 bytes. The exact-true `OFFICIAL_DAILY_EDITOR_DRAFTS_ENABLED` feature flag, Basic administrator credentials, first-party Origin/Fetch Metadata and empty query are enforced before any private database access.

@@ -1,5 +1,9 @@
 # Initial Baseball — Current Work
 
+## Private My Creations pagination — #654
+
+- [ ] Complete final-head CI including eight mounted Chromium pagination/account-switch cases, READY Preview and Codex/CodeRabbit coverage. The server-derived presentation scope must clear retained account A rows when account B supplies a later page, including an empty page. Local full tests/typecheck and independent source review pass; local Chromium socket permissions prevent browser acceptance. No production activation or hosted Auth acceptance is implied.
+
 ## Engineering workflow — native default-OFF smoke pilot (November 8)
 
 - [ ] Consolidate the three local default-OFF Daily browser QA milestones #628/#634/#635 as one reviewable #635 source change on current main, without losing #633 disabled Custom identity GET/POST guards: first signed hint → browser save → reload/authorized hint replay → second hint; signed first terminal give-up → next-at-bat reload; remaining eight signed terminal transitions → final nine-row points scorecard → completed-game reload. Require **new exact-head** CI with native Chromium, READY Preview and independent reviews before merge. This verifies real Chromium local Daily progression, not real guesses, hosted competitive scoring, Auth, secondary editions or physical phones.
@@ -17,7 +21,6 @@
 ## Official Daily editions — approved November 5
 
 - [ ] Independently review combined private editor #614 from current main: one-slot future draft replace under revision CAS, restricted 25-result canonical candidate name search, contextual slot picker returning to explicit review form, Basic/first-party/default-OFF gate, all-nine clue-ready uniqueness, stale-tab protection, 1 KiB strict forms, no issuance/public score mutation. Obtain exact-head CI, READY Preview, protected hosted QA/physical device acceptance. Old #612/#613 remain review references only if combined PR lands.
-
 - [ ] Independently review clean-main source-only A2 exact-ID secondary Daily practice #608: server-signed private runtime, single-hint transport, no answerful SSR/bootstrap, strict immutable ID/date/ruleset, isolated browser saves, shared nine-player game UI, personal-only results with no AVG/BEAT/leaderboards, guest practice and all three default-OFF flags. Require exact-head full CI, hidden-answer production build audit, matching READY Preview, hosted isolated QA/physical mobile tests. Competitive A3 #566 remains denied.
 
 - [ ] A1: issuance identity, frozen nine-player content, service-only persistence and restricted editor action.
