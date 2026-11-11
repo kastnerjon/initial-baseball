@@ -2,8 +2,8 @@
 
 ## Current source integration — November 10
 
-- [ ] Verify main push CI run `42936744355` after merged #654 on `5fe81616`; exact production deployment is READY and public/default-OFF routes were verified. The source now includes private keyset pagination, account-switch clearing and eight mounted Chromium cases; hosted Auth/DB, physical-device and explicit release gates remain separate.
-- [ ] Complete fresh final-head CI, READY Preview and independent Codex/CodeRabbit review for #606 refreshed onto that main, preserving all 14 prior Archive source/test blobs. No Archive flag, production migration or competition activation is authorized by this refresh.
+- [ ] Complete hosted isolated-QA verified-account My Creations pagination, account-switch and empty-page acceptance, and physical-device checks. #654 is merged with eight mounted Chromium cases; main push CI `42936744355` passed and matching production deployment is READY. Auth/Custom production activation remains OFF and requires explicit release approval.
+- [ ] Resolve the final in-scope documentation findings and complete independent final-head review before integrating #606 unified official Archive. Exact-head CI `42945583941` passed and Vercel Preview is READY. No Archive flag, production migration or competition activation is authorized.
 
 ## Engineering workflow — native default-OFF smoke pilot (November 8)
 
@@ -85,7 +85,7 @@ Remaining tasks only; completed verification and production evidence are recorde
 
 - [ ] Review one shared Private/Unlisted and future Public Custom gameplay/completion journey in four contexts (guest friend, authenticated nonowner, creator preview, future Discover entrant). Review the complete Create → owner preview → share → independent friend play → results journey with the product owner. Agree on a design direction before substantial visual implementation. Refine screen hierarchy, labels, buttons, navigation, loading/errors, results, accessibility, responsive mobile layouts, typography, color and brand consistency while preserving gameplay, scoring and privacy contracts. Prior HTML/branding concepts were exploratory, not approved specifications.
 
-- [ ] Before broad repeated-play expansion: measure per-puzzle cookie growth/eviction and reopened progress in real browsers; consider bounded credentials only after stress evidence, preserving legacy challenge-cookie precedence. Add keyset pagination before claiming My Creations is a complete lifetime archive.
+- [ ] Before broad repeated-play expansion: measure per-puzzle cookie growth/eviction and reopened progress in real browsers; consider bounded credentials only after stress evidence, preserving legacy challenge-cookie precedence. Verify lifetime archive completeness for My Creations after the source-integrated #654 keyset pagination; hosted account-switch/empty-page and device acceptance remain outstanding.
 
 ## 4. Later roadmap
 
