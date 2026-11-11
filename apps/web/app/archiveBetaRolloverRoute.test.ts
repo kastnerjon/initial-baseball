@@ -76,7 +76,12 @@ describe('archive rollover request boundaries', () => {
     }));
     expect(response.status).toBe(503);
     expect(response.headers.get('cache-control')).toBe('private, no-store');
-    expect(await response.json()).toEqual({ ...result, remaining: 2, failures });
+    const body = await response.json();
+    expect(body).toEqual({ ...result, remaining: 2,
+      failures: failures.map(({ puzzleDate, kind }) => ({ puzzleDate, kind })),
+    });
+    expect(JSON.stringify(body)).not.toContain('fixture-private-player-id');
+    expect(JSON.stringify(body)).not.toContain('fixture-unreleased-hint');
     expect(console.error).toHaveBeenCalledTimes(1);
     const logged = JSON.parse(String(vi.mocked(console.error).mock.calls[0]?.[0]));
     expect(logged).toEqual({
