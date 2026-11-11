@@ -60,4 +60,66 @@ describe('archive rollover request boundaries', () => {
     expect(await response.json()).toEqual(result);
     expect(run).toHaveBeenCalledOnce();
   });
+  it('records bounded per-kind rollover failure evidence without private payloads', async () => {
+    const failures = [
+      { puzzleDate: '2026-10-16', kind: 'missing-source', sourceSelections: 'fixture-private-player-id', clueSnapshot: 'fixture-unreleased-hint' },
+      { puzzleDate: '2026-11-01', kind: 'unavailable' },
+      { puzzleDate: '2026-11-02', kind: 'immutable-conflict' },
+      { puzzleDate: '2026-11-03', kind: 'missing-source' },
+      { puzzleDate: '2026-11-04', kind: 'unavailable' },
+      { puzzleDate: '2026-11-05', kind: 'unavailable' },
+      { puzzleDate: '2026-11-06', kind: 'immutable-conflict' },
+    ];
+    run.mockResolvedValueOnce({ ...result, remaining: 2, failures });
+    const response = await POST(new Request(url, {
+      method: 'POST', headers: { authorization: 'Bearer ' + secret },
+    }));
+    expect(response.status).toBe(503);
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+    const body = await response.json();
+    expect(body).toEqual({ ...result, remaining: 2,
+      failures: failures.map(({ puzzleDate, kind }) => ({ puzzleDate, kind })),
+    });
+    expect(JSON.stringify(body)).not.toContain('fixture-private-player-id');
+    expect(JSON.stringify(body)).not.toContain('fixture-unreleased-hint');
+    expect(console.error).toHaveBeenCalledTimes(1);
+    const logged = JSON.parse(String(vi.mocked(console.error).mock.calls[0]?.[0]));
+    expect(logged).toEqual({
+      event: 'archive-rollover-incomplete',
+      failed: 7,
+      remaining: 2,
+      failureKinds: { 'missing-source': 2, 'immutable-conflict': 2, unavailable: 3 },
+      sampleFailures: failures.slice(0, 5).map(({ puzzleDate, kind }) => ({ puzzleDate, kind })),
+      omittedFailures: 2,
+    });
+    const message = JSON.stringify(logged);
+    expect(message).not.toContain('2026-11-05');
+    expect(message).not.toContain('2026-11-06');
+    expect(message).not.toContain('sourceSelections');
+    expect(message).not.toContain('clueSnapshot');
+    expect(message).not.toContain('fixture-private-player-id');
+    expect(message).not.toContain('fixture-unreleased-hint');
+  });
+
+  it('distinguishes backlog-only alerts from completed rollovers', async () => {
+    run.mockResolvedValueOnce({ ...result, remaining: 3 });
+    expect((await POST(new Request(url, {
+      method: 'POST', headers: { authorization: 'Bearer ' + secret },
+    }))).status).toBe(503);
+    expect(console.error).toHaveBeenCalledTimes(1);
+    expect(JSON.parse(String(vi.mocked(console.error).mock.calls[0]?.[0]))).toEqual({
+      event: 'archive-rollover-incomplete',
+      failed: 0,
+      remaining: 3,
+      failureKinds: { 'missing-source': 0, 'immutable-conflict': 0, unavailable: 0 },
+      sampleFailures: [],
+      omittedFailures: 0,
+    });
+    vi.mocked(console.error).mockClear();
+    expect((await POST(new Request(url, {
+      method: 'POST', headers: { authorization: 'Bearer ' + secret },
+    }))).status).toBe(200);
+    expect(console.error).not.toHaveBeenCalled();
+  });
+
 });
