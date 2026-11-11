@@ -73,3 +73,35 @@ describe('secondary official edition result admission remains fail-closed', () =
     expect(isDailyResultCollectionEnabled('daily-ed-unknown-reserved-type')).toBe(false);
   });
 });
+
+/** These tests demonstrate why metadata validation alone is not play provenance. */
+describe('identical-roster edition relabeling threat model', () => {
+  it('keeps both write paths closed even though both roster validators accept relabeled facts', async () => {
+    const { validateDailyAtBatResult, validateDailyCompletedResult } = await import('@initial-baseball/engine');
+    const siblingId = 'daily-ed-v1-6077ee21-9370-4cf3-aa21-74c50b485591';
+    const pitches = Array.from({ length: 9 }, (_, i) => ({ pitchNumber: i + 1, initials: 'AB' }));
+    const editionA = { id: PUZZLE_ID, puzzleDate: DATE, puzzleNumber: 194, pitches };
+    const editionB = { ...editionA, id: siblingId };
+    const facts = pitches.map(pitch => ({ ...pitch, outcome: 'HR' as const,
+      hintsRevealed: 0 as const, wrongGuesses: 0, resolution: 'correct' as const }));
+    const envelope = { schemaVersion: 1 as const, puzzleId: editionA.id, puzzleDate: DATE,
+      puzzleNumber: editionA.puzzleNumber, rulesetVersion: 'points-v4' as const };
+    const atBatA = { ...envelope, attemptId: 'attempt-a', atBat: facts[0]! };
+    const completionA = { ...envelope, submissionId: 'result-a', completedAtBats: facts };
+    const atBatB = { ...atBatA, puzzleId: siblingId };
+    const completionB = { ...completionA, puzzleId: siblingId };
+
+    for (const [puzzle, atBat, completion] of [
+      [editionA, atBatA, completionA], [editionB, atBatB, completionB],
+    ] as const) {
+      expect(validateDailyAtBatResult({ submission: atBat, puzzle, rulesetVersion: 'points-v4' }).ok).toBe(true);
+      expect(validateDailyCompletedResult({ submission: completion, puzzle, rulesetVersion: 'points-v4' }).ok).toBe(true);
+    }
+    const context = services();
+    await expect(context.atBatService.submit(atBatB)).resolves.toEqual({ ok: false, error: 'invalid_puzzle' });
+    await expect(context.completedService.submit(completionB)).resolves.toEqual({ ok: false, error: 'invalid_puzzle' });
+    expect(context.loadAuthoritativePuzzle).not.toHaveBeenCalled();
+    expect(context.atBatInsert).not.toHaveBeenCalled();
+    expect(context.completedInsert).not.toHaveBeenCalled();
+  });
+});
