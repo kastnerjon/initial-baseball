@@ -1,8 +1,9 @@
 # Initial Baseball — Current Work
 
-## Private My Creations pagination — #654
+## Current source integration — November 10
 
-- [ ] Complete final-head CI including eight mounted Chromium pagination/account-switch cases, READY Preview and Codex/CodeRabbit coverage. The server-derived presentation scope must clear retained account A rows when account B supplies a later page, including an empty page. Local full tests/typecheck and independent source review pass; local Chromium socket permissions prevent browser acceptance. No production activation or hosted Auth acceptance is implied.
+- [ ] Complete hosted isolated-QA verified-account My Creations pagination, account-switch and empty-page acceptance, and physical-device checks. #654 is merged with eight mounted Chromium cases; main push CI `42936744355` passed and matching production deployment is READY. Auth/Custom production activation remains OFF and requires explicit release approval.
+- [ ] Resolve the final in-scope documentation findings and complete independent final-head review before integrating #606 unified official Archive. Exact-head CI `42945583941` passed and Vercel Preview is READY. No Archive flag, production migration or competition activation is authorized.
 
 ## Engineering workflow — native default-OFF smoke pilot (November 8)
 
@@ -21,7 +22,9 @@
 ## Official Daily editions — approved November 5
 
 - [ ] Independently review combined private editor #614 from current main: one-slot future draft replace under revision CAS, restricted 25-result canonical candidate name search, contextual slot picker returning to explicit review form, Basic/first-party/default-OFF gate, all-nine clue-ready uniqueness, stale-tab protection, 1 KiB strict forms, no issuance/public score mutation. Obtain exact-head CI, READY Preview, protected hosted QA/physical device acceptance. Old #612/#613 remain review references only if combined PR lands.
-- [ ] Independently review clean-main source-only A2 exact-ID secondary Daily practice #608: server-signed private runtime, single-hint transport, no answerful SSR/bootstrap, strict immutable ID/date/ruleset, isolated browser saves, shared nine-player game UI, personal-only results with no AVG/BEAT/leaderboards, guest practice and all three default-OFF flags. Require exact-head full CI, hidden-answer production build audit, matching READY Preview, hosted isolated QA/physical mobile tests. Competitive A3 #566 remains denied.
+- [ ] Complete release acceptance for merged unified official Archive #606: published primary metadata placeholder puzzleId:null (not falsely playable), exact-ID numbered secondary metadata unlinked until exact-ID enabled hosted acceptance, arbitrary same-date edition keyset, no hidden answer/score writes, original Archive beta retained with errors sanitized and four default-OFF flags. Require protected hosted 120+-edition browser acceptance (121-edition rollback-only DB fixture passed), physical responsive Safari/Android and controlled release approval. Primary source issue #589 and A3 signed result admission #566 remain separate blockers.
+
+- [ ] Complete isolated hosted signed-playback, hidden-answer bundle verification and physical Safari/Android acceptance for the merged, default-OFF exact-ID secondary practice source (#608). Preserve private progression, single-hint reveal, per-edition saves and personal-only results; competitive A3 #566 remains denied.
 
 - [ ] A1: issuance identity, frozen nine-player content, service-only persistence and restricted editor action.
 - [ ] A2–A4: exact-ID play and hint privacy, result isolation, share links, one Archive and device QA.
@@ -83,7 +86,7 @@ Remaining tasks only; completed verification and production evidence are recorde
 
 - [ ] Review one shared Private/Unlisted and future Public Custom gameplay/completion journey in four contexts (guest friend, authenticated nonowner, creator preview, future Discover entrant). Review the complete Create → owner preview → share → independent friend play → results journey with the product owner. Agree on a design direction before substantial visual implementation. Refine screen hierarchy, labels, buttons, navigation, loading/errors, results, accessibility, responsive mobile layouts, typography, color and brand consistency while preserving gameplay, scoring and privacy contracts. Prior HTML/branding concepts were exploratory, not approved specifications.
 
-- [ ] Before broad repeated-play expansion: measure per-puzzle cookie growth/eviction and reopened progress in real browsers; consider bounded credentials only after stress evidence, preserving legacy challenge-cookie precedence. Add keyset pagination before claiming My Creations is a complete lifetime archive.
+- [ ] Before broad repeated-play expansion: measure per-puzzle cookie growth/eviction and reopened progress in real browsers; consider bounded credentials only after stress evidence, preserving legacy challenge-cookie precedence. Verify lifetime archive completeness for My Creations after the source-integrated #654 keyset pagination; hosted account-switch/empty-page and device acceptance remain outstanding.
 
 ## 4. Later roadmap
 
