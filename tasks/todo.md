@@ -21,6 +21,8 @@
 
 ## Official Daily editions — approved November 5
 
+- [ ] Independently review the A4 exact-ID practice navigation from the unified official Archive and current-day chooser: immutable publication ID and Pacific date, no legacy-primary false link, existing four-gate source visibility, independently gated practice destination, no competitive score/admission, hidden-answer safety, exact-head CI/Preview, protected hosted navigation and physical Safari/Android before public enablement.
+
 - [ ] Review the current-day secondary Daily metadata chooser #588 stacked on clean unified Archive #606: current server-Pacific date, bounded arbitrary-count edition pagination, primary Daily home-link visibility, unlinked secondary titles until separately enabled and accepted #608 practice route, no score/hints/hidden identity, safe query/cursor rollover, four default-OFF switches, exact-head CI/Preview/independent review and physical QA. Production activation and A3 signed competition remain separately gated.
 
 - [ ] Independently review clean-main unified official Archive #606: published primary metadata placeholder puzzleId:null (not falsely playable), exact-ID numbered secondary metadata unlinked until exact-ID enabled hosted acceptance, arbitrary same-date edition keyset, no hidden answer/score writes, original Archive beta retained with errors sanitized and four default-OFF flags. Require exact-head CI/Preview, CodeRabbit/Codex, protected hosted 120+-edition browser acceptance (121-edition rollback-only DB fixture passed), physical responsive Safari/Android and controlled release approval. Primary source issue #589 and A3 signed result admission #566 remain separate blockers.

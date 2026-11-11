@@ -1,5 +1,9 @@
 # Initial Baseball — Start Here
 
+## November 10 — exact-ID secondary practice navigation staged across Archive and chooser
+
+- An A4 source-only dependent change now links verified, published secondary official Daily editions from the unified Archive and today's chooser to the existing `/daily/editions/:id?date=:PacificDate` practice route. It uses immutable publication ID/date metadata and the already independent default-OFF Archive/choice/practice/HTTP/private-runtime gates; no player answers, scoring authority, account claims or hidden hints in links. Legacy historical primary editorial IDs remain unlinked.
+- The source integration is **not** production activation. Require exact-head CI/Preview, independent review, protected hosted date/edition navigation and real Safari/Android validation before enabling any gate. A3 signed competitive result admission issue #566 and legacy primary historical identity issue #589 remain separate.
 ## November 10 — Archive integration refresh after My Creations pagination (#654)
 
 - Main `5fe81616633751cfc56eaf33d7db79b4597132b8` includes merged #654: stable private My Creations keyset pagination, server-derived account-scope continuity and eight mounted-component Chromium scenarios in CI. Exact-merge production deployment `dpl_EyrJoERCYBTmdo9Hk7b647pLQ4k2` is READY; public `/` and `/archive` return 200, while `/account` and `/create` return 404. Main push CI run `42936744355` was in progress at verification. Hosted Auth and physical-device acceptance remain separate gates.
@@ -9,12 +13,12 @@
 
 ## November 9 — default-OFF current-day official Daily edition chooser (#588)
 
-- Source-only /daily/editions date-bound metadata chooser and primary home link are now stacked on the one historical Archive metadata service (#606). It lists arbitrary published secondary editions for the server's Pacific date using a 30-row cursor and shows primary Daily Nine as the guest-playable default. Secondary entries remain unlinked until the already source-integrated exact-ID practice route (#608) is separately enabled and verified in hosted/browser acceptance. Four exact-true release flags remain OFF, no private hints or scoring authority are exposed and no production schema/flag changes are made.
+- Source-only /daily/editions date-bound metadata chooser and primary home link are now stacked on the one historical Archive metadata service (#606). It lists arbitrary published secondary editions for the server's Pacific date using a 30-row cursor and shows primary Daily Nine as the guest-playable default. Secondary practice links are separately staged on top of this default-OFF chooser and still require protected hosted/browser acceptance before public enablement. Four exact-true release flags remain OFF, no private hints or scoring authority are exposed and no production schema/flag changes are made.
 - Exact-head CI/Preview, CodeRabbit/Codex review and protected hosted/mobile QA remain required. A3 signed score admission #566 is independently blocked; this metadata-only chooser does not change competitive eligibility.
 
 ## November 9 — unified historical official Daily Archive source integration (#606)
 
-- Consolidated one default-OFF official Archive from immutable legacy-primary and arbitrary-count secondary publication metadata, grouped by Pacific date with stable (date, edition) pagination. Neither unverified historical primary editorial IDs nor staged secondary practice links are clickable; this prevents cross-population score relabeling and 404 navigation while #583/#566 remain release gates. The original Archive beta section is preserved; no hidden players, clues, score writes or production flag/DDL changes.
+- Consolidated one default-OFF official Archive from immutable legacy-primary and arbitrary-count secondary publication metadata, grouped by Pacific date with stable (date, edition) pagination. Unverified historical primary editorial IDs remain non-clickable; reviewed secondary practice links are a separately staged A4 follow-up; this prevents cross-population score relabeling and 404 navigation while #583/#566 remain release gates. The original Archive beta section is preserved; no hidden players, clues, score writes or production flag/DDL changes.
 - The 14 Archive source/test blobs are carried forward from separately CI-/Codex-reviewed #606; this clean-main integration preserves merged Archive rollover 503 diagnostics #616 and signed Custom reader #626. Require fresh exact-head CI/Preview and independent review, then isolated hosted Archive/physical QA and explicit release approval before any flags are enabled.
 
 ## November 10 — My Creations pagination account-switch correction (#654)
