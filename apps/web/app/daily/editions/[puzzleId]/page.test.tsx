@@ -131,7 +131,7 @@ describe('default-OFF exact-ID official Daily practice page', () => {
     const html = renderToStaticMarkup(page);
     expect(html).toContain('Practice — scores are not submitted');
     expect(html).toContain('shared-daily-game');
-    expect(html).toContain('href="/archive"');
+    expect(html).toContain('href="/archive">Archive beta</a>');
     expect(html).toContain('href="/"');
     expect(html).not.toContain('href="/daily/editions"');
     expect(html).not.toContain('PRIVATE_FUTURE_HINT');
@@ -142,6 +142,17 @@ describe('default-OFF exact-ID official Daily practice page', () => {
       puzzle: expect.objectContaining({ id: ID }),
     }));
   });
+  it('uses the official Archive label only when the real Archive gate is enabled', async () => {
+    enable();
+    vi.stubEnv('OFFICIAL_DAILY_EDITION_ARCHIVE_ENABLED', 'true');
+    const official = renderToStaticMarkup(await OfficialDailyPracticePage(input()));
+    expect(official).toContain('href="/archive">Official Archive</a>');
+    vi.stubEnv('OFFICIAL_DAILY_EDITION_ARCHIVE_ENABLED', 'false');
+    const beta = renderToStaticMarkup(await OfficialDailyPracticePage(input()));
+    expect(beta).toContain('href="/archive">Archive beta</a>');
+    expect(beta).not.toContain('Official Archive</a>');
+  });
+
   it('offers the edition chooser only when its independent release flags permit it', async () => {
     enable();
     vi.mocked(isOfficialDailyEditionChooserVisible).mockReturnValue(true);

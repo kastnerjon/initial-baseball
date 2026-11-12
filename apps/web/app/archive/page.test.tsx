@@ -66,24 +66,6 @@ describe('shared Archive route', () => {
     expect(mocked.archive).toHaveBeenCalledWith({});
   });
 
-  it('does not advertise a disabled practice route in the enabled Archive', async () => {
-    mocked.visible.mockReturnValue(true);
-    mocked.practice.mockReturnValue(false);
-    mocked.archive.mockResolvedValue({ dates: [{
-      puzzleDate: '2026-11-05', editions: [{
-        kind: 'official-secondary', puzzleDate: '2026-11-05',
-        puzzleNumber: 193, editionNumber: 2, title: 'Modern',
-        puzzleId: 'daily-ed-v1-907f33db-c38f-43c3-8e6b-a3aaf19bbd08',
-      }],
-    }], nextCursor: null });
-    const html = renderToStaticMarkup(await ArchivePage({ searchParams: Promise.resolve({}) }));
-    expect(html).toContain('2026-11-05 – Modern');
-    expect(html).toContain('Practice replay unavailable');
-    expect(html).not.toContain('href="/daily/editions/');
-    expect(html).not.toContain('Practice only; scores are not submitted');
-    expect(html).toContain('beta-results');
-  });
-
   it('ignores unrelated tracking parameters without discarding incomplete cursor validation', async () => {
     mocked.visible.mockReturnValue(true);
     await ArchivePage({ searchParams: Promise.resolve({

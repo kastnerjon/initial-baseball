@@ -3,10 +3,13 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocked = vi.hoisted(() => ({
-  enabled: vi.fn(), read: vi.fn(),
+  enabled: vi.fn(), read: vi.fn(), archiveVisible: vi.fn(),
   notFound: vi.fn((): never => { throw new Error('NOT_FOUND'); }),
 }));
 vi.mock('next/navigation', () => ({ notFound: mocked.notFound }));
+vi.mock('../../serverOfficialDailyArchiveSection', () => ({
+  isOfficialDailyArchiveVisible: mocked.archiveVisible,
+}));
 vi.mock('../../serverOfficialDailyEditionChoice', () => ({
   isOfficialDailyEditionChooserVisible: mocked.enabled,
   readCurrentOfficialDailyEditionChoice: mocked.read,
@@ -16,6 +19,7 @@ import ChoicePage, { metadata } from './page';
 beforeEach(() => {
   vi.clearAllMocks();
   mocked.enabled.mockReturnValue(false);
+  mocked.archiveVisible.mockReturnValue(false);
   mocked.read.mockResolvedValue({ puzzleDate: '2026-11-06', editions: [], nextCursor: null });
 });
 const args = (searchParams: Record<string, string | string[] | undefined> = {}) =>
@@ -53,6 +57,17 @@ describe('Daily edition choice page', () => {
     });
     expect(html).not.toContain('correctPlayerIds');
     expect(html).not.toContain('Leaderboard');
+  });
+
+  it('labels the Archive beta destination accurately unless official Archive is actually enabled', async () => {
+    mocked.enabled.mockReturnValue(true);
+    const beta = renderToStaticMarkup(await ChoicePage(args()));
+    expect(beta).toContain('href="/archive">Archive beta (earlier test puzzles)</a>');
+    expect(beta).not.toContain('Earlier official Daily puzzles');
+    mocked.archiveVisible.mockReturnValue(true);
+    const official = renderToStaticMarkup(await ChoicePage(args()));
+    expect(official).toContain('href="/archive">Earlier official Daily puzzles</a>');
+    expect(official).not.toContain('Archive beta (earlier test puzzles)');
   });
 
   it('handles empty editions and sanitizes reader failures without hiding primary Daily', async () => {

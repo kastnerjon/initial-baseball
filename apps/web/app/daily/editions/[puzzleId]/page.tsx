@@ -1,5 +1,6 @@
 import React, { type JSX } from 'react';
 import { notFound } from 'next/navigation';
+import { isOfficialDailyArchiveVisible } from '../../../serverOfficialDailyArchiveSection';
 import { isOfficialDailyOccurrenceId, validateIssuedDailyCalendarDate } from '@initial-baseball/daily/official-edition-identity';
 import { DailyRuntimeRequestError } from '../../../dailyRuntimeService';
 import { validateOfficialDailyEditionBootstrap } from '../../../officialDailyEditionHttpTransport';
@@ -65,7 +66,7 @@ export default async function OfficialDailyPracticePage({
         </header>
         <nav aria-label="Daily navigation">
           <a href="/">Today’s Daily</a>
-          {' · '}<a href="/archive">Archive</a>
+          {' · '}<a href="/archive">{isOfficialDailyArchiveVisible() ? 'Official Archive' : 'Archive beta'}</a>
           {isOfficialDailyEditionChooserVisible() ? (
             <>{' · '}<a href="/daily/editions">More official Daily puzzles</a></>
           ) : null}

@@ -13,6 +13,7 @@ import {
   isOfficialDailyEditionChooserVisible, isOfficialDailyEditionPracticeVisible,
   readCurrentOfficialDailyEditionChoice,
 } from './serverOfficialDailyEditionChoice';
+import { isOfficialDailyArchiveVisible } from './serverOfficialDailyArchiveSection';
 
 const ON = {
   OFFICIAL_DAILY_EDITION_CHOICE_ENABLED: 'true',
@@ -44,6 +45,26 @@ describe('default-off official Daily edition chooser', () => {
     }
   });
 
+
+  it('matches all 32 real release-flag combinations, including chooser ON and Archive OFF', () => {
+    const flags = [
+      'OFFICIAL_DAILY_EDITION_CHOICE_ENABLED',
+      'OFFICIAL_DAILY_EDITION_ARCHIVE_ENABLED',
+      'OFFICIAL_DAILY_EDITION_PRACTICE_UI_ENABLED',
+      'OFFICIAL_DAILY_EDITION_HTTP_ENABLED',
+      'OFFICIAL_DAILY_EDITION_PRIVATE_RUNTIME_ENABLED',
+    ] as const;
+    for (let mask = 0; mask < 32; mask += 1) {
+      const env: Record<string, string> = {};
+      flags.forEach((flag, index) => { env[flag] = (mask & (1 << index)) ? 'true' : 'false'; });
+      const practiceOn = flags.slice(2).every(flag => env[flag] === 'true');
+      expect(isOfficialDailyEditionPracticeVisible(env)).toBe(practiceOn);
+      expect(isOfficialDailyEditionChooserVisible(env)).toBe(practiceOn && env[flags[0]] === 'true');
+      expect(isOfficialDailyArchiveVisible(env)).toBe(practiceOn && env[flags[1]] === 'true');
+    }
+    expect(isOfficialDailyEditionChooserVisible({ ...ON, OFFICIAL_DAILY_EDITION_ARCHIVE_ENABLED: 'false' })).toBe(true);
+    expect(isOfficialDailyArchiveVisible({ ...ON, OFFICIAL_DAILY_EDITION_ARCHIVE_ENABLED: 'false' })).toBe(false);
+  });
 
   it('never constructs privileged clients with any missing or noncanonical gate', async () => {
     expect(isOfficialDailyEditionChooserVisible({})).toBe(false);

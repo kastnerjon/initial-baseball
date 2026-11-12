@@ -1,5 +1,6 @@
 import React, { type JSX } from 'react';
 import { notFound } from 'next/navigation';
+import { isOfficialDailyArchiveVisible } from '../../serverOfficialDailyArchiveSection';
 import {
   isOfficialDailyEditionChooserVisible, readCurrentOfficialDailyEditionChoice,
 } from '../../serverOfficialDailyEditionChoice';
@@ -60,7 +61,8 @@ export default async function OfficialDailyEditionChoicePage({ searchParams }: P
             )}
           </section>
         )}
-        <p><a href="/archive">Earlier Daily puzzles</a></p>
+        <p><a href="/archive">{isOfficialDailyArchiveVisible()
+          ? 'Earlier official Daily puzzles' : 'Archive beta (earlier test puzzles)'}</a></p>
       </section>
     </main>
   );

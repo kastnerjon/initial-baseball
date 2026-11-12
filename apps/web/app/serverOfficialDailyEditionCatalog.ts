@@ -84,7 +84,7 @@ function parseRow(value: unknown, expectedDate: string): OfficialDailyCatalogEdi
       || row.puzzle_date !== expectedDate
       || !isOfficialDailyPositiveNumber(row.puzzle_number)
       || row.puzzle_number !== getDailyPuzzleNumber(expectedDate)
-      || !isOfficialDailyPositiveNumber(row.edition_number)
+      || !isOfficialDailyPositiveNumber(row.edition_number) || row.edition_number < 2
       || !isOfficialDailyEditionKey(row.edition_key)
       || typeof title !== 'string'
       || row.schema_version !== 1
