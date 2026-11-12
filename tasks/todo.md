@@ -1,5 +1,11 @@
 # Initial Baseball — Current Work
 
+## Current source integration — November 10
+
+- [ ] #632 is the canonical default-OFF Custom guest completion display integration candidate: first-write-wins named/Anonymous choice through signed first-attempt transport, redacted private readback and saved-only guest UI. Source/test blobs are preserved on reconciled current main; require exact-head CI, independent security review, isolated hosted SQL/real-browser and physical-device acceptance. Do not separately merge superseded #623/#629 component branches or enable Custom/Auth/production migrations.
+- [ ] Complete hosted isolated-QA verified-account My Creations pagination, account-switch and empty-page acceptance, and physical-device checks. #654 is merged with eight mounted Chromium cases; main push CI `42936744355` passed and matching production deployment is READY. Auth/Custom production activation remains OFF and requires explicit release approval.
+- [ ] Resolve the final in-scope documentation findings and complete independent final-head review before integrating #606 unified official Archive. Exact-head CI `42945583941` passed and Vercel Preview is READY. No Archive flag, production migration or competition activation is authorized.
+
 ## Engineering workflow — native default-OFF smoke pilot (November 8)
 
 - [ ] Consolidate the three local default-OFF Daily browser QA milestones #628/#634/#635 as one reviewable #635 source change on current main, without losing #633 disabled Custom identity GET/POST guards: first signed hint → browser save → reload/authorized hint replay → second hint; signed first terminal give-up → next-at-bat reload; remaining eight signed terminal transitions → final nine-row points scorecard → completed-game reload. Require **new exact-head** CI with native Chromium, READY Preview and independent reviews before merge. This verifies real Chromium local Daily progression, not real guesses, hosted competitive scoring, Auth, secondary editions or physical phones.
@@ -16,7 +22,9 @@
 
 ## Official Daily editions — approved November 5
 
-- [ ] Independently review clean-main source-only A2 exact-ID secondary Daily practice #608: server-signed private runtime, single-hint transport, no answerful SSR/bootstrap, strict immutable ID/date/ruleset, isolated browser saves, shared nine-player game UI, personal-only results with no AVG/BEAT/leaderboards, guest practice and all three default-OFF flags. Require exact-head full CI, hidden-answer production build audit, matching READY Preview, hosted isolated QA/physical mobile tests. Competitive A3 #566 remains denied.
+- [ ] Independently review clean-main unified official Archive #606: published primary metadata placeholder puzzleId:null (not falsely playable), exact-ID numbered secondary metadata unlinked until exact-ID enabled hosted acceptance, arbitrary same-date edition keyset, no hidden answer/score writes, original Archive beta retained with errors sanitized and four default-OFF flags. Require exact-head CI/Preview, CodeRabbit/Codex, protected hosted 120+-edition browser acceptance (121-edition rollback-only DB fixture passed), physical responsive Safari/Android and controlled release approval. Primary source issue #589 and A3 signed result admission #566 remain separate blockers.
+
+- [ ] Complete isolated hosted signed-playback, hidden-answer bundle verification and physical Safari/Android acceptance for the merged, default-OFF exact-ID secondary practice source (#608). Preserve private progression, single-hint reveal, per-edition saves and personal-only results; competitive A3 #566 remains denied.
 
 - [ ] A1: issuance identity, frozen nine-player content, service-only persistence and restricted editor action.
 - [ ] A2–A4: exact-ID play and hint privacy, result isolation, share links, one Archive and device QA.
@@ -27,10 +35,12 @@
 
 ## Custom #528 — secure completion display identity (source policy staged)
 
-- [ ] Independently review consolidated default-OFF completion-name integration #632 from latest main: patched signed writer, merged signed readback, dual-gated HTTP GET/POST, creator/Auth exclusion, first-write-wins name/Anonymous UX, missing-secret redaction, no hidden answers or score admission. Verify exact integrated commit CI/Preview and isolated hosted/physical device QA. #623/#629 are retained as reference dependency PRs and should not be merged separately if the integrated candidate lands. No production flag/migration activation.
+- [ ] Review signed private readback adapter #626 after SQL #625. Verify exact challenge/browser cookie and creator-marker boundary, malformed provider rows, named UTF-16 text, Anonymous nullness, default-OFF gate and final-head CI/Preview. No public GET or production enablement without isolated SQL QA and device acceptance.
+
+- [ ] Review private display readback SQL #625 after writer #620. Verify exact-browser, N-row and summary/awarded-point parity, creator exclusion, Anonymous null and least-privilege readback via transaction-rollback isolated QA. No production migration or public API is authorized.
 
 - [ ] Preserve the main native Chromium default-OFF smoke gate for Custom completion-name GET/POST (identity flag forced false even when inherited true). This only verifies HTTP 404 without secrets; it is not signed browser acceptance or migration readiness.
-- [ ] Complete independent review and isolated hosted signed-browser acceptance for the #620/#625 SQL writer/readback plus integrated #632 source-only transport/UI. Preserve first-write-wins, creator exclusion, and no credential or hidden-answer leaks; nickname linkage, abuse tests, mobile devices, production migrations and release authorization remain pending.
+- [ ] Source checkpoint: #620 immutable first-admitted Custom v2 name/Anonymous write SQL, #623 signed write port, #625 private SQL readback, #626 signed read port, and #629 default-OFF guarded HTTP transport. Confirm final exact-head CI/Preview and independent reviews, then isolated QA rollback rehearsal before any production migration. HTTP is still source-only; front-end UX, nickname linkage, rate/abuse, device QA and explicit release authorization remain undone.
 - [ ] Stage a separate service-role-only first-write-wins name/privacy projection bound to the server-admitted Custom v2 submission (never to a caller-chosen submission ID). Use the portable `parseCompletionDisplayName` boundary, but retain the verified attempt-cookie/creator-exclusion and independent nickname authorization. This remains incomplete until reviewed additive QA-only database migration, endpoint and UI tests, real Safari QA and explicit release authorization.
 
 
@@ -76,7 +86,7 @@ Remaining tasks only; completed verification and production evidence are recorde
 
 - [ ] Review one shared Private/Unlisted and future Public Custom gameplay/completion journey in four contexts (guest friend, authenticated nonowner, creator preview, future Discover entrant). Review the complete Create → owner preview → share → independent friend play → results journey with the product owner. Agree on a design direction before substantial visual implementation. Refine screen hierarchy, labels, buttons, navigation, loading/errors, results, accessibility, responsive mobile layouts, typography, color and brand consistency while preserving gameplay, scoring and privacy contracts. Prior HTML/branding concepts were exploratory, not approved specifications.
 
-- [ ] Before broad repeated-play expansion: measure per-puzzle cookie growth/eviction and reopened progress in real browsers; consider bounded credentials only after stress evidence, preserving legacy challenge-cookie precedence. Add keyset pagination before claiming My Creations is a complete lifetime archive.
+- [ ] Before broad repeated-play expansion: measure per-puzzle cookie growth/eviction and reopened progress in real browsers; consider bounded credentials only after stress evidence, preserving legacy challenge-cookie precedence. Verify lifetime archive completeness for My Creations after the source-integrated #654 keyset pagination; hosted account-switch/empty-page and device acceptance remain outstanding.
 
 ## 4. Later roadmap
 

@@ -148,3 +148,7 @@ jobs:
         run: |
           node --test apps/web/scripts/qa-custom-completion-display-fixture.test.mjs
           node apps/web/scripts/qa-custom-completion-display-browser.mjs
+      - name: Verify mounted My Creations pagination and account switching in Chromium
+        env:
+          IB_DEFAULT_OFF_SMOKE_PLAYWRIGHT_MODULE: /tmp/ib-default-off-smoke/node_modules/playwright/index.mjs
+        run: node scripts/qa-my-creations-pagination-browser.mjs
