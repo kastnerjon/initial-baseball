@@ -126,7 +126,7 @@ function createIssuedDailyPuzzleBase<I extends IssuedDailyIdentity>(
   };
 }
 
-function requireCluesMatchFrozenOrder(
+export function requireCluesMatchFrozenOrder(
   label: string,
   canonicalPlayerIds: readonly string[],
   snapshot: PermanentDailyIssuedClueSnapshot,
@@ -251,19 +251,9 @@ export function validateIssuedDailyNumber(value: number): void {
   }
 }
 
-export function validateIssuedDailyCalendarDate(value: string): void {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
-    throw new Error('Issued Daily puzzle date must use YYYY-MM-DD.');
-  }
-
-  const timestamp = Date.parse(`${value}T00:00:00.000Z`);
-  if (
-    !Number.isFinite(timestamp)
-    || new Date(timestamp).toISOString().slice(0, 10) !== value
-  ) {
-    throw new Error('Issued Daily puzzle date is not a valid calendar date.');
-  }
-}
+/** Retain the existing private issuer's public export from the safe module. */
+export { validateIssuedDailyCalendarDate } from './officialDailyBrowserIdentity';
+import { validateIssuedDailyCalendarDate } from './officialDailyBrowserIdentity';
 
 function validateIssuedDailyIdentity(identity: IssuedDailyIdentity): void {
   validateIssuedDailySeriesVersion(identity.seriesVersion);

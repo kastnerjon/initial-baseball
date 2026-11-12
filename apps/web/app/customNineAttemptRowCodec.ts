@@ -13,6 +13,8 @@ export type CustomNineAttemptState = Readonly<{
   createdAt: string;
   updatedAt: string;
   completedAt: string | null;
+  /** Monotonic server-observed v2 creator exclusion; omitted for legacy/false rows. */
+  creatorSeen?: true;
 }>;
 
 export class CustomNineAttemptRepositoryError extends Error {
@@ -34,8 +36,9 @@ export function requireCustomNineProgressionToken(value: unknown): asserts value
   }
 }
 
-export function normalizeCustomNineAttemptFacts(value: unknown, atBatCount = 9): readonly DailyCompletedAtBat[] {
+export function normalizeCustomNineAttemptFacts(value: unknown, atBatCount = 9, cap: 1 | 2 | 3 = 3): readonly DailyCompletedAtBat[] {
   if (!Number.isInteger(atBatCount) || atBatCount < 1 || atBatCount > 10
+    || (cap !== 1 && cap !== 2 && cap !== 3)
     || !Array.isArray(value) || value.length > atBatCount) throw invalid();
   return value.map((fact: unknown, index: number) => {
     if (!record(fact) || typeof fact.initials !== 'string'
@@ -45,7 +48,7 @@ export function normalizeCustomNineAttemptFacts(value: unknown, atBatCount = 9):
         .every(key => Object.hasOwn(fact, key))) throw invalid();
     const normalized = normalizeDailyTerminalAtBat(fact, {
       pitchNumber: index + 1, initials: fact.initials,
-    } as DailyPublicPuzzle['pitches'][number]);
+    } as DailyPublicPuzzle['pitches'][number], cap);
     if (!normalized.ok) throw invalid();
     return normalized.atBat;
   });
@@ -56,12 +59,13 @@ export function decodeCustomNineAttemptRow(raw: unknown): CustomNineAttemptState
   return decodeCustomAttemptRow(raw, 9, 'v1');
 }
 
-export function decodeCustomLineupV2AttemptRow(raw: unknown, atBatCount: number): CustomNineAttemptState {
+export function decodeCustomLineupV2AttemptRow(raw: unknown, atBatCount: number, cap: 1 | 2 | 3 = 3): CustomNineAttemptState {
   if (!Number.isInteger(atBatCount) || atBatCount < 1 || atBatCount > 10) throw invalid();
-  return decodeCustomAttemptRow(raw, atBatCount, 'v2');
+  return decodeCustomAttemptRow(raw, atBatCount, 'v2', cap);
 }
 
-function decodeCustomAttemptRow(raw: unknown, atBatCount: number, version: 'v1' | 'v2'): CustomNineAttemptState {
+function decodeCustomAttemptRow(raw: unknown, atBatCount: number,
+  version: 'v1' | 'v2', cap: 1 | 2 | 3 = 3): CustomNineAttemptState {
   if (!record(raw)) throw invalid();
   const challengeId = raw.challenge_id;
   const digest = raw.browser_key_digest;
@@ -77,7 +81,8 @@ function decodeCustomAttemptRow(raw: unknown, atBatCount: number, version: 'v1' 
     || typeof raw.revision !== 'number' || !Number.isSafeInteger(raw.revision)
     || raw.revision < 0) throw invalid();
   requireCustomNineProgressionToken(raw.current_progression_token);
-  const facts = normalizeCustomNineAttemptFacts(raw.terminal_at_bats, atBatCount);
+  const facts = normalizeCustomNineAttemptFacts(raw.terminal_at_bats, atBatCount, cap);
+  if (raw.creator_seen !== undefined && typeof raw.creator_seen !== 'boolean') throw invalid();
   const completedAt = raw.completed_at;
   if (completedAt !== null && !timestamp(completedAt)) throw invalid();
   if (raw.revision < facts.length
@@ -90,6 +95,7 @@ function decodeCustomAttemptRow(raw: unknown, atBatCount: number, version: 'v1' 
     revision: raw.revision, currentProgressionToken: raw.current_progression_token,
     terminalAtBats: facts, status: raw.status,
     createdAt: raw.created_at, updatedAt: raw.updated_at, completedAt,
+    ...(raw.creator_seen === true ? { creatorSeen: true as const } : {}),
   };
 }
 

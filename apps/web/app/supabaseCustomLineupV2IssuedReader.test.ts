@@ -28,9 +28,41 @@ function reader(data:unknown,error:unknown=null) {
   const match=vi.fn().mockReturnValue({maybeSingle});
   const select=vi.fn().mockReturnValue({match});
   const from=vi.fn().mockReturnValue({select});
-  return {repo:createSupabaseCustomLineupV2IssuedReader({from} as unknown as SupabaseClient),from,match};
+  return {repo:createSupabaseCustomLineupV2IssuedReader({from} as unknown as SupabaseClient),from,match,select};
 }
 describe('private v2 issued challenge read boundary',()=>{
+  it('reads only narrow account owner metadata and rejects corrupt rows',async()=>{
+    const account='123e4567-e89b-42d3-a456-426614174099';
+    const maybeSingle=vi.fn().mockResolvedValue({data:{creator_account_id:account},error:null});
+    const eq=vi.fn().mockReturnThis();
+    const select=vi.fn().mockReturnValue({eq,maybeSingle});
+    const from=vi.fn().mockReturnValue({select});
+    const adapter=createSupabaseCustomLineupV2IssuedReader({from} as unknown as SupabaseClient);
+    await expect(adapter.getCreatorAccountId(ID)).resolves.toBe(account);
+    expect(from).toHaveBeenCalledWith('custom_nine_issued_challenges');
+    expect(select).toHaveBeenCalledWith('creator_account_id');
+    expect(eq).toHaveBeenCalledWith('puzzle_id',ID);
+    expect(eq).toHaveBeenCalledWith('schema_version',2);
+    maybeSingle.mockResolvedValueOnce({data:{creator_account_id:null},error:null});
+    await expect(adapter.getCreatorAccountId(ID)).resolves.toBeNull();
+    maybeSingle.mockResolvedValueOnce({data:null,error:null});
+    await expect(adapter.getCreatorAccountId(ID)).resolves.toBeNull();
+    for (const row of [{},{creator_account_id:'invalid'},{creator_account_id:42}]) {
+      maybeSingle.mockResolvedValueOnce({data:row,error:null});
+      await expect(adapter.getCreatorAccountId(ID)).rejects.toMatchObject({kind:'invalid-row'});
+    }
+    maybeSingle.mockResolvedValueOnce({data:null,error:{message:'PRIVATE SQL'}});
+    await expect(adapter.getCreatorAccountId(ID)).rejects.toMatchObject({kind:'query'});
+    const before=from.mock.calls.length;
+    await expect(adapter.getCreatorAccountId('bad-id')).rejects.toThrow();
+    expect(from).toHaveBeenCalledTimes(before);
+    const failing=createSupabaseCustomLineupV2IssuedReader({
+      from:()=>{throw new Error('PRIVATE PROVIDER DETAILS');},
+    } as unknown as SupabaseClient);
+    await expect(failing.getCreatorAccountId(ID)).rejects.toMatchObject({
+      kind:'query',message:expect.not.stringContaining('PRIVATE PROVIDER DETAILS'),
+    });
+  });
   it.each([1,5,9,10])('reads strict schema-2 frozen %i batter challenge',async n=>{
     const row=fixture(n),decoded=decodeCustomLineupV2IssuedRow(row);
     const expected=createCustomLineupIssuedChallenge({
@@ -39,10 +71,25 @@ describe('private v2 issued challenge read boundary',()=>{
     });
     expect(decoded).toEqual(expected);
     expect(Object.isFrozen(decoded.clueSnapshot.pitches[0]?.hintValues)).toBe(true);
-    const {repo,from,match}=reader(row);
+    const {repo,from,match,select}=reader(row);
     await expect(repo.getById(ID)).resolves.toEqual(expected);
     expect(from).toHaveBeenCalledWith('custom_nine_issued_challenges');
     expect(match).toHaveBeenCalledWith({puzzle_id:ID,schema_version:2});
+    expect(select).toHaveBeenCalledWith(
+      'puzzle_id,schema_version,ruleset_version,canonical_player_ids,clue_snapshot,issued_at,strike_limit',
+    );
+  });
+  it.each([1,2,3] as const)('decodes the persisted immutable %i-strike rule', strikeLimit => {
+    const row = { ...fixture(2), strike_limit: strikeLimit };
+    expect(decodeCustomLineupV2IssuedRow(row).strikeLimit).toBe(strikeLimit);
+  });
+  it('defaults omitted historical fixtures to three, but rejects explicit invalid DB caps', () => {
+    expect(decodeCustomLineupV2IssuedRow(fixture(1)).strikeLimit).toBe(3);
+    for (const strike_limit of [null, 0, 4, -1, 1.5, '2', true]) {
+      expect(() => decodeCustomLineupV2IssuedRow({
+        ...fixture(1), strike_limit,
+      })).toThrow('Private Custom Lineup v2 challenge unavailable');
+    }
   });
   it('rejects v1, 0/11, broken and mismatched challenge records',async()=>{
     const good=fixture(1);

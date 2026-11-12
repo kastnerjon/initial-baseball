@@ -75,6 +75,20 @@ Null and zero are different.
 - Mixed known and unknown source rows do not produce a partial rate statistic.
 - Unsupported values such as WAR, OPS+, ERA+, awards, and All-Star selections remain explicitly `null` until an approved source or derivation is added.
 
+## Verified season-team appearance gaps
+
+The upstream Lahman appearances file is preserved unchanged. A separate
+`data/canonical/verified-appearance-gaps.csv` records five 2025 player-seasons
+whose batting facts were committed without an appearance row. Each record
+includes an MLB player-season source URL, the verified club and the MLB
+games-played total; unverified positional game counts remain `null`.
+The canonical season-facts generator joins these only when the original
+Lahman source has no appearance row for that player-season, records the
+supplement's SHA-256 provenance, and fails strict generation if any
+batting or pitching player-season still lacks team appearance evidence.
+The runtime regression verifies the five clubs and games totals. Do not
+edit the generated season cards, runtime shards or UI to fix source gaps.
+
 ## Daily-eligible exports
 
 The legacy exports remain:

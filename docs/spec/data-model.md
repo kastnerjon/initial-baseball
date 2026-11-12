@@ -1,9 +1,13 @@
 # Data Model Spec
 
 Status: Current persistence contract and approved next entities  
-Last updated: 2026-09-18
+Last updated: 2026-11-05
 
 ## Ownership
+
+**Official edition editorial drafts (staged, not publicly enabled).** A separate service-only `official_daily_editorial_drafts` table reserves a stable UUID and unique `(Pacific date, edition key/number)` for each additional edition (number 2 or later while legacy primary remains authoritative). It holds nine ordered selections, draft/scheduled/issued state and optimistic revision. A private database function locks the draft, verifies the caller's expected revision and ordered snapshot, writes the existing append-only `official_daily_publications` record and marks the draft issued in one transaction. Identical retries return its original ID; conflicts do not overwrite. No public access, hosted migration, or new primary cutover is implied by this source change.
+
+**Approved addition, pending persistence implementation.** Each new official occurrence owns a stable ID and frozen ordered content, clues and rules. Enforce uniqueness on (Pacific date, edition key) and separately on the globally unique puzzle ID. Identical rosters across occurrences are valid. Existing editorial, result and numbered archive records keep their stored identities.
 
 | Concern | Authority |
 |---|---|
@@ -20,6 +24,14 @@ Last updated: 2026-09-18
 Names are never database join keys.
 
 Supabase is the current relational provider for operational records. It is not a second factual baseball database and does not own product rules.
+
+## Canonical player-season team evidence — reviewed 2025 gaps
+
+Regular-season statistics and team affiliations are joined by the exact canonical/Lahman player identity and season. The committed Lahman `Batting.csv` and `Pitching.csv` source subsets contain statistics but not team IDs; `Appearances.csv` supplies source team/position records. The canonical season-facts generator must not infer an unsourced season club from a player's career history or fill unknown positional games with zero.
+
+The reviewed source set has five 2025 batting player-seasons lacking an original appearance row (David Bañuelos, Kris Bryant, Luis Campusano, David Fry, and Marcell Ozuna). To preserve the original Lahman files, `packages/baseball-data/data/canonical/verified-appearance-gaps.csv` holds a separate, checksum-tracked MLB-sourced season/team/total-games record for each. Each record cites its MLB player source URL; it supplements only a season absent from the original appearances file. Positional appearance counts remain `null` if not sourced. The generator rejects overlapping or unknown supplements, malformed totals and years, and any batting or pitching player-season that still lacks appearance/team evidence; strict runtime validation also checks the five specific team/game regressions.
+
+This is a source-provenance and canonical reveal data correction, not a change to immutable issued Daily puzzle identities, player lookup, outcomes, scoring, or Supabase persistence. The web UI consumes the generated season/team display identities without its own override.
 
 ## `daily_editorial_puzzles`
 
@@ -131,6 +143,8 @@ This migration is **staged in source, not evidence of a live grant change**.
 A matching hosted Supabase staging test, independent review and post-apply
 security/DDL verification are required before declaring remediation complete.
 See `tasks/plans/rls-event-trigger-execute-hardening.md`.
+
+**Isolated hosted QA rehearsal (November 11):** Recreated the exact current production helper and its enabled event trigger in one rollback-only QA transaction, ran the migration twice, verified `anon`/`authenticated` EXECUTE denied and automatic RLS still enabled for a postgres-owned test table. Separate postflight proved no helper, trigger, table or grant persisted. A deliberately granted, non-owner `authenticated` CREATE case did **not** auto-enable RLS either before or after the migration; that was a preexisting helper limitation, not a revocation regression. Both production and QA currently deny these browser roles CREATE on `public`. This is **not production DDL approval**.
 
 `apps/web/app/supabaseDailyPuzzleRepository.ts` implements the provider-neutral editorial puzzle port.
 
@@ -350,3 +364,19 @@ Persistence/security contract:
 Hosted verification used two simultaneous disposable same-key inserts with differing normalized payloads. Exactly one row won; cleanup returned the table to zero rows. This proves the database uniqueness primitive, not coherent browser attempt ownership. `POST /api/daily/at-bats` composes authoritative puzzle lookup, engine normalization/point derivation, Daily idempotency and this provider; browser 6D now invokes it asynchronously after successful owner gameplay persistence and immutable journal freeze. Scope: `tasks/plans/resolved-at-bat-supabase-provider.md` and `tasks/plans/resolved-at-bat-submission-api.md`.
 
 The approved browser lifecycle adds no server table. Browser 6A defines the version-1 local attempt journal/outbox; 6B defines ephemeral exclusive-lock authority and generation fencing; 6C defines gameplay contribution eligibility; 6D activates delivery without changing that persisted schema. A successful owner gameplay save is the prerequisite for freezing native terminal facts into immutable schema-1 AB submissions. Newly frozen slots may then POST asynchronously, and pending exact payloads retry after ownership/hydration. Conflict/rejection retires the journal under 6A semantics; stale/unavailable delivery also disables the current local contribution session. The browser never backfills observations from saved gameplay after an interrupted save-before-freeze edge. For new exact-version points-v3 or points-v4 completed-result records, the active journal `attemptId` is supplied as the completed-result `submissionId`; if a completed-result browser record already exists, its frozen ID/payload/status remains authoritative and ignores the preferred attempt ID. Legacy/completion-only and Classic creation keep independent IDs. Existing completed-result retry records remain unchanged. Classic, legacy/v1/v2 compatibility sessions, and unsupported browsers send no resolved ABs. Production collection is verified by the separate 6D deployment/browser/database proof: current-browser owner/follower/takeover, one nine-AB run with attempt/completion ID equality, physical Safari restore, exact cleanup and clean route runtime scans. Scope: `tasks/plans/resolved-at-bat-browser-outbox.md`, `tasks/plans/resolved-at-bat-browser-ownership.md`, `tasks/plans/resolved-at-bat-browser-gameplay-lifecycle.md`, `tasks/plans/resolved-at-bat-browser-6d.md`, and `tasks/plans/resolved-at-bat-browser-lifecycle.md`.
+
+## Custom v2 completion display identity (additive source stage, #528)
+
+A separate append-only `public.custom_lineup_v2_completion_displays` row may exist only for a previously admitted Custom v2 completed result. Its primary key `submission_id` references `custom_nine_completed_results.submission_id` and therefore inherits the exact immutable challenge/result identity; it does not duplicate or accept a caller-controlled `challenge_id`. Fields are `display_mode` (`named` or `anonymous`), nullable `display_name`, and `created_at`. Anonymous rows must store a null name. The name is unverified presentation text, not account identity, ownership proof or scoring authority. Public leaderboard readers must join accepted results and avoid selecting/displaying names for Anonymous rows.
+
+The service-role-only, `SECURITY DEFINER` function `record_custom_lineup_v2_completion_display(challenge_id, browser_key_digest, mode, name)` derives submission identity from the exact, challenge-scoped private first-attempt ledger row. It locks that row, denies creator-seen/unfinished attempts, and requires a matching atomic completion, **all N matching per-batter score rows**, and a summary point total equal to the sum of their awarded points before inserting a display. Exact retries return `created=false`; a different name or mode cannot overwrite the first choice. This shares the creator-marker/admission lock for race safety. The table has RLS on, no policies, no browser privileges and **no service-role direct INSERT/UPDATE/DELETE grant**. The `SECURITY DEFINER` function is executable only by `service_role`; its narrowly scoped, fully qualified SQL enforces attempt-lock/score eligibility before any write. This closes a direct service-role INSERT path that would otherwise bypass that eligibility contract. There is no public HTTP route or activation in this source stage.
+
+SQL constrains trimmed plain-text names and refuses control characters, long text and disclosure of names in Anonymous mode. The future server caller must **also** apply the existing `parseCompletionDisplayName` JS 1–32 UTF-16-code-unit contract, verify the signed first-attempt browser cookie and never accept a client-selected submission ID. Authenticated nicknames require a separate authoritative account/profile binding; this table does not infer identity from OAuth claims. The rollback-only QA test is `supabase/tests/custom_v2_completion_displays.sql`. The migration remains **unapplied** until reviewed production-shaped isolated rehearsal and separately authorized release.
+
+### Service-only exact-browser Custom completion display readback (#528)
+
+A separate `SECURITY INVOKER` function `read_custom_lineup_v2_completion_display(challenge_id, browser_key_digest)` allows `service_role` only. It locks the same exact first-attempt row as completion admission, first-write display and creator exclusion, returning zero rows for unfinished, foreign, unadmitted, creator-excluded or missing choices. Named results return only plain text mode/name; Anonymous returns null name. It verifies all N exact terminal at-bat rows **and the completed summary-point total equal to their awarded-point sum**, mirroring the writer's stronger gate even after privileged score corruption. It never accepts or returns a client-chosen submission ID, score, hint, player identity or credential. This is source-only, not a browser endpoint, public read, or production migration. The rollback-only SQL fixture covers cross-browser isolation, creator exclusion, Anonymous nullness and mismatched-score readback denial.
+
+### Internal signed Custom completion display readback service (#528)
+
+`createServerCustomV2CompletionDisplayReadService` checks the exact-true `CUSTOM_V2_COMPLETION_DISPLAY_ENABLED` switch and independently verifies challenge-scoped signed first-attempt browser credentials plus sticky creator marker before invoking the private `read_custom_lineup_v2_completion_display` RPC. The service returns only `not_set` or a strictly decoded `named` string/`anonymous` null choice, with no score or result ID; missing/foreign/creator credentials fail closed, and all provider anomalies are redacted. The SQL reader remains authoritative for attempt-lock, complete N-row score, summary-point parity and creator exclusion. This module is not an HTTP endpoint, client identity authority, leaderboard reader or production release.

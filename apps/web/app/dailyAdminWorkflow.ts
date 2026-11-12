@@ -9,6 +9,7 @@ import {
   createCanonicalDailyLineupCandidates,
   createDailyEditorialHorizonService,
   createDailyPuzzleEditorialService,
+  replaceDailyPuzzleLineup,
   createProductionCanonicalDailySelector,
   rankPlayersByRecognizability,
   type DailyEditorialHorizonPuzzle,
@@ -92,6 +93,8 @@ export interface DailyAdminWorkflow {
     canonicalPlayerIds: readonly string[];
     actorId: string;
     occurredAt: string;
+    /** Owner-authorized current-day fallback reset; ordinary edits remain scheduled-only. */
+    allowCurrentDraftReset?: boolean;
   }): Promise<DailyEditorialHorizonPuzzle>;
   transitionLifecycle(input: {
     puzzleDate: string;
@@ -219,13 +222,20 @@ export function createDailyAdminWorkflow(
 
       if (isCurrentScheduledCorrection) {
         const current = await repository.getByDate(input.puzzleDate);
-        if (current?.status !== 'scheduled') {
+        if (current?.status === 'scheduled') {
+          await editorialService.correctScheduledLineup(input);
+        } else if (current?.status === 'draft' && input.allowCurrentDraftReset === true) {
+          // Reuse the reviewed pure mutation and save against the *same* revision
+          // that was checked as draft. A concurrent schedule must reject this
+          // reset rather than turn a scheduled puzzle back into fallback.
+          const updated = replaceDailyPuzzleLineup(current, input);
+          await repository.save(updated, { expectedRevision: current.revision });
+        } else {
           throw new DailyAdminWorkflowError(
             'not-current-scheduled-puzzle',
-            `Daily puzzle ${input.puzzleDate} must already be scheduled for a same-day correction.`,
+            `Daily puzzle ${input.puzzleDate} must be scheduled, or be a draft with an explicit same-day reset.`,
           );
         }
-        await editorialService.correctScheduledLineup(input);
       } else {
         await editorialService.replaceLineup(input);
       }

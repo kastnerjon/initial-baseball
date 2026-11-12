@@ -1,9 +1,12 @@
 'use client';
 
-import React, { useEffect, useState, type JSX } from 'react';
+import React, { useEffect, useRef, useState, type JSX } from 'react';
 import { parseCustomLineupTitle } from '@initial-baseball/shared';
+import type { CustomLineupStrikeLimit } from '@initial-baseball/daily';
 import { CustomLineupShareLink } from '../custom-lineup/CustomLineupShareLink';
 import { CustomLineupSlotPicker } from './CustomLineupSlotPicker';
+import { CUSTOM_LINEUP_DRAFT_KEY, parseCustomLineupDraft } from './customLineupDraftSession';
+import { createCustomNineCreatorIssueGate } from './customNineCreatorIssueGate';
 import {
   appendCustomNinePlayer,
   isCompleteCustomNineSelection,
@@ -28,10 +31,19 @@ function isCandidate(value: unknown): value is SearchCandidate {
     && typeof candidate.displayName === 'string' && candidate.displayName.trim().length > 0;
 }
 
-// Anonymous creation has no replay/idempotency key or owner-code readback.
+// A dropped issuance response is ambiguous even though the creator is signed in.
 const AMBIGUOUS_PUBLIC_CREATION = 'Could not confirm whether your lineup was created. '
-  + 'If it was, its owner code cannot be recovered here. Retrying creates a separate '
-  + 'challenge and uses another creation attempt.';
+  + 'A retry may create a second challenge and use another creation attempt. '
+  + 'Check My Creations once available before retrying.';
+
+/** The web tsconfig deliberately avoids ambient DOM storage globals. */
+function creatorDraftStorage() {
+  return (globalThis as unknown as { sessionStorage?: {
+    getItem(key: string): string | null;
+    setItem(key: string, value: string): void;
+    removeItem(key: string): void;
+  } }).sessionStorage;
+}
 
 function playerLabel(player: SearchCandidate): string {
   const first = player.metadata?.firstYear;
@@ -42,18 +54,23 @@ function playerLabel(player: SearchCandidate): string {
 }
 
 /** Reuses the exact tested ordered picker for admin and no-sign-in creators. */
-export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, audience = 'admin' }: {
+export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, audience = 'admin',
+  variableStrikesAvailable = false }: {
   mode?: 'v1' | 'v2';
   gameplayAvailable?: boolean;
   audience?: 'admin' | 'public';
+  /** Do not enable until server issuance and client progression accept this rule. */
+  variableStrikesAvailable?: boolean;
 } = {}): JSX.Element {
   const isV2 = mode === 'v2';
   const isPublic = audience === 'public' && isV2;
+  const issueGate = useRef(createCustomNineCreatorIssueGate());
   const maximumPlayers = isV2 ? 10 : 9;
   const creationEndpoint = isPublic ? '/api/custom-lineup/create'
     : isV2 ? '/api/custom-lineup/challenges' : '/api/custom-nine/challenges';
   const [query, setQuery] = useState('');
   const [title, setTitle] = useState('');
+  const [strikeLimit, setStrikeLimit] = useState<CustomLineupStrikeLimit>(3);
   const [suggestions, setSuggestions] = useState<SearchCandidate[]>([]);
   const [players, setPlayers] = useState<readonly ChosenCustomNinePlayer[]>([]);
   const [slots, setSlots] = useState<CustomLineupSlots>(() => Array.from({ length: 9 }, () => null));
@@ -61,8 +78,9 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
   const [searchError, setSearchError] = useState(false);
   const [issuing, setIssuing] = useState(false);
   const [createdId, setCreatedId] = useState<string | null>(null);
-  const [createdOwnerCapability, setCreatedOwnerCapability] = useState<string | null>(null);
   const [issueError, setIssueError] = useState<string | null>(null);
+  const [draftHydrated, setDraftHydrated] = useState(false);
+  const [needsSignIn, setNeedsSignIn] = useState(false);
   const [copyMessage, setCopyMessage] = useState<string | null>(null);
   const draftEditable = isCustomNineDraftEditable(createdId, issuing);
   const titleValid = parseCustomLineupTitle(title).ok;
@@ -70,6 +88,31 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
     ? isCompleteCustomLineupSlots(slots)
     : isCompleteCustomNineSelection(players);
   const displayedSlots = maximumPlayers;
+
+  useEffect(() => {
+    if (!isPublic) return;
+    try {
+      const value = creatorDraftStorage()?.getItem(CUSTOM_LINEUP_DRAFT_KEY);
+      if (value && value.length <= 6000) {
+        const draft = parseCustomLineupDraft(JSON.parse(value));
+        if (draft) {
+          setTitle(draft.title); setSlots(draft.slots);
+          setStrikeLimit(variableStrikesAvailable ? draft.strikeLimit : 3);
+        }
+      }
+    } catch { /* Browser may disable storage; unsaved drafting still works. */ }
+    setDraftHydrated(true);
+  }, [isPublic, variableStrikesAvailable]);
+
+  useEffect(() => {
+    if (!isPublic || !draftHydrated) return;
+    try {
+      if (createdId !== null) creatorDraftStorage()?.removeItem(CUSTOM_LINEUP_DRAFT_KEY);
+      else creatorDraftStorage()?.setItem(CUSTOM_LINEUP_DRAFT_KEY, JSON.stringify({
+        title, slots, strikeLimit: variableStrikesAvailable ? strikeLimit : 3,
+      }));
+    } catch { /* Storage is best-effort and contains only public player selection. */ }
+  }, [isPublic, draftHydrated, createdId, title, slots, strikeLimit, variableStrikesAvailable]);
 
   useEffect(() => {
     const trimmed = query.trim();
@@ -115,72 +158,65 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
 
   async function issue(): Promise<void> {
     if (!draftEditable || !validSelection || (isPublic && !titleValid)) return;
-    setIssuing(true);
-    setIssueError(null);
-    setCopyMessage(null);
-    try {
-      const response = await fetch(creationEndpoint, {
-        method: 'POST',
-        credentials: 'same-origin',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          canonicalPlayerIds: isV2 ? slots.map(player => player!.playerId) : players.map(player => player.playerId),
-          ...(isPublic ? { title: parseCustomLineupTitle(title).ok ? title : '' } : {}),
-        }),
-      });
-      if (!isPublic && response.status === 401) {
-        setIssueError('Administrator authorization is required. Sign in to the admin dashboard again.');
-        return;
-      }
-      if (!response.ok) {
-        setIssueError(response.status === 429 && isPublic
-          ? 'You have reached the creation limit. Try again later.'
-          : response.status === 422
-          ? 'At least one player does not have the required four-hint game data. Replace that player.'
-          : response.status === 400
-            ? isV2 ? isPublic ? 'Enter a name and select 1–10 distinct players.' : 'Choose 1–10 distinct players and try again.' : 'The nine-player selection is invalid. Verify all slots and try again.'
-            : isPublic && response.status >= 500
-              ? AMBIGUOUS_PUBLIC_CREATION
-              : 'Challenge could not be issued. Try again later.');
-        return;
-      }
-      const value: unknown = await response.json();
-      if (value === null || typeof value !== 'object'
-        || !('puzzleId' in value) || typeof value.puzzleId !== 'string'
-        || !(isV2
-          ? /^custom-lineup-v2-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(value.puzzleId)
-          : /^custom-nine-v1-[a-f0-9-]{36}$/.test(value.puzzleId))) {
-        throw new Error('Invalid issue response');
-      }
-      if (isPublic) {
-        const owner = 'ownerCapability' in value ? value.ownerCapability : null;
-        if (typeof owner !== 'string' || !/^[A-Za-z0-9_-]{43}$/.test(owner)) {
-          throw new Error('Missing one-time owner management code');
+    await issueGate.current.run(async () => {
+      setIssuing(true);
+      setIssueError(null);
+      setCopyMessage(null);
+      try {
+        const response = await fetch(creationEndpoint, {
+          method: 'POST',
+          credentials: 'same-origin',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            canonicalPlayerIds: isV2 ? slots.map(player => player!.playerId) : players.map(player => player.playerId),
+            ...(isPublic ? { title: parseCustomLineupTitle(title).ok ? title : '' } : {}),
+            ...(isPublic && variableStrikesAvailable ? { strikeLimit } : {}),
+          }),
+        });
+        if (isPublic && response.status === 401) {
+          setNeedsSignIn(true);
+          setIssueError('Sign in to save and share this lineup. Your unsaved draft stays on this device.');
+          return false;
         }
-        setCreatedOwnerCapability(owner);
+        if (!isPublic && response.status === 401) {
+          setIssueError('Administrator authorization is required. Sign in to the admin dashboard again.');
+          return false;
+        }
+        if (!response.ok) {
+          setIssueError(response.status === 429 && isPublic
+            ? 'You have reached the creation limit. Try again later.'
+            : response.status === 422
+            ? 'At least one player does not have the required four-hint game data. Replace that player.'
+            : response.status === 400
+              ? isV2 ? isPublic ? 'Enter a name and select 1–10 distinct players.' : 'Choose 1–10 distinct players and try again.' : 'The nine-player selection is invalid. Verify all slots and try again.'
+              : isPublic && response.status >= 500
+                ? AMBIGUOUS_PUBLIC_CREATION
+                : 'Challenge could not be issued. Try again later.');
+          return false;
+        }
+        const value: unknown = await response.json();
+        if (value === null || typeof value !== 'object'
+          || !('puzzleId' in value) || typeof value.puzzleId !== 'string'
+          || !(isV2
+            ? /^custom-lineup-v2-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/.test(value.puzzleId)
+            : /^custom-nine-v1-[a-f0-9-]{36}$/.test(value.puzzleId))) {
+          throw new Error('Invalid issue response');
+        }
+        if (isPublic && ('ownerCapability' in value || 'creatorAccountId' in value)) {
+          throw new Error('Unexpected private ownership data in public issue response');
+        }
+        setNeedsSignIn(false);
+        setCreatedId(value.puzzleId);
+        return true;
+      } catch {
+        setIssueError(isPublic
+          ? AMBIGUOUS_PUBLIC_CREATION
+          : 'Challenge could not be issued. Try again later.');
+        return false;
+      } finally {
+        setIssuing(false);
       }
-      setCreatedId(value.puzzleId);
-    } catch {
-      setIssueError(isPublic
-        ? AMBIGUOUS_PUBLIC_CREATION
-        : 'Challenge could not be issued. Try again later.');
-    } finally {
-      setIssuing(false);
-    }
-  }
-
-  async function copyOwnerCapability(): Promise<void> {
-    if (!createdOwnerCapability) return;
-    try {
-      const clipboard = (navigator as Navigator & {
-        clipboard?: { writeText: (text: string) => Promise<void> };
-      }).clipboard;
-      if (!clipboard) throw new Error('Clipboard unavailable');
-      await clipboard.writeText(createdOwnerCapability);
-      setCopyMessage('Owner code copied. Store it securely.');
-    } catch {
-      setCopyMessage('Could not copy automatically. Select the owner code below.');
-    }
+    });
   }
 
   async function copyId(): Promise<void> {
@@ -201,12 +237,12 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
         <p className="eyebrow">{isPublic ? 'Make your own challenge' : 'Authorized operations · ' + (isV2 ? 'Custom Lineup v2' : 'Staged Custom Nine')}</p>
         <h1>{isPublic ? 'Create a Lineup' : isV2 ? 'Create a Custom Lineup' : 'Create a Custom Nine'}</h1>
         <p>{isPublic
-          ? 'Name your challenge, choose 1–10 baseball players in order, and share it privately with friends.'
+          ? 'Name your challenge and choose 1–10 baseball players. Draft without signing in; sign in to save and share it.'
           : isV2
           ? 'Choose 1–10 different canonical players in batting order. Players and clues are frozen when issued.'
           : 'Select exactly nine different canonical players in batting order. Players and their clues are frozen when you issue the challenge.'}</p>
         {isPublic ? <>
-          <p>Your lineup is unlisted: only friends with your link can play it.</p>
+          <p>Your issued lineup is unlisted: only friends with your link can play it.</p>
           <p><a href="/">Back to Daily Nine</a></p>
         </> : <>
           <p><a href="/admin/daily">Back to Daily administration</a></p>
@@ -220,7 +256,7 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
           <h2 id="custom-lineup-title-heading">Name your puzzle</h2>
           <label htmlFor="custom-lineup-puzzle-title">Puzzle name (3–60 characters)</label>
           <input id="custom-lineup-puzzle-title" type="text"
-            autoComplete="off" value={title} disabled={!draftEditable}
+            autoComplete="off" maxLength={60} value={title} disabled={!draftEditable}
             placeholder="e.g. 1998 Yankees Legends"
             onChange={event => {
               if ('value' in event.target && typeof event.target.value === 'string') {
@@ -229,6 +265,25 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
             }} />
           {title.length > 0 && !titleValid
             ? <p role="status">Use a name of 3–60 visible characters.</p> : null}
+        </section>
+      ) : null}
+      {isPublic && variableStrikesAvailable ? (
+        <section className="custom-nine-creator-card" aria-labelledby="custom-lineup-strike-heading">
+          <h2 id="custom-lineup-strike-heading">Game rules</h2>
+          <label htmlFor="custom-lineup-strike-limit">Strikes per out</label>
+          <select id="custom-lineup-strike-limit" value={strikeLimit}
+            disabled={!draftEditable}
+            onChange={event => {
+              if ('value' in event.target && typeof event.target.value === 'string') {
+                const selected = Number(event.target.value);
+                if (selected === 1 || selected === 2 || selected === 3) setStrikeLimit(selected);
+              }
+            }}>
+            <option value={1}>1 strike</option>
+            <option value={2}>2 strikes</option>
+            <option value={3}>3 strikes (default)</option>
+          </select>
+          <p>The same strike limit applies to every at-bat in your issued lineup.</p>
         </section>
       ) : null}
       <section className="custom-nine-creator-card" aria-labelledby="custom-nine-lineup-heading">
@@ -300,23 +355,15 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
           </button>
           <p>{isPublic ? 'Friends can play your exact lineup from the share link. No account required.' : 'Admin-only staging. Issuing does not activate public competitive participation.'}</p>
           {issueError !== null ? <p role="alert">{issueError}</p> : null}
+          {isPublic && needsSignIn && createdId === null
+            ? <p><a href="/account">Sign in to save this lineup</a></p> : null}
           {createdId !== null ? (
             <div className="custom-nine-created" role="status">
               <strong>Challenge issued.</strong>
               {isV2 && gameplayAvailable ? <CustomLineupShareLink key={createdId} puzzleId={createdId} />
                 : <p>{isV2 ? 'This challenge is issued privately. Gameplay links remain disabled until a separately approved release.' : 'The opaque challenge ID is ready. Playable challenge links are a separate upcoming stage.'}</p>}
               {isPublic ? <>
-                <p>Your lineup is locked. Use the link above to share it.</p>
-                {createdOwnerCapability ? <div>
-                  <strong>Save your private owner code</strong>
-                  <p>Keep this separate from the play link. You will need it to
-                    manage publishing later. This code cannot be recovered without an account.</p>
-                  <code>{createdOwnerCapability}</code>
-                  <button type="button" onClick={() => { void copyOwnerCapability(); }}>
-                    Copy owner code
-                  </button>
-                  {copyMessage !== null ? <span>{copyMessage}</span> : null}
-                </div> : null}
+                <p>This challenge is now owned by your signed-in account. Use the link above to share it.</p>
               </> : <>
                 <code>{createdId}</code>
                 <button type="button" onClick={() => { void copyId(); }}>Copy challenge ID</button>
@@ -324,13 +371,15 @@ export function CustomNineCreatorView({ mode = 'v1', gameplayAvailable = false, 
                 <p>Save or copy this ID before starting another challenge. Your issued lineup is locked.</p>
               </>}
               <button type="button" onClick={() => {
+                issueGate.current.reset();
                 setPlayers([]);
                 setSlots(Array.from({ length: 9 }, () => null));
                 setQuery('');
                 setTitle('');
+                setStrikeLimit(3);
                 setSuggestions([]);
                 setCreatedId(null);
-                setCreatedOwnerCapability(null);
+                setNeedsSignIn(false);
                 setIssueError(null);
                 setCopyMessage(null);
               }}>Start another challenge</button>

@@ -2,7 +2,7 @@ import 'server-only';
 import { createHmac } from 'node:crypto';
 import {
   cloneCustomLineupIssuedChallenge, validateCustomLineupPuzzleId,
-  type CustomLineupIssuedChallenge,
+  type CustomLineupIssuedChallenge, type CustomLineupStrikeLimit,
 } from '@initial-baseball/daily';
 import type { Player } from '@initial-baseball/shared';
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -61,6 +61,8 @@ export function createServerCustomLineupV2BootstrapService({
       // Revalidate even injected repositories. No client-controlled length.
       const challenge = cloneCustomLineupIssuedChallenge(row);
       if (challenge.puzzleId !== puzzleId) throw new Error('Custom Lineup challenge identity mismatch.');
+      // The issued row is immutable authority, including after new issuance is disabled.
+      // Do not apply the new-issuance rollout flag to existing issued gameplay.
       const puzzle = materializeCustomNineSessionPuzzle(challenge, dependencies.resolvePlayer);
       const tokens = createCustomLineupV2ProgressionTokens(dependencies.getSecret(environment));
       const runtime = createDailyRuntimeService({
@@ -76,6 +78,8 @@ export function createServerCustomLineupV2BootstrapService({
       return {
         puzzleId: challenge.puzzleId,
         rulesetVersion: challenge.rulesetVersion,
+        // Keep the issued rule available to signed browser progression and UI.
+        strikeLimit: challenge.strikeLimit as CustomLineupStrikeLimit,
         atBats: result.puzzle.pitches.map(p => ({ pitchNumber: p.pitchNumber, initials: p.initials })),
         progressionToken: result.progressionToken,
         hintBundle: result.hintBundle,

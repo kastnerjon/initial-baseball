@@ -7,6 +7,8 @@ import { CUSTOM_NINE_RULESET_VERSION } from './customNineIssuedChallenge';
 import { freezeCustomClueSnapshot, normalizeCustomIssuedAt } from './customIssuedChallengeShared';
 
 export const CUSTOM_LINEUP_ISSUED_CHALLENGE_SCHEMA_VERSION = 2 as const;
+export const DEFAULT_CUSTOM_LINEUP_STRIKE_LIMIT = 3 as const;
+export type CustomLineupStrikeLimit = 1 | 2 | 3;
 export const CUSTOM_LINEUP_RULESET_VERSION = CUSTOM_NINE_RULESET_VERSION;
 
 const CUSTOM_LINEUP_PUZZLE_ID =
@@ -19,6 +21,8 @@ export type CustomLineupIssuedChallengeInput = {
   readonly canonicalPlayerIds: readonly string[];
   readonly clueSnapshot: PermanentDailyIssuedClueSnapshot;
   readonly issuedAt: string;
+  /** Immutable rule for the whole lineup; omitted only by historical callers. */
+  readonly strikeLimit?: CustomLineupStrikeLimit;
 };
 
 export type CustomLineupIssuedChallenge = Readonly<{
@@ -28,6 +32,7 @@ export type CustomLineupIssuedChallenge = Readonly<{
   canonicalPlayerIds: readonly string[];
   clueSnapshot: PermanentDailyIssuedClueSnapshot;
   issuedAt: string;
+  strikeLimit: CustomLineupStrikeLimit;
 }>;
 
 /**
@@ -39,6 +44,11 @@ export function createCustomLineupIssuedChallenge(
 ): CustomLineupIssuedChallenge {
   validateCustomLineupPuzzleId(input.puzzleId);
   const selection = createCustomLineupSelection(input.canonicalPlayerIds);
+  const strikeLimit = input.strikeLimit === undefined
+    ? DEFAULT_CUSTOM_LINEUP_STRIKE_LIMIT : input.strikeLimit;
+  if (strikeLimit !== 1 && strikeLimit !== 2 && strikeLimit !== 3) {
+    throw new Error('Custom Lineup strike limit must be 1, 2, or 3.');
+  }
   const snapshot = cloneCustomLineupIssuedClueSnapshot(input.clueSnapshot);
   if (snapshot.pitches.length !== selection.canonicalPlayerIds.length) {
     throw new Error('Custom Lineup clue snapshot length must match the selected players.');
@@ -56,6 +66,7 @@ export function createCustomLineupIssuedChallenge(
     schemaVersion: CUSTOM_LINEUP_ISSUED_CHALLENGE_SCHEMA_VERSION,
     puzzleId: input.puzzleId,
     rulesetVersion: CUSTOM_LINEUP_RULESET_VERSION,
+    strikeLimit,
     canonicalPlayerIds: selection.canonicalPlayerIds,
     clueSnapshot: freezeCustomClueSnapshot(snapshot),
     issuedAt: normalizeCustomIssuedAt(input.issuedAt),

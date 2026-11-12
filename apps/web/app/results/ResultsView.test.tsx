@@ -39,4 +39,27 @@ describe('My Results presentation', () => {
     expect(html).toContain('No completed games');
     expect(html).not.toContain('0 /');
   });
+  it('filters archive deep links by exact puzzle identity, never date or Daily mode', () => {
+    const target = { ...game, key: 'archive-target', puzzleId: 'archive-beta-v1-daily-7',
+      puzzleNumber: 7, mode: 'Archive' as const, score: 22 };
+    const another = { ...target, key: 'archive-other', puzzleId: 'archive-beta-v1-daily-8',
+      score: 19 };
+    const html = renderToStaticMarkup(<ResultsList
+      archivePuzzleId="archive-beta-v1-daily-7"
+      history={{ status: 'ready', unreadableRecords: 0,
+        games: [game, another, target] }} />);
+    expect(html).toContain('22 / 36');
+    expect(html).toContain('Show all saved results');
+    expect(html).not.toContain('19 / 36');
+    expect(html).not.toContain('3.5 / 36');
+    expect(html).not.toContain('archive-target');
+    expect(html).not.toContain('archive-other');
+  });
+  it('does not invent a zero or leak another result for an unmatched archive filter', () => {
+    const html = renderToStaticMarkup(<ResultsList archivePuzzleId="archive-beta-v1-daily-9"
+      history={{ status: 'ready', unreadableRecords: 0, games: [game] }} />);
+    expect(html).toContain('No completed result is saved here');
+    expect(html).not.toContain('3.5 / 36');
+    expect(html).not.toContain('0 /');
+  });
 });

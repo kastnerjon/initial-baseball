@@ -19,7 +19,6 @@ const sampleReveal: CanonicalRevealViewModel = {
   seasons: [],
 };
 
-
 describe('AtBatCard pending resolution feedback', () => {
   it('preserves the historical v3 question prompt', () => {
     const html = renderCard({ requestPending: false, giveUpPending: false, rulesetVersion: 'points-v3' });
@@ -48,6 +47,16 @@ describe('AtBatCard pending resolution feedback', () => {
     expect(html).toContain('aria-atomic="true"');
     expect(html).not.toContain('Who is the player?');
   });
+
+  it.each(['points-v4', 'points-v3', 'classic-inning-v1'] as const)(
+    'protects Give Up in the %s at-bat before a terminal request', rulesetVersion => {
+      const html = renderCard({ requestPending: false, giveUpPending: false, rulesetVersion });
+      expect(html).toContain('class="give-up-confirmation"');
+      expect(html).toContain('Give up</button>');
+      expect(html).not.toContain('Yes, give up');
+      expect(html).not.toContain('Are you sure?');
+    },
+  );
 
   it('groups Reveal Next Hint beside Submit Guess without moving Give up', () => {
     const html = renderCard({
@@ -216,6 +225,24 @@ describe('AtBatCard pending resolution feedback', () => {
     expect(html).toContain('K 0 PTS');
     expect(html).toContain('at-bat-comparison-values');
     expect(html).not.toContain('at-bat-summary-metrics');
+  });
+
+  it('shows only earned points for official edition practice without peer-stat placeholders', () => {
+    const html = renderCard({
+      requestPending: false, giveUpPending: false, rulesetVersion: 'points-v4',
+      practiceOnly: true,
+      submittedResult: {
+        kind: 'strikeout', revealedCount: 0,
+        strikeCount: 3, outcome: 'K', source: 'strikeout',
+      },
+      comparison: { status: 'idle' },
+    });
+    expect(html).toContain('Your Score');
+    expect(html).toContain('aria-label="At-bat score"');
+    expect(html).not.toContain('Loading comparison');
+    expect(html).not.toContain('>AVG<');
+    expect(html).not.toContain('>Percentile<');
+    expect(html).not.toContain('How everyone scored');
   });
 
   it('uses the supplied terminal action label after a resolved at-bat', () => {
@@ -406,7 +433,7 @@ function renderCard(input: {
   giveUpPending: boolean;
   selectedPlayerId?: string | null;
   query?: string;
-  rulesetVersion?: 'points-v2' | 'points-v3' | 'points-v4';
+  rulesetVersion?: 'points-v2' | 'points-v3' | 'points-v4' | 'classic-inning-v1';
   submittedResult?: {
     kind: 'strikeout';
     revealedCount: 0;
@@ -415,6 +442,7 @@ function renderCard(input: {
     source: 'strikeout';
   };
   nextActionLabel?: string;
+  practiceOnly?: boolean;
   cumulativePoints?: number;
   revealCount?: 0 | 1 | 2 | 3 | 4;
   reveal?: CanonicalRevealViewModel | null;
@@ -440,6 +468,7 @@ function renderCard(input: {
       giveUpPending={input.giveUpPending}
       requestError={null}
       comparison={input.comparison ?? { status: 'idle' }}
+      practiceOnly={input.practiceOnly ?? false}
       terminalAwardedPoints={input.submittedResult === undefined ? null : 0}
       cumulativePoints={input.cumulativePoints ?? 0}
       {...(input.nextActionLabel === undefined ? {} : { nextActionLabel: input.nextActionLabel })}
@@ -452,7 +481,6 @@ function renderCard(input: {
     />,
   );
 }
-
 
 function renderTerminalComparison(comparison: DailyNineAtBatComparisonState): string {
   return renderCard({

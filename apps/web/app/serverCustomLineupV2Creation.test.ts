@@ -31,7 +31,7 @@ function clueSnapshot(ids: readonly string[]) {
   });
 }
 
-function setup() {
+function setup(environment: Record<string, string | undefined> = ENV) {
   const client = {} as SupabaseClient;
   const insertIfAbsent = vi.fn(async (challenge: CustomLineupIssuedChallenge): Promise<{
     status: 'inserted' | 'existing'; challenge: CustomLineupIssuedChallenge;
@@ -44,11 +44,67 @@ function setup() {
     issuedAt: vi.fn(() => DATE),
     mintOwnerCapability: vi.fn(() => 'A'.repeat(43)),
   };
-  const service = createServerCustomLineupV2CreationService({ environment: ENV, dependencies });
+  const service = createServerCustomLineupV2CreationService({ environment, dependencies });
   return { service, insertIfAbsent, dependencies };
 }
 
 describe('private Custom Lineup v2 issuance', () => {
+  it('blocks nondefault issuance without an explicit server readiness setting', async () => {
+    for (const cap of [1, 2] as const) {
+      const { service, dependencies, insertIfAbsent } = setup();
+      await expect(service.issueForAccount(
+        { canonicalPlayerIds: players(2), strikeLimit: cap }, 'Future setting',
+        '123e4567-e89b-42d3-a456-426614174099',
+      )).rejects.toMatchObject({ kind: 'invalid_selection' });
+      expect(dependencies.materializeClues).not.toHaveBeenCalled();
+      expect(insertIfAbsent).not.toHaveBeenCalled();
+    }
+  });
+
+  it.each([1, 2, 3] as const)('freezes approved cap %i only under trusted account issuance', async strikeLimit => {
+    const { service, insertIfAbsent } = setup({ ...ENV, CUSTOM_LINEUP_VARIABLE_STRIKES_ENABLED: 'true' });
+    const accountId = '123e4567-e89b-42d3-a456-426614174099';
+    expect(await service.issueForAccount(
+      { canonicalPlayerIds: players(2), strikeLimit }, 'Future setting', accountId,
+    )).toEqual({ puzzleId: ID });
+    expect(insertIfAbsent).toHaveBeenCalledWith(
+      expect.objectContaining({ strikeLimit, canonicalPlayerIds: players(2) }),
+      'Future setting', undefined, accountId,
+    );
+    if (strikeLimit !== 3) {
+      const old = setup({ ...ENV, CUSTOM_LINEUP_VARIABLE_STRIKES_ENABLED: 'true' });
+      await expect(old.service.issueAnonymous({ canonicalPlayerIds: players(2), strikeLimit },
+        'Anonymous test')).rejects.toMatchObject({ kind: 'invalid_selection' });
+      expect(old.insertIfAbsent).not.toHaveBeenCalled();
+    }
+  });
+
+  it('rejects malformed and extraneous strike settings before any player or database access', async () => {
+    for (const strikeLimit of [null, undefined, 0, 4, -1, '2', 1.5, false]) {
+      const { service, dependencies } = setup({ ...ENV, CUSTOM_LINEUP_VARIABLE_STRIKES_ENABLED: 'true' });
+      await expect(service.issueForAccount(
+        { canonicalPlayerIds: players(1), strikeLimit }, 'Valid title',
+        '123e4567-e89b-42d3-a456-426614174099',
+      )).rejects.toMatchObject({ kind: 'invalid_selection' });
+      expect(dependencies.materializeClues).not.toHaveBeenCalled();
+      expect(dependencies.createSupabaseClient).not.toHaveBeenCalled();
+    }
+    const { service, dependencies } = setup({ ...ENV, CUSTOM_LINEUP_VARIABLE_STRIKES_ENABLED: 'true' });
+    await expect(service.issueForAccount({ canonicalPlayerIds: players(1), strikeLimit: 2,
+      creatorAccountId: 'spoofed' }, 'Valid title',
+      '123e4567-e89b-42d3-a456-426614174099',
+    )).rejects.toMatchObject({ kind: 'invalid_selection' });
+    expect(dependencies.materializeClues).not.toHaveBeenCalled();
+  });
+
+  it('defaults omitted strikes to three even while the variable gate is enabled', async () => {
+    const { service, insertIfAbsent } = setup({ ...ENV, CUSTOM_LINEUP_VARIABLE_STRIKES_ENABLED: 'true' });
+    await service.issueForAccount({ canonicalPlayerIds: players(1) }, 'Old draft',
+      '123e4567-e89b-42d3-a456-426614174099');
+    expect(insertIfAbsent).toHaveBeenCalledWith(
+      expect.objectContaining({ strikeLimit: 3 }), 'Old draft', undefined,
+      '123e4567-e89b-42d3-a456-426614174099');
+  });
   it.each([1, 5, 9, 10])('freezes exactly %i ordered canonical batters and returns only an opaque ID', async n => {
     const { service, insertIfAbsent, dependencies } = setup();
     const ids = players(n).reverse();
@@ -74,6 +130,39 @@ describe('private Custom Lineup v2 issuance', () => {
     expect(result).toEqual({ puzzleId: ID });
     expect(insertIfAbsent).toHaveBeenCalledWith(expect.anything(), 'Mets Legends');
     expect(JSON.stringify(result)).not.toContain('Mets');
+  });
+
+  it('issues to a verified account UUID in the same frozen row, with no owner code', async () => {
+    const { service, insertIfAbsent, dependencies } = setup();
+    const accountId = '123e4567-e89b-42d3-a456-426614174099';
+    const result = await service.issueForAccount(
+      { canonicalPlayerIds: players(10) }, '  Historical   Dodgers ', accountId,
+    );
+    expect(result).toEqual({ puzzleId: ID });
+    expect(insertIfAbsent).toHaveBeenCalledWith(
+      expect.objectContaining({ schemaVersion: 2, puzzleId: ID }),
+      'Historical Dodgers', undefined, accountId,
+    );
+    expect(dependencies.mintOwnerCapability).not.toHaveBeenCalled();
+    expect(JSON.stringify(result)).not.toContain(accountId);
+    expect(JSON.stringify(result)).not.toContain('player-');
+  });
+
+  it('rejects invalid account identity and titles before catalog or DB work', async () => {
+    for (const accountId of ['', 'user@example.test', '../admin', 'not-a-uuid',
+      '123e4567-e89b-42d3-7456-426614174099', '123e4567-e89b-42d3-c456-426614174099']) {
+      const { service, dependencies } = setup();
+      await expect(service.issueForAccount(
+        { canonicalPlayerIds: players(1) }, 'Valid Title', accountId,
+      )).rejects.toMatchObject({ kind: 'invalid_selection' });
+      expect(dependencies.materializeClues).not.toHaveBeenCalled();
+      expect(dependencies.createSupabaseClient).not.toHaveBeenCalled();
+    }
+    const { service, dependencies } = setup();
+    await expect(service.issueForAccount(
+      { canonicalPlayerIds: players(1) }, '<script>', '123e4567-e89b-42d3-a456-426614174099',
+    )).rejects.toMatchObject({ kind: 'invalid_selection' });
+    expect(dependencies.materializeClues).not.toHaveBeenCalled();
   });
 
   it('creates a separate random owner management code and stores only its digest', async () => {

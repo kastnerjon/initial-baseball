@@ -54,6 +54,51 @@ describe('anonymous management verifier storage', () => {
   });
 });
 
+describe('persist immutable whole-lineup strike cap under the approved schema (#529)', () => {
+  it.each([1, 2, 3] as const)('inserts and reads back a cap-%i frozen challenge', async strikeLimit => {
+    const proposed = { ...challenge(2), strikeLimit };
+    const encoded = encodeCustomLineupV2IssuedRow(proposed);
+    expect(encoded.strike_limit).toBe(strikeLimit);
+    const { client, insert } = clientForInsert(encoded);
+    await expect(createSupabaseCustomLineupV2IssuedWriter(client).insertIfAbsent(proposed))
+      .resolves.toEqual({ status: 'inserted', challenge: proposed });
+    expect(insert).toHaveBeenCalledWith(expect.objectContaining({ strike_limit: strikeLimit }));
+  });
+  it('keeps all historical callers at three, and rejects invalid metadata', () => {
+    expect(encodeCustomLineupV2IssuedRow(challenge(1))).toMatchObject({ schema_version: 2, strike_limit: 3 });
+    for (const strikeLimit of [0, 4, null, '2', 1.5]) {
+      expect(() => encodeCustomLineupV2IssuedRow({ ...challenge(1), strikeLimit: strikeLimit as 1 | 2 | 3 }))
+        .toThrow('strike limit');
+    }
+  });
+});
+
+describe('verified creator account storage', () => {
+  it('binds the private account UUID in the same immutable insert and never reads it back', async () => {
+    const issued = challenge(2);
+    const accountId = '123e4567-e89b-42d3-a456-426614174099';
+    const { client, insert } = clientForInsert(encodeCustomLineupV2IssuedRow(issued));
+    const result = await createSupabaseCustomLineupV2IssuedWriter(client)
+      .insertIfAbsent(issued, 'Saved challenge', undefined, accountId);
+    expect(insert).toHaveBeenCalledWith({
+      ...encodeCustomLineupV2IssuedRow(issued),
+      display_title: 'Saved challenge', creator_account_id: accountId,
+    });
+    expect(result.status).toBe('inserted');
+    expect(JSON.stringify(result)).not.toContain(accountId);
+  });
+
+  it('refuses an account UUID and historical owner capability on one issued record', async () => {
+    const issued = challenge(1);
+    const { client, insert } = clientForInsert(encodeCustomLineupV2IssuedRow(issued));
+    await expect(createSupabaseCustomLineupV2IssuedWriter(client)
+      .insertIfAbsent(issued, 'Invalid dual owner', 'a'.repeat(64),
+        '123e4567-e89b-42d3-a456-426614174099'))
+      .rejects.toMatchObject({ kind: 'invalid-row' });
+    expect(insert).not.toHaveBeenCalled();
+  });
+});
+
 describe('named immutable writer', () => {
   it('writes an optional title on the exact same row insert, never on a second write', async () => {
     const issued = challenge(3);

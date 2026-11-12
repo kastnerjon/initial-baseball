@@ -18,6 +18,7 @@ import { PlayerRevealCard } from './PlayerRevealCard';
 import { ResultDisplay } from './ResultDisplay';
 import { ResultsDropdown } from './ResultsDropdown';
 import { SearchInput } from './SearchInput';
+import { ConfirmGiveUp } from './ConfirmGiveUp';
 
 type AtBatCardProps = {
   atBat: DailyPublicPuzzlePitch;
@@ -27,6 +28,7 @@ type AtBatCardProps = {
   giveUpPending: boolean;
   requestError: string | null;
   comparison: DailyNineAtBatComparisonState;
+  practiceOnly?: boolean;
   terminalAwardedPoints: number | null;
   cumulativePoints: number;
   nextActionLabel?: string;
@@ -46,6 +48,7 @@ export function AtBatCard({
   giveUpPending,
   requestError,
   comparison,
+  practiceOnly = false,
   terminalAwardedPoints,
   cumulativePoints,
   nextActionLabel = 'Next At Bat',
@@ -109,6 +112,7 @@ export function AtBatCard({
           )}
           <DailyNineAtBatComparison
             state={comparison}
+            practiceOnly={practiceOnly}
             {...(isPointsV4 && terminalAwardedPoints !== null
               ? { summaryPoints: terminalAwardedPoints, summaryOutcome: resolvedTerminalResult.outcome }
               : {})}
@@ -185,15 +189,13 @@ export function AtBatCard({
       {requestError === null ? null : <p className="request-error" role="alert">{requestError}</p>}
 
       <div className="at-bat-actions">
-        <button
-          type="button"
+        <ConfirmGiveUp
+          key={`${atBat.pitchNumber}:${state.revealCount}:${state.strikeCount}:${state.selectedPlayerId ?? ''}:${state.query}`}
           className="button-secondary button-give-up"
-          onClick={onGiveUp}
+          onConfirm={onGiveUp}
           disabled={requestPending}
-          aria-busy={giveUpPending}
-        >
-          {giveUpPending ? 'Revealing…' : 'Give up'}
-        </button>
+          pending={giveUpPending}
+        />
         <div className="at-bat-actions-right">
           <button
             type="button"

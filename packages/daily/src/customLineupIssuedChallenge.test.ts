@@ -91,6 +91,23 @@ describe('Custom Lineup v2 portable contracts (not hosted issuance)', () => {
     ]) expect(Object.isFrozen(value)).toBe(true);
   });
 
+  it.each([1, 2, 3] as const)('freezes a whole-lineup %i-strike rule', strikeLimit => {
+    const issued = createCustomLineupIssuedChallenge({ ...input(2), strikeLimit });
+    expect(issued.strikeLimit).toBe(strikeLimit);
+    expect(issued.rulesetVersion).toBe('points-v4');
+    expect(cloneCustomLineupIssuedChallenge(issued)).toEqual(issued);
+    expect(Object.isFrozen(issued)).toBe(true);
+  });
+
+  it('defaults old challenges to three and rejects malformed strike limits', () => {
+    expect(createCustomLineupIssuedChallenge(input(1)).strikeLimit).toBe(3);
+    for (const strikeLimit of [0, 4, -1, 1.5, '2', null, Number.NaN]) {
+      expect(() => createCustomLineupIssuedChallenge({
+        ...input(1), strikeLimit: strikeLimit as 1 | 2 | 3,
+      })).toThrow('strike limit');
+    }
+  });
+
   it('enforces exact v2 UUID identity and rejects legacy or malformed IDs', () => {
     expect(() => validateCustomLineupPuzzleId(ID)).not.toThrow();
     for (const id of [

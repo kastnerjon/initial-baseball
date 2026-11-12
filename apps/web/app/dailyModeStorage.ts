@@ -12,9 +12,15 @@ const DEFAULT_DAILY_STORAGE_PREFIX = 'initial-baseball:daily:';
 const VERSIONED_DAILY_STORAGE_PREFIX = 'initial-baseball:daily:ruleset:';
 const CLASSIC_DAILY_STORAGE_PREFIX = 'initial-baseball:daily:classic:';
 const ARCHIVE_DAILY_STORAGE_PREFIX = 'initial-baseball:archive:permanent-v1:';
+const OFFICIAL_EDITION_STORAGE_PREFIX = 'initial-baseball:daily:edition-v1:';
 
 export function isArchiveDailyPuzzleId(id?: string): boolean {
   return id?.startsWith('permanent-v1-daily-') === true || id?.startsWith('archive-beta-v1-daily-') === true;
+}
+
+/** Classification only; the server is authoritative for edition-ID validity. */
+function isOfficialDailyEditionPuzzleId(id?: string): boolean {
+  return id?.startsWith('daily-ed-v1-') === true;
 }
 
 type DailyModeStorage = Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>;
@@ -24,6 +30,9 @@ export function getDailyModeStorageKey(
   rulesetVersion: DailyRulesetVersion,
   puzzleId?: string,
 ): string {
+  if (isOfficialDailyEditionPuzzleId(puzzleId)) {
+    return `${OFFICIAL_EDITION_STORAGE_PREFIX}${encodeURIComponent(puzzleId!)}:${rulesetVersion}:${puzzleDate}`;
+  }
   if (isArchiveDailyPuzzleId(puzzleId)) {
     const prefix = puzzleId!.startsWith('archive-beta-v1-daily-') ? 'initial-baseball:archive:archive-beta-v1:' : ARCHIVE_DAILY_STORAGE_PREFIX;
     return `${prefix}${encodeURIComponent(puzzleId!)}:${rulesetVersion}:${puzzleDate}`;
@@ -49,8 +58,10 @@ export function getDailyModeStorage(
     return storage;
   }
   const archive = isArchiveDailyPuzzleId(puzzleId);
-  if (!archive && usesHistoricalCurrentDailyKey(rulesetVersion)) return storage;
-  const puzzleScopedCurrentId = !archive
+  const edition = isOfficialDailyEditionPuzzleId(puzzleId);
+  // New edition IDs never existed in the historical date-only save namespace.
+  if (!archive && !edition && usesHistoricalCurrentDailyKey(rulesetVersion)) return storage;
+  const puzzleScopedCurrentId = !archive && !edition
     && rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION
     && puzzleId !== undefined
     ? puzzleId
@@ -108,7 +119,7 @@ export function isDailyModeSaveCompatible(
   savedRulesetVersion: DailyRulesetVersion,
   puzzleId?: string,
 ): boolean {
-  if (isArchiveDailyPuzzleId(puzzleId)) {
+  if (isArchiveDailyPuzzleId(puzzleId) || isOfficialDailyEditionPuzzleId(puzzleId)) {
     return requestedRulesetVersion === savedRulesetVersion;
   }
   if (requestedRulesetVersion === CLASSIC_DAILY_RULESET_VERSION) {

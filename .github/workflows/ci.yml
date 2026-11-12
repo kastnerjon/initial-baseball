@@ -48,6 +48,14 @@ jobs:
       - run: pnpm test
       - name: Verify isolated Custom QA startup and loopback-origin guards
         run: node --test apps/web/scripts/qa-custom-v2-hosted*.test.mjs
+      - name: Verify isolated QA account journey safety and browser runner syntax
+        run: |
+          node --check apps/web/scripts/qa-custom-account-browser.mjs
+          node --test apps/web/scripts/qa-custom-account-safety.test.mjs
+      - name: Verify credential isolation and syntax of default-OFF browser smoke
+        run: |
+          node --check apps/web/scripts/qa-default-off-browser.mjs
+          node --test apps/web/scripts/qa-default-off-browser-safety.test.mjs
       - run: pnpm check:file-sizes
       - name: Generate current baseball data audit
         run: pnpm data:audit
@@ -125,3 +133,16 @@ jobs:
           pnpm --filter @initial-baseball/baseball-data build
           pnpm --filter @initial-baseball/daily build
           pnpm --filter @initial-baseball/web build
+
+      - name: Install pinned QA-only Chromium for default-OFF browser smoke
+        run: |
+          npm install --prefix /tmp/ib-default-off-smoke --no-package-lock playwright@1.56.1
+          /tmp/ib-default-off-smoke/node_modules/.bin/playwright install --with-deps chromium
+      - name: Verify default-OFF production-built routes in native Chromium
+        env:
+          IB_DEFAULT_OFF_SMOKE_PLAYWRIGHT_MODULE: /tmp/ib-default-off-smoke/node_modules/playwright/index.mjs
+        run: node apps/web/scripts/qa-default-off-browser.mjs
+      - name: Verify mounted My Creations pagination and account switching in Chromium
+        env:
+          IB_DEFAULT_OFF_SMOKE_PLAYWRIGHT_MODULE: /tmp/ib-default-off-smoke/node_modules/playwright/index.mjs
+        run: node scripts/qa-my-creations-pagination-browser.mjs

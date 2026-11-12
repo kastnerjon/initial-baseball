@@ -10,7 +10,7 @@ import {
 } from './supabaseCustomLineupV2IssuedReader';
 
 const TABLE = 'custom_nine_issued_challenges';
-const COLUMNS = 'puzzle_id,schema_version,ruleset_version,canonical_player_ids,clue_snapshot,issued_at';
+const COLUMNS = 'puzzle_id,schema_version,ruleset_version,canonical_player_ids,clue_snapshot,issued_at,strike_limit';
 
 export class CustomLineupV2IssuedWriteError extends Error {
   constructor(public readonly kind: 'query' | 'invalid-row') {
@@ -22,12 +22,15 @@ export class CustomLineupV2IssuedWriteError extends Error {
 /** Encode only the already-validated immutable schema-v2 fields. */
 export function encodeCustomLineupV2IssuedRow(
   challenge: CustomLineupIssuedChallenge, displayTitle?: string, ownerCapabilityDigest?: string,
+  creatorAccountId?: string,
 ) {
   const value = cloneCustomLineupIssuedChallenge(challenge);
+  // Issued-row schema is immutable; the trusted issuer gates 1/2 until end-to-end ready.
   return {
     puzzle_id: value.puzzleId,
     schema_version: value.schemaVersion,
     ruleset_version: value.rulesetVersion,
+    strike_limit: value.strikeLimit,
     canonical_player_ids: [...value.canonicalPlayerIds],
     clue_snapshot: {
       schemaVersion: value.clueSnapshot.schemaVersion,
@@ -42,6 +45,7 @@ export function encodeCustomLineupV2IssuedRow(
     issued_at: value.issuedAt,
     ...(displayTitle === undefined ? {} : { display_title: displayTitle }),
     ...(ownerCapabilityDigest === undefined ? {} : { owner_capability_digest: ownerCapabilityDigest }),
+    ...(creatorAccountId === undefined ? {} : { creator_account_id: creatorAccountId }),
   };
 }
 
@@ -50,9 +54,13 @@ export function createSupabaseCustomLineupV2IssuedWriter(client: SupabaseClient)
   return {
     async insertIfAbsent(
       challenge: CustomLineupIssuedChallenge, displayTitle?: string, ownerCapabilityDigest?: string,
+      creatorAccountId?: string,
     ):
       Promise<{ status: 'inserted' | 'existing'; challenge: CustomLineupIssuedChallenge }> {
-      const row = encodeCustomLineupV2IssuedRow(challenge, displayTitle, ownerCapabilityDigest);
+      if (ownerCapabilityDigest !== undefined && creatorAccountId !== undefined) {
+        throw new CustomLineupV2IssuedWriteError('invalid-row');
+      }
+      const row = encodeCustomLineupV2IssuedRow(challenge, displayTitle, ownerCapabilityDigest, creatorAccountId);
       let response;
       try {
         response = await client.from(TABLE).insert(row).select(COLUMNS).single();

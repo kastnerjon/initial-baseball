@@ -32,6 +32,8 @@ export async function POST(request: Request): Promise<NextResponse> {
       canonicalPlayerIds: input.canonicalPlayerIds,
       actorId,
       occurredAt,
+      // Same-day fallback replacement is permitted only with explicit schedule intent.
+      allowCurrentDraftReset: input.schedule,
     });
     if (input.schedule) {
       puzzle = await workflow.transitionLifecycle({

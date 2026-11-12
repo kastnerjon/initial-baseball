@@ -39,23 +39,36 @@ describe('baseballPlayers', () => {
   });
 
   it('includes required fields for every player', () => {
-    for (const player of baseballPlayers) {
-      expect(player.id.length).toBeGreaterThan(0);
-      expect(player.fullName.length).toBeGreaterThan(0);
-      expect(player.displayName.length).toBeGreaterThan(0);
-      expect(player.primaryPosition.length).toBeGreaterThan(0);
-      expect(player.mainDecade.length).toBeGreaterThan(0);
-      expect(player.firstYear === null || typeof player.firstYear === 'number').toBe(true);
-      expect(player.lastYear === null || typeof player.lastYear === 'number').toBe(true);
-      expect(player.yearsPlayedDisplay).toBeTypeOf('string');
-      expect(player.primaryTeam).toBeTypeOf('string');
-      expect(player.teamsDisplay).toBeTypeOf('string');
-      expect(player.statsLine).toBeTypeOf('string');
-      expect(player.careerStats === null || ['hitter', 'pitcher'].includes(player.careerStats.kind)).toBe(true);
-      expect(['core', 'extended', 'none']).toContain(player.dailyEligibilityTier);
-      expect(player.dailyEligible).toBeTypeOf('boolean');
-      expect(Array.isArray(player.aliases)).toBe(true);
+    const failures: string[] = [];
+
+    for (const [index, player] of baseballPlayers.entries()) {
+      // Validate every field of every player; aggregate failures instead of
+      // invoking Vitest's assertion machinery hundreds of thousands of times.
+      const checks = [
+        ['id', player.id.length > 0],
+        ['fullName', player.fullName.length > 0],
+        ['displayName', player.displayName.length > 0],
+        ['primaryPosition', player.primaryPosition.length > 0],
+        ['mainDecade', player.mainDecade.length > 0],
+        ['firstYear', player.firstYear === null || typeof player.firstYear === 'number'],
+        ['lastYear', player.lastYear === null || typeof player.lastYear === 'number'],
+        ['yearsPlayedDisplay', typeof player.yearsPlayedDisplay === 'string'],
+        ['primaryTeam', typeof player.primaryTeam === 'string'],
+        ['teamsDisplay', typeof player.teamsDisplay === 'string'],
+        ['statsLine', typeof player.statsLine === 'string'],
+        ['careerStats', player.careerStats === null
+          || ['hitter', 'pitcher'].includes(player.careerStats?.kind)],
+        ['dailyEligibilityTier', ['core', 'extended', 'none'].includes(player.dailyEligibilityTier)],
+        ['dailyEligible', typeof player.dailyEligible === 'boolean'],
+        ['aliases', Array.isArray(player.aliases)],
+      ] as const;
+
+      for (const [field, valid] of checks) {
+        if (!valid) failures.push(`player[${index}] (${player.id}): ${field}`);
+      }
     }
+
+    expect(failures).toEqual([]);
   });
 
   it('keeps aliases as arrays', () => {

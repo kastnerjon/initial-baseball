@@ -12,7 +12,7 @@ const TABLE = 'custom_nine_attempt_states';
 const COLUMNS = [
   'challenge_id', 'browser_key_digest', 'attempt_id', 'revision',
   'current_progression_token', 'terminal_at_bats', 'status',
-  'created_at', 'updated_at', 'completed_at',
+  'created_at', 'updated_at', 'completed_at', 'creator_seen',
 ].join(',');
 
 export type CustomLineupV2ReservationKey = Readonly<{ challengeId: string; browserKeyDigest: string }>;
@@ -32,15 +32,32 @@ async function query<T>(perform: () => PromiseLike<T>): Promise<T> {
   try { return await perform(); } catch { throw failure(); }
 }
 
+/** Monotone creator provenance update; the database trigger forbids clearing true.
+ * Missing attempts are harmless because there is no reserved row to mark.
+ */
+export async function markCustomLineupV2CreatorSeen(
+  client: SupabaseClient, key: CustomLineupV2ReservationKey,
+): Promise<void> {
+  requireKey(key);
+  const result = await query(() => client.from(TABLE).update({ creator_seen: true })
+    .eq('challenge_id', key.challengeId)
+    .eq('browser_key_digest', key.browserKeyDigest)
+    .select('creator_seen').maybeSingle());
+  if (result.error !== null || (result.data !== null && result.data.creator_seen !== true)) {
+    throw failure();
+  }
+}
+
 /** Immutable-N v2 reservation only. No v1 nine-only CAS completion method is exposed. */
 export function createSupabaseCustomLineupV2ReservationRepository(
-  client: SupabaseClient, immutableAtBatCount: number,
+  client: SupabaseClient, immutableAtBatCount: number, cap: 1 | 2 | 3 = 3,
 ) {
-  if (!Number.isInteger(immutableAtBatCount) || immutableAtBatCount < 1 || immutableAtBatCount > 10) {
+  if (!Number.isInteger(immutableAtBatCount) || immutableAtBatCount < 1 || immutableAtBatCount > 10
+    || (cap !== 1 && cap !== 2 && cap !== 3)) {
     throw invalid();
   }
   function decode(row: unknown, key: CustomLineupV2ReservationKey): CustomNineAttemptState {
-    const saved = decodeCustomLineupV2AttemptRow(row, immutableAtBatCount);
+    const saved = decodeCustomLineupV2AttemptRow(row, immutableAtBatCount, cap);
     if (saved.challengeId !== key.challengeId || saved.browserKeyDigest !== key.browserKeyDigest) {
       throw invalid();
     }
@@ -91,7 +108,7 @@ export function createSupabaseCustomLineupV2ReservationRepository(
         || JSON.stringify(next.terminalAtBats) !== JSON.stringify(prior.terminalAtBats)) throw invalid();
       return { status: 'advanced', state: next };
     },
-    /** Exact-N terminal CAS: every correct, third-strike or give-up result must
+    /** Exact-N terminal CAS: every correct, issued-cap strikeout or give-up result must
      * win the same revision/token predicate as nonterminal guesses.
      */
     async advanceTerminal(
@@ -113,7 +130,7 @@ export function createSupabaseCustomLineupV2ReservationRepository(
       requireCustomNineProgressionToken(successorToken);
       if (successorToken === prior.currentProgressionToken) throw invalid();
       const facts = normalizeCustomNineAttemptFacts(
-        [...prior.terminalAtBats, terminalAtBat], immutableAtBatCount,
+        [...prior.terminalAtBats, terminalAtBat], immutableAtBatCount, cap,
       );
       if (facts.length !== prior.terminalAtBats.length + 1) throw invalid();
       const completed = facts.length === immutableAtBatCount;

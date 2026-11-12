@@ -30,7 +30,7 @@ beforeEach(() => {
   vi.stubEnv('DAILY_PROGRESSION_SECRET', 'a-test-progression-secret-that-is-long-enough');
   issue.mockReset();
   issue.mockResolvedValue({ puzzleId: ID });
-  vi.mocked(createServerCustomLineupV2CreationService).mockReturnValue({ issue, issueAnonymous: vi.fn() });
+  vi.mocked(createServerCustomLineupV2CreationService).mockReturnValue({ issue, issueAnonymous: vi.fn(), issueForAccount: vi.fn() });
 });
 
 afterEach(() => { vi.unstubAllEnvs(); vi.clearAllMocks(); });

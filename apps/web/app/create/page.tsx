@@ -6,9 +6,10 @@ import '../admin/custom-nine/custom-nine-creator.css';
 
 export const dynamic = 'force-dynamic';
 
-/** Default-off public creator. No account. Does not activate the v2 game. */
+/** Default-off guest draft builder. Issuance is separately account-gated by the server. */
 export default function CreateLineupPage(): JSX.Element {
   if (process.env.CUSTOM_LINEUP_PUBLIC_CREATION_ENABLED !== 'true'
     || !isCustomLineupV2GameplayTransportEnabled()) notFound();
-  return <CustomNineCreatorView mode="v2" audience="public" gameplayAvailable />;
+  return <CustomNineCreatorView mode="v2" audience="public" gameplayAvailable
+    variableStrikesAvailable={process.env.CUSTOM_LINEUP_VARIABLE_STRIKES_ENABLED === 'true'} />;
 }

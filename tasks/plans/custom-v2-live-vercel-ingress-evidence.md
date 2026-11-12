@@ -52,3 +52,22 @@ The project's active, staging and draft firewall configuration reads return **40
 ## Review and documentation impact
 
 This permanent note replaces ephemeral probe code; the probe was intentionally **closed unmerged**. Evidence is limited to the exact preview, timestamp and cases above. Update `docs/START-HERE.md` and `tasks/todo.md` accordingly. No new product or architecture contract, package dependency, runtime behavior, or migration is introduced by the documentation PR.
+
+## October 24 — live route-scoped WAF enforcement and rollback
+
+The Vercel project Firewall dashboard was accessible. The project initially had zero custom rules. Hobby entitlements support one fixed-window rate rule. Rule `rule_custom_lineup_create_rate_limit_Fq5Eyx` is now active with these exact matches and settings:
+
+- `Request Path Equals /api/custom-lineup/create`
+- `Method Equals POST`
+- Fixed window: 600 seconds; limit: 10; key: IP address
+- Over-limit response: HTTP 429
+
+The project has neither `CUSTOM_LINEUP_PUBLIC_CREATION_ENABLED` nor `CUSTOM_LINEUP_V2_GAMEPLAY_TRANSPORT_ENABLED` configured. A harmless production `POST {}` probe therefore reached the handler's early closed-feature gate and returned HTTP 404 without parsing a challenge or writing Supabase. With the route rule in log-only mode, Vercel's Firewall Traffic dashboard recorded the request. After publishing the 10/600/IP rule, ten same-egress invalid requests returned HTTP 404 and the eleventh returned HTTP 429, demonstrating live edge enforcement.
+
+Rollback was exercised by deactivating the same rule and publishing that change; a further harmless invalid request returned HTTP 404. The rule was reactivated and published. The final dashboard state showed the rule active and no staged changes. The separate database-side creation quota remains enabled as its own defense.
+
+After the probes, read-only SQL counts were unchanged: production had 1 issued challenge, 0 attempts, 0 completed results, 0 at-bats and 0 budget rows; isolated QA had 49 issued, 24 attempts, 24 completed, 114 at-bats and 4 budget rows. No valid creation request was sent, and no WAF rule, feature flag or database object was changed after the final published restoration.
+
+Preview isolation was also checked using nonsecret Vercel configuration metadata: its `SUPABASE_URL` is `https://dwreeiydvwikpamlokji.supabase.co`, the production project, and there is no QA-specific override. Do not use Vercel Preview for signed/destructive QA. The firewall configuration API still returns `404 Seawall Config not found`; the authenticated Firewall dashboard's published rule list is the configuration evidence. No paid upgrade was made.
+
+This verifies one live route-scoped edge rule and its safe reversal while application creation/gameplay remained closed. It does **not** prove valid creator/gameplay or signed browser acceptance, a physical-device run, or safe rollback after production activation. Keep both production Custom flags OFF until the remaining launch gates pass.

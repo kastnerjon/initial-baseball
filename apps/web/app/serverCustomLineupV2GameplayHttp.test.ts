@@ -12,11 +12,15 @@ vi.mock('./serverCustomLineupV2IncorrectGuesses', () => ({
 vi.mock('./serverCustomLineupV2CompletedAdmission', () => ({
   createServerCustomLineupV2CompletedAdmissionService: vi.fn(),
 }));
+vi.mock('./serverCustomLineupV2AccountCreatorExclusion', () => ({
+  inspectCustomLineupV2AccountCreator: vi.fn(),
+}));
 
 import { createServerCustomLineupV2AttemptBootstrap } from './serverCustomLineupV2AttemptBootstrap';
 import { createServerCustomLineupV2AttemptHintService } from './serverCustomLineupV2AttemptHints';
 import { createServerCustomLineupV2IncorrectGuessService } from './serverCustomLineupV2IncorrectGuesses';
 import { createServerCustomLineupV2CompletedAdmissionService } from './serverCustomLineupV2CompletedAdmission';
+import { inspectCustomLineupV2AccountCreator } from './serverCustomLineupV2AccountCreatorExclusion';
 import { handleCustomLineupV2GameplayPost, isCustomLineupV2GameplayTransportEnabled }
   from './serverCustomLineupV2GameplayHttp';
 
@@ -24,7 +28,7 @@ const ID = 'custom-lineup-v2-123e4567-e89b-42d3-a456-426614174000';
 const URL = 'https://example.test/api/custom-lineup/challenges/' + ID + '/attempt/';
 const player = 'ibp_' + 'a'.repeat(20);
 const opening = {
-  puzzleId: ID, rulesetVersion: 'points-v4',
+  puzzleId: ID, rulesetVersion: 'points-v4', strikeLimit: 3,
   atBats: [{ pitchNumber: 1, initials: 'BH' }],
   progressionToken: 'signed-open',
   hintBundle: { pitchNumber: 1, revealedCount: 0, hints: [], checkpoints: [] },
@@ -51,6 +55,7 @@ function send(action: typeof actions[number], options: RequestInit = {}, id=ID, 
 beforeEach(() => {
   vi.clearAllMocks();
   vi.stubEnv('CUSTOM_LINEUP_V2_GAMEPLAY_TRANSPORT_ENABLED', 'true');
+  vi.mocked(inspectCustomLineupV2AccountCreator).mockResolvedValue({ owner: false, finish: r => r });
   bootstrap.mockResolvedValue({
     kind: 'ready', bootstrap: opening, setCookie:
       'opaque=valid; Path=/api/custom-lineup/challenges/' + ID + '; HttpOnly; SameSite=Strict; Secure',
@@ -111,7 +116,7 @@ describe('off-by-default Custom v2 gameplay HTTP transport', () => {
       ...opening, attemptMode: 'reserved',
       attemptProgress: { strikeCount: 0, completedAtBats: [] },
     });
-    expect(bootstrap).toHaveBeenCalledWith(ID, cookie, URL + 'bootstrap');
+    expect(bootstrap).toHaveBeenCalledWith(ID, cookie, URL + 'bootstrap', false);
     bootstrap.mockResolvedValueOnce({
       kind: 'ready', bootstrap: { ...opening, progressionToken: 'signed-resumed',
         hintBundle: { pitchNumber: 1, revealedCount: 1,
@@ -133,7 +138,7 @@ describe('off-by-default Custom v2 gameplay HTTP transport', () => {
     expect(await preview.json()).toMatchObject({ attemptMode: 'creator_preview' });
     expect(preview.headers.get('set-cookie')).toBeNull();
     bootstrap.mockResolvedValueOnce({
-      kind: 'completed', atBats: opening.atBats,
+      kind: 'completed', atBats: opening.atBats, strikeLimit: 3,
       completedAtBats: [{ pitchNumber: 1, initials: 'BH', outcome: 'HR',
         hintsRevealed: 0, wrongGuesses: 0, resolution: 'correct' }],
       revision: 1, completedAt: '2026-10-15T12:00:00Z',
@@ -141,10 +146,79 @@ describe('off-by-default Custom v2 gameplay HTTP transport', () => {
     const result = await send('bootstrap');
     const json = await result.json() as Record<string, unknown>;
     expect(json.attemptMode).toBe('completed');
+    expect(json.strikeLimit).toBe(3);
     expect(json).not.toHaveProperty('progressionToken');
     expect(json).not.toHaveProperty('hintBundle');
     expect(json).not.toHaveProperty('attemptId');
     expect(result.headers.get('set-cookie')).toBeNull();
+  });
+
+  it('shows signed-in creator preview without reserving and blocks mutations/completion', async () => {
+    vi.mocked(inspectCustomLineupV2AccountCreator).mockResolvedValue({
+      owner: true, finish: r => r,
+    });
+    bootstrap.mockResolvedValueOnce({ kind: 'preview', bootstrap: opening });
+    const result = await send('bootstrap');
+    expect(result.status).toBe(200);
+    expect(await result.json()).toMatchObject({ attemptMode: 'creator_preview' });
+    expect(bootstrap).toHaveBeenCalledWith(ID, cookie, URL + 'bootstrap', true);
+    for (const action of ['submit', 'hint', 'resolve'] as const) {
+      const blocked = await send(action);
+      expect(blocked.status).toBe(403);
+      expect(await blocked.json()).toEqual({ error: 'invalid_credential' });
+    }
+    expect(submit).not.toHaveBeenCalled();
+    expect(hint).not.toHaveBeenCalled();
+    expect(attempt).not.toHaveBeenCalled();
+  });
+
+  it('applies refreshed auth cookies after gameplay without losing an attempt cookie', async () => {
+    vi.mocked(inspectCustomLineupV2AccountCreator).mockResolvedValueOnce({
+      owner: false,
+      finish: result => {
+        result.headers.append('set-cookie', 'sb-refresh=token; Path=/; HttpOnly');
+        return result;
+      },
+    });
+    const res = await send('bootstrap');
+    const cookies = res.headers.get('set-cookie') ?? '';
+    expect(cookies).toContain('sb-refresh=token');
+    expect(cookies).toContain('opaque=valid; Path=');
+  });
+
+  it('preserves refreshed Auth cookies when inspection or action dispatch fails', async () => {
+    const addRefresh = (result: Response) => {
+      result.headers.append('set-cookie', 'sb-refresh=renewed; Path=/; HttpOnly');
+      return result;
+    };
+    vi.mocked(inspectCustomLineupV2AccountCreator).mockImplementationOnce(
+      async (_request, _id, _cookie, onFinish) => {
+        onFinish?.(addRefresh);
+        throw new Error('PRIVATE_AUTH_LOOKUP_ERROR');
+      },
+    );
+    const diagnostic = vi.spyOn(console, 'error').mockImplementation(() => {});
+    try {
+      const unavailable = await send('bootstrap');
+      expect(unavailable.status).toBe(503);
+      expect(unavailable.headers.get('set-cookie')).toContain('sb-refresh=renewed');
+      expect(await unavailable.json()).toEqual({ error: 'session_unavailable' });
+      vi.mocked(inspectCustomLineupV2AccountCreator).mockResolvedValueOnce({
+        owner: false, finish: addRefresh,
+      });
+      const invalidBody = await send('hint', { body: 'invalid-json' });
+      expect(invalidBody.status).toBe(400);
+      expect(invalidBody.headers.get('set-cookie')).toContain('sb-refresh=renewed');
+      bootstrap.mockRejectedValueOnce(new Error('PRIVATE_DISPATCH_ERROR'));
+      vi.mocked(inspectCustomLineupV2AccountCreator).mockResolvedValueOnce({
+        owner: false, finish: addRefresh,
+      });
+      const failedDispatch = await send('bootstrap');
+      expect(failedDispatch.status).toBe(503);
+      expect(failedDispatch.headers.get('set-cookie')).toContain('sb-refresh=renewed');
+    } finally {
+      diagnostic.mockRestore();
+    }
   });
 
   it('rejects nonempty bootstrap or submit bodies, including streaming body', async () => {

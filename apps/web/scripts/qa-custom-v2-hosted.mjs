@@ -17,9 +17,15 @@ function required(name) {
 }
 // Never let the operator supply the production ref as an arbitrary comparison value.
 const PRODUCTION_REF = 'dwreeiydvwikpamlokji';
+// This runner creates and mutates real challenge/attempt/result fixtures. Never
+// allow an arbitrary "nonproduction" ref: use only the registered, disposable QA
+// project. A QA-project rotation must be a deliberate reviewed code change.
+const APPROVED_QA_REF = 'iklbnlicgsxxhaoiscor';
 const projectRef = required('CUSTOM_V2_QA_PROJECT_REF');
 assert.notEqual(projectRef, PRODUCTION_REF, 'Production Supabase is prohibited');
 assert.match(projectRef, /^[a-z0-9]{20}$/);
+assert.equal(projectRef, APPROVED_QA_REF,
+  'Only the designated isolated Custom v2 QA Supabase project is allowed');
 const projectUrl = new URL(required('SUPABASE_URL'));
 assert.equal(projectUrl.href, 'https://' + projectRef + '.supabase.co/',
   'Staging API must use exact HTTPS URL of the specified nonproduction project');
@@ -31,6 +37,11 @@ assert.equal(required('CUSTOM_LINEUP_V2_GAMEPLAY_TRANSPORT_ENABLED'), 'true',
 // Optional QA-only public issuance path: simulated Vercel ingress over loopback.
 // This cannot prove real Vercel header trust, mobile behavior, WAF or public rollout.
 const publicCreatorQa = env.CUSTOM_V2_QA_PUBLIC_CREATION === 'true';
+// A requested native-browser gate must never silently downgrade to HTTP-only QA.
+if (env.CUSTOM_V2_QA_PLAYWRIGHT_MODULE !== undefined) {
+  assert.ok(env.CUSTOM_V2_QA_PLAYWRIGHT_MODULE.trim(),
+    'Native browser QA requires a nonempty Playwright module path');
+}
 if (publicCreatorQa) {
   assert.equal(required('CUSTOM_LINEUP_PUBLIC_CREATION_ENABLED'), 'true',
     'Public creation must be enabled only in the isolated QA child server');
@@ -177,10 +188,14 @@ async function createChallenge(n) {
     });
     assert.equal(forbidden.status, 403, 'Cross-origin anonymous issuance must fail');
     const missingEdge = await creator.send('/api/custom-lineup/create', {
+      // Next synthesizes an omitted x-forwarded-for from the local socket.
+      // Empty values survive that nullish default and exercise fail-closed
+      // unusable ingress without changing the application's trust checks.
+      qaForwardedIp: '',
       body: { canonicalPlayerIds: players.slice(0, n), title: 'Rejected no-edge issue' },
     });
     assert.equal(missingEdge.status, 503,
-      'Anonymous issuance without trusted Vercel ingress must fail closed');
+      'Anonymous issuance with unusable Vercel ingress must fail closed');
   }
   const preview = await creator.send(attemptPath(id, 'bootstrap'));
   assert.equal(preview.status, 200);
@@ -435,8 +450,9 @@ async function verifyCommittedCreationResponseLoss() {
   assert.match(first.data?.ownerCapability ?? '', /^[A-Za-z0-9_-]{43}$/);
   assert.match(first.headers.get('set-cookie') ?? '', /HttpOnly/);
 
-  // Deliberately do not use the first returned ID/capability to make the
-  // subsequent request. The caller retries the same selection and title.
+  // This Node test receives the first HTTP 201 and then discards its data
+  // before an explicit retry. It is simulated client-side loss, not a network
+  // response drop; the optional Chromium test covers that browser boundary.
   const retry = await client.send('/api/custom-lineup/create', {
     qaForwardedIp: ip, body,
   });
@@ -450,7 +466,7 @@ async function verifyCommittedCreationResponseLoss() {
   assert.match(retry.headers.get('set-cookie') ?? '', /HttpOnly/);
   assert.ok(!JSON.stringify([...retry.headers]).includes(first.data.ownerCapability),
     'Prior owner capability must not leak on retry');
-  console.log('PASS QA simulated committed-response loss: retry creates another immutable challenge');
+  console.log('PASS QA caller-discarded committed create response: explicit retry issues separately');
 }
 
 const server = await startValidatedWebServer();
@@ -458,6 +474,15 @@ try {
   for (const n of acceptedLengths) await play(n);
   await alternativeFinish('third-strike');
   await alternativeFinish('give-up');
+  // Optional: native Web Locks + signed Next/Supabase continuity on two real tabs.
+  // Only after hard-pinned isolated QA credentials and local server validation.
+  if (env.CUSTOM_V2_QA_PLAYWRIGHT_MODULE) {
+    const { verifyNativeBrowserContinuity } = await import('./qa-custom-v2-native-browser.mjs');
+    await verifyNativeBrowserContinuity({
+      base, createChallenge, players, modulePath: env.CUSTOM_V2_QA_PLAYWRIGHT_MODULE,
+      testPublicCreatorUi: publicCreatorQa,
+    });
+  }
   if (publicCreatorQa) await verifyCommittedCreationResponseLoss();
   if (publicCreatorQa) await verifyAnonymousCreationBudget();
   if (publicCreatorQa) await verifyConcurrentAnonymousCreationBudget();

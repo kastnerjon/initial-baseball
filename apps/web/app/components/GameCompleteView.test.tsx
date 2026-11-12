@@ -212,6 +212,53 @@ describe('GameCompleteView comparison', () => {
   });
 });
 
+
+
+describe('practice-only completion suppresses unavailable competitive comparisons', () => {
+  it('retains earned v4 points and Your Nine without loading histograms, AVG or percentile', () => {
+    const html = renderToStaticMarkup(<GameCompleteView
+      practiceOnly
+      shareResult={{ ...shareResult, rulesetVersion: 'points-v4',
+        points: { points: 4, maximumPoints: 36, atBatsCompleted: 9,
+          totalAtBats: 9, completed: true } }}
+      shareText={shareText}
+      comparison={{ status: 'idle' }}
+      atBatPoints={{ 1: 4 }}
+      scorecardAnswers={{ 1: 'Private completed answer' }}
+      leaderboard={{ puzzle: { id: 'primary', puzzleDate: '2026-10-11', puzzleNumber: 146 },
+        completedAtBats: [], attemptId: null }}
+    />);
+    expect(html).toContain('Practice final score');
+    expect(html).toContain('4 PTS');
+    expect(html).toContain('Your Nine at-bat results');
+    expect(html).toContain('Reveal players');
+    expect(html).not.toContain('Private completed answer');
+    expect(html).not.toContain('Loading comparison');
+    expect(html).not.toContain('Loading score distribution');
+    expect(html).not.toContain('Final Score Distribution');
+    expect(html).not.toContain('At-Bat Score Distribution');
+    expect(html).not.toContain('Top 10');
+    expect(html).not.toContain('Percentile');
+    expect(html).not.toContain('AVG');
+  });
+
+  it('keeps personal points but suppresses unavailable comparison columns in legacy points practice', () => {
+    const html = renderToStaticMarkup(<GameCompleteView
+      practiceOnly
+      shareResult={shareResult}
+      shareText={shareText}
+      comparison={{ status: 'idle' }}
+      atBatPoints={{ 1: 4 }}
+    />);
+    expect(html).toContain('Practice final score');
+    expect(html).toContain('41 PTS');
+    expect(html).toContain('Daily Nine detailed scoreboard');
+    expect(html).not.toContain('>AVG</th>');
+    expect(html).not.toContain('BEAT %');
+    expect(html).not.toContain('Loading score distribution');
+  });
+});
+
 function render(
   comparison: NonNullable<Parameters<typeof GameCompleteView>[0]['comparison']>,
   scorecardAnswers: NonNullable<Parameters<typeof GameCompleteView>[0]['scorecardAnswers']> = {},

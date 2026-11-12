@@ -52,6 +52,14 @@ local analogue. It is not hosted, matched Supabase staging acceptance and
 does not validate all Supabase control-plane migrations. Do not apply to live
 production merely because local tests and PR CI pass.
 
+## November 11 — isolated hosted QA matched transactional rehearsal
+
+- Inspected production metadata read-only: `public.rls_auto_enable()` is `postgres`-owned, `SECURITY DEFINER`, returns `event_trigger`, has `search_path=pg_catalog` and the `ensure_rls` trigger on `ddl_command_end` is enabled. Production grants inherited EXECUTE to `anon` and `authenticated`, but neither they nor `service_role` can CREATE in schema `public`.
+- In separate isolated Supabase QA (`iklbnlicgsxxhaoiscor`), reproduced the **exact** production helper body and enabled event trigger **inside one transaction**. Applied the exact source migration blob `9915f13e88b5956bc429ce82c2f1c9918b4f8d41`; verified API-role EXECUTE was removed, a `postgres`-owned disposable CREATE TABLE auto-enabled RLS, and repeated migration remained idempotent. Result: `PASS: hosted QA transactional RLS helper`.
+- A postflight read-only query after `ROLLBACK` confirmed the QA function, event trigger and test table all absent. No hosted migration-history entry, production grant, table or configuration was changed.
+- An adversarial non-owner DDL diagnostic temporarily granted `authenticated` CREATE on `public` *inside a rollback-only QA transaction*. Such a table did **not** receive automatic RLS. A baseline reproduction with the original helper **before applying this migration** returned the same `rls_enabled=false`, despite the role still inheriting EXECUTE. This is not a newly introduced migration regression or evidence that real browser roles can create production tables; both environments deny those roles CREATE by default. It means this test must **not** be cited as proof that the helper auto-enables RLS for arbitrary non-owner table creators.
+- The source PR still needs exact-current-main CI and final-head independent review after any branch reconciliation. A validated QA transaction is not live migration application, nor does source integration authorize production DDL. Use explicit owner approval and production-specific post-apply verification before grant changes.
+
 ## Deployment gate and rollback
 
 - Obtain genuine independent review, exact-head CI and Preview.
@@ -76,6 +84,7 @@ production merely because local tests and PR CI pass.
 
 ## Status
 
-Source/matched-local verification complete October 22, 2026. Hosted matched
-staging, independent review, and live application are **not complete**.
+Source/matched-local verification completed October 22, 2026; a matching
+rollback-only isolated hosted QA reproduction was verified November 11.
+Final-head integration review and live production application are **not complete**.
 Custom Lineups public flags remain OFF, and this PR alone is not a launch gate.
