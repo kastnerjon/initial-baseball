@@ -588,3 +588,144 @@ If a scheduled selection no longer resolves to a nonempty canonical player displ
 ## Bounded Archive beta rollover diagnostics (#615)
 
 The authenticated same-origin Archive beta rollover POST still returns HTTP 503 when any historical source/issuance failure or unprocessed backlog remains; this does not change issuance, publication or legacy score identity. Its private operational error event now records counts by the existing three sanitized failure classes (`missing-source`, `immutable-conflict`, `unavailable`) and at most five date/kind samples, plus the omitted count. No player selections, clues, raw provider exceptions, bearer credentials or unbounded issue list are logged. A successful zero-failure, zero-backlog run logs no error. The confirmed missing 2026-10-16 editorial source and original accepted primary results remain untouched; see issue #615. The change improves diagnosis only and does not waive that missing source, suppress 503, repair historical data or activate official secondary Daily editions.
+
+## Opt-in, spoiler-safe on-demand Daily hint transport (staged)
+
+The shared server Daily runtime supports a new opt-in on-demand hint projection.
+For that mode, bootstrap, resume and next-batter hint bundles contain only
+values already revealed by the signed progression token, and **no presigned
+future reveal checkpoints**. The explicit revealHint command remains the sole
+transport of the next clue and its next signed progression token. Each
+incorrect guess preserves the same partial visibility; an at-bat completion
+never preloads the next batter's clue. The private server may still construct
+complete hint bundles internally for authoritative resolution.
+
+Legacy bundle transport remains the default and unchanged for existing Daily
+clients. No public route activates on-demand mode yet; the secondary exact-ID
+runtime must opt in explicitly. That rollout also requires fresh client-side
+state handling, Pacific date admission, score isolation, and device QA.
+
+The private exact-ID adapter binds a runtime to one frozen publication and the issued points-v4 ruleset. Its reader must enforce Pacific release eligibility and return the exact materialized puzzle or null. Signed continuation tokens for another edition or ruleset fail before publication lookup. Bootstrap, continuation and terminal play use the shared Daily runtime with incremental hints. Competitive admission is gated separately by #566.
+
+## Default-OFF private exact-ID Daily server runtime composition
+
+The web server can compose a private official edition runtime from the existing immutable release-aware reader and the shared exact-ID, points-v4, on-demand hint service. The composition factory validates the canonical daily-ed-v1 occurrence ID and requires the exact server-only setting OFFICIAL_DAILY_EDITION_PRIVATE_RUNTIME_ENABLED=true **before** obtaining a service-role client or canonical runtime. Every gameplay read re-evaluates release eligibility using the server Pacific clock; future and missing publications yield no puzzle.
+
+This source-staged composition is used by the separately default-OFF exact-ID HTTP and server-rendered practice routes, but is not publicly activated. Even with the private factory flag on, the existing fail-closed secondary score and comparison admission remain active. The independently reviewed signed-attempt design in issue #566 is required before public competitive starts. The existing primary Daily, Classic and archive-beta runtime selection and their legacy token/hint contracts remain unchanged.
+
+### Source-staged exact-ID edition gameplay HTTP transport (default OFF)
+
+The route `/api/daily/editions/:puzzleId/:action` is gated by an additional exact server setting `OFFICIAL_DAILY_EDITION_HTTP_ENABLED=true` **and** the private runtime's independent `OFFICIAL_DAILY_EDITION_PRIVATE_RUNTIME_ENABLED=true` gate. Both default OFF. Only `GET .../bootstrap?date=YYYY-MM-DD` and strict JSON `POST .../hint`, `POST .../hints`, and `POST .../resolve` are recognized. They compose the immutable-ID, release-aware server runtime, return `private, no-store` data, and reject invalid/unknown actions and payloads. Bootstrap, resume, next pitch and single-hint responses never include future clues or presigned checkpoints. The browser must use the staged on-demand client protocol, **not** legacy locally preloaded clues.
+
+This HTTP transport is source-only and not an approved player-facing activation. In particular, its `resolve` returns portable at-bat outcomes but makes **no competitive writes, attempt reservation, leaderboard projection or eligibility decision**. Existing result writers explicitly reject all `daily-ed-v1-` IDs pending issue #566's signed per-edition attempt/score admission. The new HTTP gate must remain OFF until the complete A2/A3 integration, independent review, QA/physical-device verification and explicit production release decision. Primary Daily/Classic/Archive routes are unchanged.
+
+### Source-only browser adapter for exact-ID edition requests
+
+The browser-only `createOfficialDailyEditionHttpTransport(puzzleId)` binds the future client to one validated immutable `daily-ed-v1-` identity. It addresses only the separately gated edition `bootstrap`, `hint`, `hints` and `resolve` endpoints; it never routes a secondary puzzle to legacy `/api/daily/resolve`, exposes score-writing methods or silently falls back to primary Daily. The bootstrap parser verifies the exact returned puzzle ID/date, points-v4 ruleset, nine answer-free public pitches, zero initial clues and no future checkpoints. The resume and resolution adapter rejects preloaded checkpoints or mismatched reveal counts. Server tokens and eligibility remain authoritative on the server, not browser-verified. The shared `DailyInningGame` consumes this browser adapter in officialEditionPractice mode behind the three default-OFF settings. This is implemented but not publicly activated; the signed secondary result-admission gate (#566) remains mandatory before competitive usage.
+
+The exact-ID browser transport independently validates nested public hint and statistics configuration and each single-hint envelope before passing data to the UI. Its default GET and POST transports preserve sanitized typed outcomes: `not_found` for 404, `invalid_request` for other 4xx, `unavailable` for 5xx/network failures, and `invalid_response` for malformed successful JSON. Underlying provider/token diagnostics are not surfaced. These are browser transport error categories, not competitive admission decisions.
+
+The browser transport additionally validates the discriminator-specific at-bat result and the post-terminal canonical public reveal projection (stat lines, seasons, career peaks and known fields). Incorrect guesses must have a null player reveal. Unexpected nested answer-bearing fields are rejected rather than forwarded. This does not validate the server's signed competitive eligibility; issue #566 remains the authority for that later integration.
+
+### Source-staged shared Daily UI for exact-ID practice
+
+The existing Daily Nine component can be rendered with `officialEditionPractice` for an immutable `daily-ed-v1-` ID. In this mode its resolution, on-demand hint reveal, and saved-game restoration use the edition-bound server transport, not legacy primary endpoints. Reveals remain on demand; there are no local future hint checkpoints. Secondary-edition leaderboard/comparison reads and score submissions remain suppressed. Local saves and share links use the edition ID. The separate server-rendered practice route and default-OFF activation gates are implemented, but are not publicly enabled. No competitive admission, database writes, or new scoring rules are introduced; primary Daily and Classic keep their previous behavior.
+
+### Default-OFF official Daily practice route
+
+`/daily/editions/:puzzleId?date=YYYY-MM-DD` is a private, no-index, noncompetitive acceptance page using the existing Daily Nine UI. It requires all three exact server settings `OFFICIAL_DAILY_EDITION_PRACTICE_UI_ENABLED=true`, `OFFICIAL_DAILY_EDITION_HTTP_ENABLED=true`, and `OFFICIAL_DAILY_EDITION_PRIVATE_RUNTIME_ENABLED=true`, each OFF by default. It rejects invalid IDs, malformed dates, query extras, unreleased/future editions before rendering an answer-free bootstrap. Gameplay and local saves remain edition-bound; results and comparison populations are not admitted. This page is staged for hosted QA only, not enabled on production or approved for public activation.
+
+### Browser-safe edition identity dependency
+
+The exact-ID browser transport resolves its immutable occurrence-ID and strict real-date validators through the narrow `@initial-baseball/daily/official-edition-identity` export, not the `@initial-baseball/daily` barrel. That isolated module has no selection, clue snapshot, canonical player-data or server imports, preventing browser chunk inclusion of private player catalogs. The original Daily private issuer exports delegate to precisely the same validators; no published identity format or existing ID/date validation changes. The production hidden-answer bundle QA must pass before this is mergeable.
+
+The browser bootstrap decoder also rejects non-positive or unsafe puzzle numbers and metadata statuses other than released `published` / `archived`. Metadata scalar validation occurs before any payload reaches the shared gameplay UI; objects containing answer data are never accepted as number or status fields.
+
+### Server-rendered edition bootstrap boundary
+
+The gated official edition practice page reuses the exact strict public bootstrap decoder before passing any payload into the shared client-side Daily game. Private clue-layout fields, additional player identities, invalid status/number fields and future hint checkpoints are rejected at the React server-component boundary. Tests assert that malicious bootstrap fixtures never reach the `DailyInningGame` client props. This preserves the hidden-answer invariant for initial HTML/RSC, not merely subsequent HTTP responses.
+
+The strict `validateOfficialDailyEditionBootstrap` schema is exported for reuse at the Next.js server-to-client render boundary. A server-rendered official practice page must validate the full public puzzle, hint configurations, nine public pitches, signed progression token, and zero future hints/checkpoints **before** passing the bootstrap as serialized client props. Unexpected nested private fields fail closed rather than being forwarded.
+
+
+## Official secondary Daily practice-only results and comparison presentation (#583, staged)
+
+Secondary practice sessions use the same shared Daily Nine at-bat/game engine and preserve each authoritative personal at-bat and cumulative points result. Because these sessions are noncompetitive, the read adapters intentionally never query Daily AVG/BEAT/percentile populations. The React game and completed-scorecard presentation must enforce the same policy: suppress all comparison loading tiles, peer average/percentile tracks, expandable score histograms, leaderboard, and chart disclosures rather than showing an indefinite loading state. The private practice UI still supports spoiler-aware reveal of already completed players and the standard personal score/share flow; primary Daily, Classic and Archive-beta competitive comparisons are unchanged. The official edition practice route remains strictly default OFF and is not publicly activated without separate complete hosted/device and answer-integrity acceptance.
+
+The source-stage same-date edition storage regression additionally asserts that exactly identified secondary editions never share browser saves, reset boundaries or gameplay ownership keys with one another, current primary, Classic or Archive beta. Both retained and unknown future `daily-ed-*` IDs remain excluded from competitive result collection. The unit test does not substitute for real multi-tab Safari/Android acceptance.
+
+## Private official-edition date catalog (staged, no public route)
+
+The web server now has a private metadata-only date catalog reader for
+immutable official Daily publications. It accepts a valid Pacific game
+date and pages by increasing editionNumber, returning up to 100 records
+per request and an edition-number cursor if more results exist. It does
+not impose a maximum number of editions per date: consumers must continue
+through the pages for complete archive/date discovery.
+
+The database projection is restricted to puzzle_id, puzzle_date,
+puzzle_number, edition_key, edition_number, title, schema_version and
+ruleset_version. It never reads frozen clue snapshots, canonical player
+IDs or hint values. Each row is validated against the existing Daily
+identity, date/number, slug, title and ruleset rules. Provider failures
+and malformed metadata are sanitized; the reader fails closed rather
+than returning partially verified pages. Future Pacific dates return
+empty results without querying the database.
+
+This is only a server-private discovery adapter: it does not activate
+public browsing, a share link, editor access, public gameplay, Archive
+routing, or secondary edition score admission. The legacy primary is
+not included or changed. Public date/edition browsing and full
+archive grouping require separately reviewed UI and server admission;
+the immutable official publication store and rollout flags remain
+release-gated.
+
+The private cross-date official Archive catalog groups metadata for completed Pacific dates only (strictly before the current Pacific game date), descending by date and ascending by edition number. Publication titles are validated against the shared title parser, preserving parser-valid stored text (including repeated interior spaces) instead of rejecting an entire catalog page; invalid titles still fail closed. Its cursor contains the last returned date and edition number so a single date may span pages. The public Archive must also retain historical numbered entries and their device-local results. This private query does not issue play links or change the public Archive.
+
+### Default-off official Daily Archive section (A4, source staged)
+
+The existing public `/archive` page continues serving legacy Archive beta unchanged when the new feature is OFF. A separately gated official edition section may read only immutable past-Pacific-day publication metadata using the server-only, keyset-paginated catalog from #571. It displays each occurrence as `YYYY-MM-DD – Puzzle title` without a practice link until the now source-integrated exact-ID route is deliberately enabled and independently verified in hosted/browser acceptance; a date may have any number of editions. Its pagination cursor is a validated date/positive edition number pair and never a title or roster hash. The section requires four exact server flags, all default OFF: `OFFICIAL_DAILY_EDITION_ARCHIVE_ENABLED`, `OFFICIAL_DAILY_EDITION_PRACTICE_UI_ENABLED`, `OFFICIAL_DAILY_EDITION_HTTP_ENABLED`, and `OFFICIAL_DAILY_EDITION_PRIVATE_RUNTIME_ENABLED`. When any is OFF the official catalog is not touched; when the catalog fails, only a sanitized availability message renders, preserving historical Archive beta access. The public route does not expose frozen clue snapshots, server service keys, live/current-day editions, scores or comparison populations. This staging depends on the shared edition practice route (#583) and is **not a public-release authorization**; integrated/physical QA, the signed A3 admission gate (#566), independent reviews and rollout approval remain outstanding.
+
+The public Archive view ignores unrelated URL tracking parameters while passing only present `afterDate` and `afterEdition` fields to its strict cursor decoder. Partial or malformed cursor fields still fail closed. Current/future-Pacific-day cursors are rejected **before** the privileged Supabase client is constructed, and the same authoritative clock value is passed to the catalog for its independent cutoff check.
+
+## Private legacy-primary Daily publication catalog (#589, source only)
+
+A server-only historical primary reader returns strictly verified publication metadata from the legacy daily_editorial_puzzles table for past-Pacific-day, already-published nine-player contract-v1 records. It selects only id, puzzle_date, puzzle_number, version, lineup_contract_version, status, published_at. It never selects selections, roster, player identities, hints, clues, actor details or results. It validates timestamps against the request clock, published status, immutable date/number consistency and descending unique dates. A 1–100 row (default 30) exclusive date cursor supports bounded pagination. Invalid input fails before private provider I/O; bad provider data fails closed without partial output.
+
+The stored editorial ID (daily-YYYY-MM-DD-v1) is NOT necessarily the legacy gameplay/result puzzle ID, which can be roster-fingerprint or deterministic-fallback based. The reader deliberately exposes editorialRecordId, not puzzleId; it must not be linked or used for competitive admission without proving the historical authoritative identity and preserving existing results. This reader has no route, migration or release activation of its own; the source-integrated unified Archive consumes its verified publication metadata behind the four existing default-OFF gates. The editorial record ID is still not the historical gameplay/result puzzle ID and cannot authorize competitive admission.
+
+## Private primary-and-secondary Archive read-model merger (#589, source staged)
+
+A private, source-only cross-catalog read model takes verified published primary editorial metadata and immutable secondary official edition metadata, orders by puzzle date descending and edition number ascending, and returns date-grouped pages with one exclusive (date, edition number) cursor. Each source fetches one more than the requested final page size (default 30, maximum 99), so a date containing hundreds of secondary editions can resume without duplicates, skipped dates or fixed edition limits. It checks date/number consistency, source identity collisions, malformed cursors and cross-source duplicate editions before exposing a page, redacting provider errors.
+
+The original primary appears as Puzzle 1 **only when independently published editorial metadata exists**, with kind=legacy-primary and puzzleId=null. This is intentional: editorial record IDs are not authoritative gameplay/result IDs, and this merger does not make primary entries playable, admit scores, or silently combine accepted historical score populations. Secondary entries retain immutable exact IDs and titles. The merger is consumed by the shared server-only Archive composition and the existing default-OFF /archive route; the pure merger itself constructs no privileged client and is not A4 release approval. Preserve the original Archive beta as a separate series.
+
+The read-model merger independently enforces each source's requested row limit and rejects secondary puzzle IDs repeated across different edition numbers, including the lookahead row. These are separate invariants from duplicate (date, edition) detection. The entire module is server-only to prevent client-side use of private source adapters.
+
+## Unified historical official Archive date-grouped presentation (#589, staged)
+
+The source-staged `UnifiedOfficialDailyArchiveSection` renders exactly one historical official Daily Archive from the verified primary/secondary metadata merge, grouped newest Pacific date first, with primary `Puzzle 1` and arbitrarily many immutable secondary editions. Secondary entries are deliberately **unlinked** pending a verified exact-ID practice route; their immutable identities remain server-only read-model fields. Legacy primary editorial publication records are intentionally **unlinked** with an explicit replay-unavailable label until the historical game ID, clue snapshot and result-population continuity are verified. Pagination uses the complete date/edition keyset in `afterDate`/`afterEdition` query fields, including continuation within one date. It renders titles as escaped text, has no direct Supabase access, score writes, hidden answers or comparison aggregates, and is now wired to the single existing default-OFF /archive route. The earlier #587 secondary-only renderer/test have been deleted, rather than shipping two competing official Archive sections.
+
+## Unified official Daily Archive service-only composition (#589)
+
+A distinct server-only unified-Archive reader composes the verified legacy published-primary catalog with immutable secondary publication metadata using **one Supabase service client and one Pacific request clock**. It reuses exactly the existing four default-OFF Archive/practice/HTTP/private-runtime flags and strict date/edition cursor decoding; OFF or invalid/current/future cursors cannot construct a privileged database client. Each catalog queries only publication metadata (not clue snapshots, player selections or score data); the merger keeps unverified historical primaries as unlinked `puzzleId:null` and exact secondary practice IDs intact. The existing default-OFF /archive route now consumes this service and the unified renderer. Historical primaries remain unlinked and beta remains a separate section on the same page. Errors are sanitized and preserve beta listings; route wiring alone is not public release approval. Neither this composition nor metadata discovery grants signed A3 scoring admission.
+
+## Unified official Daily Archive route staging (#589)
+
+The existing `/archive` page preserves the legacy Archive beta experience with all four new server gates OFF and performs zero unified publication access. When all gates are exact true, one official historical section groups verified published primary placeholders and unlinked secondary practice placeholders by Pacific date, using the same date/edition keyset for pages split within one date. It discards unrelated tracking query keys but rejects incomplete/malformed cursor data before privileged client construction. Legacy primary entries remain **unlinked**, marked unavailable for replay until their exact historical gameplay and scoring identity is independently established. The browser never emits a secondary practice URL before the exact-ID route is independently enabled and verified, preventing enabled-flag 404 navigation. A private source error does not reflect secrets or block Archive beta. The former secondary-only renderer/test and private reader were removed; there is no second official Archive implementation. This staged route does not grant A3 score admission, apply a DB migration, or activate production flags.
+
+
+### Practice-link prerequisite (Codex review, source-only)
+
+The unified Archive deliberately renders both legacy primary and official secondary entries as **non-clickable** metadata until their real replay routes are verified. The old stacked UI included links to /daily/editions/<puzzleId> before that route existed in the earlier source baseline, resulting in broken 404 navigation when the Archive gate was enabled. The clean A4 integration removes these unsafe links and keeps the exact immutable occurrence IDs only in server-private models. Restoring secondary practice navigation requires a separately reviewed active-route integration and a real hosted HTTP/physical-browser acceptance test; #608 supplies default-OFF route source but not release acceptance. A historical primary additionally requires authoritative gameplay ID and clue/result continuity proof. No competitive score admission or public enablement follows from the Archive display.
+
+## Private account My Creations keyset pagination (source-stage, default OFF)
+
+The existing verified-account-only `GET /api/account/creations` returns a first page of up to 40 immutable Custom v2 challenges. The same endpoint accepts one optional `cursor` query parameter to request older entries; any other, duplicate, empty or malformed parameter fails closed with HTTP 404. All pages require the existing trusted Origin/Auth configuration and a server-verified nonanonymous creator account; missing authentication returns 401. The account ID is taken exclusively from the verified session and never from a query or a browser-supplied owner ID.
+
+Response: `{ "creations": [{ "puzzleId", "title", "issuedAt" }], "nextCursor": string | null, "accountScope": string }`. The 64-character SHA-256 presentation marker is purpose-separated from other account uses and derived exclusively from the verified account UUID. It is not an authorization token or database filter and does not expose the UUID. Only safe, typed display metadata is projected from `custom_nine_issued_challenges`; hidden players, clue snapshots, owner capabilities, creator UUIDs and private result data are excluded. `nextCursor: null` means no older page. The server performs deterministic keyset traversal by `issued_at DESC, puzzle_id ASC`, matching the isolated-QA `custom_v2_verified_creator_recent_idx` index (the second key breaks same-timestamp ties); the two-key cursor avoids skipped or duplicated entries when multiple lineups share an issuance timestamp and avoids offset drift if a newer lineup is created. The cursor is bounded and carries only the previously returned timestamp and immutable puzzle ID. It is **not an authorization token**; every page rechecks the verified account and scopes the service-role SQL to that account and schema version 2. The reader fetches at most 41 projected rows to determine whether another 40-row page exists.
+
+The private account UI appends older lineups on demand, validates response structure, deduplicates IDs defensively and provides a retry path for later-page failures. A newly expired account session clears its displayed list instead of retaining private metadata. If another tab switches accounts between page requests, a changed `accountScope` clears all retained rows and the cursor and asks the visitor to reload; pages from two accounts are never appended together. Source integration does not enable account creation, Custom publication, guest scores or production flags. Hosted authenticated QA, device acceptance and explicit launch authorization remain separate gates.
+
+
+`scripts/qa-my-creations-pagination-browser.mjs` bundles the actual My Creations component and browser fetch path using the existing Vitest/Vite toolchain, then verifies eight mounted Chromium scenarios: 390px and 1280px viewports, unchanged or switched account scope, and empty or populated later pages. It uses a fresh browser context per case, an ephemeral loopback-only HTTP fixture and synthetic metadata; external requests and service workers are blocked. CI reuses the existing pinned QA-only Playwright installation. It does not sign in, use database credentials, exercise hosted ingress, capture screenshots/traces, or establish physical-device acceptance. A browser/fixture failure fails this verification.

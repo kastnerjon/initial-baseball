@@ -21,7 +21,7 @@ type DailyGameplayResolutionRequest = {
   onSuccess: (response: DailyResolutionResponse) => void;
 };
 
-type PostDailyResolutionJson = (
+export type PostDailyResolutionJson = (
   path: string,
   body: Record<string, unknown>,
 ) => Promise<DailyResolutionResponse>;
@@ -35,6 +35,7 @@ export type DailyGameplayResolutionClient = {
 export function createDailyGameplayResolutionClient(
   callbacks: DailyGameplayResolutionClientCallbacks,
   postJson: PostDailyResolutionJson = (path, body) => postDailyGameplayJson<DailyResolutionResponse>(path, body),
+  endpointPath = '/api/daily/resolve',
 ): DailyGameplayResolutionClient {
   const requestController = createDailyGameplayRequestController();
 
@@ -54,7 +55,7 @@ export function createDailyGameplayResolutionClient(
         callbacks.onPendingActionChange('giveUp' in action ? 'give_up' : 'guess');
         callbacks.onErrorChange(null);
       },
-      execute: () => postJson('/api/daily/resolve', { progressionToken, ...action }),
+      execute: () => postJson(endpointPath, { progressionToken, ...action }),
       onSuccess,
       onError: () => {
         callbacks.onErrorChange('The Daily game could not complete that action. Please try again.');

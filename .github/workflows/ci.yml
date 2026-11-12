@@ -56,6 +56,8 @@ jobs:
         run: |
           node --check apps/web/scripts/qa-default-off-browser.mjs
           node --test apps/web/scripts/qa-default-off-browser-safety.test.mjs
+          node --check apps/web/scripts/qa-official-daily-isolation-browser.mjs
+          node --test apps/web/scripts/qa-official-daily-isolation-safety.test.mjs
       - run: pnpm check:file-sizes
       - name: Generate current baseball data audit
         run: pnpm data:audit
@@ -142,3 +144,11 @@ jobs:
         env:
           IB_DEFAULT_OFF_SMOKE_PLAYWRIGHT_MODULE: /tmp/ib-default-off-smoke/node_modules/playwright/index.mjs
         run: node apps/web/scripts/qa-default-off-browser.mjs
+      - name: Verify official Daily edition browser persistence isolation
+        env:
+          DAILY_ISOLATION_QA_PLAYWRIGHT_MODULE: /tmp/ib-default-off-smoke/node_modules/playwright/index.mjs
+        run: node apps/web/scripts/qa-official-daily-isolation-browser.mjs
+      - name: Verify mounted My Creations pagination and account switching in Chromium
+        env:
+          IB_DEFAULT_OFF_SMOKE_PLAYWRIGHT_MODULE: /tmp/ib-default-off-smoke/node_modules/playwright/index.mjs
+        run: node scripts/qa-my-creations-pagination-browser.mjs
