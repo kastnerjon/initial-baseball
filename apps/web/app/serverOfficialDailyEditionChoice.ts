@@ -7,15 +7,20 @@ import { getPacificDailyDateString } from './getPacificDailyDateString';
 
 export type OfficialDailyEditionChoicePage = Awaited<ReturnType<typeof listPrivateOfficialDailyEditionsByDate>>;
 type Environment = Record<string, string | undefined>;
-const REQUIRED_FLAGS = [
-  'OFFICIAL_DAILY_EDITION_CHOICE_ENABLED',
+const REQUIRED_PRACTICE_FLAGS = [
   'OFFICIAL_DAILY_EDITION_PRACTICE_UI_ENABLED',
   'OFFICIAL_DAILY_EDITION_HTTP_ENABLED',
   'OFFICIAL_DAILY_EDITION_PRIVATE_RUNTIME_ENABLED',
 ] as const;
 
+/** Archive links and the destination route must share the same release gates. */
+export function isOfficialDailyEditionPracticeVisible(env: Environment = process.env): boolean {
+  return REQUIRED_PRACTICE_FLAGS.every(flag => env[flag] === 'true');
+}
+
 export function isOfficialDailyEditionChooserVisible(env: Environment = process.env): boolean {
-  return REQUIRED_FLAGS.every(flag => env[flag] === 'true');
+  return env.OFFICIAL_DAILY_EDITION_CHOICE_ENABLED === 'true'
+    && isOfficialDailyEditionPracticeVisible(env);
 }
 
 /** Only a positive keyset cursor is accepted; URL tracking keys are not authority. */

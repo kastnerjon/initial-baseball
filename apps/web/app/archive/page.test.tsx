@@ -3,13 +3,16 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocked = vi.hoisted(() => ({
-  beta: vi.fn(), visible: vi.fn(), archive: vi.fn(),
+  beta: vi.fn(), visible: vi.fn(), archive: vi.fn(), practice: vi.fn(),
 }));
 vi.mock('../serverArchiveBetaRuntime', () => ({
   listAvailableArchiveBetaPuzzles: mocked.beta,
 }));
 vi.mock('../serverOfficialDailyArchiveSection', () => ({
   isOfficialDailyArchiveVisible: mocked.visible,
+}));
+vi.mock('../serverOfficialDailyEditionChoice', () => ({
+  isOfficialDailyEditionPracticeVisible: mocked.practice,
 }));
 vi.mock('../serverUnifiedOfficialDailyArchiveSection', () => ({
   readPrivateUnifiedOfficialDailyArchive: mocked.archive,
@@ -23,6 +26,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocked.beta.mockResolvedValue([{ dailyNumber: 1, puzzleDate: '2026-10-20' }]);
   mocked.visible.mockReturnValue(false);
+  mocked.practice.mockReturnValue(true);
   mocked.archive.mockResolvedValue({ dates: [], nextCursor: null });
 });
 
@@ -60,6 +64,24 @@ describe('shared Archive route', () => {
     expect(html).not.toContain('daily-2026-11-05-v1');
     expect(html).toContain('beta-results');
     expect(mocked.archive).toHaveBeenCalledWith({});
+  });
+
+  it('does not advertise a disabled practice route in the enabled Archive', async () => {
+    mocked.visible.mockReturnValue(true);
+    mocked.practice.mockReturnValue(false);
+    mocked.archive.mockResolvedValue({ dates: [{
+      puzzleDate: '2026-11-05', editions: [{
+        kind: 'official-secondary', puzzleDate: '2026-11-05',
+        puzzleNumber: 193, editionNumber: 2, title: 'Modern',
+        puzzleId: 'daily-ed-v1-907f33db-c38f-43c3-8e6b-a3aaf19bbd08',
+      }],
+    }], nextCursor: null });
+    const html = renderToStaticMarkup(await ArchivePage({ searchParams: Promise.resolve({}) }));
+    expect(html).toContain('2026-11-05 – Modern');
+    expect(html).toContain('Practice replay unavailable');
+    expect(html).not.toContain('href="/daily/editions/');
+    expect(html).not.toContain('Practice only; scores are not submitted');
+    expect(html).toContain('beta-results');
   });
 
   it('ignores unrelated tracking parameters without discarding incomplete cursor validation', async () => {

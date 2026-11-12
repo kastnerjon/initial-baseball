@@ -4,7 +4,9 @@ import { isOfficialDailyOccurrenceId, validateIssuedDailyCalendarDate } from '@i
 import { DailyRuntimeRequestError } from '../../../dailyRuntimeService';
 import { validateOfficialDailyEditionBootstrap } from '../../../officialDailyEditionHttpTransport';
 import { createServerOfficialDailyEditionRuntime } from '../../../serverOfficialDailyEditionRuntime';
-import { isOfficialDailyEditionChooserVisible } from '../../../serverOfficialDailyEditionChoice';
+import {
+  isOfficialDailyEditionChooserVisible, isOfficialDailyEditionPracticeVisible,
+} from '../../../serverOfficialDailyEditionChoice';
 import { DailyInningGame } from '../../../components/DailyInningGame';
 import { DailyHowToDialog } from '../../../components/DailyHowToDialog';
 import { getDailyHowToContent } from '../../../dailyHowTo';
@@ -27,11 +29,7 @@ export default async function OfficialDailyPracticePage({
   params: Promise<{ puzzleId: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }): Promise<JSX.Element> {
-  if (process.env.OFFICIAL_DAILY_EDITION_PRACTICE_UI_ENABLED !== 'true'
-      || process.env.OFFICIAL_DAILY_EDITION_HTTP_ENABLED !== 'true'
-      || process.env.OFFICIAL_DAILY_EDITION_PRIVATE_RUNTIME_ENABLED !== 'true') {
-    notFound();
-  }
+  if (!isOfficialDailyEditionPracticeVisible()) notFound();
   const { puzzleId } = await params;
   const query = await searchParams;
   if (typeof puzzleId !== 'string' || !puzzleId.startsWith('daily-ed-v1-')

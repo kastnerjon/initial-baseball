@@ -9,7 +9,10 @@ vi.mock('./serverOfficialDailyEditionCatalog', async importOriginal => ({
 }));
 vi.mock('./serverSupabaseClient', () => ({ createServerSupabaseClient: mocked.client }));
 
-import { isOfficialDailyEditionChooserVisible, readCurrentOfficialDailyEditionChoice } from './serverOfficialDailyEditionChoice';
+import {
+  isOfficialDailyEditionChooserVisible, isOfficialDailyEditionPracticeVisible,
+  readCurrentOfficialDailyEditionChoice,
+} from './serverOfficialDailyEditionChoice';
 
 const ON = {
   OFFICIAL_DAILY_EDITION_CHOICE_ENABLED: 'true',
@@ -25,6 +28,23 @@ beforeEach(() => {
 });
 
 describe('default-off official Daily edition chooser', () => {
+  it('requires destination practice gates independently of the chooser switch', () => {
+    expect(isOfficialDailyEditionPracticeVisible({})).toBe(false);
+    expect(isOfficialDailyEditionPracticeVisible(ON)).toBe(true);
+    expect(isOfficialDailyEditionPracticeVisible({
+      ...ON, OFFICIAL_DAILY_EDITION_CHOICE_ENABLED: 'false',
+    })).toBe(true);
+    expect(isOfficialDailyEditionChooserVisible({
+      ...ON, OFFICIAL_DAILY_EDITION_CHOICE_ENABLED: 'false',
+    })).toBe(false);
+    for (const flag of ['OFFICIAL_DAILY_EDITION_PRACTICE_UI_ENABLED',
+      'OFFICIAL_DAILY_EDITION_HTTP_ENABLED',
+      'OFFICIAL_DAILY_EDITION_PRIVATE_RUNTIME_ENABLED']) {
+      expect(isOfficialDailyEditionPracticeVisible({ ...ON, [flag]: 'false' })).toBe(false);
+    }
+  });
+
+
   it('never constructs privileged clients with any missing or noncanonical gate', async () => {
     expect(isOfficialDailyEditionChooserVisible({})).toBe(false);
     for (const key of Object.keys(ON)) {
