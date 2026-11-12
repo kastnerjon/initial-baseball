@@ -1,5 +1,6 @@
 import React, { type JSX } from 'react';
 import { headers } from 'next/headers';
+import { getPacificDailyDateString } from '../../../../getPacificDailyDateString';
 import { notFound, redirect } from 'next/navigation';
 import { isOfficialDailyOccurrenceId } from '@initial-baseball/daily';
 import {
@@ -58,6 +59,17 @@ function EditorialPreview({ preview, selection }: {
       <p><strong>Status:</strong> {preview.status}</p>
       <p><strong>Current editorial revision:</strong> {preview.revision}</p>
       <p><strong>Occurrence ID:</strong> <code>{preview.occurrenceId}</code></p>
+      {preview.status === 'draft'
+        && preview.puzzleDate > getPacificDailyDateString(new Date()) ? (
+          <form method="post" action="/admin/daily/editions/review/rename">
+            <input type="hidden" name="occurrenceId" value={preview.occurrenceId} />
+            <input type="hidden" name="expectedRevision" value={String(preview.revision)} />
+            <label htmlFor="official-edition-title">Puzzle title</label>
+            <input id="official-edition-title" name="title" defaultValue={preview.title}
+              style={inputStyle} required />
+            <button type="submit">Save title</button>
+          </form>
+        ) : null}
       <p><a href="/admin/daily/editions/players">Find canonical player IDs by name</a></p>
       <h3>Selected players (batting order)</h3>
       <ol>
