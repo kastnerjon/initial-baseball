@@ -10,7 +10,17 @@ export async function POST(request: Request): Promise<Response> {
     if (/^Bearer\s/i.test(authorization ?? '')) requireDailyChatOpsPrincipal(authorization);
     else requireDailyAdminPrincipal(authorization);
     const result = await runArchiveBetaRollover();
-    const status = result.failures.length > 0 || result.remaining > 0 ? 503 : 200;
+    // Project the response separately from the privileged issuer result.
+    // Future service changes must not serialize private source, roster, or clue fields.
+    const failures = result.failures.map(({ puzzleDate, kind }) => ({ puzzleDate, kind }));
+    const safeResult = {
+      cutoffDate: result.cutoffDate,
+      created: result.created,
+      preserved: result.preserved,
+      remaining: result.remaining,
+      failures,
+    };
+    const status = failures.length > 0 || safeResult.remaining > 0 ? 503 : 200;
     if (status !== 200) {
       // Report bounded, already-sanitized date/kind metadata; never provider exceptions,
       // source player selections, clue material or an unbounded per-day failure list.
@@ -25,7 +35,7 @@ export async function POST(request: Request): Promise<Response> {
         omittedFailures: Math.max(0, result.failures.length - 5),
       }));
     }
-    return response(result, status);
+    return response(safeResult, status);
   } catch (error) {
     if (error instanceof DailyAdminAuthorizationError || error instanceof DailyChatOpsAuthorizationError) {
       const status = error.kind === 'unauthorized' ? 401 : 503;
