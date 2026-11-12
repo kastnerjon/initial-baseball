@@ -1,5 +1,9 @@
 # Initial Baseball — Start Here
 
+## November 9 — verified historical primary ID utility staged (#592)
+
+- Source-only, read-only verification of historical published editorial roster-derived Daily puzzle IDs, including fail-closed deterministic fallback dates. Stacked on #606 unified Archive but does not activate replay links, reconstruct accepted score identity, migrate historical results, or expose the nine-player selections. Exact-head CI, Preview, independent review, and historical replay proof remain gates.
+
 ## November 10 — Archive integration refresh after My Creations pagination (#654)
 
 - Main `5fe81616633751cfc56eaf33d7db79b4597132b8` includes merged #654: stable private My Creations keyset pagination, server-derived account-scope continuity and eight mounted-component Chromium scenarios in CI. Exact-merge production deployment `dpl_EyrJoERCYBTmdo9Hk7b647pLQ4k2` is READY; public `/` and `/archive` return 200, while `/account` and `/create` return 404. Main push CI run `42936744355` was in progress at verification. Hosted Auth and physical-device acceptance remain separate gates.

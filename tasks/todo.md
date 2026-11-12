@@ -1,5 +1,7 @@
 # Initial Baseball — Current Work
 
+- [ ] Review #592 read-only canonical historical primary gameplay-ID verifier on unified Archive #606. Check fallback pre-launch dates, immutable published selections/timestamps, no player-roster disclosure, no public linking or historical result relabeling. Require fresh exact-head CI, READY Preview and independent reviews; Archive beta and accepted result populations remain intact.
+
 ## Current source integration — November 10
 
 - [ ] Complete hosted isolated-QA verified-account My Creations pagination, account-switch and empty-page acceptance, and physical-device checks. #654 is merged with eight mounted Chromium cases; main push CI `42936744355` passed and matching production deployment is READY. Auth/Custom production activation remains OFF and requires explicit release approval.
