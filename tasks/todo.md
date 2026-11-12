@@ -2,6 +2,7 @@
 
 ## Current source integration — November 10
 
+- [ ] #632 is the canonical default-OFF Custom guest completion display integration candidate: first-write-wins named/Anonymous choice through signed first-attempt transport, redacted private readback and saved-only guest UI. Source/test blobs are preserved on reconciled current main; require exact-head CI, independent security review, isolated hosted SQL/real-browser and physical-device acceptance. Do not separately merge superseded #623/#629 component branches or enable Custom/Auth/production migrations.
 - [ ] Complete hosted isolated-QA verified-account My Creations pagination, account-switch and empty-page acceptance, and physical-device checks. #654 is merged with eight mounted Chromium cases; main push CI `42936744355` passed and matching production deployment is READY. Auth/Custom production activation remains OFF and requires explicit release approval.
 - [ ] Resolve the final in-scope documentation findings and complete independent final-head review before integrating #606 unified official Archive. Exact-head CI `42945583941` passed and Vercel Preview is READY. No Archive flag, production migration or competition activation is authorized.
 

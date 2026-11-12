@@ -1,5 +1,16 @@
 # Initial Baseball — Start Here
 
+## November 11 — reconciled Custom guest completion display integration candidate (#632)
+
+- The default-OFF source candidate now combines signed guest completion display writing, a private exact-browser readback consumer, same-origin GET/POST route and saved-only named/Anonymous guest UI into one reviewed integration boundary. SQL writer/readback and authorization layers #620/#625/#626 already exist on main; this candidate adds no production DDL or flag changes. No new score authority, browser-selected submission IDs, account nickname binding or hidden player-answer transport.
+- Code reconciles original source/test blobs from #623/#629/#632, with the signed writer signing-configuration error-leak fix and server-authoritative first-choice readback after lost/duplicate POST. Earlier #623/#629 branches remain unmerged and must not be integrated independently after this candidate without checking the final tree. Exact-head CI, independent full integrated review, READY Preview, isolated hosted SQL/browser QA and physical Safari/Android remain gates; this is NOT a production release.
+- Archive rollover diagnostics #616 are already merged and production READY, preserving HTTP 503 and historical primary results; missing 2026-10-16 editorial source investigation #615 remains open. A3 official secondary Daily exact-ID signed score admission #566 remains closed to production.
+
+## November 9 — exact-immutable-ID secondary Daily practice gameplay integration (#608)
+
+- A2 source-only branch now combines server-signed per-edition practice runtime and on-demand hint transport, strict answer-free SSR bootstrap, a shared Daily Nine game UI with edition-bound saves, a private `/daily/editions/:id` practice page, and personal-only result presentation. The browser cannot submit/compare/leaderboard secondary scores; A3 exact-ID signed competitive result admission #566 remains separate and mandatory before any competition.
+- All three secondary practice/runtime/HTTP flags remain default OFF. No production migration/feature activation. This clean-main integration preserves existing primary Daily/Classic/Archive and Custom scoring behavior. Fresh exact-head CI/Preview, independent reviews, isolated hosted signed playback, physical Safari/Android and answer-integrity bundle QA remain separate gates.
+
 ## November 10 — Archive integration refresh after My Creations pagination (#654)
 
 - Main `5fe81616633751cfc56eaf33d7db79b4597132b8` includes merged #654: stable private My Creations keyset pagination, server-derived account-scope continuity and eight mounted-component Chromium scenarios in CI. Exact-merge production deployment `dpl_EyrJoERCYBTmdo9Hk7b647pLQ4k2` is READY; public `/` and `/archive` return 200, while `/account` and `/create` return 404. Main push CI run `42936744355` was in progress at verification. Hosted Auth and physical-device acceptance remain separate gates.
