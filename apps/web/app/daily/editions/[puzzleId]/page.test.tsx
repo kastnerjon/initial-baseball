@@ -25,12 +25,13 @@ vi.mock('../../../components/DailyHowToDialog', () => ({
 }));
 
 vi.mock('../../../serverOfficialDailyEditionChoice', () => ({
-  isOfficialDailyEditionChooserVisible: () => true,
+  isOfficialDailyEditionChooserVisible: vi.fn(() => false),
   readCurrentOfficialDailyEditionChoice: mocked.readChoice,
 }));
 
 import OfficialDailyPracticePage, { metadata } from './page';
 import ChoicePage from '../page';
+import { isOfficialDailyEditionChooserVisible } from '../../../serverOfficialDailyEditionChoice';
 import { UnifiedOfficialDailyArchiveSection } from '../../../archive/UnifiedOfficialDailyArchiveSection';
 const ID = 'daily-ed-v1-907f33db-c38f-43c3-8e6b-a3aaf19bbd08';
 const DATE = '2026-11-06';
@@ -64,6 +65,7 @@ function safeBootstrap(puzzleId = ID, date = DATE) {
 beforeEach(() => {
   vi.unstubAllEnvs();
   vi.clearAllMocks();
+  vi.mocked(isOfficialDailyEditionChooserVisible).mockReturnValue(false);
   mocked.createRuntime.mockReturnValue({
     getBootstrap: vi.fn(async () => safeBootstrap()),
   });
@@ -124,6 +126,9 @@ describe('default-OFF exact-ID official Daily practice page', () => {
     const html = renderToStaticMarkup(page);
     expect(html).toContain('Practice — scores are not submitted');
     expect(html).toContain('shared-daily-game');
+    expect(html).toContain('href="/archive"');
+    expect(html).toContain('href="/"');
+    expect(html).not.toContain('href="/daily/editions"');
     expect(html).not.toContain('PRIVATE_FUTURE_HINT');
     expect(mocked.createRuntime).toHaveBeenCalledWith(ID);
     expect(mocked.createRuntime.mock.results[0]?.value.getBootstrap).toHaveBeenCalledWith(DATE);
@@ -132,11 +137,22 @@ describe('default-OFF exact-ID official Daily practice page', () => {
       puzzle: expect.objectContaining({ id: ID }),
     }));
   });
+  it('offers the edition chooser only when its independent release flags permit it', async () => {
+    enable();
+    vi.mocked(isOfficialDailyEditionChooserVisible).mockReturnValue(true);
+    const html = renderToStaticMarkup(await OfficialDailyPracticePage(input()));
+    expect(html).toContain('href="/daily/editions"');
+    expect(html).toContain('More official Daily puzzles');
+    expect(html).toContain('href="/archive"');
+    expect(html).not.toContain('PRIVATE_FUTURE_HINT');
+    expect(mocked.createRuntime).toHaveBeenCalledOnce();
+  });
 });
 
 describe('published edition links open their exact practice route', () => {
   it('keeps two same-day editions and an older Archive edition distinct', async () => {
     enable();
+    vi.mocked(isOfficialDailyEditionChooserVisible).mockReturnValue(true);
     const secondId = 'daily-ed-v1-2a65c93c-3f36-4f4b-853f-92e85bb81648';
     const olderId = 'daily-ed-v1-269b64cf-1242-4775-a2e3-04b999ae088e';
     const olderDate = '2026-11-04';
