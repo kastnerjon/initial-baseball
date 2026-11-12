@@ -1,5 +1,10 @@
 # Initial Baseball — Start Here
 
+## November 10 — secondary Daily editor one-slot editing and contextual canonical lookup (#614)
+
+- Consolidated source-only secondary Daily editor workflow integrates revision-checked one-player draft replacement (#612), private name/alias lookup (#613), and contextual slot/candidate picker (#614) into one source candidate on latest main. Reuses existing Basic/first-party editorial authorization, canonical player search, all-nine clue readiness, draft-only revision CAS and explicit review/confirm/issuance. No GET mutation, score admission, hidden clue disclosure, schema change or production flag activation.
+- Earlier isolated hosted QA rollback verified one-slot revision CAS, stale revision denial, scheduled refusal and unique publication identity; it is not production parity or physical device acceptance. Exact-head full CI, READY Preview and independent final-head review remain mandatory before source merge. Old #612/#613 should not be merged separately if this candidate lands.
+
 ## November 10 — Archive integration refresh after My Creations pagination (#654)
 
 - Main `5fe81616633751cfc56eaf33d7db79b4597132b8` includes merged #654: stable private My Creations keyset pagination, server-derived account-scope continuity and eight mounted-component Chromium scenarios in CI. Exact-merge production deployment `dpl_EyrJoERCYBTmdo9Hk7b647pLQ4k2` is READY; public `/` and `/archive` return 200, while `/account` and `/create` return 404. Main push CI run `42936744355` was in progress at verification. Hosted Auth and physical-device acceptance remain separate gates.

@@ -36,13 +36,15 @@ const props = (params: Record<string, string | string[] | undefined>) => ({
   searchParams: Promise.resolve(params),
 });
 beforeEach(() => {
+  vi.useFakeTimers();
+  vi.setSystemTime(new Date('2026-11-10T20:00:00Z'));
   vi.stubEnv('OFFICIAL_DAILY_EDITOR_DRAFTS_ENABLED', 'true');
   vi.stubEnv('DAILY_ADMIN_USERNAME', USER);
   vi.stubEnv('DAILY_ADMIN_PASSWORD', PASSWORD);
   vi.mocked(headers).mockResolvedValue(new Headers({ authorization: AUTH, 'sec-fetch-site': 'same-origin' }) as never);
   vi.mocked(readOfficialDailyEditorialDraftPreview).mockResolvedValue(PREVIEW);
 });
-afterEach(() => { vi.unstubAllEnvs(); vi.clearAllMocks(); });
+afterEach(() => { vi.useRealTimers(); vi.unstubAllEnvs(); vi.clearAllMocks(); });
 
 describe('read-only authenticated exact secondary editor review page', () => {
   it('stays unreachable and performs no reads unless the server flag is exact true', async () => {
@@ -106,6 +108,7 @@ describe('read-only authenticated exact secondary editor review page', () => {
     const html = renderToStaticMarkup(await Page(props({ occurrenceId: ID })));
     expect(html).toContain('Modern');
     expect(html).toContain('Current editorial revision');
+    expect(html).toContain('/admin/daily/editions/players');
     const orderedPositions = Array.from({ length: 9 }, (_, i) =>
       html.indexOf('<code>fixture-' + (i + 1) + '</code>'));
     expect(orderedPositions.every(position => position >= 0)).toBe(true);
@@ -120,6 +123,114 @@ describe('read-only authenticated exact secondary editor review page', () => {
     expect(html).toContain('type="checkbox" required="" name="confirmed" value="yes"');
     expect(readOfficialDailyEditorialDraftPreview)
       .toHaveBeenCalledWith(expect.anything(), ID);
+  });
+
+  it('renders draft-only one-slot edit with all nine choices and current revision', async () => {
+    const html = renderToStaticMarkup(await Page(props({ occurrenceId: ID })));
+    expect(html).toContain('Replace one player');
+    expect(html).toContain('action="/admin/daily/editions/review/replace"');
+    expect(html).toContain('name="expectedRevision" value="3"');
+    expect(html).toContain('name="canonicalPlayerId"');
+    expect(html).toContain('name="slot"');
+    for (let i = 1; i <= 9; i++) {
+      expect(html).toContain('<option value="' + i + '">');
+    }
+    expect(html).not.toContain('PRIVATE_FUTURE_HINT_AND_ROSTER');
+  });
+
+  it('prepopulates a draft-only slot from a strictly validated name-lookup choice', async () => {
+    const html = renderToStaticMarkup(await Page(props({
+      occurrenceId: ID, slot: '9', canonicalPlayerId: 'fixture-10',
+    })));
+    expect(html).toContain('Find replacement for slot 9');
+    expect(html).toContain('name="slot"');
+    expect(html).toContain('value="9" selected=""');
+    expect(html).toContain('name="canonicalPlayerId"');
+    expect(html).toContain('value="fixture-10"');
+    expect(html).toContain('Player selected from the lookup');
+    expect(html).toContain('name="expectedRevision" value="3"');
+    expect(html).not.toContain('PRIVATE_FUTURE_HINT_AND_ROSTER');
+  });
+
+  it('rejects malformed or partial selection links before private draft I/O', async () => {
+    for (const params of [
+      { occurrenceId: ID, slot: '9' },
+      { occurrenceId: ID, canonicalPlayerId: 'fixture-10' },
+      { occurrenceId: ID, slot: '0', canonicalPlayerId: 'fixture-10' },
+      { occurrenceId: ID, slot: '9', canonicalPlayerId: ' fixture-10' },
+      { occurrenceId: ID, slot: '9', canonicalPlayerId: ['fixture-10','other'] },
+      { occurrenceId: ID, slot: '9', canonicalPlayerId: 'x'.repeat(201) },
+    ]) {
+      const html = renderToStaticMarkup(await Page(props(params)));
+      expect(html).toContain('Invalid occurrence ID');
+    }
+    expect(createServerSupabaseClient).not.toHaveBeenCalled();
+  });
+
+  it('never shows a slot picker on scheduled or issued publications', async () => {
+    for (const status of ['scheduled', 'issued'] as const) {
+      vi.mocked(readOfficialDailyEditorialDraftPreview).mockResolvedValueOnce({
+        ...PREVIEW, status, canSchedule: false,
+      });
+      const html = renderToStaticMarkup(await Page(props({
+        occurrenceId: ID, slot: '5', canonicalPlayerId: 'fixture-10',
+      })));
+      expect(html).not.toContain('Find replacement for slot');
+      expect(html).not.toContain('Player selected from the lookup');
+      expect(html).not.toContain('Replace selected player');
+    }
+  });
+
+  it('does not offer player edits after scheduling or issuance', async () => {
+    for (const status of ['scheduled', 'issued'] as const) {
+      vi.mocked(readOfficialDailyEditorialDraftPreview).mockResolvedValueOnce({
+        ...PREVIEW, status, canSchedule: false,
+      });
+      const html = renderToStaticMarkup(await Page(props({ occurrenceId: ID })));
+      expect(html).not.toContain('Replace selected player');
+      expect(html).not.toContain('/admin/daily/editions/review/replace');
+    }
+  });
+
+  it('allows correcting a clue-unready draft without exposing a schedule command', async () => {
+    vi.mocked(readOfficialDailyEditorialDraftPreview).mockResolvedValueOnce({
+      ...PREVIEW, canSchedule: false,
+    });
+    const html = renderToStaticMarkup(await Page(props({ occurrenceId: ID })));
+    expect(html).toContain('Replace selected player');
+    expect(html).not.toContain('Confirm lineup and schedule');
+  });
+
+  it('renders an escaped title-only form with the exact observed occurrence and revision', async () => {
+    vi.mocked(readOfficialDailyEditorialDraftPreview).mockResolvedValueOnce({
+      ...PREVIEW, title: '<script>UNTRUSTED</script>', canSchedule: false,
+    });
+    const html = renderToStaticMarkup(await Page(props({ occurrenceId: ID })));
+    expect(html).toContain('action="/admin/daily/editions/review/rename"');
+    expect(html).toContain('name="title"');
+    expect(html).toContain('value="&lt;script&gt;UNTRUSTED&lt;/script&gt;"');
+    expect(html).toContain('name="occurrenceId" value="' + ID + '"');
+    expect(html).toContain('name="expectedRevision" value="3"');
+    expect(html).toContain('Save title');
+    expect(html).not.toContain('Confirm lineup and schedule');
+  });
+
+  it.each([
+    { status: 'scheduled' as const }, { status: 'issued' as const },
+    { puzzleDate: '2026-11-10' }, { puzzleDate: '2026-11-09' },
+  ])('hides title editing for nonfuture or frozen drafts: %j', async override => {
+    vi.mocked(readOfficialDailyEditorialDraftPreview).mockResolvedValueOnce({ ...PREVIEW, ...override });
+    const html = renderToStaticMarkup(await Page(props({ occurrenceId: ID })));
+    expect(html).not.toContain('action="/admin/daily/editions/review/rename"');
+    expect(html).not.toContain('Save title');
+  });
+
+  it('offers title and slot edits independently against the same observed draft revision', async () => {
+    const html = renderToStaticMarkup(await Page(props({ occurrenceId: ID })));
+    expect(html).toContain('action="/admin/daily/editions/review/rename"');
+    expect(html).toContain('action="/admin/daily/editions/review/replace"');
+    expect(html).toContain('name="expectedRevision" value="3"');
+    expect(html).toContain('Find replacement for slot 1');
   });
 
   it('labels unready clues without adding a misleading schedule command', async () => {
@@ -149,7 +260,7 @@ describe('read-only authenticated exact secondary editor review page', () => {
     expect(html).not.toContain('PRIVATE_FUTURE_HINT_AND_ROSTER');
   });
 
-  it('suppresses issuance when any scheduled canonical player is unresolved', async () => {
+  it('keeps scheduled issuance unavailable for unresolved or incomplete canonical rosters', async () => {
     vi.stubEnv('OFFICIAL_DAILY_EDITOR_ISSUANCE_ENABLED', 'true');
     for (const selections of [
       PREVIEW.selections.map((selection, index) =>

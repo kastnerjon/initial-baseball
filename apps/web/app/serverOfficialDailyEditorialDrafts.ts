@@ -143,6 +143,49 @@ export async function createOfficialDailyEditorialDraft(
   }
 }
 
+/** Rename a future unscheduled draft; a stale retry must reload its revision. */
+export async function renameOfficialDailyEditorialDraft(
+  client: SupabaseClient, occurrenceId: string, expectedRevision: number,
+  value: unknown, actorId: string, now: Date = new Date(),
+) {
+  const title = parseCustomLineupTitle(value);
+  if (typeof occurrenceId !== 'string' || !UUID.test(occurrenceId)
+      || !Number.isInteger(expectedRevision) || expectedRevision < 0
+      || expectedRevision >= 2147483647 || !title.ok
+      || typeof actorId !== 'string' || actorId.trim().length === 0
+      || !Number.isFinite(now.getTime())) invalid();
+  const today = getPacificDailyDateString(now);
+  try {
+    const found = await client.from(TABLE).select(COLUMNS)
+      .eq('occurrence_id', occurrenceId).maybeSingle();
+    if (found.error !== null) unavailable();
+    if (found.data === null) throw new OfficialDailyDraftError('conflict');
+    const draft = readDraft(found.data);
+    if (draft.occurrence_id !== occurrenceId) unavailable();
+    if (draft.status !== 'draft' || draft.revision !== expectedRevision
+        || draft.puzzle_date <= today) throw new OfficialDailyDraftError('conflict');
+    const updated = await client.from(TABLE)
+      .update({ title: title.title, revision: expectedRevision + 1,
+        updated_by: actorId, updated_at: now.toISOString() })
+      .eq('occurrence_id', occurrenceId).eq('status', 'draft')
+      .eq('revision', expectedRevision).gt('puzzle_date', today)
+      .select(COLUMNS).maybeSingle();
+    if (updated.error !== null) unavailable();
+    if (updated.data === null) throw new OfficialDailyDraftError('conflict');
+    const saved = readDraft(updated.data);
+    if (saved.occurrence_id !== occurrenceId || saved.status !== 'draft'
+        || saved.revision !== expectedRevision + 1 || saved.title !== title.title
+        || saved.puzzle_date !== draft.puzzle_date || saved.puzzle_number !== draft.puzzle_number
+        || saved.edition_key !== draft.edition_key || saved.edition_number !== draft.edition_number
+        || saved.created_by !== draft.created_by
+        || !isDeepStrictEqual(saved.selections, draft.selections)) unavailable();
+    return { status: 'renamed' as const, occurrenceId, revision: saved.revision };
+  } catch (error) {
+    if (error instanceof OfficialDailyDraftError) throw error;
+    unavailable();
+  }
+}
+
 /** Validate clues privately before a revision-checked scheduling update. */
 export async function scheduleOfficialDailyEditorialDraft(
   client: SupabaseClient, occurrenceId: string, expectedRevision: number,
@@ -192,6 +235,91 @@ export async function scheduleOfficialDailyEditorialDraft(
   }
 }
 
+
+/**
+ * Replace exactly one draft-only batting-order slot using a revision CAS.
+ * Never edit issued/scheduled lineups or return private clue material.
+ */
+export async function replaceOfficialDailyEditorialDraftPlayer(
+  client: SupabaseClient,
+  occurrenceId: string,
+  expectedRevision: number,
+  slot: number,
+  canonicalPlayerId: string,
+  actorId: string,
+  now: Date = new Date(),
+): Promise<{ status: 'updated' | 'existing'; occurrenceId: string; revision: number }> {
+  if (typeof occurrenceId !== 'string' || !UUID.test(occurrenceId)
+      || !Number.isSafeInteger(expectedRevision) || expectedRevision < 0
+      || !Number.isInteger(slot) || slot < 1 || slot > 9
+      || typeof canonicalPlayerId !== 'string'
+      || canonicalPlayerId.length === 0 || canonicalPlayerId.length > 200
+      || canonicalPlayerId.trim() !== canonicalPlayerId
+      || typeof actorId !== 'string' || actorId.trim().length === 0
+      || !Number.isFinite(now.getTime())) invalid();
+
+  try {
+    const found = await client.from(TABLE).select(COLUMNS)
+      .eq('occurrence_id', occurrenceId).maybeSingle();
+    if (found.error !== null) unavailable();
+    if (found.data === null) throw new OfficialDailyDraftError('conflict');
+    const draft = readDraft(found.data);
+    if (draft.occurrence_id !== occurrenceId || draft.status !== 'draft'
+        || draft.revision !== expectedRevision
+        || draft.puzzle_date <= getPacificDailyDateString(now)) {
+      throw new OfficialDailyDraftError('conflict');
+    }
+
+    const prior = draft.selections.find(selection => selection.slot === slot);
+    if (prior === undefined) unavailable();
+    if (prior.canonicalPlayerId === canonicalPlayerId) {
+      return { status: 'existing', occurrenceId, revision: expectedRevision };
+    }
+
+    const selections = draft.selections.map(selection =>
+      selection.slot === slot
+        ? { ...selection, canonicalPlayerId, source: 'manual' as const }
+        : selection,
+    );
+    try {
+      validateDailyEditorialSelectionsForContract(selections, 1);
+      prepareServerOfficialDailyPublication({
+        occurrenceId, editionKey: draft.edition_key,
+        editionNumber: draft.edition_number, title: draft.title,
+        editorial: {
+          puzzleDate: draft.puzzle_date, puzzleNumber: draft.puzzle_number,
+          status: 'scheduled', selections,
+        },
+      });
+    } catch { invalid(); }
+
+    const updated = await client.from(TABLE)
+      .update({
+        selections, revision: expectedRevision + 1,
+        updated_by: actorId, updated_at: now.toISOString(),
+      })
+      .eq('occurrence_id', occurrenceId)
+      .eq('status', 'draft')
+      .eq('revision', expectedRevision)
+      .select(COLUMNS).maybeSingle();
+    if (updated.error !== null) unavailable();
+    if (updated.data === null) throw new OfficialDailyDraftError('conflict');
+    const revised = readDraft(updated.data);
+    if (revised.occurrence_id !== occurrenceId || revised.status !== 'draft'
+        || revised.revision !== expectedRevision + 1
+        || revised.puzzle_date !== draft.puzzle_date
+        || revised.puzzle_number !== draft.puzzle_number
+        || revised.edition_key !== draft.edition_key
+        || revised.edition_number !== draft.edition_number
+        || revised.title !== draft.title
+        || !isDeepStrictEqual(revised.selections, selections)) unavailable();
+
+    return { status: 'updated', occurrenceId, revision: revised.revision };
+  } catch (error) {
+    if (error instanceof OfficialDailyDraftError) throw error;
+    unavailable();
+  }
+}
 
 /** Exact private editorial roster preview; neither public clue transport nor issuance. */
 export type OfficialDailyDraftPreview = Readonly<{

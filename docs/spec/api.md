@@ -486,6 +486,38 @@ the legacy primary remain unaffected. The new editorial database migration,
 hosted QA and physical acceptance are separate prerequisites; production
 activation requires explicit release approval.
 
+### Secondary draft title revision (server service only)
+
+The server-only `renameOfficialDailyEditorialDraft` adapter normalizes a title
+using the same 3–60-character policy as draft creation and changes only that
+title plus revision/audit fields. It requires an exact occurrence UUID, a current
+PostgreSQL integer revision that can be incremented, and a trusted server actor.
+The read and conditional update both require a future Pacific date and
+`status=draft`; scheduled/issued drafts, stale revisions and lost races fail
+closed. Successful writes preserve occurrence/date/edition identity and all nine
+ordered selections, returning only safe status, occurrence ID and new revision.
+Even an identical stale retry must reload the current revision; it cannot infer
+that another editor's write was its own. Provider errors remain redacted.
+The private form adapter below is its only new consumer. It does not change
+the existing default-OFF editor flag, database schema, issuance, or release gates.
+
+### Restricted draft title form (source staged, default OFF)
+
+The exact-occurrence review page offers a title field only for a future Pacific
+`draft`, independent of clue readiness. `POST /admin/daily/editions/review/rename`
+requires the existing exact-true editor flag, first-party same-origin form
+admission and Basic admin principal. It accepts only occurrenceId,
+expectedRevision and title in a 1 KiB bounded UTF-8 URL-encoded body with no query,
+duplicate or unexpected fields. Invalid title/revision values fail before
+privileged database construction. The server-derived actor is passed to the
+rename service; browser actor/roster/status input is never accepted. Success
+redirects with 303 to exact-occurrence review to obtain the new revision; stale
+or scheduled drafts produce generic 409 responses. All responses are private,
+no-store and vary by Authorization. Rendering the form grants no write authority;
+the service rechecks date, status and revision. No schema, issuance, public link
+or production activation is added. Hosted/physical acceptance remains pending.
+
+
 ## Official secondary Daily result admission: fail-closed until signed evidence
 
 The existing anonymous Daily at-bat and completed-game submission HTTP
@@ -729,3 +761,20 @@ The private account UI appends older lineups on demand, validates response struc
 
 
 `scripts/qa-my-creations-pagination-browser.mjs` bundles the actual My Creations component and browser fetch path using the existing Vitest/Vite toolchain, then verifies eight mounted Chromium scenarios: 390px and 1280px viewports, unchanged or switched account scope, and empty or populated later pages. It uses a fresh browser context per case, an ephemeral loopback-only HTTP fixture and synthetic metadata; external requests and service workers are blocked. CI reuses the existing pinned QA-only Playwright installation. It does not sign in, use database credentials, exercise hosted ingress, capture screenshots/traces, or establish physical-device acceptance. A browser/fixture failure fails this verification.
+## Restricted revision-checked secondary Daily draft player replacement (source-staged)
+
+An authenticated editor may change **one selected player** of a future, still-unpublished secondary Daily draft on the exact nine-player review page. POST `/admin/daily/editions/review/replace` accepts exactly four unique URL-encoded fields: occurrence UUID, the presently reviewed draft revision (zero or greater), a batting-order slot 1–9, and a nonempty trimmed canonical player ID. The form body is bounded to 1024 actual UTF-8 bytes. The exact-true `OFFICIAL_DAILY_EDITOR_DRAFTS_ENABLED` feature flag, Basic administrator credentials, first-party Origin/Fetch Metadata and empty query are enforced before any private database access.
+
+The existing server-authoritative editorial draft service reads only the requested draft, rejects scheduled/issued/expired or stale revisions, preserves the immutable occurrence/date/edition identity, substitutes only the requested canonical player, validates all nine unique ordered selections and complete clue readiness privately, and commits a `draft`→`draft` revision CAS update. A matching unchanged player is a verified no-op; concurrent changes return sanitized 409 conflicts rather than silently overwriting another editor. Successful updates redirect to the private review page, requiring another review before scheduling. No private hint snapshot is returned.
+
+The database trigger and existing issuer continue to enforce immutable published selections. This does not add bulk editing, player autocomplete, public gameplay, secondary competitive score eligibility, an account permission grant, a migration or a production flag change. Isolated hosted multi-tab acceptance and physical mobile editing remain release gates.
+
+## Restricted secondary Daily candidate lookup (source-staged, default OFF)
+
+GET `/admin/daily/editions/players` is a private server-rendered, metadata-only name/alias search utility accessible from the new secondary Daily date catalog and exact-draft review. It requires exact-true `OFFICIAL_DAILY_EDITOR_DRAFTS_ENABLED`, valid Basic Daily administrator credentials and first-party `Sec-Fetch-Site` navigation before any candidate work. Only an optional `q` parameter is accepted; queries are 2–80 characters without ASCII controls. Invalid searches fail before candidate lookup. A valid query reuses the **existing primary Daily editor's** canonical candidate search and displays no more than 25 matching display names, ambiguity years, positions, reveal-readiness indicators and canonical IDs. Hidden player clues, hint values and future puzzle lineups are not selected or rendered. A search error returns a generic private message.
+
+This is a copyable-ID lookup, not an autocomplete/mutation API. It does not change Daily player eligibility or names, create a draft, schedule/issue an edition, enable public gameplay, or grant secondary competitive score admission. Hosted Basic-auth and physical mobile acceptance remain release gates.
+
+## Contextual secondary Daily draft-slot player picking (source-staged, default OFF)
+
+The restricted exact-roster review page can navigate to the same metadata-only canonical player lookup for one draft batting-order slot. A valid lookup carries only the exact occurrence UUID and slot number through bounded first-party query parameters. Selecting a clue-ready candidate returns to the authenticated review page with the candidate ID and slot prefilled in the existing one-slot replacement form. The editor must still explicitly submit that form against the freshly read draft revision; no GET request changes a draft, bypasses CAS or schedules/issues a puzzle. Scheduled and issued editions never show a player picker. All routes retain Basic/first-party authorization, default-OFF gates, no hidden-clue transport, and sanitized provider failure handling. Hosted browser/device QA and separate production release approval remain required.
