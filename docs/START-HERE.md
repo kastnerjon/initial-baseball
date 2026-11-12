@@ -1,5 +1,12 @@
 # Initial Baseball — Start Here
 
+## November 11 — PR consolidation and integrated Archive checkpoint
+
+- GitHub `main` `60c8890d14517e75b14c49839dbc51d9b49f925b` includes #606 unified official Archive source; Archive and secondary competitive score flags remain OFF. The legacy primary's historical result identity is still unproven for replay, and #589/#566 remain separate integrity gates.
+- Closed unmerged obsolete docs #640 and superseded fixed-five calendar prototype #434; folded all #650 rollover diagnostic tests into parent #652 and closed #650 unmerged. No application code was discarded by these closures.
+- Reconciled existing branches onto that main without rewriting their executable source blobs: #637 bounded secondary hints, #639 Chromium same-date save/lock isolation, and #592 read-only primary historical ID verification. #655 is the canonical delivery-plan reconciliation; #588 chooser and #614 editor selection are mergeable. These are **PR/source states**, not production releases.
+- At this checkpoint, #637 new exact-head CI `43123089151` succeeded; fresh #639/#592/#652/#655 runs and mandatory external reviews remain pending. CodeRabbit reported continued review quota for #658, so CI-green #658 is held unmerged. No hosted schema, production flags, accepted scores, or live authenticated Custom flow changed.
+
 ## November 10 — multi-Daily delivery decision (documentation only)
 
 - Updated [the canonical multi-Daily plan](../tasks/plans/multiple-official-dailies.md) after independent architecture review. Prioritize integrating existing player/admin PR stacks and exact-ID secondary competitive admission at current primary parity; do not block launch on the larger #566 browser-identity proposal. No zero-overlap roster requirement; legacy primary stays Puzzle 1 for initial release.

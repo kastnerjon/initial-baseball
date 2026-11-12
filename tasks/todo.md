@@ -1,9 +1,12 @@
 # Initial Baseball — Current Work
 
-## Current source integration — November 10
+## Current source integration — November 11
 
-- [ ] Complete hosted isolated-QA verified-account My Creations pagination, account-switch and empty-page acceptance, and physical-device checks. #654 is merged with eight mounted Chromium cases; main push CI `42936744355` passed and matching production deployment is READY. Auth/Custom production activation remains OFF and requires explicit release approval.
-- [ ] Resolve the final in-scope documentation findings and complete independent final-head review before integrating #606 unified official Archive. Exact-head CI `42945583941` passed and Vercel Preview is READY. No Archive flag, production migration or competition activation is authorized.
+- [ ] Integrate current-main unified Archive user journey: #588 chooser (CI/Preview passing, latest independent review still required), then dependent #649/#651 link and return navigation. Keep Archive and secondary Daily flags OFF; do not invent primary replay links. #606 is merged, not a pending PR. #658 beta-catalog failure isolation is CI-green but external review-gated.
+- [ ] Complete and independently review #614 editor contextual player selection before stacked #643/#644 draft-title workflow; keep production editor schema/flags untouched. Fixed-five horizon draft #434 was closed unmerged as superseded by versioned variable-length Daily Lineup.
+- [ ] Verify exact-head CI, matching Preview, Codex/CodeRabbit reviews for reconciled #637 hint-envelope hardening, #639 native edition-storage isolation QA and #592 source-only historical-primary ID verifier. #637 CI `43123089151` passed; remaining checks/reviews must be observed, not inferred.
+- [ ] Complete combined #652 Archive rollover response/log redaction review and exact-head checks; #650 test-only child was folded byte-identically into #652 and closed unmerged. Address issue #615 missing historical source separately.
+- [ ] Review and merge #655 planning decision only after its final-head checks; never treat planning as authority to weaken A3 result admission or activate production. Keep pending Custom #632/#638 and security staging #494 under their independent release gates.
 
 ## Engineering workflow — native default-OFF smoke pilot (November 8)
 
