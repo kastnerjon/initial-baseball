@@ -2,6 +2,7 @@
 
 ## Current source integration — November 10
 
+- [ ] #639 source-only same-date browser-isolation QA: exact edition saves, reset boundaries, primary/secondary coexistence and Web Locks must pass native Chromium on the final commit. The synthetic fixture is documented in `docs/engineering/official-daily-browser-isolation-qa.md`; it does **not** establish signed hosted competitive scoring, real Supabase first attempts or Safari/Android acceptance. Require independent review and matching Preview before merge.
 - [ ] Complete hosted isolated-QA verified-account My Creations pagination, account-switch and empty-page acceptance, and physical-device checks. #654 is merged with eight mounted Chromium cases; main push CI `42936744355` passed and matching production deployment is READY. Auth/Custom production activation remains OFF and requires explicit release approval.
 - [ ] Resolve the final in-scope documentation findings and complete independent final-head review before integrating #606 unified official Archive. Exact-head CI `42945583941` passed and Vercel Preview is READY. No Archive flag, production migration or competition activation is authorized.
 
