@@ -34,10 +34,12 @@ describe('one date-grouped historical official Archive presentation', () => {
     expect(html).toContain('2026-11-04 – Puzzle 2');
     expect((html.match(/<h3>/g) ?? []).length).toBe(2);
     expect((html.match(/Historical replay unavailable/g) ?? []).length).toBe(2);
+    expect((html.match(/Practice only; scores are not submitted/g) ?? []).length).toBe(3);
+    expect((html.match(/href="\/daily\/editions\//g) ?? []).length).toBe(3);
     expect(html).toContain('/archive?afterDate=2026-11-04&amp;afterEdition=2');
   });
 
-  it('never creates a playable link from the editorial primary ID or its null identity', () => {
+  it('links only published exact-ID secondary puzzles, never synthetic legacy primary IDs', () => {
     const html = renderToStaticMarkup(<UnifiedOfficialDailyArchiveSection page={{
       dates: records, nextCursor: null,
     }} />);
@@ -45,10 +47,11 @@ describe('one date-grouped historical official Archive presentation', () => {
     expect(html).not.toContain('href="/daily/2026-11-05"');
     expect(html).not.toContain('daily/editions/null');
     expect(html).not.toContain('/daily/editions/daily-2026');
-    expect((html.match(/<a /g) ?? []).length).toBe(0);
-    expect(html).not.toContain('/daily/editions/');
-    expect(html).not.toContain('daily-ed-v1-907f33db-c38f-43c3-8e6b-a3aaf19bbd08');
-    expect(html).toContain('Practice replay unavailable');
+    expect((html.match(/<a /g) ?? []).length).toBe(3);
+    expect(html).toContain('href="/daily/editions/daily-ed-v1-907f33db-c38f-43c3-8e6b-a3aaf19bbd08?date=2026-11-05"');
+    expect(html).toContain('href="/daily/editions/daily-ed-v1-6077ee21-9370-4cf3-aa21-74c50b485591?date=2026-11-05"');
+    expect(html).toContain('href="/daily/editions/daily-ed-v1-269b64cf-1242-4775-a2e3-04b999ae088e?date=2026-11-04"');
+    expect(html).not.toContain('/daily/editions/null');
   });
 
   it('supports a partial date page, an empty page, and the end-of-list cursor', () => {
@@ -80,6 +83,7 @@ describe('one date-grouped historical official Archive presentation', () => {
     expect(html).toContain('&lt;img');
     expect(html).not.toContain('clue_snapshot');
     expect(html).not.toContain('canonicalPlayerIds');
+    expect(html).toContain('href="/daily/editions/daily-ed-v1-907f33db-c38f-43c3-8e6b-a3aaf19bbd08?date=2026-11-05"');
     expect(html).not.toContain('Leaderboard');
     expect(html).not.toContain('AVG');
   });

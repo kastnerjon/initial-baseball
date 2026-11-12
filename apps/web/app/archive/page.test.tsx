@@ -54,8 +54,8 @@ describe('shared Archive route', () => {
     expect(html).toContain('2026-11-05 – Puzzle 1');
     expect(html).toContain('Historical replay unavailable');
     expect(html).toContain('2026-11-05 – Modern');
-    expect(html).toContain('Practice replay unavailable');
-    expect(html).not.toContain('/daily/editions/');
+    expect(html).toContain('Practice only; scores are not submitted');
+    expect(html).toContain('href="/daily/editions/daily-ed-v1-907f33db-c38f-43c3-8e6b-a3aaf19bbd08?date=2026-11-05"');
     expect(html).not.toContain('href="/daily/editions/null');
     expect(html).not.toContain('daily-2026-11-05-v1');
     expect(html).toContain('beta-results');
