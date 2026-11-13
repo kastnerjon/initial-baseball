@@ -48,7 +48,7 @@ function puzzle(): DailyPuzzle {
   };
 }
 
-describe('on-demand Daily hint transport for future official editions', () => {
+describe('optional on-demand hint projection (not the official edition gameplay default)', () => {
   it('does not preload hidden hints or future signed checkpoints', async () => {
     const runtime = createDailyRuntimeService({
       createPuzzle: () => puzzle(),
@@ -108,8 +108,12 @@ describe('exact-ID official runtime', () => {
     });
     const boot = await edition(first).getBootstrap(date);
     expect(readEligiblePuzzle).toHaveBeenCalledWith(first);
-    expect(boot.hintBundle.hints).toEqual([]);
-    expect(boot.hintBundle.checkpoints).toEqual([]);
+    expect(boot.hintBundle.hints.map(hint => hint.hintValue)).toEqual([firstHint, 'NYM', 'CF', '3 HR']);
+    expect(boot.hintBundle.checkpoints.map(checkpoint => checkpoint.revealedCount)).toEqual([1, 2, 3, 4]);
+    expect(JSON.stringify(boot)).not.toContain(nextHint);
+    const checkpoint = boot.hintBundle.checkpoints[0]!;
+    expect(tokens.verify(checkpoint.progressionToken))
+      .toMatchObject({ puzzleId: first, pitchNumber: 1, revealCount: 1 });
     expect((await edition(first).revealHint(boot.progressionToken)).hint.hintValue).toBe(firstHint);
     const correct = await edition(first).resolveAtBat({ progressionToken: boot.progressionToken, submittedPlayerId: answerId });
     expect(correct.result.kind).toBe('correct');
