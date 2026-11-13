@@ -1,9 +1,17 @@
 # Initial Baseball — Current Work
 
+## Production-parity correction — approved November 12
+
+- [ ] **#588 pre-merge gameplay correction:** replace separate per-hint HTTP requests in secondary practice with the primary Daily's authorized current-batter four-hint bundle and locally consumed signed reveal checkpoints. Preserve future-batter/answer privacy, exact-edition persistence and #657 score-admission denial; run primary/secondary parity tests for hint latency, guesses, Give Up, refresh, completed scorecards, and physical Safari/Android before merging. No production release approval.
+- [ ] Require production gameplay parity evidence for later Custom friend play and future puzzle sources. Separate issuance and score policies may differ; owner approval is required for any user-visible latency, control, save or flow divergence.
+
+
+- [ ] **#588 gameplay parity and integrated navigation:** Verify the staged chooser/Archive links and implement signed current-batter four-hint bundles with immediate local Hint taps for exact-ID practice. Test the strict browser/SSR transport, per-edition save hydration and full nine-at-bat scorecard; re-test owner-observed iPhone switching/refresh after change. Require exact-head CI/Preview, independent review, Android and Pacific rollover. Keep #657 score admission and production flags OFF; clean QA-only fixtures and flags after acceptance.
+
 ## Current source integration — November 10
 
-- [ ] Verify main push CI run `42936744355` after merged #654 on `5fe81616`; exact production deployment is READY and public/default-OFF routes were verified. The source now includes private keyset pagination, account-switch clearing and eight mounted Chromium cases; hosted Auth/DB, physical-device and explicit release gates remain separate.
-- [ ] Complete fresh final-head CI, READY Preview and independent Codex/CodeRabbit review for #606 refreshed onto that main, preserving all 14 prior Archive source/test blobs. No Archive flag, production migration or competition activation is authorized by this refresh.
+- [ ] Complete hosted isolated-QA verified-account My Creations pagination, account-switch and empty-page acceptance, and physical-device checks. #654 is merged with eight mounted Chromium cases; main push CI `42936744355` passed and matching production deployment is READY. Auth/Custom production activation remains OFF and requires explicit release approval.
+- [ ] Resolve the final in-scope documentation findings and complete independent final-head review before integrating #606 unified official Archive. Exact-head CI `42945583941` passed and Vercel Preview is READY. No Archive flag, production migration or competition activation is authorized.
 
 ## Engineering workflow — native default-OFF smoke pilot (November 8)
 
@@ -21,13 +29,9 @@
 
 ## Official Daily editions — approved November 5
 
-- [ ] Independently review the A4 exact-ID practice navigation from the unified official Archive and current-day chooser: immutable publication ID and Pacific date, no legacy-primary false link, existing four-gate source visibility, independently gated practice destination, no competitive score/admission, hidden-answer safety, exact-head CI/Preview, protected hosted navigation and physical Safari/Android before public enablement.
-
-- [ ] Finish source integration of chooser/practice navigation #588: #652 Archive-beta failure isolation is already merged into main; verify combined Archive resilience and gated exact-ID links. Protected 121-edition current/historical metadata pagination passed; remaining gates are valid released-puzzle signed hint/resolve and personal-only results QA, actual Pacific-midnight rollover, final-head independent review/CI/Preview, and physical Safari/Android acceptance. Keep production flags OFF and secondary competitive admission denied until #657.
-
 - [ ] Independently review clean-main unified official Archive #606: published primary metadata placeholder puzzleId:null (not falsely playable), exact-ID numbered secondary metadata unlinked until exact-ID enabled hosted acceptance, arbitrary same-date edition keyset, no hidden answer/score writes, original Archive beta retained with errors sanitized and four default-OFF flags. Require exact-head CI/Preview, CodeRabbit/Codex, protected hosted 120+-edition browser acceptance (121-edition rollback-only DB fixture passed), physical responsive Safari/Android and controlled release approval. Primary source issue #589 and A3 signed result admission #566 remain separate blockers.
 
-- [ ] Complete isolated hosted signed-playback, hidden-answer bundle verification and physical Safari/Android acceptance for the merged, default-OFF exact-ID secondary practice source (#608). Preserve private progression, single-hint reveal, per-edition saves and personal-only results; competitive A3 #566 remains denied.
+- [ ] Complete isolated hosted signed-playback, hidden-answer bundle verification and physical Safari/Android acceptance for the merged, default-OFF exact-ID secondary practice source (#608). Preserve private progression, current-batter four-hint local reveal, per-edition saves and personal-only results; competitive secondary score admission stays denied until #657.
 
 - [ ] A1: issuance identity, frozen nine-player content, service-only persistence and restricted editor action.
 - [ ] A2–A4: exact-ID play and hint privacy, result isolation, share links, one Archive and device QA.
@@ -89,7 +93,7 @@ Remaining tasks only; completed verification and production evidence are recorde
 
 - [ ] Review one shared Private/Unlisted and future Public Custom gameplay/completion journey in four contexts (guest friend, authenticated nonowner, creator preview, future Discover entrant). Review the complete Create → owner preview → share → independent friend play → results journey with the product owner. Agree on a design direction before substantial visual implementation. Refine screen hierarchy, labels, buttons, navigation, loading/errors, results, accessibility, responsive mobile layouts, typography, color and brand consistency while preserving gameplay, scoring and privacy contracts. Prior HTML/branding concepts were exploratory, not approved specifications.
 
-- [ ] Before broad repeated-play expansion: verify existing #654 My Creations keyset pagination in hosted account-switch and real-device scenarios; measure per-puzzle cookie growth/eviction and reopened progress in real browsers, consider bounded credentials only after stress evidence, and preserve legacy challenge-cookie precedence. Do not re-implement the already merged pagination.
+- [ ] Before broad repeated-play expansion: measure per-puzzle cookie growth/eviction and reopened progress in real browsers; consider bounded credentials only after stress evidence, preserving legacy challenge-cookie precedence. Verify lifetime archive completeness for My Creations after the source-integrated #654 keyset pagination; hosted account-switch/empty-page and device acceptance remain outstanding.
 
 ## 4. Later roadmap
 
@@ -120,7 +124,7 @@ These gates are separate from Custom Lineups Phase 1. Keep them active until eac
 ## Official Daily exact-ID gameplay: frozen materializer (staged)
 
 - [ ] Integrate the private exact-ID reader with the shared frozen-clue DailyPuzzle materializer under explicit server admission and date checks. This source-only adapter does not create public gameplay.
-- [ ] Replace any bulk release of unrevealed hints in secondary edition bootstrap, resume, next-pitch and hint-bundle endpoints with single authorized reveal transport. Preserve the existing primary until parity checks.
+- [ ] Prevent early release of canonical answers or future-batter hints through secondary edition bootstrap, resume, next-pitch and hint-bundle endpoints. The active batter's four-hint signed bundle must match production gameplay as described in the #588 parity correction. Preserve existing primary behavior and verify edition-bound progression.
 - [ ] Verify edition-scoped progression, scores, share links, browser persistence and historical/archived practice before enabling public routes.
 
 ## Official Daily edition browser-save separation (staged)

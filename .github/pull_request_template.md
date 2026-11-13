@@ -34,6 +34,15 @@ Documentation exception: <!-- Required only when no canonical doc changes. Give 
 
 After the final diff, state whether a new conversation can resume correctly from `AGENTS.md`, `docs/START-HERE.md`, and `tasks/todo.md`.
 
+## Gameplay parity
+
+<!-- Required for gameplay-related changes. Replace ALL placeholders with concrete evidence. -->
+- **Baseline:** <!-- actual production mode and hint, guess, save, result interaction -->
+- **Shared path:** <!-- which existing game component, rules and transport are reused -->
+- **Interaction/network differences:** <!-- extra calls, latency, controls, or "None; existing playing behavior preserved." -->
+- **Verification:** <!-- actual primary, secondary and Custom parity checks; mark pending gates honestly -->
+- **Approved divergence:** <!-- "None; production parity maintained." or exact owner decision/risk -->
+
 ## Data and answer integrity
 
 - [ ] No hidden answer, canonical answer ID, hint, reveal, credential, or service-role data leaks through public HTML, payloads, bundles, APIs, logs, or share output.
