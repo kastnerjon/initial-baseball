@@ -24,6 +24,13 @@ const post = (action: string, body: unknown, headers: Record<string, string> = {
   URL + action,
   { method: 'POST', headers: { 'content-type': 'application/json', ...headers }, body: JSON.stringify(body) },
 );
+const currentHints = [
+  { hintType: 'main_decade', hintLabel: 'Era', hintValue: '1990s' },
+  { hintType: 'teams', hintLabel: 'Teams', hintValue: 'Example Club' },
+  { hintType: 'position', hintLabel: 'Position', hintValue: 'OF' },
+  { hintType: 'stats', hintLabel: 'Stats', hintValue: 'HR 100' },
+];
+const checkpoints = ['signed-depth-1', 'signed-depth-2', 'signed-depth-3', 'signed-depth-4'];
 const noRuntime = () => expect(createServerOfficialDailyEditionRuntime).not.toHaveBeenCalled();
 
 beforeEach(() => {
@@ -31,9 +38,9 @@ beforeEach(() => {
   vi.mocked(createServerOfficialDailyEditionRuntime).mockReturnValue(runtime as never);
   runtime.getBootstrap.mockResolvedValue({
     rulesetVersion: 'points-v4', puzzle: { id: ID, pitches: [{ initials: 'HP' }] },
-    progressionToken: 'opaque-token', hintBundle: { pitchNumber: 1, revealedCount: 0, hints: [], checkpoints: [] },
+    progressionToken: 'opaque-token', hintBundle: { pitchNumber: 1, revealedCount: 0, hints: currentHints, checkpoints },
   });
-  runtime.getHintBundle.mockResolvedValue({ hintBundle: { pitchNumber: 1, revealedCount: 1, hints: [], checkpoints: [] } });
+  runtime.getHintBundle.mockResolvedValue({ hintBundle: { pitchNumber: 1, revealedCount: 1, hints: currentHints, checkpoints: checkpoints.slice(1) } });
   runtime.revealHint.mockResolvedValue({ hint: { hintType: 'main_decade', hintLabel: 'Era', hintValue: 'AUTHORIZED_HINT' }, progressionToken: 'successor' });
   runtime.resolveAtBat.mockResolvedValue({ result: { kind: 'incorrect' }, progressionToken: 'successor', reveal: null, hintBundle: null });
 });
@@ -58,7 +65,7 @@ describe('default-OFF exact-ID official Daily HTTP adapter', () => {
     expect(response.headers.get('x-content-type-options')).toBe('nosniff');
     expect(createServerOfficialDailyEditionRuntime).toHaveBeenCalledWith(ID);
     expect(runtime.getBootstrap).toHaveBeenCalledWith('2026-11-06');
-    expect(await response.json()).toMatchObject({ puzzle: { id: ID }, hintBundle: { hints: [], checkpoints: [] } });
+    expect(await response.json()).toMatchObject({ puzzle: { id: ID }, hintBundle: { pitchNumber: 1, revealedCount: 0, hints: currentHints, checkpoints } });
   });
 
   it('supports single-hint, resume and unsigned-practice resolution without result submission', async () => {
@@ -67,6 +74,10 @@ describe('default-OFF exact-ID official Daily HTTP adapter', () => {
     expect(runtime.revealHint).toHaveBeenCalledWith('before');
     expect((await POST(post('hints', { progressionToken: 'after' }), context('hints'))).status).toBe(200);
     expect(runtime.getHintBundle).toHaveBeenCalledWith('after');
+    const resumed = await POST(post('hints', { progressionToken: 'after' }), context('hints'));
+    expect(await resumed.json()).toMatchObject({ hintBundle: {
+      pitchNumber: 1, revealedCount: 1, hints: currentHints, checkpoints: checkpoints.slice(1),
+    } });
     expect((await POST(post('resolve', { progressionToken: 'before', giveUp: true }), context('resolve'))).status).toBe(200);
     expect(runtime.resolveAtBat).toHaveBeenCalledWith({ progressionToken: 'before', giveUp: true });
     expect((await POST(post('resolve', { progressionToken: 'before', submittedPlayerId: 'ibp_ab000000000000000000' }), context('resolve'))).status).toBe(200);
