@@ -1,5 +1,11 @@
 # Initial Baseball — Current Work
 
+## Production-parity correction — approved November 12
+
+- [ ] **#588 pre-merge gameplay correction:** replace separate per-hint HTTP requests in secondary practice with the primary Daily's authorized current-batter four-hint bundle and locally consumed signed reveal checkpoints. Preserve future-batter/answer privacy, exact-edition persistence and #657 score-admission denial; run primary/secondary parity tests for hint latency, guesses, Give Up, refresh, completed scorecards, and physical Safari/Android before merging. No production release approval.
+- [ ] Require production gameplay parity evidence for later Custom friend play and future puzzle sources. Separate issuance and score policies may differ; owner approval is required for any user-visible latency, control, save or flow divergence.
+
+
 ## Current source integration — November 10
 
 - [ ] Complete hosted isolated-QA verified-account My Creations pagination, account-switch and empty-page acceptance, and physical-device checks. #654 is merged with eight mounted Chromium cases; main push CI `42936744355` passed and matching production deployment is READY. Auth/Custom production activation remains OFF and requires explicit release approval.

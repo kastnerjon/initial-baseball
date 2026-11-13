@@ -80,6 +80,57 @@ test('accepts a specific exception and rejects placeholders', () => {
   );
 });
 
+
+const PARITY = [
+  '## Gameplay parity',
+  '- **Baseline:** Production Primary Daily uses instant local active-batter hints.',
+  '- **Shared path:** Existing DailyInningGame and progression transport are reused.',
+  '- **Interaction/network differences:** None; no extra network requests per hint.',
+  '- **Verification:** Verify hint, guess, give-up, reload and results against Primary Daily.',
+  '- **Approved divergence:** None; production interaction parity is maintained.',
+].join('\n');
+
+test('requires gameplay parity assessment on shared-game and edition code changes', () => {
+  for (const file of [
+    'apps/web/app/components/DailyInningGame.tsx',
+    'apps/web/app/serverOfficialDailyEditionRuntime.ts',
+    'apps/web/app/api/daily/editions/[id]/route.ts',
+    'apps/web/app/api/custom-lineup/[id]/route.ts',
+    'packages/daily/src/officialDailyPublication.ts',
+    'packages/engine/src/scoring.ts',
+  ]) {
+    const changedFiles = [file, 'docs/product/daily-inning-blueprint.md'];
+    assert.throws(() => validateDocumentationImpact({ changedFiles, prBody: DOCUMENTATION_SECTION }), /Gameplay parity/);
+    assert.doesNotThrow(() => validateDocumentationImpact({
+      changedFiles, prBody: DOCUMENTATION_SECTION + '\n' + PARITY,
+    }));
+  }
+});
+
+test('rejects missing and templated gameplay assessments', () => {
+  const changedFiles = ['apps/web/app/components/DailyInningGame.tsx', 'docs/START-HERE.md'];
+  assert.throws(() => validateDocumentationImpact({
+    changedFiles, prBody: DOCUMENTATION_SECTION + '\n' + PARITY.replace(
+      '- **Interaction/network differences:** None; no extra network requests per hint.',
+      '- **Interaction/network differences:** <!-- TODO -->',
+    ),
+  }), /Interaction\/network differences/);
+  assert.throws(() => validateDocumentationImpact({
+    changedFiles, prBody: DOCUMENTATION_SECTION + '\n' + PARITY.replace(
+      '- **Approved divergence:** None; production interaction parity is maintained.', '',
+    ),
+  }), /Approved divergence/);
+});
+
+test('exempts documentation-only and unrelated operational changes from gameplay parity', () => {
+  for (const changedFiles of [
+    ['AGENTS.md', 'docs/START-HERE.md'],
+    ['apps/web/next.config.mjs', 'docs/START-HERE.md'],
+  ]) {
+    assert.doesNotThrow(() => validateDocumentationImpact({ changedFiles, prBody: DOCUMENTATION_SECTION }));
+  }
+});
+
 function createRepository() {
   const repo = mkdtempSync(join(tmpdir(), 'initial-baseball-docs-impact-'));
   exec(repo, ['init', '-q']);

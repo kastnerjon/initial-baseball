@@ -46,6 +46,40 @@ const OPERATIONAL_EXACT_FILES = new Set([
   'apps/web/next.config.ts',
 ]);
 
+
+// This is a review-completeness gate, not proof of actual user-experience parity.
+const GAMEPLAY_PREFIXES = [
+  'apps/web/app/components/', 'apps/web/app/daily/', 'apps/web/app/archive/',
+  'apps/web/app/api/daily/', 'apps/web/app/api/custom-lineup/',
+  'apps/web/app/api/custom-nine/', 'packages/daily/src/', 'packages/engine/src/',
+];
+const GAMEPLAY_ROOT = /^apps\/web\/app\/[^/]*(?:daily|Daily|hint|Hint|game|Game|archive|Archive|official|Official|custom|Custom|score|Score)[^/]*\.(?:ts|tsx|js|mjs)$/;
+const PARITY_FIELDS = ['Baseline', 'Shared path', 'Interaction/network differences', 'Verification', 'Approved divergence'];
+
+export function classifyGameplayChanges(changedFiles) {
+  return changedFiles.filter((file) =>
+    GAMEPLAY_PREFIXES.some((prefix) => file.startsWith(prefix)) || GAMEPLAY_ROOT.test(file));
+}
+
+export function validateGameplayParity({ changedFiles, prBody }) {
+  const gameplayChanges = classifyGameplayChanges(changedFiles);
+  if (!gameplayChanges.length) return gameplayChanges;
+  const heading = /^## Gameplay parity\s*$/m.exec(prBody);
+  if (!heading) throw new DocumentationImpactError('Gameplay code changes require a "## Gameplay parity" PR section.');
+  const after = prBody.slice(heading.index + heading[0].length);
+  const next = /^## /m.exec(after);
+  const section = next ? after.slice(0, next.index) : after;
+  for (const field of PARITY_FIELDS) {
+    const label = '- **' + field + ':**';
+    const line = section.split('\n').find((candidate) => candidate.trimStart().startsWith(label));
+    const answer = line?.trimStart().slice(label.length).trim() ?? '';
+    if (answer.length < 12 || /^(?:<!--|tbd\b|todo\b|n\/a\b|not applicable\b|\.\.\.)/i.test(answer)) {
+      throw new DocumentationImpactError('Gameplay parity needs a concrete "' + field + '" assessment.');
+    }
+  }
+  return gameplayChanges;
+}
+
 export function main({
   baseSha = process.env.BASE_SHA?.trim(),
   headSha = process.env.HEAD_SHA?.trim(),
@@ -133,7 +167,8 @@ export function validateDocumentationImpact({ changedFiles, prBody }) {
     );
   }
 
-  return { materialChanges, canonicalChanges, handoffChanges, exception };
+  const gameplayChanges = validateGameplayParity({ changedFiles, prBody });
+  return { materialChanges, canonicalChanges, handoffChanges, gameplayChanges, exception };
 }
 
 export function classifyMaterialChanges(changedFiles) {
