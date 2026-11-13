@@ -1,9 +1,14 @@
 # Initial Baseball — Current Work
 
-## Current source integration — November 10
+## Current source integration — November 11
 
-- [ ] Complete hosted isolated-QA verified-account My Creations pagination, account-switch and empty-page acceptance, and physical-device checks. #654 is merged with eight mounted Chromium cases; main push CI `42936744355` passed and matching production deployment is READY. Auth/Custom production activation remains OFF and requires explicit release approval.
-- [ ] Resolve the final in-scope documentation findings and complete independent final-head review before integrating #606 unified official Archive. Exact-head CI `42945583941` passed and Vercel Preview is READY. No Archive flag, production migration or competition activation is authorized.
+- [ ] Integrate current-main unified Archive user journey: #588 chooser (CI/Preview passing, latest independent review still required), then combined #649 exact-practice entry and return navigation (#651 integrated into that still-open parent branch). Keep Archive and secondary Daily flags OFF; do not invent primary replay links. #606 is merged, not a pending PR. #658 beta-catalog failure isolation is CI-green but external review-gated.
+- [ ] Complete and independently review #614 editor contextual player selection before combined #643 guarded future-draft title workflow (#644 integrated into that still-open parent branch); keep production editor schema/flags untouched. Fixed-five horizon draft #434 was closed unmerged as superseded by versioned variable-length Daily Lineup.
+- [ ] Verify exact-head CI, matching Preview, Codex/CodeRabbit reviews for reconciled #637 hint-envelope hardening, #639 native edition-storage isolation QA and #592 source-only historical-primary ID verifier. #637 CI `43123089151` passed; remaining checks/reviews must be observed, not inferred.
+- [ ] Complete combined #652 Archive rollover response/log redaction review and exact-head checks; #650 test-only child was folded byte-identically into #652 and closed unmerged. Address issue #615 missing historical source separately.
+- [ ] **Launch-scoped A3, #657:** implement separately reviewed exact-ID score admission and isolated comparison/leaderboard populations for released secondary editions at existing primary parity. Preserve `daily-ed-*` fail-closed guards until full review, CI, hosted same-roster/replay QA and explicit release approval; superseded #566/#576 designs are not acceptance evidence.
+- [ ] **Separate scoring-integrity initiative, #656:** independently threat-model and implement server-authoritative attempt progression and replay-safe score derivation for **all** official Dailies, including the existing primary. This is an urgent security follow-up, **not automatically a prerequisite** for A3 at current primary parity. No production migration or policy change approved by the plan.
+- [ ] Review and merge #655 planning decision only after its final-head checks; never treat planning as authority to weaken A3 result admission or activate production. Keep pending Custom #632/#638 and security staging #494 under their independent release gates.
 
 ## Engineering workflow — native default-OFF smoke pilot (November 8)
 
