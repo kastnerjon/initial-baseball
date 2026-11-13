@@ -65,7 +65,7 @@ test('accepts a material change with canonical and handoff documentation', () =>
 test('accepts a specific exception and rejects placeholders', () => {
   assert.doesNotThrow(() =>
     validateDocumentationImpact({
-      changedFiles: ['apps/web/app/page.tsx'],
+      changedFiles: ['apps/web/app/adminSettings.ts'],
       prBody: `${DOCUMENTATION_SECTION}\nDocumentation exception: Restores behavior already specified in docs/spec/api.md.`,
     }),
   );
@@ -73,7 +73,7 @@ test('accepts a specific exception and rejects placeholders', () => {
   assert.throws(
     () =>
       validateDocumentationImpact({
-        changedFiles: ['apps/web/app/page.tsx'],
+        changedFiles: ['apps/web/app/adminSettings.ts'],
         prBody: `${DOCUMENTATION_SECTION}\nDocumentation exception: N/A`,
       }),
     /Material files changed/,
@@ -93,6 +93,10 @@ const PARITY = [
 test('requires gameplay parity assessment on shared-game and edition code changes', () => {
   for (const file of [
     'apps/web/app/components/DailyInningGame.tsx',
+    'apps/web/app/page.tsx',
+    'apps/web/app/serverCanonicalRuntime.ts',
+    'apps/web/app/serverCanonicalData.ts',
+    'apps/web/app/api/players/search/route.ts',
     'apps/web/app/serverOfficialDailyEditionRuntime.ts',
     'apps/web/app/api/daily/editions/[id]/route.ts',
     'apps/web/app/api/custom-lineup/[id]/route.ts',
