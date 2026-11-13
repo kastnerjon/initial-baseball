@@ -386,7 +386,6 @@ export function DailyInningGame({
   }
   function handleNextPitch(): void {
     if (pendingAdvance === null || requestPending) return;
-    onDemandHints?.invalidate();
 
     setGameState(currentGameState => ({
       ...currentGameState,
@@ -407,7 +406,6 @@ export function DailyInningGame({
   }
   function handleResetToday(): void {
     if (!gameplayPersistence.resetPersistedState()) return;
-    onDemandHints?.invalidate();
     completedComparison.invalidate();
     scorecardComparisons.invalidate();
     resolutionRequests.invalidate();
