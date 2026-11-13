@@ -113,7 +113,7 @@ These gates are separate from Custom Lineups Phase 1. Keep them active until eac
 
 ## Independent security follow-up (not a Custom launch gate)
 
-- [ ] Resume staged RLS helper EXECUTE hardening in draft PR #494 only after matched hosted Supabase staging verifies event-trigger and DDL behavior. Never apply the migration to production on local-only evidence.
+- [ ] Complete final-head external review and current-main CI for staged RLS helper EXECUTE hardening #494. Matched production-helper/event-trigger behavior, privilege revocation, idempotence and supported postgres-owned DDL auto-RLS were verified inside isolated hosted QA with full rollback on November 11. Preserve the documented non-owner DDL baseline limitation. Source merge is not production DDL authorization; require explicit approval before applying grants.
 
 ## Official Daily publication storage
 
