@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -100,6 +100,14 @@ test('requires gameplay parity assessment on shared-game and edition code change
     'apps/web/app/serverOfficialDailyEditionRuntime.ts',
     'apps/web/app/api/daily/editions/[id]/route.ts',
     'apps/web/app/api/custom-lineup/[id]/route.ts',
+    'apps/web/app/custom/CustomLineupGame.tsx',
+    'apps/web/app/custom/[puzzleId]/page.tsx',
+    'apps/web/app/results/ResultsView.tsx',
+    'apps/web/app/daily-game.css',
+    'apps/web/app/daily-your-nine.css',
+    'apps/web/app/globals.css',
+    'packages/shared/src/types/daily.ts',
+    'packages/shared/src/types/gameSettings.ts',
     'packages/daily/src/officialDailyPublication.ts',
     'packages/engine/src/scoring.ts',
   ]) {
@@ -141,6 +149,25 @@ test('rejects code- and emphasis-formatted placeholder text for each parity fiel
       }), /Gameplay parity/);
     }
   }
+});
+
+test('PR description edits re-run parity verification against the current body', () => {
+  const workflow = readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
+  const trigger = workflow.match(/^  pull_request:\s*\r?\n    types: \[([^\]]+)\]\s*$/m);
+  assert.ok(trigger, 'CI must declare explicit pull_request event types');
+  const actions = new Set(trigger[1].split(',').map((value) => value.trim()));
+  for (const action of ['opened', 'synchronize', 'reopened', 'edited', 'ready_for_review']) {
+    assert.ok(actions.has(action), 'CI must run on pull_request.' + action);
+  }
+  const changedFiles = ['apps/web/app/custom/CustomLineupGame.tsx', 'docs/START-HERE.md'];
+  const approvedBody = DOCUMENTATION_SECTION + '\n' + PARITY;
+  assert.doesNotThrow(() => validateDocumentationImpact({ changedFiles, prBody: approvedBody }));
+  const editedBody = approvedBody.replace(
+    /^## Gameplay parity[\s\S]*$/m,
+    '## Plain-English summary\n\nGameplay parity assessment was removed.',
+  );
+  assert.throws(() => validateDocumentationImpact({ changedFiles, prBody: editedBody }),
+    /Gameplay parity/);
 });
 
 test('exempts documentation-only and unrelated operational changes from gameplay parity', () => {

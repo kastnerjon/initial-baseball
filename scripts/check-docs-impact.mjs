@@ -51,7 +51,9 @@ const OPERATIONAL_EXACT_FILES = new Set([
 const GAMEPLAY_PREFIXES = [
   'apps/web/app/components/', 'apps/web/app/daily/', 'apps/web/app/archive/',
   'apps/web/app/api/daily/', 'apps/web/app/api/custom-lineup/',
-  'apps/web/app/api/custom-nine/', 'packages/daily/src/', 'packages/engine/src/',
+  'apps/web/app/api/custom-nine/',
+  'apps/web/app/custom/', 'apps/web/app/results/',
+  'packages/daily/src/', 'packages/engine/src/', 'packages/shared/src/types/',
 ];
 const GAMEPLAY_ENTRY_POINTS = new Set([
   'apps/web/app/page.tsx',
@@ -59,13 +61,15 @@ const GAMEPLAY_ENTRY_POINTS = new Set([
   'apps/web/app/serverCanonicalData.ts',
   'apps/web/app/api/players/search/route.ts',
 ]);
+const GAMEPLAY_STYLES = /^apps\/web\/app\/(?:daily-[^/]+|globals)\.css$/;
 const GAMEPLAY_ROOT = /^apps\/web\/app\/[^/]*(?:daily|Daily|hint|Hint|game|Game|archive|Archive|official|Official|custom|Custom|score|Score)[^/]*\.(?:ts|tsx|js|mjs)$/;
 const PARITY_FIELDS = ['Baseline', 'Shared path', 'Interaction/network differences', 'Verification', 'Approved divergence'];
 
 export function classifyGameplayChanges(changedFiles) {
   return changedFiles.filter((file) =>
     GAMEPLAY_PREFIXES.some((prefix) => file.startsWith(prefix))
-    || GAMEPLAY_ENTRY_POINTS.has(file) || GAMEPLAY_ROOT.test(file));
+    || GAMEPLAY_ENTRY_POINTS.has(file)
+    || GAMEPLAY_STYLES.test(file) || GAMEPLAY_ROOT.test(file));
 }
 
 export function validateGameplayParity({ changedFiles, prBody }) {
