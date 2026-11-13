@@ -25,7 +25,14 @@ runtime dependency or make network calls from the web app to a baseball API.
   reload the same at-bat/player and exact previously authorized hint are restored
   without duplication. The post-reload signed hint POST must succeed, and the
   next authorized hint must actually render (not merely increment to 2/4).
-- A real server-signed Give up resolves the first at-bat, the shared game advances exactly once to at-bat 2 with no inherited hints, and a second full reload retains the completed first at-bat and current second at-bat. Only state/status is logged; answers and signed tokens never appear in assertions or diagnostics.
+- A normal UI search selects one of two known public players whose initials differ
+  from the visible active initials. Submitting that actual player receives a real
+  signed nonterminal incorrect response with one strike and no answer reveal.
+  The strike, exact one-item wrong-guess history and first hint persist through
+  durable browser save/reload; the next hint remains usable and the next at-bat
+  resets both strikes and wrong-guess history. Candidate choice never reads the
+  hidden answer, private data or a test fixture.
+- Two further distinct publicly searched wrong-player guesses complete the first at-bat as an actual signed three-strike K. The second guess must not reveal the answer; only the third receives a terminal reveal. Browser save retains the K and exactly three wrong guesses. The shared game then advances once to at-bat 2 with no inherited strikes or hints, and a second reload preserves the completed first at-bat. The runner never logs answers or signed tokens.
 - A complete nine-at-bat local Daily is exercised with signed terminal give-up
   requests for every remaining at-bat, sequential advancement to the current Your Nine results panel showing nine of
   nine completed and all nine scorecard rows, and a reload confirming that
@@ -69,8 +76,14 @@ Playwright CLI (`install --with-deps chromium`) as CI does.
 
 ## What it does **not** prove
 
-This is a full nine-at-bat **give-up path** and local persistence smoke, not real-guess gameplay acceptance or an isolated hosted QA result.
-It verifies signed local hint continuation and nine terminal give-up/advance transitions plus completed-game reload, but does **not** verify real player guesses, authoritative scoring, saved competitive submissions,
+This covers three real incorrect-player guesses to a signed first-at-bat K,
+followed by eight signed Give Ups and durable nine-at-bat completion. An independent fresh
+Chromium context additionally uses the first context's already-authorized
+terminal public reveal (never hidden answer material) to select a canonical
+player through real search, submit a zero-hint correct HR and retain that result
+after advancing. No terminal names, IDs or tokens appear in QA logs. It verifies
+nonterminal answer privacy, strike/hint recovery after reload, terminal
+progression, and final scorecard persistence in local Chromium. It does **not** verify authoritative competitive scoring or admissions,
 Supabase row policies/migrations, authenticated Custom creation, Custom completion-name write/read/identity recovery,
 real-browser enabled-mode CSRF and name-entry flows, OAuth, Archive
 catalogs, secondary official Daily editions, physical Safari, or Android.

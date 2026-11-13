@@ -2,6 +2,7 @@
 
 ## Current source integration — November 10
 
+- [ ] **Daily Chromium QA suite (consolidated #645):** preserve both genuine signed incorrect/correct guess gameplay and the separate synthetic same-date official edition localStorage/Web Locks isolation acceptance. Run both in native CI Chromium at mobile and desktop widths. Synthetic edition persistence checks do **not** prove hosted A3 score admission or physical Safari/Android acceptance; keep all new edition flags OFF pending release review.
 - [ ] Complete hosted isolated-QA verified-account My Creations pagination, account-switch and empty-page acceptance, and physical-device checks. #654 is merged with eight mounted Chromium cases; main push CI `42936744355` passed and matching production deployment is READY. Auth/Custom production activation remains OFF and requires explicit release approval.
 - [ ] Resolve the final in-scope documentation findings and complete independent final-head review before integrating #606 unified official Archive. Exact-head CI `42945583941` passed and Vercel Preview is READY. No Archive flag, production migration or competition activation is authorized.
 

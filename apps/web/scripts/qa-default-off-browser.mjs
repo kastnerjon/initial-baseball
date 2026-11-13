@@ -122,6 +122,31 @@ try {
       await page.getByText('1/4 hints', { exact: true }).waitFor();
       const beforeHint = await page.locator('.revealed-hint .hint-value').first().textContent();
       assert.ok(beforeHint && beforeHint.trim(), 'First authorized hint should render');
+      // Choose a guaranteed different player using only publicly shown initials
+      // and two known public search inputs; never inspect the hidden answer.
+      const incorrectCandidate = beforeInitials === 'BR' ? 'Hank Aaron' : 'Babe Ruth';
+      const searchResponse = page.waitForResponse(response =>
+        new URL(response.url()).pathname === '/api/players/search'
+          && response.request().method() === 'GET', { timeout: 15_000 });
+      await page.getByLabel('Guess the player', { exact: true }).fill(incorrectCandidate);
+      assert.equal((await searchResponse).status(), 200, 'Canonical player search must succeed');
+      await page.getByRole('list', { name: 'Matching players', exact: true })
+        .getByRole('button', { name: incorrectCandidate, exact: true }).click();
+      const signedIncorrectResponse = page.waitForResponse(response =>
+        new URL(response.url()).pathname === '/api/daily/resolve'
+          && response.request().method() === 'POST', { timeout: 15_000 });
+      await page.getByRole('button', { name: 'Submit Guess', exact: true }).click();
+      const incorrectResponse = await signedIncorrectResponse;
+      assert.equal(incorrectResponse.status(), 200, 'Real signed incorrect guess must succeed');
+      const incorrect = await incorrectResponse.json();
+      assert.ok(incorrect?.result?.kind === 'incorrect'
+        && incorrect.result.strikeCount === 1 && incorrect.reveal === null,
+      'Real resolve must return one nonterminal strike without revealing the answer');
+      await page.getByRole('img', { name: '1 of 3 strikes', exact: true }).waitFor();
+      await page.getByText('2 strikes left.', { exact: true }).waitFor();
+      await page.getByRole('region', { name: 'Wrong guesses for this at-bat', exact: true })
+        .getByText(incorrectCandidate, { exact: true }).waitFor();
+      await page.getByText('1/4 hints', { exact: true }).waitFor();
       // Observe durable save before navigating to avoid testing a React effect race.
       await page.waitForFunction(() => {
         for (let i = 0; i < localStorage.length; i++) {
@@ -129,7 +154,10 @@ try {
           if (!key?.startsWith('initial-baseball:daily:')) continue;
           try {
             const saved = JSON.parse(localStorage.getItem(key) ?? '');
-            if (saved?.atBatState?.revealCount === 1) return true;
+            if (saved?.currentPitchIndex === 0
+              && saved?.atBatState?.revealCount === 1
+              && saved?.atBatState?.strikeCount === 1
+              && saved?.atBatState?.wrongGuesses?.length === 1) return true;
           } catch { /* Ignore unrelated or corrupted local keys. */ }
         }
         return false;
@@ -170,28 +198,96 @@ try {
         'Reload must preserve the exact authorized hint without exposing it in logs');
       assert.equal(await page.locator('.revealed-hint').count(), 1,
         'Reload must not replay or duplicate previous hints');
+      await page.getByRole('img', { name: '1 of 3 strikes', exact: true }).waitFor();
+      const restoredWrongGuesses = page.getByRole('region', {
+        name: 'Wrong guesses for this at-bat', exact: true,
+      });
+      assert.equal(await restoredWrongGuesses.locator('li').count(), 1,
+        'Reload must retain exactly one wrong guess');
+      assert.ok(await restoredWrongGuesses.locator('li').textContent() === incorrectCandidate,
+        'Reload must preserve the selected public wrong guess without logging it');
       await page.getByRole('button', { name: 'Reveal Next Hint', exact: true }).click();
       await page.getByText('2/4 hints', { exact: true }).waitFor();
+      await page.getByRole('img', { name: '1 of 3 strikes', exact: true }).waitFor();
       assert.equal(await page.locator('.revealed-hint').count(), 2,
         'Second authorized hint should render, not just increment progress');
 
 
 
-      // Resolve one real server-signed terminal at-bat without knowing or
-      // logging the hidden answer, then advance with the shared Daily engine.
-      const signedGiveUpResponse = page.waitForResponse(response =>
-        new URL(response.url()).pathname === '/api/daily/resolve'
-          && response.request().method() === 'POST', { timeout: 15_000 });
-      await page.getByRole('button', { name: 'Give up', exact: true }).click();
-      await page.getByRole('button', { name: 'Yes, give up', exact: true }).click();
-      assert.equal((await signedGiveUpResponse).status(), 200,
-        'Signed Daily terminal give-up must be accepted before advancing');
+      // Continue with distinct, well-known public players whose initials cannot
+      // match the visible current batter. Never inspect private answer material.
+      const publicIncorrectPool = [
+        { name: 'Babe Ruth', initials: 'BR' },
+        { name: 'Hank Aaron', initials: 'HA' },
+        { name: 'Derek Jeter', initials: 'DJ' },
+        { name: 'Willie Mays', initials: 'WM' },
+      ];
+      const remainingWrongGuesses = publicIncorrectPool
+        .filter(candidate => candidate.initials !== beforeInitials
+          && candidate.name !== incorrectCandidate)
+        .slice(0, 2);
+      assert.equal(remainingWrongGuesses.length, 2,
+        'Public pool must supply two more distinct definitely incorrect names');
+      let authorizedTerminalPlayer = null;
+      for (const [index, candidate] of remainingWrongGuesses.entries()) {
+        const searchResponse = page.waitForResponse(response =>
+          new URL(response.url()).pathname === '/api/players/search'
+            && response.request().method() === 'GET', { timeout: 15_000 });
+        await page.getByLabel('Guess the player', { exact: true }).fill(candidate.name);
+        assert.equal((await searchResponse).status(), 200,
+          'Further public canonical player search must succeed');
+        await page.getByRole('list', { name: 'Matching players', exact: true })
+          .getByRole('button', { name: candidate.name, exact: true }).click();
+        const signedGuessResponse = page.waitForResponse(response =>
+          new URL(response.url()).pathname === '/api/daily/resolve'
+            && response.request().method() === 'POST', { timeout: 15_000 });
+        await page.getByRole('button', { name: 'Submit Guess', exact: true }).click();
+        const response = await signedGuessResponse;
+        assert.equal(response.status(), 200,
+          'Further Daily guess must receive an authorized signed response');
+        const resolution = await response.json();
+        if (index === 0) {
+          assert.equal(resolution?.result?.kind, 'incorrect',
+            'Second incorrect guess must remain nonterminal');
+          assert.equal(resolution?.result?.strikeCount, 2,
+            'Second incorrect guess must count exactly two strikes');
+          assert.equal(resolution?.reveal, null,
+            'Second incorrect guess must not reveal the hidden answer');
+          await page.getByRole('img', { name: '2 of 3 strikes', exact: true }).waitFor();
+          await page.getByRole('region', {
+            name: 'Wrong guesses for this at-bat', exact: true,
+          }).getByText(candidate.name, { exact: true }).waitFor();
+          assert.equal(await page.getByRole('region', {
+            name: 'Wrong guesses for this at-bat', exact: true,
+          }).locator('li').count(), 2, 'Second guess must make two wrong-guess entries');
+          await page.getByText('2/4 hints', { exact: true }).waitFor();
+        } else {
+          assert.equal(resolution?.result?.kind, 'strikeout',
+            'Third incorrect guess must resolve a real strikeout');
+          assert.equal(resolution?.result?.strikeCount, 3,
+            'Third incorrect guess must finish with exactly three strikes');
+          assert.equal(resolution?.result?.outcome, 'K',
+            'A signed three-strike resolution must record a K');
+          assert.ok(resolution?.reveal && typeof resolution.reveal === 'object',
+            'Only a terminal strikeout may supply the authorized reveal');
+          assert.ok(typeof resolution.reveal.playerId === 'string'
+            && typeof resolution.reveal.displayName === 'string',
+          'A signed terminal reveal must identify its public player');
+          authorizedTerminalPlayer = { playerId: resolution.reveal.playerId,
+            displayName: resolution.reveal.displayName };
+          await page.getByRole('button', { name: 'Next At Bat', exact: true }).waitFor();
+        }
+      }
       await page.getByRole('button', { name: 'Next At Bat', exact: true }).click();
       await page.locator('.at-bat-progress-step[aria-current="step"][aria-label="At-bat 2: current"]')
         .waitFor({ timeout: 15_000 });
       assert.equal(await page.locator('[aria-label="At-bat 1: completed"]').count(), 1,
         'Completed first at-bat must be retained');
       await page.getByText('0/4 hints', { exact: true }).waitFor();
+      await page.getByRole('img', { name: '0 of 3 strikes', exact: true }).waitFor();
+      assert.equal(await page.getByRole('region', {
+        name: 'Wrong guesses for this at-bat', exact: true,
+      }).count(), 0, 'New at-bat must not inherit the previous wrong guess');
       assert.equal(await page.locator('.revealed-hint').count(), 0,
         'New at-bat must not inherit previously revealed hints');
       await page.waitForFunction(() => {
@@ -203,7 +299,10 @@ try {
             if (saved?.currentPitchIndex === 1
               && saved?.pendingAdvance === null
               && saved?.atBatState?.revealCount === 0
-              && saved?.gameState?.completedAtBats?.length === 1) return true;
+              && saved?.gameState?.completedAtBats?.length === 1
+              && saved.gameState.completedAtBats[0]?.resolution === 'strikeout'
+              && saved.gameState.completedAtBats[0]?.wrongGuesses === 3
+              && saved.gameState.completedAtBats[0]?.outcome === 'K') return true;
           } catch { /* Ignore unrelated local keys. */ }
         }
         return false;
@@ -281,6 +380,71 @@ try {
       assert.equal(await page.locator('.at-bat-progress-step[aria-current="step"]').count(),
         0, 'Completed Daily must not reopen an unfinished at-bat after reload');
 
+      // A separate, empty browser context verifies a real correct answer using
+      // ONLY a prior server-authorized terminal reveal (never hidden source data).
+      assert.ok(authorizedTerminalPlayer, 'Signed K must contain a public terminal player');
+      const correctContext = await browser.newContext({ viewport, serviceWorkers: 'block' });
+      correctContext.setDefaultTimeout(10_000);
+      correctContext.setDefaultNavigationTimeout(20_000);
+      try {
+        await correctContext.route('**/*', route => {
+          const url = new URL(route.request().url());
+          return url.origin === base ? route.continue() : route.abort();
+        });
+        const correctPage = await correctContext.newPage();
+        let jsErrors = 0;
+        correctPage.on('pageerror', () => { jsErrors++; });
+        assert.equal((await correctPage.goto(base + '/', { waitUntil: 'domcontentloaded' }))?.status(),
+          200, 'Independent Daily session must load');
+        await correctPage.getByRole('button', { name: 'Got it', exact: true }).click();
+        await correctPage.getByText('0/4 hints', { exact: true }).waitFor();
+        assert.ok((await correctPage.locator('.initials-value').textContent()) === beforeInitials,
+          'Second isolated session must begin on the same immutable player');
+        const freshSearch = correctPage.waitForResponse(response =>
+          new URL(response.url()).pathname === '/api/players/search'
+            && response.request().method() === 'GET', { timeout: 15_000 });
+        await correctPage.getByLabel('Guess the player', { exact: true })
+          .fill(authorizedTerminalPlayer.displayName);
+        const candidateResponse = await freshSearch;
+        assert.equal(candidateResponse.status(), 200, 'Public canonical search must succeed');
+        const candidates = (await candidateResponse.json())?.results;
+        const index = Array.isArray(candidates) ? candidates.slice(0, 5)
+          .findIndex(x => x?.playerId === authorizedTerminalPlayer.playerId) : -1;
+        assert.ok(index >= 0, 'The already-revealed public player must appear in search');
+        await correctPage.getByRole('list', { name: 'Matching players', exact: true })
+          .getByRole('button').nth(index).click();
+        const signedCorrect = correctPage.waitForResponse(response =>
+          new URL(response.url()).pathname === '/api/daily/resolve'
+            && response.request().method() === 'POST', { timeout: 15_000 });
+        await correctPage.getByRole('button', { name: 'Submit Guess', exact: true }).click();
+        const correctResponse = await signedCorrect;
+        assert.equal(correctResponse.status(), 200, 'Real signed correct guess must succeed');
+        const correct = await correctResponse.json();
+        assert.equal(correct?.result?.kind, 'correct', 'Correct guess must resolve correctly');
+        assert.equal(correct?.result?.outcome, 'HR', 'Zero hints must yield a home run');
+        assert.ok(correct?.reveal?.playerId === authorizedTerminalPlayer.playerId,
+          'Signed correct result must match the previously authorized terminal player');
+        await correctPage.getByRole('button', { name: 'Next At Bat', exact: true }).click();
+        await correctPage.locator('.at-bat-progress-step[aria-current="step"][aria-label="At-bat 2: current"]')
+          .waitFor({ timeout: 15_000 });
+        await correctPage.getByRole('img', { name: '0 of 3 strikes', exact: true }).waitFor();
+        await correctPage.waitForFunction(() => {
+          for (let i = 0; i < localStorage.length; i++) {
+            const key = localStorage.key(i);
+            if (!key?.startsWith('initial-baseball:daily:')) continue;
+            try {
+              const saved = JSON.parse(localStorage.getItem(key) ?? '');
+              if (saved?.currentPitchIndex === 1 && saved?.gameState?.completedAtBats?.length === 1
+                && saved.gameState.completedAtBats[0]?.resolution === 'correct'
+                && saved.gameState.completedAtBats[0]?.wrongGuesses === 0
+                && saved.gameState.completedAtBats[0]?.outcome === 'HR') return true;
+            } catch { /* No secret logging. */ }
+          }
+          return false;
+        }, null, { timeout: 10_000 });
+        assert.equal(jsErrors, 0, 'Fresh correct-guess context must remain error-free');
+      } finally { await correctContext.close(); }
+
       // Both identity flags remain OFF, including when a later source PR adds
       // GET/POST routes. No signed browser cookie or private DB is available.
       const challenge = 'custom-lineup-v2-123e4567-e89b-42d3-a456-426614174000';
@@ -307,7 +471,7 @@ try {
       await context.close();
     }
   }
-  console.log('PASS default-OFF native Chromium: Daily signed hint/terminal advance/reload, Results, disabled Custom identity GET/POST, mobile/desktop viewports');
+  console.log('PASS default-OFF native Chromium: Daily real three-strike K plus fresh-context correct HR, nine completed at-bats, default-OFF routes, mobile/desktop viewports');
   console.log('Hosted Supabase, scoring, OAuth and physical-device acceptance are NOT established.');
 } finally {
   await browser?.close();

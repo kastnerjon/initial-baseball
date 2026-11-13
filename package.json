@@ -9,7 +9,7 @@
     "test": "turbo test",
     "lint": "turbo lint",
     "typecheck": "turbo typecheck",
-    "check:file-sizes": "node scripts/check-file-sizes.mjs",
+    "check:file-sizes": "node --test scripts/check-file-sizes.test.mjs && node scripts/check-file-sizes.mjs",
     "data:audit": "pnpm --filter @initial-baseball/baseball-data audit:current",
     "data:identities": "pnpm --filter @initial-baseball/baseball-data generate:canonical-identities",
     "data:universe": "pnpm --filter @initial-baseball/baseball-data materialize:reviewed-canonical-identities && pnpm --filter @initial-baseball/baseball-data generate:canonical-universe",
