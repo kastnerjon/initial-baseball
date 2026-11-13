@@ -52,7 +52,7 @@ const GAMEPLAY_PREFIXES = [
   'apps/web/app/components/', 'apps/web/app/daily/', 'apps/web/app/archive/',
   'apps/web/app/api/daily/', 'apps/web/app/api/custom-lineup/',
   'apps/web/app/api/custom-nine/',
-  'apps/web/app/custom/', 'apps/web/app/results/',
+  'apps/web/app/custom/', 'apps/web/app/results/', 'apps/web/app/classic/',
   'packages/daily/src/', 'packages/engine/src/', 'packages/shared/src/types/',
 ];
 const GAMEPLAY_ENTRY_POINTS = new Set([
@@ -61,7 +61,7 @@ const GAMEPLAY_ENTRY_POINTS = new Set([
   'apps/web/app/serverCanonicalData.ts',
   'apps/web/app/api/players/search/route.ts',
 ]);
-const GAMEPLAY_STYLES = /^apps\/web\/app\/(?:daily-[^/]+|globals)\.css$/;
+const GAMEPLAY_STYLES = /^apps\/web\/app\/(?:daily-[^/]+|styles|globals)\.css$/;
 const GAMEPLAY_ROOT = /^apps\/web\/app\/[^/]*(?:daily|Daily|hint|Hint|game|Game|archive|Archive|official|Official|custom|Custom|score|Score)[^/]*\.(?:ts|tsx|js|mjs)$/;
 const PARITY_FIELDS = ['Baseline', 'Shared path', 'Interaction/network differences', 'Verification', 'Approved divergence'];
 
