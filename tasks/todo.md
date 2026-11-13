@@ -29,7 +29,7 @@
 
 - [ ] Independently review clean-main unified official Archive #606: published primary metadata placeholder puzzleId:null (not falsely playable), exact-ID numbered secondary metadata unlinked until exact-ID enabled hosted acceptance, arbitrary same-date edition keyset, no hidden answer/score writes, original Archive beta retained with errors sanitized and four default-OFF flags. Require exact-head CI/Preview, CodeRabbit/Codex, protected hosted 120+-edition browser acceptance (121-edition rollback-only DB fixture passed), physical responsive Safari/Android and controlled release approval. Primary source issue #589 and A3 signed result admission #566 remain separate blockers.
 
-- [ ] Complete isolated hosted signed-playback, hidden-answer bundle verification and physical Safari/Android acceptance for the merged, default-OFF exact-ID secondary practice source (#608). Preserve private progression, single-hint reveal, per-edition saves and personal-only results; competitive A3 #566 remains denied.
+- [ ] Complete isolated hosted signed-playback, hidden-answer bundle verification and physical Safari/Android acceptance for the merged, default-OFF exact-ID secondary practice source (#608). Preserve private progression, current-batter four-hint local reveal, per-edition saves and personal-only results; competitive secondary score admission stays denied until #657.
 
 - [ ] A1: issuance identity, frozen nine-player content, service-only persistence and restricted editor action.
 - [ ] A2–A4: exact-ID play and hint privacy, result isolation, share links, one Archive and device QA.
@@ -122,7 +122,7 @@ These gates are separate from Custom Lineups Phase 1. Keep them active until eac
 ## Official Daily exact-ID gameplay: frozen materializer (staged)
 
 - [ ] Integrate the private exact-ID reader with the shared frozen-clue DailyPuzzle materializer under explicit server admission and date checks. This source-only adapter does not create public gameplay.
-- [ ] Replace any bulk release of unrevealed hints in secondary edition bootstrap, resume, next-pitch and hint-bundle endpoints with single authorized reveal transport. Preserve the existing primary until parity checks.
+- [ ] Prevent early release of canonical answers or future-batter hints through secondary edition bootstrap, resume, next-pitch and hint-bundle endpoints. The active batter's four-hint signed bundle must match production gameplay as described in the #588 parity correction. Preserve existing primary behavior and verify edition-bound progression.
 - [ ] Verify edition-scoped progression, scores, share links, browser persistence and historical/archived practice before enabling public routes.
 
 ## Official Daily edition browser-save separation (staged)

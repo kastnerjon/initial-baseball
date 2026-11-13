@@ -126,6 +126,23 @@ test('rejects missing and templated gameplay assessments', () => {
   }), /Approved divergence/);
 });
 
+test('rejects code- and emphasis-formatted placeholder text for each parity field', () => {
+  const fields = ['Baseline', 'Shared path', 'Interaction/network differences', 'Verification', 'Approved divergence'];
+  const changedFiles = ['apps/web/app/components/DailyInningGame.tsx', 'docs/START-HERE.md'];
+  for (const field of fields) {
+    for (const placeholder of ['`TODO: fill this in later`', '**TODO: fill this in later**']) {
+      const updated = PARITY.split('\n').map((line) =>
+        line.startsWith('- **' + field + ':**')
+          ? '- **' + field + ':** ' + placeholder
+          : line,
+      ).join('\n');
+      assert.throws(() => validateDocumentationImpact({
+        changedFiles, prBody: DOCUMENTATION_SECTION + '\n' + updated,
+      }), /Gameplay parity/);
+    }
+  }
+});
+
 test('exempts documentation-only and unrelated operational changes from gameplay parity', () => {
   for (const changedFiles of [
     ['AGENTS.md', 'docs/START-HERE.md'],

@@ -80,7 +80,8 @@ export function validateGameplayParity({ changedFiles, prBody }) {
     const label = '- **' + field + ':**';
     const line = section.split('\n').find((candidate) => candidate.trimStart().startsWith(label));
     const answer = line?.trimStart().slice(label.length).trim() ?? '';
-    if (answer.length < 12 || /^(?:<!--|tbd\b|todo\b|n\/a\b|not applicable\b|\.\.\.)/i.test(answer)) {
+    const unformatted = answer.replace(/^[\s`*_~]+/, '').trim();
+    if (answer.length < 12 || /^(?:<!--|tbd\b|todo\b|n\/a\b|not applicable\b|\.\.\.)/i.test(unformatted)) {
       throw new DocumentationImpactError('Gameplay parity needs a concrete "' + field + '" assessment.');
     }
   }
