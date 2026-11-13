@@ -9,7 +9,16 @@ const ID = 'daily-ed-v1-907f33db-c38f-43c3-8e6b-a3aaf19bbd08';
 const OTHER = 'daily-ed-v1-6077ee21-9370-4cf3-aa21-74c50b485591';
 const DATE = '2026-11-06';
 const URL = '/api/daily/editions/' + ID + '/';
-const bundle = { pitchNumber: 1, revealedCount: 0, hints: [], checkpoints: [] };
+const bundle = {
+  pitchNumber: 1, revealedCount: 0,
+  hints: DEFAULT_DAILY_HINT_CONFIG.map(slot => ({
+    slot: slot.slot, hintType: slot.hintType, hintLabel: slot.displayLabel,
+    hintValue: 'CURRENT_BATTER_HINT_' + slot.slot,
+  })),
+  checkpoints: [1, 2, 3, 4].map(revealedCount => ({
+    revealedCount, progressionToken: 'signed-current-' + revealedCount,
+  })),
+};
 function bootstrap(id = ID, date = DATE) {
   return {
     rulesetVersion: 'points-v4', progressionToken: 'signed-start',
@@ -61,11 +70,13 @@ describe('source-staged official Daily exact-ID browser HTTP transport', () => {
     expect(get).toHaveBeenCalledWith(URL + 'bootstrap?date=' + DATE);
     expect(result.puzzle.id).toBe(ID);
     expect(result.hintBundle).toEqual(bundle);
+    expect(result.hintBundle.hints).toHaveLength(4);
+    expect(result.hintBundle.checkpoints.map(checkpoint => checkpoint.revealedCount)).toEqual([1, 2, 3, 4]);
     expect(JSON.stringify(result)).not.toContain('canonicalPlayerIds');
     expect(JSON.stringify(result)).not.toContain('PRIVATE_FUTURE_HINT');
   });
 
-  it('rejects a sibling edition, wrong date or any preloaded answer fields', async () => {
+  it('accepts current-batter hints, rejects sibling editions and future-answer fields', async () => {
     const cases = [
       bootstrap(OTHER),
       bootstrap(ID, '2026-11-05'),
@@ -80,6 +91,8 @@ describe('source-staged official Daily exact-ID browser HTTP transport', () => {
         pitches: [{ ...bootstrap().puzzle.pitches[0], fullName: 'PRIVATE_FUTURE_HINT' },
           ...bootstrap().puzzle.pitches.slice(1)] } },
       { ...bootstrap(), hintBundle: { ...bundle, checkpoints: [{ revealedCount: 1, progressionToken: 'PRIVATE' }] } },
+      { ...bootstrap(), hintBundle: { ...bundle, checkpoints: [...bundle.checkpoints, { revealedCount: 5, progressionToken: 'FUTURE' }] } },
+      { ...bootstrap(), hintBundle: { ...bundle, hints: [...bundle.hints, { ...bundle.hints[0], slot: 5 }] } },
       { ...bootstrap(), hintBundle: { ...bundle, hints: ['PRIVATE_FUTURE_HINT'] } },
       { ...bootstrap(), futureHints: ['PRIVATE_FUTURE_HINT'] },
     ];
@@ -235,6 +248,24 @@ describe('source-staged official Daily exact-ID browser HTTP transport', () => {
     await expect(transport.hints('x')).rejects.toThrow(/incompatible/i);
   });
 
+  it('restores a revealed current batter with only remaining signed checkpoints', async () => {
+    const { transport, post } = setup();
+    const resumed = {
+      ...bundle, revealedCount: 2, checkpoints: bundle.checkpoints.slice(2),
+    };
+    post.mockResolvedValueOnce({ hintBundle: resumed });
+    expect((await transport.hints('signed-after-2')).hintBundle).toEqual(resumed);
+    for (const malformed of [
+      { ...resumed, checkpoints: bundle.checkpoints },
+      { ...resumed, hints: bundle.hints.slice(0, 2) },
+      { ...resumed, checkpoints: [{ ...resumed.checkpoints[0], revealedCount: 4 }, resumed.checkpoints[1]] },
+      { ...resumed, hints: [{ ...bundle.hints[0], playerId: 'SECRET_ANSWER' }, ...bundle.hints.slice(1)] },
+    ]) {
+      post.mockResolvedValueOnce({ hintBundle: malformed });
+      await expect(transport.hints('signed-after-2')).rejects.toThrow(/incompatible/i);
+    }
+  });
+
   it('accepts a canonical public terminal reveal without hidden answer fields', async () => {
     const { transport, post } = setup();
     const result = {
@@ -280,7 +311,7 @@ describe('source-staged official Daily exact-ID browser HTTP transport', () => {
     post.mockResolvedValueOnce({
       result: { kind: 'correct', revealedCount: 0, outcome: 'HR', source: 'initials' },
       reveal: publicReveal(), progressionToken: 'successor',
-      hintBundle: { ...bundle, hints: [{ slot: 1, hintType: 'stats', hintLabel: 'Stats', hintValue: 'PRIVATE_FUTURE_HINT' }] },
+      hintBundle: { ...bundle, futureBatter: { correctPlayerId: 'SECRET' } },
     });
     await expect(transport.resolve({ progressionToken: 'x', giveUp: true }))
       .rejects.toThrow(/incompatible/i);

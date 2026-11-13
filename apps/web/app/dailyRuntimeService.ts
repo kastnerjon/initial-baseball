@@ -33,7 +33,7 @@ type CreateDailyRuntimeServiceInput = {
   progressionTokens: DailyProgressionTokenCodec;
   /** Trusted server-owned setting; Daily remains at three by default. */
   maxStrikes?: 1 | 2 | 3;
-  /** Future exact-ID editions use incremental server-authorized clue revelation. */
+  /** Opt-in transport policy. Official exact-ID play follows the production bundle UX. */
   hintTransport?: 'legacy-bundle' | 'on-demand';
 };
 
@@ -71,7 +71,7 @@ export function createExactIdDailyRuntimeService(
   return buildDailyRuntimeService({
     canonicalRuntime,
     progressionTokens,
-    hintTransport: 'on-demand',
+    hintTransport: 'legacy-bundle',
     async createPuzzle() {
       const puzzle = await readEligiblePuzzle(puzzleId);
       if (!puzzle || puzzle.id !== puzzleId) {

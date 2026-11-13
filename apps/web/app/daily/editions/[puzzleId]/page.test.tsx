@@ -63,7 +63,16 @@ function safeBootstrap(puzzleId = ID, date = DATE) {
       })),
     },
     rulesetVersion: 'points-v4', progressionToken: 'signed-token',
-    hintBundle: { pitchNumber: 1, revealedCount: 0, hints: [], checkpoints: [] },
+    hintBundle: {
+      pitchNumber: 1, revealedCount: 0,
+      hints: DEFAULT_DAILY_HINT_CONFIG.map(slot => ({
+        slot: slot.slot, hintType: slot.hintType, hintLabel: slot.displayLabel,
+        hintValue: 'CURRENT_BATTER_HINT_' + slot.slot,
+      })),
+      checkpoints: [1, 2, 3, 4].map(revealedCount => ({
+        revealedCount, progressionToken: 'signed-' + revealedCount,
+      })),
+    },
   };
 }
 
