@@ -30,7 +30,9 @@ const currentHints = [
   { hintType: 'position', hintLabel: 'Position', hintValue: 'OF' },
   { hintType: 'stats', hintLabel: 'Stats', hintValue: 'HR 100' },
 ];
-const checkpoints = ['signed-depth-1', 'signed-depth-2', 'signed-depth-3', 'signed-depth-4'];
+const checkpoints = [1, 2, 3, 4].map(revealedCount => ({
+  revealedCount, progressionToken: `signed-depth-${revealedCount}`,
+}));
 const noRuntime = () => expect(createServerOfficialDailyEditionRuntime).not.toHaveBeenCalled();
 
 beforeEach(() => {
