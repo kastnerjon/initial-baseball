@@ -20,7 +20,6 @@ import { createCompletedDailyShareResult } from '../dailyCompletedShareResult';
 import { requireHintBundle, requireReveal } from '../dailyRuntimeResponseRequirements';
 import { createOfficialDailyEditionHttpTransport } from '../officialDailyEditionHttpTransport';
 import { createOfficialEditionResolutionTransport } from '../officialEditionResolutionTransport';
-import { createDailyOnDemandHintRequestClient } from '../dailyOnDemandHintRequestClient';
 import type { CanonicalRevealViewModel } from '../canonicalRevealViewModel';
 import { type DailyAtBatUiState, createInitialAtBatUiState, createInitialDailyGameState, withConfirmedIncorrectGuess } from '../dailyClientState';
 import type {
@@ -80,12 +79,7 @@ export function DailyInningGame({
   const [hintBundle, setHintBundle] = useState<DailyHintBundle | null>(initialHintBundle);
   const [hasLoadedSavedState, setHasLoadedSavedState] = useState(false);
   const [bundlePending, setBundlePending] = useState(false);
-  const [hintPending, setHintPending] = useState(false);
   const [requestError, setRequestError] = useState<string | null>(null);
-  const [onDemandHints] = useState(() => editionTransport === null ? null
-    : createDailyOnDemandHintRequestClient({
-        onPendingChange: setHintPending, onErrorChange: setRequestError,
-      }, token => editionTransport.hint(token)));
   const resolutionRequests = useDailyGameplayResolutionRequests(setRequestError, editionResolution);
   const [savedGameRestoreController] = useState(() => createDailySavedGameRestoreController(
     editionTransport === null ? undefined : token => editionTransport.hints(token),
@@ -154,12 +148,11 @@ export function DailyInningGame({
   );
   useEffect(() => () => {
     savedGameRestoreController.invalidate();
-    onDemandHints?.invalidateSilently();
-  }, [savedGameRestoreController, onDemandHints]);
+  }, [savedGameRestoreController]);
   const performanceLayout = isYourNineEnabled(gameState.rulesetVersion);
   const isPuzzleComplete = currentPitchIndex >= puzzle.pitches.length;
   const isGameComplete = gameState.points.completed || gameState.score.completed || isPuzzleComplete;
-  const requestPending = resolutionRequests.pendingAction !== null || hintPending;
+  const requestPending = resolutionRequests.pendingAction !== null;
   const isRestoringActiveHints = hasLoadedSavedState && hintBundle === null
     && pendingAdvance === null && !isGameComplete;
   const shareResult = useMemo(
@@ -318,7 +311,7 @@ export function DailyInningGame({
   );
 
   async function handleSubmit(): Promise<void> {
-    if (hintPending || atBatState.selectedPlayerId === null) return;
+    if (atBatState.selectedPlayerId === null) return;
     // Capture the actual selected player before an asynchronous response can arrive.
     const submittedPlayerId = atBatState.selectedPlayerId;
     const submittedDisplayName = atBatState.query.trim();
@@ -350,7 +343,6 @@ export function DailyInningGame({
   }
 
   async function handleGiveUp(): Promise<void> {
-    if (hintPending) return;
     await resolutionRequests.resolveAtBat({
       progressionToken,
       action: { giveUp: true },
@@ -394,7 +386,6 @@ export function DailyInningGame({
   }
   function handleNextPitch(): void {
     if (pendingAdvance === null || requestPending) return;
-    onDemandHints?.invalidate();
 
     setGameState(currentGameState => ({
       ...currentGameState,
@@ -415,7 +406,6 @@ export function DailyInningGame({
   }
   function handleResetToday(): void {
     if (!gameplayPersistence.resetPersistedState()) return;
-    onDemandHints?.invalidate();
     completedComparison.invalidate();
     scorecardComparisons.invalidate();
     resolutionRequests.invalidate();
@@ -461,21 +451,6 @@ export function DailyInningGame({
   }
   function handleRevealHint(): void {
     if (requestPending) return;
-    if (onDemandHints !== null) {
-      if (hintBundle === null) return;
-      void onDemandHints.reveal({
-        progressionToken, hintBundle, hintConfig: puzzle.hintConfig,
-        onSuccess: ({ reveal, hintBundle: nextBundle }) => {
-          setProgressionToken(reveal.progressionToken);
-          setHintBundle(nextBundle);
-          setAtBatState(state => ({
-            ...state, revealCount: reveal.revealedCount,
-            revealedHints: [...state.revealedHints, reveal.hint], submittedResult: null,
-          }));
-        },
-      });
-      return;
-    }
     try {
       const nextReveal = revealNextHintFromBundle(
         requireHintBundle(hintBundle),

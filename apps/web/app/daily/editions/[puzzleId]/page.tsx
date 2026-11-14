@@ -1,9 +1,13 @@
 import React, { type JSX } from 'react';
 import { notFound } from 'next/navigation';
+import { isOfficialDailyArchiveVisible } from '../../../serverOfficialDailyArchiveSection';
 import { isOfficialDailyOccurrenceId, validateIssuedDailyCalendarDate } from '@initial-baseball/daily/official-edition-identity';
 import { DailyRuntimeRequestError } from '../../../dailyRuntimeService';
 import { validateOfficialDailyEditionBootstrap } from '../../../officialDailyEditionHttpTransport';
 import { createServerOfficialDailyEditionRuntime } from '../../../serverOfficialDailyEditionRuntime';
+import {
+  isOfficialDailyEditionChooserVisible, isOfficialDailyEditionPracticeVisible,
+} from '../../../serverOfficialDailyEditionChoice';
 import { DailyInningGame } from '../../../components/DailyInningGame';
 import { DailyHowToDialog } from '../../../components/DailyHowToDialog';
 import { getDailyHowToContent } from '../../../dailyHowTo';
@@ -26,11 +30,7 @@ export default async function OfficialDailyPracticePage({
   params: Promise<{ puzzleId: string }>;
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }): Promise<JSX.Element> {
-  if (process.env.OFFICIAL_DAILY_EDITION_PRACTICE_UI_ENABLED !== 'true'
-      || process.env.OFFICIAL_DAILY_EDITION_HTTP_ENABLED !== 'true'
-      || process.env.OFFICIAL_DAILY_EDITION_PRIVATE_RUNTIME_ENABLED !== 'true') {
-    notFound();
-  }
+  if (!isOfficialDailyEditionPracticeVisible()) notFound();
   const { puzzleId } = await params;
   const query = await searchParams;
   if (typeof puzzleId !== 'string' || !puzzleId.startsWith('daily-ed-v1-')
@@ -64,7 +64,13 @@ export default async function OfficialDailyPracticePage({
             content={getDailyHowToContent(bootstrap.rulesetVersion)}
           />
         </header>
-        <nav aria-label="Daily navigation"><a href="/">Today’s Daily</a></nav>
+        <nav aria-label="Daily navigation">
+          <a href="/">Today’s Daily</a>
+          {' · '}<a href="/archive">{isOfficialDailyArchiveVisible() ? 'Official Archive' : 'Archive beta'}</a>
+          {isOfficialDailyEditionChooserVisible() ? (
+            <>{' · '}<a href="/daily/editions">More official Daily puzzles</a></>
+          ) : null}
+        </nav>
         <DailyInningGame key={bootstrap.puzzle.id}
           puzzle={bootstrap.puzzle} rulesetVersion={bootstrap.rulesetVersion}
           initialProgressionToken={bootstrap.progressionToken}

@@ -36,6 +36,20 @@ describe('revealNextHintFromBundle', () => {
     });
   });
 
+  it('reveals all four hints synchronously with signed checkpoint tokens and no transport', () => {
+    let revealedCount: 0 | 1 | 2 | 3 | 4 = 0;
+    const observed: string[] = [];
+    for (let depth = 1; depth <= 4; depth++) {
+      const reveal = revealNextHintFromBundle(bundle, revealedCount);
+      expect(reveal.revealedCount).toBe(depth);
+      expect(reveal.progressionToken).toBe(`token-${depth}`);
+      observed.push(reveal.hint.hintValue);
+      revealedCount = reveal.revealedCount;
+    }
+    expect(observed).toEqual(['2000s', 'SEA, CIN', 'CF', '630 HR']);
+    expect(() => revealNextHintFromBundle(bundle, revealedCount)).toThrow(/already revealed/);
+  });
+
   it('fails closed when a checkpoint is missing', () => {
     expect(() => revealNextHintFromBundle({
       ...bundle,

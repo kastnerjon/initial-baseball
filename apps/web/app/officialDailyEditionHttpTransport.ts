@@ -71,22 +71,37 @@ function validateSingleHint(value: unknown): value is DailyHintResponse {
     && typeof value.hint.hintValue === 'string' && value.hint.hintValue.length > 0;
 }
 
-function validateOnDemandBundle(value: unknown): value is DailyHintBundle {
+/**
+ * Same current-at-bat four-hint/checkpoint contract as production Primary
+ * Daily. Only the active pitch's hints may be present; strict shapes reject
+ * answer IDs, nested future-batter hints and additional token fields.
+ */
+function validateCurrentBatterBundle(value: unknown): value is DailyHintBundle {
   if (!isRecord(value)
       || !hasKeys(value, ['pitchNumber', 'revealedCount', 'hints', 'checkpoints'])
-      || !Number.isSafeInteger(value.pitchNumber) || (value.pitchNumber as number) < 1
+      || !Number.isSafeInteger(value.pitchNumber)
+      || (value.pitchNumber as number) < 1 || (value.pitchNumber as number) > 9
       || !Number.isInteger(value.revealedCount)
       || (value.revealedCount as number) < 0 || (value.revealedCount as number) > 4
-      || !Array.isArray(value.hints) || value.hints.length !== value.revealedCount
-      || !Array.isArray(value.checkpoints) || value.checkpoints.length !== 0) {
+      || !Array.isArray(value.hints) || value.hints.length !== 4
+      || !Array.isArray(value.checkpoints)
+      || value.checkpoints.length !== 4 - (value.revealedCount as number)) {
     return false;
   }
   return value.hints.every((hint, index) =>
     isRecord(hint) && hasKeys(hint, ['slot', 'hintType', 'hintLabel', 'hintValue'])
     && hint.slot === index + 1
-    && typeof hint.hintType === 'string'
-    && typeof hint.hintLabel === 'string'
-    && typeof hint.hintValue === 'string');
+    && HINT_TYPES.has(hint.hintType as string)
+    && typeof hint.hintLabel === 'string' && hint.hintLabel.length > 0
+    && hint.hintLabel.length <= 120
+    && typeof hint.hintValue === 'string' && hint.hintValue.length > 0
+    && hint.hintValue.length <= 4096)
+    && value.checkpoints.every((checkpoint, index) =>
+      isRecord(checkpoint) && hasKeys(checkpoint, ['revealedCount', 'progressionToken'])
+      && checkpoint.revealedCount === (value.revealedCount as number) + index + 1
+      && typeof checkpoint.progressionToken === 'string'
+      && checkpoint.progressionToken.length > 0
+      && checkpoint.progressionToken.length <= 4096);
 }
 
 const HITTER_DISPLAY_FIELDS = ['AB', 'H', 'HR', 'BA', 'R', 'RBI', 'SB', 'OBP', 'SLG', 'OPS'] as const;
@@ -190,7 +205,7 @@ export function validateOfficialDailyEditionBootstrap(value: unknown, puzzleId: 
       || !value.puzzle.pitches.every((pitch: unknown, index: number) =>
         isRecord(pitch) && hasKeys(pitch, ['pitchNumber', 'initials'])
           && pitch.pitchNumber === index + 1 && typeof pitch.initials === 'string')
-      || !validateOnDemandBundle(value.hintBundle)
+      || !validateCurrentBatterBundle(value.hintBundle)
       || value.hintBundle.pitchNumber !== 1 || value.hintBundle.revealedCount !== 0) {
     incompatible();
   }
@@ -269,7 +284,7 @@ export function createOfficialDailyEditionHttpTransport(
       validProgressionToken(progressionToken);
       const value = await post('hints', { progressionToken });
       if (!isRecord(value) || !hasKeys(value, ['hintBundle'])
-          || !validateOnDemandBundle(value.hintBundle)) incompatible();
+          || !validateCurrentBatterBundle(value.hintBundle)) incompatible();
       return value as DailyHintBundleResponse;
     },
     async resolve(request: DailyResolutionRequest): Promise<DailyResolutionResponse> {
@@ -289,7 +304,7 @@ export function createOfficialDailyEditionHttpTransport(
           || !validatePublicResult(value.result)
           || (isRecord(value.result) && (value.result.kind === 'incorrect'
             ? value.reveal !== null : !validatePublicReveal(value.reveal)))
-          || (value.hintBundle !== null && !validateOnDemandBundle(value.hintBundle))) {
+          || (value.hintBundle !== null && !validateCurrentBatterBundle(value.hintBundle))) {
         incompatible();
       }
       return value as DailyResolutionResponse;
