@@ -3,6 +3,14 @@
 Status: Living product source of truth  
 Last updated: 2026-11-05
 
+## November 12 — approved one-game parity decision
+
+Primary Daily Nine, additional official Daily editions and playable Custom Lineups share the same player experience wherever their actual rules match. Different puzzles, issuance permissions and competitive eligibility must not create different hint latency, controls, guess flow, save/refresh, reveal, scorecard or share behavior.
+
+**Instant hints are a product requirement.** The server supplies all four hints for only the active batter, with signed reveal-depth checkpoints, at bootstrap, verified resume and next-at-bat resolution. Tapping Hint reveals its local authorized value with no new network request. The owner accepts that a technically inclined casual player can inspect the active batter's clue values. Canonical answers, future-batter hints, secrets, identity boundaries and edition-bound competitive scoring integrity are not waived. Maintain #657 as a hard scoring release gate; #656 is separate.
+
+The currently staged secondary Daily practice fetches each hint individually, creating owner-observed delay during iPhone QA. Before merging #588, adopt the existing production bundle/checkpoint behavior in the shared game, retain exact-edition isolation, test actual response/answer boundaries, and verify iPhone/Android latency and full gameplay. Do not introduce a different Custom gameplay transport when its rules match the existing game without a separate approved tradeoff. No new production activation is approved here.
+
 ## November 5 approved official editions (pending implementation)
 
 Every Pacific game date can have one or more independently curated official Daily Nines. The editor controls names, order, rosters and primary selection. Default to Puzzle 1, Puzzle 2, etc. One archive lists Date – Puzzle title. All editions share Daily gameplay and completion; each has independent progress, scores and links. Visitors may play every edition without signing in. [Delivery plan](../../tasks/plans/multiple-official-dailies.md).
@@ -108,7 +116,7 @@ Current-batter hints are gameplay inputs, not answers, and may be present in bro
 
 Bootstrap contains only batter one’s bundle. Incorrect guesses refresh the same-pitch bundle with updated signed strike claims. Correct/K/Give Up responses may provide only the next pitch’s bundle. Saved progression hydrates only its verified current pitch.
 
-A technical user can inspect all current hints before clicking them. This is accepted for the anonymous noncompetitive launch model; stronger competition requires a new architecture decision.
+A technical user can inspect current-batter hints before clicking them. The owner reaffirmed this as an accepted casual-gameplay tradeoff for primary, secondary and applicable Custom modes on November 12. It does not authorize answers, future-batter clues, or unverifiable competitive results.
 
 ## Scoring and result facts
 

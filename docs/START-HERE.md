@@ -1,5 +1,12 @@
 # Initial Baseball — Start Here
 
+## November 12 — approved product parity decision and pre-merge correction
+
+- The live primary Daily Nine's immediate, local current-batter hint behavior is the owner-approved baseline for secondary editions and applicable Custom Lineups. The staged secondary exact-ID practice instead fetches each hint on demand; iPhone QA revealed perceptible delay. The owner accepts browser-visible current-batter hints for casual play but not canonical answers, future-batter clues, or compromised signed progression/edition-bound score admission (#657).
+- This product decision is recorded in AGENTS.md, the product blueprint and canonical multi-Daily plan. New gameplay PRs must include a gameplay parity assessment enforced by the existing required documentation-impact CI check; tests and independent review still verify actual behavior.
+- **Implementation not yet complete:** Fix #588's hint transport to match production current-batter bundles/checkpoints before source merge, retain per-edition save/identity isolation, verify full hosted play and actual Safari/Android. Keep production flags and secondary competition OFF; #656 broader anti-fabrication is separately scoped.
+
+
 ## November 10 — Archive integration refresh after My Creations pagination (#654)
 
 - Main `5fe81616633751cfc56eaf33d7db79b4597132b8` includes merged #654: stable private My Creations keyset pagination, server-derived account-scope continuity and eight mounted-component Chromium scenarios in CI. Exact-merge production deployment `dpl_EyrJoERCYBTmdo9Hk7b647pLQ4k2` is READY; public `/` and `/archive` return 200, while `/account` and `/create` return 404. Main push CI run `42936744355` was in progress at verification. Hosted Auth and physical-device acceptance remain separate gates.

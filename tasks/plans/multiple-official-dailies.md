@@ -1,6 +1,12 @@
 # Multiple official Daily Lineups and private Custom launch
 Approved November 5, 2026. The windows below are estimates from a November 9 planning baseline. Release depends on verified behavior.
 
+## November 12 superseding decision: production gameplay parity
+
+Secondary official editions are additional puzzles in the existing Daily Nine game, not a second gameplay architecture. Custom Lineups change authorship and authorization, but friend play inherits the same interactions whenever its rules match. Preserve the primary game's server-authorized four-hint bundle plus signed checkpoints for the active batter, with immediate local hint taps. Verify no canonical answer or future-batter clue leakage. The owner accepts current-batter hint inspectability in casual play; retain exact-edition save identity and fail-closed competitive score admission (#657), separate from broader #656.
+
+Before source merge of #588, replace its per-hint server round-trip with the existing current-batter bundle contract, then verify both modes' interaction timing, guess/Give Up, persistence and full scorecard on hosted iPhone/Android. A slower alternate design requires explicit owner signoff. This decision supersedes the old A2 per-hint fetch instruction below; no production flags or competition activation are approved.
+
 ## What the editor publishes
 
 On a Pacific game date the editor can add one or more nine-player puzzles, select every player and slot, name the puzzles and choose the primary. Default titles are Puzzle 1, Puzzle 2 and so on. Modern (2000 onward), 70s/80s/90s and Mixed are examples. No fixed set of editions or difficulty tiers. One Archive shows each occurrence as “Date – Puzzle title”. Use the same gameplay and completion UI for every edition. Future scoring changes must preserve previously issued rules and accepted results.
@@ -8,7 +14,7 @@ On a Pacific game date the editor can add one or more nine-player puzzles, selec
 ## Delivery order
 
 1. **A1, private issuance.** Build a validated official publication candidate from editor-selected slots, a trusted opaque occurrence ID, and dated frozen clues. Add an additive service-only store, atomic issuance with revision checks, and admin-only scheduling. A retry must return the first-issued ID. Same-date editions may share an entire roster.
-2. **A2, play by exact puzzle ID.** Separate browsing by date from playing by ID. Verify signed progression before selecting the puzzle. Cache by immutable identity. Serve each hint at reveal time; inspect bootstrap, resume, next batter and bulk hint routes for unrevealed values. Missing/future secondary puzzles fail closed.
+2. **A2, play by exact puzzle ID.** Separate browsing by date from playing by ID. Verify signed progression before selecting the puzzle. Cache by immutable identity. Supply only the current batter's server-authorized four-hint bundle and signed checkpoints at bootstrap/advance/resume; hint taps are local and immediate. Inspect transport boundaries for early answers and future-batter clues. Missing/future secondary puzzles fail closed.
 3. **A3, independent scores.** Scope browser saves, locks, queued at-bats, first attempts, completion and leaderboard to each edition. Test relabeling results between identical rosters. Distinguish eligible delayed live submissions from archive practice. Keep all historical IDs, links, retries and anonymous eligibility.
 4. **A4, first two editions.** Offer an edition choice, permanent share links and one date-grouped archive. Verify both directions of switching, mobile refresh, sharing and Pacific midnight. Target weeks 1–2, roughly 6–10 engineering days before review/device waits.
 5. **B, publisher workflow.** Extend the existing admin calendar and lifecycle to add, order, name and schedule any number per date. Default a date to one primary and freeze its selection before play. Coordinate with the horizon inspection in #434. Target another week. Transition only future unscheduled dates after legacy parity.
