@@ -20,8 +20,9 @@ At 390px and desktop widths, the runner verifies:
 
 - Named and Anonymous choices, exact request fields, escaped plain-text names,
   immutable saved state and read-only recovery after a page reload.
-- Another tab's simulated winning Anonymous choice takes precedence over the
-  local losing name when POST returns `existing`.
+- An identical retry returns HTTP 200 `existing`. A conflicting local choice
+  returns HTTP 503, followed by an authoritative GET that recovers another
+  tab's simulated winning Anonymous choice.
 - A lost POST response triggers authoritative readback; the UI confirms the
   committed simulated name rather than asking for another write. Chromium may
   retransmit the identical POST after the fixture drops a reused socket; the
@@ -55,4 +56,4 @@ server CSRF, hosted Next ingress, real account providers or Safari/Android.
 Existing server/SQL tests and release gates remain required. It grants no
 production migration or feature-activation approval. A successful bundle or
 syntax check does not establish browser execution: require the runner's final
-14-scenario PASS from the exact CI head.
+16-scenario PASS from the exact CI head.
