@@ -76,6 +76,15 @@ describe('official Daily editorial drafts', () => {
     expect(db.from).toHaveBeenCalledWith('official_daily_editorial_drafts');
   });
 
+  it('fails closed on duplicate-create recovery with an invalid saved puzzle number', async () => {
+    const existing = { ...saved, puzzle_number: 195 };
+    const query = { eq: vi.fn().mockReturnThis(), maybeSingle: vi.fn().mockResolvedValue({ data: existing, error: null }) };
+    const insertion = { select: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({ data: null, error: { code: '23505' } }) };
+    const client = { from: vi.fn(() => ({ insert: () => insertion, select: () => query })) } as unknown as SupabaseClient;
+    await expect(createOfficialDailyEditorialDraft(client, input, 'editor', NOW))
+      .rejects.toMatchObject({ kind: 'unavailable' });
+  });
+
   it('does not reserve an edition if any canonical player or clue is unavailable', async () => {
     const db = fakeDb();
     vi.mocked(prepareServerOfficialDailyPublication)

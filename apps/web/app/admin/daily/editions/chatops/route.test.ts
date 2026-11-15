@@ -71,6 +71,11 @@ describe('private official Daily edition ChatOps', () => {
     vi.mocked(readOfficialDailyEditorialDraftPreview).mockResolvedValueOnce({ ...prior, selections: [...prior.selections].reverse() });
     expect((await POST(request({ action: 'create', draft }))).status).toBe(409);
   });
+  it('rejects a mismatched puzzle number on create readback', async () => {
+    const prior = await readOfficialDailyEditorialDraftPreview({} as never, ID);
+    vi.mocked(readOfficialDailyEditorialDraftPreview).mockResolvedValueOnce({ ...prior, puzzleNumber: 224 });
+    expect((await POST(request({ action: 'create', draft }))).status).toBe(409);
+  });
   it('requires exact occurrence, revision and explicit confirmation before scheduling', async () => {
     for (const body of [{ action: 'schedule', occurrenceId: ID, expectedRevision: 0 },
       { action: 'schedule', occurrenceId: ID, expectedRevision: 0, confirmed: false },

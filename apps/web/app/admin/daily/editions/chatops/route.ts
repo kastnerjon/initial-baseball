@@ -51,6 +51,7 @@ export async function POST(request: Request): Promise<NextResponse> {
       const draft = await readOfficialDailyEditorialDraftPreview(client, result.occurrenceId);
       if (!expected || draft.occurrenceId !== result.occurrenceId || draft.status !== 'draft'
           || draft.revision !== result.revision || draft.puzzleDate !== expected.puzzleDate
+          || draft.puzzleNumber !== expected.puzzleNumber
           || draft.editionKey !== expected.editionKey || draft.editionNumber !== expected.editionNumber
           || draft.title !== expected.title || draft.selections.length !== expected.selections.length
           || !draft.selections.every((selection, i) => selection.slot === expected.selections[i]?.slot
