@@ -27,15 +27,20 @@ const saved = {
 
 function fakeDb(row: Record<string, unknown> | null = saved) {
   let payload: Record<string, unknown> = {};
+  let cutoff = '';
   const read = {
     eq: vi.fn().mockReturnThis(),
     maybeSingle: vi.fn(async () => ({ data: row, error: null as unknown })),
   };
   const updateQuery = {
     eq: vi.fn().mockReturnThis(),
+    gt: vi.fn(function (this: unknown, key: string, value: string) {
+      if (key === 'puzzle_date') cutoff = value;
+      return this;
+    }),
     select: vi.fn().mockReturnThis(),
     maybeSingle: vi.fn(async () => ({
-      data: row === null ? null : { ...row, ...payload }, error: null as unknown,
+      data: row === null || (cutoff !== '' && String(row.puzzle_date) <= cutoff) ? null : { ...row, ...payload }, error: null as unknown,
     })),
   };
   const update = vi.fn((value: Record<string, unknown>) => {
@@ -53,9 +58,10 @@ async function replace(
   expectedRevision = 3,
   slot = 3,
   now = NOW,
+  writeClock = () => now,
 ) {
   return replaceOfficialDailyEditorialDraftPlayer(
-    client, ID, expectedRevision, slot, canonicalPlayerId, 'editor', now,
+    client, ID, expectedRevision, slot, canonicalPlayerId, 'editor', now, writeClock,
   );
 }
 
@@ -79,6 +85,7 @@ describe('private revision-CAS official Daily player replacement', () => {
     expect(patch.revision).toBe(4);
     expect(db.updateQuery.eq).toHaveBeenCalledWith('status', 'draft');
     expect(db.updateQuery.eq).toHaveBeenCalledWith('revision', 3);
+    expect(db.updateQuery.gt).toHaveBeenCalledWith('puzzle_date', '2026-11-05');
     expect(prepareServerOfficialDailyPublication).toHaveBeenCalledWith(
       expect.objectContaining({
         occurrenceId: ID,
@@ -86,6 +93,14 @@ describe('private revision-CAS official Daily player replacement', () => {
       }),
     );
     expect(JSON.stringify(result)).not.toContain('PRIVATE_CLUES');
+  });
+
+  it('rejects a draft that becomes current between read and write', async () => {
+    const db = fakeDb();
+    await expect(replace(db.client, 'fixture-10', 3, 3,
+      new Date('2026-11-06T07:59:59Z'), () => new Date('2026-11-06T08:00:00Z')))
+      .rejects.toMatchObject({ kind: 'conflict' });
+    expect(db.updateQuery.gt).toHaveBeenCalledWith('puzzle_date', '2026-11-06');
   });
 
   it('treats an identical already selected player as a verified no-op', async () => {

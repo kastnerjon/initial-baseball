@@ -5,6 +5,7 @@
 - Main `d05b78f149fe4c8c11a46a33d549051856147a88` includes #588, reusing Primary Daily's immediate authorized current-batter hints for exact-ID secondary practice and integrating the current-day chooser and Archive navigation. Exact-head review and PR CI passed; the merged production deployment is READY, default-OFF home and Archive returned 200, and the disabled chooser returned 404. Main push CI passed. Isolated QA fixtures were cleaned.
 - Owner deferred a real hosted Pacific midnight transition and physical Android Chrome test to release; neither is verified. Production official-edition flags and competitive scoring remain OFF; #657 exact-edition result admission, separate #656 broader anti-fabrication, production migration/rollback rehearsal, and explicit release approval remain open.
 - The owner requires private ChatGPT creation, review, revision and explicit scheduling for all official Daily editions (#663). Existing primary-only ChatOps does not yet support additional editions. Preserve private payloads, exact occurrence and revision, validation and readback; do not bypass the editorial service or expose future lineups in GitHub.
+- Database-atomic enforcement of the future-Pacific-date editor boundary remains release issue #664. Refreshing the application clock immediately before a conditional write narrows but does not eliminate a race at database execution.
 
 ## November 10 — secondary Daily editor one-slot editing and contextual canonical lookup (#614)
 

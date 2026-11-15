@@ -776,6 +776,8 @@ An authenticated editor may change **one selected player** of a future, still-un
 
 The existing server-authoritative editorial draft service reads only the requested draft, rejects scheduled/issued/expired or stale revisions, preserves the immutable occurrence/date/edition identity, substitutes only the requested canonical player, validates all nine unique ordered selections and complete clue readiness privately, and commits a `draft`→`draft` revision CAS update. A matching unchanged player is a verified no-op; concurrent changes return sanitized 409 conflicts rather than silently overwriting another editor. Successful updates redirect to the private review page, requiring another review before scheduling. No private hint snapshot is returned.
 
+Draft rename and replacement refresh the Pacific date immediately before constructing their conditional writes. This narrows a request-spanning-midnight race but does not prove database-atomic timing if execution or lock acquisition is delayed after the application samples the clock. Database-side statement-time enforcement remains release issue #664.
+
 The database trigger and existing issuer continue to enforce immutable published selections. This does not add bulk editing, player autocomplete, public gameplay, secondary competitive score eligibility, an account permission grant, a migration or a production flag change. Isolated hosted multi-tab acceptance and physical mobile editing remain release gates.
 
 ## Restricted secondary Daily candidate lookup (source-staged, default OFF)

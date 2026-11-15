@@ -64,8 +64,8 @@ function database(row: Record<string, unknown> | null = initial) {
 }
 
 const rename = (db: ReturnType<typeof database>, title: unknown = '  Modern   Legends  ',
-  revision = 0, now = NOW, id = ID, actor = 'trusted-editor') =>
-  renameOfficialDailyEditorialDraft(db.client, id, revision, title, actor, now);
+  revision = 0, now = NOW, id = ID, actor = 'trusted-editor', writeClock = () => now) =>
+  renameOfficialDailyEditorialDraft(db.client, id, revision, title, actor, now, writeClock);
 
 describe('private official Daily draft title revision', () => {
   it('normalizes only the title, bumps the revision and preserves the exact roster and identity', async () => {
@@ -127,6 +127,14 @@ describe('private official Daily draft title revision', () => {
     const after = database({ ...initial, puzzle_date: '2026-11-10', puzzle_number: 198 });
     await expect(rename(after, 'Legends', 0, new Date('2026-11-10T08:00:00Z')))
       .rejects.toMatchObject({ kind: 'conflict' });
+  });
+
+  it('rejects a draft that becomes current between read and write', async () => {
+    const db = database({ ...initial, puzzle_date: '2026-11-10', puzzle_number: 198 });
+    const before = new Date('2026-11-10T07:59:59Z');
+    await expect(rename(db, 'Legends', 0, before, ID, 'trusted-editor',
+      () => new Date('2026-11-10T08:00:00Z'))).rejects.toMatchObject({ kind: 'conflict' });
+    expect(db.stored()).toMatchObject({ revision: 0, title: 'Modern' });
   });
 
   it('allows only one of two overlapping writes to the same revision', async () => {

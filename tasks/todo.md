@@ -7,6 +7,7 @@
 
 
 - [ ] **Private ChatGPT lineup management (#663):** extend the existing primary-only private ChatOps workflow to additional official editions, with private ordered lineup review, exact occurrence/revision checks, explicit scheduling, safe timeout readback and no direct assistant writes to editorial tables.
+- [ ] **Editorial midnight correctness (#664):** require a reviewed database-atomic future-Pacific-date guard for secondary draft edits and scheduling before production editor activation; application-side write-clock refresh alone does not cover a request delayed after the clock is sampled.
 
 ## Current source integration — November 10
 

@@ -147,6 +147,7 @@ export async function createOfficialDailyEditorialDraft(
 export async function renameOfficialDailyEditorialDraft(
   client: SupabaseClient, occurrenceId: string, expectedRevision: number,
   value: unknown, actorId: string, now: Date = new Date(),
+  writeClock: () => Date = () => new Date(),
 ) {
   const title = parseCustomLineupTitle(value);
   if (typeof occurrenceId !== 'string' || !UUID.test(occurrenceId)
@@ -164,11 +165,13 @@ export async function renameOfficialDailyEditorialDraft(
     if (draft.occurrence_id !== occurrenceId) unavailable();
     if (draft.status !== 'draft' || draft.revision !== expectedRevision
         || draft.puzzle_date <= today) throw new OfficialDailyDraftError('conflict');
+    const writeTime = writeClock();
+    if (!Number.isFinite(writeTime.getTime())) unavailable();
     const updated = await client.from(TABLE)
       .update({ title: title.title, revision: expectedRevision + 1,
         updated_by: actorId, updated_at: now.toISOString() })
       .eq('occurrence_id', occurrenceId).eq('status', 'draft')
-      .eq('revision', expectedRevision).gt('puzzle_date', today)
+      .eq('revision', expectedRevision).gt('puzzle_date', getPacificDailyDateString(writeTime))
       .select(COLUMNS).maybeSingle();
     if (updated.error !== null) unavailable();
     if (updated.data === null) throw new OfficialDailyDraftError('conflict');
@@ -248,6 +251,7 @@ export async function replaceOfficialDailyEditorialDraftPlayer(
   canonicalPlayerId: string,
   actorId: string,
   now: Date = new Date(),
+  writeClock: () => Date = () => new Date(),
 ): Promise<{ status: 'updated' | 'existing'; occurrenceId: string; revision: number }> {
   if (typeof occurrenceId !== 'string' || !UUID.test(occurrenceId)
       || !Number.isSafeInteger(expectedRevision) || expectedRevision < 0
@@ -293,6 +297,8 @@ export async function replaceOfficialDailyEditorialDraftPlayer(
       });
     } catch { invalid(); }
 
+    const writeTime = writeClock();
+    if (!Number.isFinite(writeTime.getTime())) unavailable();
     const updated = await client.from(TABLE)
       .update({
         selections, revision: expectedRevision + 1,
@@ -301,6 +307,7 @@ export async function replaceOfficialDailyEditorialDraftPlayer(
       .eq('occurrence_id', occurrenceId)
       .eq('status', 'draft')
       .eq('revision', expectedRevision)
+      .gt('puzzle_date', getPacificDailyDateString(writeTime))
       .select(COLUMNS).maybeSingle();
     if (updated.error !== null) unavailable();
     if (updated.data === null) throw new OfficialDailyDraftError('conflict');
