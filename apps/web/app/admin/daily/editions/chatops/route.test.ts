@@ -3,12 +3,12 @@ vi.mock('server-only', () => ({}));
 vi.mock('../../../../serverSupabaseClient', () => ({ createServerSupabaseClient: vi.fn(() => ({})) }));
 vi.mock('../../../../serverOfficialDailyEditorialDrafts', () => {
   class OfficialDailyDraftError extends Error { constructor(readonly kind: string) { super('private roster'); } }
-  return { OfficialDailyDraftError, createOfficialDailyEditorialDraft: vi.fn(), parseOfficialDailyDraftInput: vi.fn(),
+  return { OfficialDailyDraftError, createOfficialDailyEditorialDraft: vi.fn(), findOfficialDailyEditorialDraftForRecovery: vi.fn(), parseOfficialDailyDraftInput: vi.fn(),
     readOfficialDailyEditorialDraftPreview: vi.fn(), replaceOfficialDailyEditorialDraftRoster: vi.fn(), scheduleOfficialDailyEditorialDraft: vi.fn() };
 });
 import { POST } from './route';
 import { createServerSupabaseClient } from '../../../../serverSupabaseClient';
-import { createOfficialDailyEditorialDraft, OfficialDailyDraftError, parseOfficialDailyDraftInput,
+import { createOfficialDailyEditorialDraft, findOfficialDailyEditorialDraftForRecovery, OfficialDailyDraftError, parseOfficialDailyDraftInput,
   readOfficialDailyEditorialDraftPreview, replaceOfficialDailyEditorialDraftRoster, scheduleOfficialDailyEditorialDraft } from '../../../../serverOfficialDailyEditorialDrafts';
 
 const TOKEN = '0123456789abcdef0123456789abcdef';
@@ -65,6 +65,17 @@ describe('private official Daily edition ChatOps', () => {
     expect(readOfficialDailyEditorialDraftPreview).toHaveBeenCalledWith(expect.anything(), ID);
     expect(createOfficialDailyEditorialDraft).not.toHaveBeenCalled();
     expect(scheduleOfficialDailyEditorialDraft).not.toHaveBeenCalled();
+  });
+  it('recovers a lost occurrence ID by exact date and key without writing', async () => {
+    const prior = await readOfficialDailyEditorialDraftPreview({} as never, ID);
+    vi.mocked(findOfficialDailyEditorialDraftForRecovery).mockResolvedValueOnce(prior);
+    const response = await POST(request({ action: 'lookup', puzzleDate: '2026-12-05', editionKey: 'modern' }));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toMatchObject({ draft: { occurrenceId: ID } });
+    expect(createOfficialDailyEditorialDraft).not.toHaveBeenCalled();
+    expect(scheduleOfficialDailyEditorialDraft).not.toHaveBeenCalled();
+    vi.mocked(findOfficialDailyEditorialDraftForRecovery).mockResolvedValueOnce(null);
+    expect((await POST(request({ action: 'lookup', puzzleDate: '2026-12-05', editionKey: 'modern' }))).status).toBe(404);
   });
   it('revises a roster only at the requested revision and checks ordered readback', async () => {
     vi.mocked(replaceOfficialDailyEditorialDraftRoster).mockResolvedValueOnce({ status: 'updated', occurrenceId: ID, revision: 1 });

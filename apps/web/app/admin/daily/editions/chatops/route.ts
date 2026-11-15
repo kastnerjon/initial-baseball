@@ -4,7 +4,7 @@ import { isSameOriginDailyAdminMutation } from '../../../../dailyAdminRequestSec
 import { readDailyResultJsonBody } from '../../../../dailyResultRequestBody';
 import { createServerSupabaseClient } from '../../../../serverSupabaseClient';
 import {
-  createOfficialDailyEditorialDraft, OfficialDailyDraftError, parseOfficialDailyDraftInput,
+  createOfficialDailyEditorialDraft, findOfficialDailyEditorialDraftForRecovery, OfficialDailyDraftError, parseOfficialDailyDraftInput,
   readOfficialDailyEditorialDraftPreview, replaceOfficialDailyEditorialDraftRoster, scheduleOfficialDailyEditorialDraft,
 } from '../../../../serverOfficialDailyEditorialDrafts';
 
@@ -39,15 +39,22 @@ export async function POST(request: Request): Promise<NextResponse> {
   if (!isRecord(v) || typeof v.action !== 'string') return reply(400, 'invalid_request');
   const create = v.action === 'create' && keysEqual(v, ['action', 'draft']) && isRecord(v.draft);
   const preview = v.action === 'preview' && keysEqual(v, ['action', 'occurrenceId']);
+  const lookup = v.action === 'lookup' && keysEqual(v, ['action', 'puzzleDate', 'editionKey'])
+    && typeof v.puzzleDate === 'string' && typeof v.editionKey === 'string';
   const schedule = v.action === 'schedule' && keysEqual(v, ['action', 'occurrenceId', 'expectedRevision', 'confirmed'])
     && v.confirmed === true && Number.isSafeInteger(v.expectedRevision) && (v.expectedRevision as number) >= 0;
   const revise = v.action === 'revise' && keysEqual(v, ['action', 'occurrenceId', 'expectedRevision', 'canonicalPlayerIds'])
     && Number.isSafeInteger(v.expectedRevision) && (v.expectedRevision as number) >= 0 && Array.isArray(v.canonicalPlayerIds);
-  if (!create && !preview && !schedule && !revise) return reply(400, 'invalid_request');
-  if (!create && (typeof v.occurrenceId !== 'string' || !UUID.test(v.occurrenceId))) return reply(400, 'invalid_request');
+  if (!create && !preview && !lookup && !schedule && !revise) return reply(400, 'invalid_request');
+  if (!create && !lookup && (typeof v.occurrenceId !== 'string' || !UUID.test(v.occurrenceId))) return reply(400, 'invalid_request');
   try {
     const expected = create ? parseOfficialDailyDraftInput(v.draft, new Date()) : null;
     const client = createServerSupabaseClient();
+    if (lookup) {
+      const draft = await findOfficialDailyEditorialDraftForRecovery(client, v.puzzleDate, v.editionKey);
+      if (draft === null) return reply(404, 'not_found');
+      return NextResponse.json({ draft }, { status: 200, headers: HEADERS });
+    }
     if (create) {
       const result = await createOfficialDailyEditorialDraft(client, v.draft, actorId);
       const draft = await readOfficialDailyEditorialDraftPreview(client, result.occurrenceId);

@@ -328,6 +328,29 @@ export async function replaceOfficialDailyEditorialDraftPlayer(
   }
 }
 
+/** Find an exact future edition for private recovery after a lost create response. */
+export async function findOfficialDailyEditorialDraftForRecovery(
+  client: SupabaseClient, puzzleDate: unknown, editionKey: unknown, now: Date = new Date(),
+) {
+  if (!Number.isFinite(now.getTime()) || !validDate(puzzleDate)
+      || puzzleDate <= getPacificDailyDateString(now) || typeof editionKey !== 'string'
+      || editionKey.length > 64 || !EDITION_KEY.test(editionKey)) invalid();
+  try {
+    const found = await client.from(TABLE).select(COLUMNS)
+      .eq('puzzle_date', puzzleDate).eq('edition_key', editionKey).maybeSingle();
+    if (found.error !== null) unavailable();
+    if (found.data === null) return null;
+    const draft = readDraft(found.data);
+    if (draft.puzzle_date !== puzzleDate || draft.edition_key !== editionKey) unavailable();
+    const preview = await readOfficialDailyEditorialDraftPreview(client, draft.occurrence_id, now);
+    if (preview.puzzleDate !== puzzleDate || preview.editionKey !== editionKey) unavailable();
+    return preview;
+  } catch (error) {
+    if (error instanceof OfficialDailyDraftError) throw error;
+    unavailable();
+  }
+}
+
 /** Atomically replace the ordered roster of a future unscheduled draft. */
 export async function replaceOfficialDailyEditorialDraftRoster(
   client: SupabaseClient, occurrenceId: string, expectedRevision: number,
