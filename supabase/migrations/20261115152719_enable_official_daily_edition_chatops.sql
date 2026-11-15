@@ -19,11 +19,10 @@ begin
     from vault.decrypted_secrets where name = 'daily_chatops_token';
   select decrypted_secret into chatops_origin
     from vault.decrypted_secrets where name = 'daily_edition_chatops_origin';
-  -- QA never falls back to production; an untrusted origin never receives the token.
-  if chatops_token is null or chatops_origin is null or chatops_origin not in (
-    'https://initial-baseball-web.vercel.app',
-    'https://initial-baseball-web-git-qa-officia-2a5bf9-kastnerjons-projects.vercel.app'
-  ) then
+  -- This staged transport is QA-only. Production needs a separate reviewed path.
+  -- A misplaced QA secret can never direct this function to the production site.
+  if chatops_token is null or chatops_origin is distinct from
+    'https://initial-baseball-web-git-qa-officia-2a5bf9-kastnerjons-projects.vercel.app' then
     raise exception 'Daily ChatOps transport is not configured.';
   end if;
   select net.http_post(
