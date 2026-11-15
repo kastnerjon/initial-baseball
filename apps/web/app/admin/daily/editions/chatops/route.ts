@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { isOfficialDailyOccurrenceId } from '@initial-baseball/daily';
 import { DailyChatOpsAuthorizationError, requireDailyChatOpsPrincipal } from '../../../../dailyChatOpsAuthorization';
 import { isSameOriginDailyAdminMutation } from '../../../../dailyAdminRequestSecurity';
 import { readDailyResultJsonBody } from '../../../../dailyResultRequestBody';
@@ -9,7 +10,6 @@ import {
 } from '../../../../serverOfficialDailyEditorialDrafts';
 
 const HEADERS = { 'cache-control': 'private, no-store', vary: 'Authorization' } as const;
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/;
 const reply = (status: number, error: string) => NextResponse.json({ error }, { status, headers: HEADERS });
 const isRecord = (v: unknown): v is Record<string, unknown> => v !== null && typeof v === 'object' && !Array.isArray(v);
 const keysEqual = (v: Record<string, unknown>, keys: string[]) =>
@@ -46,7 +46,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   const revise = v.action === 'revise' && keysEqual(v, ['action', 'occurrenceId', 'expectedRevision', 'canonicalPlayerIds'])
     && Number.isSafeInteger(v.expectedRevision) && (v.expectedRevision as number) >= 0 && Array.isArray(v.canonicalPlayerIds);
   if (!create && !preview && !lookup && !schedule && !revise) return reply(400, 'invalid_request');
-  if (!create && !lookup && (typeof v.occurrenceId !== 'string' || !UUID.test(v.occurrenceId))) return reply(400, 'invalid_request');
+  if (!create && !lookup && (typeof v.occurrenceId !== 'string' || !isOfficialDailyOccurrenceId(v.occurrenceId))) return reply(400, 'invalid_request');
   try {
     const expected = create ? parseOfficialDailyDraftInput(v.draft, new Date()) : null;
     const client = createServerSupabaseClient();
