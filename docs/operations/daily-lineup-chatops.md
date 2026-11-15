@@ -1,5 +1,13 @@
 # Daily lineup ChatOps
 
+## Additional official editions — source-staged, not enabled
+
+Issue #663 tracks the owner's request to manage multiple official Daily editions through ChatGPT. The existing primary-only workflow below is unchanged. The separate edition route and private transport are source-staged and not evidence of production deployment or authorization to publish.
+
+`POST /admin/daily/editions/chatops` requires both edition-editor and edition-ChatOps flags and the existing server-only ChatOps bearer. Its bounded JSON envelopes are `create` with a dated named draft and nine ordered canonical IDs, `preview` with an exact occurrence UUID, and `schedule` with that UUID, the reviewed revision and explicit confirmation. Create and schedule return the verified private roster and revision; preview never writes. Draft creation never schedules. The staged interface does not yet provide conversational bulk roster revision, issuance or publication.
+
+The staged `private.dispatch_official_daily_edition_chatops(jsonb)` is a `SECURITY INVOKER` transport, not a writer. It retrieves the token and a mandatory allowlisted environment origin from Vault; isolated QA must never dispatch to production. Inspect the asynchronous HTTP response and exact ordered roster/revision, and verify authoritative state before retrying a timeout. Never put future lineups in public GitHub, CI inputs or logs. Independent security review, isolated hosted QA, reviewed credentials and explicit production migration/feature authorization remain required.
+
 Status: operational in production; smoke-tested September 16 and exercised for routine owner-supplied future lineups September 17, 2026.
 
 ## Goal

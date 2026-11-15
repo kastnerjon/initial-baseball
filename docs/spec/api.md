@@ -410,6 +410,12 @@ Before `POST /api/daily/at-bats` is called from gameplay, a separate version-1 p
 
 ## Private Daily lineup ChatOps
 
+### Additional official edition ChatOps (source-staged, default OFF)
+
+`POST /admin/daily/editions/chatops` requires both exact-true edition-editor and edition-ChatOps flags, the existing dedicated ChatOps bearer credential, JSON, an empty query, and same-origin Fetch Metadata when supplied. It accepts only a bounded 8 KiB `create` envelope containing a draft, a `preview` envelope containing the exact occurrence UUID, or a `schedule` envelope containing that UUID, expected revision and explicit confirmation. Create never schedules; preview never writes. The trusted `chatops:assistant` actor and existing private editorial service supply validation, lifecycle and revision CAS. Create checks the complete ordered roster and date/title/edition metadata against private readback; schedule checks the status and revision readback. Responses are `private, no-store` and may contain future roster identities; errors are sanitized. This does not add conversational bulk revision, issuance, public competition, production migration or activation.
+
+The staged `SECURITY INVOKER` private transport accepts a bounded JSON object, retrieves the existing bearer token and mandatory exact-allowlisted environment origin from Vault, and posts via `pg_net`; it never writes editorial tables. QA and production origins are configured separately with no fallback. Inspect the asynchronous response and recover uncertain outcomes through authoritative occurrence/revision readback before retries. Independent security review and isolated hosted acceptance precede production authorization.
+
 ### `POST /admin/daily/chatops`
 
 This is a server-to-server operational adapter, not a browser or public gameplay API. It exists so an authorized assistant transport can apply one exact future nine-player lineup without manually replacing nine admin slots.
