@@ -1,5 +1,11 @@
 # Initial Baseball — Start Here
 
+## November 15 — secondary editorial Pacific date guard source candidate (#664)
+
+- A **separate, unapplied migration candidate** adds a live-database-clock `BEFORE ROW` date check for inserts, draft edits, scheduling and unscheduling. It retains original identity/revision/issuance triggers, service-only RLS and allowed scheduled-to-issued transitions. No gameplay logic, primary Daily, credentials, feature flags or production data change.
+- The exact candidate migration plus synthetic QA acceptance passed inside a single isolated-Supabase transaction that rolled back. Verified current/past-day denial, future create/edit/schedule/unschedule, immutable issuance/idempotent retry and Pacific DST date mapping. These tests do not simulate a real concurrent row-lock wait across Pacific midnight.
+- **Not merged or deployed.** Require final independent review, exact-head CI, real hosted lock-wait acceptance, production-shaped migration rehearsal and explicit production authorization before applying any schema changes or activating secondary editorial flows.
+
 ## November 15 — official Daily navigation merged; editor integration in review
 
 - Main `d05b78f149fe4c8c11a46a33d549051856147a88` includes #588, reusing Primary Daily's immediate authorized current-batter hints for exact-ID secondary practice and integrating the current-day chooser and Archive navigation. Exact-head review and PR CI passed; the merged production deployment is READY, default-OFF home and Archive returned 200, and the disabled chooser returned 404. Main push CI passed. Isolated QA fixtures were cleaned.
