@@ -61,7 +61,16 @@ export async function serveCompletionDisplayFixture(bundle, options = {}) {
     const existing = saved !== null;
     if (!existing) saved = choice.mode === 'anonymous'
       ? { mode: 'anonymous', displayName: null } : choice;
+    // PostgreSQL's 23505 conflict is redacted to HTTP 503. Only an exact
+    // duplicate choice can return 200 existing; never acknowledge a loser.
+    if (existing && (saved.mode !== choice.mode
+      || (choice.mode === 'named' && saved.displayName !== choice.displayName))) {
+      response.writeHead(503);
+      response.end(JSON.stringify({ error: 'session_unavailable' }));
+      return;
+    }
     if (options.losePostResponse) { response.destroy(); return; }
+    response.writeHead(existing ? 200 : 201);
     response.end(JSON.stringify({ status: existing ? 'existing' : 'created' }));
   }
   await new Promise((resolve, reject) =>

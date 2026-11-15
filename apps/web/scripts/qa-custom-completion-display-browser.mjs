@@ -35,12 +35,12 @@ try {
   assert.ok(!executablePath || isAbsolute(executablePath), 'Chromium executable must be absolute');
   browser = await chromium.launch({ headless: true, ...(executablePath ? { executablePath } : {}) });
   for (const viewport of [{ width: 390, height: 844 }, { width: 1280, height: 800 }]) {
-    for (const scenario of ['named', 'anonymous', 'existing', 'lost-post', 'invalid',
-      'load-retry', 'write-retry']) {
+    for (const scenario of ['named', 'anonymous', 'existing', 'conflicting',
+      'lost-post', 'invalid', 'load-retry', 'write-retry']) {
       await run(scenario, viewport, built.outputFiles[0].text);
     }
   }
-  console.log('PASS 14 Custom completion display Chromium scenarios; simulated HTTP only.');
+  console.log('PASS 16 Custom completion display Chromium scenarios; simulated HTTP only.');
 } finally {
   await browser?.close();
   await rm(temporary, { recursive: true, force: true });
@@ -48,9 +48,11 @@ try {
 
 async function run(scenario, viewport, bundle) {
   const label = scenario + ' at ' + viewport.width + 'px';
+  const name = '<img src=x onerror=alert(1)>';
   const options = scenario === 'existing'
-    ? { winner: { mode: 'anonymous', displayName: null } }
-    : scenario === 'lost-post' ? { losePostResponse: true }
+    ? { winner: { mode: 'named', displayName: name } }
+    : scenario === 'conflicting' ? { winner: { mode: 'anonymous', displayName: null } }
+      : scenario === 'lost-post' ? { losePostResponse: true }
       : scenario === 'load-retry' ? { failReadOnce: true }
         : scenario === 'write-retry' ? { postFailure: true } : {};
   const fixture = await serveCompletionDisplayFixture(bundle, options);
@@ -62,6 +64,14 @@ async function run(scenario, viewport, bundle) {
     await context.route('**/*', route => new URL(route.request().url()).origin === fixture.url
       ? route.continue() : route.abort());
     const page = await context.newPage();
+    const postStatuses = [];
+    page.on('response', response => {
+      if (response.request().method() === 'POST'
+        && new URL(response.url()).pathname ===
+          '/api/custom-lineup/challenges/' + puzzleId + '/completion/display') {
+        postStatuses.push(response.status());
+      }
+    });
     page.on('pageerror', () => errors.push('Uncaught browser error'));
     await page.goto(fixture.url);
     const input = page.getByLabel('Display name (optional)');
@@ -83,7 +93,6 @@ async function run(scenario, viewport, bundle) {
     }
     const anonymous = scenario === 'anonymous';
     // Plain-text HTML-like input must survive as text, without creating an element.
-    const name = '<img src=x onerror=alert(1)>';
     if (anonymous) await page.getByRole('button', { name: 'Stay Anonymous' }).click();
     else {
       await input.fill('  ' + name + '  ');
@@ -97,7 +106,8 @@ async function run(scenario, viewport, bundle) {
       assert.equal(await page.getByText('Name saved:', { exact: false }).count(), 0);
       return;
     }
-    const expected = anonymous || scenario === 'existing' ? 'Saved as Anonymous.' : 'Name saved: ' + name + '.';
+    const expected = anonymous || scenario === 'conflicting'
+      ? 'Saved as Anonymous.' : 'Name saved: ' + name + '.';
     await page.getByRole('status').filter({ hasText: expected }).waitFor();
     assert.equal(await input.count(), 0, 'A saved first choice is not editable');
     assert.equal(await page.locator('img').count(), 0, 'Names render only as escaped text');
@@ -113,8 +123,19 @@ async function run(scenario, viewport, bundle) {
         ? { mode: 'anonymous' } : { mode: 'named', displayName: name },
       label + ': retries must preserve the exact choice');
     }
-    if (scenario === 'existing' || scenario === 'lost-post') {
-      assert.ok(fixture.reads.length >= 2, label + ': existing or lost write requires authoritative readback');
+    if (scenario === 'existing' || scenario === 'conflicting' || scenario === 'lost-post') {
+      assert.ok(fixture.reads.length >= 2,
+        label + ': existing, conflicting or lost write requires authoritative readback');
+    }
+    if (scenario === 'existing') {
+      assert.ok(postStatuses.includes(200),
+        label + ': only an exact duplicate returns existing');
+    }
+    if (scenario === 'conflicting') {
+      assert.ok(postStatuses.includes(503),
+        label + ': conflicting SQL choice must be surfaced as sanitized HTTP 503');
+      assert.ok(!postStatuses.includes(200),
+        label + ': conflicting choice must not be acknowledged as an exact retry');
     }
     await page.reload();
     await page.getByRole('status').filter({ hasText: expected }).waitFor();

@@ -25,16 +25,31 @@ async function read(fixture) {
 test('simulated endpoint preserves first named choice over a later Anonymous POST', async () => {
   await withFixture({}, async fixture => {
     assert.deepEqual(await read(fixture), { status: 'not_set' });
-    assert.deepEqual(await (await post(fixture, named)).json(), { status: 'created' });
-    assert.deepEqual(await (await post(fixture, { mode: 'anonymous' })).json(), { status: 'existing' });
+    const created = await post(fixture, named);
+    assert.equal(created.status, 201);
+    assert.deepEqual(await created.json(), { status: 'created' });
+    const retry = await post(fixture, named);
+    assert.equal(retry.status, 200);
+    assert.deepEqual(await retry.json(), { status: 'existing' });
+    for (const conflict of [{ mode: 'anonymous' },
+      { mode: 'named', displayName: 'Different name' }]) {
+      const denied = await post(fixture, conflict);
+      assert.equal(denied.status, 503);
+      assert.deepEqual(await denied.json(), { error: 'session_unavailable' });
+    }
     assert.deepEqual(await read(fixture), { status: 'saved', ...named });
-    assert.equal(fixture.writes.length, 2);
+    assert.equal(fixture.writes.length, 4);
   });
 });
 
 test('simulated winning Anonymous choice suppresses the submitted losing name', async () => {
   await withFixture({ winner: { mode: 'anonymous', displayName: null } }, async fixture => {
-    assert.deepEqual(await (await post(fixture, named)).json(), { status: 'existing' });
+    const denied = await post(fixture, named);
+    assert.equal(denied.status, 503);
+    assert.deepEqual(await denied.json(), { error: 'session_unavailable' });
+    const exact = await post(fixture, { mode: 'anonymous' });
+    assert.equal(exact.status, 200);
+    assert.deepEqual(await exact.json(), { status: 'existing' });
     assert.deepEqual(await read(fixture), { status: 'saved', mode: 'anonymous', displayName: null });
   });
 });
@@ -46,7 +61,9 @@ test('repeated lost simulated POST replies preserve the first committed choice',
     assert.deepEqual(await read(fixture), { status: 'saved', ...named });
     await assert.rejects(post(fixture, named));
     assert.deepEqual(await read(fixture), { status: 'saved', ...named });
-    await assert.rejects(post(fixture, { mode: 'anonymous' }));
+    const conflict = await post(fixture, { mode: 'anonymous' });
+    assert.equal(conflict.status, 503);
+    assert.deepEqual(await conflict.json(), { error: 'session_unavailable' });
     assert.equal(fixture.writes.length, 3);
     assert.deepEqual(await read(fixture), { status: 'saved', ...named });
   });
