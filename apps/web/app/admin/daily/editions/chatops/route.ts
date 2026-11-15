@@ -5,7 +5,7 @@ import { readDailyResultJsonBody } from '../../../../dailyResultRequestBody';
 import { createServerSupabaseClient } from '../../../../serverSupabaseClient';
 import {
   createOfficialDailyEditorialDraft, OfficialDailyDraftError, parseOfficialDailyDraftInput,
-  readOfficialDailyEditorialDraftPreview, scheduleOfficialDailyEditorialDraft,
+  readOfficialDailyEditorialDraftPreview, replaceOfficialDailyEditorialDraftRoster, scheduleOfficialDailyEditorialDraft,
 } from '../../../../serverOfficialDailyEditorialDrafts';
 
 const HEADERS = { 'cache-control': 'private, no-store', vary: 'Authorization' } as const;
@@ -41,7 +41,9 @@ export async function POST(request: Request): Promise<NextResponse> {
   const preview = v.action === 'preview' && keysEqual(v, ['action', 'occurrenceId']);
   const schedule = v.action === 'schedule' && keysEqual(v, ['action', 'occurrenceId', 'expectedRevision', 'confirmed'])
     && v.confirmed === true && Number.isSafeInteger(v.expectedRevision) && (v.expectedRevision as number) >= 0;
-  if (!create && !preview && !schedule) return reply(400, 'invalid_request');
+  const revise = v.action === 'revise' && keysEqual(v, ['action', 'occurrenceId', 'expectedRevision', 'canonicalPlayerIds'])
+    && Number.isSafeInteger(v.expectedRevision) && (v.expectedRevision as number) >= 0 && Array.isArray(v.canonicalPlayerIds);
+  if (!create && !preview && !schedule && !revise) return reply(400, 'invalid_request');
   if (!create && (typeof v.occurrenceId !== 'string' || !UUID.test(v.occurrenceId))) return reply(400, 'invalid_request');
   try {
     const expected = create ? parseOfficialDailyDraftInput(v.draft, new Date()) : null;
@@ -61,6 +63,17 @@ export async function POST(request: Request): Promise<NextResponse> {
     if (preview) {
       const draft = await readOfficialDailyEditorialDraftPreview(client, v.occurrenceId as string);
       return NextResponse.json({ draft }, { status: 200, headers: HEADERS });
+    }
+    if (revise) {
+      const result = await replaceOfficialDailyEditorialDraftRoster(
+        client, v.occurrenceId as string, v.expectedRevision as number, v.canonicalPlayerIds, actorId);
+      const draft = await readOfficialDailyEditorialDraftPreview(client, result.occurrenceId);
+      const ids = v.canonicalPlayerIds as unknown[];
+      if (draft.occurrenceId !== result.occurrenceId || draft.status !== 'draft'
+          || draft.revision !== result.revision || draft.selections.length !== ids.length
+          || !draft.selections.every((selection, i) => selection.slot === i + 1
+            && selection.canonicalPlayerId === ids[i])) return reply(409, 'conflict');
+      return NextResponse.json({ result, draft }, { status: 200, headers: HEADERS });
     }
     const result = await scheduleOfficialDailyEditorialDraft(client, v.occurrenceId as string, v.expectedRevision as number, actorId);
     const draft = await readOfficialDailyEditorialDraftPreview(client, result.occurrenceId);

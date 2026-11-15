@@ -4,12 +4,12 @@ vi.mock('../../../../serverSupabaseClient', () => ({ createServerSupabaseClient:
 vi.mock('../../../../serverOfficialDailyEditorialDrafts', () => {
   class OfficialDailyDraftError extends Error { constructor(readonly kind: string) { super('private roster'); } }
   return { OfficialDailyDraftError, createOfficialDailyEditorialDraft: vi.fn(), parseOfficialDailyDraftInput: vi.fn(),
-    readOfficialDailyEditorialDraftPreview: vi.fn(), scheduleOfficialDailyEditorialDraft: vi.fn() };
+    readOfficialDailyEditorialDraftPreview: vi.fn(), replaceOfficialDailyEditorialDraftRoster: vi.fn(), scheduleOfficialDailyEditorialDraft: vi.fn() };
 });
 import { POST } from './route';
 import { createServerSupabaseClient } from '../../../../serverSupabaseClient';
 import { createOfficialDailyEditorialDraft, OfficialDailyDraftError, parseOfficialDailyDraftInput,
-  readOfficialDailyEditorialDraftPreview, scheduleOfficialDailyEditorialDraft } from '../../../../serverOfficialDailyEditorialDrafts';
+  readOfficialDailyEditorialDraftPreview, replaceOfficialDailyEditorialDraftRoster, scheduleOfficialDailyEditorialDraft } from '../../../../serverOfficialDailyEditorialDrafts';
 
 const TOKEN = '0123456789abcdef0123456789abcdef';
 const ID = '907f33db-c38f-43c3-8e6b-a3aaf19bbd08';
@@ -65,6 +65,29 @@ describe('private official Daily edition ChatOps', () => {
     expect(readOfficialDailyEditorialDraftPreview).toHaveBeenCalledWith(expect.anything(), ID);
     expect(createOfficialDailyEditorialDraft).not.toHaveBeenCalled();
     expect(scheduleOfficialDailyEditorialDraft).not.toHaveBeenCalled();
+  });
+  it('revises a roster only at the requested revision and checks ordered readback', async () => {
+    vi.mocked(replaceOfficialDailyEditorialDraftRoster).mockResolvedValueOnce({ status: 'updated', occurrenceId: ID, revision: 1 });
+    const prior = await readOfficialDailyEditorialDraftPreview({} as never, ID);
+    vi.mocked(readOfficialDailyEditorialDraftPreview).mockResolvedValueOnce({ ...prior, revision: 1 });
+    const response = await POST(request({ action: 'revise', occurrenceId: ID, expectedRevision: 0, canonicalPlayerIds: roster }));
+    expect(response.status).toBe(200);
+    expect(replaceOfficialDailyEditorialDraftRoster).toHaveBeenCalledWith(expect.anything(), ID, 0, roster, 'chatops:assistant');
+    expect(scheduleOfficialDailyEditorialDraft).not.toHaveBeenCalled();
+  });
+  it('rejects roster revision when private readback has a different order', async () => {
+    vi.mocked(replaceOfficialDailyEditorialDraftRoster).mockResolvedValueOnce({ status: 'updated', occurrenceId: ID, revision: 1 });
+    const prior = await readOfficialDailyEditorialDraftPreview({} as never, ID);
+    vi.mocked(readOfficialDailyEditorialDraftPreview).mockResolvedValueOnce({ ...prior, revision: 1, selections: [...prior.selections].reverse() });
+    expect((await POST(request({ action: 'revise', occurrenceId: ID, expectedRevision: 0, canonicalPlayerIds: roster }))).status).toBe(409);
+  });
+  it('rejects malformed revision envelopes before constructing a privileged client', async () => {
+    for (const body of [
+      { action: 'revise', occurrenceId: ID, expectedRevision: -1, canonicalPlayerIds: roster },
+      { action: 'revise', occurrenceId: ID, expectedRevision: 0, canonicalPlayerIds: roster, actorId: 'spoofed' },
+      { action: 'revise', occurrenceId: ID, expectedRevision: 0, canonicalPlayerIds: 'bad' },
+    ]) expect((await POST(request(body))).status).toBe(400);
+    expect(createServerSupabaseClient).not.toHaveBeenCalled();
   });
   it('rejects mismatched ordered roster readback', async () => {
     const prior = await readOfficialDailyEditorialDraftPreview({} as never, ID);
