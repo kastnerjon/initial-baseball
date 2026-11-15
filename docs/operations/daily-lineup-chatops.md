@@ -8,6 +8,12 @@ Issue #663 tracks the owner's request to manage multiple official Daily editions
 
 The staged `private.dispatch_official_daily_edition_chatops(jsonb)` is a `SECURITY INVOKER` transport, not a writer. It retrieves the token and origin from Vault and accepts only the fixed QA origin: production origin and all other values are rejected. This source is QA-only and must not be applied to production; a production transport requires a separate reviewed environment binding and release approval. Inspect the asynchronous HTTP response and exact ordered roster/revision, and verify authoritative state before retrying a timeout. Never put future lineups in public GitHub, CI inputs or logs. Independent security review, isolated hosted QA, reviewed credentials and explicit production migration/feature authorization remain required.
 
+### Uncertain outcomes — manual recovery until tested
+
+An HTTP or transport timeout does not prove the write failed. Never issue a different draft or advance to scheduling just because a response was lost. For an existing known occurrence, privately `preview` the exact occurrence and compare status, revision, title and ordered canonical IDs with the reviewed request. If a revision or scheduling response was lost and the readback shows the requested state at the expected next revision, it is consistent with success but does not by itself establish which concurrent actor made the change; review the authoritative state before proceeding. If the revision is unchanged and the draft is still the expected draft, retry only the same intended operation with that same expected revision. Any other status, revision, roster, missing occurrence or unavailable readback is ambiguous: stop and investigate rather than blindly retrying or scheduling.
+
+Create retries use the existing date/edition uniqueness and exact-draft recovery; do not change input or create a second edition after a timeout. If retry does not safely return the exact draft, stop. In particular, a lost create response can leave the occurrence ID unknown and the current API has no date-and-key lookup for recovery after the draft changes. A reviewed private lookup or equivalent recovery mechanism, plus hosted timeout/concurrency acceptance, is still required before this workflow is complete.
+
 Status: operational in production; smoke-tested September 16 and exercised for routine owner-supplied future lineups September 17, 2026.
 
 ## Goal
