@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import { execFileSync } from 'node:child_process';
-import { mkdtempSync, mkdirSync, writeFileSync } from 'node:fs';
+import { mkdtempSync, mkdirSync, readFileSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import test from 'node:test';
@@ -65,7 +65,7 @@ test('accepts a material change with canonical and handoff documentation', () =>
 test('accepts a specific exception and rejects placeholders', () => {
   assert.doesNotThrow(() =>
     validateDocumentationImpact({
-      changedFiles: ['apps/web/app/page.tsx'],
+      changedFiles: ['apps/web/app/adminSettings.ts'],
       prBody: `${DOCUMENTATION_SECTION}\nDocumentation exception: Restores behavior already specified in docs/spec/api.md.`,
     }),
   );
@@ -73,11 +73,112 @@ test('accepts a specific exception and rejects placeholders', () => {
   assert.throws(
     () =>
       validateDocumentationImpact({
-        changedFiles: ['apps/web/app/page.tsx'],
+        changedFiles: ['apps/web/app/adminSettings.ts'],
         prBody: `${DOCUMENTATION_SECTION}\nDocumentation exception: N/A`,
       }),
     /Material files changed/,
   );
+});
+
+
+const PARITY = [
+  '## Gameplay parity',
+  '- **Baseline:** Production Primary Daily uses instant local active-batter hints.',
+  '- **Shared path:** Existing DailyInningGame and progression transport are reused.',
+  '- **Interaction/network differences:** None; no extra network requests per hint.',
+  '- **Verification:** Verify hint, guess, give-up, reload and results against Primary Daily.',
+  '- **Approved divergence:** None; production interaction parity is maintained.',
+].join('\n');
+
+test('requires gameplay parity assessment on shared-game and edition code changes', () => {
+  for (const file of [
+    'apps/web/app/components/DailyInningGame.tsx',
+    'apps/web/app/page.tsx',
+    'apps/web/app/serverCanonicalRuntime.ts',
+    'apps/web/app/serverCanonicalData.ts',
+    'apps/web/app/api/players/search/route.ts',
+    'apps/web/app/serverOfficialDailyEditionRuntime.ts',
+    'apps/web/app/api/daily/editions/[id]/route.ts',
+    'apps/web/app/api/custom-lineup/[id]/route.ts',
+    'apps/web/app/custom/CustomLineupGame.tsx',
+    'apps/web/app/custom/[puzzleId]/page.tsx',
+    'apps/web/app/results/ResultsView.tsx',
+    'apps/web/app/classic/page.tsx',
+    'apps/web/app/daily-game.css',
+    'apps/web/app/daily-your-nine.css',
+    'apps/web/app/globals.css',
+    'apps/web/app/styles.css',
+    'packages/shared/src/types/daily.ts',
+    'packages/shared/src/types/gameSettings.ts',
+    'packages/daily/src/officialDailyPublication.ts',
+    'packages/engine/src/scoring.ts',
+  ]) {
+    const changedFiles = [file, 'docs/product/daily-inning-blueprint.md'];
+    assert.throws(() => validateDocumentationImpact({ changedFiles, prBody: DOCUMENTATION_SECTION }), /Gameplay parity/);
+    assert.doesNotThrow(() => validateDocumentationImpact({
+      changedFiles, prBody: DOCUMENTATION_SECTION + '\n' + PARITY,
+    }));
+  }
+});
+
+test('rejects missing and templated gameplay assessments', () => {
+  const changedFiles = ['apps/web/app/components/DailyInningGame.tsx', 'docs/START-HERE.md'];
+  assert.throws(() => validateDocumentationImpact({
+    changedFiles, prBody: DOCUMENTATION_SECTION + '\n' + PARITY.replace(
+      '- **Interaction/network differences:** None; no extra network requests per hint.',
+      '- **Interaction/network differences:** <!-- TODO -->',
+    ),
+  }), /Interaction\/network differences/);
+  assert.throws(() => validateDocumentationImpact({
+    changedFiles, prBody: DOCUMENTATION_SECTION + '\n' + PARITY.replace(
+      '- **Approved divergence:** None; production interaction parity is maintained.', '',
+    ),
+  }), /Approved divergence/);
+});
+
+test('rejects code- and emphasis-formatted placeholder text for each parity field', () => {
+  const fields = ['Baseline', 'Shared path', 'Interaction/network differences', 'Verification', 'Approved divergence'];
+  const changedFiles = ['apps/web/app/components/DailyInningGame.tsx', 'docs/START-HERE.md'];
+  for (const field of fields) {
+    for (const placeholder of ['`TODO: fill this in later`', '**TODO: fill this in later**']) {
+      const updated = PARITY.split('\n').map((line) =>
+        line.startsWith('- **' + field + ':**')
+          ? '- **' + field + ':** ' + placeholder
+          : line,
+      ).join('\n');
+      assert.throws(() => validateDocumentationImpact({
+        changedFiles, prBody: DOCUMENTATION_SECTION + '\n' + updated,
+      }), /Gameplay parity/);
+    }
+  }
+});
+
+test('PR description edits re-run parity verification against the current body', () => {
+  const workflow = readFileSync(new URL('../.github/workflows/ci.yml', import.meta.url), 'utf8');
+  const trigger = workflow.match(/^  pull_request:\s*\r?\n    types: \[([^\]]+)\]\s*$/m);
+  assert.ok(trigger, 'CI must declare explicit pull_request event types');
+  const actions = new Set(trigger[1].split(',').map((value) => value.trim()));
+  for (const action of ['opened', 'synchronize', 'reopened', 'edited', 'ready_for_review']) {
+    assert.ok(actions.has(action), 'CI must run on pull_request.' + action);
+  }
+  const changedFiles = ['apps/web/app/custom/CustomLineupGame.tsx', 'docs/START-HERE.md'];
+  const approvedBody = DOCUMENTATION_SECTION + '\n' + PARITY;
+  assert.doesNotThrow(() => validateDocumentationImpact({ changedFiles, prBody: approvedBody }));
+  const editedBody = approvedBody.replace(
+    /^## Gameplay parity[\s\S]*$/m,
+    '## Plain-English summary\n\nGameplay parity assessment was removed.',
+  );
+  assert.throws(() => validateDocumentationImpact({ changedFiles, prBody: editedBody }),
+    /Gameplay parity/);
+});
+
+test('exempts documentation-only and unrelated operational changes from gameplay parity', () => {
+  for (const changedFiles of [
+    ['AGENTS.md', 'docs/START-HERE.md'],
+    ['apps/web/next.config.mjs', 'docs/START-HERE.md'],
+  ]) {
+    assert.doesNotThrow(() => validateDocumentationImpact({ changedFiles, prBody: DOCUMENTATION_SECTION }));
+  }
 });
 
 function createRepository() {
