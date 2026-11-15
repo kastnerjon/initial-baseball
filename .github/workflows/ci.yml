@@ -145,6 +145,8 @@ jobs:
         env:
           IB_DEFAULT_OFF_SMOKE_PLAYWRIGHT_MODULE: /tmp/ib-default-off-smoke/node_modules/playwright/index.mjs
         run: node apps/web/scripts/qa-default-off-browser.mjs
+      - name: Verify mounted secondary Daily hint progression and restoration
+        run: node scripts/qa-daily-edition-hints-mounted.mjs
       - name: Verify official Daily edition browser persistence isolation
         env:
           DAILY_ISOLATION_QA_PLAYWRIGHT_MODULE: /tmp/ib-default-off-smoke/node_modules/playwright/index.mjs
