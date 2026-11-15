@@ -4,6 +4,13 @@ set local lock_timeout = '2s';
 set local statement_timeout = '15s';
 do $test$
 begin
+  if not exists (
+    select 1 from pg_extension e
+    join pg_namespace n on n.oid = e.extnamespace
+    where e.extname = 'pg_net' and n.nspname = 'extensions'
+  ) then
+    raise exception 'pg_net extension must be outside public';
+  end if;
   if has_function_privilege('anon', 'private.dispatch_official_daily_edition_chatops(jsonb)', 'EXECUTE')
       or has_function_privilege('authenticated', 'private.dispatch_official_daily_edition_chatops(jsonb)', 'EXECUTE') then
     raise exception 'public roles can execute private transport';

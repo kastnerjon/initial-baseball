@@ -1,5 +1,6 @@
 -- Private transport only; the authenticated service owns all editorial writes.
-create extension if not exists pg_net;
+-- Supabase recommends installing pg_net outside public even though its runtime queue lives in net.
+create extension if not exists pg_net with schema extensions;
 create schema if not exists private;
 revoke all on schema private from public;
 
