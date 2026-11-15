@@ -16,9 +16,15 @@ begin
     or not (select relrowsecurity from pg_class where oid='public.official_daily_editorial_drafts'::regclass) then
     raise exception 'Guard execution permissions or editorial RLS unexpectedly relaxed';
   end if;
-  if (select count(*) from pg_trigger
-      where tgrelid='public.official_daily_editorial_drafts'::regclass and not tgisinternal) <> 2 then
-    raise exception 'The new guard must coexist with the original editorial integrity trigger';
+  if not exists (select 1 from pg_trigger
+        where tgrelid='public.official_daily_editorial_drafts'::regclass
+          and tgname='a_official_daily_editorial_future_date'
+          and tgenabled in ('O','A'))
+    or not exists (select 1 from pg_trigger
+        where tgrelid='public.official_daily_editorial_drafts'::regclass
+          and tgname='guard_official_daily_editorial_draft'
+          and tgenabled in ('O','A')) then
+    raise exception 'The new and original editorial integrity guards must coexist';
   end if;
   if ('2026-03-08T07:59:59Z'::timestamptz at time zone 'America/Los_Angeles')::date <> date '2026-03-07'
     or ('2026-03-08T08:00:00Z'::timestamptz at time zone 'America/Los_Angeles')::date <> date '2026-03-08'
