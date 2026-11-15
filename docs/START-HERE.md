@@ -1,23 +1,31 @@
 # Initial Baseball — Start Here
 
-## November 15 — source integration and Custom guest completion candidate
+## November 15 — Custom completion guest display test-fidelity review (#632)
 
-- Main `0d803d122cf58392d49cc45458dfcfa2e404af27` includes independently reviewed source merges #662 (editorial Skill), #665 (default-OFF multi-edition application endpoint) and #667 (unapplied PostgreSQL Pacific date-guard migration). PR exact-head CI and Preview passed; the combined main push CI and production build still require verification at this checkpoint.
-- Read-only production and isolated QA metadata confirmed #667 guard function and trigger absent. #666 secure private transport, protected hosted concurrency/recovery, #664 real midnight lock wait and explicit owner migration/feature release approval remain mandatory; secondary competition OFF until #657 and separate #656.
-- #632 retains one consolidated default-OFF Custom guest completion feature: signed exact-browser named/Anonymous first-result display, private readback and synthetic Chromium regression. Source files are reconciled with current main. Fresh exact-head CI, independent review and matching Preview are mandatory before integration; protected Auth/SQL hosted and physical-device acceptance remain release gates.
+- On latest main `60a9a6fa5469f9ad590cc3859bda570b9be633be`, existing #632 incorporates signed first-result Custom guest named/Anonymous selection, private immutable readback and native Chromium regression. Independent parent source review approved with conditions and found one simulated HTTP fidelity gap, not an application authorization or score defect: PostgreSQL's conflicting first-choice insert fails with 23505, sanitized to HTTP 503, whereas an exact retry returns 200 existing.
+- Three fixture/Chromium/test files have been corrected without modifying the application or SQL: a new Chromium conflicting-choice scenario asserts 503 followed by original-winner GET at 390px and 1280px (16 synthetic cases total); earlier lost-response and exact-retry coverage remain. Reconciled current-main commit requires fresh final-head CI, READY Preview and substantive incremental independent review before source merge. Protected hosted signed Auth/SQL, physical iOS Safari/Android and release authorization are separate.
+- Custom/Auth/guest-display production flags and existing database migrations remain OFF/unapplied. Do not treat source merge or synthetic HTTP as production acceptance.
+
+
+## November 15 — historical primary identity verifier source integrated (#592)
+
+- Reviewed #592 private source merged as `60a9a6fa5469f9ad590cc3859bda570b9be633be` after exact-head CodeRabbit review, CI and READY Preview. The two server-only verifier/test Git blobs are retained; no public replay link, score writer, historical result reinterpretation, schema migration or flag is added.
+- The verifier checks past published primary Daily editorial metadata against the canonical public selection resolver and denies pre-2026-07-22 deterministic-fallback dates. It only returns the currently authorized opaque roster-derived ID; this cannot establish the identity of every previously accepted historical result. Do not join distinct result populations, construct a lost October 16 roster, or make unified Archive primary placeholders clickable.
+- Source integration passed review and CI, but #589 requires provenance for historical accepted results and actual replay, hosted device QA, and explicit release authorization. The #667 Pacific date-guard migration remains unapplied in production.
+
 
 ## November 15 — secondary editorial Pacific date guard source merged (#664)
 
 - A **separate, unapplied migration candidate** adds a live-database-clock `BEFORE ROW` date check for inserts, draft edits, scheduling and unscheduling. It retains original identity/revision/issuance triggers, service-only RLS and allowed scheduled-to-issued transitions. No gameplay logic, primary Daily, credentials, feature flags or production data change.
 - The exact candidate migration plus synthetic QA acceptance passed inside a single isolated-Supabase transaction that rolled back. Verified current/past-day denial, future create/edit/schedule/unschedule, immutable issuance/idempotent retry and Pacific DST date mapping. These tests do not simulate a real concurrent row-lock wait across Pacific midnight.
-- **Source merged to main as #667; database migration NOT applied.** Independent source review and exact-head CI/Preview passed. Real hosted lock-wait acceptance, production-shaped migration rehearsal, and explicit production authorization remain prerequisites to any SQL deployment or feature activation.
+- **Migration source merged (#667), but PostgreSQL guard NOT installed.** Independent source review and exact-head CI/Preview passed; real hosted midnight lock-wait and installation/rollback rehearsal plus explicit release authorization remain necessary before production SQL changes or secondary editor activation.
 
 ## November 15 — official Daily navigation and editor source merged, release gated
 
 - Main `d05b78f149fe4c8c11a46a33d549051856147a88` includes #588, reusing Primary Daily's immediate authorized current-batter hints for exact-ID secondary practice and integrating the current-day chooser and Archive navigation. Exact-head review and PR CI passed; the merged production deployment is READY, default-OFF home and Archive returned 200, and the disabled chooser returned 404. Main push CI passed. Isolated QA fixtures were cleaned.
 - Owner deferred a real hosted Pacific midnight transition and physical Android Chrome test to release; neither is verified. Production official-edition flags and competitive scoring remain OFF; #657 exact-edition result admission, separate #656 broader anti-fabrication, production migration/rollback rehearsal, and explicit release approval remain open.
-- The owner requires private ChatGPT creation, review, revision and explicit scheduling for all official Daily editions (#663). #665's additional-edition application route/service is now source-merged but default OFF; the existing primary-only operational transport remains unchanged and #666 replacement is unresolved. Preserve private payloads, exact occurrence and revision, validation and readback; do not bypass the editorial service or expose future lineups in GitHub.
-- The #667 database-time guard migration is source-merged, but it is NOT installed; #664 hosted two-session Pacific-midnight and rollback acceptance remain release blockers. Application-clock checks alone do not solve a row-lock wait.
+- The owner requires private ChatGPT creation, review, revision and explicit scheduling for all official Daily editions (#663). #665's secondary application source is merged but defaults OFF; the existing primary-only operational transport is unchanged and #666 confidentiality fix remains outstanding. Preserve private payloads, exact occurrence and revision, validation and readback; do not bypass the editorial service or expose future lineups in GitHub.
+- The #667 database-time guard migration is source-merged but unapplied; #664 real two-session Pacific-midnight lock wait and rollback acceptance remain release gates. Application clock refresh cannot alone close a row-lock wait.
 
 ## November 10 — secondary Daily editor one-slot editing and contextual canonical lookup (#614)
 

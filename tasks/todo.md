@@ -2,7 +2,7 @@
 
 ## Private multi-edition ChatOps (#663, #665 merged)
 
-- [ ] #665 source is merged and reviewed; complete protected hosted auth, concurrency, response-loss and readback acceptance, plus #664 DB guard and #666 confidential transport before activation. The unsafe shared-queue and synchronous SQL HTTP transport candidates are **excluded from the merge diff**; no additional-edition database transport is approved. Design and independently review a confidential connector or private intent path under #666 before any ChatGPT dispatch, with hosted response-loss/concurrency acceptance. Verify #664's database-atomic Pacific-date guard before activation. Keep secondary competition OFF pending #657.
+- [ ] #665 default-OFF application-only source merged after independent review; complete protected hosted auth, concurrency, response-loss and readback acceptance. No additional-edition transport is approved: #666 private confidentiality design and #664 real atomic Pacific-midnight database acceptance are mandatory before activation. Existing primary transport remains unchanged. Secondary competition OFF pending #657 and separate #656.
 
 ## Production-parity correction — approved November 12
 
@@ -11,11 +11,14 @@
 
 
 - [ ] **Private ChatGPT lineup management (#663):** extend the existing primary-only private ChatOps workflow to additional official editions, with private ordered lineup review, exact occurrence/revision checks, explicit scheduling, safe timeout readback and no direct assistant writes to editorial tables.
-- [ ] **Editorial midnight correctness (#664):** #667 database-time trigger source is merged but SQL remains unapplied; prove real two-session Pacific-midnight lock wait and rehearse migration/rollback before explicit owner release authorization.
+- [ ] **Editorial midnight correctness (#664):** #667 guard migration source merged but SQL not installed; real two-session Pacific-midnight SQLSTATE 23514 lock-wait, issued idempotence and rollback/installation rehearsal plus explicit owner authorization remain.
+
+- [ ] **Historical primary Daily identity verifier (#592 merged):** private source integrated. #589 archival lineage, accepted-result cohort separation, playable original replay/clue proof and physical/hosted release gates remain outstanding. Do not expose unverified primary Archive links or rewrite old results.
+
+- [ ] **Custom guest completion (#632):** one independent source-review P2 corrected in test fixture: conflicting first-write mode/name -> sanitized 503, exact retry 200, and Chromium 503 -> winner GET at mobile/desktop. Require reconciled exact-head CI, READY Preview, substantive incremental review and source integration. Protected hosted Auth/SQL, real races, physical devices and production migration/flags remain separately gated.
 
 ## Current source integration — November 10
 
-- [ ] **Custom guest completion (#632):** reconcile signed first-result named/Anonymous display, private readback and synthetic Chromium acceptance on latest main; require exact-head CI, Preview and independent full review. Hosted signed Auth/SQL and physical Safari/Android remain separate release gates; Custom/Auth flags stay OFF.
 - [ ] **Daily Chromium QA suite (consolidated #645):** preserve both genuine signed incorrect/correct guess gameplay and the separate synthetic same-date official edition localStorage/Web Locks isolation acceptance. Run both in native CI Chromium at mobile and desktop widths. Synthetic edition persistence checks do **not** prove hosted A3 score admission or physical Safari/Android acceptance; keep all new edition flags OFF pending release review.
 - [ ] Complete hosted isolated-QA verified-account My Creations pagination, account-switch and empty-page acceptance, and physical-device checks. #654 is merged with eight mounted Chromium cases; main push CI `42936744355` passed and matching production deployment is READY. Auth/Custom production activation remains OFF and requires explicit release approval.
 - [ ] Resolve the final in-scope documentation findings and complete independent final-head review before integrating #606 unified official Archive. Exact-head CI `42945583941` passed and Vercel Preview is READY. No Archive flag, production migration or competition activation is authorized.
