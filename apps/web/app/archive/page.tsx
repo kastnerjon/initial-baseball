@@ -1,6 +1,7 @@
 import React, { type JSX } from 'react';
 import { listAvailableArchiveBetaPuzzles } from '../serverArchiveBetaRuntime';
 import { isOfficialDailyArchiveVisible } from '../serverOfficialDailyArchiveSection';
+import { isOfficialDailyEditionPracticeVisible } from '../serverOfficialDailyEditionChoice';
 import { readPrivateUnifiedOfficialDailyArchive } from '../serverUnifiedOfficialDailyArchiveSection';
 import type { UnifiedArchivePage } from '../unifiedOfficialDailyArchiveMerge';
 import { ArchiveLocalResults } from './ArchiveLocalResults';
@@ -22,6 +23,7 @@ export default async function ArchivePage({ searchParams }: ArchivePageProps): P
     console.error('archive-beta-read-failed');
   }
   const officialArchiveEnabled = isOfficialDailyArchiveVisible();
+  const practiceAvailable = isOfficialDailyEditionPracticeVisible();
   let official: UnifiedArchivePage | null = null;
   let officialUnavailable = false;
   if (officialArchiveEnabled) {
@@ -49,7 +51,7 @@ export default async function ArchivePage({ searchParams }: ArchivePageProps): P
       <section className="daily-card">
         <p className="eyebrow">Initial Baseball · {officialArchiveEnabled ? 'Archive' : 'Archive beta'}</p>
         <h1>{officialArchiveEnabled ? 'Past Daily lineups' : 'Play an earlier lineup'}</h1>
-        {official !== null ? <UnifiedOfficialDailyArchiveSection page={official} /> : null}
+        {official !== null ? <UnifiedOfficialDailyArchiveSection page={official} practiceAvailable={practiceAvailable} /> : null}
         {officialUnavailable ? (
           <section aria-label="Official Daily archive">
             <h2>Official Daily editions</h2>

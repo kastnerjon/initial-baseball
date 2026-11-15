@@ -3,13 +3,16 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocked = vi.hoisted(() => ({
-  beta: vi.fn(), visible: vi.fn(), archive: vi.fn(),
+  beta: vi.fn(), visible: vi.fn(), archive: vi.fn(), practice: vi.fn(),
 }));
 vi.mock('../serverArchiveBetaRuntime', () => ({
   listAvailableArchiveBetaPuzzles: mocked.beta,
 }));
 vi.mock('../serverOfficialDailyArchiveSection', () => ({
   isOfficialDailyArchiveVisible: mocked.visible,
+}));
+vi.mock('../serverOfficialDailyEditionChoice', () => ({
+  isOfficialDailyEditionPracticeVisible: mocked.practice,
 }));
 vi.mock('../serverUnifiedOfficialDailyArchiveSection', () => ({
   readPrivateUnifiedOfficialDailyArchive: mocked.archive,
@@ -23,6 +26,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocked.beta.mockResolvedValue([{ dailyNumber: 1, puzzleDate: '2026-10-20' }]);
   mocked.visible.mockReturnValue(false);
+  mocked.practice.mockReturnValue(true);
   mocked.archive.mockResolvedValue({ dates: [], nextCursor: null });
 });
 
@@ -54,8 +58,8 @@ describe('shared Archive route', () => {
     expect(html).toContain('2026-11-05 – Puzzle 1');
     expect(html).toContain('Historical replay unavailable');
     expect(html).toContain('2026-11-05 – Modern');
-    expect(html).toContain('Practice replay unavailable');
-    expect(html).not.toContain('/daily/editions/');
+    expect(html).toContain('Practice only; scores are not submitted');
+    expect(html).toContain('href="/daily/editions/daily-ed-v1-907f33db-c38f-43c3-8e6b-a3aaf19bbd08?date=2026-11-05"');
     expect(html).not.toContain('href="/daily/editions/null');
     expect(html).not.toContain('daily-2026-11-05-v1');
     expect(html).toContain('beta-results');
@@ -104,6 +108,8 @@ describe('shared Archive route', () => {
       expect(mocked.archive).toHaveBeenCalledWith({});
       expect(html).toContain('Official Daily editions');
       expect(html).toContain('2026-11-05 – Modern');
+      expect(html).toContain('Practice only; scores are not submitted');
+      expect(html).toContain('href="/daily/editions/daily-ed-v1-907f33db-c38f-43c3-8e6b-a3aaf19bbd08?date=2026-11-05"');
       expect(html).toContain('The Archive beta is temporarily unavailable.');
       expect(html).not.toContain('No archive puzzles have been issued yet.');
       expect(html).not.toContain('Showing up to 60');
