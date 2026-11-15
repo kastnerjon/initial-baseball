@@ -2,7 +2,7 @@
 
 ## Private multi-edition ChatOps (#663, #665)
 
-- [ ] Complete the staged, default-OFF private create/lookup/revise/preview/schedule workflow in #665. The database transport accepts the fixed QA origin only and must not be applied to production. Complete exact-head CI/Preview and independent security review, isolated hosted lost-response and concurrency acceptance, and a separately reviewed production-bound transport before any release. Verify #664's database-atomic Pacific-date guard before activation. Keep secondary competition OFF pending #657.
+- [ ] Complete independent source review and exact-head CI/Preview for #665's default-OFF private create/lookup/revise/preview/schedule HTTP route/editorial service. The unsafe shared-queue and synchronous SQL HTTP transport candidates are **excluded from the merge diff**; no additional-edition database transport is approved. Design and independently review a confidential connector or private intent path under #666 before any ChatGPT dispatch, with hosted response-loss/concurrency acceptance. Verify #664's database-atomic Pacific-date guard before activation. Keep secondary competition OFF pending #657.
 
 ## Production-parity correction — approved November 12
 
