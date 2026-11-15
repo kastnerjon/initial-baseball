@@ -32,7 +32,7 @@ function puzzle(id: string): DailyPuzzle {
       player: { playerId: ANSWER_ID, fullName: 'Hidden Player',
         displayName: 'Hidden Player', initials: 'HP', kind: 'hitter' as const,
         primaryPosition: 'CF' },
-      hints: { main_decade: 'PRIVATE_HINT_MARKER', teams: 'NYM',
+      hints: { main_decade: index === 0 ? 'CURRENT_BATTER_HINT' : 'PRIVATE_FUTURE_HINT_MARKER', teams: 'NYM',
         position: 'CF', stats: '3 HR' },
     })),
   };
@@ -65,19 +65,26 @@ describe('private official Daily edition runtime composition', () => {
     expect(d.readReleasedPuzzle).not.toHaveBeenCalled();
   });
 
-  it('loads only released exact-ID content and serializes no future hints', async () => {
+  it('authorizes only current-batter hints and four signed local reveal checkpoints', async () => {
     const d = dependencies(async (_client, id) => puzzle(id));
     const runtime = createServerOfficialDailyEditionRuntime(FIRST_ID, d);
     const boot = await runtime.getBootstrap(DATE);
     expect(boot.puzzle.id).toBe(FIRST_ID);
     expect(boot.puzzle.pitches).toHaveLength(9);
-    expect(boot.hintBundle).toMatchObject({ revealedCount: 0, hints: [], checkpoints: [] });
-    expect(JSON.stringify(boot)).not.toContain('PRIVATE_HINT_MARKER');
+    expect(boot.hintBundle.revealedCount).toBe(0);
+    expect(boot.hintBundle.hints).toHaveLength(4);
+    expect(boot.hintBundle.hints[0]?.hintValue).toBe('CURRENT_BATTER_HINT');
+    expect(boot.hintBundle.checkpoints.map(checkpoint => checkpoint.revealedCount)).toEqual([1, 2, 3, 4]);
+    for (const checkpoint of boot.hintBundle.checkpoints) {
+      const claims = TOKENS.verify(checkpoint.progressionToken);
+      expect(claims).toMatchObject({ puzzleId: FIRST_ID, pitchNumber: 1, revealCount: checkpoint.revealedCount });
+    }
+    expect(JSON.stringify(boot)).not.toContain('PRIVATE_FUTURE_HINT_MARKER');
     expect(JSON.stringify(boot)).not.toContain('Hidden Player');
     expect(JSON.stringify(boot)).not.toContain(ANSWER_ID);
     expect(d.readReleasedPuzzle).toHaveBeenCalledWith(client, FIRST_ID, NOW);
     expect((await runtime.revealHint(boot.progressionToken)).hint.hintValue)
-      .toBe('PRIVATE_HINT_MARKER');
+      .toBe('CURRENT_BATTER_HINT');
   });
 
   it('fails closed for a missing or future publication and never invents a puzzle', async () => {

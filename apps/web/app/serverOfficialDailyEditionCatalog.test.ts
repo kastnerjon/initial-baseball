@@ -149,10 +149,21 @@ describe('private official Daily date catalog', () => {
     [ 'wrong title', { title: '<private-hint>' } ],
     [ 'wrong key', { edition_key: 'Unsafe/Puzzle' } ],
     [ 'invalid edition', { edition_number: 0 } ],
+    [ 'reserved primary edition', { edition_number: 1 } ],
   ] as const)('fails closed on malformed %s metadata', async (_label, change) => {
     const db = database([{ ...edition(2), ...change }]);
     await expect(listPrivateOfficialDailyEditionsByDate(db.client, { puzzleDate: DATE }, NOW))
       .rejects.toThrowError(expect.objectContaining({ kind: 'unavailable' }));
+  });
+
+  it('rejects a reserved primary edition in either current-day or historical metadata', async () => {
+    const primaryNumber = { ...edition(2), edition_number: 1 };
+    const today = database([primaryNumber]);
+    await expect(listPrivateOfficialDailyEditionsByDate(today.client, { puzzleDate: DATE }, NOW))
+      .rejects.toMatchObject({ kind: 'unavailable' });
+    const historical = database([primaryNumber]);
+    await expect(listPrivateOfficialDailyArchivePage(historical.client, {}, NOW))
+      .rejects.toMatchObject({ kind: 'unavailable' });
   });
 
   it('rejects duplicate/out-of-order pages instead of creating unstable cursors', async () => {

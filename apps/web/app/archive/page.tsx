@@ -1,6 +1,7 @@
 import React, { type JSX } from 'react';
 import { listAvailableArchiveBetaPuzzles } from '../serverArchiveBetaRuntime';
 import { isOfficialDailyArchiveVisible } from '../serverOfficialDailyArchiveSection';
+import { isOfficialDailyEditionPracticeVisible } from '../serverOfficialDailyEditionChoice';
 import { readPrivateUnifiedOfficialDailyArchive } from '../serverUnifiedOfficialDailyArchiveSection';
 import type { UnifiedArchivePage } from '../unifiedOfficialDailyArchiveMerge';
 import { ArchiveLocalResults } from './ArchiveLocalResults';
@@ -14,8 +15,15 @@ type ArchivePageProps = {
 
 /** One default-OFF historical official Archive above the existing separate beta series. */
 export default async function ArchivePage({ searchParams }: ArchivePageProps): Promise<JSX.Element> {
-  const puzzles = await listAvailableArchiveBetaPuzzles();
+  let puzzles: Awaited<ReturnType<typeof listAvailableArchiveBetaPuzzles>> | null = null;
+  try {
+    puzzles = await listAvailableArchiveBetaPuzzles();
+  } catch {
+    // Keep the independent official catalog available without exposing provider errors.
+    console.error('archive-beta-read-failed');
+  }
   const officialArchiveEnabled = isOfficialDailyArchiveVisible();
+  const practiceAvailable = isOfficialDailyEditionPracticeVisible();
   let official: UnifiedArchivePage | null = null;
   let officialUnavailable = false;
   if (officialArchiveEnabled) {
@@ -43,7 +51,7 @@ export default async function ArchivePage({ searchParams }: ArchivePageProps): P
       <section className="daily-card">
         <p className="eyebrow">Initial Baseball · {officialArchiveEnabled ? 'Archive' : 'Archive beta'}</p>
         <h1>{officialArchiveEnabled ? 'Past Daily lineups' : 'Play an earlier lineup'}</h1>
-        {official !== null ? <UnifiedOfficialDailyArchiveSection page={official} /> : null}
+        {official !== null ? <UnifiedOfficialDailyArchiveSection page={official} practiceAvailable={practiceAvailable} /> : null}
         {officialUnavailable ? (
           <section aria-label="Official Daily archive">
             <h2>Official Daily editions</h2>
@@ -54,12 +62,12 @@ export default async function ArchivePage({ searchParams }: ArchivePageProps): P
         <p>Frozen puzzles, current Daily Nine scoring. Your progress and scores are saved on this device, separately from today’s game.</p>
         <p>This test archive is disposable and is not the permanent Daily sequence. Comparisons use other submitted results for each exact puzzle and ruleset.</p>
         <a href="/">Back to today’s Daily</a> · <a href="/results">My Results</a>
-        {puzzles.length === 0 ? <p>No archive puzzles have been issued yet.</p> : (
+        {puzzles === null ? <p>The Archive beta is temporarily unavailable.</p> : puzzles.length === 0 ? <p>No archive puzzles have been issued yet.</p> : (
           <ArchiveLocalResults puzzles={puzzles.map(puzzle => ({
             dailyNumber: puzzle.dailyNumber, puzzleDate: puzzle.puzzleDate,
           }))} />
         )}
-        <p>Showing up to 60 most recent issued puzzles.</p>
+        {puzzles !== null ? <p>Showing up to 60 most recent issued puzzles.</p> : null}
       </section>
     </main>
   );

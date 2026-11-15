@@ -1,0 +1,4 @@
+interface:
+  display_name: "Initial Baseball Daily Lineups"
+  short_description: "Generate, review and schedule Daily Nine lineups"
+  default_prompt: "Use $initial-baseball-daily-nine-lineups to generate the next 14 Daily Nine lineups, ask if I want the same criteria as last time, and check every player's recent usage."

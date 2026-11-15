@@ -86,6 +86,14 @@ Dependencies must not point upward. In particular:
 - UI components must not own baseball rules, player normalization, or puzzle generation.
 - Data generation must not be owned by `apps/web`.
 
+## Production gameplay parity (owner-approved November 12, 2026)
+
+The live primary points-v4 Daily Nine is the default playing-experience contract for additional official editions and guest-play Custom Lineups when the rules match. Reuse its shared gameplay, visible actions, immediate hints, guess/Give Up, save/resume, results and share behavior. Vary source, exact puzzle identity, issuance/ownership permissions, lineup length and score eligibility through bounded adapters. Reusing one React component while adding a slower hint network path is NOT behavioral parity.
+
+**Current-batter hint policy:** As in production Primary Daily, authorize all four hints and their signed reveal-depth checkpoints for the active batter at bootstrap, validated resume or next-at-bat advance. Reveal each locally and immediately without another HTTP request. The owner knowingly accepts inspectable current-batter clues for casual play. Never reveal canonical answer identities, future-batter clues, credentials or other puzzles early. Signed progression and correct-edition competitive provenance (#657) remain mandatory; #656 broader anti-fabrication remains separate.
+
+Before implementing a different network/latency interaction, gameplay flow, persistence behavior or privacy policy, document the user-visible tradeoff and obtain explicit owner approval. A technical security enhancement alone cannot silently override the existing product experience. Gameplay-related PRs must compare the real production source/runtime path, shared code, network and latency differences, primary/secondary/Custom parity tests, and any approved divergence. The required documentation-impact check enforces a written assessment; independent review and real browser tests establish its accuracy.
+
 ## Mandatory architecture check before implementation
 
 Before changing code, answer:

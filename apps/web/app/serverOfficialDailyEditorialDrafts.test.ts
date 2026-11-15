@@ -12,7 +12,7 @@ vi.mock('./materializePermanentDailyIssuedClueSnapshot', () => ({
 import { prepareServerOfficialDailyPublication } from './materializePermanentDailyIssuedClueSnapshot';
 import { getCanonicalDailyPlayer } from './canonicalDailyPlayerLookup';
 import {
-  createOfficialDailyEditorialDraft, OfficialDailyDraftError,
+  createOfficialDailyEditorialDraft, findOfficialDailyEditorialDraftForRecovery, OfficialDailyDraftError,
   parseOfficialDailyDraftInput, readOfficialDailyEditorialDraftPreview,
   scheduleOfficialDailyEditorialDraft,
 } from './serverOfficialDailyEditorialDrafts';
@@ -74,6 +74,15 @@ describe('official Daily editorial drafts', () => {
     expect(prepareServerOfficialDailyPublication).toHaveBeenCalledWith(
       expect.objectContaining({ editorial: expect.objectContaining({ selections }) }));
     expect(db.from).toHaveBeenCalledWith('official_daily_editorial_drafts');
+  });
+
+  it('fails closed on duplicate-create recovery with an invalid saved puzzle number', async () => {
+    const existing = { ...saved, puzzle_number: 195 };
+    const query = { eq: vi.fn().mockReturnThis(), maybeSingle: vi.fn().mockResolvedValue({ data: existing, error: null }) };
+    const insertion = { select: vi.fn().mockReturnThis(), single: vi.fn().mockResolvedValue({ data: null, error: { code: '23505' } }) };
+    const client = { from: vi.fn(() => ({ insert: () => insertion, select: () => query })) } as unknown as SupabaseClient;
+    await expect(createOfficialDailyEditorialDraft(client, input, 'editor', NOW))
+      .rejects.toMatchObject({ kind: 'unavailable' });
   });
 
   it('does not reserve an edition if any canonical player or clue is unavailable', async () => {
@@ -138,6 +147,23 @@ describe('official Daily editorial drafts', () => {
 
 
 describe('restricted exact-draft preview', () => {
+  it('recovers a future occurrence by exact date and edition key without writing', async () => {
+    const db = fakeDb();
+    expect(await findOfficialDailyEditorialDraftForRecovery(db.client, '2026-11-06', 'modern', NOW))
+      .toMatchObject({ occurrenceId: ID, puzzleDate: '2026-11-06', editionKey: 'modern', revision: 0 });
+    expect(db.read.eq).toHaveBeenCalledWith('puzzle_date', '2026-11-06');
+    expect(db.read.eq).toHaveBeenCalledWith('edition_key', 'modern');
+    expect(db.updateQuery.select).not.toHaveBeenCalled();
+    expect(db.write.select).not.toHaveBeenCalled();
+  });
+  it('fails closed for invalid lookup, missing rows and mismatched provider data', async () => {
+    const db = fakeDb();
+    await expect(findOfficialDailyEditorialDraftForRecovery(db.client, '2026-11-05', 'modern', NOW)).rejects.toMatchObject({ kind: 'invalid' });
+    await expect(findOfficialDailyEditorialDraftForRecovery(db.client, '2026-11-06', 'wrong/key', NOW)).rejects.toMatchObject({ kind: 'invalid' });
+    expect(db.from).not.toHaveBeenCalled();
+    expect(await findOfficialDailyEditorialDraftForRecovery(fakeDb(null).client, '2026-11-06', 'modern', NOW)).toBeNull();
+    await expect(findOfficialDailyEditorialDraftForRecovery(db.client, '2026-11-06', 'another', NOW)).rejects.toMatchObject({ kind: 'unavailable' });
+  });
   it('rejects invalid identifiers/clocks before repository access', async () => {
     const db = fakeDb();
     for (const id of ['daily-ed-v1-' + ID, ID.toUpperCase(), '../' + ID, '']) {

@@ -13,6 +13,8 @@ Add durable corrections here when product review, QA, production verification, o
 - Answer leakage and adversarial cheating are different problems. Protect ordinary public boundaries without claiming tamper-proof anonymous competition.
 - A signed stateless token can prevent forged later progression without per-action persistence; replay prevention is a separate decision.
 
+- **Production UX parity cannot be inferred from component reuse.** November 12 physical iPhone QA found secondary official hint taps slower than primary because the new source path fetched one clue per signed HTTP request. This contradicted an existing blueprint requirement for immediate local hint reveal, despite sharing the rendering component. Before extending working gameplay, compare the actual production network and interaction contract and seek product approval for any divergence. Convert repeated mistakes into a test and enforce a PR parity assessment. The owner accepts inspectable active-batter hints but not future answers or weakened edition-bound score admission.
+
 ## Player identity and data
 
 - Join by canonical/source IDs, never display names.
