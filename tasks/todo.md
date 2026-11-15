@@ -1,7 +1,16 @@
 # Initial Baseball — Current Work
 
+## Production-parity correction — approved November 12
+
+- [ ] **Official Daily release acceptance:** #588 is merged with immediate current-batter hints and practice navigation. Verify real hosted Pacific midnight rollover and physical Android Chrome before release; rehearse applicable production migrations and rollback, and obtain explicit release authorization. Keep all secondary competition OFF pending #657; #656 remains separate.
+- [ ] Require production gameplay parity evidence for later Custom friend play and future puzzle sources. Separate issuance and score policies may differ; owner approval is required for any user-visible latency, control, save or flow divergence.
+
+
+- [ ] **Private ChatGPT lineup management (#663):** extend the existing primary-only private ChatOps workflow to additional official editions, with private ordered lineup review, exact occurrence/revision checks, explicit scheduling, safe timeout readback and no direct assistant writes to editorial tables.
+
 ## Current source integration — November 10
 
+- [ ] **Daily Chromium QA suite (consolidated #645):** preserve both genuine signed incorrect/correct guess gameplay and the separate synthetic same-date official edition localStorage/Web Locks isolation acceptance. Run both in native CI Chromium at mobile and desktop widths. Synthetic edition persistence checks do **not** prove hosted A3 score admission or physical Safari/Android acceptance; keep all new edition flags OFF pending release review.
 - [ ] Complete hosted isolated-QA verified-account My Creations pagination, account-switch and empty-page acceptance, and physical-device checks. #654 is merged with eight mounted Chromium cases; main push CI `42936744355` passed and matching production deployment is READY. Auth/Custom production activation remains OFF and requires explicit release approval.
 - [ ] Resolve the final in-scope documentation findings and complete independent final-head review before integrating #606 unified official Archive. Exact-head CI `42945583941` passed and Vercel Preview is READY. No Archive flag, production migration or competition activation is authorized.
 
@@ -24,7 +33,7 @@
 - [ ] Independently review combined private editor #614 from current main: one-slot future draft replace under revision CAS, restricted 25-result canonical candidate name search, contextual slot picker returning to explicit review form, Basic/first-party/default-OFF gate, all-nine clue-ready uniqueness, stale-tab protection, 1 KiB strict forms, no issuance/public score mutation. Obtain exact-head CI, READY Preview, protected hosted QA/physical device acceptance. Old #612/#613 remain review references only if combined PR lands.
 - [ ] Complete release acceptance for merged unified official Archive #606: published primary metadata placeholder puzzleId:null (not falsely playable), exact-ID numbered secondary metadata unlinked until exact-ID enabled hosted acceptance, arbitrary same-date edition keyset, no hidden answer/score writes, original Archive beta retained with errors sanitized and four default-OFF flags. Require protected hosted 120+-edition browser acceptance (121-edition rollback-only DB fixture passed), physical responsive Safari/Android and controlled release approval. Primary source issue #589 and A3 signed result admission #566 remain separate blockers.
 
-- [ ] Complete isolated hosted signed-playback, hidden-answer bundle verification and physical Safari/Android acceptance for the merged, default-OFF exact-ID secondary practice source (#608). Preserve private progression, single-hint reveal, per-edition saves and personal-only results; competitive A3 #566 remains denied.
+- [ ] Complete isolated hosted signed-playback, hidden-answer bundle verification and physical Safari/Android acceptance for the merged, default-OFF exact-ID secondary practice source (#608). Preserve private progression, current-batter four-hint local reveal, per-edition saves and personal-only results; competitive secondary score admission stays denied until #657.
 
 - [ ] A1: issuance identity, frozen nine-player content, service-only persistence and restricted editor action.
 - [ ] A2–A4: exact-ID play and hint privacy, result isolation, share links, one Archive and device QA.
@@ -117,7 +126,7 @@ These gates are separate from Custom Lineups Phase 1. Keep them active until eac
 ## Official Daily exact-ID gameplay: frozen materializer (staged)
 
 - [ ] Integrate the private exact-ID reader with the shared frozen-clue DailyPuzzle materializer under explicit server admission and date checks. This source-only adapter does not create public gameplay.
-- [ ] Replace any bulk release of unrevealed hints in secondary edition bootstrap, resume, next-pitch and hint-bundle endpoints with single authorized reveal transport. Preserve the existing primary until parity checks.
+- [ ] Prevent early release of canonical answers or future-batter hints through secondary edition bootstrap, resume, next-pitch and hint-bundle endpoints. The active batter's four-hint signed bundle must match production gameplay as described in the #588 parity correction. Preserve existing primary behavior and verify edition-bound progression.
 - [ ] Verify edition-scoped progression, scores, share links, browser persistence and historical/archived practice before enabling public routes.
 
 ## Official Daily edition browser-save separation (staged)

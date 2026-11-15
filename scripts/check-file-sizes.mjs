@@ -4,7 +4,7 @@ import { join } from 'node:path';
 const ROOT = process.cwd();
 const MAX_LINES = 500;
 const INCLUDE = new Set(['.ts', '.tsx', '.js', '.jsx']);
-const IGNORE_DIRS = new Set(['node_modules', '.git', 'dist', 'build', '.turbo', '.expo', 'coverage']);
+const IGNORE_DIRS = new Set(['node_modules', '.git', 'dist', 'build', '.next', '.turbo', '.expo', 'coverage']);
 
 function walk(dir, files = []) {
   for (const name of readdirSync(dir)) {
