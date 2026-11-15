@@ -68,7 +68,9 @@ function validateSingleHint(value: unknown): value is DailyHintResponse {
       || !hasKeys(value.hint, ['hintType', 'hintLabel', 'hintValue'])) return false;
   return HINT_TYPES.has(value.hint.hintType as string)
     && typeof value.hint.hintLabel === 'string' && value.hint.hintLabel.length > 0
-    && typeof value.hint.hintValue === 'string' && value.hint.hintValue.length > 0;
+    && value.hint.hintLabel.length <= 120
+    && typeof value.hint.hintValue === 'string' && value.hint.hintValue.length > 0
+    && value.hint.hintValue.length <= 4096;
 }
 
 /**
