@@ -328,6 +328,79 @@ export async function replaceOfficialDailyEditorialDraftPlayer(
   }
 }
 
+/** Find an exact future edition for private recovery after a lost create response. */
+export async function findOfficialDailyEditorialDraftForRecovery(
+  client: SupabaseClient, puzzleDate: unknown, editionKey: unknown, now: Date = new Date(),
+) {
+  if (!Number.isFinite(now.getTime()) || !validDate(puzzleDate)
+      || puzzleDate <= getPacificDailyDateString(now) || typeof editionKey !== 'string'
+      || editionKey.length > 64 || !EDITION_KEY.test(editionKey)) invalid();
+  try {
+    const found = await client.from(TABLE).select(COLUMNS)
+      .eq('puzzle_date', puzzleDate).eq('edition_key', editionKey).maybeSingle();
+    if (found.error !== null) unavailable();
+    if (found.data === null) return null;
+    const draft = readDraft(found.data);
+    if (draft.puzzle_date !== puzzleDate || draft.edition_key !== editionKey) unavailable();
+    const preview = await readOfficialDailyEditorialDraftPreview(client, draft.occurrence_id, now);
+    if (preview.puzzleDate !== puzzleDate || preview.editionKey !== editionKey) unavailable();
+    return preview;
+  } catch (error) {
+    if (error instanceof OfficialDailyDraftError) throw error;
+    unavailable();
+  }
+}
+
+/** Atomically replace the ordered roster of a future unscheduled draft. */
+export async function replaceOfficialDailyEditorialDraftRoster(
+  client: SupabaseClient, occurrenceId: string, expectedRevision: number,
+  canonicalPlayerIds: unknown, actorId: string, now: Date = new Date(),
+  writeClock: () => Date = () => new Date(),
+) {
+  if (typeof occurrenceId !== 'string' || !UUID.test(occurrenceId)
+      || !Number.isSafeInteger(expectedRevision) || expectedRevision < 0 || expectedRevision >= 2147483647
+      || typeof actorId !== 'string' || actorId.trim().length === 0 || !Number.isFinite(now.getTime())) invalid();
+  try {
+    const found = await client.from(TABLE).select(COLUMNS).eq('occurrence_id', occurrenceId).maybeSingle();
+    if (found.error !== null) unavailable();
+    if (found.data === null) throw new OfficialDailyDraftError('conflict');
+    const draft = readDraft(found.data);
+    if (draft.occurrence_id !== occurrenceId || draft.status !== 'draft'
+        || draft.revision !== expectedRevision || draft.puzzle_date <= getPacificDailyDateString(now)) {
+      throw new OfficialDailyDraftError('conflict');
+    }
+    const parsed = parseOfficialDailyDraftInput({ puzzleDate: draft.puzzle_date, editionKey: draft.edition_key,
+      editionNumber: draft.edition_number, title: draft.title, canonicalPlayerIds }, now);
+    if (isDeepStrictEqual(draft.selections, parsed.selections)) {
+      return { status: 'existing' as const, occurrenceId, revision: expectedRevision };
+    }
+    try {
+      prepareServerOfficialDailyPublication({ occurrenceId, editionKey: draft.edition_key,
+        editionNumber: draft.edition_number, title: draft.title,
+        editorial: { puzzleDate: draft.puzzle_date, puzzleNumber: draft.puzzle_number,
+          status: 'scheduled', selections: parsed.selections } });
+    } catch { invalid(); }
+    const writeTime = writeClock();
+    if (!Number.isFinite(writeTime.getTime())) unavailable();
+    const updated = await client.from(TABLE).update({ selections: parsed.selections,
+      revision: expectedRevision + 1, updated_by: actorId, updated_at: now.toISOString() })
+      .eq('occurrence_id', occurrenceId).eq('status', 'draft').eq('revision', expectedRevision)
+      .gt('puzzle_date', getPacificDailyDateString(writeTime)).select(COLUMNS).maybeSingle();
+    if (updated.error !== null) unavailable();
+    if (updated.data === null) throw new OfficialDailyDraftError('conflict');
+    const saved = readDraft(updated.data);
+    if (saved.occurrence_id !== occurrenceId || saved.status !== 'draft'
+        || saved.revision !== expectedRevision + 1 || saved.puzzle_date !== draft.puzzle_date
+        || saved.puzzle_number !== draft.puzzle_number || saved.edition_key !== draft.edition_key
+        || saved.edition_number !== draft.edition_number || saved.title !== draft.title
+        || saved.created_by !== draft.created_by || !isDeepStrictEqual(saved.selections, parsed.selections)) unavailable();
+    return { status: 'updated' as const, occurrenceId, revision: saved.revision };
+  } catch (error) {
+    if (error instanceof OfficialDailyDraftError) throw error;
+    unavailable();
+  }
+}
+
 /** Exact private editorial roster preview; neither public clue transport nor issuance. */
 export type OfficialDailyDraftPreview = Readonly<{
   occurrenceId: string; puzzleDate: string; puzzleNumber: number;

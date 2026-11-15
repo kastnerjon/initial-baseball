@@ -1,5 +1,9 @@
 # Initial Baseball — Current Work
 
+## Private multi-edition ChatOps (#663, #665)
+
+- [ ] Complete independent source review and exact-head CI/Preview for #665's default-OFF private create/lookup/revise/preview/schedule HTTP route/editorial service. The unsafe shared-queue and synchronous SQL HTTP transport candidates are **excluded from the merge diff**; no additional-edition database transport is approved. Design and independently review a confidential connector or private intent path under #666 before any ChatGPT dispatch, with hosted response-loss/concurrency acceptance. Verify #664's database-atomic Pacific-date guard before activation. Keep secondary competition OFF pending #657.
+
 ## Production-parity correction — approved November 12
 
 - [ ] **Official Daily release acceptance:** #588 is merged with immediate current-batter hints and practice navigation. Verify real hosted Pacific midnight rollover and physical Android Chrome before release; rehearse applicable production migrations and rollback, and obtain explicit release authorization. Keep all secondary competition OFF pending #657; #656 remains separate.

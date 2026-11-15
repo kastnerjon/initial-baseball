@@ -11,7 +11,7 @@ vi.mock('./materializePermanentDailyIssuedClueSnapshot', () => ({
 
 import { prepareServerOfficialDailyPublication } from './materializePermanentDailyIssuedClueSnapshot';
 import {
-  OfficialDailyDraftError, replaceOfficialDailyEditorialDraftPlayer,
+  OfficialDailyDraftError, replaceOfficialDailyEditorialDraftPlayer, replaceOfficialDailyEditorialDraftRoster,
 } from './serverOfficialDailyEditorialDrafts';
 
 const ID = '907f33db-c38f-43c3-8e6b-a3aaf19bbd08';
@@ -66,6 +66,45 @@ async function replace(
 }
 
 beforeEach(() => { vi.clearAllMocks(); });
+
+describe('private revision-CAS roster replacement', () => {
+  const ids = selections.map(s => s.canonicalPlayerId);
+  const revise = (client: SupabaseClient, roster: unknown = [...ids].reverse(), revision = 3,
+    now = NOW, clock = () => now) => replaceOfficialDailyEditorialDraftRoster(client, ID, revision, roster, 'editor', now, clock);
+  it('reorders all nine players in one revision-checked draft write', async () => {
+    const db = fakeDb();
+    expect(await revise(db.client)).toEqual({ status: 'updated', occurrenceId: ID, revision: 4 });
+    expect(db.update).toHaveBeenCalledOnce();
+    expect((db.update.mock.calls[0]![0] as { selections: typeof selections }).selections.map(s => s.canonicalPlayerId)).toEqual([...ids].reverse());
+    expect(db.updateQuery.eq).toHaveBeenCalledWith('revision', 3);
+    expect(db.updateQuery.eq).toHaveBeenCalledWith('status', 'draft');
+  });
+  it('preserves a verified identical draft without a write', async () => {
+    const db = fakeDb();
+    expect(await revise(db.client, ids)).toEqual({ status: 'existing', occurrenceId: ID, revision: 3 });
+    expect(db.update).not.toHaveBeenCalled();
+  });
+  it('rejects duplicates, stale revisions, and non-draft rows', async () => {
+    await expect(revise(fakeDb().client, [...ids.slice(0, 8), ids[0]])).rejects.toMatchObject({ kind: 'invalid' });
+    await expect(revise(fakeDb().client, ids, 2)).rejects.toMatchObject({ kind: 'conflict' });
+    await expect(revise(fakeDb({ ...saved, status: 'scheduled' }).client)).rejects.toMatchObject({ kind: 'conflict' });
+  });
+  it('rejects a date that rolls over between read and write', async () => {
+    const db = fakeDb();
+    await expect(revise(db.client, [...ids].reverse(), 3,
+      new Date('2026-11-06T07:59:59Z'), () => new Date('2026-11-06T08:00:00Z')))
+      .rejects.toMatchObject({ kind: 'conflict' });
+  });
+  it('rejects a lost concurrent write and clue-incomplete rosters', async () => {
+    const db = fakeDb();
+    db.updateQuery.maybeSingle.mockResolvedValueOnce({ data: null, error: null });
+    await expect(revise(db.client)).rejects.toMatchObject({ kind: 'conflict' });
+    const unavailablePlayer = fakeDb();
+    vi.mocked(prepareServerOfficialDailyPublication).mockImplementationOnce(() => { throw new Error('private'); });
+    await expect(revise(unavailablePlayer.client)).rejects.toMatchObject({ kind: 'invalid' });
+    expect(unavailablePlayer.update).not.toHaveBeenCalled();
+  });
+});
 
 describe('private revision-CAS official Daily player replacement', () => {
   it('replaces one selected slot only after clue readiness, preserving immutable identity', async () => {

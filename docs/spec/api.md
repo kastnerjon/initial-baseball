@@ -410,6 +410,12 @@ Before `POST /api/daily/at-bats` is called from gameplay, a separate version-1 p
 
 ## Private Daily lineup ChatOps
 
+### Additional official edition ChatOps (source-staged, default OFF)
+
+`POST /admin/daily/editions/chatops` requires both exact-true edition-editor and edition-ChatOps flags, the existing dedicated ChatOps bearer credential, JSON, an empty query, and same-origin Fetch Metadata when supplied. It accepts only a bounded 8 KiB `create` envelope containing a draft, a read-only `lookup` envelope with exact future date and edition key, a `preview` envelope containing the exact occurrence UUID, a `revise` envelope containing that UUID, expected revision and nine ordered canonical player IDs, or a `schedule` envelope containing that UUID, expected revision and explicit confirmation. Create and revise never schedule; lookup and preview never write. The trusted `chatops:assistant` actor and existing private editorial service supply validation, lifecycle and revision CAS. Create and revise verify the complete ordered roster against private readback; schedule checks the status and revision readback. Responses are `private, no-store` and may contain future roster identities; errors are sanitized. This does not add issuance, public competition, production migration or activation; database-atomic Pacific-date protection remains a release gate (#664).
+
+**No additional-edition database/assistant transport ships in this source candidate.** The shared-queue `pg_net` and synchronous SQL HTTP drafts were removed after confidentiality and redirect review, respectively (#666). The private application route remains default-OFF, authenticated and independently verifiable. A secure connector or private application-owned intent transport must be separately designed and reviewed before use; do not put future lineups or reusable credentials in a shared SQL network queue. The primary production ChatOps transport still uses `pg_net` and requires a separate controlled cutover. The #664 database-atomic future-date guard, protected hosted acceptance, and explicit release authorization remain outstanding.
+
 ### `POST /admin/daily/chatops`
 
 This is a server-to-server operational adapter, not a browser or public gameplay API. It exists so an authorized assistant transport can apply one exact future nine-player lineup without manually replacing nine admin slots.
