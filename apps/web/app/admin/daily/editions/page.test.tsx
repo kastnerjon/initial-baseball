@@ -90,6 +90,7 @@ describe('secondary official Daily editor catalog page', () => {
     expect(html).toContain('Create a secondary Daily draft');
     expect(html).toContain('/admin/daily/editions/create');
     expect(html).toContain('Save draft and review players');
+    expect(html).toContain('/admin/daily/editions/players');
     expect(html).toContain('name="editionNumber"');
     expect(html).toContain('name="puzzleDate"');
     for (let slot = 1; slot <= 9; slot++) {

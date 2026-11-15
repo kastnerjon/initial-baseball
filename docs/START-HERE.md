@@ -1,5 +1,30 @@
 # Initial Baseball — Start Here
 
+## November 15 — historical primary identity verifier source candidate (#592)
+
+- Existing #592 branch was reconciled onto main `0d803d122cf58392d49cc45458dfcfa2e404af27` after #662, #665, and #667 source integration. The two server-only executable verifier/test files retain their exact prior Git blobs; no public route, score writer, historical replay link, migration or flag is added.
+- The verifier checks past published primary Daily editorial metadata against the canonical public selection resolver and denies pre-2026-07-22 deterministic-fallback dates. It only returns the currently authorized opaque roster-derived ID; this cannot establish the identity of every previously accepted historical result. Do not join distinct result populations, construct a lost October 16 roster, or make unified Archive primary placeholders clickable.
+- Require fresh exact-head CI/Preview and independent final-head review of the reconciled source before merging; any hosted replay and device/release steps remain separate. The previously merged #667 Pacific date-guard migration is still unapplied in production.
+
+
+## November 15 — secondary editorial Pacific date guard source candidate (#664)
+
+- A **separate, unapplied migration candidate** adds a live-database-clock `BEFORE ROW` date check for inserts, draft edits, scheduling and unscheduling. It retains original identity/revision/issuance triggers, service-only RLS and allowed scheduled-to-issued transitions. No gameplay logic, primary Daily, credentials, feature flags or production data change.
+- The exact candidate migration plus synthetic QA acceptance passed inside a single isolated-Supabase transaction that rolled back. Verified current/past-day denial, future create/edit/schedule/unschedule, immutable issuance/idempotent retry and Pacific DST date mapping. These tests do not simulate a real concurrent row-lock wait across Pacific midnight.
+- **Not merged or deployed.** Require final independent review, exact-head CI, real hosted lock-wait acceptance, production-shaped migration rehearsal and explicit production authorization before applying any schema changes or activating secondary editorial flows.
+
+## November 15 — official Daily navigation merged; editor integration in review
+
+- Main `d05b78f149fe4c8c11a46a33d549051856147a88` includes #588, reusing Primary Daily's immediate authorized current-batter hints for exact-ID secondary practice and integrating the current-day chooser and Archive navigation. Exact-head review and PR CI passed; the merged production deployment is READY, default-OFF home and Archive returned 200, and the disabled chooser returned 404. Main push CI passed. Isolated QA fixtures were cleaned.
+- Owner deferred a real hosted Pacific midnight transition and physical Android Chrome test to release; neither is verified. Production official-edition flags and competitive scoring remain OFF; #657 exact-edition result admission, separate #656 broader anti-fabrication, production migration/rollback rehearsal, and explicit release approval remain open.
+- The owner requires private ChatGPT creation, review, revision and explicit scheduling for all official Daily editions (#663). Existing primary-only ChatOps does not yet support additional editions. Preserve private payloads, exact occurrence and revision, validation and readback; do not bypass the editorial service or expose future lineups in GitHub.
+- Database-atomic enforcement of the future-Pacific-date editor boundary remains release issue #664. Refreshing the application clock immediately before a conditional write narrows but does not eliminate a race at database execution.
+
+## November 10 — secondary Daily editor one-slot editing and contextual canonical lookup (#614)
+
+- Consolidated source-only secondary Daily editor workflow integrates revision-checked one-player draft replacement (#612), private name/alias lookup (#613), and contextual slot/candidate picker (#614) into one source candidate on latest main. Reuses existing Basic/first-party editorial authorization, canonical player search, all-nine clue readiness, draft-only revision CAS and explicit review/confirm/issuance. No GET mutation, score admission, hidden clue disclosure, schema change or production flag activation.
+- Earlier isolated hosted QA rollback verified one-slot revision CAS, stale revision denial, scheduled refusal and unique publication identity; it is not production parity or physical device acceptance. Exact-head full CI, READY Preview and independent final-head review remain mandatory before source merge. Old #612/#613 should not be merged separately if this candidate lands.
+
 ## November 10 — Archive integration refresh after My Creations pagination (#654)
 
 - Main `5fe81616633751cfc56eaf33d7db79b4597132b8` includes merged #654: stable private My Creations keyset pagination, server-derived account-scope continuity and eight mounted-component Chromium scenarios in CI. Exact-merge production deployment `dpl_EyrJoERCYBTmdo9Hk7b647pLQ4k2` is READY; public `/` and `/archive` return 200, while `/account` and `/create` return 404. Main push CI run `42936744355` was in progress at verification. Hosted Auth and physical-device acceptance remain separate gates.
