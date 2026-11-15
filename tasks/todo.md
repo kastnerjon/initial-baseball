@@ -1,5 +1,9 @@
 # Initial Baseball — Current Work
 
+## Private multi-edition ChatOps (#663, #665)
+
+- [ ] Complete the staged, default-OFF private create/lookup/revise/preview/schedule workflow in #665. The database transport accepts the fixed QA origin only and must not be applied to production. Complete exact-head CI/Preview and independent security review, isolated hosted lost-response and concurrency acceptance, and a separately reviewed production-bound transport before any release. Verify #664's database-atomic Pacific-date guard before activation. Keep secondary competition OFF pending #657.
+
 ## Production-parity correction — approved November 12
 
 - [ ] **Official Daily release acceptance:** #588 is merged with immediate current-batter hints and practice navigation. Verify real hosted Pacific midnight rollover and physical Android Chrome before release; rehearse applicable production migrations and rollback, and obtain explicit release authorization. Keep all secondary competition OFF pending #657; #656 remains separate.
