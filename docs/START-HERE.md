@@ -1,5 +1,12 @@
 # Initial Baseball — Start Here
 
+## November 15 — historical primary identity verifier source candidate (#592)
+
+- Existing #592 branch was reconciled onto main `0d803d122cf58392d49cc45458dfcfa2e404af27` after #662, #665, and #667 source integration. The two server-only executable verifier/test files retain their exact prior Git blobs; no public route, score writer, historical replay link, migration or flag is added.
+- The verifier checks past published primary Daily editorial metadata against the canonical public selection resolver and denies pre-2026-07-22 deterministic-fallback dates. It only returns the currently authorized opaque roster-derived ID; this cannot establish the identity of every previously accepted historical result. Do not join distinct result populations, construct a lost October 16 roster, or make unified Archive primary placeholders clickable.
+- Require fresh exact-head CI/Preview and independent final-head review of the reconciled source before merging; any hosted replay and device/release steps remain separate. The previously merged #667 Pacific date-guard migration is still unapplied in production.
+
+
 ## November 15 — secondary editorial Pacific date guard source candidate (#664)
 
 - A **separate, unapplied migration candidate** adds a live-database-clock `BEFORE ROW` date check for inserts, draft edits, scheduling and unscheduling. It retains original identity/revision/issuance triggers, service-only RLS and allowed scheduled-to-issued transitions. No gameplay logic, primary Daily, credentials, feature flags or production data change.

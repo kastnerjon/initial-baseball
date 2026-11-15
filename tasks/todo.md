@@ -13,6 +13,8 @@
 - [ ] **Private ChatGPT lineup management (#663):** extend the existing primary-only private ChatOps workflow to additional official editions, with private ordered lineup review, exact occurrence/revision checks, explicit scheduling, safe timeout readback and no direct assistant writes to editorial tables.
 - [ ] **Editorial midnight correctness (#664):** require a reviewed database-atomic future-Pacific-date guard for secondary draft edits and scheduling before production editor activation; application-side write-clock refresh alone does not cover a request delayed after the clock is sampled.
 
+- [ ] **Historical primary Daily identity verifier (#592):** source-staged private read-only proof of a currently authorized published editorial roster-derived ID on reconciled main. Recheck exact-head CI/Preview and independent final review; no Archive primary links, reconstruction of historical score populations, replay/signed issuer migration, or feature activation. Preserve #589 provenance boundary.
+
 ## Current source integration — November 10
 
 - [ ] **Daily Chromium QA suite (consolidated #645):** preserve both genuine signed incorrect/correct guess gameplay and the separate synthetic same-date official edition localStorage/Web Locks isolation acceptance. Run both in native CI Chromium at mobile and desktop widths. Synthetic edition persistence checks do **not** prove hosted A3 score admission or physical Safari/Android acceptance; keep all new edition flags OFF pending release review.
