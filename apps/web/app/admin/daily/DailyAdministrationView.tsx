@@ -1,10 +1,9 @@
+import PrimaryPlayerEditor from './PrimaryPlayerEditor';
 import { ArchiveBetaIssuanceForm } from './ArchiveBetaIssuanceForm';
 import type { DailyEditorialHorizonPuzzle, DailyEditorialHorizonSlot } from '@initial-baseball/daily';
 import type { JSX } from 'react';
 import type {
   DailyAdminLifecycleAction,
-  DailyAdminPlayerPreview,
-  DailyAdminPlayerSearchResult,
 } from '../../dailyAdminWorkflow';
 import {
   DailyLifecycleActionForm,
@@ -19,9 +18,6 @@ export type DailyAdminEditorSelection = {
 type DailyAdministrationViewProps = {
   puzzles: readonly DailyEditorialHorizonPuzzle[];
   selection: DailyAdminEditorSelection | null;
-  query: string;
-  searchResults: readonly DailyAdminPlayerSearchResult[];
-  preview: DailyAdminPlayerPreview | null;
   replacementComplete: boolean;
   lifecycleActionComplete: DailyAdminLifecycleAction | null;
   betaIssuedDate?: string | null;
@@ -32,9 +28,6 @@ type DailyAdministrationViewProps = {
 export function DailyAdministrationView({
   puzzles,
   selection,
-  query,
-  searchResults,
-  preview,
   replacementComplete,
   lifecycleActionComplete,
   betaIssuedDate = null,
@@ -79,9 +72,6 @@ export function DailyAdministrationView({
         <EditorPanel
           puzzle={selectedPuzzle}
           slot={selectedSlot}
-          query={query}
-          searchResults={searchResults}
-          preview={preview}
         />
       ) : null}
 
@@ -99,99 +89,17 @@ export function DailyAdministrationView({
   );
 }
 
-function EditorPanel({
-  puzzle,
-  slot,
-  query,
-  searchResults,
-  preview,
-}: {
-  puzzle: DailyEditorialHorizonPuzzle;
-  slot: DailyEditorialHorizonSlot;
-  query: string;
-  searchResults: readonly DailyAdminPlayerSearchResult[];
-  preview: DailyAdminPlayerPreview | null;
+function EditorPanel({ puzzle, slot }: {
+  puzzle: DailyEditorialHorizonPuzzle; slot: DailyEditorialHorizonSlot;
 }): JSX.Element {
-  const current = slot.player;
   const editable = puzzle.status === 'draft' || puzzle.status === 'scheduled';
-
-  return (
-    <section aria-label="Player replacement editor" style={{ ...cardStyle, marginTop: 28 }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', gap: 20, flexWrap: 'wrap' }}>
-        <div>
-          <p className="eyebrow">Editing {puzzle.puzzleDate} · Slot {slot.slot}</p>
-          <h2 style={{ marginTop: 4 }}>Replace {current?.player.displayName ?? 'unresolved player'}</h2>
-          <p style={{ marginBottom: 0 }}>{editable ? 'Search by player name or alias, inspect the exact game preview, then save the canonical player ID.' : 'Published and archived puzzles cannot be changed through ordinary replacement.'}</p>
-        </div>
-        <a href="/admin/daily" style={linkButtonStyle}>Close editor</a>
-      </div>
-
-      {editable ? (
-        <form action="/admin/daily" method="get" style={{ display: 'flex', gap: 10, marginTop: 20, flexWrap: 'wrap' }}>
-          <input type="hidden" name="puzzleDate" value={puzzle.puzzleDate} />
-          <input type="hidden" name="slot" value={slot.slot} />
-          <input name="q" defaultValue={query} placeholder="Search player name or alias" aria-label="Search player name or alias" style={inputStyle} />
-          <button type="submit" style={buttonStyle}>Search</button>
-        </form>
-      ) : null}
-
-      {query.length > 0 && searchResults.length === 0 ? <p>No Daily candidates matched “{query}”.</p> : null}
-      {searchResults.length > 0 ? (
-        <div style={{ display: 'grid', gap: 10, marginTop: 18 }}>
-          {searchResults.map(result => (
-            <a
-              key={result.canonicalPlayerId}
-              href={buildEditorHref(puzzle.puzzleDate, slot.slot, query, result.canonicalPlayerId)}
-              style={resultCardStyle}
-            >
-              <strong>{result.displayName}{result.requiresYearDisambiguation ? ` (${result.yearsPlayedDisplay})` : ''}</strong>
-              <span>{result.playerType} · {result.primaryPosition} · {result.teamsDisplay || 'Teams unavailable'} · Rank {result.recognizabilityRank ?? '—'}</span>
-              <code>{result.canonicalPlayerId}</code>
-            </a>
-          ))}
-        </div>
-      ) : null}
-
-      {preview !== null ? <PlayerPreview puzzle={puzzle} slot={slot} preview={preview} /> : null}
-    </section>
-  );
-}
-
-function PlayerPreview({
-  puzzle,
-  slot,
-  preview,
-}: {
-  puzzle: DailyEditorialHorizonPuzzle;
-  slot: DailyEditorialHorizonSlot;
-  preview: DailyAdminPlayerPreview;
-}): JSX.Element {
-  const reveal = preview.reveal;
-  const teams = reveal.career.teamIdentities?.map(team => team.abbreviation).join(', ')
-    || reveal.career.teamIds.join(', ')
-    || 'Teams unavailable';
-  const lines = buildCareerLines(preview);
-
-  return (
-    <section style={{ marginTop: 22, paddingTop: 20, borderTop: '1px solid rgba(22, 33, 22, 0.18)' }}>
-      <p className="eyebrow">Exact game preview</p>
-      <h3 style={{ margin: '4px 0 6px' }}>{preview.displayName} · {preview.initials}</h3>
-      <p style={{ marginTop: 0 }}>{reveal.career.firstSeason}–{reveal.career.lastSeason} · {reveal.playerType} · {reveal.career.primaryPosition ?? 'Unknown'} · {teams}</p>
-      {lines.map(line => <p key={line} style={{ margin: '6px 0' }}>{line}</p>)}
-      <p style={{ margin: '6px 0' }}>Regular-season reveal rows: {reveal.seasons.length}</p>
-
-      <ol style={{ paddingLeft: 22 }}>
-        {preview.hints.map(hint => <li key={hint.hintType}><strong>{hint.hintLabel}:</strong> {hint.hintValue}</li>)}
-      </ol>
-
-      <form action="/admin/daily/replace" method="post" style={{ marginTop: 18 }}>
-        <input type="hidden" name="puzzleDate" value={puzzle.puzzleDate} />
-        <input type="hidden" name="slot" value={slot.slot} />
-        <input type="hidden" name="canonicalPlayerId" value={preview.canonicalPlayerId} />
-        <button type="submit" style={buttonStyle}>Replace slot {slot.slot} with {preview.displayName}</button>
-      </form>
-    </section>
-  );
+  return <section aria-label="Player replacement editor" style={{ ...cardStyle, marginTop: 28 }}>
+    <p className="eyebrow">Editing {puzzle.puzzleDate} · Slot {slot.slot}</p>
+    <h2>Replace {slot.player?.player.displayName ?? 'unresolved player'}</h2>
+    <p>{editable ? 'Search by player name or alias, inspect the exact game preview, then save the canonical player ID.' : 'Published and archived puzzles cannot be changed through ordinary replacement.'}</p>
+    <a href="/admin/daily" style={linkButtonStyle}>Close editor</a>
+    {editable ? <PrimaryPlayerEditor key={`${puzzle.puzzleDate}:${slot.slot}`} puzzleDate={puzzle.puzzleDate} slot={slot.slot} /> : null}
+  </section>;
 }
 
 function PuzzleCard({
@@ -257,18 +165,8 @@ function SlotRow({ puzzle, slot, selected }: { puzzle: DailyEditorialHorizonPuzz
   );
 }
 
-function buildCareerLines(preview: DailyAdminPlayerPreview): string[] {
-  const { batting, pitching, advanced } = preview.reveal.career;
-  return [
-    batting === null ? null : `Career batting: ${batting.homeRuns ?? '—'} HR · ${batting.battingAverage ?? '—'} AVG · ${advanced?.ops ?? '—'} OPS`,
-    pitching === null ? null : `Career pitching: ${pitching.wins ?? '—'} W · ${pitching.saves ?? '—'} SV · ${pitching.earnedRunAverage ?? '—'} ERA · ${pitching.whip ?? '—'} WHIP`,
-  ].filter((line): line is string => line !== null);
-}
-
-function buildEditorHref(puzzleDate: string, slot: number, query = '', playerId = ''): string {
+function buildEditorHref(puzzleDate: string, slot: number): string {
   const params = new URLSearchParams({ puzzleDate, slot: String(slot) });
-  if (query.length > 0) params.set('q', query);
-  if (playerId.length > 0) params.set('playerId', playerId);
   return `/admin/daily?${params.toString()}`;
 }
 
@@ -277,8 +175,6 @@ const linkButtonStyle = { ...buttonStyle, display: 'inline-block', textDecoratio
 const cardStyle = { border: '1px solid rgba(22, 33, 22, 0.18)', borderRadius: 16, background: 'rgba(255, 252, 244, 0.96)', padding: 20 } as const;
 const emptyStyle = { ...cardStyle, marginTop: 28 } as const;
 const successStyle = { ...cardStyle, marginTop: 20, borderColor: '#315f43', background: '#eef8ef' } as const;
-const inputStyle = { minWidth: 300, flex: 1, border: '1px solid rgba(22, 33, 22, 0.35)', borderRadius: 8, padding: '12px 14px', font: 'inherit' } as const;
-const resultCardStyle = { display: 'grid', gap: 4, padding: 12, border: '1px solid rgba(22, 33, 22, 0.2)', borderRadius: 10, color: 'inherit', textDecoration: 'none' } as const;
 const textLinkStyle = { color: '#173326', fontWeight: 700 } as const;
 const headCellStyle = { padding: '10px 12px', borderBottom: '2px solid #162116', textAlign: 'left', fontSize: 12, textTransform: 'uppercase', letterSpacing: '0.06em' } as const;
 const bodyCellStyle = { padding: 12, borderBottom: '1px solid rgba(22, 33, 22, 0.14)', textAlign: 'left', verticalAlign: 'top', fontSize: 14 } as const;
