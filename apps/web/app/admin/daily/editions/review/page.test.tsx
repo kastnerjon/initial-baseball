@@ -138,47 +138,24 @@ describe('read-only authenticated exact secondary editor review page', () => {
     expect(html).not.toContain('PRIVATE_FUTURE_HINT_AND_ROSTER');
   });
 
-  it('prepopulates a draft-only slot from a strictly validated name-lookup choice', async () => {
-    const html = renderToStaticMarkup(await Page(props({
-      occurrenceId: ID, slot: '9', canonicalPlayerId: 'fixture-10',
-    })));
-    expect(html).toContain('Find replacement for slot 9');
-    expect(html).toContain('name="slot"');
-    expect(html).toContain('value="9" selected=""');
-    expect(html).toContain('name="canonicalPlayerId"');
-    expect(html).toContain('value="fixture-10"');
-    expect(html).toContain('Player selected from the lookup');
-    expect(html).toContain('name="expectedRevision" value="3"');
-    expect(html).not.toContain('PRIVATE_FUTURE_HINT_AND_ROSTER');
-  });
-
-  it('rejects malformed or partial selection links before private draft I/O', async () => {
+  it('rejects URL-based player selection before private draft I/O', async () => {
     for (const params of [
+      { occurrenceId: ID, slot: '9', canonicalPlayerId: 'fixture-10' },
       { occurrenceId: ID, slot: '9' },
       { occurrenceId: ID, canonicalPlayerId: 'fixture-10' },
-      { occurrenceId: ID, slot: '0', canonicalPlayerId: 'fixture-10' },
-      { occurrenceId: ID, slot: '9', canonicalPlayerId: ' fixture-10' },
-      { occurrenceId: ID, slot: '9', canonicalPlayerId: ['fixture-10','other'] },
-      { occurrenceId: ID, slot: '9', canonicalPlayerId: 'x'.repeat(201) },
     ]) {
       const html = renderToStaticMarkup(await Page(props(params)));
       expect(html).toContain('Invalid occurrence ID');
+      expect(createServerSupabaseClient).not.toHaveBeenCalled();
     }
-    expect(createServerSupabaseClient).not.toHaveBeenCalled();
   });
 
-  it('never shows a slot picker on scheduled or issued publications', async () => {
-    for (const status of ['scheduled', 'issued'] as const) {
-      vi.mocked(readOfficialDailyEditorialDraftPreview).mockResolvedValueOnce({
-        ...PREVIEW, status, canSchedule: false,
-      });
-      const html = renderToStaticMarkup(await Page(props({
-        occurrenceId: ID, slot: '5', canonicalPlayerId: 'fixture-10',
-      })));
-      expect(html).not.toContain('Find replacement for slot');
-      expect(html).not.toContain('Player selected from the lookup');
-      expect(html).not.toContain('Replace selected player');
-    }
+  it('renders inline private lookup without selection URLs', async () => {
+    const html = renderToStaticMarkup(await Page(props({ occurrenceId: ID })));
+    expect(html).toContain('Private player lookup');
+    expect(html).not.toContain('canonicalPlayerId=');
+    expect(html).not.toContain('Find replacement for slot');
+    expect(html).toContain('name="expectedRevision" value="3"');
   });
 
   it('does not offer player edits after scheduling or issuance', async () => {
@@ -230,7 +207,7 @@ describe('read-only authenticated exact secondary editor review page', () => {
     expect(html).toContain('action="/admin/daily/editions/review/rename"');
     expect(html).toContain('action="/admin/daily/editions/review/replace"');
     expect(html).toContain('name="expectedRevision" value="3"');
-    expect(html).toContain('Find replacement for slot 1');
+    expect(html).toContain('Private player lookup');
   });
 
   it('labels unready clues without adding a misleading schedule command', async () => {
