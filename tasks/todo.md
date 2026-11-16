@@ -1,8 +1,8 @@
 # Initial Baseball — Current Work
 
-## Private multi-edition ChatOps (#663, #665)
+## Private multi-edition ChatOps (#663, #665 merged)
 
-- [ ] Complete independent source review and exact-head CI/Preview for #665's default-OFF private create/lookup/revise/preview/schedule HTTP route/editorial service. The unsafe shared-queue and synchronous SQL HTTP transport candidates are **excluded from the merge diff**; no additional-edition database transport is approved. Design and independently review a confidential connector or private intent path under #666 before any ChatGPT dispatch, with hosted response-loss/concurrency acceptance. Verify #664's database-atomic Pacific-date guard before activation. Keep secondary competition OFF pending #657.
+- [ ] #665 default-OFF application-only source merged after independent review; complete protected hosted auth, concurrency, response-loss and readback acceptance. No additional-edition transport is approved: #666 private confidentiality design and #664 real atomic Pacific-midnight database acceptance are mandatory before activation. Existing primary transport remains unchanged. Secondary competition OFF pending #657 and separate #656.
 
 ## Production-parity correction — approved November 12
 
@@ -11,9 +11,11 @@
 
 
 - [ ] **Private ChatGPT lineup management (#663):** extend the existing primary-only private ChatOps workflow to additional official editions, with private ordered lineup review, exact occurrence/revision checks, explicit scheduling, safe timeout readback and no direct assistant writes to editorial tables.
-- [ ] **Editorial midnight correctness (#664):** require a reviewed database-atomic future-Pacific-date guard for secondary draft edits and scheduling before production editor activation; application-side write-clock refresh alone does not cover a request delayed after the clock is sampled.
+- [ ] **Editorial midnight correctness (#664):** #667 guard migration source merged but SQL not installed; real two-session Pacific-midnight SQLSTATE 23514 lock-wait, issued idempotence and rollback/installation rehearsal plus explicit owner authorization remain.
 
-- [ ] **Historical primary Daily identity verifier (#592):** source-staged private read-only proof of a currently authorized published editorial roster-derived ID on reconciled main. Recheck exact-head CI/Preview and independent final review; no Archive primary links, reconstruction of historical score populations, replay/signed issuer migration, or feature activation. Preserve #589 provenance boundary.
+- [ ] **Historical primary Daily identity verifier (#592 merged):** private source integrated. #589 archival lineage, accepted-result cohort separation, playable original replay/clue proof and physical/hosted release gates remain outstanding. Do not expose unverified primary Archive links or rewrite old results.
+
+- [ ] **Custom guest completion (#632):** one independent source-review P2 corrected in test fixture: conflicting first-write mode/name -> sanitized 503, exact retry 200, and Chromium 503 -> winner GET at mobile/desktop. Require reconciled exact-head CI, READY Preview, substantive incremental review and source integration. Protected hosted Auth/SQL, real races, physical devices and production migration/flags remain separately gated.
 
 ## Current source integration — November 10
 
@@ -124,7 +126,7 @@ These gates are separate from Custom Lineups Phase 1. Keep them active until eac
 
 ## Independent security follow-up (not a Custom launch gate)
 
-- [ ] **Production-only RLS helper EXECUTE hardening (#494, draft):** the exact unmodified SQL migration and rollback plan are reconciled on current main. Production-shaped isolated Supabase QA reproduced the helper and event trigger only within BEGIN/ROLLBACK; verified anon/auth EXECUTE denied, postgres-owned DDL auto-RLS preserved, baseline non-owner limitation and postflight no residual objects. Require fresh exact-head CI/Preview, independent final-head security review and explicit production DDL/grant authorization before applying; source merge must not be represented as production remediation.
+- [ ] **Production RLS helper EXECUTE hardening (#481):** PR #494 source-merged after independent final-head review, CI and isolated rollback-only hosted rehearsal. The rehearsal verified API-role revocation and postgres-owned DDL auto-RLS, with a baseline non-owner limitation; production remains unchanged. Before applying, obtain explicit production DDL authorization, recheck helper and trigger, and follow the rollout and postflight plan.
 
 ## Official Daily publication storage
 

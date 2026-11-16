@@ -1,24 +1,31 @@
 # Initial Baseball — Start Here
 
-## November 15 — historical primary identity verifier source candidate (#592)
+## November 15 — Custom completion guest display test-fidelity review (#632)
 
-- Existing #592 branch was reconciled onto main `0d803d122cf58392d49cc45458dfcfa2e404af27` after #662, #665, and #667 source integration. The two server-only executable verifier/test files retain their exact prior Git blobs; no public route, score writer, historical replay link, migration or flag is added.
+- On latest main `60a9a6fa5469f9ad590cc3859bda570b9be633be`, existing #632 incorporates signed first-result Custom guest named/Anonymous selection, private immutable readback and native Chromium regression. Independent parent source review approved with conditions and found one simulated HTTP fidelity gap, not an application authorization or score defect: PostgreSQL's conflicting first-choice insert fails with 23505, sanitized to HTTP 503, whereas an exact retry returns 200 existing.
+- Three fixture/Chromium/test files have been corrected without modifying the application or SQL: a new Chromium conflicting-choice scenario asserts 503 followed by original-winner GET at 390px and 1280px (16 synthetic cases total); earlier lost-response and exact-retry coverage remain. Reconciled current-main commit requires fresh final-head CI, READY Preview and substantive incremental independent review before source merge. Protected hosted signed Auth/SQL, physical iOS Safari/Android and release authorization are separate.
+- Custom/Auth/guest-display production flags and existing database migrations remain OFF/unapplied. Do not treat source merge or synthetic HTTP as production acceptance.
+
+
+## November 15 — historical primary identity verifier source integrated (#592)
+
+- Reviewed #592 private source merged as `60a9a6fa5469f9ad590cc3859bda570b9be633be` after exact-head CodeRabbit review, CI and READY Preview. The two server-only verifier/test Git blobs are retained; no public replay link, score writer, historical result reinterpretation, schema migration or flag is added.
 - The verifier checks past published primary Daily editorial metadata against the canonical public selection resolver and denies pre-2026-07-22 deterministic-fallback dates. It only returns the currently authorized opaque roster-derived ID; this cannot establish the identity of every previously accepted historical result. Do not join distinct result populations, construct a lost October 16 roster, or make unified Archive primary placeholders clickable.
-- Require fresh exact-head CI/Preview and independent final-head review of the reconciled source before merging; any hosted replay and device/release steps remain separate. The previously merged #667 Pacific date-guard migration is still unapplied in production.
+- Source integration passed review and CI, but #589 requires provenance for historical accepted results and actual replay, hosted device QA, and explicit release authorization. The #667 Pacific date-guard migration remains unapplied in production.
 
 
-## November 15 — secondary editorial Pacific date guard source candidate (#664)
+## November 15 — secondary editorial Pacific date guard source merged (#664)
 
 - A **separate, unapplied migration candidate** adds a live-database-clock `BEFORE ROW` date check for inserts, draft edits, scheduling and unscheduling. It retains original identity/revision/issuance triggers, service-only RLS and allowed scheduled-to-issued transitions. No gameplay logic, primary Daily, credentials, feature flags or production data change.
 - The exact candidate migration plus synthetic QA acceptance passed inside a single isolated-Supabase transaction that rolled back. Verified current/past-day denial, future create/edit/schedule/unschedule, immutable issuance/idempotent retry and Pacific DST date mapping. These tests do not simulate a real concurrent row-lock wait across Pacific midnight.
-- **Not merged or deployed.** Require final independent review, exact-head CI, real hosted lock-wait acceptance, production-shaped migration rehearsal and explicit production authorization before applying any schema changes or activating secondary editorial flows.
+- **Migration source merged (#667), but PostgreSQL guard NOT installed.** Independent source review and exact-head CI/Preview passed; real hosted midnight lock-wait and installation/rollback rehearsal plus explicit release authorization remain necessary before production SQL changes or secondary editor activation.
 
-## November 15 — official Daily navigation merged; editor integration in review
+## November 15 — official Daily navigation and editor source merged, release gated
 
 - Main `d05b78f149fe4c8c11a46a33d549051856147a88` includes #588, reusing Primary Daily's immediate authorized current-batter hints for exact-ID secondary practice and integrating the current-day chooser and Archive navigation. Exact-head review and PR CI passed; the merged production deployment is READY, default-OFF home and Archive returned 200, and the disabled chooser returned 404. Main push CI passed. Isolated QA fixtures were cleaned.
 - Owner deferred a real hosted Pacific midnight transition and physical Android Chrome test to release; neither is verified. Production official-edition flags and competitive scoring remain OFF; #657 exact-edition result admission, separate #656 broader anti-fabrication, production migration/rollback rehearsal, and explicit release approval remain open.
-- The owner requires private ChatGPT creation, review, revision and explicit scheduling for all official Daily editions (#663). Existing primary-only ChatOps does not yet support additional editions. Preserve private payloads, exact occurrence and revision, validation and readback; do not bypass the editorial service or expose future lineups in GitHub.
-- Database-atomic enforcement of the future-Pacific-date editor boundary remains release issue #664. Refreshing the application clock immediately before a conditional write narrows but does not eliminate a race at database execution.
+- The owner requires private ChatGPT creation, review, revision and explicit scheduling for all official Daily editions (#663). #665's secondary application source is merged but defaults OFF; the existing primary-only operational transport is unchanged and #666 confidentiality fix remains outstanding. Preserve private payloads, exact occurrence and revision, validation and readback; do not bypass the editorial service or expose future lineups in GitHub.
+- The #667 database-time guard migration is source-merged but unapplied; #664 real two-session Pacific-midnight lock wait and rollback acceptance remain release gates. Application clock refresh cannot alone close a row-lock wait.
 
 ## November 10 — secondary Daily editor one-slot editing and contextual canonical lookup (#614)
 
