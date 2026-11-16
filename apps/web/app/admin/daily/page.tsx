@@ -30,12 +30,6 @@ export default async function DailyAdministrationPage({
     const workflow = createDailyAdminWorkflow(repository);
     const [params, puzzles] = await Promise.all([searchParams, workflow.getHorizon()]);
     const selection = resolveSelection(params, puzzles);
-    const query = selection === null ? '' : readString(params.q).trim();
-    const searchResults = query.length === 0 ? [] : workflow.searchPlayers(query);
-    const previewPlayerId = selection === null ? '' : readString(params.playerId);
-    const preview = previewPlayerId.length === 0 || selection === null
-      ? null
-      : workflow.previewPlayer(previewPlayerId, selection.puzzleDate);
     const lifecycleAction = readString(params.lifecycle);
 
     return (
@@ -45,9 +39,6 @@ export default async function DailyAdministrationPage({
         currentDate={getPacificDailyDateString()}
         puzzles={puzzles}
         selection={selection}
-        query={query}
-        searchResults={searchResults}
-        preview={preview}
         replacementComplete={readString(params.updated) === '1'}
         lifecycleActionComplete={isDailyAdminLifecycleAction(lifecycleAction) ? lifecycleAction : null}
       />

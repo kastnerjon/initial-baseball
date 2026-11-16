@@ -39,9 +39,11 @@ export async function POST(request: Request): Promise<NextResponse> {
     const destination = new URL('/admin/daily', request.url);
     destination.searchParams.set('puzzleDate', puzzleDate);
     destination.searchParams.set('slot', String(slot));
-    destination.searchParams.set('playerId', canonicalPlayerId);
     destination.searchParams.set('updated', '1');
-    return NextResponse.redirect(destination, 303);
+    const redirect = NextResponse.redirect(destination, 303);
+    redirect.headers.set('cache-control', 'private, no-store');
+    redirect.headers.set('referrer-policy', 'no-referrer');
+    return redirect;
   } catch (error) {
     if (error instanceof DailyAdminAuthorizationError && error.kind === 'unauthorized') {
       return new NextResponse('Daily administration credentials are required.', {

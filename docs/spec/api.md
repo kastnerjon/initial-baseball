@@ -416,6 +416,10 @@ Before `POST /api/daily/at-bats` is called from gameplay, a separate version-1 p
 
 **No additional-edition database/assistant transport ships in this source candidate.** The shared-queue `pg_net` and synchronous SQL HTTP drafts were removed after confidentiality and redirect review, respectively (#666). The private application route remains default-OFF, authenticated and independently verifiable. A secure connector or private application-owned intent transport must be separately designed and reviewed before use; do not put future lineups or reusable credentials in a shared SQL network queue. The primary production ChatOps transport still uses `pg_net` and requires a separate controlled cutover. The #664 database-atomic future-date guard, protected hosted acceptance, and explicit release authorization remain outstanding.
 
+### Primary Daily editor player search and preview
+
+`POST /admin/daily/players` is a private read-only primary editor endpoint. It requires the existing Basic administrator principal and first-party browser context, rejects URL query strings, bounds URL-encoded bodies to 1 KiB, and accepts either an exact `q` search field or the exact `playerId`, `puzzleDate`, and `slot` preview fields. Search returns at most 25 allowlisted candidate records; preview requires an existing horizon date and slot, and returns the private game-preview presentation. Responses are private/no-store with no-referrer and sanitized errors. The editor keeps search and candidate selection in page state. Replacing a player remains a separate explicit POST, whose redirect contains date/slot/status but no player identity. This source change does not establish hosted request-body/log redaction or secure the separate ChatOps transport.
+
 ### `POST /admin/daily/chatops`
 
 This is a server-to-server operational adapter, not a browser or public gameplay API. It exists so an authorized assistant transport can apply one exact future nine-player lineup without manually replacing nine admin slots.
