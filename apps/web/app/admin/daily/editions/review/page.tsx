@@ -13,41 +13,27 @@ import {
   type OfficialDailyDraftPreview,
 } from '../../../../serverOfficialDailyEditorialDrafts';
 import { createServerSupabaseClient } from '../../../../serverSupabaseClient';
+import PrivatePlayerReplacement from './PrivatePlayerReplacement';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 export const metadata = { robots: { index: false, follow: false } };
 
 type Parameters = Record<string, string | string[] | undefined>;
-type PlayerSelection = { slot: number; canonicalPlayerId: string };
 type ReviewQuery = { kind: 'empty' | 'invalid' }
-  | { kind: 'valid'; occurrenceId: string; selection: PlayerSelection | null };
+  | { kind: 'valid'; occurrenceId: string };
 const inputStyle = { width: '100%', maxWidth: 430 } as const;
 
 function parseReviewQuery(params: Parameters): ReviewQuery {
   const keys = Object.keys(params);
   if (keys.length === 0) return { kind: 'empty' };
-  if (keys.length !== 1 && keys.length !== 3) return { kind: 'invalid' };
-  if (keys.some(key => !['occurrenceId', 'slot', 'canonicalPlayerId'].includes(key)))
-    return { kind: 'invalid' };
+  if (keys.length !== 1 || keys[0] !== 'occurrenceId') return { kind: 'invalid' };
   const id = params.occurrenceId;
-  if (typeof id !== 'string' || !isOfficialDailyOccurrenceId(id))
-    return { kind: 'invalid' };
-  if (keys.length === 1) return { kind: 'valid', occurrenceId: id, selection: null };
-  const slot = params.slot;
-  const candidate = params.canonicalPlayerId;
-  if (typeof slot !== 'string' || !/^[1-9]$/.test(slot)
-      || typeof candidate !== 'string' || candidate.length === 0 || candidate.length > 200
-      || candidate.trim() !== candidate || /[\u0000-\u001f\u007f]/.test(candidate)) {
-    return { kind: 'invalid' };
-  }
-  return { kind: 'valid', occurrenceId: id,
-    selection: { slot: Number(slot), canonicalPlayerId: candidate } };
+  if (typeof id !== 'string' || !isOfficialDailyOccurrenceId(id)) return { kind: 'invalid' };
+  return { kind: 'valid', occurrenceId: id };
 }
 
-function EditorialPreview({ preview, selection }: {
-  preview: OfficialDailyDraftPreview; selection: PlayerSelection | null;
-}) {
+function EditorialPreview({ preview }: { preview: OfficialDailyDraftPreview }) {
   const scheduledPlayersResolved = preview.selections.length === 9
     && preview.selections.every(selection =>
       typeof selection.displayName === 'string' && selection.displayName.trim().length > 0);
@@ -78,42 +64,13 @@ function EditorialPreview({ preview, selection }: {
             <strong>{selection.slot}.</strong>{' '}
             {selection.displayName ?? 'Unresolved player'}
             {' · '}<code>{selection.canonicalPlayerId}</code>
-            {preview.status === 'draft' ? <> {' · '}
-              <a href={'/admin/daily/editions/players?'
-                + new URLSearchParams({
-                  occurrenceId: preview.occurrenceId, slot: String(selection.slot),
-                }).toString()}>Find replacement for slot {selection.slot}</a>
-            </> : null}
+
           </li>
         ))}
       </ol>
       {preview.status === 'draft' ? (
-        <section aria-label="Replace a draft player">
-          <h3>Replace one player</h3>
-          <p>A replacement creates a new draft revision. It cannot change a scheduled
-            or issued lineup. Reload this page if another editor changed the draft.</p>
-          <form method="post" action="/admin/daily/editions/review/replace">
-            <input type="hidden" name="occurrenceId" value={preview.occurrenceId} />
-            <input type="hidden" name="expectedRevision" value={String(preview.revision)} />
-            <label htmlFor="draft-replace-slot">Batting-order slot</label>
-            <select id="draft-replace-slot" name="slot" required
-              defaultValue={selection ? String(selection.slot) : ''}>
-              <option value="" disabled>Select a player</option>
-              {preview.selections.map(selection => (
-                <option key={selection.slot} value={selection.slot}>
-                  {selection.slot} · {selection.displayName ?? selection.canonicalPlayerId}
-                </option>
-              ))}
-            </select>
-            <label htmlFor="draft-replace-player">Replacement canonical player ID</label>
-            <input id="draft-replace-player" name="canonicalPlayerId"
-              type="text" maxLength={200} required autoComplete="off"
-              defaultValue={selection?.canonicalPlayerId ?? ''} />
-            {selection ? <p>Player selected from the lookup. Confirm the correct
-              batting-order slot and player before submitting this revision.</p> : null}
-            <button type="submit">Replace selected player</button>
-          </form>
-        </section>
+        <PrivatePlayerReplacement occurrenceId={preview.occurrenceId} revision={preview.revision}
+          selections={preview.selections} />
       ) : null}
       <p role="status">
         {preview.status === 'draft'
@@ -215,9 +172,7 @@ export default async function OfficialDailyEditionReviewPage({
           <p role="alert">Draft review is temporarily unavailable. Refresh the editor
             metadata before taking any scheduling action.</p>
         ) : null}
-        {preview !== null ? <EditorialPreview preview={preview}
-          selection={preview.status === 'draft' && query.kind === 'valid'
-            ? query.selection : null} /> : null}
+        {preview !== null ? <EditorialPreview preview={preview} /> : null}
       </section>
     </main>
   );

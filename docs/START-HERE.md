@@ -1,11 +1,14 @@
 # Initial Baseball — Start Here
 
-## November 15 — Custom completion guest display test-fidelity review (#632)
+## November 15 — Custom guest completion display source integrated (#632)
 
-- On latest main `60a9a6fa5469f9ad590cc3859bda570b9be633be`, existing #632 incorporates signed first-result Custom guest named/Anonymous selection, private immutable readback and native Chromium regression. Independent parent source review approved with conditions and found one simulated HTTP fidelity gap, not an application authorization or score defect: PostgreSQL's conflicting first-choice insert fails with 23505, sanitized to HTTP 503, whereas an exact retry returns 200 existing.
-- Three fixture/Chromium/test files have been corrected without modifying the application or SQL: a new Chromium conflicting-choice scenario asserts 503 followed by original-winner GET at 390px and 1280px (16 synthetic cases total); earlier lost-response and exact-retry coverage remain. Reconciled current-main commit requires fresh final-head CI, READY Preview and substantive incremental independent review before source merge. Protected hosted signed Auth/SQL, physical iOS Safari/Android and release authorization are separate.
-- Custom/Auth/guest-display production flags and existing database migrations remain OFF/unapplied. Do not treat source merge or synthetic HTTP as production acceptance.
+- #632 merged on main `9807e2c0e5dfbd581de45776e420f3e4b7907bd6` after independent final-head approval, passing CI and READY Preview. Its simulated Chromium fixture exercises first-write conflicts, authoritative readback and response loss at mobile/desktop widths. Merged main CI passed and its production deployment was READY; default-OFF `/create` and `/account` returned 404.
+- This is source integration only. Protected hosted signed Auth and SQL/concurrency/recovery, physical Safari/Android, production migration and explicit feature-release authorization remain outstanding; Custom/Auth/guest-display production flags remain OFF.
 
+## November 15 — private editorial candidate lookup (source candidate, #666)
+
+- Replace secondary editor player-name and candidate-ID URL query parameters with a bounded, authenticated same-origin POST lookup and in-page selection. The existing revision-protected replacement and explicit scheduling paths remain unchanged. Queries, candidate choices, and future rosters must not appear in navigation URLs. Request-body/log redaction, private ingress, authorized hosted browser/device acceptance and production release remain separate checks.
+- The existing primary editor transport and its possible exposure remain outside this change; #666 stays open. #664 real midnight lock-wait QA and #657 exact-edition competitive score provenance are independent release gates. No production credentials, migrations or feature flags change.
 
 ## November 15 — historical primary identity verifier source integrated (#592)
 

@@ -15,7 +15,7 @@
 
 - [ ] **Historical primary Daily identity verifier (#592 merged):** private source integrated. #589 archival lineage, accepted-result cohort separation, playable original replay/clue proof and physical/hosted release gates remain outstanding. Do not expose unverified primary Archive links or rewrite old results.
 
-- [ ] **Custom guest completion (#632):** one independent source-review P2 corrected in test fixture: conflicting first-write mode/name -> sanitized 503, exact retry 200, and Chromium 503 -> winner GET at mobile/desktop. Require reconciled exact-head CI, READY Preview, substantive incremental review and source integration. Protected hosted Auth/SQL, real races, physical devices and production migration/flags remain separately gated.
+- [ ] **Custom guest completion (#632):** source-merged after independent review, CI and Preview. Protected hosted Auth/SQL, real races and recovery, physical devices, production migration and explicit release approval remain separately gated.
 
 ## Current source integration — November 10
 
