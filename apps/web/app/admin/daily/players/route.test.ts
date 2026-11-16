@@ -5,6 +5,7 @@ vi.mock('../../../dailyAdminWorkflow', () => ({ createDailyAdminWorkflow: vi.fn(
 import { createDailyAdminContext } from '../../../dailyAdminComposition';
 import { createDailyAdminWorkflow } from '../../../dailyAdminWorkflow';
 import { POST } from './route';
+import { searchCanonicalPlayers } from '@initial-baseball/engine';
 
 const AUTH = 'Basic ' + Buffer.from('editor:a-development-only-admin-password').toString('base64');
 const searchPlayers = vi.fn(() => Array.from({ length: 30 }, (_, i) => ({
@@ -44,8 +45,20 @@ describe('primary private player editor POST', () => {
     const response = await POST(request());
     expect(response.status).toBe(200); expect(response.headers.get('cache-control')).toBe('private, no-store');
     expect(response.headers.get('referrer-policy')).toBe('no-referrer');
-    const data = await response.json() as { results: unknown[]; hasMore: boolean }; expect(data.results).toHaveLength(25); expect(data.hasMore).toBe(true);
+    const data = await response.json() as { results: unknown[]; mayHaveMore: boolean }; expect(data.results).toHaveLength(10); expect(data.mayHaveMore).toBe(true);
     expect(JSON.stringify(data)).not.toContain('DO_NOT_RETURN');
+  });
+  it('signals a possible truncation when the real search helper reaches its ten-result limit', async () => {
+    const source = Array.from({ length: 30 }, (_, i) => ({ id: `id${i}`, displayName: `Player ${i}`, aliases: [] }));
+    const actual = searchCanonicalPlayers('Player', source);
+    expect(actual).toHaveLength(10);
+    vi.mocked(createDailyAdminWorkflow).mockReturnValueOnce({ searchPlayers: () => actual.map(result => ({
+      canonicalPlayerId: result.playerId, displayName: result.displayName, yearsPlayedDisplay: '',
+      requiresYearDisambiguation: false, playerType: 'Batter', primaryPosition: 'CF',
+      teamsDisplay: '', recognizabilityRank: null, revealReady: true,
+    })) } as never);
+    const data = await (await POST(request())).json() as { results: unknown[]; mayHaveMore: boolean };
+    expect(data.results).toHaveLength(10); expect(data.mayHaveMore).toBe(true);
   });
   it('only previews a selected horizon slot and projects the game preview', async () => {
     expect((await POST(request('playerId=p1&puzzleDate=2030-01-02&slot=1'))).status).toBe(404);

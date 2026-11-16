@@ -14,7 +14,7 @@ afterEach(async () => { await act(async () => root.unmount()); container.remove(
 async function type(input, value) { await act(async () => { Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, value); input.dispatchEvent(new Event('input', { bubbles: true })); }); }
 async function submit(form) { await act(async () => form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }))); }
 it('keeps searches and previews out of URLs and requires explicit replacement', async () => {
-  const fetcher = vi.fn().mockResolvedValueOnce({ ok: true, json: async () => ({ results: [candidate], hasMore: false }) })
+  const fetcher = vi.fn().mockResolvedValueOnce({ ok: true, json: async () => ({ results: [candidate], mayHaveMore: false }) })
     .mockResolvedValueOnce({ ok: true, json: async () => ({ preview }) });
   vi.stubGlobal('fetch', fetcher);
   await act(async () => root.render(<PrimaryPlayerEditor puzzleDate="2030-01-01" slot={1} />));
@@ -39,7 +39,7 @@ it('locks input while loading and rejects malformed results', async () => {
   await act(async () => root.render(<PrimaryPlayerEditor puzzleDate="2030-01-01" slot={1} />));
   const input = container.querySelector('input[type="search"]'); await type(input, 'Player');
   await submit(input.closest('form')); expect(input.disabled).toBe(true);
-  await act(async () => finish({ ok: true, json: async () => ({ results: [null], hasMore: false }) }));
+  await act(async () => finish({ ok: true, json: async () => ({ results: [null], mayHaveMore: false }) }));
   expect(input.disabled).toBe(false); expect(container.querySelector('[role="alert"]')).not.toBeNull();
   expect(container.querySelector('form[action="/admin/daily/replace"]')).toBeNull();
 });

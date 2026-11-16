@@ -43,13 +43,13 @@ export async function POST(request: Request): Promise<NextResponse> {
     const workflow = createDailyAdminWorkflow(repository);
     if (search && q !== null) {
       const found = workflow.searchPlayers(q.trim());
-      const results = found.slice(0, 25).map(player => ({
+      const results = found.slice(0, 10).map(player => ({
         canonicalPlayerId: player.canonicalPlayerId, displayName: player.displayName,
         yearsPlayedDisplay: player.yearsPlayedDisplay, requiresYearDisambiguation: player.requiresYearDisambiguation,
         playerType: player.playerType, primaryPosition: player.primaryPosition, teamsDisplay: player.teamsDisplay,
         recognizabilityRank: player.recognizabilityRank, revealReady: player.revealReady,
       }));
-      return NextResponse.json({ results, hasMore: found.length > 25 }, { headers: HEADERS });
+      return NextResponse.json({ results, mayHaveMore: found.length >= 10 }, { headers: HEADERS });
     }
     if (id === null || date === null || slot === null) return reply(400, 'invalid_request');
     const horizon = await workflow.getHorizon();

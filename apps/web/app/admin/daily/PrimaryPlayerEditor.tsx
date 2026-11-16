@@ -45,7 +45,7 @@ async function lookup(fields: Record<string, string>): Promise<unknown> {
 export default function PrimaryPlayerEditor({ puzzleDate, slot }: { puzzleDate: string; slot: number }): JSX.Element {
   const [query, setQuery] = useState('');
   const [results, setResults] = useState<DailyAdminPlayerSearchResult[] | null>(null);
-  const [hasMore, setHasMore] = useState(false);
+  const [mayHaveMore, setMayHaveMore] = useState(false);
   const [preview, setPreview] = useState<Preview | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState(false);
@@ -57,9 +57,9 @@ export default function PrimaryPlayerEditor({ puzzleDate, slot }: { puzzleDate: 
     const request = ++generation.current;
     setBusy(true); setError(false); setResults(null); setPreview(null);
     try {
-      const value = await lookup({ q: query }) as { results?: unknown; hasMore?: unknown };
-      if (!value || !Array.isArray(value.results) || value.results.length > 25 || !value.results.every(isCandidate) || typeof value.hasMore !== 'boolean') throw new Error('invalid');
-      if (request === generation.current) { setResults(value.results as DailyAdminPlayerSearchResult[]); setHasMore(value.hasMore); }
+      const value = await lookup({ q: query }) as { results?: unknown; mayHaveMore?: unknown };
+      if (!value || !Array.isArray(value.results) || value.results.length > 10 || !value.results.every(isCandidate) || typeof value.mayHaveMore !== 'boolean') throw new Error('invalid');
+      if (request === generation.current) { setResults(value.results as DailyAdminPlayerSearchResult[]); setMayHaveMore(value.mayHaveMore); }
     } catch { if (request === generation.current) setError(true); }
     finally { if (request === generation.current) setBusy(false); }
   }
@@ -86,7 +86,7 @@ export default function PrimaryPlayerEditor({ puzzleDate, slot }: { puzzleDate: 
     {error ? <p role="alert">Player search or preview is temporarily unavailable.</p> : null}
     {results !== null ? <section aria-label="Player search results" aria-live="polite">
       {results.length === 0 ? <p>No Daily candidates matched.</p> : null}
-      {hasMore ? <p>Showing the first 25 matches. Refine the search to find a specific player.</p> : null}
+      {mayHaveMore ? <p>Showing up to 10 matches. There may be more; refine the search to find a specific player.</p> : null}
       <ul style={{ display: 'grid', gap: 10, padding: 0, listStyle: 'none' }}>{results.map(player => <li key={player.canonicalPlayerId}>
         <button type="button" style={resultStyle} disabled={busy} onClick={() => select(player.canonicalPlayerId)}>
           {player.displayName}{player.requiresYearDisambiguation ? ` (${player.yearsPlayedDisplay})` : ''}
