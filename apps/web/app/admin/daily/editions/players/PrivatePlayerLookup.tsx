@@ -18,8 +18,9 @@ function isCandidate(value: unknown): value is Candidate {
 }
 
 /** Keeps private search and selected candidates out of navigation URLs and browser history. */
-export default function PrivatePlayerLookup({ onSelect }: {
+export default function PrivatePlayerLookup({ onSelect, onQueryChange }: {
   onSelect?: (candidate: Candidate) => void;
+  onQueryChange?: () => void;
 }): JSX.Element {
   const [query, setQuery] = useState('');
   const [result, setResult] = useState<{ results: Candidate[]; hasMore: boolean } | null>(null);
@@ -52,7 +53,10 @@ export default function PrivatePlayerLookup({ onSelect }: {
     <form onSubmit={search}>
       <label htmlFor="private-player-query">Player name or alias</label>
       <input id="private-player-query" type="search" maxLength={80} minLength={2}
-        value={query} onChange={event => setQuery((event.target as unknown as { value: string }).value)} required />
+        value={query} disabled={busy} onChange={event => {
+          setResult(null); setError(false); onQueryChange?.();
+          setQuery((event.target as unknown as { value: string }).value);
+        }} required />
       <button type="submit" disabled={busy}>{busy ? 'Searching…' : 'Find players'}</button>
     </form>
     {error ? <p role="alert">Player search is temporarily unavailable.</p> : null}

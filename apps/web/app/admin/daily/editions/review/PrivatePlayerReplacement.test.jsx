@@ -59,6 +59,29 @@ it('searches by POST and prefills an in-page selection without putting player da
   expect(body.get('canonicalPlayerId')).toBe('private-player-id');
   expect(body.get('expectedRevision')).toBe('3');
   expect(container.innerHTML).not.toContain('canonicalPlayerId=private-player-id');
+  await act(async () => {
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, 'New Query');
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  expect(container.textContent).not.toContain('Synthetic Player');
+  expect(container.textContent).not.toContain('Private Player');
+  expect(container.querySelector('#draft-replace-player').value).toBe('');
+});
+
+it('locks the query until a pending search completes', async () => {
+  let finish;
+  vi.stubGlobal('fetch', vi.fn(() => new Promise(resolve => { finish = resolve; })));
+  await act(async () => root.render(<PrivatePlayerReplacement occurrenceId="fixture" revision={3} selections={[]} />));
+  const input = container.querySelector('#private-player-query');
+  await act(async () => {
+    Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, 'Player');
+    input.dispatchEvent(new Event('input', { bubbles: true }));
+  });
+  const form = input.closest('form');
+  await act(async () => form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })));
+  expect(input.disabled).toBe(true);
+  await act(async () => finish({ ok: true, json: async () => ({ results: [], hasMore: false }) }));
+  expect(input.disabled).toBe(false);
 });
 
 it('does not offer selection for unready candidates and fails closed on malformed replies', async () => {

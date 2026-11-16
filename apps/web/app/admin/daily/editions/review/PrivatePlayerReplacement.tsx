@@ -12,7 +12,8 @@ export default function PrivatePlayerReplacement({ occurrenceId, revision, selec
     <h3>Replace one player</h3>
     <p>A replacement creates a new draft revision. It cannot change a scheduled
       or issued lineup. Reload this page if another editor changed the draft.</p>
-    <PrivatePlayerLookup onSelect={player => setCandidate(player.canonicalPlayerId)} />
+    <PrivatePlayerLookup onSelect={player => setCandidate(player.canonicalPlayerId)}
+      onQueryChange={() => setCandidate('')} />
     <form method="post" action="/admin/daily/editions/review/replace">
       <input type="hidden" name="occurrenceId" value={occurrenceId} />
       <input type="hidden" name="expectedRevision" value={String(revision)} />
