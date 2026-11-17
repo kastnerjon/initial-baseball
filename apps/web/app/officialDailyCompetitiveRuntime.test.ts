@@ -1,8 +1,29 @@
 import { describe, expect, it, vi } from 'vitest';
-import { A, B, DATE, ANSWER, OTHER, runtime, tokens, proofs } from './officialDailyCompetitive.testFixtures';
+import { A, B, DATE, ANSWER, OTHER, ATTEMPT, runtime, tokens, proofs } from './officialDailyCompetitive.testFixtures';
 vi.mock('server-only', () => ({}));
 
 describe('source-only competitive Daily transcript', () => {
+  it('binds repeated live bootstraps to one durable reservation identity', async () => {
+    const game = runtime(A);
+    const first = proofs.verify((await game.getBootstrap(DATE)).progressionToken);
+    const second = proofs.verify((await game.getBootstrap(DATE)).progressionToken);
+    expect(second).toEqual(first);
+    expect(first.attemptId).toBe(ATTEMPT);
+    expect(first.startedAt).toBe(Date.parse('2026-11-06T12:00:00.000Z'));
+  });
+
+  it('fails closed on a mismatched edition, date or start window from reservation', async () => {
+    const now = new Date('2026-11-06T12:00:00Z');
+    for (const override of [
+      { puzzleId: B }, { puzzleDate: '2026-11-05' },
+      { startedAt: '2026-11-05T12:00:00.000Z' },
+      { startedAt: '2026-11-06T13:01:00.000Z' },
+      { startedAt: 'malformed' },
+    ]) {
+      await expect(runtime(A, now, override).getBootstrap(DATE)).rejects.toThrow();
+    }
+  });
+
   it('records server-observed hints, wrong guesses and terminal outcomes through nine batters', async () => {
     const game = runtime(A);
     const boot = await game.getBootstrap(DATE);

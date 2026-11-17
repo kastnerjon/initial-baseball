@@ -1,9 +1,9 @@
 import 'server-only';
-import { randomUUID } from 'node:crypto';
 import { normalizeDailyTerminalAtBat } from '@initial-baseball/engine';
 import type { DailyCompletedAtBat } from '@initial-baseball/shared';
 import type { DailyProgressionTokenCodec } from './dailyProgressionToken';
 import type { DailyHintBundle, DailyRuntimeService } from './dailyRuntimeContracts';
+import type { OfficialDailyAttemptReservation } from './officialDailyAttemptReservation';
 import { verifyOfficialDailyCompetitiveTranscript } from './officialDailyCompetitiveTranscript';
 import { getPacificDailyDateString } from './getPacificDailyDateString';
 import {
@@ -13,8 +13,9 @@ import {
 
 /**
  * Source-only provenance producer for exact-ID Daily play. It is deliberately
- * not wired to routes or score admission: signed branches can still be replayed
- * until an atomic admission mechanism is implemented and independently reviewed.
+ * not wired to routes or score admission. Bootstraps require a durable SQL
+ * first-start reservation, but signed branches still need atomic progression
+ * CAS before any score eligibility. No cookie or public transport is installed.
  */
 export function createOfficialDailyCompetitiveRuntime(input: {
   puzzleId: string;
@@ -22,7 +23,10 @@ export function createOfficialDailyCompetitiveRuntime(input: {
   progressionTokens: DailyProgressionTokenCodec;
   secret: string;
   now: () => Date;
-  newAttemptId?: () => string;
+  /** Server-only, SQL-backed first-start winner for the validated browser credential. */
+  reserveAttempt: (request: {
+    puzzleId: string; puzzleDate: string; rulesetVersion: 'points-v4';
+  }) => Promise<OfficialDailyAttemptReservation>;
 }): DailyRuntimeService {
   const proofs = createOfficialDailyCompetitiveProofCodec(input.secret);
   const fail = () => { throw new Error('Official Daily competitive progression unavailable.'); };
@@ -50,10 +54,22 @@ export function createOfficialDailyCompetitiveRuntime(input: {
       const bootstrap = await input.runtime.getBootstrap(date, 'points-v4');
       if (bootstrap.puzzle.id !== input.puzzleId || bootstrap.puzzle.puzzleDate !== date
         || bootstrap.rulesetVersion !== 'points-v4') return fail();
-      const proof: OfficialDailyCompetitiveProof = {
-        version: 1, purpose: 'live', attemptId: (input.newAttemptId ?? randomUUID)(),
+      if (bootstrap.puzzle.status !== 'published') return fail();
+      const reservation = await input.reserveAttempt({
         puzzleId: input.puzzleId, puzzleDate: date, rulesetVersion: 'points-v4',
-        startedAt: now.getTime(), progressionToken: bootstrap.progressionToken, atBats: [],
+      });
+      const startedAt = Date.parse(reservation.startedAt);
+      // Read the clock again: SQL can commit after this request's pre-reservation time.
+      // Tolerate bounded server/DB clock skew without accepting a future-day first start.
+      const afterReservation = input.now().getTime();
+      if (reservation.puzzleId !== input.puzzleId || reservation.puzzleDate !== date
+        || reservation.rulesetVersion !== 'points-v4' || !Number.isFinite(startedAt)
+        || !Number.isFinite(afterReservation) || startedAt > afterReservation + 60_000
+        || getPacificDailyDateString(new Date(startedAt)) !== date) return fail();
+      const proof: OfficialDailyCompetitiveProof = {
+        version: 1, purpose: 'live', attemptId: reservation.attemptId,
+        puzzleId: input.puzzleId, puzzleDate: date, rulesetVersion: 'points-v4',
+        startedAt, progressionToken: bootstrap.progressionToken, atBats: [],
       };
       const token = proofs.sign(proof);
       await verify(token);
