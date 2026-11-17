@@ -47,7 +47,8 @@ export function createOfficialDailyCompetitiveAdmission(input: {
       try { proof = proofs.verify(token); } catch { return invalid; }
       const now = input.now().getTime();
       if (proof.puzzleId !== expectedPuzzleId || !Number.isFinite(now)
-        || proof.startedAt > now || now - proof.startedAt > input.maximumAttemptAgeMs
+        // Allow the same bounded 60-second server/DB clock skew as bootstrap.
+        || proof.startedAt > now + 60_000 || now - proof.startedAt > input.maximumAttemptAgeMs
         || getPacificDailyDateString(new Date(proof.startedAt)) !== proof.puzzleDate
         || proof.atBats.length === 0) return invalid;
       const puzzle = await input.loadReleasedPuzzle(proof.puzzleId);
