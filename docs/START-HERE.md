@@ -1,5 +1,11 @@
 # Initial Baseball — Start Here
 
+## November 17 — atomic official Daily completion persistence candidate (#678)
+
+- Draft #678 stages a service-role-only PostgreSQL function and server-only adapter to commit nine normalized at-bat rows and one completed summary in a single transaction against the existing historical Daily result tables. The SQL locks the exact canonical completed attempt, checks edition/date/ruleset and terminal facts, and compares immutable first-write winners. It is not wired to public gameplay, and it trusts the calling service to verify HMAC and derive all scoring fields with the engine before invocation.
+- Initial adapter tests cover exact RPC payload, retry response, malformed edition/attempt/facts and provider failures. The first candidate CI test job passed but documentation-impact failed because this checkpoint was absent; latest head must be rechecked. SQL transaction rollback, two-session races, production-shaped isolated QA, trusted caller integration, exact-head independent review and READY Preview remain required. No production migration, feature flag or competitive scoring activation.
+
+
 ## November 17 — signed gameplay bound to durable progression (#657)
 
 - Verified main `c3978b0c978d0def0d25899e04de5487523c99ca` includes #674 first-start authority, #675 source-only signed reservation bootstrap, and #676 service-only SQL progression CAS. #676 passed exact-head CI `44112535777`, Codex review and READY Preview. Its first-start + CAS SQL migrations and full rollback fixture passed in a single isolated QA transaction; a separate post-rollback query verified no candidate table/functions persisted. No production SQL/flags, public scoring or browser transport changed.

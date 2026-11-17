@@ -17,11 +17,6 @@ DECLARE
   v_inserted integer := 0;
   v_total_inserted integer := 0;
   v_slot integer;
-  v_fields text[] := ARRAY[
-    'attempt_id','schema_version','puzzle_id','puzzle_date','puzzle_number',
-    'ruleset_version','pitch_number','initials','outcome','hints_revealed',
-    'wrong_guesses','resolution','awarded_points'
-  ];
 BEGIN
   IF p_expected_token IS NULL OR p_at_bat_rows IS NULL
      OR jsonb_typeof(p_at_bat_rows) <> 'array'
@@ -37,18 +32,8 @@ BEGIN
       AND attempt_id=p_attempt_id FOR UPDATE;
   IF NOT FOUND OR v_attempt.status <> 'completed'
      OR v_attempt.current_progression_token IS DISTINCT FROM p_expected_token
-     OR v_attempt.terminal_at_bats IS DISTINCT FROM
-        (SELECT jsonb_agg(value ORDER BY ordinality)
-         FROM jsonb_array_elements(p_at_bat_rows) WITH ORDINALITY AS t(value,ordinality)
-         -- Compare only canonical gameplay facts, not computed points.
-         )
   THEN
-    -- The caller supplies persistence rows with awarded_points; compare the
-    -- six engine-observed facts separately below instead.
-    IF NOT FOUND OR v_attempt.status <> 'completed'
-       OR v_attempt.current_progression_token IS DISTINCT FROM p_expected_token THEN
-      RAISE EXCEPTION 'Official Daily completion is not canonical.' USING errcode='22023';
-    END IF;
+    RAISE EXCEPTION 'Official Daily completion is not canonical.' USING errcode='22023';
   END IF;
   SELECT * INTO v_pub FROM public.official_daily_publications
     WHERE puzzle_id=p_puzzle_id;
