@@ -2,7 +2,7 @@
 
 ## Primary delivery — exact-edition competitive provenance (#657)
 
-- [ ] Integrate the SQL-backed monotonic progression authority with the merged #674 first-start reservation and #675 source-only signed runtime. Preserve server-held browser credential binding, exact released-edition identity, locally preauthorized four hints, ordered wrong/terminal transitions, stale-fork exclusion and idempotent retry; no public route or competition switch until reviewed end-to-end.
+- [ ] Complete reviewed source-only signed runtime/CAS composition (next candidate after merged #676), then wire a concrete trusted released-publication reader and server-held HttpOnly browser credential into a default-OFF request handler. Preserve immediate four-hint local reveal, ordered wrong/terminal transitions, canonical result retries and sibling identity. Existing source composition is not yet a public admission route or release.
 - [ ] Implement transactional nine-at-bat plus completion admission against **existing** points-v4 Daily tables. Preserve Primary Daily history and identical-roster sibling isolation; verify actual two-session races, delayed Pacific-midnight/response-loss cases on isolated production-shaped QA, then independent final-head review, CI/Preview, physical devices and explicit owner release approval. The existing isolated QA lacks first-start and Daily result tables. Secondary competition remains OFF; #656 is separate.
 
 

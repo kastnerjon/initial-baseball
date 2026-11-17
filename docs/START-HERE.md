@@ -1,5 +1,11 @@
 # Initial Baseball — Start Here
 
+## November 17 — signed gameplay bound to durable progression (#657)
+
+- Verified main `c3978b0c978d0def0d25899e04de5487523c99ca` includes #674 first-start authority, #675 source-only signed reservation bootstrap, and #676 service-only SQL progression CAS. #676 passed exact-head CI `44112535777`, Codex review and READY Preview. Its first-start + CAS SQL migrations and full rollback fixture passed in a single isolated QA transaction; a separate post-rollback query verified no candidate table/functions persisted. No production SQL/flags, public scoring or browser transport changed.
+- This bounded candidate composes the existing signed Daily producer, trusted server-reservation callback and SQL CAS store. It verifies current canonical signed state against the DB row before any score-affecting action, permits a server-signed *local revealCount checkpoint* only at the same batter/strikes/terminal history with nondecreasing revealed hints, and advances wrong/terminal actions with an atomic compare-and-swap. An identical action after lost response returns the winner; different stale forks fail closed. New source-only tests cover conflicting branches, sibling identical rosters, stale tokens, expiry, restore, nine ordered terminals and no extra per-hint DB writes. This candidate has no public route.
+- Next required engineering: concrete released-publication service/HttpOnly browser credential and request-local runtime composition; PostgreSQL atomic nine-at-bat and completed-result persistence against historical Daily table contracts; SQL two-session races, Pacific-midnight/expiry/retry, isolated production-shaped QA, mobile Safari/Android, final-head review and owner-approved production release. This source candidate is NOT a scoring release and #656 deeper integrity remains separate.
+
 ## November 17 — exact-edition first-start and progression authority (#657)
 
 - Verified main `aefe7587e3fa672f66fb9c4618c0692ef5769e83` incorporates merged #674 SQL first-start reservation (reviewed source only) and #675 disconnected signed bootstrap producer using its immutable stored attempt ID/start time. Both passed exact-head CI, independent review and matching READY Preview before merge. No production migration, public route, browser credential transport or competition activation occurred.
