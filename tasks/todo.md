@@ -2,8 +2,8 @@
 
 ## Primary delivery — exact-edition competitive provenance (#657)
 
-- [ ] Review the existing provenance branch's signed producer and ordered immutable-prefix consumer. Test actual PostgreSQL races/recovery on isolated production-shaped Daily tables (absent from current Custom QA). No public score route is wired.
-- [ ] Settle first-start/browser admission, live retry duration and key rotation; verify released-publication/runtime/HTTP integration, CI/Preview, independent security review, hosted/device acceptance and explicit release approval. Keep secondary competition OFF. Immutable result admission does not prevent repeated bootstrap or token forking.
+- [ ] Integrate the SQL-backed monotonic progression authority with the merged #674 first-start reservation and #675 source-only signed runtime. Preserve server-held browser credential binding, exact released-edition identity, locally preauthorized four hints, ordered wrong/terminal transitions, stale-fork exclusion and idempotent retry; no public route or competition switch until reviewed end-to-end.
+- [ ] Implement transactional nine-at-bat plus completion admission against **existing** points-v4 Daily tables. Preserve Primary Daily history and identical-roster sibling isolation; verify actual two-session races, delayed Pacific-midnight/response-loss cases on isolated production-shaped QA, then independent final-head review, CI/Preview, physical devices and explicit owner release approval. The existing isolated QA lacks first-start and Daily result tables. Secondary competition remains OFF; #656 is separate.
 
 
 ## Private multi-edition ChatOps (#663, #665 merged)
