@@ -43,18 +43,48 @@ describe('source-only official Daily first-start reservation contract', () => {
     expect(new Set([a.attemptId, b.attemptId, c.attemptId]).size).toBe(3);
     expect(rows.size).toBe(3);
   });
-  it('rejects a store returning another edition or credential', async () => {
+  it('rejects a store returning mismatched edition, date, credential or incompatible attempt UUID', async () => {
     const { service } = setup();
     const original = await service.reserve(request);
-    const invalid = createOfficialDailyAttemptReservationService({
-      now: () => new Date(), store: { insertOrRead: async () => ({ ...original, puzzleId: OTHER }) },
-    });
-    await expect(invalid.reserve(request)).rejects.toThrow('mismatch');
+    const invalidRows = [
+      { ...original, puzzleId: OTHER },
+      { ...original, puzzleDate: '2026-11-17' },
+      { ...original, browserKeyDigest: 'f'.repeat(64) },
+      { ...original, attemptId: '00000000-0000-1000-8000-000000000001' },
+    ];
+    for (const row of invalidRows) {
+      const invalid = createOfficialDailyAttemptReservationService({
+        now: () => new Date(), store: { insertOrRead: async () => row },
+      });
+      await expect(invalid.reserve(request)).rejects.toThrow('mismatch');
+    }
   });
-  it('rejects malformed identifiers and weak browser keys before storage', async () => {
+  it('rejects malformed edition UUIDs, non-calendar dates and weak browser keys before storage', async () => {
     const { service, rows } = setup();
     await expect(service.reserve({ ...request, puzzleId: 'daily-legacy' })).rejects.toThrow();
+    await expect(service.reserve({ ...request, puzzleId: 'daily-ed-v1-' + '-'.repeat(36) })).rejects.toThrow();
+    await expect(service.reserve({ ...request, puzzleId: 'daily-ed-v1-11111111-1111-1111-8111-111111111111' })).rejects.toThrow();
+    await expect(service.reserve({ ...request, puzzleDate: '2026-02-30' })).rejects.toThrow();
+    await expect(service.reserve({ ...request, puzzleDate: '2026-99-99' })).rejects.toThrow();
     await expect(service.reserve({ ...request, browserKey: 'short' })).rejects.toThrow();
     expect(rows.size).toBe(0);
+  });
+  it('reconciles an insert response lost after commit when the durable store returns the same winner', async () => {
+    const rows = new Map<string, OfficialDailyAttemptReservation>();
+    let lost = true;
+    const service = createOfficialDailyAttemptReservationService({
+      now: () => new Date('2026-11-16T12:00:00.000Z'),
+      store: { async insertOrRead(candidate) {
+        const key = [candidate.puzzleId, candidate.browserKeyDigest].join(':');
+        const row = rows.get(key) ?? candidate;
+        rows.set(key, row);
+        if (lost) { lost = false; throw new Error('connection lost after commit'); }
+        return row;
+      } },
+    });
+    await expect(service.reserve(request)).rejects.toThrow('connection lost');
+    const committed = [...rows.values()][0];
+    expect(await service.reserve(request)).toEqual(committed);
+    expect(rows.size).toBe(1);
   });
 });

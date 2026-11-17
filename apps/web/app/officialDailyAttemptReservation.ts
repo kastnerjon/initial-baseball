@@ -15,13 +15,25 @@ export type OfficialDailyAttemptReservationStore = {
   insertOrRead: (reservation: OfficialDailyAttemptReservation) => Promise<OfficialDailyAttemptReservation>;
 };
 
+// Match the immutable edition and competitive-proof UUID v4 contracts.
+const UUID_V4_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const OFFICIAL_ID_PATTERN = /^daily-ed-v1-[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const DIGEST_PATTERN = /^[0-9a-f]{64}$/;
-const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function isCalendarDate(value: string): boolean {
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) return false;
+  const milliseconds = Date.parse(value + 'T00:00:00.000Z');
+  return Number.isFinite(milliseconds)
+    && new Date(milliseconds).toISOString().slice(0, 10) === value;
+}
 
 /**
- * Server-side first-start reservation adapter. It does not establish a unique
- * person or prevent cookie loss; the store must enforce a composite unique key.
- * No public route uses this source-only candidate.
+ * Source-only reservation boundary, not competitive admission. Its caller must
+ * establish a server-issued random HttpOnly browser credential and trusted
+ * released-publication/date eligibility before calling. Credential length
+ * alone does not prove entropy or identify a unique human/browser; two initial
+ * cookies can still race. The store must enforce durable composite uniqueness
+ * and unique attempt IDs. No public route uses this candidate.
  */
 export function createOfficialDailyAttemptReservationService(input: {
   store: OfficialDailyAttemptReservationStore;
@@ -35,8 +47,10 @@ export function createOfficialDailyAttemptReservationService(input: {
       rulesetVersion: 'points-v4';
       browserKey: string;
     }): Promise<OfficialDailyAttemptReservation> {
-      if (!/^daily-ed-v1-[0-9a-f-]{36}$/i.test(request.puzzleId)
-        || !/^\d{4}-\d{2}-\d{2}$/.test(request.puzzleDate)
+      if (typeof request.puzzleId !== 'string'
+        || !OFFICIAL_ID_PATTERN.test(request.puzzleId)
+        || typeof request.puzzleDate !== 'string'
+        || !isCalendarDate(request.puzzleDate)
         || request.rulesetVersion !== 'points-v4'
         || typeof request.browserKey !== 'string'
         || request.browserKey.length < 32
@@ -53,7 +67,7 @@ export function createOfficialDailyAttemptReservationService(input: {
         startedAt: input.now().toISOString(),
       };
       const stored = await input.store.insertOrRead(candidate);
-      if (!UUID_PATTERN.test(stored.attemptId)
+      if (!UUID_V4_PATTERN.test(stored.attemptId)
         || !DIGEST_PATTERN.test(stored.browserKeyDigest)
         || stored.puzzleId !== candidate.puzzleId
         || stored.puzzleDate !== candidate.puzzleDate
