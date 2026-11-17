@@ -4,6 +4,7 @@ import { createDailyProgressionTokenCodec } from './dailyProgressionToken';
 import { createDailyRuntimeService } from './dailyRuntimeService';
 import { createOfficialDailyCompetitiveProofCodec } from './officialDailyCompetitiveProof';
 import { createOfficialDailyCompetitiveRuntime } from './officialDailyCompetitiveRuntime';
+import type { OfficialDailyAttemptReservation } from './officialDailyAttemptReservation';
 
 
 export const DATE = '2026-11-06';
@@ -16,7 +17,11 @@ export const OTHER = 'ibp_cd000000000000000000';
 export const tokens = createDailyProgressionTokenCodec(SECRET);
 export const proofs = createOfficialDailyCompetitiveProofCodec(SECRET);
 
-export function runtime(id: string, now = new Date('2026-11-06T12:00:00Z')) {
+export function runtime(
+  id: string,
+  now = new Date('2026-11-06T12:00:00Z'),
+  reservationOverride: Partial<OfficialDailyAttemptReservation> = {},
+) {
   const puzzle: DailyPuzzle = {
     id, puzzleDate: DATE, puzzleNumber: 194, status: 'published',
     hintConfig: DEFAULT_DAILY_HINT_CONFIG, statsHintConfig: DEFAULT_DAILY_STATS_HINT_CONFIG,
@@ -32,6 +37,12 @@ export function runtime(id: string, now = new Date('2026-11-06T12:00:00Z')) {
   const base = createDailyRuntimeService({ createPuzzle: () => puzzle, progressionTokens: tokens,
     resolveLegacyPlayerId: id => id, getCanonicalReveal: () => reveal });
   return createOfficialDailyCompetitiveRuntime({ puzzleId: id, runtime: base, progressionTokens: tokens,
-    secret: SECRET, now: () => now, newAttemptId: () => ATTEMPT });
+    secret: SECRET, now: () => now,
+    reserveAttempt: async request => ({
+      attemptId: ATTEMPT, puzzleId: request.puzzleId, puzzleDate: request.puzzleDate,
+      rulesetVersion: request.rulesetVersion, browserKeyDigest: 'a'.repeat(64),
+      startedAt: '2026-11-06T12:00:00.000Z', ...reservationOverride,
+    }),
+  });
 }
 

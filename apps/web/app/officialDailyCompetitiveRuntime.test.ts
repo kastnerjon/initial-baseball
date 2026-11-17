@@ -1,8 +1,65 @@
 import { describe, expect, it, vi } from 'vitest';
-import { A, B, DATE, ANSWER, OTHER, runtime, tokens, proofs } from './officialDailyCompetitive.testFixtures';
+import { A, B, DATE, ANSWER, OTHER, ATTEMPT, SECRET, runtime, tokens, proofs } from './officialDailyCompetitive.testFixtures';
+import { createOfficialDailyCompetitiveAdmission } from './officialDailyCompetitiveAdmission';
 vi.mock('server-only', () => ({}));
 
 describe('source-only competitive Daily transcript', () => {
+  it('binds repeated live bootstraps to one durable reservation identity', async () => {
+    const appClock = new Date('2026-11-06T12:05:00.000Z');
+    const game = runtime(A, appClock);
+    const first = proofs.verify((await game.getBootstrap(DATE)).progressionToken);
+    appClock.setTime(Date.parse('2026-11-06T12:07:00.000Z'));
+    const second = proofs.verify((await game.getBootstrap(DATE)).progressionToken);
+    expect(second).toEqual(first);
+    expect(first.attemptId).toBe(ATTEMPT);
+    expect(first.startedAt).toBe(Date.parse('2026-11-06T12:00:00.000Z'));
+  });
+
+  it('admits source-signed terminal facts with a 30-second DB lead and zero-skew control', async () => {
+    for (const secondsAhead of [0, 30]) {
+      const clock = new Date('2026-11-06T12:00:00.000Z');
+      const game = runtime(A, clock, {
+        startedAt: new Date(clock.getTime() + secondsAhead * 1000).toISOString(),
+      });
+      const bootstrap = await game.getBootstrap(DATE);
+      const terminal = await game.resolveAtBat({
+        progressionToken: bootstrap.progressionToken, giveUp: true,
+      });
+      const stored = [] as string[];
+      const service = createOfficialDailyCompetitiveAdmission({
+        secret: SECRET, progressionTokens: tokens,
+        loadReleasedPuzzle: () => game.getPublicPuzzle(DATE),
+        now: () => clock, maximumAttemptAgeMs: 24 * 60 * 60 * 1000,
+        atBats: { async insertIfAbsent(result) {
+          stored.push(result.attemptId);
+          return { status: 'inserted', result };
+        } },
+        completions: { async insertIfAbsent(result) {
+          return { status: 'inserted', result };
+        } },
+      });
+      await expect(service.submit(terminal.progressionToken, A)).resolves.toEqual({
+        ok: true, status: 'created', completed: false,
+      });
+      expect(stored).toEqual([ATTEMPT]);
+      expect(proofs.verify(terminal.progressionToken).startedAt).toBe(
+        Date.parse('2026-11-06T12:00:00.000Z') + secondsAhead * 1000,
+      );
+    }
+  });
+
+  it('fails closed on a mismatched edition, date or start window from reservation', async () => {
+    const now = new Date('2026-11-06T12:00:00Z');
+    for (const override of [
+      { puzzleId: B }, { puzzleDate: '2026-11-05' },
+      { startedAt: '2026-11-05T12:00:00.000Z' },
+      { startedAt: '2026-11-06T13:01:00.000Z' },
+      { startedAt: 'malformed' },
+    ]) {
+      await expect(runtime(A, now, override).getBootstrap(DATE)).rejects.toThrow();
+    }
+  });
+
   it('records server-observed hints, wrong guesses and terminal outcomes through nine batters', async () => {
     const game = runtime(A);
     const boot = await game.getBootstrap(DATE);

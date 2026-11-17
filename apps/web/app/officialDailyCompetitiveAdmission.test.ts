@@ -101,7 +101,7 @@ describe('source-only exact-edition signed result admission', () => {
   it('rejects future starts, invalid live-start dates, empty proof and tampering before lookup', async () => {
     const f = fixture(), game = await play(), proof = proofs.verify(game.first);
     for (const token of [game.boot, game.first + 'x',
-      proofs.sign({ ...proof, startedAt: START + 1 }),
+      proofs.sign({ ...proof, startedAt: START + 60_001 }),
       proofs.sign({ ...proof, startedAt: START - WINDOW })]) {
       expect(await f.service.submit(token, A)).toMatchObject({ ok: false, error: 'invalid_proof' });
     }
