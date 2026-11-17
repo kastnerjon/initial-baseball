@@ -10,6 +10,12 @@ BEGIN
     OR has_table_privilege('authenticated','public.official_daily_attempt_states','INSERT')
     OR has_function_privilege('anon','public.reserve_official_daily_attempt(text,text)','EXECUTE')
     OR has_function_privilege('authenticated','public.reserve_official_daily_attempt(text,text)','EXECUTE')
+    OR has_column_privilege('service_role','public.official_daily_attempt_states','attempt_id','UPDATE')
+    OR has_column_privilege('service_role','public.official_daily_attempt_states','puzzle_id','UPDATE')
+    OR has_column_privilege('service_role','public.official_daily_attempt_states','browser_key_digest','UPDATE')
+    OR has_column_privilege('service_role','public.official_daily_attempt_states','started_at','UPDATE')
+    OR NOT has_column_privilege('service_role','public.official_daily_attempt_states','revision','UPDATE')
+    OR NOT has_column_privilege('service_role','public.official_daily_attempt_states','terminal_at_bats','UPDATE')
     OR NOT has_function_privilege('service_role','public.reserve_official_daily_attempt(text,text)','EXECUTE')
  THEN RAISE EXCEPTION 'Daily first-start authority grants unsafe'; END IF;
 END;

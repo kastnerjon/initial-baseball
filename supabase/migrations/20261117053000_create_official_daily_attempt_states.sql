@@ -36,7 +36,11 @@ CREATE TABLE public.official_daily_attempt_states (
 ALTER TABLE public.official_daily_attempt_states ENABLE ROW LEVEL SECURITY;
 REVOKE ALL ON TABLE public.official_daily_attempt_states
   FROM PUBLIC,anon,authenticated,service_role;
-GRANT SELECT,INSERT,UPDATE ON TABLE public.official_daily_attempt_states TO service_role;
+GRANT SELECT,INSERT ON TABLE public.official_daily_attempt_states TO service_role;
+-- Only progression data may change. Immutable first-start identity, edition,
+-- browser digest and DB-issued start time cannot be rewritten by service code.
+GRANT UPDATE (revision,current_progression_token,terminal_at_bats,status,updated_at,completed_at)
+  ON TABLE public.official_daily_attempt_states TO service_role;
 COMMENT ON TABLE public.official_daily_attempt_states IS
   'Private first-start authority for exact issued Daily edition and anonymous browser digest. No unique-person claim. CAS, authenticated gameplay and score admission are separately gated.';
 
