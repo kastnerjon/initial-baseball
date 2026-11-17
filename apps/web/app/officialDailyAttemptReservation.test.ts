@@ -51,6 +51,7 @@ describe('source-only official Daily first-start reservation contract', () => {
       { ...original, puzzleDate: '2026-11-17' },
       { ...original, browserKeyDigest: 'f'.repeat(64) },
       { ...original, attemptId: '00000000-0000-1000-8000-000000000001' },
+      { ...original, attemptId: '00000000-0000-4000-8000-AAAAAAAAAAAA' },
     ];
     for (const row of invalidRows) {
       const invalid = createOfficialDailyAttemptReservationService({
@@ -63,6 +64,7 @@ describe('source-only official Daily first-start reservation contract', () => {
     const { service, rows } = setup();
     await expect(service.reserve({ ...request, puzzleId: 'daily-legacy' })).rejects.toThrow();
     await expect(service.reserve({ ...request, puzzleId: 'daily-ed-v1-' + '-'.repeat(36) })).rejects.toThrow();
+    await expect(service.reserve({ ...request, puzzleId: ID.toUpperCase() })).rejects.toThrow();
     await expect(service.reserve({ ...request, puzzleId: 'daily-ed-v1-11111111-1111-1111-8111-111111111111' })).rejects.toThrow();
     await expect(service.reserve({ ...request, puzzleDate: '2026-02-30' })).rejects.toThrow();
     await expect(service.reserve({ ...request, puzzleDate: '2026-99-99' })).rejects.toThrow();
