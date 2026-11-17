@@ -1,5 +1,11 @@
 # Initial Baseball — Current Work
 
+## Primary delivery — exact-edition competitive provenance (#657)
+
+- [ ] Review the existing provenance branch's signed producer and ordered immutable-prefix consumer. Test actual PostgreSQL races/recovery on isolated production-shaped Daily tables (absent from current Custom QA). No public score route is wired.
+- [ ] Settle first-start/browser admission, live retry duration and key rotation; verify released-publication/runtime/HTTP integration, CI/Preview, independent security review, hosted/device acceptance and explicit release approval. Keep secondary competition OFF. Immutable result admission does not prevent repeated bootstrap or token forking.
+
+
 ## Private multi-edition ChatOps (#663, #665 merged)
 
 - [ ] #665 default-OFF application-only source merged after independent review; complete protected hosted auth, concurrency, response-loss and readback acceptance. No additional-edition transport is approved: #666 private confidentiality design and #664 real atomic Pacific-midnight database acceptance are mandatory before activation. Existing primary transport remains unchanged. Secondary competition OFF pending #657 and separate #656.

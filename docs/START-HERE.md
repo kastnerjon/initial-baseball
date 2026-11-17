@@ -1,5 +1,12 @@
 # Initial Baseball — Start Here
 
+## November 16 — exact-edition signed result admission candidate (#657)
+
+- The existing provenance branch stages a server-only signed transcript producer and consumer. It derives observations and completion through the existing engine, verifies the entire exact-edition transcript before writes, and reconciles ordered facts against existing atomic immutable at-bat keys before writing one deterministic edition/attempt completion. Partial persistence is intentional and retryable, not a multi-row transaction.
+- Disconnected source candidate only: routes and browser collection still deny secondary scores. Token forks/repeated bootstrap remain possible. First-start/browser admission, concrete released-publication wiring, retry-window/key-lifetime policy, independent security/SQL review, actual races/recovery, hosted/device acceptance and explicit release authorization remain gates.
+- Read-only inspection found the isolated Custom QA project lacks both Daily result tables. Production has existing result uniqueness constraints and RLS; prepare an isolated production-shaped Daily rehearsal, never production QA. No hosted database, flag or credential changed.
+
+
 ## November 15 — Custom guest completion display source integrated (#632)
 
 - #632 merged on main `9807e2c0e5dfbd581de45776e420f3e4b7907bd6` after independent final-head approval, passing CI and READY Preview. Its simulated Chromium fixture exercises first-write conflicts, authoritative readback and response loss at mobile/desktop widths. Merged main CI passed and its production deployment was READY; default-OFF `/create` and `/account` returned 404.
