@@ -4,6 +4,7 @@ import { normalizeDailyTerminalAtBat } from '@initial-baseball/engine';
 import type { DailyCompletedAtBat } from '@initial-baseball/shared';
 import type { DailyProgressionTokenCodec } from './dailyProgressionToken';
 import type { DailyHintBundle, DailyRuntimeService } from './dailyRuntimeContracts';
+import { verifyOfficialDailyCompetitiveTranscript } from './officialDailyCompetitiveTranscript';
 import { getPacificDailyDateString } from './getPacificDailyDateString';
 import {
   createOfficialDailyCompetitiveProofCodec,
@@ -29,18 +30,8 @@ export function createOfficialDailyCompetitiveRuntime(input: {
   async function verify(token: string) {
     const proof = proofs.verify(token);
     if (proof.puzzleId !== input.puzzleId) return fail();
-    const claims = input.progressionTokens.verify(proof.progressionToken);
-    if (claims.puzzleId !== proof.puzzleId || claims.puzzleDate !== proof.puzzleDate
-      || claims.rulesetVersion !== proof.rulesetVersion) return fail();
     const puzzle = await input.runtime.getPublicPuzzle(proof.puzzleDate);
-    if (puzzle.id !== proof.puzzleId || puzzle.puzzleDate !== proof.puzzleDate
-      || puzzle.pitches.length !== 9 || puzzle.pitches.some((pitch, i) => pitch.pitchNumber !== i + 1)) return fail();
-    if ((!claims.completed && claims.pitchNumber !== proof.atBats.length + 1)
-      || (claims.completed && (claims.pitchNumber !== 9 || proof.atBats.length !== 9))) return fail();
-    if (claims.outCount !== Math.min(3, proof.atBats.filter(fact => fact.outcome === 'K').length)) return fail();
-    for (const [i, fact] of proof.atBats.entries()) {
-      if (!normalizeDailyTerminalAtBat(fact, puzzle.pitches[i]).ok) return fail();
-    }
+    const claims = verifyOfficialDailyCompetitiveTranscript(proof, input.progressionTokens, puzzle, input.puzzleId);
     return { proof, claims, puzzle };
   }
 

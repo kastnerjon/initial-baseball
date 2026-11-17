@@ -26,3 +26,27 @@ On a Pacific game date the editor can add one or more nine-player puzzles, selec
 Keep the November 6 scheduled primary on its existing path. The legacy editorial date/number unique constraints and archive-beta numbered copies remain authoritative for their existing records. Never convert a published Daily into a Custom or a Custom into a Daily. Share pure content and baseball rules, keep ownership and competition admission separate.
 
 For each material change require exact-commit CI, independent CodeRabbit and Codex review, READY Vercel Preview, then isolated hosted QA and physical iOS Safari/Android acceptance for user-visible changes. Rehearse only the selected Daily migrations on a production-shaped QA database. Roll back discovery and new starts first; retain compatible readers and delayed ingress for issued games. Production migration, feature enablement and launch require explicit release approval. No QA Custom schema promotion as part of Daily work.
+
+## November 16 source candidate: authenticated transcript consumption (#657)
+
+The WIP signs exact edition/date/ruleset, server-issued attempt ID, live-start
+time, inner progression and ordered server-observed terminal facts. Its
+server-only consumer accepts the proof and expected edition ID, not caller score
+facts. It requires an explicit trusted maximum attempt age, rejects future or
+incorrect-date starts, resolves released immutable content and validates the
+entire transcript before writes.
+
+The candidate reuses existing repositories: insert-or-return the winner for each
+terminal fact in pitch order, stop at the first mismatch, then insert the
+engine-derived completion under a deterministic edition/attempt ID. Immutable
+prefix rows survive failed requests and are reconciled by retries. This is
+per-row atomic admission, not an all-or-nothing transaction. Safety depends on
+immutable repository winners and every secondary writer using this boundary.
+Existing public routes remain fail-closed; this candidate has no route imports.
+
+It does not reserve the first browser start, prevent token forks or repeated
+bootstrap, identify a unique human, or replace #656. Production admission
+architecture remains unapproved. Independent security/SQL review, actual
+database races/recovery, concrete publication/runtime/HTTP wiring,
+first-start policy, retry-window/key-rotation decisions and all release gates
+remain required. No schema or feature is activated.
