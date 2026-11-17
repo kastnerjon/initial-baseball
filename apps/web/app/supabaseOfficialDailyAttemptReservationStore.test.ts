@@ -36,13 +36,25 @@ describe('private Daily SQL reservation adapter', () => {
     });
     expect(rpc).toHaveBeenCalledTimes(2);
   });
-  it('fails closed on provider errors, missing or malformed SQL rows', async () => {
+  it('fails closed on provider errors and independently malformed SQL fields', async () => {
+    const hash = (await import('node:crypto')).createHash('sha256').update(KEY).digest('hex');
+    const valid = { ...winner, browser_key_digest: hash };
     const req = { puzzleId: ID, puzzleDate: '2026-11-17', rulesetVersion: 'points-v4' as const, browserKey: KEY };
+    // Positive control ensures no rejection is caused by the baseline mock.
+    await expect(service(valid).reservation.reserve(req)).resolves.toMatchObject({
+      attemptId: winner.attempt_id, puzzleId: ID, browserKeyDigest: hash,
+    });
     for (const [data, error] of [
       [null, { message: 'PRIVATE SQL' }], [null, null],
-      [{ ...winner, revision: -1 }, null],
-      [{ ...winner, ruleset_version: 'wrong' }, null],
-      [{ ...winner, attempt_id: 'broken' }, null],
+      [{ ...valid, revision: -1 }, null],
+      [{ ...valid, revision: 0.5 }, null],
+      [{ ...valid, ruleset_version: 'wrong' }, null],
+      [{ ...valid, attempt_id: 'broken' }, null],
+      [{ ...valid, status: 'pending' }, null],
+      [{ ...valid, started_at: null }, null],
+      [{ ...valid, puzzle_id: 'daily-ed-v1-22222222-2222-4222-8222-222222222222' }, null],
+      [{ ...valid, browser_key_digest: 'b'.repeat(64) }, null],
+      [{ ...valid, puzzle_date: '2026-11-16' }, null],
     ] as const) {
       const { reservation } = service(data, error);
       await expect(reservation.reserve(req)).rejects.toThrow();
