@@ -27,6 +27,40 @@ function mock(data: unknown, error: unknown = null) {
 }
 
 describe('private official Daily monotonic SQL progression adapter', () => {
+  it('reads the exact reserved current winner through service-only SQL and validates its fields', async () => {
+    const row = { ...valid, outcome: undefined };
+    function readMock(data: unknown, error: unknown = null) {
+      const single = vi.fn().mockResolvedValue({ data, error });
+      const q = { select: vi.fn(), eq: vi.fn(), single };
+      q.select.mockReturnValue(q);
+      q.eq.mockReturnValue(q);
+      const from = vi.fn().mockReturnValue(q);
+      const store = createSupabaseOfficialDailyProgressionStore(
+        { from } as unknown as SupabaseClient,
+      );
+      return { store, from, q };
+    }
+    const { store, from, q } = readMock(row);
+    await expect(store.read(reservation)).resolves.toEqual({
+      token: FIRST, revision: 0, terminalAtBats: [], status: 'active',
+    });
+    expect(from).toHaveBeenCalledWith('official_daily_attempt_states');
+    expect(q.eq).toHaveBeenCalledWith('puzzle_id', reservation.puzzleId);
+    expect(q.eq).toHaveBeenCalledWith('browser_key_digest', reservation.browserKeyDigest);
+    expect(q.eq).toHaveBeenCalledWith('attempt_id', reservation.attemptId);
+    for (const invalid of [
+      null, { ...row, attempt_id: 'bad' },
+      { ...row, browser_key_digest: 'b'.repeat(64) },
+      { ...row, started_at: '2026-11-17T18:00:00.000Z' },
+      { ...row, current_progression_token: 'malformed' },
+      { ...row, terminal_at_bats: [{ ...FACT, pitchNumber: 2 }] },
+    ]) {
+      await expect(readMock(invalid).store.read(reservation)).rejects.toThrow();
+    }
+    await expect(readMock(null, { message: 'secret provider details' }).store.read(reservation))
+      .rejects.toThrow('Private official Daily progression unavailable.');
+  });
+
   it('initializes an exact reservation and does not replace the existing winning token', async () => {
     const { rpc, store } = mock(valid);
     await expect(store.initialize(reservation, FIRST)).resolves.toMatchObject({

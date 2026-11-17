@@ -25,21 +25,9 @@ export type OfficialDailyProgressionOutcome = Readonly<{
  * authentication, reveal delivery, public routing or completed-result writes.
  */
 export function createSupabaseOfficialDailyProgressionStore(client: SupabaseClient) {
-  async function rpc(
-    name: 'initialize_official_daily_progression' | 'advance_official_daily_progression',
-    args: Record<string, unknown>,
-    reservation: OfficialDailyAttemptReservation,
-  ): Promise<OfficialDailyProgressionOutcome> {
-    let response;
-    try {
-      response = await client.rpc(name, args).single();
-    } catch {
-      throw new Error('Private official Daily progression unavailable.');
-    }
-    if (response.error !== null) {
-      throw new Error('Private official Daily progression unavailable.');
-    }
-    const row = response.data;
+  function decodeState(
+    row: unknown, reservation: OfficialDailyAttemptReservation,
+  ): OfficialDailyProgressionSnapshot {
     if (typeof row !== 'object' || row === null || Array.isArray(row)) {
       throw new Error('Private official Daily progression invalid.');
     }
@@ -60,23 +48,60 @@ export function createSupabaseOfficialDailyProgressionStore(client: SupabaseClie
       value.terminal_at_bats.length > 9 ||
       !value.terminal_at_bats.every((fact: unknown, index: number) => validFact(fact, index)) ||
       (value.status !== 'active' && value.status !== 'completed') ||
-      (value.status === 'completed') !== (value.terminal_at_bats.length === 9) ||
-      !['initialized', 'advanced', 'existing', 'conflict'].includes(String(value.outcome))
+      (value.status === 'completed') !== (value.terminal_at_bats.length === 9)
     ) {
       throw new Error('Private official Daily progression invalid.');
     }
     return {
-      outcome: value.outcome as OfficialDailyProgressionOutcome['outcome'],
-      state: {
-        token: value.current_progression_token,
-        revision: value.revision,
-        terminalAtBats: value.terminal_at_bats as DailyCompletedAtBat[],
-        status: value.status,
-      },
+      token: value.current_progression_token,
+      revision: value.revision,
+      terminalAtBats: value.terminal_at_bats as DailyCompletedAtBat[],
+      status: value.status,
     };
   }
 
+  async function rpc(
+    name: 'initialize_official_daily_progression' | 'advance_official_daily_progression',
+    args: Record<string, unknown>,
+    reservation: OfficialDailyAttemptReservation,
+  ): Promise<OfficialDailyProgressionOutcome> {
+    let response;
+    try {
+      response = await client.rpc(name, args).single();
+    } catch {
+      throw new Error('Private official Daily progression unavailable.');
+    }
+    if (response.error !== null) {
+      throw new Error('Private official Daily progression unavailable.');
+    }
+    const row = response.data;
+    const state = decodeState(row, reservation);
+    const outcome = (row as Record<string, unknown>).outcome;
+    if (!['initialized', 'advanced', 'existing', 'conflict'].includes(String(outcome))) {
+      throw new Error('Private official Daily progression invalid.');
+    }
+    return { outcome: outcome as OfficialDailyProgressionOutcome['outcome'], state };
+  }
+
   return {
+    /** Read the current winner under service-role only; no browser-readable query. */
+    async read(reservation: OfficialDailyAttemptReservation): Promise<OfficialDailyProgressionSnapshot> {
+      let response;
+      try {
+        response = await client.from('official_daily_attempt_states')
+          .select('attempt_id,puzzle_id,browser_key_digest,started_at,revision,current_progression_token,terminal_at_bats,status')
+          .eq('puzzle_id', reservation.puzzleId)
+          .eq('browser_key_digest', reservation.browserKeyDigest)
+          .eq('attempt_id', reservation.attemptId).single();
+      } catch {
+        throw new Error('Private official Daily progression unavailable.');
+      }
+      if (response.error !== null || response.data === null) {
+        throw new Error('Private official Daily progression unavailable.');
+      }
+      return decodeState(response.data, reservation);
+    },
+
     async initialize(reservation: OfficialDailyAttemptReservation, initialToken: string) {
       const stored = await rpc('initialize_official_daily_progression', {
         p_puzzle_id: reservation.puzzleId,
