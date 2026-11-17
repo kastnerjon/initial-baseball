@@ -90,7 +90,7 @@ BEGIN
      FROM public.advance_official_daily_progression(
        v_id,v_digest,v_attempt,v_current,v_next,v_full,v_index=9);
    IF v_outcome<>'advanced'
-     OR v_status <> CASE WHEN v_index=9 THEN 'completed' ELSE 'active' END
+     OR v_status <> (CASE WHEN v_index=9 THEN 'completed' ELSE 'active' END)
    THEN RAISE EXCEPTION 'Ordered terminal CAS failed on step %',v_index; END IF;
    v_previous:=v_current;
    v_current:=v_next;
