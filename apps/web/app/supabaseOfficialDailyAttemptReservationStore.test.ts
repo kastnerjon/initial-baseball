@@ -36,6 +36,23 @@ describe('private Daily SQL reservation adapter', () => {
     });
     expect(rpc).toHaveBeenCalledTimes(2);
   });
+  it('only reads the returned browser’s existing exact-edition row during gameplay', async () => {
+    const digest = (await import('node:crypto')).createHash('sha256').update(KEY).digest('hex');
+    const row = { ...winner, browser_key_digest: digest,
+      official_daily_publications: { puzzle_date: winner.puzzle_date, ruleset_version: 'points-v4' } };
+    const single = vi.fn().mockResolvedValue({ data: row, error: null });
+    const query = { eq: vi.fn().mockReturnThis(), select: vi.fn().mockReturnThis(), single };
+    const client = { from: vi.fn(() => query), rpc: vi.fn() };
+    const store = createSupabaseOfficialDailyAttemptReservationStore(client as unknown as SupabaseClient, 'existing');
+    const reservation = createOfficialDailyAttemptReservationService({ now: () => new Date(), store });
+    const request = { puzzleId: ID, puzzleDate: winner.puzzle_date, rulesetVersion: 'points-v4' as const, browserKey: KEY };
+    expect((await reservation.reserve(request)).attemptId).toBe(winner.attempt_id);
+    expect(client.from).toHaveBeenCalledWith('official_daily_attempt_states');
+    expect(query.eq.mock.calls).toEqual([['puzzle_id', ID], ['browser_key_digest', digest]]);
+    single.mockResolvedValueOnce({ data: null, error: null });
+    await expect(reservation.reserve(request)).rejects.toThrow();
+    expect(client.rpc).not.toHaveBeenCalled();
+  });
   it('fails closed on provider errors and independently malformed SQL fields', async () => {
     const hash = (await import('node:crypto')).createHash('sha256').update(KEY).digest('hex');
     const valid = { ...winner, browser_key_digest: hash };

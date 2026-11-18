@@ -818,3 +818,15 @@ Legacy-primary entries remain plain-text/unlinked, because an editorial record I
 ## Default-OFF Custom v2 guest completion display UI (source-staged)
 
 The unlisted v2 game page passes `completionDisplayEnabled` only when both exact-true gameplay and display HTTP gates are enabled. The authoritative first-attempt `/attempt/submit` returns `created` or `existing` on success; only then does `CustomLineupGame` set its admission state to `saved` and render the browser completion-choice panel. Failed or pending results cannot offer a name. It uses an exact-challenge same-origin, no-store GET/POST transport to choose a shared-valid 1–32 UTF-16-unit display name or Anonymous, once. It sends no score, submission ID, roster, clue, signed progression token or account identity. On uncertain POST, the client re-reads the saved server-authoritative first choice before retrying and never overwrites locally. React escapes plain-text names. Refresh restoration is limited to the exact signed browser, without public leaderboard name display or nickname/account linking. This is **source-only, disabled in production**; independent reviews, isolated migration/transaction QA, physical Safari/Android, browser security and abuse acceptance are pending.
+
+### Secondary Daily competitive gameplay candidate (#657)
+
+The server stages `POST /api/daily/editions/:puzzleId/competitive/:action` behind both `OFFICIAL_DAILY_EDITION_COMPETITIVE_HTTP_ENABLED=true` and `OFFICIAL_DAILY_EDITION_PRIVATE_RUNTIME_ENABLED=true`. Both default off. Each request requires HTTPS, a matching Origin, and a bounded JSON body. Responses carry `private, no-store`. The server requires a dedicated `OFFICIAL_DAILY_COMPETITIVE_SECRET` and a positive integer `OFFICIAL_DAILY_COMPETITIVE_MAX_AGE_MS`; QA supplies its own values. Production policy and rollout require approval.
+
+| Action | JSON fields | Behavior |
+| --- | --- | --- |
+| `bootstrap` | `date` | First contact returns HTTP 428 with an edition-scoped, host-only, HttpOnly, Secure, SameSite=Strict cookie. Repeat with the cookie to reserve or recover the attempt and obtain the shared current-batter hint bundle. |
+| `hints` | `progressionToken` | Reads the saved attempt and returns the authorized current-batter bundle for resume. Individual hint taps still use the local signed checkpoints. |
+| `resolve` | `progressionToken` and either `submittedPlayerId` or `giveUp: true` | Reads the saved attempt, checks the signed play and durably advances it. The ninth terminal play and engine-derived scorecard commit in one transaction. Identical response-loss retries recover the same result. |
+
+The edition, browser reservation and server-issued attempt govern score attribution. A missing cookie on a gameplay action or an invalid cookie is rejected. The player interface still uses its existing practice transport. First-entry setup, multi-tab cookie establishment, hosted PostgREST acceptance, shared UI integration and physical-device parity are release gates. An anonymous cookie cannot establish a unique person.
