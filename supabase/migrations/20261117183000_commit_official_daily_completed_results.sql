@@ -135,3 +135,61 @@ GRANT EXECUTE ON FUNCTION public.commit_official_daily_completed_results(
 COMMENT ON FUNCTION public.commit_official_daily_completed_results(
   text,text,uuid,text,jsonb,jsonb
 ) IS 'Private atomic nine-at-bat plus completion commit. Caller must validate HMAC, edition and engine-derived points; no public ingress.';
+
+-- Final-step CAS and result admission MUST share one PostgreSQL transaction.
+-- Calling advance_official_daily_progression and the result writer separately
+-- would leave a completed attempt with no durable score after response loss.
+-- The caller verifies the signed previous/next proofs and engine-derived rows.
+CREATE FUNCTION public.advance_and_commit_official_daily_completed_results(
+  p_puzzle_id text, p_browser_key_digest text, p_attempt_id uuid,
+  p_expected_token text, p_next_token text, p_terminal_at_bats jsonb,
+  p_at_bat_rows jsonb, p_completion_row jsonb
+)
+RETURNS text
+LANGUAGE plpgsql VOLATILE SECURITY INVOKER SET search_path = ''
+AS $fn$
+DECLARE
+  v_outcome text;
+  v_state_token text;
+  v_state_facts jsonb;
+  v_state_status text;
+  v_result text;
+BEGIN
+  IF p_terminal_at_bats IS NULL OR
+     jsonb_typeof(p_terminal_at_bats) <> 'array' OR
+     jsonb_array_length(p_terminal_at_bats) <> 9 OR
+     p_next_token IS NULL OR p_next_token = p_expected_token
+  THEN
+    RAISE EXCEPTION 'Invalid official Daily final transition.' USING errcode='22023';
+  END IF;
+
+  SELECT outcome,current_progression_token,terminal_at_bats,status
+    INTO v_outcome,v_state_token,v_state_facts,v_state_status
+    FROM public.advance_official_daily_progression(
+      p_puzzle_id,p_browser_key_digest,p_attempt_id,
+      p_expected_token,p_next_token,p_terminal_at_bats,true
+    );
+  IF v_outcome NOT IN ('advanced','existing') OR
+     v_state_token IS DISTINCT FROM p_next_token OR
+     v_state_facts IS DISTINCT FROM p_terminal_at_bats OR
+     v_state_status IS DISTINCT FROM 'completed'
+  THEN
+    RAISE EXCEPTION 'Conflicting official Daily final progression.' USING errcode='22023';
+  END IF;
+
+  v_result := public.commit_official_daily_completed_results(
+    p_puzzle_id,p_browser_key_digest,p_attempt_id,
+    p_next_token,p_at_bat_rows,p_completion_row
+  );
+  RETURN v_result;
+END;
+$fn$;
+REVOKE ALL ON FUNCTION public.advance_and_commit_official_daily_completed_results(
+  text,text,uuid,text,text,jsonb,jsonb,jsonb
+) FROM PUBLIC,anon,authenticated,service_role;
+GRANT EXECUTE ON FUNCTION public.advance_and_commit_official_daily_completed_results(
+  text,text,uuid,text,text,jsonb,jsonb,jsonb
+) TO service_role;
+COMMENT ON FUNCTION public.advance_and_commit_official_daily_completed_results(
+  text,text,uuid,text,text,jsonb,jsonb,jsonb
+) IS 'Service-only final progression CAS and nine-at-bat plus summary write in one transaction; requires trusted HMAC and engine validation.';
