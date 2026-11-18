@@ -1,4 +1,6 @@
 import 'server-only';
+import type { createSupabaseOfficialDailyAtomicCompletionStore } from './supabaseOfficialDailyAtomicCompletionStore';
+import { deriveOfficialDailyScorecard } from './deriveOfficialDailyScorecard';
 import type { DailyCompletedAtBat, DailyPublicPuzzle } from '@initial-baseball/shared';
 import type { DailyProgressionClaims, DailyProgressionTokenCodec } from './dailyProgressionToken';
 import type { DailyRuntimeService } from './dailyRuntimeContracts';
@@ -54,7 +56,7 @@ function sameStageExceptLocalHint(
  * Local current-batter hint checkpoints may advance revealCount without an
  * HTTP request. Scoring actions are serialized through SQL CAS; stale branches
  * cannot overwrite the winner, while a repeated identical action is recoverable
- * after a lost response. Persisting all nine result rows is a separate gate.
+ * after a lost response. The final action commits its scorecard in the same transaction.
  */
 export function createOfficialDailyCompetitiveCASRuntime(input: {
   puzzleId: string;
@@ -65,6 +67,7 @@ export function createOfficialDailyCompetitiveCASRuntime(input: {
     puzzleId: string; puzzleDate: string; rulesetVersion: 'points-v4';
   }) => Promise<OfficialDailyAttemptReservation>;
   progression: ProgressionStore;
+  completion: Pick<ReturnType<typeof createSupabaseOfficialDailyAtomicCompletionStore>, 'advanceAndCommit'>;
   now: () => Date;
   maximumAttemptAgeMs: number;
 }): DailyRuntimeService {
@@ -181,18 +184,30 @@ export function createOfficialDailyCompetitiveCASRuntime(input: {
       // exact released puzzle; never trust a client-authored score or result.
       const response = await input.runtime.resolveAtBat(request);
       const nextProof = requireProof(response.progressionToken);
-      const nextClaims = input.progressionTokens.verify(nextProof.progressionToken);
+      const nextClaims = verifyOfficialDailyCompetitiveTranscript(nextProof, input.progressionTokens, v.puzzle, input.puzzleId);
       if (!sameOwner(v.proof, nextProof)) return fail();
       const currentBranch = sameStageExceptLocalHint(v.saved.proof, v.proof, v.saved.claims, v.claims);
       const responseLossRetry = !currentBranch &&
         v.state.token === response.progressionToken &&
         sameFacts(v.state.terminalAtBats, nextProof.atBats);
       if (!currentBranch && !responseLossRetry) return fail();
+      const expectedToken = currentBranch ? v.state.token : request.progressionToken;
+      if (nextClaims.completed) {
+        const scorecard = deriveOfficialDailyScorecard(v.puzzle, nextProof, true);
+        if (!scorecard?.completion) return fail();
+        try {
+          await input.completion.advanceAndCommit({
+            reservation: v.reservation, expectedToken, nextToken: response.progressionToken,
+            terminalAtBats: nextProof.atBats, atBats: scorecard.atBats, completion: scorecard.completion,
+          });
+        } catch { return fail(); }
+        return response;
+      }
       let applied;
       try {
         applied = await input.progression.advance({
           reservation: v.reservation,
-          expectedToken: currentBranch ? v.state.token : request.progressionToken,
+          expectedToken,
           nextToken: response.progressionToken,
           terminalAtBats: nextProof.atBats,
           completed: nextClaims.completed,

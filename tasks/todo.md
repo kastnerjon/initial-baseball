@@ -153,3 +153,5 @@ These gates are separate from Custom Lineups Phase 1. Keep them active until eac
 
 - [ ] Verify the source-staged `official_daily_editorial_drafts` table and atomic `issue_official_daily_editorial_draft` function against isolated QA. Retain the completed rollback-only rehearsal evidence; no production migration without explicit release approval.
 - [ ] Integrate the default-OFF, authenticated secondary draft administration from #560 with the reviewed private issuer (#561) and exact-ID publication readback; preserve existing primary issuance, editorial revision checks and immutable retries. Public gameplay, competitive result admission and release still require their separate gates.
+
+- [ ] #678 atomic official Daily completed-result writer: verify the passing final-step atomic CAS+results rollback fixture and finish two-session race fixtures, verify exact score authority through trusted caller, isolated QA, final-head independent review and CI/Preview; draft only, secondary scoring OFF.

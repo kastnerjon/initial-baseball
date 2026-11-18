@@ -46,7 +46,13 @@ function memory() {
     };
     return { outcome: 'advanced' as const, state: winner };
   });
-  return { initialize, read, advance, state: () => winner, set: (state: OfficialDailyProgressionSnapshot) => { winner = state; } };
+  type CompletionStore = Parameters<typeof createOfficialDailyCompetitiveCASRuntime>[0]['completion'];
+  const advanceAndCommit = vi.fn<CompletionStore['advanceAndCommit']>(async input => {
+    const result = await advance({ ...input, completed: true });
+    if (result.outcome === 'conflict') throw new Error('conflict');
+    return result.outcome === 'existing' ? 'existing' : 'created';
+  });
+  return { initialize, read, advance, advanceAndCommit, state: () => winner, set: (state: OfficialDailyProgressionSnapshot) => { winner = state; } };
 }
 
 function rig(
@@ -63,7 +69,7 @@ function rig(
   const reserveAttempt = vi.fn(async () => reservation);
   const game = createOfficialDailyCompetitiveCASRuntime({
     puzzleId: id, runtime: producer, progressionTokens: tokens, secret: SECRET,
-    reserveAttempt, progression: database, now: () => clock,
+    reserveAttempt, progression: database, completion: database, now: () => clock,
     maximumAttemptAgeMs: 24 * 60 * 60 * 1000,
   });
   return { game, database, reserveAttempt, reservation };
@@ -154,9 +160,20 @@ describe('source-only durable official Daily competitive CAS runtime', () => {
   it('completes exactly nine ordered terminal facts with one authoritative revision each', async () => {
     const { game, database } = rig();
     let current = (await game.getBootstrap(DATE)).progressionToken;
-    for (let i = 0; i < 9; i++) {
+    for (let i = 0; i < 8; i++) {
       current = (await game.resolveAtBat({ progressionToken: current, giveUp: true })).progressionToken;
     }
+    const last = { progressionToken: current, giveUp: true };
+    database.advanceAndCommit.mockRejectedValueOnce(new Error('write failed'));
+    await expect(game.resolveAtBat(last)).rejects.toThrow();
+    expect(database.state()?.revision).toBe(8);
+    current = (await game.resolveAtBat(last)).progressionToken;
+    expect((await game.resolveAtBat(last)).progressionToken).toBe(current);
+    expect(database.advanceAndCommit.mock.lastCall?.[0]).toMatchObject({
+      reservation: { puzzleId: A, attemptId: ATTEMPT },
+      completion: { submissionId: `official-${A}-${ATTEMPT}`, summary: { points: 0 } },
+    });
+    expect(database.advanceAndCommit.mock.lastCall?.[0].atBats).toHaveLength(9);
     const state = database.state()!;
     expect(state).toMatchObject({ status: 'completed', revision: 9, token: current });
     expect(state.terminalAtBats.map(x => x.pitchNumber)).toEqual([1,2,3,4,5,6,7,8,9]);
@@ -173,7 +190,7 @@ describe('source-only durable official Daily competitive CAS runtime', () => {
     const wrong = createOfficialDailyCompetitiveCASRuntime({
       puzzleId: A, runtime: runtime(A), progressionTokens: tokens, secret: SECRET,
       reserveAttempt: async () => ({ ...x.reservation, attemptId: OTHER_ATTEMPT }),
-      progression: memory(), now: () => new Date(START), maximumAttemptAgeMs: 86_400_000,
+      progression: memory(), completion: memory(), now: () => new Date(START), maximumAttemptAgeMs: 86_400_000,
     });
     await expect(wrong.getBootstrap(DATE)).rejects.toThrow();
     const fresh = rig();

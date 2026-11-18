@@ -1,5 +1,23 @@
 # Initial Baseball — Start Here
 
+## Active release and next action
+
+**Player outcome.** A player can finish a second official Daily and have the result counted once for the edition they played, even when another edition has the same roster. The active release is tracked in [#657](https://github.com/kastnerjon/initial-baseball/issues/657). Secondary competitive scoring is disabled.
+
+**Current evidence.** [Hosted QA on #678](https://github.com/kastnerjon/initial-baseball/pull/678#issuecomment-6990686548) observed a blocked concurrent retry return the first committed score. This branch now connects the verified ninth play to the atomic writer in the private runtime. The engine derives the nine result rows and summary before the write. The physical-device and hosted signed browser journey remain pending.
+
+**Next action.** Verify exact-head integration tests and obtain independent review of the final transaction caller. Then compose the exact-ID released-puzzle and browser-reservation dependencies on the gated route and test the full player journey in isolated QA. Follow the linked QA note for temporary schema cleanup.
+
+**Release acceptance.** Exercise the complete signed game on the matching Preview, including separate scores for identical-roster editions, reload and response-loss recovery. Carry forward the mobile, Pacific rollover, independent review and production approval requirements in the [release plan](../tasks/plans/multiple-official-dailies.md).
+
+**Chat handoff.** On “proceed,” verify this block against the linked issue and PR, then take the next executable action. Refresh this block in the existing work PR when the release, evidence, blocker or next action changes. On “checkpoint and hand off,” record any branch-only progress and stop engineering so the next chat can take ownership.
+
+## November 17 — atomic official Daily completion persistence candidate (#678)
+
+- Draft #678 stages service-role-only PostgreSQL functions and server-only adapter to commit nine normalized at-bat rows and one completed summary in a single transaction against the existing historical Daily result tables. The final-step wrapper now executes CAS completion and result admission in the same PostgreSQL transaction. The SQL locks the exact canonical completed attempt, checks edition/date/ruleset and terminal facts, and compares immutable first-write winners. It is not wired to public gameplay, and it trusts the calling service to verify HMAC and derive all scoring fields with the engine before invocation.
+- Initial adapter tests cover exact RPC payload, retry response, malformed edition/attempt/facts and provider failures. The first candidate CI test job passed but documentation-impact failed because this checkpoint was absent; latest head must be rechecked. Isolated QA rollback-only PostgreSQL fixture passed first-write, identical replay, fractional 0.5-point persistence, wrong-token and conflicting-score rejection; a subsequent query confirmed no retained objects. The final-step wrapper passed an isolated rollback-only QA fixture with nine-result creation and idempotent replay. Two-session races, production-shaped isolated QA, trusted caller integration, exact-head independent review and READY Preview remain required. No production migration, feature flag or competitive scoring activation.
+
+
 ## November 17 — signed gameplay bound to durable progression (#657)
 
 - Verified main `c3978b0c978d0def0d25899e04de5487523c99ca` includes #674 first-start authority, #675 source-only signed reservation bootstrap, and #676 service-only SQL progression CAS. #676 passed exact-head CI `44112535777`, Codex review and READY Preview. Its first-start + CAS SQL migrations and full rollback fixture passed in a single isolated QA transaction; a separate post-rollback query verified no candidate table/functions persisted. No production SQL/flags, public scoring or browser transport changed.
