@@ -92,3 +92,56 @@ describe('private atomic official Daily completion adapter', () => {
     expect(rpc).not.toHaveBeenCalled();
   });
 });
+
+describe('final-step atomic progression and result admission', () => {
+  const finalInput = {
+    reservation,
+    expectedToken: 'official-daily-competitive-proof-v1.previous.sig',
+    nextToken: input.canonicalToken,
+    terminalAtBats: completion.completedAtBats,
+    atBats,
+    completion,
+  };
+
+  it('sends the CAS predecessor and final proof with all nine facts in one RPC', async () => {
+    const { rpc, store } = mock('created');
+    await expect(store.advanceAndCommit(finalInput)).resolves.toBe('created');
+    expect(rpc).toHaveBeenCalledTimes(1);
+    const [name, args] = rpc.mock.calls[0] as [string, Record<string, unknown>];
+    expect(name).toBe('advance_and_commit_official_daily_completed_results');
+    expect(args).toMatchObject({
+      p_expected_token: finalInput.expectedToken,
+      p_next_token: finalInput.nextToken,
+      p_attempt_id: reservation.attemptId,
+    });
+    expect(args.p_terminal_at_bats).toHaveLength(9);
+    expect(args.p_at_bat_rows).toHaveLength(9);
+  });
+
+  it('allows identical response-loss retry and fails closed on SQL errors', async () => {
+    await expect(mock('existing').store.advanceAndCommit(finalInput))
+      .resolves.toBe('existing');
+    await expect(mock('conflict').store.advanceAndCommit(finalInput))
+      .rejects.toThrow('Private official Daily final transition unavailable.');
+    await expect(mock(null, { message: 'sensitive database detail' }).store.advanceAndCommit(finalInput))
+      .rejects.toThrow('Private official Daily final transition unavailable.');
+  });
+
+  it('rejects missing predecessor, altered terminal facts and invalid score rows before RPC', async () => {
+    const { rpc, store } = mock('created');
+    const cases = [
+      { ...finalInput, expectedToken: finalInput.nextToken },
+      { ...finalInput, terminalAtBats: finalInput.terminalAtBats.slice(0, 8) },
+      { ...finalInput, terminalAtBats: [...finalInput.terminalAtBats].reverse() },
+      { ...finalInput, atBats: atBats.slice(1) },
+      { ...finalInput, atBats: atBats.map((row, i) =>
+        i === 0 ? { ...row, atBat: { ...row.atBat, initials: 'XX' } } : row) },
+    ];
+    for (const candidate of cases) {
+      await expect(store.advanceAndCommit(candidate)).rejects.toThrow(
+        'Invalid private official Daily final transition.',
+      );
+    }
+    expect(rpc).not.toHaveBeenCalled();
+  });
+});
