@@ -130,6 +130,8 @@ describe('final-step atomic progression and result admission', () => {
   it('rejects missing predecessor, altered terminal facts and invalid score rows before RPC', async () => {
     const { rpc, store } = mock('created');
     const cases = [
+      { ...finalInput, completion: { ...completion, completedAtBats: [...facts, facts[0]!] } },
+      { ...finalInput, completion: { ...completion, completedAtBats: [...facts].reverse() } },
       { ...finalInput, expectedToken: finalInput.nextToken },
       { ...finalInput, terminalAtBats: finalInput.terminalAtBats.slice(0, 8) },
       { ...finalInput, terminalAtBats: [...finalInput.terminalAtBats].reverse() },

@@ -41,21 +41,23 @@ RAISE EXCEPTION 'Invalid first finalization was accepted';
 EXCEPTION WHEN check_violation THEN NULL; END;
 IF (SELECT status FROM public.official_daily_attempt_states
     WHERE attempt_id='22222222-2222-4222-8222-222222222222') <> 'active'
-OR (SELECT count(*) FROM public.daily_at_bat_results) <> 0
-OR (SELECT count(*) FROM public.daily_completed_results) <> 0
+OR (SELECT count(*) FROM public.daily_at_bat_results WHERE attempt_id='22222222-2222-4222-8222-222222222222'
+    AND puzzle_id='daily-ed-v1-11111111-1111-4111-8111-111111111111' AND ruleset_version='points-v4') <> 0
+OR (SELECT count(*) FROM public.daily_completed_results WHERE submission_id=v_completion->>'submission_id') <> 0
 THEN RAISE EXCEPTION 'Failed finalization did not roll back CAS and writes'; END IF;
 v_result := public.advance_and_commit_official_daily_completed_results(
 'daily-ed-v1-11111111-1111-4111-8111-111111111111',repeat('a',64),
 '22222222-2222-4222-8222-222222222222',
 'official-daily-competitive-proof-v1.previous','official-daily-competitive-proof-v1.qa',v_facts,v_rows,v_completion);
-IF v_result <> 'created' THEN RAISE EXCEPTION 'First commit must create'; END IF;
+IF v_result IS DISTINCT FROM 'created' THEN RAISE EXCEPTION 'First commit must create'; END IF;
 v_result := public.advance_and_commit_official_daily_completed_results(
 'daily-ed-v1-11111111-1111-4111-8111-111111111111',repeat('a',64),
 '22222222-2222-4222-8222-222222222222',
 'official-daily-competitive-proof-v1.previous','official-daily-competitive-proof-v1.qa',v_facts,v_rows,v_completion);
-IF v_result <> 'existing' THEN RAISE EXCEPTION 'Retry must be idempotent'; END IF;
-IF (SELECT count(*) FROM public.daily_at_bat_results WHERE awarded_points=0.5) <> 9
-OR (SELECT count(*) FROM public.daily_completed_results) <> 1
+IF v_result IS DISTINCT FROM 'existing' THEN RAISE EXCEPTION 'Retry must be idempotent'; END IF;
+IF (SELECT count(*) FROM public.daily_at_bat_results WHERE attempt_id='22222222-2222-4222-8222-222222222222'
+    AND puzzle_id='daily-ed-v1-11111111-1111-4111-8111-111111111111' AND ruleset_version='points-v4' AND awarded_points=0.5) <> 9
+OR (SELECT count(*) FROM public.daily_completed_results WHERE submission_id=v_completion->>'submission_id') <> 1
 THEN RAISE EXCEPTION 'Atomic rows or fractional points lost'; END IF;
 BEGIN
 PERFORM public.advance_and_commit_official_daily_completed_results(

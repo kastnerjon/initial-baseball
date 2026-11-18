@@ -25,10 +25,10 @@ export function createSupabaseOfficialDailyAtomicCompletionStore(client: Supabas
       if (expectedToken === nextToken ||
         !expectedToken.startsWith('official-daily-competitive-proof-v1.') ||
         !nextToken.startsWith('official-daily-competitive-proof-v1.') ||
-        terminalAtBats.length !== 9 ||
+        terminalAtBats.length !== 9 || completion.completedAtBats.length !== 9 ||
         terminalAtBats.some((fact, index) => {
           const expected = completion.completedAtBats[index];
-          return !expected || fact.pitchNumber !== index + 1 ||
+          return !expected || fact.pitchNumber !== index + 1 || fact.pitchNumber !== expected.pitchNumber ||
             fact.initials !== expected.initials || fact.outcome !== expected.outcome ||
             fact.hintsRevealed !== expected.hintsRevealed ||
             fact.wrongGuesses !== expected.wrongGuesses ||
