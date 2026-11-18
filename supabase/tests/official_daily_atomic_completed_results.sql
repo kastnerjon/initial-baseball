@@ -29,6 +29,21 @@ v_completion := jsonb_build_object(
 'schema_version',1,'puzzle_id','daily-ed-v1-11111111-1111-4111-8111-111111111111',
 'puzzle_date','2026-11-18','puzzle_number',1,'ruleset_version','points-v4',
 'completed_at_bats',v_facts,'summary',jsonb_build_object('points',4.5));
+-- A first finalization that fails result constraints must leave CAS active.
+BEGIN
+PERFORM public.advance_and_commit_official_daily_completed_results(
+'daily-ed-v1-11111111-1111-4111-8111-111111111111',repeat('a',64),
+'22222222-2222-4222-8222-222222222222',
+'official-daily-competitive-proof-v1.previous',
+'official-daily-competitive-proof-v1.qa',v_facts,
+jsonb_set(v_rows,'{0,awarded_points}','99'::jsonb),v_completion);
+RAISE EXCEPTION 'Invalid first finalization was accepted';
+EXCEPTION WHEN check_violation THEN NULL; END;
+IF (SELECT status FROM public.official_daily_attempt_states
+    WHERE attempt_id='22222222-2222-4222-8222-222222222222') <> 'active'
+OR (SELECT count(*) FROM public.daily_at_bat_results) <> 0
+OR (SELECT count(*) FROM public.daily_completed_results) <> 0
+THEN RAISE EXCEPTION 'Failed finalization did not roll back CAS and writes'; END IF;
 v_result := public.advance_and_commit_official_daily_completed_results(
 'daily-ed-v1-11111111-1111-4111-8111-111111111111',repeat('a',64),
 '22222222-2222-4222-8222-222222222222',
