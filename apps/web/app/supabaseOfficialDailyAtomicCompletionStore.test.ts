@@ -17,7 +17,7 @@ const facts = Array.from({ length: 9 }, (_, i) => ({
 const atBats = facts.map(atBat => ({
   schemaVersion: 1, attemptId: reservation.attemptId, puzzleId: reservation.puzzleId,
   puzzleDate: reservation.puzzleDate, puzzleNumber: 1,
-  rulesetVersion: 'points-v4', atBat, awardedPoints: -1,
+  rulesetVersion: 'points-v4', atBat, awardedPoints: 0,
 })) as DailyAtBatResult[];
 const completion = {
   schemaVersion: 1,
@@ -25,7 +25,7 @@ const completion = {
   puzzleId: reservation.puzzleId, puzzleDate: reservation.puzzleDate,
   puzzleNumber: 1, rulesetVersion: 'points-v4',
   completedAtBats: facts,
-  summary: { points: -9, maximumPoints: 36, atBatsCompleted: 9,
+  summary: { points: 0, maximumPoints: 36, atBatsCompleted: 9,
     totalAtBats: 9, completed: true, strikeouts: 9 },
 } as DailyCompletedResult;
 const input = { reservation, canonicalToken: 'official-daily-competitive-proof-v1.token.sig',
@@ -53,7 +53,7 @@ describe('private atomic official Daily completion adapter', () => {
     });
     expect(args.p_at_bat_rows).toHaveLength(9);
     expect((args.p_at_bat_rows as Record<string, unknown>[])[8]).toMatchObject({
-      pitch_number: 9, awarded_points: -1, puzzle_id: reservation.puzzleId,
+      pitch_number: 9, awarded_points: 0, puzzle_id: reservation.puzzleId,
     });
     expect(args.p_completion_row).toMatchObject({
       submission_id: completion.submissionId, puzzle_id: reservation.puzzleId,

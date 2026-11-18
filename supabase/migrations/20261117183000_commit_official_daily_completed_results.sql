@@ -85,7 +85,7 @@ BEGIN
       (v_row->>'puzzle_number')::integer,v_row->>'ruleset_version',
       (v_row->>'pitch_number')::smallint,v_row->>'initials',v_row->>'outcome',
       (v_row->>'hints_revealed')::smallint,(v_row->>'wrong_guesses')::smallint,
-      v_row->>'resolution',(v_row->>'awarded_points')::smallint
+      v_row->>'resolution',(v_row->>'awarded_points')::numeric(4,1)
     ) ON CONFLICT ON CONSTRAINT daily_at_bat_results_pkey DO NOTHING;
     GET DIAGNOSTICS v_inserted = ROW_COUNT;
     v_total_inserted := v_total_inserted + v_inserted;
