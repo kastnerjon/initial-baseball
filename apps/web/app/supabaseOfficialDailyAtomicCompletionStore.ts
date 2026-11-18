@@ -37,7 +37,15 @@ export function createSupabaseOfficialDailyAtomicCompletionStore(client: Supabas
           row.rulesetVersion !== reservation.rulesetVersion ||
           row.puzzleNumber !== completion.puzzleNumber ||
           row.atBat.pitchNumber !== index + 1 ||
-          JSON.stringify(row.atBat) !== JSON.stringify(completion.completedAtBats[index]))
+          (() => {
+            const expected = completion.completedAtBats[index];
+            return !expected || row.atBat.pitchNumber !== expected.pitchNumber ||
+              row.atBat.initials !== expected.initials ||
+              row.atBat.outcome !== expected.outcome ||
+              row.atBat.hintsRevealed !== expected.hintsRevealed ||
+              row.atBat.wrongGuesses !== expected.wrongGuesses ||
+              row.atBat.resolution !== expected.resolution;
+          })())
       ) {
         throw new Error('Invalid private official Daily completion input.');
       }

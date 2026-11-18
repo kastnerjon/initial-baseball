@@ -62,6 +62,7 @@ BEGIN
        OR v_row->>'puzzle_number' IS DISTINCT FROM v_pub.puzzle_number::text
        OR v_row->>'ruleset_version' IS DISTINCT FROM 'points-v4'
        OR v_row->>'pitch_number' IS DISTINCT FROM v_slot::text
+       OR (v_attempt.terminal_at_bats->(v_slot-1)->>'pitchNumber') IS DISTINCT FROM v_slot::text
        OR (v_row->'initials') IS DISTINCT FROM
           (v_attempt.terminal_at_bats->(v_slot-1)->'initials')
        OR (v_row->'outcome') IS DISTINCT FROM
