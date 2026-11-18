@@ -4,9 +4,9 @@
 
 **Player outcome.** A player can finish a second official Daily and have the result counted once for the edition they played, even when another edition has the same roster. The active release is tracked in [#657](https://github.com/kastnerjon/initial-baseball/issues/657). Secondary competitive scoring is disabled.
 
-**Current evidence.** [Draft PR #678](https://github.com/kastnerjon/initial-baseball/pull/678) owns completion persistence. Its isolated rollback-only SQL fixtures exercised all nine result rows, the summary and an identical retry. The hosted player journey, including the trusted caller, still needs verification.
+**Current evidence.** [Hosted QA on #678](https://github.com/kastnerjon/initial-baseball/pull/678#issuecomment-6990686548) observed a blocked concurrent retry return the first committed score. This branch now connects the verified ninth play to the atomic writer in the private runtime. The engine derives the nine result rows and summary before the write. The physical-device and hosted signed browser journey remain pending.
 
-**Next action.** Resume #678 at its current head. Check its latest evidence, then run the outstanding two-session completion race on isolated QA with the matching Daily result schema. Verify a single committed result and a consistent retry. If the schema is missing, identify the missing objects and rehearse the required schema in isolated QA first. Record the commit, environment and outcome on the PR.
+**Next action.** Verify exact-head integration tests and obtain independent review of the final transaction caller. Then compose the exact-ID released-puzzle and browser-reservation dependencies on the gated route and test the full player journey in isolated QA. Follow the linked QA note for temporary schema cleanup.
 
 **Release acceptance.** Exercise the complete signed game on the matching Preview, including separate scores for identical-roster editions, reload and response-loss recovery. Carry forward the mobile, Pacific rollover, independent review and production approval requirements in the [release plan](../tasks/plans/multiple-official-dailies.md).
 

@@ -1,13 +1,10 @@
 import 'server-only';
-import { validateDailyAtBatResult, validateDailyCompletedResult } from '@initial-baseball/engine';
+import { deriveOfficialDailyScorecard } from './deriveOfficialDailyScorecard';
 import {
   createDailyAtBatResultService, createDailyCompletedResultService,
   type DailyAtBatResultRepository, type DailyCompletedResultRepository,
 } from '@initial-baseball/daily';
-import {
-  DAILY_AT_BAT_RESULT_SCHEMA_VERSION, DAILY_COMPLETED_RESULT_SCHEMA_VERSION,
-  type DailyPublicPuzzle,
-} from '@initial-baseball/shared';
+import type { DailyPublicPuzzle } from '@initial-baseball/shared';
 import type { DailyProgressionTokenCodec } from './dailyProgressionToken';
 import { createOfficialDailyCompetitiveProofCodec } from './officialDailyCompetitiveProof';
 import { verifyOfficialDailyCompetitiveTranscript } from './officialDailyCompetitiveTranscript';
@@ -58,31 +55,16 @@ export function createOfficialDailyCompetitiveAdmission(input: {
           proof, input.progressionTokens, puzzle, expectedPuzzleId,
         );
       } catch { return invalid; }
-      const context = { puzzleId: proof.puzzleId, puzzleDate: proof.puzzleDate,
-        puzzleNumber: puzzle.puzzleNumber, rulesetVersion: proof.rulesetVersion };
-      // Validate ALL facts before the first write, including the completed summary.
-      const rows = proof.atBats.map(atBat => validateDailyAtBatResult({
-        puzzle, rulesetVersion: proof.rulesetVersion,
-        submission: { ...context, schemaVersion: DAILY_AT_BAT_RESULT_SCHEMA_VERSION,
-          attemptId: proof.attemptId, atBat },
-      }));
-      if (rows.some(row => !row.ok)) return invalid;
-      const completion = verified.completed ? validateDailyCompletedResult({
-        puzzle, rulesetVersion: proof.rulesetVersion,
-        submission: { ...context, schemaVersion: DAILY_COMPLETED_RESULT_SCHEMA_VERSION,
-          submissionId: `official-${proof.puzzleId}-${proof.attemptId}`,
-          completedAtBats: proof.atBats },
-      }) : null;
-      if (completion && !completion.ok) return invalid;
+      const scorecard = deriveOfficialDailyScorecard(puzzle, proof, verified.completed);
+      if (!scorecard) return invalid;
       let created = false;
-      for (const row of rows) {
-        if (!row.ok) return invalid;
-        const result = await atBats.store(row.result);
+      for (const row of scorecard.atBats) {
+        const result = await atBats.store(row);
         if (!result.ok) return { ok: false, error: result.error };
         created ||= result.status === 'created';
       }
-      if (completion?.ok) {
-        const result = await completions.store(completion.result);
+      if (scorecard.completion) {
+        const result = await completions.store(scorecard.completion);
         if (!result.ok) return { ok: false, error: result.error };
         return { ok: true, status: result.status, completed: true };
       }
