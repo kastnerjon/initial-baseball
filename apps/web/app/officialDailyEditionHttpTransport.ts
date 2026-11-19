@@ -35,7 +35,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function hasKeys(value: Record<string, unknown>, keys: readonly string[]): boolean {
-  return Object.keys(value).sort().join(',') === [...keys].sort().join(',');
+  return Object.keys(value).length === keys.length && keys.every(key => Object.hasOwn(value, key));
 }
 
 /** Accept only public, declarative hint settings; no nested answers or future hint blobs. */

@@ -294,6 +294,9 @@ describe('source-staged official Daily exact-ID browser HTTP transport', () => {
       reveal: publicReveal(), progressionToken: 'successor', hintBundle: null,
     };
     const malformed = [
+      { ...correct, reveal: { ...publicReveal(), career: {
+        lines: [{ kind: 'hitter', stats: { 'AB,BA,H,HR,OBP,OPS,R,RBI,SB,SLG': 0 } }],
+      } } },
       { ...incorrect, reveal: publicReveal() },
       { ...incorrect, result: { ...incorrect.result, futureAnswers: ['PRIVATE_FUTURE_HINT'] } },
       { ...correct, reveal: { ...publicReveal(), futureAnswers: ['PRIVATE_FUTURE_HINT'] } },
