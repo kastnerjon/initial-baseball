@@ -1,6 +1,6 @@
 import { DEFAULT_DAILY_HINT_CONFIG, DEFAULT_DAILY_STATS_HINT_CONFIG } from '@initial-baseball/shared';
 import { describe, expect, it, vi } from 'vitest';
-import { restoreCompetitiveHint, saveCompetitiveHint } from './competitiveDailyLocalHint';
+import { restoreCompetitiveHint, restoreCompetitiveHintSafely, saveCompetitiveHint, saveCompetitiveHintSafely } from './competitiveDailyLocalHint';
 import { createOfficialDailyCompetitiveHttpTransport } from './officialDailyCompetitiveHttpTransport';
 import {
   OfficialDailyEditionHttpError,
@@ -179,6 +179,25 @@ describe('isolated competitive Daily browser client', () => {
     expect(restoreCompetitiveHint(storage, { ...b, puzzle: { ...b.puzzle, id: SIBLING } }).hintBundle.revealedCount).toBe(0);
     saveCompetitiveHint(storage, ID, b.progressionToken, 100);
     expect(restoreCompetitiveHint(storage, b)).toBe(b);
+  });
+
+  it('keeps signed hints usable when browser storage reads, writes or acquisition fail', async () => {
+    const b = await createOfficialDailyCompetitiveHttpTransport(ID,
+      vi.fn().mockResolvedValue(json(bootstrap()))).bootstrap(DATE);
+    const denied = (): never => { throw new Error('storage blocked'); };
+    const unreadable = { getItem: denied, setItem: () => {} };
+    const unwritable = { getItem: () => null, setItem: denied };
+    expect(restoreCompetitiveHintSafely(b, denied)).toBe(b);
+    expect(restoreCompetitiveHintSafely(b, () => unreadable)).toBe(b);
+    expect(() => saveCompetitiveHintSafely(ID, b.progressionToken, 1, denied)).not.toThrow();
+    expect(() => saveCompetitiveHintSafely(ID, b.progressionToken, 1, () => unwritable)).not.toThrow();
+    const data = new Map<string, string>();
+    const storage = { getItem: (key: string) => data.get(key) ?? null,
+      setItem: (key: string, value: string) => { data.set(key, value); } };
+    saveCompetitiveHintSafely(ID, b.progressionToken, 2, () => storage);
+    expect(restoreCompetitiveHintSafely(b, () => storage)).toMatchObject({
+      progressionToken: 'signed-checkpoint-2', hintBundle: { revealedCount: 2 },
+    });
   });
 
   it('fails closed before fetch for invalid edition, date, token or submitted ID', async () => {

@@ -6,14 +6,14 @@ import { createOfficialDailyCompetitiveHttpTransport } from '../officialDailyCom
 import type { restoreCompetitiveScorecard } from '../restoreCompetitiveScorecard';
 import { createCompletedDailyShareResult } from '../dailyCompletedShareResult';
 import { createDailyScorecardPoints } from '../dailyScorecard';
-import { restoreCompetitiveHint } from '../competitiveDailyLocalHint';
+import { restoreCompetitiveHintSafely } from '../competitiveDailyLocalHint';
 import { getBrowserDailyAtBatLockPort } from '../dailyAtBatOwnershipCoordinator';
 import { DailyInningGame } from './DailyInningGame';
 import { GameCompleteView } from './GameCompleteView';
 
 export function CompetitiveDailyGame({ puzzleId, date }: { puzzleId: string; date: string }): JSX.Element {
   const [card, setCard] = useState<ReturnType<typeof restoreCompetitiveScorecard> | null>(null);
-  const [localBootstrap, setLocalBootstrap] = useState<ReturnType<typeof restoreCompetitiveHint> | null>(null);
+  const [localBootstrap, setLocalBootstrap] = useState<ReturnType<typeof restoreCompetitiveHintSafely> | null>(null);
   const [retry, setRetry] = useState(0);
   const [message, setMessage] = useState('Opening your scorecard…');
   useEffect(() => {
@@ -37,7 +37,7 @@ export function CompetitiveDailyGame({ puzzleId, date }: { puzzleId: string; dat
             winner = await client.scorecard(date);
           }
           if (!closed) {
-            if (winner.status === 'active') setLocalBootstrap(restoreCompetitiveHint(globalThis.localStorage, winner.bootstrap));
+            if (winner.status === 'active') setLocalBootstrap(restoreCompetitiveHintSafely(winner.bootstrap));
             setCard(winner);
           }
           await held;

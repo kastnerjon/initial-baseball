@@ -19,3 +19,17 @@ export function restoreCompetitiveHint(storage: HintStorage, bootstrap: DailyBoo
   return { ...bootstrap, progressionToken: checkpoint.progressionToken,
     hintBundle: { ...bootstrap.hintBundle, revealedCount: checkpoint.revealedCount } };
 }
+
+/** Browser hint caches are optional. A storage denial must never deny signed gameplay. */
+export function restoreCompetitiveHintSafely(
+  bootstrap: DailyBootstrap, getStorage: () => HintStorage = () => globalThis.localStorage,
+): DailyBootstrap {
+  try { return restoreCompetitiveHint(getStorage(), bootstrap); } catch { return bootstrap; }
+}
+
+export function saveCompetitiveHintSafely(
+  puzzleId: string, anchor: string, depth: number,
+  getStorage: () => HintStorage = () => globalThis.localStorage,
+): void {
+  try { saveCompetitiveHint(getStorage(), puzzleId, anchor, depth); } catch { /* Optional cache. */ }
+}

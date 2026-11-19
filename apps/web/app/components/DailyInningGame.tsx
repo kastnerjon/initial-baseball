@@ -19,7 +19,7 @@ import { useDailyGameplayPersistence } from '../useDailyGameplayPersistence';
 import { createCompletedDailyShareResult } from '../dailyCompletedShareResult';
 import { requireHintBundle, requireReveal } from '../dailyRuntimeResponseRequirements';
 import { createOfficialDailyEditionHttpTransport } from '../officialDailyEditionHttpTransport';
-import { saveCompetitiveHint } from '../competitiveDailyLocalHint';
+import { saveCompetitiveHintSafely } from '../competitiveDailyLocalHint';
 import type { restoreCompetitiveScorecard } from '../restoreCompetitiveScorecard';
 import { createOfficialDailyCompetitiveHttpTransport } from '../officialDailyCompetitiveHttpTransport';
 import { createOfficialEditionResolutionTransport } from '../officialEditionResolutionTransport';
@@ -470,7 +470,7 @@ export function DailyInningGame({
         requireHintBundle(hintBundle),
         atBatState.revealCount,
       );
-      if (competitive) saveCompetitiveHint(globalThis.localStorage, puzzle.id, competitiveAnchor.current, nextReveal.revealedCount);
+      if (competitive) saveCompetitiveHintSafely(puzzle.id, competitiveAnchor.current, nextReveal.revealedCount);
       setProgressionToken(nextReveal.progressionToken);
       setAtBatState(currentState => ({
         ...currentState,
