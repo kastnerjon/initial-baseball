@@ -1,6 +1,11 @@
 import { DEFAULT_DAILY_HINT_CONFIG, DEFAULT_DAILY_STATS_HINT_CONFIG } from '@initial-baseball/shared';
 import { describe, expect, it, vi } from 'vitest';
-import { restoreCompetitiveHint, restoreCompetitiveHintSafely, saveCompetitiveHint, saveCompetitiveHintSafely } from './competitiveDailyLocalHint';
+import {
+  restoreCompetitiveHint, restoreCompetitiveHintSafely,
+  restoreCompetitiveWrongGuesses, restoreCompetitiveWrongGuessesSafely,
+  saveCompetitiveHint, saveCompetitiveHintSafely,
+  saveCompetitiveWrongGuesses, saveCompetitiveWrongGuessesSafely,
+} from './competitiveDailyLocalHint';
 import { createOfficialDailyCompetitiveHttpTransport } from './officialDailyCompetitiveHttpTransport';
 import {
   OfficialDailyEditionHttpError,
@@ -179,6 +184,50 @@ describe('isolated competitive Daily browser client', () => {
     expect(restoreCompetitiveHint(storage, { ...b, puzzle: { ...b.puzzle, id: SIBLING } }).hintBundle.revealedCount).toBe(0);
     saveCompetitiveHint(storage, ID, b.progressionToken, 100);
     expect(restoreCompetitiveHint(storage, b)).toBe(b);
+  });
+
+  it('restores only same-edition, same-signed-winner wrong-guess names after a reload', () => {
+    const data = new Map<string, string>();
+    const storage = { getItem: (key: string) => data.get(key) ?? null,
+      setItem: (key: string, value: string) => { data.set(key, value); } };
+    const guesses = [{ playerId: 'player-billy', displayName: 'Billy Ripken' }];
+    saveCompetitiveWrongGuesses(storage, ID, 'signed-winner-1', 1, guesses);
+    expect(restoreCompetitiveWrongGuesses(storage, ID, 'signed-winner-1', 1)).toEqual(guesses);
+    expect(restoreCompetitiveWrongGuesses(storage, SIBLING, 'signed-winner-1', 1)).toEqual([]);
+    expect(restoreCompetitiveWrongGuesses(storage, ID, 'other-attempt-or-stage', 1)).toEqual([]);
+    expect(restoreCompetitiveWrongGuesses(storage, ID, 'signed-winner-1', 2)).toEqual([]);
+    // An immediate local hint reveal must preserve the wrong-guess list.
+    saveCompetitiveHint(storage, ID, 'signed-winner-1', 2);
+    expect(restoreCompetitiveWrongGuesses(storage, ID, 'signed-winner-1', 1)).toEqual(guesses);
+    // A second server-confirmed incorrect guess replaces the cache at its new signed anchor.
+    const two = [...guesses, { playerId: 'player-bob', displayName: 'Bob Roberts' }];
+    saveCompetitiveWrongGuesses(storage, ID, 'signed-winner-2', 2, two);
+    expect(restoreCompetitiveWrongGuesses(storage, ID, 'signed-winner-1', 1)).toEqual([]);
+    expect(restoreCompetitiveWrongGuesses(storage, ID, 'signed-winner-2', 2)).toEqual(two);
+    saveCompetitiveHint(storage, ID, 'signed-winner-3', 1);
+    expect(restoreCompetitiveWrongGuesses(storage, ID, 'signed-winner-3', 2)).toEqual([]);
+  });
+
+  it('fails open for gameplay but closed for stale, malformed or denied guess cache', () => {
+    const data = new Map<string, string>();
+    const storage = { getItem: (key: string) => data.get(key) ?? null,
+      setItem: (key: string, value: string) => { data.set(key, value); } };
+    const guesses = [{ playerId: 'p1', displayName: 'Billy Ripken' }];
+    saveCompetitiveWrongGuessesSafely(ID, 'signed-winner', 1, guesses, () => storage);
+    expect(restoreCompetitiveWrongGuessesSafely(ID, 'signed-winner', 1, () => storage)).toEqual(guesses);
+    expect(restoreCompetitiveWrongGuessesSafely(ID, 'signed-winner', 0, () => storage)).toEqual([]);
+    const blocked = () => { throw new Error('Browser storage unavailable'); };
+    expect(restoreCompetitiveWrongGuessesSafely(ID, 'signed-winner', 1, blocked)).toEqual([]);
+    expect(() => saveCompetitiveWrongGuessesSafely(ID, 'signed-winner', 1, guesses, blocked)).not.toThrow();
+    const unreadable = { getItem: blocked, setItem: () => {} };
+    expect(restoreCompetitiveWrongGuessesSafely(ID, 'signed-winner', 1, () => unreadable)).toEqual([]);
+    const unwritable = { getItem: () => null, setItem: blocked };
+    expect(() => saveCompetitiveWrongGuessesSafely(ID, 'signed-winner', 1, guesses, () => unwritable)).not.toThrow();
+    const entry = [...data.keys()][0]!;
+    data.set(entry, JSON.stringify({ anchor: 'signed-winner', depth: 1, wrongGuesses: [
+      { playerId: 'p1', displayName: 'Billy Ripken' }, { playerId: '<injected>', displayName: '' },
+    ] }));
+    expect(restoreCompetitiveWrongGuessesSafely(ID, 'signed-winner', 2, () => storage)).toEqual([]);
   });
 
   it('keeps signed hints usable when browser storage reads, writes or acquisition fail', async () => {
