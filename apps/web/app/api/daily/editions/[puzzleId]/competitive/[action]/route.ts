@@ -13,7 +13,7 @@ export async function POST(request: Request, context: Context) {
   }
   const { puzzleId, action } = await context.params;
   if (!isOfficialDailyBrowserPuzzleId(puzzleId) ||
-      (action !== 'bootstrap' && action !== 'hints' && action !== 'resolve')) {
+      (action !== 'bootstrap' && action !== 'scorecard' && action !== 'hints' && action !== 'resolve')) {
     return respond({ error: 'not_found' }, 404);
   }
   const url = new URL(request.url);
@@ -28,7 +28,7 @@ export async function POST(request: Request, context: Context) {
   let play: ReturnType<typeof parseBody> | undefined;
   try {
     const body = await readBoundedJson(request);
-    if (action === 'bootstrap') {
+    if (action === 'bootstrap' || action === 'scorecard') {
       if (typeof body !== 'object' || !body || Object.keys(body).join(',') !== 'date' ||
           !('date' in body) || typeof body.date !== 'string') return respond({ error: 'invalid_request' }, 400);
       validateIssuedDailyCalendarDate(body.date);
@@ -56,6 +56,7 @@ export async function POST(request: Request, context: Context) {
     const game = createServerOfficialDailyCompetitiveGame(
       puzzleId, identity.browserKeyDigest, secret, age, action === 'bootstrap' ? 'bootstrap' : 'existing',
     );
+    if (action === 'scorecard') return respond(await game.getScorecard(date!));
     if (action === 'bootstrap') return respond(await game.getBootstrap(date!));
     if (action === 'hints') return respond(await game.getHintBundle(play!.progressionToken));
     return respond(await game.resolveAtBat(play!));

@@ -177,7 +177,7 @@ export function createBrowserDailyAtBatOwnershipCoordinator(input: {
 }) {
   return createDailyAtBatOwnershipCoordinator({
     ...input,
-    lockPort: browserLockPort(),
+    lockPort: getBrowserDailyAtBatLockPort(),
     storageSignals: browserStorageSignalPort(),
     createAbortController: browserAbortControllerFactory(),
   });
@@ -210,7 +210,7 @@ function unavailableJournalPreparation(): DailyAtBatOwnerPreparation {
   return { contribution: 'disabled', generation: null, reason: 'journal_unavailable' };
 }
 
-function browserLockPort(): DailyAtBatExclusiveLockPort | null {
+export function getBrowserDailyAtBatLockPort(): DailyAtBatExclusiveLockPort | null {
   type BrowserLockManager = { request(
     name: string,
     options: { mode: 'exclusive'; signal: unknown },

@@ -39,6 +39,7 @@ export function useDailyGameplayPersistence({
   puzzle,
   rulesetVersion,
   initialProgressionToken,
+  serverOwned = false,
   hasLoadedSavedState,
   saveInput,
   onRestore,
@@ -48,6 +49,7 @@ export function useDailyGameplayPersistence({
   puzzle: DailyPublicPuzzle;
   rulesetVersion: DailyRulesetVersion;
   initialProgressionToken: string;
+  serverOwned?: boolean;
   hasLoadedSavedState: boolean;
   saveInput: SaveDailyGameInput;
   onRestore: (loaded: LoadedSavedDailyGame | null) => void;
@@ -79,6 +81,7 @@ export function useDailyGameplayPersistence({
   completedResultRef.current = submitCompletedResultCreationIfEligible;
 
   useEffect(() => {
+    if (serverOwned) return;
     let cancelled = false;
     const ownedSessionKey = sessionKey;
     persistenceSession.beginSession(ownedSessionKey);
@@ -201,10 +204,10 @@ export function useDailyGameplayPersistence({
       persistenceSession.setCompletionPolicy(allow);
       restoreRef.current(loaded);
     }
-  }, [sessionKey]);
+  }, [sessionKey, serverOwned]);
 
   useEffect(() => {
-    if (!hasLoadedSavedState || !persistenceSession.canPersist({
+    if (serverOwned || !hasLoadedSavedState || !persistenceSession.canPersist({
       renderAccess: access,
       renderSessionKey: sessionKey,
       renderReadySessionKey: readySessionKey,
@@ -267,6 +270,7 @@ export function useDailyGameplayPersistence({
     });
   }, [
     access,
+    serverOwned,
     hasLoadedSavedState,
     persistenceSession,
     readySessionKey,
@@ -298,7 +302,7 @@ export function useDailyGameplayPersistence({
     ? comparisonExclusion.resultId
     : null;
   return {
-    access: currentSession ? access : 'checking',
+    access: serverOwned ? 'owner' : currentSession ? access : 'checking',
     contribution: currentSession ? contribution : null,
     comparisonExcludedResultId,
     resetPersistedState,

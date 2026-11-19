@@ -1,3 +1,4 @@
+import { restoreCompetitiveScorecard } from './restoreCompetitiveScorecard';
 import { isOfficialDailyOccurrenceId, validateIssuedDailyCalendarDate } from '@initial-baseball/daily/official-edition-identity';
 import type { DailyBootstrap, DailyHintBundleResponse, DailyResolutionRequest, DailyResolutionResponse } from './dailyRuntimeContracts';
 import {
@@ -75,6 +76,12 @@ export function createOfficialDailyCompetitiveHttpTransport(
       }
       const value = await requireJson(response);
       return validateOfficialDailyEditionBootstrap(value, puzzleId, date, true);
+    },
+    async scorecard(date: string) {
+      try { validateIssuedDailyCalendarDate(date); }
+      catch { throw new OfficialDailyEditionHttpError('invalid_request'); }
+      const response = await postJson(fetcher, base + 'scorecard', { date });
+      return restoreCompetitiveScorecard(await requireJson(response), puzzleId, date);
     },
     async hints(progressionToken: string): Promise<DailyHintBundleResponse> {
       validToken(progressionToken);

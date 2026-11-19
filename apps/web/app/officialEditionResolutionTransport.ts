@@ -4,9 +4,9 @@ import type { createOfficialDailyEditionHttpTransport } from './officialDailyEdi
 type EditionTransport = ReturnType<typeof createOfficialDailyEditionHttpTransport>;
 
 /** Bind the shared resolution controller to the exact-ID, validated transport. */
-export function createOfficialEditionResolutionTransport(puzzleId: string, edition: EditionTransport):
+export function createOfficialEditionResolutionTransport(puzzleId: string, edition: Pick<EditionTransport, 'resolve'>, competitive = false):
   { path: string; postJson: PostDailyResolutionJson } {
-  const path = `/api/daily/editions/${puzzleId}/resolve`;
+  const path = `/api/daily/editions/${puzzleId}/${competitive ? 'competitive/' : ''}resolve`;
   const postJson: PostDailyResolutionJson = (requestPath, body) => {
     if (requestPath !== path || typeof body.progressionToken !== 'string') {
       throw new Error('Invalid official edition resolution request.');

@@ -10,7 +10,7 @@ const ORIGIN = 'https://qa.example';
 const SECRET = 'ephemeral-route-test-secret-at-least-32-characters';
 const DATE = { date: '2026-11-18' };
 const game = {
-  getBootstrap: vi.fn(), getHintBundle: vi.fn(), resolveAtBat: vi.fn(),
+  readScorecard: vi.fn(), getScorecard: vi.fn(), getBootstrap: vi.fn(), getHintBundle: vi.fn(), resolveAtBat: vi.fn(),
   revealHint: vi.fn(), getPublicPuzzle: vi.fn(),
 };
 
@@ -62,6 +62,20 @@ describe('official Daily competitive POST', () => {
     expect((await post('hints', { progressionToken: 'signed-next' }, cookie, SIBLING)).status).toBe(403);
     expect((await post('bootstrap', DATE, cookie + '; ' + cookie)).status).toBe(403);
     expect(createServerOfficialDailyCompetitiveGame).toHaveBeenCalledTimes(2);
+  });
+  it('reads an existing scorecard only for its edition credential', async () => {
+    const first = await post('bootstrap', DATE);
+    const cookie = first.headers.get('set-cookie')!.split(';')[0]!;
+    game.getScorecard.mockResolvedValue({ status: 'completed', revision: 9 });
+    expect((await post('scorecard', DATE)).status).toBe(403);
+    expect((await post('scorecard', DATE, cookie, SIBLING)).status).toBe(403);
+    expect((await post('scorecard', { ...DATE, score: 27 }, cookie)).status).toBe(400);
+    const response = await post('scorecard', DATE, cookie);
+    expect(await response.json()).toEqual({ status: 'completed', revision: 9 });
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+    expect(createServerOfficialDailyCompetitiveGame).toHaveBeenCalledOnce();
+    expect(vi.mocked(createServerOfficialDailyCompetitiveGame).mock.calls[0]![4]).toBe('existing');
+    expect(game.getScorecard).toHaveBeenCalledWith(DATE.date);
   });
   it('rejects foreign origins, extra score fields, unconfigured policy and invalid IDs before runtime access', async () => {
     expect((await post('bootstrap', DATE, '', ID, 'https://other.example')).status).toBe(403);
