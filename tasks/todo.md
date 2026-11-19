@@ -2,9 +2,9 @@
 
 ## Primary delivery — exact-edition competitive provenance (#657)
 
-- [ ] Complete reviewed source-only signed runtime/CAS composition (next candidate after merged #676), then wire a concrete trusted released-publication reader and server-held HttpOnly browser credential into a default-OFF request handler. Preserve immediate four-hint local reveal, ordered wrong/terminal transitions, canonical result retries and sibling identity. Existing source composition is not yet a public admission route or release.
-- [ ] Implement transactional nine-at-bat plus completion admission against **existing** points-v4 Daily tables. Preserve Primary Daily history and identical-roster sibling isolation; verify actual two-session races, delayed Pacific-midnight/response-loss cases on isolated production-shaped QA, then independent final-head review, CI/Preview, physical devices and explicit owner release approval. The existing isolated QA lacks first-start and Daily result tables. Secondary competition remains OFF; #656 is separate.
-
+- [x] Merge signed game progression and transactional nine-at-bat plus summary persistence (#677, #678). Isolated PostgreSQL passed concurrent retry, sibling separation, partial-write rollback and fractional scoring.
+- [ ] Verify the competitive POST path on protected Preview with isolated QA and the real PostgREST schema cache. Exercise cookie establishment, two-tab first use, expiry, Pacific midnight, two identical-roster editions, lost responses and scorecard readback. Exercise physical Safari and Android Chrome through the shared UI.
+- [ ] Approve the production retry window, signing-key rotation and rollout separately before enabling any secondary competition. Existing public score, ranking and comparison routes remain gated.
 
 ## Private multi-edition ChatOps (#663, #665 merged)
 

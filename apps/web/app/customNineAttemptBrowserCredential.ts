@@ -1,6 +1,6 @@
 import 'server-only';
 import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
-import { validateCustomNinePuzzleId, validateCustomLineupPuzzleId } from '@initial-baseball/daily';
+import { isOfficialDailyOccurrenceId, validateCustomNinePuzzleId, validateCustomLineupPuzzleId } from '@initial-baseball/daily';
 
 type Scope = Readonly<{ prefix: string; domain: string; path: string; validate: (id: string) => void }>;
 const V1: Scope = {
@@ -25,6 +25,21 @@ export function createCustomNineAttemptBrowserCredential(secret: string) {
 /** Opaque, separately signed v2 browser identity. No public route is enabled. */
 export function createCustomLineupV2AttemptBrowserCredential(secret: string) {
   return createScopedCredential(secret, V2);
+}
+
+export function isOfficialDailyBrowserPuzzleId(id: string): boolean {
+  const prefix = 'daily-ed-v1-';
+  return id.startsWith(prefix) && isOfficialDailyOccurrenceId(id.slice(prefix.length));
+}
+
+export function createOfficialDailyAttemptBrowserCredential(secret: string) {
+  return createScopedCredential(secret, {
+    prefix: 'ib-official-daily-attempt-v1-', domain: 'initial-baseball:official-daily:attempt-browser:v1',
+    path: '/api/daily/editions/',
+    validate(id) {
+      if (!isOfficialDailyBrowserPuzzleId(id)) throw new Error('Invalid official Daily edition.');
+    },
+  });
 }
 
 function createScopedCredential(secret: string, scope: Scope) {

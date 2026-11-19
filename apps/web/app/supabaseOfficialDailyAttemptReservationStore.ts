@@ -7,15 +7,29 @@ import type {
 /** Service-role-only adapter to the SQL first-start winner. Not a public route. */
 export function createSupabaseOfficialDailyAttemptReservationStore(
   client: SupabaseClient,
+  mode: 'bootstrap' | 'existing' = 'bootstrap',
 ): OfficialDailyAttemptReservationStore {
   return {
     async insertOrRead(candidate: OfficialDailyAttemptReservation) {
       let result;
       try {
-        result = await client.rpc('reserve_official_daily_attempt', {
-          p_puzzle_id: candidate.puzzleId,
-          p_browser_key_digest: candidate.browserKeyDigest,
-        }).single();
+        if (mode === 'bootstrap') {
+          result = await client.rpc('reserve_official_daily_attempt', {
+            p_puzzle_id: candidate.puzzleId,
+            p_browser_key_digest: candidate.browserKeyDigest,
+          }).single();
+        } else {
+          const existing = await client.from('official_daily_attempt_states')
+            .select('attempt_id,puzzle_id,browser_key_digest,started_at,status,revision,official_daily_publications!inner(puzzle_date,ruleset_version)')
+            .eq('puzzle_id', candidate.puzzleId).eq('browser_key_digest', candidate.browserKeyDigest)
+            .single();
+          // PostgREST embeds this many-to-one foreign key as a single object.
+          const publication: unknown = existing.data?.official_daily_publications;
+          if (!publication || typeof publication !== 'object' || Array.isArray(publication)) {
+            throw new Error('Missing official Daily publication.');
+          }
+          result = { error: existing.error, data: { ...existing.data, ...publication } };
+        }
       } catch {
         throw new Error('Private official Daily reservation unavailable.');
       }

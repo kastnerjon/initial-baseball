@@ -65,14 +65,18 @@ function rig(
     attemptId, puzzleId: id, puzzleDate: DATE, rulesetVersion: 'points-v4' as const,
     browserKeyDigest: 'a'.repeat(64), startedAt: START,
   };
-  const producer = runtime(id, clock, { attemptId });
+  const readExistingAttempt = vi.fn(async () => {
+    if (!database.state()) throw new Error('No existing reservation');
+    return reservation;
+  });
+  const producer = runtime(id, clock, { attemptId }, readExistingAttempt);
   const reserveAttempt = vi.fn(async () => reservation);
   const game = createOfficialDailyCompetitiveCASRuntime({
     puzzleId: id, runtime: producer, progressionTokens: tokens, secret: SECRET,
     reserveAttempt, progression: database, completion: database, now: () => clock,
     maximumAttemptAgeMs: 24 * 60 * 60 * 1000,
   });
-  return { game, database, reserveAttempt, reservation };
+  return { game, database, reserveAttempt, readExistingAttempt, reservation };
 }
 
 describe('source-only durable official Daily competitive CAS runtime', () => {
@@ -119,6 +123,24 @@ describe('source-only durable official Daily competitive CAS runtime', () => {
     expect(resumed.hintBundle.pitchNumber).toBe(2);
     expect(resumed.hintBundle.hints).toHaveLength(4);
     expect(database.state()?.revision).toBe(1);
+  });
+
+  it('recovers the current batter after Pacific midnight only for an existing unexpired start', async () => {
+    const first = rig();
+    const boot = await first.game.getBootstrap(DATE);
+    const play = await first.game.resolveAtBat({ progressionToken: boot.progressionToken, giveUp: true });
+    const midnight = new Date('2026-11-07T08:00:01Z');
+    const returning = rig(A, midnight, first.database);
+    const resumed = await returning.game.getBootstrap(DATE);
+    expect(resumed.progressionToken).toBe(play.progressionToken);
+    expect(resumed.hintBundle.pitchNumber).toBe(2);
+    expect(returning.readExistingAttempt).toHaveBeenCalledOnce();
+    expect(first.database.state()?.revision).toBe(1);
+    const fresh = rig(A, midnight);
+    await expect(fresh.game.getBootstrap(DATE)).rejects.toThrow();
+    expect(fresh.database.initialize).not.toHaveBeenCalled();
+    const expired = rig(A, new Date('2026-11-07T12:00:01Z'), first.database);
+    await expect(expired.game.getBootstrap(DATE)).rejects.toThrow();
   });
 
   it('treats the identical response-loss replay as idempotent, without increasing revision', async () => {
