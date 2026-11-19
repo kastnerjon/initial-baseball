@@ -19,7 +19,7 @@ import { useDailyGameplayPersistence } from '../useDailyGameplayPersistence';
 import { createCompletedDailyShareResult } from '../dailyCompletedShareResult';
 import { requireHintBundle, requireReveal } from '../dailyRuntimeResponseRequirements';
 import { createOfficialDailyEditionHttpTransport } from '../officialDailyEditionHttpTransport';
-import { saveCompetitiveHintSafely } from '../competitiveDailyLocalHint';
+import { restoreCompetitiveWrongGuessesSafely, saveCompetitiveHintSafely, saveCompetitiveWrongGuessesSafely } from '../competitiveDailyLocalHint';
 import type { restoreCompetitiveScorecard } from '../restoreCompetitiveScorecard';
 import { createOfficialDailyCompetitiveHttpTransport } from '../officialDailyCompetitiveHttpTransport';
 import { createOfficialEditionResolutionTransport } from '../officialEditionResolutionTransport';
@@ -84,6 +84,9 @@ export function DailyInningGame({
     ...createInitialAtBatUiState(), strikeCount: competitiveCard?.strikeCount ?? 0,
     revealCount: initialHintBundle.revealedCount,
     revealedHints: initialHintBundle.hints.slice(0, initialHintBundle.revealedCount),
+    ...(competitiveCard ? { wrongGuesses: restoreCompetitiveWrongGuessesSafely(
+      puzzle.id, competitiveCard.bootstrap.progressionToken, competitiveCard.strikeCount,
+    ) } : {}),
   }));
   const [pendingAdvance, setPendingAdvance] = useState<PendingAtBatAdvance | null>(null);
   const [progressionToken, setProgressionToken] = useState(initialProgressionToken);
@@ -336,7 +339,12 @@ export function DailyInningGame({
         const { result } = response;
 
         if (result.kind === 'incorrect') {
-          setHintBundle(requireHintBundle(response.hintBundle));
+          const nextBundle = requireHintBundle(response.hintBundle);
+          setHintBundle(nextBundle);
+          if (competitive) {
+            saveCompetitiveWrongGuessesSafely(puzzle.id, response.progressionToken, nextBundle.revealedCount,
+              [...(atBatState.wrongGuesses ?? []), { playerId: submittedPlayerId, displayName: submittedDisplayName }]);
+          }
           setAtBatState(currentState => withConfirmedIncorrectGuess(
             currentState, result,
             { playerId: submittedPlayerId, displayName: submittedDisplayName },

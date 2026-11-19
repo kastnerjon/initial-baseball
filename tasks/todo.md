@@ -4,8 +4,8 @@
 
 - [x] Merge signed game progression and transactional nine-at-bat plus summary persistence (#677, #678). Isolated PostgreSQL passed concurrent retry, sibling separation, partial-write rollback and fractional scoring.
 - [x] Merge the default-OFF competitive HTTP route (#679) after final-commit review, matching Preview and exact-head CI; main push CI and production build verified at merge `aff8aa236`. No public activation.
-- [ ] Verify and integrate the Preview-only shared UI and scorecard candidate for the same-origin competitive client credential handshake and resumable bootstrap to shared Daily gameplay; reconcile server-signed progression with exact-edition saves, two-tab state and reset/completion recovery before exposing a live game.
-- [ ] Verify the competitive POST path on protected Preview with isolated QA and the real PostgREST schema cache. Exercise cookie establishment, two-tab first use, expiry, Pacific midnight, two identical-roster editions, lost responses and scorecard readback. Exercise physical Safari and Android Chrome through the shared UI.
+- [x] Merge #681's shared Daily Nine competitive UI, cookie transport and authoritative active/completed scorecard restoration after final-head source review, CI and matching Preview. Hosted Chromium verifies two exact-ID siblings, independent results, two-tab ownership, reload and response loss; production remains OFF.
+- [ ] Complete #657 release acceptance: hosted Chromium and iPhone-emulated WebKit checked cookie bootstrap, sibling editions, reload, signed guesses, two-tab ownership and loss recovery; physical Safari/Android, actual Pacific rollover and expiry remain. Before the next hosted run, fix the observed competitive wrong-guessed-name cache loss across reload without changing scoring or the primary/practice paths.
 - [ ] Approve the production retry window, signing-key rotation and rollout separately before enabling any secondary competition. Existing public score, ranking and comparison routes remain gated.
 
 ## Private multi-edition ChatOps (#663, #665 merged)
