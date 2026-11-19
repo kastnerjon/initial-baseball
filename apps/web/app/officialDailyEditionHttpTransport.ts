@@ -188,6 +188,22 @@ function validatePublicReveal(value: unknown): boolean {
     && publicTeamIds(season.teamIds) && validateStatLines(season.lines));
 }
 
+export function validateOfficialDailyPublicPuzzle(puzzle: unknown, puzzleId: string, date: string): DailyBootstrap['puzzle'] {
+  if (!isRecord(puzzle)
+      || !hasKeys(puzzle, ['id', 'puzzleNumber', 'puzzleDate', 'status', 'hintConfig', 'statsHintConfig', 'pitches'])
+      || puzzle.id !== puzzleId || puzzle.puzzleDate !== date
+      || !Number.isSafeInteger(puzzle.puzzleNumber)
+      || (puzzle.puzzleNumber as number) < 1
+      || (puzzle.status !== 'published' && puzzle.status !== 'archived')
+      || !validatePublicHintConfig(puzzle.hintConfig)
+      || !validatePublicStatsHintConfig(puzzle.statsHintConfig)
+      || !Array.isArray(puzzle.pitches) || puzzle.pitches.length !== 9
+      || !puzzle.pitches.every((pitch: unknown, index: number) =>
+        isRecord(pitch) && hasKeys(pitch, ['pitchNumber', 'initials'])
+          && pitch.pitchNumber === index + 1 && typeof pitch.initials === 'string')) incompatible();
+  return puzzle as DailyBootstrap['puzzle'];
+}
+
 /** Strict public-only contract used before both HTTP returns and SSR client-prop serialization. */
 export function validateOfficialDailyEditionBootstrap(
   value: unknown, puzzleId: string, date: string, allowResumedAtBat = false,
@@ -197,22 +213,11 @@ export function validateOfficialDailyEditionBootstrap(
       || value.rulesetVersion !== POINTS_V4_DAILY_RULESET_VERSION
       || typeof value.progressionToken !== 'string'
       || value.progressionToken.length === 0 || value.progressionToken.length > 4096
-      || !isRecord(value.puzzle)
-      || !hasKeys(value.puzzle, ['id', 'puzzleNumber', 'puzzleDate', 'status', 'hintConfig', 'statsHintConfig', 'pitches'])
-      || value.puzzle.id !== puzzleId || value.puzzle.puzzleDate !== date
-      || !Number.isSafeInteger(value.puzzle.puzzleNumber)
-      || (value.puzzle.puzzleNumber as number) < 1
-      || (value.puzzle.status !== 'published' && value.puzzle.status !== 'archived')
-      || !validatePublicHintConfig(value.puzzle.hintConfig)
-      || !validatePublicStatsHintConfig(value.puzzle.statsHintConfig)
-      || !Array.isArray(value.puzzle.pitches) || value.puzzle.pitches.length !== 9
-      || !value.puzzle.pitches.every((pitch: unknown, index: number) =>
-        isRecord(pitch) && hasKeys(pitch, ['pitchNumber', 'initials'])
-          && pitch.pitchNumber === index + 1 && typeof pitch.initials === 'string')
       || !validateCurrentBatterBundle(value.hintBundle)
       || (!allowResumedAtBat && (value.hintBundle.pitchNumber !== 1 || value.hintBundle.revealedCount !== 0))) {
     incompatible();
   }
+  validateOfficialDailyPublicPuzzle(value.puzzle, puzzleId, date);
   return value as DailyBootstrap;
 }
 

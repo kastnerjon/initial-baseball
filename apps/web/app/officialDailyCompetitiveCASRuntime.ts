@@ -70,7 +70,7 @@ export function createOfficialDailyCompetitiveCASRuntime(input: {
   completion: Pick<ReturnType<typeof createSupabaseOfficialDailyAtomicCompletionStore>, 'advanceAndCommit'>;
   now: () => Date;
   maximumAttemptAgeMs: number;
-}): DailyRuntimeService {
+}) {
   if (!Number.isSafeInteger(input.maximumAttemptAgeMs) || input.maximumAttemptAgeMs <= 0) {
     throw new Error('A bounded official Daily progression retry policy is required.');
   }
@@ -143,7 +143,28 @@ export function createOfficialDailyCompetitiveCASRuntime(input: {
     return { ...auth, state, saved };
   }
 
-  return {
+  async function readScorecard(reservation: OfficialDailyAttemptReservation) {
+    const state = await input.progression.read(reservation);
+    const auth = await authorize(state.token);
+    if (auth.reservation.attemptId !== reservation.attemptId ||
+        auth.reservation.browserKeyDigest !== reservation.browserKeyDigest) return fail();
+    const { proof, claims } = requireStored(state, reservation, auth.puzzle);
+    const scorecard = deriveOfficialDailyScorecard(auth.puzzle, proof, claims.completed);
+    if (!scorecard) return fail();
+    const common = {
+      puzzle: auth.puzzle, rulesetVersion: proof.rulesetVersion,
+      revision: state.revision, atBats: scorecard.atBats.map(row => row.atBat),
+    };
+    if (claims.completed) {
+      if (!scorecard.completion) return fail();
+      return { ...common, status: 'completed' as const, summary: scorecard.completion.summary };
+    }
+    const { hintBundle } = await input.runtime.getHintBundle(state.token);
+    return { ...common, status: 'active' as const, progressionToken: state.token,
+      strikeCount: claims.strikeCount, hintBundle };
+  }
+
+  const runtime: DailyRuntimeService = {
     getPublicPuzzle: date => input.runtime.getPublicPuzzle(date),
 
     async getBootstrap(date, rulesetVersion) {
@@ -220,4 +241,5 @@ export function createOfficialDailyCompetitiveCASRuntime(input: {
       return response;
     },
   };
+  return { ...runtime, readScorecard };
 }

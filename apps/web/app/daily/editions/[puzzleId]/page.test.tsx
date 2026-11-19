@@ -86,6 +86,18 @@ beforeEach(() => {
 });
 
 describe('default-OFF exact-ID official Daily practice page', () => {
+  it('mounts competitive entry only on explicitly enabled Preview and preserves production practice', async () => {
+    enable();
+    vi.stubEnv('OFFICIAL_DAILY_COMPETITIVE_UI_QA', 'true');
+    vi.stubEnv('OFFICIAL_DAILY_EDITION_COMPETITIVE_HTTP_ENABLED', 'true');
+    vi.stubEnv('VERCEL_ENV', 'preview');
+    const preview = renderToStaticMarkup(await OfficialDailyPracticePage(input()));
+    expect(preview).toContain('Opening your scorecard');
+    expect(mocked.createRuntime).not.toHaveBeenCalled();
+    vi.stubEnv('VERCEL_ENV', 'production');
+    expect(renderToStaticMarkup(await OfficialDailyPracticePage(input()))).toContain('shared-daily-game');
+    expect(mocked.createRuntime).toHaveBeenCalledOnce();
+  });
   it('is not indexed or described with private answer details', () => {
     expect(metadata.robots).toEqual({ index: false, follow: false, nocache: true });
     expect(JSON.stringify(metadata)).not.toContain(ID);

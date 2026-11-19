@@ -115,10 +115,14 @@ describe('source-only durable official Daily competitive CAS runtime', () => {
   });
 
   it('restores the stored current batter and hints rather than resetting the signed attempt', async () => {
-    const { game, database } = rig();
+    const { game, database, reservation } = rig();
     const bootstrap = await game.getBootstrap(DATE);
     const terminal = await game.resolveAtBat({ progressionToken: bootstrap.progressionToken, giveUp: true });
     const resumed = await game.getBootstrap(DATE);
+    const card = await game.readScorecard(reservation);
+    expect(card).toMatchObject({ status: 'active', revision: 1,
+      atBats: [{ pitchNumber: 1, resolution: 'give_up' }],
+      progressionToken: terminal.progressionToken, hintBundle: { pitchNumber: 2 } });
     expect(resumed.progressionToken).toBe(terminal.progressionToken);
     expect(resumed.hintBundle.pitchNumber).toBe(2);
     expect(resumed.hintBundle.hints).toHaveLength(4);
@@ -175,12 +179,13 @@ describe('source-only durable official Daily competitive CAS runtime', () => {
     expect(proofs.verify(second.progressionToken).puzzleId).toBe(B);
     await expect(two.game.resolveAtBat({ progressionToken: first.progressionToken, giveUp: true }))
       .rejects.toThrow();
+    await expect(two.game.readScorecard(one.reservation)).rejects.toThrow();
     expect(two.database.state()?.revision).toBe(0);
     expect(one.database.state()?.revision).toBe(0);
   });
 
   it('completes exactly nine ordered terminal facts with one authoritative revision each', async () => {
-    const { game, database } = rig();
+    const { game, database, reservation } = rig();
     let current = (await game.getBootstrap(DATE)).progressionToken;
     for (let i = 0; i < 8; i++) {
       current = (await game.resolveAtBat({ progressionToken: current, giveUp: true })).progressionToken;
@@ -199,6 +204,12 @@ describe('source-only durable official Daily competitive CAS runtime', () => {
     const state = database.state()!;
     expect(state).toMatchObject({ status: 'completed', revision: 9, token: current });
     expect(state.terminalAtBats.map(x => x.pitchNumber)).toEqual([1,2,3,4,5,6,7,8,9]);
+    const card = await game.readScorecard(reservation);
+    expect(card).toMatchObject({ status: 'completed', revision: 9, summary: { points: 0 } });
+    expect(card.atBats).toHaveLength(9);
+    expect(card).not.toHaveProperty('progressionToken');
+    expect(card).not.toHaveProperty('hintBundle');
+    expect(database.state()).toBe(state);
     await expect(game.getHintBundle(current)).rejects.toThrow();
     await expect(game.getBootstrap(DATE)).rejects.toThrow();
   });
@@ -209,6 +220,7 @@ describe('source-only durable official Daily competitive CAS runtime', () => {
     const token = (await x.game.getBootstrap(DATE)).progressionToken;
     clock.setTime(clock.getTime() + 2 * 24 * 60 * 60 * 1000);
     await expect(x.game.getHintBundle(token)).rejects.toThrow();
+    await expect(x.game.readScorecard(x.reservation)).rejects.toThrow();
     const wrong = createOfficialDailyCompetitiveCASRuntime({
       puzzleId: A, runtime: runtime(A), progressionTokens: tokens, secret: SECRET,
       reserveAttempt: async () => ({ ...x.reservation, attemptId: OTHER_ATTEMPT }),
@@ -220,5 +232,6 @@ describe('source-only durable official Daily competitive CAS runtime', () => {
     const boot = await fresh.game.getBootstrap(DATE);
     fresh.database.set({ ...fresh.database.state()!, token: 'official-daily-competitive-proof-v1.fake.sig' });
     await expect(fresh.game.getHintBundle(boot.progressionToken)).rejects.toThrow();
+    await expect(fresh.game.readScorecard(fresh.reservation)).rejects.toThrow();
   });
 });

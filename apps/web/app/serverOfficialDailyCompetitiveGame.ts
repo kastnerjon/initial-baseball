@@ -37,9 +37,28 @@ export function createServerOfficialDailyCompetitiveGame(
   const reserveAttempt = (request: Request) => reservationFor(request, mode);
   const readExistingAttempt = (request: Request) => reservationFor(request, 'existing');
   const shared = { puzzleId, now, progressionTokens, secret, reserveAttempt };
-  return createOfficialDailyCompetitiveCASRuntime({
+  const game = createOfficialDailyCompetitiveCASRuntime({
     ...shared, runtime: createOfficialDailyCompetitiveRuntime({ ...shared, runtime, readExistingAttempt }),
     progression: createSupabaseOfficialDailyProgressionStore(client),
     completion: createSupabaseOfficialDailyAtomicCompletionStore(client), maximumAttemptAgeMs,
   });
+  return {
+    ...game,
+    async getScorecard(date: string) {
+      const reservation = await readExistingAttempt({ puzzleId, puzzleDate: date, rulesetVersion: 'points-v4' });
+      const card = await game.readScorecard(reservation);
+      const released = await publication;
+      if (!released || released.id !== puzzleId || released.puzzleDate !== date) {
+        throw new Error('Official Daily scorecard unavailable.');
+      }
+      const resolvedNames = card.atBats.map(fact => {
+        const pitch = released.pitches[fact.pitchNumber - 1];
+        if (!pitch || pitch.pitchNumber !== fact.pitchNumber || pitch.player.initials !== fact.initials) {
+          throw new Error('Official Daily scorecard unavailable.');
+        }
+        return pitch.player.displayName;
+      });
+      return { ...card, resolvedNames };
+    },
+  };
 }

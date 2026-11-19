@@ -1,5 +1,6 @@
 import { DEFAULT_DAILY_HINT_CONFIG, DEFAULT_DAILY_STATS_HINT_CONFIG } from '@initial-baseball/shared';
 import { describe, expect, it, vi } from 'vitest';
+import { restoreCompetitiveHint, restoreCompetitiveHintSafely, saveCompetitiveHint, saveCompetitiveHintSafely } from './competitiveDailyLocalHint';
 import { createOfficialDailyCompetitiveHttpTransport } from './officialDailyCompetitiveHttpTransport';
 import {
   OfficialDailyEditionHttpError,
@@ -133,6 +134,70 @@ describe('isolated competitive Daily browser client', () => {
     expect(fetcher.mock.calls[2]![1].body).toBe(JSON.stringify({
       progressionToken: 'signed', giveUp: true,
     }));
+  });
+
+  it('reconstructs active and final scorecards only for the requested edition', async () => {
+    const { puzzle, rulesetVersion, progressionToken } = bootstrap();
+    const fact = { pitchNumber: 1, initials: 'PP', outcome: 'K', hintsRevealed: 0,
+      wrongGuesses: 0, resolution: 'give_up' };
+    const active = { status: 'active', puzzle, rulesetVersion, progressionToken, strikeCount: 1,
+      revision: 2, resolvedNames: ['Resolved Player'], atBats: [fact], hintBundle: bundle(2) };
+    const completed = { status: 'completed', puzzle, rulesetVersion, revision: 9, resolvedNames: Array(9).fill('Resolved Player'),
+      atBats: Array.from({ length: 9 }, (_, i) => ({ ...fact, pitchNumber: i + 1 })),
+      summary: { points: 0, maximumPoints: 0, atBatsCompleted: 9, totalAtBats: 9,
+        completed: true, strikeouts: 9 } };
+    const fetcher = vi.fn().mockImplementation(async () => json(active));
+    const transport = createOfficialDailyCompetitiveHttpTransport(ID, fetcher);
+    const restored = await transport.scorecard(DATE);
+    expect(restored).toMatchObject({ status: 'active', revision: 2, strikeCount: 1,
+      gameState: { completedAtBats: [fact], points: { points: 0 } } });
+    expect(fetcher).toHaveBeenCalledWith(URL + 'scorecard', expect.objectContaining({
+      redirect: 'error', method: 'POST', credentials: 'same-origin', body: JSON.stringify({ date: DATE }),
+    }));
+    completed.summary.maximumPoints = restored.gameState.points.maximumPoints;
+    fetcher.mockImplementationOnce(async () => json(completed));
+    expect(await transport.scorecard(DATE)).toMatchObject({ status: 'completed', revision: 9,
+      gameState: { points: { completed: true, points: 0 } } });
+    for (const value of [{ ...active, puzzle: { ...puzzle, id: SIBLING } },
+      { ...active, resolvedNames: ['Resolved Player', 'Future Player'] }, { ...active, hintBundle: bundle(1) }, { ...active, atBats: [{ ...fact, answer: 'private' }] },
+      { ...completed, summary: { ...completed.summary, points: 10 } }, { ...completed, progressionToken }]) {
+      fetcher.mockImplementationOnce(async () => json(value));
+      await expect(transport.scorecard(DATE)).rejects.toThrow(/incompatible/i);
+    }
+  });
+
+  it('restores local hints only against the signed winner for the same edition', async () => {
+    const data = new Map<string, string>();
+    const storage = { getItem: (key: string) => data.get(key) ?? null,
+      setItem: (key: string, value: string) => { data.set(key, value); } };
+    const b = await createOfficialDailyCompetitiveHttpTransport(ID, vi.fn().mockResolvedValue(json(bootstrap())))
+      .bootstrap(DATE);
+    saveCompetitiveHint(storage, ID, b.progressionToken, 2);
+    expect(restoreCompetitiveHint(storage, b)).toMatchObject({ progressionToken: 'signed-checkpoint-2',
+      hintBundle: { revealedCount: 2 } });
+    expect(restoreCompetitiveHint(storage, { ...b, progressionToken: 'new-winner' }).hintBundle.revealedCount).toBe(0);
+    expect(restoreCompetitiveHint(storage, { ...b, puzzle: { ...b.puzzle, id: SIBLING } }).hintBundle.revealedCount).toBe(0);
+    saveCompetitiveHint(storage, ID, b.progressionToken, 100);
+    expect(restoreCompetitiveHint(storage, b)).toBe(b);
+  });
+
+  it('keeps signed hints usable when browser storage reads, writes or acquisition fail', async () => {
+    const b = await createOfficialDailyCompetitiveHttpTransport(ID,
+      vi.fn().mockResolvedValue(json(bootstrap()))).bootstrap(DATE);
+    const denied = (): never => { throw new Error('storage blocked'); };
+    const unreadable = { getItem: denied, setItem: () => {} };
+    const unwritable = { getItem: () => null, setItem: denied };
+    expect(restoreCompetitiveHintSafely(b, denied)).toBe(b);
+    expect(restoreCompetitiveHintSafely(b, () => unreadable)).toBe(b);
+    expect(() => saveCompetitiveHintSafely(ID, b.progressionToken, 1, denied)).not.toThrow();
+    expect(() => saveCompetitiveHintSafely(ID, b.progressionToken, 1, () => unwritable)).not.toThrow();
+    const data = new Map<string, string>();
+    const storage = { getItem: (key: string) => data.get(key) ?? null,
+      setItem: (key: string, value: string) => { data.set(key, value); } };
+    saveCompetitiveHintSafely(ID, b.progressionToken, 2, () => storage);
+    expect(restoreCompetitiveHintSafely(b, () => storage)).toMatchObject({
+      progressionToken: 'signed-checkpoint-2', hintBundle: { revealedCount: 2 },
+    });
   });
 
   it('fails closed before fetch for invalid edition, date, token or submitted ID', async () => {
