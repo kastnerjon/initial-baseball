@@ -23,18 +23,22 @@ export function createServerOfficialDailyCompetitiveGame(
     createClient: () => client, progressionTokens: () => progressionTokens, now,
     readReleasedPuzzle: (db, id, at) => publication ??= readReleasedOfficialDailyPuzzle(db, id, at),
   });
-  const reservations = createOfficialDailyAttemptReservationService({
-    store: createSupabaseOfficialDailyAttemptReservationStore(client, mode), now,
-  });
-  type Request = Omit<Parameters<typeof reservations.reserve>[0], 'browserKey'>;
-  let winner: ReturnType<typeof reservations.reserve> | undefined;
-  const reserveAttempt = (request: Request) => {
+  type Reserve = ReturnType<typeof createOfficialDailyAttemptReservationService>['reserve'];
+  type Request = Omit<Parameters<Reserve>[0], 'browserKey'>;
+  let winner: ReturnType<Reserve> | undefined;
+  const reservationFor = (request: Request, access: 'bootstrap' | 'existing') => {
     if (request.puzzleId !== puzzleId) throw new Error('Official Daily edition mismatch.');
-    return winner ??= reservations.reserve({ ...request, browserKey });
+    if (!winner) {
+      const store = createSupabaseOfficialDailyAttemptReservationStore(client, access);
+      winner = createOfficialDailyAttemptReservationService({ store, now }).reserve({ ...request, browserKey });
+    }
+    return winner;
   };
+  const reserveAttempt = (request: Request) => reservationFor(request, mode);
+  const readExistingAttempt = (request: Request) => reservationFor(request, 'existing');
   const shared = { puzzleId, now, progressionTokens, secret, reserveAttempt };
   return createOfficialDailyCompetitiveCASRuntime({
-    ...shared, runtime: createOfficialDailyCompetitiveRuntime({ ...shared, runtime }),
+    ...shared, runtime: createOfficialDailyCompetitiveRuntime({ ...shared, runtime, readExistingAttempt }),
     progression: createSupabaseOfficialDailyProgressionStore(client),
     completion: createSupabaseOfficialDailyAtomicCompletionStore(client), maximumAttemptAgeMs,
   });

@@ -11,6 +11,10 @@ import {
   type OfficialDailyCompetitiveProof,
 } from './officialDailyCompetitiveProof';
 
+type FindReservation = (request: {
+  puzzleId: string; puzzleDate: string; rulesetVersion: 'points-v4';
+}) => Promise<OfficialDailyAttemptReservation>;
+
 /**
  * Source-only provenance producer for exact-ID Daily play. It is deliberately
  * not wired to routes or score admission. Bootstraps require a durable SQL
@@ -24,9 +28,8 @@ export function createOfficialDailyCompetitiveRuntime(input: {
   secret: string;
   now: () => Date;
   /** Server-only, SQL-backed first-start winner for the validated browser credential. */
-  reserveAttempt: (request: {
-    puzzleId: string; puzzleDate: string; rulesetVersion: 'points-v4';
-  }) => Promise<OfficialDailyAttemptReservation>;
+  reserveAttempt: FindReservation;
+  readExistingAttempt?: FindReservation;
 }): DailyRuntimeService {
   const proofs = createOfficialDailyCompetitiveProofCodec(input.secret);
   const fail = () => { throw new Error('Official Daily competitive progression unavailable.'); };
@@ -49,13 +52,17 @@ export function createOfficialDailyCompetitiveRuntime(input: {
     getPublicPuzzle: date => input.runtime.getPublicPuzzle(date),
     async getBootstrap(date, rulesetVersion) {
       const now = input.now();
-      if (!Number.isFinite(now.getTime()) || getPacificDailyDateString(now) !== date
+      if (!Number.isFinite(now.getTime())
         || (rulesetVersion !== undefined && rulesetVersion !== 'points-v4')) return fail();
+      const today = getPacificDailyDateString(now);
+      if (date > today) return fail();
+      const findAttempt = date === today ? input.reserveAttempt : input.readExistingAttempt;
+      if (!findAttempt) return fail();
       const bootstrap = await input.runtime.getBootstrap(date, 'points-v4');
       if (bootstrap.puzzle.id !== input.puzzleId || bootstrap.puzzle.puzzleDate !== date
         || bootstrap.rulesetVersion !== 'points-v4') return fail();
       if (bootstrap.puzzle.status !== 'published') return fail();
-      const reservation = await input.reserveAttempt({
+      const reservation = await findAttempt({
         puzzleId: input.puzzleId, puzzleDate: date, rulesetVersion: 'points-v4',
       });
       const startedAt = Date.parse(reservation.startedAt);

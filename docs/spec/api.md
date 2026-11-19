@@ -825,7 +825,7 @@ The server stages `POST /api/daily/editions/:puzzleId/competitive/:action` behin
 
 | Action | JSON fields | Behavior |
 | --- | --- | --- |
-| `bootstrap` | `date` | First contact returns HTTP 428 with an edition-scoped, host-only, HttpOnly, Secure, SameSite=Strict cookie. Repeat with the cookie to reserve or recover the attempt and obtain the shared current-batter hint bundle. |
+| `bootstrap` | `date` | First contact returns HTTP 428 with an edition-scoped, host-only, HttpOnly, Secure, SameSite=Strict cookie. Repeat with the cookie to reserve on the current Pacific date or recover the attempt and its current-batter hints. After Pacific midnight, bootstrap reads an existing eligible reservation and enforces the original attempt expiry. |
 | `hints` | `progressionToken` | Reads the saved attempt and returns the authorized current-batter bundle for resume. Individual hint taps still use the local signed checkpoints. |
 | `resolve` | `progressionToken` and either `submittedPlayerId` or `giveUp: true` | Reads the saved attempt, checks the signed play and durably advances it. The ninth terminal play and engine-derived scorecard commit in one transaction. Identical response-loss retries recover the same result. |
 
