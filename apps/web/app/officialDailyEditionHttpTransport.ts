@@ -35,7 +35,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function hasKeys(value: Record<string, unknown>, keys: readonly string[]): boolean {
-  return Object.keys(value).sort().join(',') === [...keys].sort().join(',');
+  return Object.keys(value).length === keys.length && keys.every(key => Object.hasOwn(value, key));
 }
 
 /** Accept only public, declarative hint settings; no nested answers or future hint blobs. */
@@ -189,7 +189,9 @@ function validatePublicReveal(value: unknown): boolean {
 }
 
 /** Strict public-only contract used before both HTTP returns and SSR client-prop serialization. */
-export function validateOfficialDailyEditionBootstrap(value: unknown, puzzleId: string, date: string): DailyBootstrap {
+export function validateOfficialDailyEditionBootstrap(
+  value: unknown, puzzleId: string, date: string, allowResumedAtBat = false,
+): DailyBootstrap {
   if (!isRecord(value)
       || !hasKeys(value, ['rulesetVersion', 'puzzle', 'progressionToken', 'hintBundle'])
       || value.rulesetVersion !== POINTS_V4_DAILY_RULESET_VERSION
@@ -208,7 +210,7 @@ export function validateOfficialDailyEditionBootstrap(value: unknown, puzzleId: 
         isRecord(pitch) && hasKeys(pitch, ['pitchNumber', 'initials'])
           && pitch.pitchNumber === index + 1 && typeof pitch.initials === 'string')
       || !validateCurrentBatterBundle(value.hintBundle)
-      || value.hintBundle.pitchNumber !== 1 || value.hintBundle.revealedCount !== 0) {
+      || (!allowResumedAtBat && (value.hintBundle.pitchNumber !== 1 || value.hintBundle.revealedCount !== 0))) {
     incompatible();
   }
   return value as DailyBootstrap;
@@ -249,6 +251,27 @@ async function requestEditionJson(
   }
 }
 
+/** Shared strict parser; the competitive endpoint cannot return untrusted hints or future answers. */
+export function validateOfficialDailyEditionHintsResponse(value: unknown): DailyHintBundleResponse {
+  if (!isRecord(value) || !hasKeys(value, ['hintBundle'])
+      || !validateCurrentBatterBundle(value.hintBundle)) incompatible();
+  return value as DailyHintBundleResponse;
+}
+
+/** Same public-only resolution schema for practice and signed competitive play. */
+export function validateOfficialDailyEditionResolutionResponse(value: unknown): DailyResolutionResponse {
+  if (!isRecord(value) || !hasKeys(value, ['result', 'reveal', 'progressionToken', 'hintBundle'])
+      || typeof value.progressionToken !== 'string'
+      || value.progressionToken.length === 0 || value.progressionToken.length > 4096
+      || !validatePublicResult(value.result)
+      || (isRecord(value.result) && (value.result.kind === 'incorrect'
+        ? value.reveal !== null : !validatePublicReveal(value.reveal)))
+      || (value.hintBundle !== null && !validateCurrentBatterBundle(value.hintBundle))) {
+    incompatible();
+  }
+  return value as DailyResolutionResponse;
+}
+
 const defaultGetJson: GetJson = path => requestEditionJson(path);
 const defaultPostJson: PostJson = (path, body) => requestEditionJson(path, body);
 
@@ -285,9 +308,7 @@ export function createOfficialDailyEditionHttpTransport(
     async hints(progressionToken: string): Promise<DailyHintBundleResponse> {
       validProgressionToken(progressionToken);
       const value = await post('hints', { progressionToken });
-      if (!isRecord(value) || !hasKeys(value, ['hintBundle'])
-          || !validateCurrentBatterBundle(value.hintBundle)) incompatible();
-      return value as DailyHintBundleResponse;
+      return validateOfficialDailyEditionHintsResponse(value);
     },
     async resolve(request: DailyResolutionRequest): Promise<DailyResolutionResponse> {
       validProgressionToken(request.progressionToken);
@@ -300,16 +321,7 @@ export function createOfficialDailyEditionHttpTransport(
         incompatible();
       }
       const value = await post('resolve', body);
-      if (!isRecord(value) || !hasKeys(value, ['result', 'reveal', 'progressionToken', 'hintBundle'])
-          || typeof value.progressionToken !== 'string'
-          || value.progressionToken.length === 0 || value.progressionToken.length > 4096
-          || !validatePublicResult(value.result)
-          || (isRecord(value.result) && (value.result.kind === 'incorrect'
-            ? value.reveal !== null : !validatePublicReveal(value.reveal)))
-          || (value.hintBundle !== null && !validateCurrentBatterBundle(value.hintBundle))) {
-        incompatible();
-      }
-      return value as DailyResolutionResponse;
+      return validateOfficialDailyEditionResolutionResponse(value);
     },
   };
 }
