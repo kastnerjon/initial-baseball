@@ -52,7 +52,7 @@ describe('isolated competitive Daily browser client', () => {
     expect(fetcher).toHaveBeenCalledTimes(2);
     for (const [url, init] of fetcher.mock.calls) {
       expect(url).toBe(URL + 'bootstrap');
-      expect(init).toMatchObject({ method: 'POST', credentials: 'same-origin',
+      expect(init).toMatchObject({ method: 'POST', credentials: 'same-origin', redirect: 'error',
         headers: { 'content-type': 'application/json' }, body: JSON.stringify({ date: DATE }) });
     }
   });
@@ -126,6 +126,7 @@ describe('isolated competitive Daily browser client', () => {
     expect(fetcher.mock.calls.map(([url]) => url)).toEqual([
       URL + 'hints', URL + 'resolve', URL + 'resolve',
     ]);
+    for (const [, init] of fetcher.mock.calls) expect(init.redirect).toBe('error');
     expect(fetcher.mock.calls[1]![1].body).toBe(JSON.stringify({
       progressionToken: 'signed', submittedPlayerId: 'ibp_1',
     }));

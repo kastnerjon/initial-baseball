@@ -19,7 +19,7 @@ function validToken(token: string): void {
 async function postJson(fetcher: Fetch, path: string, body: object): Promise<Response> {
   try {
     return await fetcher(path, {
-      method: 'POST', credentials: 'same-origin',
+      method: 'POST', credentials: 'same-origin', redirect: 'error',
       headers: { 'content-type': 'application/json' },
       body: JSON.stringify(body),
     });
