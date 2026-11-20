@@ -58,6 +58,8 @@ type DailyInningGameProps = {
   archivePath?: string;
   officialEditionPractice?: boolean;
   competitiveCard?: Extract<ReturnType<typeof restoreCompetitiveScorecard>, { status: 'active' }>;
+  /** Reopen the authoritative scorecard after an ambiguous competitive resolution failure. */
+  onCompetitiveActionFailure?: () => void;
 };
 export function DailyInningGame({
   puzzle,
@@ -65,7 +67,7 @@ export function DailyInningGame({
   initialProgressionToken,
   initialHintBundle,
   archivePath,
-  officialEditionPractice = false, competitiveCard,
+  officialEditionPractice = false, competitiveCard, onCompetitiveActionFailure,
 }: DailyInningGameProps): JSX.Element {
   const archive = isArchiveDailyPuzzleId(puzzle.id);
   const editionPractice = officialEditionPractice && isSecondaryOfficialDailyEditionId(puzzle.id);
@@ -94,7 +96,13 @@ export function DailyInningGame({
   const [hasLoadedSavedState, setHasLoadedSavedState] = useState(competitive);
   const [bundlePending, setBundlePending] = useState(false);
   const [requestError, setRequestError] = useState<string | null>(null);
-  const resolutionRequests = useDailyGameplayResolutionRequests(setRequestError, editionResolution);
+  const resolutionRequests = useDailyGameplayResolutionRequests(message => {
+    setRequestError(message);
+    // A committed action may have lost its response, including across a
+    // signing-key rotation. Never retry a potentially stale competitive action:
+    // rehydrate the exact edition's SQL-backed winner instead.
+    if (message !== null && competitive) onCompetitiveActionFailure?.();
+  }, editionResolution);
   const [savedGameRestoreController] = useState(() => createDailySavedGameRestoreController(
     editionTransport === null ? undefined : token => editionTransport.hints(token),
   ));
