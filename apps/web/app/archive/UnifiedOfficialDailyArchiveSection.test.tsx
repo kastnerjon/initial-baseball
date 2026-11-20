@@ -57,7 +57,7 @@ describe('one date-grouped historical official Archive presentation', () => {
     expect(html).toContain('support scored play in this preview');
     expect(html).not.toContain('Practice only; scores are not submitted');
     expect((html.match(/Historical replay unavailable/g) ?? []).length).toBe(2);
-    expect((html.match(/href="\\/daily\\/editions\\//g) ?? []).length).toBe(3);
+    expect(html.split('href="/daily/editions/').length - 1).toBe(3);
   });
 
   it('links only published exact-ID secondary puzzles, never synthetic legacy primary IDs', () => {
