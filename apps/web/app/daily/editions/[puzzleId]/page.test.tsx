@@ -31,6 +31,9 @@ vi.mock('../../../serverOfficialDailyEditionChoice', () => ({
     'OFFICIAL_DAILY_EDITION_HTTP_ENABLED',
     'OFFICIAL_DAILY_EDITION_PRIVATE_RUNTIME_ENABLED',
   ].every(flag => process.env[flag] === 'true'),
+  isOfficialDailyEditionCompetitivePreviewVisible: () => process.env.VERCEL_ENV === 'preview'
+    && process.env.OFFICIAL_DAILY_COMPETITIVE_UI_QA === 'true'
+    && process.env.OFFICIAL_DAILY_EDITION_COMPETITIVE_HTTP_ENABLED === 'true',
   readCurrentOfficialDailyEditionChoice: mocked.readChoice,
 }));
 

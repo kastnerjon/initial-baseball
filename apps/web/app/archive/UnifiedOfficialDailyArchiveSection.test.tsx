@@ -24,7 +24,7 @@ const records: UnifiedArchivePage['dates'] = [
 describe('one date-grouped historical official Archive presentation', () => {
   it('keeps secondary metadata unlinked when practice is disabled', () => {
     const html = renderToStaticMarkup(<UnifiedOfficialDailyArchiveSection
-      practiceAvailable={false} page={{ dates: records, nextCursor: null }} />);
+      practiceAvailable={false} competitiveAvailable={false} page={{ dates: records, nextCursor: null }} />);
     expect((html.match(/Practice replay unavailable/g) ?? []).length).toBe(3);
     expect(html).not.toContain('href="/daily/editions/');
     expect(html).not.toContain('Practice only; scores are not submitted');
@@ -34,7 +34,7 @@ describe('one date-grouped historical official Archive presentation', () => {
 
 
   it('lists the actual primary and all same-day secondary occurrences in order', () => {
-    const html = renderToStaticMarkup(<UnifiedOfficialDailyArchiveSection practiceAvailable page={{
+    const html = renderToStaticMarkup(<UnifiedOfficialDailyArchiveSection practiceAvailable competitiveAvailable={false} page={{
       dates: records, nextCursor: { puzzleDate: '2026-11-04', editionNumber: 2 },
     }} />);
     expect(html).toContain('Official Daily editions');
@@ -50,8 +50,18 @@ describe('one date-grouped historical official Archive presentation', () => {
     expect(html).toContain('/archive?afterDate=2026-11-04&amp;afterEdition=2');
   });
 
+  it('labels scored preview entries accurately without exposing legacy primary replay', () => {
+    const html = renderToStaticMarkup(<UnifiedOfficialDailyArchiveSection
+      practiceAvailable competitiveAvailable page={{ dates: records, nextCursor: null }} />);
+    expect((html.match(/Scored play; results count for this edition/g) ?? []).length).toBe(3);
+    expect(html).toContain('support scored play in this preview');
+    expect(html).not.toContain('Practice only; scores are not submitted');
+    expect((html.match(/Historical replay unavailable/g) ?? []).length).toBe(2);
+    expect((html.match(/href="\\/daily\\/editions\\//g) ?? []).length).toBe(3);
+  });
+
   it('links only published exact-ID secondary puzzles, never synthetic legacy primary IDs', () => {
-    const html = renderToStaticMarkup(<UnifiedOfficialDailyArchiveSection practiceAvailable page={{
+    const html = renderToStaticMarkup(<UnifiedOfficialDailyArchiveSection practiceAvailable competitiveAvailable={false} page={{
       dates: records, nextCursor: null,
     }} />);
     expect(html).not.toContain('daily-2026-11-05-v1');
@@ -66,7 +76,7 @@ describe('one date-grouped historical official Archive presentation', () => {
   });
 
   it('supports a partial date page, an empty page, and the end-of-list cursor', () => {
-    const partial = renderToStaticMarkup(<UnifiedOfficialDailyArchiveSection practiceAvailable page={{
+    const partial = renderToStaticMarkup(<UnifiedOfficialDailyArchiveSection practiceAvailable competitiveAvailable={false} page={{
       dates: [{ puzzleDate: records[0]!.puzzleDate,
         editions: records[0]!.editions.slice(1, 2) }],
       nextCursor: { puzzleDate: '2026-11-05', editionNumber: 2 },
@@ -74,7 +84,7 @@ describe('one date-grouped historical official Archive presentation', () => {
     expect(partial).toContain('Modern');
     expect(partial).not.toContain('Historical replay unavailable');
     expect(partial).toContain('/archive?afterDate=2026-11-05&amp;afterEdition=2');
-    const empty = renderToStaticMarkup(<UnifiedOfficialDailyArchiveSection practiceAvailable page={{
+    const empty = renderToStaticMarkup(<UnifiedOfficialDailyArchiveSection practiceAvailable competitiveAvailable={false} page={{
       dates: [], nextCursor: null,
     }} />);
     expect(empty).toContain('No earlier official editions have been issued yet.');
@@ -82,7 +92,7 @@ describe('one date-grouped historical official Archive presentation', () => {
   });
 
   it('escapes editor-provided titles and does not emit hidden answers or scored comparisons', () => {
-    const html = renderToStaticMarkup(<UnifiedOfficialDailyArchiveSection practiceAvailable page={{
+    const html = renderToStaticMarkup(<UnifiedOfficialDailyArchiveSection practiceAvailable competitiveAvailable={false} page={{
       dates: [{ puzzleDate: '2026-11-05', editions: [{
         kind: 'official-secondary', puzzleDate: '2026-11-05', puzzleNumber: 193,
         editionNumber: 2, title: '<img src=x onerror=alert(1)>',
