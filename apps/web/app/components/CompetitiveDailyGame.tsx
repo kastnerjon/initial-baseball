@@ -57,5 +57,14 @@ export function CompetitiveDailyGame({ puzzleId, date }: { puzzleId: string; dat
   const bootstrap = localBootstrap ?? card.bootstrap;
   return <DailyInningGame competitiveCard={card} puzzle={card.bootstrap.puzzle}
     rulesetVersion={card.bootstrap.rulesetVersion} initialProgressionToken={bootstrap.progressionToken}
-    initialHintBundle={bootstrap.hintBundle} archivePath={path} />;
+    initialHintBundle={bootstrap.hintBundle} archivePath={path}
+    onCompetitiveActionFailure={() => {
+      // Response loss can mean SQL already accepted the action; a retry with
+      // the same stale token may conflict after signing-key rotation. The
+      // scorecard read is the authority, not a guessed replay of the action.
+      setCard(null);
+      setLocalBootstrap(null);
+      setMessage('Restoring your saved scorecard after a failed action…');
+      setRetry(value => value + 1);
+    }} />;
 }
