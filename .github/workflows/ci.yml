@@ -58,6 +58,7 @@ jobs:
           node --check apps/web/scripts/qa-default-off-browser.mjs
           node --test apps/web/scripts/qa-default-off-browser-safety.test.mjs
           node --check apps/web/scripts/qa-official-daily-isolation-browser.mjs
+          node --check apps/web/scripts/qa-official-daily-competitive-recovery-browser.mjs
           node --test apps/web/scripts/qa-official-daily-isolation-safety.test.mjs
       - run: pnpm check:file-sizes
       - name: Generate current baseball data audit
@@ -151,6 +152,10 @@ jobs:
         env:
           DAILY_ISOLATION_QA_PLAYWRIGHT_MODULE: /tmp/ib-default-off-smoke/node_modules/playwright/index.mjs
         run: node apps/web/scripts/qa-official-daily-isolation-browser.mjs
+      - name: Verify competitive Daily response-loss recovery in real Chromium
+        env:
+          OFFICIAL_DAILY_RECOVERY_QA_PLAYWRIGHT_MODULE: /tmp/ib-default-off-smoke/node_modules/playwright/index.mjs
+        run: node apps/web/scripts/qa-official-daily-competitive-recovery-browser.mjs
       - name: Verify Custom completion display component with simulated HTTP in Chromium
         env:
           CUSTOM_DISPLAY_QA_PLAYWRIGHT_MODULE: /tmp/ib-default-off-smoke/node_modules/playwright/index.mjs
