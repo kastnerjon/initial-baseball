@@ -38,10 +38,26 @@ function database(rows: unknown[], error: unknown = null) {
     or: vi.fn().mockReturnThis(),
     order: vi.fn().mockReturnThis(),
     gt: vi.fn().mockReturnThis(),
-    limit: vi.fn(async () => ({ data: rows, error })),
+    gte: vi.fn().mockReturnThis(),
+    limit: vi.fn(async (_max: number) => ({ data: rows, error })),
   };
   const from = vi.fn(() => query);
   return { client: { from } as unknown as SupabaseClient, from, query };
+}
+
+
+/** Exercise real server-side filtering/pagination against stored QA-style reserved rows. */
+function databaseWithStoredRows(rows: ReturnType<typeof edition>[]) {
+  const db = database([]);
+  db.query.limit.mockImplementation(async max => {
+    const min = db.query.gte.mock.calls.find(call => call[0] === 'edition_number')?.[1];
+    const after = db.query.gt.mock.calls.find(call => call[0] === 'edition_number')?.[1];
+    const filtered = rows.filter(row =>
+      (min === undefined || row.edition_number >= min)
+      && (after === undefined || row.edition_number > after));
+    return { data: filtered.slice(0, max), error: null };
+  });
+  return db;
 }
 
 describe('private official Daily date catalog', () => {
@@ -69,6 +85,38 @@ describe('private official Daily date catalog', () => {
     expect(db.query.limit).toHaveBeenCalledWith(51);
     expect(db.query.gt).not.toHaveBeenCalled();
     expect(JSON.stringify(result)).not.toContain('private-player');
+  });
+
+
+  it('excludes historical reserved edition-one rows before date and Archive lookahead', async () => {
+    // QA has immutable edition-one publications with real signed attempt history.
+    // Never mutate those rows or weaken the strict parser: exclude them in SQL.
+    const stored = [
+      { ...edition(2), edition_number: 1, edition_key: 'reserved-qa-one' },
+      edition(2), edition(3),
+    ];
+    const dateDb = databaseWithStoredRows(stored);
+    const date = await listPrivateOfficialDailyEditionsByDate(dateDb.client,
+      { puzzleDate: DATE, pageSize: 1 }, NOW);
+    expect(dateDb.query.gte).toHaveBeenCalledWith('edition_number', 2);
+    expect(date.editions.map(x => x.editionNumber)).toEqual([2]);
+    expect(date.nextCursor).toBe(2);
+
+    const dateNextDb = databaseWithStoredRows(stored);
+    const dateNext = await listPrivateOfficialDailyEditionsByDate(dateNextDb.client,
+      { puzzleDate: DATE, afterEditionNumber: 2, pageSize: 1 }, NOW);
+    expect(dateNextDb.query.gte).toHaveBeenCalledWith('edition_number', 2);
+    expect(dateNextDb.query.gt).toHaveBeenCalledWith('edition_number', 2);
+    expect(dateNext.editions.map(x => x.editionNumber)).toEqual([3]);
+
+    const archiveDb = databaseWithStoredRows(stored);
+    const archive = await listPrivateOfficialDailyArchivePage(archiveDb.client,
+      { pageSize: 1 }, NOW);
+    expect(archiveDb.query.gte).toHaveBeenCalledWith('edition_number', 2);
+    expect(archive.dates[0]?.editions.map(x => x.editionNumber)).toEqual([2]);
+    expect(archive.nextCursor).toEqual({ puzzleDate: DATE, editionNumber: 2 });
+    expect(JSON.stringify(archive)).not.toContain('reserved-qa-one');
+    expect(archiveDb.query.select).toHaveBeenCalledWith(expect.not.stringContaining('clue_snapshot'));
   });
 
   it('paginates without silently limiting how many editions a day may contain', async () => {

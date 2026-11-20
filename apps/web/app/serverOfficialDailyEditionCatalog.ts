@@ -130,6 +130,8 @@ export async function listPrivateOfficialDailyEditionsByDate(
     const after = query.afterEditionNumber;
     let builder = client.from(TABLE).select(COLUMNS)
       .eq('puzzle_date', query.puzzleDate)
+      // Edition 1 is reserved for legacy primary Daily, never secondary discovery.
+      .gte('edition_number', 2)
       .order('edition_number', { ascending: true });
     if (after !== undefined) builder = builder.gt('edition_number', after);
     const { data, error } = await builder.limit(query.pageSize + 1);
@@ -177,6 +179,9 @@ export async function listPrivateOfficialDailyArchivePage(
   }
   try {
     let query = client.from(TABLE).select(COLUMNS).lt('puzzle_date', today)
+      // Historical QA may retain edition-one publications with signed attempts.
+      // Filter them at storage before lookahead/cursors; never rewrite their IDs.
+      .gte('edition_number', 2)
       .order('puzzle_date', { ascending: false }).order('edition_number', { ascending: true });
     if (after !== undefined) {
       // Both interpolated values passed strict calendar/integer validation above.
