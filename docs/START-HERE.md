@@ -1,5 +1,12 @@
 # Initial Baseball — Start Here
 
+## November 20 — historical QA reserved-edition Archive catalog correction (candidate)
+
+- #684's merged Archive label and exact-link fixes are on main at `3d4a24bcc93e036bbdba012f3d3739caee4c0bd5`. The isolated QA Preview pinned to that source is READY at `dpl_Cntkip14nUQRYEXDbf6yqQmP3JYx`. QA branch-scoped Archive/chooser flags were explicitly enabled, **not** production flags.
+- Protected GET `/archive` now shows the unified Archive but falls back to `The official edition list is temporarily unavailable.` Isolated QA read-only inspection found legacy-test edition-one rows in `official_daily_publications` for November 18–19 with **29 existing signed attempt-state references**. The strict secondary Archive parser rightly rejects edition one, and `daily_editorial_puzzles` has no primary publications in isolated QA. Valid historical secondary editions 2 and 3 remain.
+- This branch adds `edition_number >= 2` to both **secondary metadata discovery queries** before page-size lookahead and cursors, retaining parser fail-closed checks and existing publication/attempt identity. Unit regressions simulate mixed historical QA rows, date-page continuation, Archive pagination and metadata-only selection. The candidate is **not** integrated, independently approved or hosted-accepted until final-head CI/Preview/review and Archive-to-signed-game acceptance pass.
+- Do not delete or renumber legacy QA publications to make the Archive work. Production scoring stays OFF. Physical Safari/Android, Pacific rollover, key-rotation and production-shaped migration gates remain unresolved.
+
 ## Active release and next action — November 20
 
 **Player outcome.** Official secondary Daily Nine editions use the shared Daily game, independently preserve signed per-edition gameplay and scores even for identical rosters, and allow scored first starts and resumes from the Archive without a gameplay deadline. The active release is [#657](https://github.com/kastnerjon/initial-baseball/issues/657). Production secondary competition remains **OFF**.
