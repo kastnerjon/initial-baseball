@@ -58,7 +58,6 @@ type DailyInningGameProps = {
   archivePath?: string;
   officialEditionPractice?: boolean;
   competitiveCard?: Extract<ReturnType<typeof restoreCompetitiveScorecard>, { status: 'active' }>;
-  /** Reopen the authoritative scorecard after an ambiguous competitive resolution failure. */
   onCompetitiveActionFailure?: () => void;
 };
 export function DailyInningGame({
@@ -98,9 +97,6 @@ export function DailyInningGame({
   const [requestError, setRequestError] = useState<string | null>(null);
   const resolutionRequests = useDailyGameplayResolutionRequests(message => {
     setRequestError(message);
-    // A committed action may have lost its response, including across a
-    // signing-key rotation. Never retry a potentially stale competitive action:
-    // rehydrate the exact edition's SQL-backed winner instead.
     if (message !== null && competitive) onCompetitiveActionFailure?.();
   }, editionResolution);
   const [savedGameRestoreController] = useState(() => createDailySavedGameRestoreController(
