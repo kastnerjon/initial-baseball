@@ -60,23 +60,19 @@ function rig(
   clock = new Date(START),
   database = memory(),
   attemptId = id === A ? ATTEMPT : OTHER_ATTEMPT,
+  startedAt = START,
 ) {
   const reservation = {
     attemptId, puzzleId: id, puzzleDate: DATE, rulesetVersion: 'points-v4' as const,
-    browserKeyDigest: 'a'.repeat(64), startedAt: START,
+    browserKeyDigest: 'a'.repeat(64), startedAt,
   };
-  const readExistingAttempt = vi.fn(async () => {
-    if (!database.state()) throw new Error('No existing reservation');
-    return reservation;
-  });
-  const producer = runtime(id, clock, { attemptId }, readExistingAttempt);
+  const producer = runtime(id, clock, { attemptId, startedAt });
   const reserveAttempt = vi.fn(async () => reservation);
   const game = createOfficialDailyCompetitiveCASRuntime({
     puzzleId: id, runtime: producer, progressionTokens: tokens, secret: SECRET,
     reserveAttempt, progression: database, completion: database, now: () => clock,
-    maximumAttemptAgeMs: 24 * 60 * 60 * 1000,
   });
-  return { game, database, reserveAttempt, readExistingAttempt, reservation };
+  return { game, database, reserveAttempt, reservation };
 }
 
 describe('source-only durable official Daily competitive CAS runtime', () => {
@@ -129,22 +125,18 @@ describe('source-only durable official Daily competitive CAS runtime', () => {
     expect(database.state()?.revision).toBe(1);
   });
 
-  it('recovers the current batter after Pacific midnight only for an existing unexpired start', async () => {
-    const first = rig();
+  it('starts from the archive and resumes the same at-bat days later', async () => {
+    const start = new Date('2026-11-09T12:00:00Z');
+    const first = rig(A, start, memory(), ATTEMPT, start.toISOString());
     const boot = await first.game.getBootstrap(DATE);
     const play = await first.game.resolveAtBat({ progressionToken: boot.progressionToken, giveUp: true });
-    const midnight = new Date('2026-11-07T08:00:01Z');
-    const returning = rig(A, midnight, first.database);
+    const returning = rig(A, new Date('2026-11-15T12:00:00Z'), first.database, ATTEMPT, start.toISOString());
     const resumed = await returning.game.getBootstrap(DATE);
     expect(resumed.progressionToken).toBe(play.progressionToken);
     expect(resumed.hintBundle.pitchNumber).toBe(2);
-    expect(returning.readExistingAttempt).toHaveBeenCalledOnce();
-    expect(first.database.state()?.revision).toBe(1);
-    const fresh = rig(A, midnight);
-    await expect(fresh.game.getBootstrap(DATE)).rejects.toThrow();
-    expect(fresh.database.initialize).not.toHaveBeenCalled();
-    const expired = rig(A, new Date('2026-11-07T12:00:01Z'), first.database);
-    await expect(expired.game.getBootstrap(DATE)).rejects.toThrow();
+    expect((await returning.game.readScorecard(first.reservation)).revision).toBe(1);
+    await returning.game.resolveAtBat({ progressionToken: resumed.progressionToken, giveUp: true });
+    expect(first.database.state()?.revision).toBe(2);
   });
 
   it('treats the identical response-loss replay as idempotent, without increasing revision', async () => {
@@ -185,7 +177,8 @@ describe('source-only durable official Daily competitive CAS runtime', () => {
   });
 
   it('completes exactly nine ordered terminal facts with one authoritative revision each', async () => {
-    const { game, database, reservation } = rig();
+    const clock = new Date('2026-11-09T12:00:00Z');
+    const { game, database, reservation } = rig(A, clock, memory(), ATTEMPT, clock.toISOString());
     let current = (await game.getBootstrap(DATE)).progressionToken;
     for (let i = 0; i < 8; i++) {
       current = (await game.resolveAtBat({ progressionToken: current, giveUp: true })).progressionToken;
@@ -204,6 +197,7 @@ describe('source-only durable official Daily competitive CAS runtime', () => {
     const state = database.state()!;
     expect(state).toMatchObject({ status: 'completed', revision: 9, token: current });
     expect(state.terminalAtBats.map(x => x.pitchNumber)).toEqual([1,2,3,4,5,6,7,8,9]);
+    clock.setUTCDate(clock.getUTCDate() + 10);
     const card = await game.readScorecard(reservation);
     expect(card).toMatchObject({ status: 'completed', revision: 9, summary: { points: 0 } });
     expect(card.atBats).toHaveLength(9);
@@ -214,17 +208,14 @@ describe('source-only durable official Daily competitive CAS runtime', () => {
     await expect(game.getBootstrap(DATE)).rejects.toThrow();
   });
 
-  it('rejects expired tokens, mismatched browser reservation, tampered SQL winner and pre-bootstrap actions', async () => {
+  it('rejects mismatched browser reservation, tampered SQL winner and pre-bootstrap actions', async () => {
     const clock = new Date(START);
     const x = rig(A, clock);
     const token = (await x.game.getBootstrap(DATE)).progressionToken;
-    clock.setTime(clock.getTime() + 2 * 24 * 60 * 60 * 1000);
-    await expect(x.game.getHintBundle(token)).rejects.toThrow();
-    await expect(x.game.readScorecard(x.reservation)).rejects.toThrow();
     const wrong = createOfficialDailyCompetitiveCASRuntime({
       puzzleId: A, runtime: runtime(A), progressionTokens: tokens, secret: SECRET,
       reserveAttempt: async () => ({ ...x.reservation, attemptId: OTHER_ATTEMPT }),
-      progression: memory(), completion: memory(), now: () => new Date(START), maximumAttemptAgeMs: 86_400_000,
+      progression: memory(), completion: memory(), now: () => new Date(START),
     });
     await expect(wrong.getBootstrap(DATE)).rejects.toThrow();
     const fresh = rig();

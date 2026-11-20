@@ -114,8 +114,11 @@ describe('source-only competitive Daily transcript', () => {
     expect(fork.atBats[0]?.outcome).toBe('K');
   });
 
-  it('does not issue a live attempt for an archived or future date', async () => {
-    await expect(runtime(A, new Date('2026-11-07T12:00:00Z')).getBootstrap(DATE)).rejects.toThrow();
+  it('starts released archives and rejects future editions', async () => {
+    const later = new Date('2026-11-09T12:00:00Z');
+    const archive = runtime(A, later, { startedAt: later.toISOString() });
+    const boot = await archive.getBootstrap(DATE);
+    expect(proofs.verify(boot.progressionToken)).toMatchObject({ puzzleDate: DATE, startedAt: later.getTime() });
     await expect(runtime(A, new Date('2026-11-05T12:00:00Z')).getBootstrap(DATE)).rejects.toThrow();
   });
 

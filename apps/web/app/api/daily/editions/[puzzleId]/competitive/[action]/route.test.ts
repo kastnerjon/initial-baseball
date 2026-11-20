@@ -26,7 +26,6 @@ beforeEach(() => {
   vi.stubEnv('OFFICIAL_DAILY_EDITION_COMPETITIVE_HTTP_ENABLED', 'true');
   vi.stubEnv('OFFICIAL_DAILY_EDITION_PRIVATE_RUNTIME_ENABLED', 'true');
   vi.stubEnv('OFFICIAL_DAILY_COMPETITIVE_SECRET', SECRET);
-  vi.stubEnv('OFFICIAL_DAILY_COMPETITIVE_MAX_AGE_MS', '86400000');
   vi.mocked(createServerOfficialDailyCompetitiveGame).mockReturnValue(game);
   game.getBootstrap.mockResolvedValue({ progressionToken: 'signed-bootstrap' });
   game.resolveAtBat.mockResolvedValue({ progressionToken: 'signed-next' });
@@ -54,10 +53,10 @@ describe('official Daily competitive POST', () => {
     expect(await (await post('bootstrap', DATE, cookie)).json()).toEqual({ progressionToken: 'signed-bootstrap' });
     const digest = vi.mocked(createServerOfficialDailyCompetitiveGame).mock.calls[0]![1];
     expect(digest).toMatch(/^[0-9a-f]{64}$/);
-    expect(createServerOfficialDailyCompetitiveGame).toHaveBeenCalledWith(ID, digest, SECRET, 86400000, 'bootstrap');
+    expect(createServerOfficialDailyCompetitiveGame).toHaveBeenCalledWith(ID, digest, SECRET, 'bootstrap');
     expect(await (await post('resolve', { progressionToken: 'signed-bootstrap', giveUp: true }, cookie)).json())
       .toEqual({ progressionToken: 'signed-next' });
-    expect(createServerOfficialDailyCompetitiveGame).toHaveBeenLastCalledWith(ID, digest, SECRET, 86400000, 'existing');
+    expect(createServerOfficialDailyCompetitiveGame).toHaveBeenLastCalledWith(ID, digest, SECRET, 'existing');
     expect(game.resolveAtBat).toHaveBeenCalledWith({ progressionToken: 'signed-bootstrap', giveUp: true });
     expect((await post('hints', { progressionToken: 'signed-next' }, cookie, SIBLING)).status).toBe(403);
     expect((await post('bootstrap', DATE, cookie + '; ' + cookie)).status).toBe(403);
@@ -74,7 +73,7 @@ describe('official Daily competitive POST', () => {
     expect(await response.json()).toEqual({ status: 'completed', revision: 9 });
     expect(response.headers.get('cache-control')).toBe('private, no-store');
     expect(createServerOfficialDailyCompetitiveGame).toHaveBeenCalledOnce();
-    expect(vi.mocked(createServerOfficialDailyCompetitiveGame).mock.calls[0]![4]).toBe('existing');
+    expect(vi.mocked(createServerOfficialDailyCompetitiveGame).mock.calls[0]![3]).toBe('existing');
     expect(game.getScorecard).toHaveBeenCalledWith(DATE.date);
   });
   it('rejects foreign origins, extra score fields, unconfigured policy and invalid IDs before runtime access', async () => {
@@ -82,7 +81,7 @@ describe('official Daily competitive POST', () => {
     expect((await post('bootstrap', { ...DATE, score: 36 })).status).toBe(400);
     expect((await post('bootstrap', DATE, '', 'daily-other')).status).toBe(404);
     expect((await post('resolve', { progressionToken: 'a'.repeat(9000), giveUp: true })).status).toBe(400);
-    vi.stubEnv('OFFICIAL_DAILY_COMPETITIVE_MAX_AGE_MS', '');
+    vi.stubEnv('OFFICIAL_DAILY_COMPETITIVE_SECRET', '');
     expect((await post('bootstrap', DATE)).status).toBe(503);
     expect(createServerOfficialDailyCompetitiveGame).not.toHaveBeenCalled();
   });

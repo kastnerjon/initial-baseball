@@ -40,8 +40,7 @@ export async function POST(request: Request, context: Context) {
 
   try {
     const secret = process.env.OFFICIAL_DAILY_COMPETITIVE_SECRET?.trim();
-    const age = Number(process.env.OFFICIAL_DAILY_COMPETITIVE_MAX_AGE_MS);
-    if (!secret || secret.length < 32 || !Number.isSafeInteger(age) || age <= 0) {
+    if (!secret || secret.length < 32) {
       return respond({ error: 'unavailable' }, 503);
     }
     const credentials = createOfficialDailyAttemptBrowserCredential(secret);
@@ -54,7 +53,7 @@ export async function POST(request: Request, context: Context) {
     }
     if (identity.kind !== 'valid') return respond({ error: 'forbidden' }, 403);
     const game = createServerOfficialDailyCompetitiveGame(
-      puzzleId, identity.browserKeyDigest, secret, age, action === 'bootstrap' ? 'bootstrap' : 'existing',
+      puzzleId, identity.browserKeyDigest, secret, action === 'bootstrap' ? 'bootstrap' : 'existing',
     );
     if (action === 'scorecard') return respond(await game.getScorecard(date!));
     if (action === 'bootstrap') return respond(await game.getBootstrap(date!));

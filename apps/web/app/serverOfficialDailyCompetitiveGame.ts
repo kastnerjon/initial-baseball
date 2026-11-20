@@ -12,7 +12,7 @@ import { readReleasedOfficialDailyPuzzle } from './serverReleasedOfficialDailyPu
 
 /** One HTTP request owns the client, released publication snapshot and verified browser identity. */
 export function createServerOfficialDailyCompetitiveGame(
-  puzzleId: string, browserKey: string, secret: string, maximumAttemptAgeMs: number,
+  puzzleId: string, browserKey: string, secret: string,
   mode: 'bootstrap' | 'existing',
 ) {
   const now = () => new Date();
@@ -38,9 +38,9 @@ export function createServerOfficialDailyCompetitiveGame(
   const readExistingAttempt = (request: Request) => reservationFor(request, 'existing');
   const shared = { puzzleId, now, progressionTokens, secret, reserveAttempt };
   const game = createOfficialDailyCompetitiveCASRuntime({
-    ...shared, runtime: createOfficialDailyCompetitiveRuntime({ ...shared, runtime, readExistingAttempt }),
+    ...shared, runtime: createOfficialDailyCompetitiveRuntime({ ...shared, runtime }),
     progression: createSupabaseOfficialDailyProgressionStore(client),
-    completion: createSupabaseOfficialDailyAtomicCompletionStore(client), maximumAttemptAgeMs,
+    completion: createSupabaseOfficialDailyAtomicCompletionStore(client),
   });
   return {
     ...game,

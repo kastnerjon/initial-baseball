@@ -21,7 +21,6 @@ export function runtime(
   id: string,
   now = new Date('2026-11-06T12:00:00Z'),
   reservationOverride: Partial<OfficialDailyAttemptReservation> = {},
-  readExistingAttempt?: Parameters<typeof createOfficialDailyCompetitiveRuntime>[0]['readExistingAttempt'],
 ) {
   const puzzle: DailyPuzzle = {
     id, puzzleDate: DATE, puzzleNumber: 194, status: 'published',
@@ -38,7 +37,7 @@ export function runtime(
   const base = createDailyRuntimeService({ createPuzzle: () => puzzle, progressionTokens: tokens,
     resolveLegacyPlayerId: id => id, getCanonicalReveal: () => reveal });
   return createOfficialDailyCompetitiveRuntime({ puzzleId: id, runtime: base, progressionTokens: tokens,
-    secret: SECRET, now: () => now, ...(readExistingAttempt ? { readExistingAttempt } : {}),
+    secret: SECRET, now: () => now,
     reserveAttempt: async request => ({
       attemptId: ATTEMPT, puzzleId: request.puzzleId, puzzleDate: request.puzzleDate,
       rulesetVersion: request.rulesetVersion, browserKeyDigest: 'a'.repeat(64),
