@@ -29,7 +29,6 @@ export function createOfficialDailyCompetitiveRuntime(input: {
   now: () => Date;
   /** Server-only, SQL-backed first-start winner for the validated browser credential. */
   reserveAttempt: FindReservation;
-  readExistingAttempt?: FindReservation;
 }): DailyRuntimeService {
   const proofs = createOfficialDailyCompetitiveProofCodec(input.secret);
   const fail = () => { throw new Error('Official Daily competitive progression unavailable.'); };
@@ -56,13 +55,11 @@ export function createOfficialDailyCompetitiveRuntime(input: {
         || (rulesetVersion !== undefined && rulesetVersion !== 'points-v4')) return fail();
       const today = getPacificDailyDateString(now);
       if (date > today) return fail();
-      const findAttempt = date === today ? input.reserveAttempt : input.readExistingAttempt;
-      if (!findAttempt) return fail();
       const bootstrap = await input.runtime.getBootstrap(date, 'points-v4');
       if (bootstrap.puzzle.id !== input.puzzleId || bootstrap.puzzle.puzzleDate !== date
         || bootstrap.rulesetVersion !== 'points-v4') return fail();
       if (bootstrap.puzzle.status !== 'published') return fail();
-      const reservation = await findAttempt({
+      const reservation = await input.reserveAttempt({
         puzzleId: input.puzzleId, puzzleDate: date, rulesetVersion: 'points-v4',
       });
       const startedAt = Date.parse(reservation.startedAt);
@@ -72,7 +69,7 @@ export function createOfficialDailyCompetitiveRuntime(input: {
       if (reservation.puzzleId !== input.puzzleId || reservation.puzzleDate !== date
         || reservation.rulesetVersion !== 'points-v4' || !Number.isFinite(startedAt)
         || !Number.isFinite(afterReservation) || startedAt > afterReservation + 60_000
-        || getPacificDailyDateString(new Date(startedAt)) !== date) return fail();
+        || getPacificDailyDateString(new Date(startedAt)) < date) return fail();
       const proof: OfficialDailyCompetitiveProof = {
         version: 1, purpose: 'live', attemptId: reservation.attemptId,
         puzzleId: input.puzzleId, puzzleDate: date, rulesetVersion: 'points-v4',

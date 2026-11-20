@@ -64,11 +64,11 @@ BEGIN
       WHERE puzzle_id=v_a) <> 2 THEN
     RAISE EXCEPTION 'Browser digest uniqueness failed';
   END IF;
-  v_blocked:=false;
-  BEGIN
-    PERFORM * FROM public.reserve_official_daily_attempt(v_yesterday,v_digest);
-  EXCEPTION WHEN invalid_parameter_value THEN v_blocked:=true; END;
-  IF NOT v_blocked THEN RAISE EXCEPTION 'New archive start accepted'; END IF;
+  SELECT r.attempt_id INTO STRICT v_other FROM public.reserve_official_daily_attempt(v_yesterday,v_digest) r;
+  SELECT r.attempt_id INTO STRICT v_repeat FROM public.reserve_official_daily_attempt(v_yesterday,v_digest) r;
+  IF v_other IS NULL OR v_repeat IS DISTINCT FROM v_other OR v_other = v_a_attempt THEN
+    RAISE EXCEPTION 'Archive reservation lost its exact edition or retry identity';
+  END IF;
   v_blocked:=false;
   BEGIN
     PERFORM * FROM public.reserve_official_daily_attempt(v_tomorrow,v_digest);
@@ -79,12 +79,6 @@ BEGIN
     PERFORM * FROM public.reserve_official_daily_attempt(v_a,'bad');
   EXCEPTION WHEN invalid_parameter_value THEN v_blocked:=true; END;
   IF NOT v_blocked THEN RAISE EXCEPTION 'Invalid digest accepted'; END IF;
-  -- An existing old winner is eligible for readback; new old rows are not.
-  INSERT INTO public.official_daily_attempt_states(puzzle_id,browser_key_digest)
-    VALUES(v_yesterday,v_digest);
-  SELECT r.attempt_id INTO v_other
-    FROM public.reserve_official_daily_attempt(v_yesterday,v_digest) r;
-  IF v_other IS NULL THEN RAISE EXCEPTION 'Existing old attempt lost'; END IF;
 END;
 $checks$;
 ROLLBACK;

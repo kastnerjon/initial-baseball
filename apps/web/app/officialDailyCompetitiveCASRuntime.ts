@@ -69,11 +69,7 @@ export function createOfficialDailyCompetitiveCASRuntime(input: {
   progression: ProgressionStore;
   completion: Pick<ReturnType<typeof createSupabaseOfficialDailyAtomicCompletionStore>, 'advanceAndCommit'>;
   now: () => Date;
-  maximumAttemptAgeMs: number;
 }) {
-  if (!Number.isSafeInteger(input.maximumAttemptAgeMs) || input.maximumAttemptAgeMs <= 0) {
-    throw new Error('A bounded official Daily progression retry policy is required.');
-  }
   const proofs = createOfficialDailyCompetitiveProofCodec(input.secret);
   const fail = (): never => { throw new Error('Official Daily competitive progression unavailable.'); };
 
@@ -86,8 +82,7 @@ export function createOfficialDailyCompetitiveCASRuntime(input: {
     if (proof.puzzleId !== input.puzzleId) return fail();
     const now = input.now().getTime();
     if (!Number.isFinite(now) || proof.startedAt > now + 60_000 ||
-      now - proof.startedAt > input.maximumAttemptAgeMs ||
-      getPacificDailyDateString(new Date(proof.startedAt)) !== proof.puzzleDate) return fail();
+      getPacificDailyDateString(new Date(proof.startedAt)) < proof.puzzleDate) return fail();
     let reservation: OfficialDailyAttemptReservation;
     try {
       reservation = await input.reserveAttempt({

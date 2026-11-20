@@ -1,5 +1,9 @@
 # Initial Baseball — Start Here
 
+## Archive scoring candidate for #657
+
+The owner approved scored play for every released official edition, including a first start days later. #682 has merged. The archive candidate updates reservation and authenticated progression and adds regressions for delayed starts, multi-day resume and completed scorecards. Apply the new forward migration on isolated QA after review and confirm hosted start, resume, completion and retry. This supersedes the earlier old-date denial and 24-hour gameplay-window criteria. Production secondary scoring remains disabled.
+
 ## Active release and next action
 
 **Player outcome.** Players can complete multiple official Daily Nine editions, each counted against the exact immutable edition they played, even when the nine-player rosters match. The active release is [#657](https://github.com/kastnerjon/initial-baseball/issues/657); production secondary competitive scoring remains **OFF**.

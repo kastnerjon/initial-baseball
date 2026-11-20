@@ -821,7 +821,7 @@ The unlisted v2 game page passes `completionDisplayEnabled` only when both exact
 
 ### Secondary Daily competitive gameplay candidate (#657)
 
-The server stages `POST /api/daily/editions/:puzzleId/competitive/:action` behind both `OFFICIAL_DAILY_EDITION_COMPETITIVE_HTTP_ENABLED=true` and `OFFICIAL_DAILY_EDITION_PRIVATE_RUNTIME_ENABLED=true`. Both default off. Each request requires HTTPS, a matching Origin, and a bounded JSON body. Responses carry `private, no-store`. The server requires a dedicated `OFFICIAL_DAILY_COMPETITIVE_SECRET` and a positive integer `OFFICIAL_DAILY_COMPETITIVE_MAX_AGE_MS`; QA supplies its own values. Production policy and rollout require approval.
+The server stages `POST /api/daily/editions/:puzzleId/competitive/:action` behind both `OFFICIAL_DAILY_EDITION_COMPETITIVE_HTTP_ENABLED=true` and `OFFICIAL_DAILY_EDITION_PRIVATE_RUNTIME_ENABLED=true`. Both default off. Each request requires HTTPS, a matching Origin, and a bounded JSON body. Responses carry `private, no-store`. The server requires a dedicated `OFFICIAL_DAILY_COMPETITIVE_SECRET` for the edition-scoped browser credential and signed progression. With that credential, players may start or resume any released edition and read their completed scorecard without a gameplay deadline. Production policy and rollout require approval.
 
 | Action | JSON fields | Behavior |
 | --- | --- | --- |
