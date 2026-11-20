@@ -205,7 +205,7 @@ describe('published edition links open their exact practice route', () => {
       })),
     });
     const choiceHtml = renderToStaticMarkup(await ChoicePage({ searchParams: Promise.resolve({}) }));
-    const archiveHtml = renderToStaticMarkup(<UnifiedOfficialDailyArchiveSection practiceAvailable page={{
+    const archiveHtml = renderToStaticMarkup(<UnifiedOfficialDailyArchiveSection practiceAvailable competitiveAvailable={false} page={{
       nextCursor: null, dates: [{ puzzleDate: olderDate, editions: [
         { kind: 'legacy-primary', puzzleId: null, puzzleDate: olderDate,
           editionNumber: 1, title: 'Puzzle 1', puzzleNumber: 192 },
