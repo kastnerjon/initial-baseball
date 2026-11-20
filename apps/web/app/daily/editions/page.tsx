@@ -2,7 +2,8 @@ import React, { type JSX } from 'react';
 import { notFound } from 'next/navigation';
 import { isOfficialDailyArchiveVisible } from '../../serverOfficialDailyArchiveSection';
 import {
-  isOfficialDailyEditionChooserVisible, readCurrentOfficialDailyEditionChoice,
+  isOfficialDailyEditionChooserVisible, isOfficialDailyEditionCompetitivePreviewVisible,
+  readCurrentOfficialDailyEditionChoice,
 } from '../../serverOfficialDailyEditionChoice';
 import type { OfficialDailyEditionChoicePage } from '../../serverOfficialDailyEditionChoice';
 
@@ -20,6 +21,7 @@ type PageProps = {
 /** A4 read-only choice surface. Main Daily remains the primary and competitive A3 is disabled. */
 export default async function OfficialDailyEditionChoicePage({ searchParams }: PageProps): Promise<JSX.Element> {
   if (!isOfficialDailyEditionChooserVisible()) notFound();
+  const competitiveAvailable = isOfficialDailyEditionCompetitivePreviewVisible();
   let page: OfficialDailyEditionChoicePage | null = null;
   let unavailable = false;
   try {
@@ -35,7 +37,9 @@ export default async function OfficialDailyEditionChoicePage({ searchParams }: P
       <section className="daily-card">
         <p className="eyebrow">Initial Baseball · Daily Nine</p>
         <h1>Today’s Daily puzzles</h1>
-        <p>The original Daily Nine remains playable without an account. Additional published editions can be played for practice without an account; competitive scores are not submitted.</p>
+        <p>The original Daily Nine remains playable without an account. {competitiveAvailable
+          ? 'Additional published editions support scored play in this preview; results count for each exact edition.'
+          : 'Additional published editions can be played for practice without an account; competitive scores are not submitted.'}</p>
         <p><a href="/">Play today’s primary Daily Nine</a></p>
         {unavailable || page === null ? (
           <p role="status">Additional Daily puzzles are temporarily unavailable.
@@ -51,7 +55,9 @@ export default async function OfficialDailyEditionChoicePage({ searchParams }: P
                     <a href={`/daily/editions/${encodeURIComponent(edition.puzzleId)}?date=${encodeURIComponent(page.puzzleDate)}`}>
                       <strong>{edition.title}</strong>
                     </a>
-                    {' · Practice only; scores are not submitted'}
+                    {' · '}{competitiveAvailable
+                      ? 'Scored play; results count for this edition'
+                      : 'Practice only; scores are not submitted'}
                   </li>
                 ))}
               </ul>
