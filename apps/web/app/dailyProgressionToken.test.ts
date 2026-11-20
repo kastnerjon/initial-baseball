@@ -109,6 +109,20 @@ describe('Daily progression token codec', () => {
     expect(() => codec.verify(signRaw({ ...claims, rulesetVersion: 'unknown-ruleset' }))).toThrow(DailyProgressionTokenError);
   });
 
+  it('preserves old signed states with explicitly retained verification keys', () => {
+    const old = createDailyProgressionTokenCodec(secret);
+    const nextSecret = 'new-daily-progression-signing-secret-0123456789abcdef';
+    const rotated = createDailyProgressionTokenCodec(nextSecret, 9, [secret]);
+    const oldToken = old.sign(claims);
+    expect(rotated.verify(oldToken)).toEqual(claims);
+    const newToken = rotated.sign(claims);
+    expect(createDailyProgressionTokenCodec(nextSecret).verify(newToken)).toEqual(claims);
+    expect(() => old.verify(newToken)).toThrow(DailyProgressionTokenError);
+    expect(() => createDailyProgressionTokenCodec(nextSecret).verify(oldToken))
+      .toThrow(DailyProgressionTokenError);
+    expect(() => createDailyProgressionTokenCodec(nextSecret, 9, ['weak'])).toThrow();
+  });
+
   it('requires a sufficiently strong injected secret', () => {
     expect(() => createDailyProgressionTokenCodec('too-short')).toThrow(/at least 32 characters/);
   });

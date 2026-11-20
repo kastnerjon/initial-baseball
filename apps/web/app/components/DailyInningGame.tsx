@@ -58,6 +58,7 @@ type DailyInningGameProps = {
   archivePath?: string;
   officialEditionPractice?: boolean;
   competitiveCard?: Extract<ReturnType<typeof restoreCompetitiveScorecard>, { status: 'active' }>;
+  onCompetitiveActionFailure?: () => void;
 };
 export function DailyInningGame({
   puzzle,
@@ -65,7 +66,7 @@ export function DailyInningGame({
   initialProgressionToken,
   initialHintBundle,
   archivePath,
-  officialEditionPractice = false, competitiveCard,
+  officialEditionPractice = false, competitiveCard, onCompetitiveActionFailure,
 }: DailyInningGameProps): JSX.Element {
   const archive = isArchiveDailyPuzzleId(puzzle.id);
   const editionPractice = officialEditionPractice && isSecondaryOfficialDailyEditionId(puzzle.id);
@@ -94,7 +95,10 @@ export function DailyInningGame({
   const [hasLoadedSavedState, setHasLoadedSavedState] = useState(competitive);
   const [bundlePending, setBundlePending] = useState(false);
   const [requestError, setRequestError] = useState<string | null>(null);
-  const resolutionRequests = useDailyGameplayResolutionRequests(setRequestError, editionResolution);
+  const resolutionRequests = useDailyGameplayResolutionRequests(message => {
+    setRequestError(message);
+    if (message !== null && competitive) onCompetitiveActionFailure?.();
+  }, editionResolution);
   const [savedGameRestoreController] = useState(() => createDailySavedGameRestoreController(
     editionTransport === null ? undefined : token => editionTransport.hints(token),
   ));

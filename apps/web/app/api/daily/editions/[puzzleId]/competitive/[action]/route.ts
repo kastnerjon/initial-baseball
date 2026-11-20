@@ -2,6 +2,7 @@ import { validateIssuedDailyCalendarDate } from '@initial-baseball/daily/officia
 import { createOfficialDailyAttemptBrowserCredential, isOfficialDailyBrowserPuzzleId } from '../../../../../../customNineAttemptBrowserCredential';
 import { parseBody, readBoundedJson, respond } from '../../../../../../officialDailyEditionRequest';
 import { createServerOfficialDailyCompetitiveGame } from '../../../../../../serverOfficialDailyCompetitiveGame';
+import { readOfficialDailyCompetitiveSigningKeys } from '../../../../../../officialDailyCompetitiveSigningKeys';
 
 export const dynamic = 'force-dynamic';
 type Context = { params: Promise<{ puzzleId: string; action: string }> };
@@ -39,12 +40,9 @@ export async function POST(request: Request, context: Context) {
   } catch { return respond({ error: 'invalid_request' }, 400); }
 
   try {
-    const secret = process.env.OFFICIAL_DAILY_COMPETITIVE_SECRET?.trim();
-    if (!secret || secret.length < 32) {
-      return respond({ error: 'unavailable' }, 503);
-    }
-    const credentials = createOfficialDailyAttemptBrowserCredential(secret);
-    const identity = credentials.inspect(request.headers.get('cookie'), puzzleId);
+    const { active, legacy } = readOfficialDailyCompetitiveSigningKeys();
+    const credentials = createOfficialDailyAttemptBrowserCredential(active, legacy);
+    const identity = credentials.inspect(request.headers.get('cookie'), puzzleId, request.url);
     if (identity.kind === 'absent' && action === 'bootstrap') {
       // Wait for the browser to return the cookie before allocating its first attempt.
       const response = respond({ error: 'cookie_required' }, 428);
@@ -53,11 +51,16 @@ export async function POST(request: Request, context: Context) {
     }
     if (identity.kind !== 'valid') return respond({ error: 'forbidden' }, 403);
     const game = createServerOfficialDailyCompetitiveGame(
-      puzzleId, identity.browserKeyDigest, secret, action === 'bootstrap' ? 'bootstrap' : 'existing',
+      puzzleId, identity.browserKeyDigest, active,
+      action === 'bootstrap' ? 'bootstrap' : 'existing', legacy,
     );
-    if (action === 'scorecard') return respond(await game.getScorecard(date!));
-    if (action === 'bootstrap') return respond(await game.getBootstrap(date!));
-    if (action === 'hints') return respond(await game.getHintBundle(play!.progressionToken));
-    return respond(await game.resolveAtBat(play!));
+    const response = action === 'scorecard' ? respond(await game.getScorecard(date!))
+      : action === 'bootstrap' ? respond(await game.getBootstrap(date!))
+      : action === 'hints' ? respond(await game.getHintBundle(play!.progressionToken))
+      : respond(await game.resolveAtBat(play!));
+    if (identity.replacementSetCookie) {
+      response.headers.set('set-cookie', identity.replacementSetCookie);
+    }
+    return response;
   } catch { return respond({ error: 'unavailable' }, 503); }
 }

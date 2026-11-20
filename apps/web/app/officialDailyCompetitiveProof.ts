@@ -27,9 +27,14 @@ export class OfficialDailyCompetitiveProofError extends Error {}
  * may be signed. The admission layer must also enforce a live-start window,
  * atomic first-write/idempotence, and the authoritative publication identity.
  */
-export function createOfficialDailyCompetitiveProofCodec(secret: string) {
-  if (secret.length < 32) throw new Error('Competitive proof secret must be at least 32 characters.');
-  const mac = (input: string) => createHmac('sha256', secret).update(input).digest();
+export function createOfficialDailyCompetitiveProofCodec(
+  secret: string, legacyVerificationSecrets: readonly string[] = [],
+) {
+  const acceptedSecrets = [secret, ...legacyVerificationSecrets];
+  if (acceptedSecrets.some(key => key.length < 32)) {
+    throw new Error('Competitive proof secret must be at least 32 characters.');
+  }
+  const mac = (input: string, key = secret) => createHmac('sha256', key).update(input).digest();
   return {
     sign(value: OfficialDailyCompetitiveProof): string {
       const proof = parseProof(value);
@@ -42,8 +47,12 @@ export function createOfficialDailyCompetitiveProofCodec(secret: string) {
       const parts = token.split('.');
       if (parts.length !== 3 || parts[0] !== PREFIX || !canonical(parts[1]) || !canonical(parts[2])) throw invalid();
       const actual = Buffer.from(parts[2]!, 'base64url');
-      const expected = mac(`${PREFIX}.${parts[1]}`);
-      if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) throw invalid();
+      const signed = `${PREFIX}.${parts[1]}`;
+      const valid = acceptedSecrets.reduce((matched, key) => {
+        const expected = mac(signed, key);
+        return (actual.length === expected.length && timingSafeEqual(actual, expected)) || matched;
+      }, false);
+      if (!valid) throw invalid();
       try {
         return parseProof(JSON.parse(Buffer.from(parts[1]!, 'base64url').toString('utf8')) as unknown);
       } catch {

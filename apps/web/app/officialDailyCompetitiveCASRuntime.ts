@@ -63,6 +63,7 @@ export function createOfficialDailyCompetitiveCASRuntime(input: {
   runtime: DailyRuntimeService;
   progressionTokens: DailyProgressionTokenCodec;
   secret: string;
+  legacyVerificationSecrets?: readonly string[];
   reserveAttempt: (request: {
     puzzleId: string; puzzleDate: string; rulesetVersion: 'points-v4';
   }) => Promise<OfficialDailyAttemptReservation>;
@@ -70,7 +71,7 @@ export function createOfficialDailyCompetitiveCASRuntime(input: {
   completion: Pick<ReturnType<typeof createSupabaseOfficialDailyAtomicCompletionStore>, 'advanceAndCommit'>;
   now: () => Date;
 }) {
-  const proofs = createOfficialDailyCompetitiveProofCodec(input.secret);
+  const proofs = createOfficialDailyCompetitiveProofCodec(input.secret, input.legacyVerificationSecrets);
   const fail = (): never => { throw new Error('Official Daily competitive progression unavailable.'); };
 
   function requireProof(token: string): OfficialDailyCompetitiveProof {

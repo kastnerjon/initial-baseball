@@ -1,5 +1,7 @@
 import { describe, expect, it, vi } from 'vitest';
 import type { DailyCompletedAtBat } from '@initial-baseball/shared';
+import { createDailyProgressionTokenCodec } from './dailyProgressionToken';
+import { createOfficialDailyCompetitiveProofCodec } from './officialDailyCompetitiveProof';
 import type { OfficialDailyProgressionSnapshot } from './supabaseOfficialDailyProgressionStore';
 import { createOfficialDailyCompetitiveCASRuntime } from './officialDailyCompetitiveCASRuntime';
 import { A, B, DATE, ANSWER, OTHER, ATTEMPT, SECRET, runtime, tokens, proofs } from './officialDailyCompetitive.testFixtures';
@@ -61,15 +63,22 @@ function rig(
   database = memory(),
   attemptId = id === A ? ATTEMPT : OTHER_ATTEMPT,
   startedAt = START,
+  signing: { secret: string; legacyVerificationSecrets?: readonly string[] } = { secret: SECRET },
 ) {
   const reservation = {
     attemptId, puzzleId: id, puzzleDate: DATE, rulesetVersion: 'points-v4' as const,
     browserKeyDigest: 'a'.repeat(64), startedAt,
   };
-  const producer = runtime(id, clock, { attemptId, startedAt });
+  const producer = runtime(id, clock, { attemptId, startedAt }, signing);
+  const signedTokens = createDailyProgressionTokenCodec(
+    signing.secret, 9, signing.legacyVerificationSecrets,
+  );
   const reserveAttempt = vi.fn(async () => reservation);
   const game = createOfficialDailyCompetitiveCASRuntime({
-    puzzleId: id, runtime: producer, progressionTokens: tokens, secret: SECRET,
+    puzzleId: id, runtime: producer, progressionTokens: signedTokens, secret: signing.secret,
+    ...(signing.legacyVerificationSecrets === undefined ? {} : {
+      legacyVerificationSecrets: signing.legacyVerificationSecrets,
+    }),
     reserveAttempt, progression: database, completion: database, now: () => clock,
   });
   return { game, database, reserveAttempt, reservation };
@@ -137,6 +146,96 @@ describe('source-only durable official Daily competitive CAS runtime', () => {
     expect((await returning.game.readScorecard(first.reservation)).revision).toBe(1);
     await returning.game.resolveAtBat({ progressionToken: resumed.progressionToken, giveUp: true });
     expect(first.database.state()?.revision).toBe(2);
+  });
+
+  it('restores a previously signed exact-edition attempt after a controlled key change', async () => {
+    const base = rig();
+    const oldStart = await base.game.getBootstrap(DATE);
+    const first = await base.game.resolveAtBat({ progressionToken: oldStart.progressionToken, giveUp: true });
+    const changedSecret = 'new-official-daily-competitive-key-0123456789abcdef';
+    const revoked = rig(A, new Date(START), base.database, ATTEMPT, START,
+      { secret: changedSecret });
+    await expect(revoked.game.getBootstrap(DATE)).rejects.toThrow();
+
+    const rotated = rig(A, new Date(START), base.database, ATTEMPT, START, {
+      secret: changedSecret, legacyVerificationSecrets: [SECRET],
+    });
+    // Old response-loss retries can produce a newly signed successor whose
+    // bytes differ from the already persisted winner. Fail closed rather than
+    // admitting a second result; authoritative bootstrap remains recoverable.
+    await expect(rotated.game.resolveAtBat({
+      progressionToken: oldStart.progressionToken, giveUp: true,
+    })).rejects.toThrow();
+    expect(base.database.state()).toMatchObject({
+      revision: 1, token: first.progressionToken,
+    });
+    const restored = await rotated.game.getBootstrap(DATE);
+    expect(restored.progressionToken).toBe(first.progressionToken);
+    expect(restored.hintBundle.pitchNumber).toBe(2);
+    const card = await rotated.game.readScorecard(base.reservation);
+    expect(card).toMatchObject({ status: 'active', revision: 1 });
+    const advanced = await rotated.game.resolveAtBat({
+      progressionToken: restored.progressionToken, giveUp: true,
+    });
+    const newProofs = createOfficialDailyCompetitiveProofCodec(changedSecret);
+    const newTokens = createDailyProgressionTokenCodec(changedSecret);
+    const reissued = newProofs.verify(advanced.progressionToken);
+    expect(newTokens.verify(reissued.progressionToken).pitchNumber).toBe(3);
+    expect(() => proofs.verify(advanced.progressionToken)).toThrow();
+    expect(base.database.state()?.revision).toBe(2);
+    expect((await rotated.game.readScorecard(base.reservation)).atBats).toHaveLength(2);
+  });
+
+  it('fails closed on old-key wrong-guess replay or conflicting stale give-up and restores the winner', async () => {
+    const base = rig();
+    const started = await base.game.getBootstrap(DATE);
+    const wrong = await base.game.resolveAtBat({
+      progressionToken: started.progressionToken, submittedPlayerId: OTHER,
+    });
+    const changedSecret = 'new-official-daily-competitive-key-0123456789abcdef';
+    const rotated = rig(A, new Date(START), base.database, ATTEMPT, START, {
+      secret: changedSecret, legacyVerificationSecrets: [SECRET],
+    });
+    await expect(rotated.game.resolveAtBat({
+      progressionToken: started.progressionToken, submittedPlayerId: OTHER,
+    })).rejects.toThrow();
+    await expect(rotated.game.resolveAtBat({
+      progressionToken: started.progressionToken, giveUp: true,
+    })).rejects.toThrow();
+    expect(base.database.state()).toMatchObject({
+      token: wrong.progressionToken, revision: 1, terminalAtBats: [],
+    });
+    const card = await rotated.game.readScorecard(base.reservation);
+    expect(card).toMatchObject({ status: 'active', revision: 1, strikeCount: 1 });
+    const resumed = await rotated.game.resolveAtBat({
+      progressionToken: wrong.progressionToken, giveUp: true,
+    });
+    expect(base.database.state()).toMatchObject({
+      token: resumed.progressionToken, revision: 2,
+      terminalAtBats: [{ pitchNumber: 1, resolution: 'give_up' }],
+    });
+  });
+
+  it('restores a completed old-key scorecard after a lost final response without duplicating results', async () => {
+    const base = rig();
+    let token = (await base.game.getBootstrap(DATE)).progressionToken;
+    for (let i = 0; i < 8; i++) {
+      token = (await base.game.resolveAtBat({ progressionToken: token, giveUp: true })).progressionToken;
+    }
+    const finalRequest = { progressionToken: token, giveUp: true };
+    const finished = await base.game.resolveAtBat(finalRequest);
+    const changedSecret = 'new-official-daily-competitive-key-0123456789abcdef';
+    const rotated = rig(A, new Date(START), base.database, ATTEMPT, START, {
+      secret: changedSecret, legacyVerificationSecrets: [SECRET],
+    });
+    await expect(rotated.game.resolveAtBat(finalRequest)).rejects.toThrow();
+    expect(base.database.state()).toMatchObject({
+      token: finished.progressionToken, status: 'completed', revision: 9,
+    });
+    const card = await rotated.game.readScorecard(base.reservation);
+    expect(card).toMatchObject({ status: 'completed', revision: 9 });
+    expect(card.atBats).toHaveLength(9);
+    expect(base.database.advanceAndCommit).toHaveBeenCalledTimes(1);
   });
 
   it('treats the identical response-loss replay as idempotent, without increasing revision', async () => {

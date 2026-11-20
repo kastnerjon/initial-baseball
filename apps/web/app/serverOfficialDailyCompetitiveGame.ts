@@ -14,10 +14,11 @@ import { readReleasedOfficialDailyPuzzle } from './serverReleasedOfficialDailyPu
 export function createServerOfficialDailyCompetitiveGame(
   puzzleId: string, browserKey: string, secret: string,
   mode: 'bootstrap' | 'existing',
+  legacyVerificationSecrets: readonly string[] = [],
 ) {
   const now = () => new Date();
   const client = createServerSupabaseClient();
-  const progressionTokens = createDailyProgressionTokenCodec(secret);
+  const progressionTokens = createDailyProgressionTokenCodec(secret, 9, legacyVerificationSecrets);
   let publication: ReturnType<typeof readReleasedOfficialDailyPuzzle> | undefined;
   const runtime = createServerOfficialDailyEditionRuntime(puzzleId, {
     createClient: () => client, progressionTokens: () => progressionTokens, now,
@@ -36,7 +37,7 @@ export function createServerOfficialDailyCompetitiveGame(
   };
   const reserveAttempt = (request: Request) => reservationFor(request, mode);
   const readExistingAttempt = (request: Request) => reservationFor(request, 'existing');
-  const shared = { puzzleId, now, progressionTokens, secret, reserveAttempt };
+  const shared = { puzzleId, now, progressionTokens, secret, legacyVerificationSecrets, reserveAttempt };
   const game = createOfficialDailyCompetitiveCASRuntime({
     ...shared, runtime: createOfficialDailyCompetitiveRuntime({ ...shared, runtime }),
     progression: createSupabaseOfficialDailyProgressionStore(client),
