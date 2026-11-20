@@ -1,4 +1,5 @@
 // @vitest-environment jsdom
+/// <reference lib="dom" />
 import React, { act } from 'react';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
@@ -59,7 +60,7 @@ beforeEach(() => {
   });
   container = document.createElement('div');
   document.body.append(container);
-  root = createRoot(container);
+  root = createRoot(container!);
 });
 
 afterEach(async () => {
