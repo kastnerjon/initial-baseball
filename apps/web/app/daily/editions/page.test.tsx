@@ -3,7 +3,7 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 const mocked = vi.hoisted(() => ({
-  enabled: vi.fn(), read: vi.fn(), archiveVisible: vi.fn(),
+  enabled: vi.fn(), read: vi.fn(), archiveVisible: vi.fn(), competitiveVisible: vi.fn(),
   notFound: vi.fn((): never => { throw new Error('NOT_FOUND'); }),
 }));
 vi.mock('next/navigation', () => ({ notFound: mocked.notFound }));
@@ -12,6 +12,7 @@ vi.mock('../../serverOfficialDailyArchiveSection', () => ({
 }));
 vi.mock('../../serverOfficialDailyEditionChoice', () => ({
   isOfficialDailyEditionChooserVisible: mocked.enabled,
+  isOfficialDailyEditionCompetitivePreviewVisible: mocked.competitiveVisible,
   readCurrentOfficialDailyEditionChoice: mocked.read,
 }));
 import ChoicePage, { metadata } from './page';
@@ -20,6 +21,7 @@ beforeEach(() => {
   vi.clearAllMocks();
   mocked.enabled.mockReturnValue(false);
   mocked.archiveVisible.mockReturnValue(false);
+  mocked.competitiveVisible.mockReturnValue(false);
   mocked.read.mockResolvedValue({ puzzleDate: '2026-11-06', editions: [], nextCursor: null });
 });
 const args = (searchParams: Record<string, string | string[] | undefined> = {}) =>
@@ -32,7 +34,7 @@ describe('Daily edition choice page', () => {
     expect(metadata.robots.index).toBe(false);
   });
 
-  it('links same-day published editions only to exact-ID noncompetitive practice', async () => {
+  it('labels same-day exact-ID editions as practice when the competitive Preview gate is OFF', async () => {
     mocked.enabled.mockReturnValue(true);
     mocked.read.mockResolvedValue({ puzzleDate: '2026-11-06', editions: [
       { puzzleId: 'daily-ed-v1-907f33db-c38f-43c3-8e6b-a3aaf19bbd08',
@@ -57,6 +59,31 @@ describe('Daily edition choice page', () => {
     });
     expect(html).not.toContain('correctPlayerIds');
     expect(html).not.toContain('Leaderboard');
+  });
+
+
+  it('uses the destination competitive-preview predicate for scored chooser links', async () => {
+    mocked.enabled.mockReturnValue(true);
+    mocked.competitiveVisible.mockReturnValue(true);
+    mocked.read.mockResolvedValue({ puzzleDate: '2026-11-06', editions: [
+      { puzzleId: 'daily-ed-v1-907f33db-c38f-43c3-8e6b-a3aaf19bbd08',
+        puzzleDate: '2026-11-06', title: 'Same roster A', editionNumber: 2,
+        editionKey: 'same-a', puzzleNumber: 194 },
+      { puzzleId: 'daily-ed-v1-2a65c93c-3f36-4f4b-853f-92e85bb81648',
+        puzzleDate: '2026-11-06', title: 'Same roster B', editionNumber: 3,
+        editionKey: 'same-b', puzzleNumber: 194 },
+    ], nextCursor: null });
+    const html = renderToStaticMarkup(await ChoicePage(args()));
+    expect(html).toContain('Additional published editions support scored play in this preview');
+    expect((html.match(/Scored play; results count for this edition/g) ?? []).length).toBe(2);
+    expect(html).toContain('href="/daily/editions/daily-ed-v1-907f33db-c38f-43c3-8e6b-a3aaf19bbd08?date=2026-11-06"');
+    expect(html).toContain('href="/daily/editions/daily-ed-v1-2a65c93c-3f36-4f4b-853f-92e85bb81648?date=2026-11-06"');
+    expect(html).not.toContain('Practice only; scores are not submitted');
+    expect(html).not.toContain('competitive scores are not submitted');
+    expect(html).not.toContain('correctPlayerIds');
+    expect(html).not.toContain('clue_snapshot');
+    expect(html).not.toContain('Leaderboard');
+    expect(mocked.read).toHaveBeenCalledOnce();
   });
 
   it('labels the Archive beta destination accurately unless official Archive is actually enabled', async () => {
