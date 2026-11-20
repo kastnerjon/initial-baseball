@@ -1,5 +1,12 @@
 # Initial Baseball — Start Here
 
+## November 20 — official Daily signing-key rotation source candidate (#657)
+
+- Key-rotation review found that replacing the sole `OFFICIAL_DAILY_COMPETITIVE_SECRET` invalidates old signed cookies, outer proofs, inner progression tokens and persisted scorecard readback, even though the canonical attempt rows remain. A controlled rotation must preserve the same edition-specific browser digest and already accepted signed state.
+- The isolated source branch `fix/official-daily-competitive-signing-rotation-657` adds an explicit bounded server-only verification-key ring for all three signing layers, with newly generated material signed only under the active key. Tests cover old-key verification and revocation, identical edition isolation, and signed CAS scorecard continuity. **The candidate is not merged, hosted accepted, independently reviewed or deployed.** A runbook is at [official-daily-signing-rotation.md](engineering/official-daily-signing-rotation.md).
+- Today the exact reviewed #667 editorial future-date guard + complete SQL regression passed again inside one isolated-QA `BEGIN ... ROLLBACK` using the production-shaped editorial drafts table. Separate metadata verification confirmed no new trigger/function, no draft rows and the original integrity trigger still enabled. This is **not** real two-session Pacific-midnight lock-wait acceptance or persistent migration.
+- #686 is independently reviewed, merged on main at `1868070effa273835dbf630265b96199f88b0a0b`, main push CI `44810949712` SUCCESS, matching production build `dpl_7XMBhaoeNuzMhaaB21NqtbBcZJE4` READY and production default-OFF smoke passed. QA exact-source scored chooser-to-game and Archive links passed; physical devices and midnight remain open. Production secondary scoring remains OFF; no hosted secrets, database schema or production settings changed.
+
 ## Active release and next action — November 20
 
 **Player outcome.** Official secondary Daily Nine editions use the shared Daily game, independently preserve signed per-edition gameplay and scores even for identical rosters, and allow scored first starts and resumes from the Archive without a gameplay deadline. Active release: [#657](https://github.com/kastnerjon/initial-baseball/issues/657). **Production secondary competition remains OFF.**

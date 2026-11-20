@@ -21,6 +21,7 @@ export function runtime(
   id: string,
   now = new Date('2026-11-06T12:00:00Z'),
   reservationOverride: Partial<OfficialDailyAttemptReservation> = {},
+  signing: { secret: string; legacyVerificationSecrets?: readonly string[] } = { secret: SECRET },
 ) {
   const puzzle: DailyPuzzle = {
     id, puzzleDate: DATE, puzzleNumber: 194, status: 'published',
@@ -34,10 +35,14 @@ export function runtime(
   const reveal = { playerId: ANSWER, displayName: 'Hidden Player', playerType: 'hitter',
     career: { primaryPosition: 'CF', firstSeason: 2000, lastSeason: 2001, teamIds: [],
       batting: null, pitching: null, advanced: null }, seasons: [] } as unknown as CanonicalPlayerReveal;
-  const base = createDailyRuntimeService({ createPuzzle: () => puzzle, progressionTokens: tokens,
+  const signedTokens = createDailyProgressionTokenCodec(signing.secret, 9, signing.legacyVerificationSecrets);
+  const base = createDailyRuntimeService({ createPuzzle: () => puzzle, progressionTokens: signedTokens,
     resolveLegacyPlayerId: id => id, getCanonicalReveal: () => reveal });
-  return createOfficialDailyCompetitiveRuntime({ puzzleId: id, runtime: base, progressionTokens: tokens,
-    secret: SECRET, now: () => now,
+  return createOfficialDailyCompetitiveRuntime({ puzzleId: id, runtime: base, progressionTokens: signedTokens,
+    secret: signing.secret,
+    ...(signing.legacyVerificationSecrets === undefined ? {} : {
+      legacyVerificationSecrets: signing.legacyVerificationSecrets,
+    }), now: () => now,
     reserveAttempt: async request => ({
       attemptId: ATTEMPT, puzzleId: request.puzzleId, puzzleDate: request.puzzleDate,
       rulesetVersion: request.rulesetVersion, browserKeyDigest: 'a'.repeat(64),

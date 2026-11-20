@@ -26,11 +26,12 @@ export function createOfficialDailyCompetitiveRuntime(input: {
   runtime: DailyRuntimeService;
   progressionTokens: DailyProgressionTokenCodec;
   secret: string;
+  legacyVerificationSecrets?: readonly string[];
   now: () => Date;
   /** Server-only, SQL-backed first-start winner for the validated browser credential. */
   reserveAttempt: FindReservation;
 }): DailyRuntimeService {
-  const proofs = createOfficialDailyCompetitiveProofCodec(input.secret);
+  const proofs = createOfficialDailyCompetitiveProofCodec(input.secret, input.legacyVerificationSecrets);
   const fail = () => { throw new Error('Official Daily competitive progression unavailable.'); };
 
   async function verify(token: string) {
