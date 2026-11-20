@@ -46,7 +46,7 @@ describe('one date-grouped historical official Archive presentation', () => {
     expect((html.match(/<h3>/g) ?? []).length).toBe(2);
     expect((html.match(/Historical replay unavailable/g) ?? []).length).toBe(2);
     expect((html.match(/Practice only; scores are not submitted/g) ?? []).length).toBe(3);
-    expect((html.match(/href="\/daily\/editions\//g) ?? []).length).toBe(3);
+    expect(html.split('href="/daily/editions/').length - 1).toBe(3);
     expect(html).toContain('/archive?afterDate=2026-11-04&amp;afterEdition=2');
   });
 
