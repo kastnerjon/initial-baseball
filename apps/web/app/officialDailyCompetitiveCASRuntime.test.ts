@@ -186,6 +186,58 @@ describe('source-only durable official Daily competitive CAS runtime', () => {
     expect((await rotated.game.readScorecard(base.reservation)).atBats).toHaveLength(2);
   });
 
+  it('fails closed on old-key wrong-guess replay or conflicting stale give-up and restores the winner', async () => {
+    const base = rig();
+    const started = await base.game.getBootstrap(DATE);
+    const wrong = await base.game.resolveAtBat({
+      progressionToken: started.progressionToken, submittedPlayerId: OTHER,
+    });
+    const changedSecret = 'new-official-daily-competitive-key-0123456789abcdef';
+    const rotated = rig(A, new Date(START), base.database, ATTEMPT, START, {
+      secret: changedSecret, legacyVerificationSecrets: [SECRET],
+    });
+    await expect(rotated.game.resolveAtBat({
+      progressionToken: started.progressionToken, submittedPlayerId: OTHER,
+    })).rejects.toThrow();
+    await expect(rotated.game.resolveAtBat({
+      progressionToken: started.progressionToken, giveUp: true,
+    })).rejects.toThrow();
+    expect(base.database.state()).toMatchObject({
+      token: wrong.progressionToken, revision: 1, terminalAtBats: [],
+    });
+    const card = await rotated.game.readScorecard(base.reservation);
+    expect(card).toMatchObject({ status: 'active', revision: 1, strikeCount: 1 });
+    const resumed = await rotated.game.resolveAtBat({
+      progressionToken: wrong.progressionToken, giveUp: true,
+    });
+    expect(base.database.state()).toMatchObject({
+      token: resumed.progressionToken, revision: 2,
+      terminalAtBats: [{ pitchNumber: 1, resolution: 'give_up' }],
+    });
+  });
+
+  it('restores a completed old-key scorecard after a lost final response without duplicating results', async () => {
+    const base = rig();
+    let token = (await base.game.getBootstrap(DATE)).progressionToken;
+    for (let i = 0; i < 8; i++) {
+      token = (await base.game.resolveAtBat({ progressionToken: token, giveUp: true })).progressionToken;
+    }
+    const finalRequest = { progressionToken: token, giveUp: true };
+    const finished = await base.game.resolveAtBat(finalRequest);
+    const changedSecret = 'new-official-daily-competitive-key-0123456789abcdef';
+    const rotated = rig(A, new Date(START), base.database, ATTEMPT, START, {
+      secret: changedSecret, legacyVerificationSecrets: [SECRET],
+    });
+    await expect(rotated.game.resolveAtBat(finalRequest)).rejects.toThrow();
+    expect(base.database.state()).toMatchObject({
+      token: finished.progressionToken, status: 'completed', revision: 9,
+    });
+    const card = await rotated.game.readScorecard(base.reservation);
+    expect(card).toMatchObject({ status: 'completed', revision: 9 });
+    expect(card.atBats).toHaveLength(9);
+    expect(base.database.advanceAndCommit).toHaveBeenCalledTimes(1);
+  });
+
   it('treats the identical response-loss replay as idempotent, without increasing revision', async () => {
     const { game, database } = rig();
     const original = await game.getBootstrap(DATE);
