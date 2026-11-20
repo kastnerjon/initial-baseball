@@ -8,15 +8,18 @@ import type { UnifiedArchivePage } from '../unifiedOfficialDailyArchiveMerge';
  * Secondary IDs link only to the source-integrated default-OFF practice route.
  * Legacy editorial primaries remain deliberately nonplayable placeholders.
  */
-export function UnifiedOfficialDailyArchiveSection({ page, practiceAvailable }: {
+export function UnifiedOfficialDailyArchiveSection({ page, practiceAvailable, competitiveAvailable }: {
   page: UnifiedArchivePage;
   practiceAvailable: boolean;
+  competitiveAvailable: boolean;
 }): JSX.Element {
   return (
     <section aria-label="Official Daily archive">
       <h2>Official Daily editions</h2>
       <p>Past official lineups. {practiceAvailable
-        ? 'Published secondary editions are available for practice; historical primary replay remains unavailable.'
+        ? competitiveAvailable
+          ? 'Published secondary editions support scored play in this preview; historical primary replay remains unavailable.'
+          : 'Published secondary editions are available for practice; historical primary replay remains unavailable.'
         : 'Secondary practice is not yet available; historical primary replay remains unavailable.'}</p>
       {page.dates.length === 0 ? (
         <p>No earlier official editions have been issued yet.</p>
@@ -38,7 +41,9 @@ export function UnifiedOfficialDailyArchiveSection({ page, practiceAvailable }: 
                         <a href={`/daily/editions/${encodeURIComponent(edition.puzzleId)}?date=${encodeURIComponent(edition.puzzleDate)}`}>
                           {`${edition.puzzleDate} – ${edition.title}`}
                         </a>
-                        {' · Practice only; scores are not submitted'}
+                        {' · '}{competitiveAvailable
+                          ? 'Scored play; results count for this edition'
+                          : 'Practice only; scores are not submitted'}
                       </>
                     ) : (
                       <>

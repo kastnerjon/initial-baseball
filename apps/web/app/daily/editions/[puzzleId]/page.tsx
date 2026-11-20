@@ -6,7 +6,8 @@ import { DailyRuntimeRequestError } from '../../../dailyRuntimeService';
 import { validateOfficialDailyEditionBootstrap } from '../../../officialDailyEditionHttpTransport';
 import { createServerOfficialDailyEditionRuntime } from '../../../serverOfficialDailyEditionRuntime';
 import {
-  isOfficialDailyEditionChooserVisible, isOfficialDailyEditionPracticeVisible,
+  isOfficialDailyEditionChooserVisible, isOfficialDailyEditionCompetitivePreviewVisible,
+  isOfficialDailyEditionPracticeVisible,
 } from '../../../serverOfficialDailyEditionChoice';
 import { CompetitiveDailyGame } from '../../../components/CompetitiveDailyGame';
 import { DailyInningGame } from '../../../components/DailyInningGame';
@@ -42,9 +43,7 @@ export default async function OfficialDailyPracticePage({
   const date = query.date;
   try { validateIssuedDailyCalendarDate(date); } catch { notFound(); }
 
-  const competitivePreview = process.env.VERCEL_ENV === 'preview'
-    && process.env.OFFICIAL_DAILY_COMPETITIVE_UI_QA === 'true'
-    && process.env.OFFICIAL_DAILY_EDITION_COMPETITIVE_HTTP_ENABLED === 'true';
+  const competitivePreview = isOfficialDailyEditionCompetitivePreviewVisible();
   let bootstrap = null;
   if (!competitivePreview) {
     try {

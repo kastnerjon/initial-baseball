@@ -31,6 +31,9 @@ vi.mock('../../../serverOfficialDailyEditionChoice', () => ({
     'OFFICIAL_DAILY_EDITION_HTTP_ENABLED',
     'OFFICIAL_DAILY_EDITION_PRIVATE_RUNTIME_ENABLED',
   ].every(flag => process.env[flag] === 'true'),
+  isOfficialDailyEditionCompetitivePreviewVisible: () => process.env.VERCEL_ENV === 'preview'
+    && process.env.OFFICIAL_DAILY_COMPETITIVE_UI_QA === 'true'
+    && process.env.OFFICIAL_DAILY_EDITION_COMPETITIVE_HTTP_ENABLED === 'true',
   readCurrentOfficialDailyEditionChoice: mocked.readChoice,
 }));
 
@@ -202,7 +205,7 @@ describe('published edition links open their exact practice route', () => {
       })),
     });
     const choiceHtml = renderToStaticMarkup(await ChoicePage({ searchParams: Promise.resolve({}) }));
-    const archiveHtml = renderToStaticMarkup(<UnifiedOfficialDailyArchiveSection practiceAvailable page={{
+    const archiveHtml = renderToStaticMarkup(<UnifiedOfficialDailyArchiveSection practiceAvailable competitiveAvailable={false} page={{
       nextCursor: null, dates: [{ puzzleDate: olderDate, editions: [
         { kind: 'legacy-primary', puzzleId: null, puzzleDate: olderDate,
           editionNumber: 1, title: 'Puzzle 1', puzzleNumber: 192 },
