@@ -35,7 +35,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function hasKeys(value: Record<string, unknown>, keys: readonly string[]): boolean {
-  return Object.keys(value).sort().join(',') === [...keys].sort().join(',');
+  return Object.keys(value).length === keys.length && keys.every(key => Object.hasOwn(value, key));
 }
 
 /** Accept only public, declarative hint settings; no nested answers or future hint blobs. */
@@ -68,7 +68,9 @@ function validateSingleHint(value: unknown): value is DailyHintResponse {
       || !hasKeys(value.hint, ['hintType', 'hintLabel', 'hintValue'])) return false;
   return HINT_TYPES.has(value.hint.hintType as string)
     && typeof value.hint.hintLabel === 'string' && value.hint.hintLabel.length > 0
-    && typeof value.hint.hintValue === 'string' && value.hint.hintValue.length > 0;
+    && value.hint.hintLabel.length <= 120
+    && typeof value.hint.hintValue === 'string' && value.hint.hintValue.length > 0
+    && value.hint.hintValue.length <= 4096;
 }
 
 /**
@@ -186,29 +188,36 @@ function validatePublicReveal(value: unknown): boolean {
     && publicTeamIds(season.teamIds) && validateStatLines(season.lines));
 }
 
+export function validateOfficialDailyPublicPuzzle(puzzle: unknown, puzzleId: string, date: string): DailyBootstrap['puzzle'] {
+  if (!isRecord(puzzle)
+      || !hasKeys(puzzle, ['id', 'puzzleNumber', 'puzzleDate', 'status', 'hintConfig', 'statsHintConfig', 'pitches'])
+      || puzzle.id !== puzzleId || puzzle.puzzleDate !== date
+      || !Number.isSafeInteger(puzzle.puzzleNumber)
+      || (puzzle.puzzleNumber as number) < 1
+      || (puzzle.status !== 'published' && puzzle.status !== 'archived')
+      || !validatePublicHintConfig(puzzle.hintConfig)
+      || !validatePublicStatsHintConfig(puzzle.statsHintConfig)
+      || !Array.isArray(puzzle.pitches) || puzzle.pitches.length !== 9
+      || !puzzle.pitches.every((pitch: unknown, index: number) =>
+        isRecord(pitch) && hasKeys(pitch, ['pitchNumber', 'initials'])
+          && pitch.pitchNumber === index + 1 && typeof pitch.initials === 'string')) incompatible();
+  return puzzle as DailyBootstrap['puzzle'];
+}
+
 /** Strict public-only contract used before both HTTP returns and SSR client-prop serialization. */
-export function validateOfficialDailyEditionBootstrap(value: unknown, puzzleId: string, date: string): DailyBootstrap {
+export function validateOfficialDailyEditionBootstrap(
+  value: unknown, puzzleId: string, date: string, allowResumedAtBat = false,
+): DailyBootstrap {
   if (!isRecord(value)
       || !hasKeys(value, ['rulesetVersion', 'puzzle', 'progressionToken', 'hintBundle'])
       || value.rulesetVersion !== POINTS_V4_DAILY_RULESET_VERSION
       || typeof value.progressionToken !== 'string'
       || value.progressionToken.length === 0 || value.progressionToken.length > 4096
-      || !isRecord(value.puzzle)
-      || !hasKeys(value.puzzle, ['id', 'puzzleNumber', 'puzzleDate', 'status', 'hintConfig', 'statsHintConfig', 'pitches'])
-      || value.puzzle.id !== puzzleId || value.puzzle.puzzleDate !== date
-      || !Number.isSafeInteger(value.puzzle.puzzleNumber)
-      || (value.puzzle.puzzleNumber as number) < 1
-      || (value.puzzle.status !== 'published' && value.puzzle.status !== 'archived')
-      || !validatePublicHintConfig(value.puzzle.hintConfig)
-      || !validatePublicStatsHintConfig(value.puzzle.statsHintConfig)
-      || !Array.isArray(value.puzzle.pitches) || value.puzzle.pitches.length !== 9
-      || !value.puzzle.pitches.every((pitch: unknown, index: number) =>
-        isRecord(pitch) && hasKeys(pitch, ['pitchNumber', 'initials'])
-          && pitch.pitchNumber === index + 1 && typeof pitch.initials === 'string')
       || !validateCurrentBatterBundle(value.hintBundle)
-      || value.hintBundle.pitchNumber !== 1 || value.hintBundle.revealedCount !== 0) {
+      || (!allowResumedAtBat && (value.hintBundle.pitchNumber !== 1 || value.hintBundle.revealedCount !== 0))) {
     incompatible();
   }
+  validateOfficialDailyPublicPuzzle(value.puzzle, puzzleId, date);
   return value as DailyBootstrap;
 }
 
@@ -247,6 +256,27 @@ async function requestEditionJson(
   }
 }
 
+/** Shared strict parser; the competitive endpoint cannot return untrusted hints or future answers. */
+export function validateOfficialDailyEditionHintsResponse(value: unknown): DailyHintBundleResponse {
+  if (!isRecord(value) || !hasKeys(value, ['hintBundle'])
+      || !validateCurrentBatterBundle(value.hintBundle)) incompatible();
+  return value as DailyHintBundleResponse;
+}
+
+/** Same public-only resolution schema for practice and signed competitive play. */
+export function validateOfficialDailyEditionResolutionResponse(value: unknown): DailyResolutionResponse {
+  if (!isRecord(value) || !hasKeys(value, ['result', 'reveal', 'progressionToken', 'hintBundle'])
+      || typeof value.progressionToken !== 'string'
+      || value.progressionToken.length === 0 || value.progressionToken.length > 4096
+      || !validatePublicResult(value.result)
+      || (isRecord(value.result) && (value.result.kind === 'incorrect'
+        ? value.reveal !== null : !validatePublicReveal(value.reveal)))
+      || (value.hintBundle !== null && !validateCurrentBatterBundle(value.hintBundle))) {
+    incompatible();
+  }
+  return value as DailyResolutionResponse;
+}
+
 const defaultGetJson: GetJson = path => requestEditionJson(path);
 const defaultPostJson: PostJson = (path, body) => requestEditionJson(path, body);
 
@@ -283,9 +313,7 @@ export function createOfficialDailyEditionHttpTransport(
     async hints(progressionToken: string): Promise<DailyHintBundleResponse> {
       validProgressionToken(progressionToken);
       const value = await post('hints', { progressionToken });
-      if (!isRecord(value) || !hasKeys(value, ['hintBundle'])
-          || !validateCurrentBatterBundle(value.hintBundle)) incompatible();
-      return value as DailyHintBundleResponse;
+      return validateOfficialDailyEditionHintsResponse(value);
     },
     async resolve(request: DailyResolutionRequest): Promise<DailyResolutionResponse> {
       validProgressionToken(request.progressionToken);
@@ -298,16 +326,7 @@ export function createOfficialDailyEditionHttpTransport(
         incompatible();
       }
       const value = await post('resolve', body);
-      if (!isRecord(value) || !hasKeys(value, ['result', 'reveal', 'progressionToken', 'hintBundle'])
-          || typeof value.progressionToken !== 'string'
-          || value.progressionToken.length === 0 || value.progressionToken.length > 4096
-          || !validatePublicResult(value.result)
-          || (isRecord(value.result) && (value.result.kind === 'incorrect'
-            ? value.reveal !== null : !validatePublicReveal(value.reveal)))
-          || (value.hintBundle !== null && !validateCurrentBatterBundle(value.hintBundle))) {
-        incompatible();
-      }
-      return value as DailyResolutionResponse;
+      return validateOfficialDailyEditionResolutionResponse(value);
     },
   };
 }

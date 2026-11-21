@@ -1,7 +1,7 @@
 'use client';
 
 import type { JSX } from 'react';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { formatDailyShareText, type PlayerSearchResult } from '@initial-baseball/engine';
 import {
   POINTS_V4_DAILY_RULESET_VERSION,
@@ -19,6 +19,9 @@ import { useDailyGameplayPersistence } from '../useDailyGameplayPersistence';
 import { createCompletedDailyShareResult } from '../dailyCompletedShareResult';
 import { requireHintBundle, requireReveal } from '../dailyRuntimeResponseRequirements';
 import { createOfficialDailyEditionHttpTransport } from '../officialDailyEditionHttpTransport';
+import { restoreCompetitiveWrongGuessesSafely, saveCompetitiveHintSafely, saveCompetitiveWrongGuessesSafely } from '../competitiveDailyLocalHint';
+import type { restoreCompetitiveScorecard } from '../restoreCompetitiveScorecard';
+import { createOfficialDailyCompetitiveHttpTransport } from '../officialDailyCompetitiveHttpTransport';
 import { createOfficialEditionResolutionTransport } from '../officialEditionResolutionTransport';
 import type { CanonicalRevealViewModel } from '../canonicalRevealViewModel';
 import { type DailyAtBatUiState, createInitialAtBatUiState, createInitialDailyGameState, withConfirmedIncorrectGuess } from '../dailyClientState';
@@ -54,6 +57,8 @@ type DailyInningGameProps = {
   initialHintBundle: DailyHintBundle;
   archivePath?: string;
   officialEditionPractice?: boolean;
+  competitiveCard?: Extract<ReturnType<typeof restoreCompetitiveScorecard>, { status: 'active' }>;
+  onCompetitiveActionFailure?: () => void;
 };
 export function DailyInningGame({
   puzzle,
@@ -61,26 +66,39 @@ export function DailyInningGame({
   initialProgressionToken,
   initialHintBundle,
   archivePath,
-  officialEditionPractice = false,
+  officialEditionPractice = false, competitiveCard, onCompetitiveActionFailure,
 }: DailyInningGameProps): JSX.Element {
   const archive = isArchiveDailyPuzzleId(puzzle.id);
   const editionPractice = officialEditionPractice && isSecondaryOfficialDailyEditionId(puzzle.id);
-  const editionTransport = useMemo(() => editionPractice
-    ? createOfficialDailyEditionHttpTransport(puzzle.id) : null, [editionPractice, puzzle.id]);
+  const competitive = competitiveCard !== undefined;
+  const competitiveAnchor = useRef(competitiveCard?.bootstrap.progressionToken ?? '');
+  const isolatedEdition = editionPractice || competitive;
+  const editionTransport = useMemo(() => competitive ? createOfficialDailyCompetitiveHttpTransport(puzzle.id)
+    : editionPractice ? createOfficialDailyEditionHttpTransport(puzzle.id) : null, [competitive, editionPractice, puzzle.id]);
   const editionResolution = useMemo(() => editionTransport === null
-    ? undefined : createOfficialEditionResolutionTransport(puzzle.id, editionTransport),
-    [editionTransport, puzzle.id]);
-  const [gameState, setGameState] = useState<DailyGameState>(() => createInitialDailyGameState(puzzle, rulesetVersion));
-  const [scorecardAnswers, setScorecardAnswers] = useState<DailyScorecardAnswers>({});
-  const [currentPitchIndex, setCurrentPitchIndex] = useState(0);
-  const [atBatState, setAtBatState] = useState<DailyAtBatUiState>(() => createInitialAtBatUiState());
+    ? undefined : createOfficialEditionResolutionTransport(puzzle.id, editionTransport, competitive),
+    [editionTransport, puzzle.id, competitive]);
+  const [gameState, setGameState] = useState<DailyGameState>(() => competitiveCard?.gameState ?? createInitialDailyGameState(puzzle, rulesetVersion));
+  const [scorecardAnswers, setScorecardAnswers] = useState<DailyScorecardAnswers>(competitiveCard?.scorecardAnswers ?? {});
+  const [currentPitchIndex, setCurrentPitchIndex] = useState(competitiveCard?.gameState.completedAtBats.length ?? 0);
+  const [atBatState, setAtBatState] = useState<DailyAtBatUiState>(() => ({
+    ...createInitialAtBatUiState(), strikeCount: competitiveCard?.strikeCount ?? 0,
+    revealCount: initialHintBundle.revealedCount,
+    revealedHints: initialHintBundle.hints.slice(0, initialHintBundle.revealedCount),
+    ...(competitiveCard ? { wrongGuesses: restoreCompetitiveWrongGuessesSafely(
+      puzzle.id, competitiveCard.bootstrap.progressionToken, competitiveCard.strikeCount,
+    ) } : {}),
+  }));
   const [pendingAdvance, setPendingAdvance] = useState<PendingAtBatAdvance | null>(null);
   const [progressionToken, setProgressionToken] = useState(initialProgressionToken);
   const [hintBundle, setHintBundle] = useState<DailyHintBundle | null>(initialHintBundle);
-  const [hasLoadedSavedState, setHasLoadedSavedState] = useState(false);
+  const [hasLoadedSavedState, setHasLoadedSavedState] = useState(competitive);
   const [bundlePending, setBundlePending] = useState(false);
   const [requestError, setRequestError] = useState<string | null>(null);
-  const resolutionRequests = useDailyGameplayResolutionRequests(setRequestError, editionResolution);
+  const resolutionRequests = useDailyGameplayResolutionRequests(message => {
+    setRequestError(message);
+    if (message !== null && competitive) onCompetitiveActionFailure?.();
+  }, editionResolution);
   const [savedGameRestoreController] = useState(() => createDailySavedGameRestoreController(
     editionTransport === null ? undefined : token => editionTransport.hints(token),
   ));
@@ -90,8 +108,9 @@ export function DailyInningGame({
     () => createDailyScorecardPoints(displayedCompletedAtBats, gameState.rulesetVersion),
     [displayedCompletedAtBats, gameState.rulesetVersion],
   );
-  const completedResultSubmission = useCompletedDailyResultSubmission(hasLoadedSavedState, gameState);
+  const completedResultSubmission = useCompletedDailyResultSubmission(hasLoadedSavedState && !competitive, gameState);
   const gameplayPersistence = useDailyGameplayPersistence({
+    serverOwned: competitive,
     puzzle,
     rulesetVersion,
     initialProgressionToken,
@@ -109,7 +128,7 @@ export function DailyInningGame({
     submitCompletedResultCreationIfEligible: completedResultSubmission.submitCreationIfEligible,
   });
   const comparisonExcludedResultId = gameplayPersistence.comparisonExcludedResultId;
-  const completedComparison = useDailyNineCompletedComparison(!hasLoadedSavedState || editionPractice ? null : createDailyNineCompletedComparisonInput({
+  const completedComparison = useDailyNineCompletedComparison(!hasLoadedSavedState || isolatedEdition ? null : createDailyNineCompletedComparisonInput({
     puzzle,
     rulesetVersion: gameState.rulesetVersion,
     points: gameState.points,
@@ -127,14 +146,14 @@ export function DailyInningGame({
     [gameState.completedPitchLines.length, puzzle.pitches],
   );
   const scorecardComparisons = useDailyNineScorecardComparisons({
-    enabled: hasLoadedSavedState && !editionPractice,
+    enabled: hasLoadedSavedState && !isolatedEdition,
     puzzle,
     rulesetVersion: gameState.rulesetVersion,
     requestedPitchNumbers,
     completedPitchNumbers,
     excludedResultId: comparisonExcludedResultId,
   });
-  const atBatComparisonInput = hasLoadedSavedState && !editionPractice
+  const atBatComparisonInput = hasLoadedSavedState && !isolatedEdition
     ? createDailyNineAtBatComparisonInput({
         puzzle, rulesetVersion: gameState.rulesetVersion, pitch: currentPitch, result: atBatState.submittedResult,
         currentPoints: gameState.points.points, terminalPoints: pendingAdvance?.points.points ?? null,
@@ -178,7 +197,7 @@ export function DailyInningGame({
       : undefined;
     return (
       <GameCompleteView
-        practiceOnly={editionPractice}
+        practiceOnly={isolatedEdition}
         scorecardAnswers={scorecardAnswers}
         shareResult={shareResult}
         shareText={`${archive ? 'Archive beta\n' : ''}${formatDailyShareText(shareResult)}`}
@@ -186,12 +205,12 @@ export function DailyInningGame({
         atBatPoints={scorecardPoints}
         atBatComparisons={scorecardComparisons.comparisons}
         {...(completedInningScoreboard !== undefined ? { inningScoreboard: completedInningScoreboard } : {})}
-        leaderboard={!archive && !editionPractice && gameState.rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION ? {
+        leaderboard={!archive && !isolatedEdition && gameState.rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION ? {
           puzzle, completedAtBats: gameState.completedAtBats,
           attemptId: gameplayPersistence.contribution?.status === 'active'
             ? gameplayPersistence.contribution.attemptId : null,
         } : undefined}
-        onResetToday={handleResetToday}
+        {...(!competitive ? { onResetToday: handleResetToday } : {})}
       />
     );
   }
@@ -254,7 +273,7 @@ export function DailyInningGame({
         giveUpPending={resolutionRequests.pendingAction === 'give_up'}
         requestError={requestError}
         comparison={atBatComparisonState}
-        practiceOnly={editionPractice}
+        practiceOnly={isolatedEdition}
         terminalAwardedPoints={terminalAwardedPoints} cumulativePoints={displayedPoints.points}
         nextActionLabel={terminalPending ? 'View Results' : 'Next At Bat'}
         onQueryChange={(query) => {
@@ -281,7 +300,7 @@ export function DailyInningGame({
       />
       {performanceLayout || gameState.completedPitchLines.length > 0 ? (
         <PitchResultList
-          practiceOnly={editionPractice}
+          practiceOnly={isolatedEdition}
           answers={scorecardAnswers}
           {...(performanceLayout ? {
             performanceLayout,
@@ -303,10 +322,10 @@ export function DailyInningGame({
           compact
         />
       ) : null}
-      {!archive && !editionPractice && gameState.rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION && <DailyNineLeaderboard puzzle={puzzle} viewOnly />}
-      <button type="button" className="reset-local-result-button" onClick={handleResetToday}>
+      {!archive && !isolatedEdition && gameState.rulesetVersion === POINTS_V4_DAILY_RULESET_VERSION && <DailyNineLeaderboard puzzle={puzzle} viewOnly />}
+      {!competitive && <button type="button" className="reset-local-result-button" onClick={handleResetToday}>
         Reset today's local result
-      </button>
+      </button>}
     </div>
   );
 
@@ -319,11 +338,17 @@ export function DailyInningGame({
       progressionToken,
       action: { submittedPlayerId },
       onSuccess: (response) => {
+        competitiveAnchor.current = response.progressionToken;
         setProgressionToken(response.progressionToken);
         const { result } = response;
 
         if (result.kind === 'incorrect') {
-          setHintBundle(requireHintBundle(response.hintBundle));
+          const nextBundle = requireHintBundle(response.hintBundle);
+          setHintBundle(nextBundle);
+          if (competitive) {
+            saveCompetitiveWrongGuessesSafely(puzzle.id, response.progressionToken, nextBundle.revealedCount,
+              [...(atBatState.wrongGuesses ?? []), { playerId: submittedPlayerId, displayName: submittedDisplayName }]);
+          }
           setAtBatState(currentState => withConfirmedIncorrectGuess(
             currentState, result,
             { playerId: submittedPlayerId, displayName: submittedDisplayName },
@@ -348,6 +373,7 @@ export function DailyInningGame({
       action: { giveUp: true },
       onSuccess: (response) => {
         if (response.result.kind === 'incorrect') return;
+        competitiveAnchor.current = response.progressionToken;
         setProgressionToken(response.progressionToken);
         setHintBundle(response.hintBundle);
         resolveTerminalResult(response.result, requireReveal(response.reveal), 'give_up');
@@ -456,6 +482,7 @@ export function DailyInningGame({
         requireHintBundle(hintBundle),
         atBatState.revealCount,
       );
+      if (competitive) saveCompetitiveHintSafely(puzzle.id, competitiveAnchor.current, nextReveal.revealedCount);
       setProgressionToken(nextReveal.progressionToken);
       setAtBatState(currentState => ({
         ...currentState,

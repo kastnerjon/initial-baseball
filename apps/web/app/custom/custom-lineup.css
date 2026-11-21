@@ -121,6 +121,22 @@
   background: #fff1f1; color: #832828; font-size: 13px; }
 .custom-lineup-status { margin: 28px 0; text-align: center; color: #647389; }
 .custom-lineup-finished { gap: 14px; }
+.custom-lineup-completion-display {
+  display: grid; gap: 12px; padding-top: 16px; margin-top: 4px;
+  border-top: 1px solid #ccd5e2;
+}
+.custom-lineup-completion-display h3 {
+  margin: 0; font-size: 18px; color: #152238;
+}
+.custom-lineup-completion-display form { display: grid; gap: 9px; }
+.custom-lineup-completion-display label {
+  color: #30435e; font-size: 13px; font-weight: 700;
+}
+.custom-lineup-completion-display input {
+  width: 100%; min-height: 43px; padding: 10px 12px; font: inherit;
+  border: 1px solid #8fa8ca; border-radius: 7px; background: white;
+  color: #152238;
+}
 .custom-lineup-panel .player-reveal-card { min-width: 0; }
 .custom-lineup-footer {
   display: flex; justify-content: space-between; gap: 16px; margin-top: 20px;

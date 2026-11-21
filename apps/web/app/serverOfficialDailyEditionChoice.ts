@@ -18,6 +18,13 @@ export function isOfficialDailyEditionPracticeVisible(env: Environment = process
   return REQUIRED_PRACTICE_FLAGS.every(flag => env[flag] === 'true');
 }
 
+/** This is a QA-only scored UI; the same route remains practice in production. */
+export function isOfficialDailyEditionCompetitivePreviewVisible(env: Environment = process.env): boolean {
+  return isOfficialDailyEditionPracticeVisible(env) && env.VERCEL_ENV === 'preview'
+    && env.OFFICIAL_DAILY_COMPETITIVE_UI_QA === 'true'
+    && env.OFFICIAL_DAILY_EDITION_COMPETITIVE_HTTP_ENABLED === 'true';
+}
+
 export function isOfficialDailyEditionChooserVisible(env: Environment = process.env): boolean {
   return env.OFFICIAL_DAILY_EDITION_CHOICE_ENABLED === 'true'
     && isOfficialDailyEditionPracticeVisible(env);

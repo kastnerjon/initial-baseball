@@ -6,8 +6,10 @@ import { DailyRuntimeRequestError } from '../../../dailyRuntimeService';
 import { validateOfficialDailyEditionBootstrap } from '../../../officialDailyEditionHttpTransport';
 import { createServerOfficialDailyEditionRuntime } from '../../../serverOfficialDailyEditionRuntime';
 import {
-  isOfficialDailyEditionChooserVisible, isOfficialDailyEditionPracticeVisible,
+  isOfficialDailyEditionChooserVisible, isOfficialDailyEditionCompetitivePreviewVisible,
+  isOfficialDailyEditionPracticeVisible,
 } from '../../../serverOfficialDailyEditionChoice';
+import { CompetitiveDailyGame } from '../../../components/CompetitiveDailyGame';
 import { DailyInningGame } from '../../../components/DailyInningGame';
 import { DailyHowToDialog } from '../../../components/DailyHowToDialog';
 import { getDailyHowToContent } from '../../../dailyHowTo';
@@ -41,15 +43,19 @@ export default async function OfficialDailyPracticePage({
   const date = query.date;
   try { validateIssuedDailyCalendarDate(date); } catch { notFound(); }
 
-  let bootstrap;
-  try {
-    bootstrap = validateOfficialDailyEditionBootstrap(
-      await createServerOfficialDailyEditionRuntime(puzzleId).getBootstrap(date), puzzleId, date,
-    );
-  } catch (error) {
-    if (error instanceof DailyRuntimeRequestError) notFound();
-    throw error;
+  const competitivePreview = isOfficialDailyEditionCompetitivePreviewVisible();
+  let bootstrap = null;
+  if (!competitivePreview) {
+    try {
+      bootstrap = validateOfficialDailyEditionBootstrap(
+        await createServerOfficialDailyEditionRuntime(puzzleId).getBootstrap(date), puzzleId, date,
+      );
+    } catch (error) {
+      if (error instanceof DailyRuntimeRequestError) notFound();
+      throw error;
+    }
   }
+  const ruleset = bootstrap?.rulesetVersion ?? 'points-v4';
   return (
     <main className="page-shell">
       <section className="daily-card">
@@ -57,11 +63,11 @@ export default async function OfficialDailyPracticePage({
           <div>
             <p className="eyebrow">Initial Baseball · Official Daily</p>
             <h1>Daily Nine</h1>
-            <p className="daily-deck">{date} · Practice — scores are not submitted</p>
+            <p className="daily-deck">{date} · {competitivePreview ? 'Competitive Daily' : 'Practice — scores are not submitted'}</p>
           </div>
           <DailyHowToDialog
-            key={`${bootstrap.puzzle.id}:${bootstrap.rulesetVersion}`}
-            content={getDailyHowToContent(bootstrap.rulesetVersion)}
+            key={`${puzzleId}:${ruleset}`}
+            content={getDailyHowToContent(ruleset)}
           />
         </header>
         <nav aria-label="Daily navigation">
@@ -71,13 +77,14 @@ export default async function OfficialDailyPracticePage({
             <>{' · '}<a href="/daily/editions">More official Daily puzzles</a></>
           ) : null}
         </nav>
-        <DailyInningGame key={bootstrap.puzzle.id}
+        {bootstrap === null ? <CompetitiveDailyGame key={puzzleId + date} puzzleId={puzzleId} date={date} />
+          : <DailyInningGame key={bootstrap.puzzle.id}
           puzzle={bootstrap.puzzle} rulesetVersion={bootstrap.rulesetVersion}
           initialProgressionToken={bootstrap.progressionToken}
           initialHintBundle={bootstrap.hintBundle}
           archivePath={`/daily/editions/${puzzleId}?date=${date}`}
           officialEditionPractice
-        />
+        />}
       </section>
     </main>
   );

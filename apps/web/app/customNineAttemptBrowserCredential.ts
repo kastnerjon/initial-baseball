@@ -1,6 +1,6 @@
 import 'server-only';
 import { createHash, createHmac, randomBytes, timingSafeEqual } from 'node:crypto';
-import { validateCustomNinePuzzleId, validateCustomLineupPuzzleId } from '@initial-baseball/daily';
+import { isOfficialDailyOccurrenceId, validateCustomNinePuzzleId, validateCustomLineupPuzzleId } from '@initial-baseball/daily';
 
 type Scope = Readonly<{ prefix: string; domain: string; path: string; validate: (id: string) => void }>;
 const V1: Scope = {
@@ -15,7 +15,7 @@ const MAX_AGE = 365 * 24 * 60 * 60;
 type Inspection =
   | { kind: 'absent' }
   | { kind: 'invalid' }
-  | { kind: 'valid'; browserKeyDigest: string };
+  | { kind: 'valid'; browserKeyDigest: string; replacementSetCookie?: string };
 
 /** Anonymous challenge-only bearer credential; deleting cookies defeats continuity. */
 export function createCustomNineAttemptBrowserCredential(secret: string) {
@@ -27,15 +27,37 @@ export function createCustomLineupV2AttemptBrowserCredential(secret: string) {
   return createScopedCredential(secret, V2);
 }
 
-function createScopedCredential(secret: string, scope: Scope) {
-  if (secret.trim().length < 32) throw new Error('Custom attempt signing unavailable.');
+export function isOfficialDailyBrowserPuzzleId(id: string): boolean {
+  const prefix = 'daily-ed-v1-';
+  return id.startsWith(prefix) && isOfficialDailyOccurrenceId(id.slice(prefix.length));
+}
+
+export function createOfficialDailyAttemptBrowserCredential(
+  secret: string, legacyVerificationSecrets: readonly string[] = [],
+) {
+  return createScopedCredential(secret, {
+    prefix: 'ib-official-daily-attempt-v1-', domain: 'initial-baseball:official-daily:attempt-browser:v1',
+    path: '/api/daily/editions/',
+    validate(id) {
+      if (!isOfficialDailyBrowserPuzzleId(id)) throw new Error('Invalid official Daily edition.');
+    },
+  }, legacyVerificationSecrets);
+}
+
+function createScopedCredential(
+  secret: string, scope: Scope, legacyVerificationSecrets: readonly string[] = [],
+) {
+  const acceptedSecrets = [secret, ...legacyVerificationSecrets];
+  if (acceptedSecrets.some(key => key.trim().length < 32)) {
+    throw new Error('Custom attempt signing unavailable.');
+  }
 
   function name(puzzleId: string): string {
     scope.validate(puzzleId);
     return scope.prefix + puzzleId;
   }
-  function signature(puzzleId: string, nonce: string): string {
-    return createHmac('sha256', secret)
+  function signature(puzzleId: string, nonce: string, key = secret): string {
+    return createHmac('sha256', key)
       .update(scope.domain + ':cookie\n' + puzzleId + '\n' + nonce)
       .digest('base64url');
   }
@@ -45,21 +67,24 @@ function createScopedCredential(secret: string, scope: Scope) {
       .digest('hex');
   }
 
+  function setCookie(puzzleId: string, nonce: string, requestUrl: string): string {
+    const cookieName = name(puzzleId);
+    const secure = new URL(requestUrl).protocol === 'https:';
+    return cookieName + '=' + nonce + '.' + signature(puzzleId, nonce)
+      + '; Path=' + scope.path + puzzleId
+      + '; Max-Age=' + MAX_AGE + '; HttpOnly; SameSite=Strict'
+      + (secure ? '; Secure' : '');
+  }
+
   return {
     issue(puzzleId: string, requestUrl: string) {
-      const cookieName = name(puzzleId);
       const nonce = randomBytes(32).toString('base64url');
-      const token = nonce + '.' + signature(puzzleId, nonce);
-      const secure = new URL(requestUrl).protocol === 'https:';
       return {
         browserKeyDigest: digest(puzzleId, nonce),
-        setCookie: cookieName + '=' + token
-          + '; Path=' + scope.path + puzzleId
-          + '; Max-Age=' + MAX_AGE + '; HttpOnly; SameSite=Strict'
-          + (secure ? '; Secure' : ''),
+        setCookie: setCookie(puzzleId, nonce, requestUrl),
       };
     },
-    inspect(cookieHeader: string | null, puzzleId: string): Inspection {
+    inspect(cookieHeader: string | null, puzzleId: string, requestUrl?: string): Inspection {
       const cookieName = name(puzzleId);
       const matches = (cookieHeader ?? '').split(';').map(x => x.trim())
         .filter(x => x.slice(0, x.indexOf('=') < 0 ? x.length : x.indexOf('=')) === cookieName);
@@ -75,12 +100,23 @@ function createScopedCredential(secret: string, scope: Scope) {
       if (Buffer.from(pair[2]!, 'base64url').toString('base64url') !== pair[2]) {
         return { kind: 'invalid' };
       }
-      const expected = Buffer.from(signature(puzzleId, nonce), 'base64url');
       const actual = Buffer.from(pair[2]!, 'base64url');
-      if (actual.length !== expected.length || !timingSafeEqual(actual, expected)) {
-        return { kind: 'invalid' };
-      }
-      return { kind: 'valid', browserKeyDigest: digest(puzzleId, nonce) };
+      let activeValid = false;
+      const valid = acceptedSecrets.reduce((matched, key, i) => {
+        const expected = Buffer.from(signature(puzzleId, nonce, key), 'base64url');
+        const matches = actual.length === expected.length && timingSafeEqual(actual, expected);
+        if (i === 0) activeValid = matches;
+        return matches || matched;
+      }, false);
+      if (!valid) return { kind: 'invalid' };
+      // Re-sign the existing random nonce under the current key without
+      // changing the database-bound digest/attempt. Never issue a new identity.
+      const replacementSetCookie = !activeValid && requestUrl !== undefined
+        ? setCookie(puzzleId, nonce, requestUrl) : undefined;
+      return {
+        kind: 'valid', browserKeyDigest: digest(puzzleId, nonce),
+        ...(replacementSetCookie === undefined ? {} : { replacementSetCookie }),
+      };
     },
   };
 }

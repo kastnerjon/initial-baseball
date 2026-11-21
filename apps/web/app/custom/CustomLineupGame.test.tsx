@@ -29,5 +29,12 @@ describe('Custom Lineup v2 first render', () => {
     expect(html).not.toContain('progressionToken');
     expect(html).not.toContain('PRIVATE_ANSWER');
     expect(html).not.toContain('Guess player');
+    expect(html).not.toContain('Completion display choice');
+    const separatelyEnabled = renderToStaticMarkup(
+      <CustomLineupGame puzzleId="custom-lineup-v2-123e4567-e89b-42d3-a456-426614174000"
+        completionDisplayEnabled />,
+    );
+    expect(separatelyEnabled).not.toContain('Completion display choice');
+    expect(separatelyEnabled).not.toContain('Save name');
   });
 });
