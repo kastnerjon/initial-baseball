@@ -36,8 +36,10 @@ export class DailyProgressionTokenError extends Error {
 export function createDailyProgressionTokenCodec(
   secret: string,
   maximumPitchNumber: 9 | 10 = 9,
+  legacyVerificationSecrets: readonly string[] = [],
 ): DailyProgressionTokenCodec {
-  if (secret.length < MINIMUM_SECRET_LENGTH) {
+  const acceptedSecrets = [secret, ...legacyVerificationSecrets];
+  if (acceptedSecrets.some(key => key.length < MINIMUM_SECRET_LENGTH)) {
     throw new Error(`Daily progression secret must be at least ${MINIMUM_SECRET_LENGTH} characters.`);
   }
 
@@ -60,8 +62,11 @@ export function createDailyProgressionTokenCodec(
       }
 
       const signingInput = `${TOKEN_PREFIX}.${payload}`;
-      const expectedSignature = sign(signingInput, secret);
-      if (!safeEqual(providedSignature, expectedSignature)) {
+      // Sign with the active secret; verify unexpired stored states under
+      // explicitly retained legacy keys during a controlled rotation.
+      const valid = acceptedSecrets.reduce((matched, key) =>
+        safeEqual(providedSignature, sign(signingInput, key)) || matched, false);
+      if (!valid) {
         throw new DailyProgressionTokenError('Invalid Daily progression token signature.');
       }
 

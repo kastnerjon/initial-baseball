@@ -11,6 +11,7 @@ vi.mock('./serverSupabaseClient', () => ({ createServerSupabaseClient: mocked.cl
 
 import {
   isOfficialDailyEditionChooserVisible, isOfficialDailyEditionPracticeVisible,
+  isOfficialDailyEditionCompetitivePreviewVisible,
   readCurrentOfficialDailyEditionChoice,
 } from './serverOfficialDailyEditionChoice';
 import { isOfficialDailyArchiveVisible } from './serverOfficialDailyArchiveSection';
@@ -45,6 +46,26 @@ describe('default-off official Daily edition chooser', () => {
     }
   });
 
+
+  it('permits scored UI only with every preview gate and destination gate', () => {
+    const env = {
+      ...ON, VERCEL_ENV: 'preview',
+      OFFICIAL_DAILY_COMPETITIVE_UI_QA: 'true',
+      OFFICIAL_DAILY_EDITION_COMPETITIVE_HTTP_ENABLED: 'true',
+    };
+    expect(isOfficialDailyEditionCompetitivePreviewVisible(env)).toBe(true);
+    expect(isOfficialDailyEditionCompetitivePreviewVisible({ ...env, VERCEL_ENV: 'production' })).toBe(false);
+    for (const flag of [
+      'OFFICIAL_DAILY_EDITION_PRACTICE_UI_ENABLED',
+      'OFFICIAL_DAILY_EDITION_HTTP_ENABLED',
+      'OFFICIAL_DAILY_EDITION_PRIVATE_RUNTIME_ENABLED',
+      'OFFICIAL_DAILY_COMPETITIVE_UI_QA',
+      'OFFICIAL_DAILY_EDITION_COMPETITIVE_HTTP_ENABLED',
+    ]) {
+      expect(isOfficialDailyEditionCompetitivePreviewVisible({ ...env, [flag]: 'false' })).toBe(false);
+    }
+    expect(isOfficialDailyEditionCompetitivePreviewVisible({})).toBe(false);
+  });
 
   it('matches all 32 real release-flag combinations, including chooser ON and Archive OFF', () => {
     const flags = [

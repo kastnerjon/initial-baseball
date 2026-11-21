@@ -7,6 +7,8 @@ Last updated: 2026-11-05
 
 **Official edition editorial drafts (staged, not publicly enabled).** A separate service-only `official_daily_editorial_drafts` table reserves a stable UUID and unique `(Pacific date, edition key/number)` for each additional edition (number 2 or later while legacy primary remains authoritative). It holds nine ordered selections, draft/scheduled/issued state and optimistic revision. A private database function locks the draft, verifies the caller's expected revision and ordered snapshot, writes the existing append-only `official_daily_publications` record and marks the draft issued in one transaction. Identical retries return its original ID; conflicts do not overwrite. No public access, hosted migration, or new primary cutover is implied by this source change.
 
+**Pacific future-date write guard (#664; source-staged, not deployed).** A separate additive `BEFORE INSERT OR UPDATE` row trigger checks the **database wall clock** using `(clock_timestamp() AT TIME ZONE 'America/Los_Angeles')::date` when inserting a secondary editorial draft or editing/scheduling/unscheduling a nonissued draft. An elapsed Pacific date fails closed under SQLSTATE 23514, even if the application sampled its cutoff before a row-lock wait. The existing service-role RLS boundary, original immutable identity/revision trigger and transactional issued-publication path remain unchanged; scheduled-to-issued remains admissible under its existing atomic issuer even when the scheduled date has elapsed. This branch provides source and isolated-QA rollback verification only: a real hosted lock-wait across midnight, matching Preview, independent review, production migration rehearsal and explicit authorization are not yet complete.
+
 **Approved addition, pending persistence implementation.** Each new official occurrence owns a stable ID and frozen ordered content, clues and rules. Enforce uniqueness on (Pacific date, edition key) and separately on the globally unique puzzle ID. Identical rosters across occurrences are valid. Existing editorial, result and numbered archive records keep their stored identities.
 
 | Concern | Authority |
@@ -125,6 +127,26 @@ The opt-in Custom POST bootstrap can create the first private attempt row after 
 This code is **not connected to any HTTP route** and does not sign or cryptographically verify progression tokens; a later trusted server gameplay boundary must verify identity, creator marker, HMACs, scoring facts and immutable issued puzzle before calling the adapter. No schema changes or hosted writes occur at this stage. The hosted ledger migration is `20261010235238` even though source is `20261010235500`; preserve/reconcile both identifiers.
 
 ## Repository and security
+
+### Supabase DDL auto-RLS helper privilege boundary (issue #481)
+
+Production Supabase has a `postgres`-owned SECURITY DEFINER
+`public.rls_auto_enable()` event-trigger function, called by the enabled
+`ensure_rls` DDL hook to enable RLS on new public tables. Historically,
+PostgreSQL's implicit PUBLIC EXECUTE also gave `anon` and `authenticated`
+EXECUTE privileges, despite this not being a normal HTTP-callable RPC.
+The scoped privilege-hardening migration
+`20261023004439_restrict_rls_auto_enable_execute.sql` conditionally revokes
+those default grants after verifying the reviewed helper/trigger identity.
+It must not disable or recreate the event trigger, change existing table RLS,
+or imply Supabase projects without this helper should acquire one.
+
+This migration is **staged in source, not evidence of a live grant change**.
+A matching hosted Supabase staging test, independent review and post-apply
+security/DDL verification are required before declaring remediation complete.
+See `tasks/plans/rls-event-trigger-execute-hardening.md`.
+
+**Isolated hosted QA rehearsal (November 11):** Recreated the exact current production helper and its enabled event trigger in one rollback-only QA transaction, ran the migration twice, verified `anon`/`authenticated` EXECUTE denied and automatic RLS still enabled for a postgres-owned test table. Separate postflight proved no helper, trigger, table or grant persisted. A deliberately granted, non-owner `authenticated` CREATE case did **not** auto-enable RLS either before or after the migration; that was a preexisting helper limitation, not a revocation regression. Both production and QA currently deny these browser roles CREATE on `public`. This is **not production DDL approval**.
 
 `apps/web/app/supabaseDailyPuzzleRepository.ts` implements the provider-neutral editorial puzzle port.
 
@@ -360,3 +382,7 @@ A separate `SECURITY INVOKER` function `read_custom_lineup_v2_completion_display
 ### Internal signed Custom completion display readback service (#528)
 
 `createServerCustomV2CompletionDisplayReadService` checks the exact-true `CUSTOM_V2_COMPLETION_DISPLAY_ENABLED` switch and independently verifies challenge-scoped signed first-attempt browser credentials plus sticky creator marker before invoking the private `read_custom_lineup_v2_completion_display` RPC. The service returns only `not_set` or a strictly decoded `named` string/`anonymous` null choice, with no score or result ID; missing/foreign/creator credentials fail closed, and all provider anomalies are redacted. The SQL reader remains authoritative for attempt-lock, complete N-row score, summary-point parity and creator exclusion. This module is not an HTTP endpoint, client identity authority, leaderboard reader or production release.
+
+### Signed Custom v2 completion display write service (#528)
+
+The server-only `createServerCustomV2CompletionDisplayService` accepts a named 1–32 UTF-16-character plain-text label or an explicit Anonymous choice only when `CUSTOM_V2_COMPLETION_DISPLAY_ENABLED` is exactly `true`. The browser credential must be a valid challenge-scoped signed first-attempt cookie with no sticky creator marker; malformed, duplicate, foreign and v1 credentials fail closed. The `createSupabaseCustomV2CompletionDisplayRepository` service-role port transmits only exact challenge ID, signed-browser digest and normalized display choice to `record_custom_lineup_v2_completion_display`. The SQL writer atomically establishes first-write-wins identity only for the server-admitted result. It returns created/existing status without exposing score, result ID, clues or private DB errors. No HTTP/UI, account nickname or production activation is added here.

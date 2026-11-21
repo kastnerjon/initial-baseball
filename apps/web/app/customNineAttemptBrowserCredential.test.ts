@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { createCustomNineAttemptBrowserCredential } from './customNineAttemptBrowserCredential';
+import { createCustomNineAttemptBrowserCredential, createOfficialDailyAttemptBrowserCredential } from './customNineAttemptBrowserCredential';
 
 vi.mock('server-only', () => ({}));
 
@@ -52,5 +52,46 @@ describe('challenge-scoped browser attempt credential', () => {
     expect(() => createCustomNineAttemptBrowserCredential('short')).toThrow();
     expect(() => codec.issue('daily_foo', url)).toThrow();
     expect(() => codec.inspect('', 'not-a-challenge')).toThrow();
+  });
+});
+
+describe('official Daily scoped credential rotation', () => {
+  const edition = 'daily-ed-v1-907f33db-c38f-43c3-8e6b-a3aaf19bbd08';
+  const sibling = 'daily-ed-v1-6077ee21-9370-4cf3-aa21-74c50b485591';
+  const oldSecret = 'old-official-daily-cookie-secret-0123456789abcdef';
+  const newSecret = 'new-official-daily-cookie-secret-0123456789abcdef';
+  const origin = 'https://initial-baseball-web.vercel.app/api/daily/editions/' + edition;
+
+  it('keeps the immutable browser digest across rotation without weakening scope', () => {
+    const previous = createOfficialDailyAttemptBrowserCredential(oldSecret);
+    const issued = previous.issue(edition, origin);
+    const cookie = issued.setCookie.split(';')[0]!;
+    const rotated = createOfficialDailyAttemptBrowserCredential(newSecret, [oldSecret]);
+    expect(rotated.inspect(cookie, edition)).toEqual({
+      kind: 'valid', browserKeyDigest: issued.browserKeyDigest,
+    });
+    expect(rotated.inspect(cookie, sibling)).toEqual({ kind: 'absent' });
+    const refresh = rotated.inspect(cookie, edition, origin);
+    expect(refresh.kind).toBe('valid');
+    if (refresh.kind !== 'valid') throw new Error('Expected legacy cookie to verify');
+    const replacement = refresh.replacementSetCookie!;
+    expect(replacement).toContain('; HttpOnly; SameSite=Strict; Secure');
+    const refreshedCookie = replacement.split(';')[0]!;
+    expect(refreshedCookie).not.toBe(cookie);
+    expect(createOfficialDailyAttemptBrowserCredential(newSecret)
+      .inspect(refreshedCookie, edition))
+      .toEqual({ kind: 'valid', browserKeyDigest: issued.browserKeyDigest });
+    expect(previous.inspect(refreshedCookie, edition)).toEqual({ kind: 'invalid' });
+    expect(createOfficialDailyAttemptBrowserCredential(newSecret).inspect(cookie, edition))
+      .toEqual({ kind: 'invalid' });
+    const fresh = rotated.issue(edition, origin);
+    expect(createOfficialDailyAttemptBrowserCredential(newSecret)
+      .inspect(fresh.setCookie.split(';')[0]!, edition))
+      .toMatchObject({ kind: 'valid', browserKeyDigest: fresh.browserKeyDigest });
+    expect(previous.inspect(fresh.setCookie.split(';')[0]!, edition)).toEqual({ kind: 'invalid' });
+  });
+
+  it('refuses malformed legacy verifier keys', () => {
+    expect(() => createOfficialDailyAttemptBrowserCredential(newSecret, ['short'])).toThrow();
   });
 });

@@ -1,5 +1,6 @@
 import React, { type JSX } from 'react';
 import { headers } from 'next/headers';
+import { getPacificDailyDateString } from '../../../../getPacificDailyDateString';
 import { notFound, redirect } from 'next/navigation';
 import { isOfficialDailyOccurrenceId } from '@initial-baseball/daily';
 import {
@@ -12,25 +13,27 @@ import {
   type OfficialDailyDraftPreview,
 } from '../../../../serverOfficialDailyEditorialDrafts';
 import { createServerSupabaseClient } from '../../../../serverSupabaseClient';
+import PrivatePlayerReplacement from './PrivatePlayerReplacement';
 
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 export const metadata = { robots: { index: false, follow: false } };
 
 type Parameters = Record<string, string | string[] | undefined>;
+type ReviewQuery = { kind: 'empty' | 'invalid' }
+  | { kind: 'valid'; occurrenceId: string };
 const inputStyle = { width: '100%', maxWidth: 430 } as const;
 
-function parseOccurrenceId(params: Parameters): string | 'empty' | 'invalid' {
+function parseReviewQuery(params: Parameters): ReviewQuery {
   const keys = Object.keys(params);
-  if (keys.length === 0) return 'empty';
-  if (keys.length !== 1 || keys[0] !== 'occurrenceId') return 'invalid';
+  if (keys.length === 0) return { kind: 'empty' };
+  if (keys.length !== 1 || keys[0] !== 'occurrenceId') return { kind: 'invalid' };
   const id = params.occurrenceId;
-  return typeof id === 'string' && isOfficialDailyOccurrenceId(id) ? id : 'invalid';
+  if (typeof id !== 'string' || !isOfficialDailyOccurrenceId(id)) return { kind: 'invalid' };
+  return { kind: 'valid', occurrenceId: id };
 }
 
 function EditorialPreview({ preview }: { preview: OfficialDailyDraftPreview }) {
-  // Issuance must not invite an editor to confirm an incomplete canonical roster.
-  // The server independently revalidates player identity, clues and revision on POST.
   const scheduledPlayersResolved = preview.selections.length === 9
     && preview.selections.every(selection =>
       typeof selection.displayName === 'string' && selection.displayName.trim().length > 0);
@@ -42,6 +45,18 @@ function EditorialPreview({ preview }: { preview: OfficialDailyDraftPreview }) {
       <p><strong>Status:</strong> {preview.status}</p>
       <p><strong>Current editorial revision:</strong> {preview.revision}</p>
       <p><strong>Occurrence ID:</strong> <code>{preview.occurrenceId}</code></p>
+      {preview.status === 'draft'
+        && preview.puzzleDate > getPacificDailyDateString(new Date()) ? (
+          <form method="post" action="/admin/daily/editions/review/rename">
+            <input type="hidden" name="occurrenceId" value={preview.occurrenceId} />
+            <input type="hidden" name="expectedRevision" value={String(preview.revision)} />
+            <label htmlFor="official-edition-title">Puzzle title</label>
+            <input id="official-edition-title" name="title" defaultValue={preview.title}
+              style={inputStyle} required />
+            <button type="submit">Save title</button>
+          </form>
+        ) : null}
+      <p><a href="/admin/daily/editions/players">Find canonical player IDs by name</a></p>
       <h3>Selected players (batting order)</h3>
       <ol>
         {preview.selections.map(selection => (
@@ -49,9 +64,14 @@ function EditorialPreview({ preview }: { preview: OfficialDailyDraftPreview }) {
             <strong>{selection.slot}.</strong>{' '}
             {selection.displayName ?? 'Unresolved player'}
             {' · '}<code>{selection.canonicalPlayerId}</code>
+
           </li>
         ))}
       </ol>
+      {preview.status === 'draft' ? (
+        <PrivatePlayerReplacement occurrenceId={preview.occurrenceId} revision={preview.revision}
+          selections={preview.selections} />
+      ) : null}
       <p role="status">
         {preview.status === 'draft'
           ? preview.canSchedule
@@ -95,7 +115,7 @@ function EditorialPreview({ preview }: { preview: OfficialDailyDraftPreview }) {
   );
 }
 
-/** Private read-only secondary lineup inspection; no mutation controls. */
+/** Restricted secondary lineup review with independent revision-bound actions. */
 export default async function OfficialDailyEditionReviewPage({
   searchParams,
 }: {
@@ -119,13 +139,14 @@ export default async function OfficialDailyEditionReviewPage({
   }
   if (!isFirstPartyDailyAdminNavigation(fetchSite)) notFound();
 
-  const id = parseOccurrenceId(await searchParams);
+  const query = parseReviewQuery(await searchParams);
+  const id = query.kind === 'valid' ? query.occurrenceId : query.kind;
   let preview: OfficialDailyDraftPreview | null = null;
   let unavailable = false;
-  if (id !== 'empty' && id !== 'invalid') {
+  if (query.kind === 'valid') {
     try {
       preview = await readOfficialDailyEditorialDraftPreview(
-        createServerSupabaseClient(), id,
+        createServerSupabaseClient(), query.occurrenceId,
       );
     } catch {
       unavailable = true;

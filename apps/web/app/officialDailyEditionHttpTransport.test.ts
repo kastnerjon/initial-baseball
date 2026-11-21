@@ -128,12 +128,18 @@ describe('source-staged official Daily exact-ID browser HTTP transport', () => {
     expect(valid.hint.hintValue).toBe('AUTHORIZED_FIRST_HINT');
     expect(valid.progressionToken).toBe('signed-next');
     expect(Object.keys(valid).sort()).toEqual(['hint', 'progressionToken']);
+    const maximum = { ...valid, hint: { ...valid.hint, hintLabel: 'L'.repeat(120), hintValue: 'V'.repeat(4096) } };
+    post.mockResolvedValueOnce(maximum);
+    expect(await transport.hint('signed-start')).toEqual(maximum);
     const cases = [
       { ...valid, checkpoints: [{ revealedCount: 4, progressionToken: 'FUTURE' }] },
       { ...valid, futureHints: ['PRIVATE_FUTURE_HINT'] },
       { ...valid, hint: { ...valid.hint, answer: 'PRIVATE_FUTURE_HINT' } },
       { ...valid, hint: { ...valid.hint, hintType: 'unknown' } },
+      { ...valid, hint: { ...valid.hint, hintLabel: '' } },
+      { ...valid, hint: { ...valid.hint, hintLabel: 'L'.repeat(121) } },
       { ...valid, hint: { ...valid.hint, hintValue: '' } },
+      { ...valid, hint: { ...valid.hint, hintValue: 'V'.repeat(4097) } },
       { ...valid, progressionToken: '' },
     ];
     for (const value of cases) {
@@ -288,6 +294,9 @@ describe('source-staged official Daily exact-ID browser HTTP transport', () => {
       reveal: publicReveal(), progressionToken: 'successor', hintBundle: null,
     };
     const malformed = [
+      { ...correct, reveal: { ...publicReveal(), career: {
+        lines: [{ kind: 'hitter', stats: { 'AB,BA,H,HR,OBP,OPS,R,RBI,SB,SLG': 0 } }],
+      } } },
       { ...incorrect, reveal: publicReveal() },
       { ...incorrect, result: { ...incorrect.result, futureAnswers: ['PRIVATE_FUTURE_HINT'] } },
       { ...correct, reveal: { ...publicReveal(), futureAnswers: ['PRIVATE_FUTURE_HINT'] } },

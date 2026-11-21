@@ -1,12 +1,30 @@
 # Initial Baseball — Current Work
 
+## Primary delivery — exact-edition competitive provenance (#657)
+
+- [x] Merge signed game progression and transactional nine-at-bat plus summary persistence (#677, #678). Isolated PostgreSQL passed concurrent retry, sibling separation, partial-write rollback and fractional scoring.
+- [x] Merge the default-OFF competitive HTTP route (#679) after final-commit review, matching Preview and exact-head CI; main push CI and production build verified at merge `aff8aa236`. No public activation.
+- [x] Merge #681's shared Daily Nine competitive UI, cookie transport and authoritative active/completed scorecard restoration after final-head source review, CI and matching Preview. Hosted Chromium verifies two exact-ID siblings, independent results, two-tab ownership, reload and response loss; production remains OFF.
+- [x] #682 merged signed-winner-bound wrong-guess display restoration. #683 merged released-archive scored first starts and unlimited original-attempt resume/readback, with exact-head CI, independent review and isolated QA evidence. Production secondary competition remains OFF.
+- [ ] Complete #657 hosted release acceptance: Archive index-to-link scored journey, real Pacific rollover with held November 19 attempt and new November 20 sibling editions, completed scorecard readback and two identical rosters. Physical iPhone Safari and Android Chrome are not yet verified.
+- [ ] Reconcile persistent isolated-QA future-date editorial guard drift; rehearse signing-key rotation/revocation and selected production-shaped migration/rollback. Obtain separate owner production approval before enabling secondary competition; public score/rank/compare gates remain closed.
+
+## Private multi-edition ChatOps (#663, #665 merged)
+
+- [ ] #665 default-OFF application-only source merged after independent review; complete protected hosted auth, concurrency, response-loss and readback acceptance. No additional-edition transport is approved: #666 private confidentiality design and #664 real atomic Pacific-midnight database acceptance are mandatory before activation. Existing primary transport remains unchanged. Secondary competition OFF pending #657 and separate #656.
+
 ## Production-parity correction — approved November 12
 
-- [ ] **#588 pre-merge gameplay correction:** the branch now implements the primary Daily's authorized current-batter four-hint bundle and locally consumed signed reveal checkpoints; route-test fixtures updated to a nine-pitch strict-contract-validated response; mounted-game network regression, fresh exact-head independent review, and hosted/device acceptance remain before merge. Preserve future-batter/answer privacy, exact-edition persistence and #657 score-admission denial; run primary/secondary parity tests for hint latency, guesses, Give Up, refresh, completed scorecards, and physical Safari/Android before merging. No production release approval.
+- [ ] **Official Daily release acceptance:** #588 is merged with immediate current-batter hints and practice navigation. Verify real hosted Pacific midnight rollover and physical Android Chrome before release; rehearse applicable production migrations and rollback, and obtain explicit release authorization. Keep all secondary competition OFF pending #657; #656 remains separate.
 - [ ] Require production gameplay parity evidence for later Custom friend play and future puzzle sources. Separate issuance and score policies may differ; owner approval is required for any user-visible latency, control, save or flow divergence.
 
 
-- [ ] **#588 gameplay parity and integrated navigation:** Verify the staged chooser/Archive links and verify the already implemented signed current-batter four-hint bundles and immediate local Hint taps for exact-ID practice, including the now-updated HTTP route fixtures and outstanding mounted zero-/hint-request regression. Test the strict browser/SSR transport, per-edition save hydration and full nine-at-bat scorecard; re-test owner-observed iPhone switching/refresh after change. Require exact-head CI/Preview, independent review, Android and Pacific rollover. Keep #657 score admission and production flags OFF; clean QA-only fixtures and flags after acceptance.
+- [ ] **Private ChatGPT lineup management (#663):** extend the existing primary-only private ChatOps workflow to additional official editions, with private ordered lineup review, exact occurrence/revision checks, explicit scheduling, safe timeout readback and no direct assistant writes to editorial tables.
+- [ ] **Editorial midnight correctness (#664):** #667 guard migration source merged but SQL not installed; real two-session Pacific-midnight SQLSTATE 23514 lock-wait, issued idempotence and rollback/installation rehearsal plus explicit owner authorization remain.
+
+- [ ] **Historical primary Daily identity verifier (#592 merged):** private source integrated. #589 archival lineage, accepted-result cohort separation, playable original replay/clue proof and physical/hosted release gates remain outstanding. Do not expose unverified primary Archive links or rewrite old results.
+
+- [ ] **Custom guest completion (#632):** source-merged after independent review, CI and Preview. Protected hosted Auth/SQL, real races and recovery, physical devices, production migration and explicit release approval remain separately gated.
 
 ## Current source integration — November 10
 
@@ -30,7 +48,8 @@
 
 ## Official Daily editions — approved November 5
 
-- [ ] Independently review clean-main unified official Archive #606: published primary metadata placeholder puzzleId:null (not falsely playable), exact-ID numbered secondary metadata unlinked until exact-ID enabled hosted acceptance, arbitrary same-date edition keyset, no hidden answer/score writes, original Archive beta retained with errors sanitized and four default-OFF flags. Require exact-head CI/Preview, CodeRabbit/Codex, protected hosted 120+-edition browser acceptance (121-edition rollback-only DB fixture passed), physical responsive Safari/Android and controlled release approval. Primary source issue #589 and A3 signed result admission #566 remain separate blockers.
+- [ ] Independently review combined private editor #614 from current main: one-slot future draft replace under revision CAS, restricted 25-result canonical candidate name search, contextual slot picker returning to explicit review form, Basic/first-party/default-OFF gate, all-nine clue-ready uniqueness, stale-tab protection, 1 KiB strict forms, no issuance/public score mutation. Obtain exact-head CI, READY Preview, protected hosted QA/physical device acceptance. Old #612/#613 remain review references only if combined PR lands.
+- [ ] Complete release acceptance for merged unified official Archive #606: published primary metadata placeholder puzzleId:null (not falsely playable), exact-ID numbered secondary metadata unlinked until exact-ID enabled hosted acceptance, arbitrary same-date edition keyset, no hidden answer/score writes, original Archive beta retained with errors sanitized and four default-OFF flags. Require protected hosted 120+-edition browser acceptance (121-edition rollback-only DB fixture passed), physical responsive Safari/Android and controlled release approval. Primary source issue #589 and A3 signed result admission #566 remain separate blockers.
 
 - [ ] Complete isolated hosted signed-playback, hidden-answer bundle verification and physical Safari/Android acceptance for the merged, default-OFF exact-ID secondary practice source (#608). Preserve private progression, current-batter four-hint local reveal, per-edition saves and personal-only results; competitive secondary score admission stays denied until #657.
 
@@ -116,7 +135,7 @@ These gates are separate from Custom Lineups Phase 1. Keep them active until eac
 
 ## Independent security follow-up (not a Custom launch gate)
 
-- [ ] Resume staged RLS helper EXECUTE hardening in draft PR #494 only after matched hosted Supabase staging verifies event-trigger and DDL behavior. Never apply the migration to production on local-only evidence.
+- [ ] **Production RLS helper EXECUTE hardening (#481):** PR #494 source-merged after independent final-head review, CI and isolated rollback-only hosted rehearsal. The rehearsal verified API-role revocation and postgres-owned DDL auto-RLS, with a baseline non-owner limitation; production remains unchanged. Before applying, obtain explicit production DDL authorization, recheck helper and trigger, and follow the rollout and postflight plan.
 
 ## Official Daily publication storage
 
@@ -137,3 +156,5 @@ These gates are separate from Custom Lineups Phase 1. Keep them active until eac
 
 - [ ] Verify the source-staged `official_daily_editorial_drafts` table and atomic `issue_official_daily_editorial_draft` function against isolated QA. Retain the completed rollback-only rehearsal evidence; no production migration without explicit release approval.
 - [ ] Integrate the default-OFF, authenticated secondary draft administration from #560 with the reviewed private issuer (#561) and exact-ID publication readback; preserve existing primary issuance, editorial revision checks and immutable retries. Public gameplay, competitive result admission and release still require their separate gates.
+
+- [ ] #678 atomic official Daily completed-result writer: verify the passing final-step atomic CAS+results rollback fixture and finish two-session race fixtures, verify exact score authority through trusted caller, isolated QA, final-head independent review and CI/Preview; draft only, secondary scoring OFF.

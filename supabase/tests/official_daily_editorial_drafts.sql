@@ -24,6 +24,9 @@ do $test$
 declare
   first_id uuid := '00000000-0000-4000-8000-000000000011';
   second_id uuid := '00000000-0000-4000-8000-000000000012';
+  replacement_id uuid := '00000000-0000-4000-8000-000000000015';
+  replacement_selections jsonb;
+  replacement_count integer;
   selections jsonb;
   snapshot jsonb;
   invalid_snapshot jsonb;
@@ -199,6 +202,54 @@ begin
     raise exception 'Duplicate edition key accepted';
   exception when unique_violation then null;
   end;
+
+  -- #614: only one draft-only single-slot CAS may win. Stale or scheduled
+  -- replacement must not modify the other eight immutable ordered slots.
+  insert into public.official_daily_editorial_drafts
+    (occurrence_id,puzzle_date,puzzle_number,edition_key,edition_number,title,
+     selections,created_by,updated_by)
+  values (replacement_id,'2099-04-11',92,'slot-edit',2,'Slot Edit',
+    selections,'fixture-admin','fixture-admin');
+  replacement_selections := jsonb_set(selections,'{3,canonicalPlayerId}',
+    '"fixture-44"'::jsonb);
+  update public.official_daily_editorial_drafts
+    set selections=replacement_selections,revision=1,updated_by='fixture-admin'
+    where occurrence_id=replacement_id and status='draft' and revision=0;
+  get diagnostics replacement_count = row_count;
+  if replacement_count<>1 then raise exception 'Draft slot CAS winner missing'; end if;
+  update public.official_daily_editorial_drafts
+    set selections=replacement_selections,revision=1
+    where occurrence_id=replacement_id and status='draft' and revision=0;
+  get diagnostics replacement_count = row_count;
+  if replacement_count<>0 then raise exception 'Stale slot edit was admitted'; end if;
+  if (select d.revision from public.official_daily_editorial_drafts d
+      where d.occurrence_id=replacement_id)<>1
+     or (select d.selections->3->>'canonicalPlayerId'
+         from public.official_daily_editorial_drafts d
+         where d.occurrence_id=replacement_id)<>'fixture-44'
+     or (select d.selections
+         from public.official_daily_editorial_drafts d
+         where d.occurrence_id=replacement_id) is distinct from replacement_selections then
+    raise exception 'Slot edit corrupted revision or another slot';
+  end if;
+  begin
+    update public.official_daily_editorial_drafts
+      set selections=jsonb_set(replacement_selections, '{3,canonicalPlayerId}',
+            '"fixture-45"'::jsonb),revision=1
+      where occurrence_id=replacement_id;
+    raise exception 'No-bump edit bypassed revision trigger';
+  exception when check_violation then null;
+  end;
+  update public.official_daily_editorial_drafts
+    set status='scheduled',revision=2
+    where occurrence_id=replacement_id and status='draft' and revision=1;
+  get diagnostics replacement_count = row_count;
+  if replacement_count<>1 then raise exception 'Draft scheduling CAS failed'; end if;
+  update public.official_daily_editorial_drafts
+    set selections=replacement_selections,revision=3
+    where occurrence_id=replacement_id and status='draft' and revision=2;
+  get diagnostics replacement_count = row_count;
+  if replacement_count<>0 then raise exception 'Scheduled draft was edited'; end if;
 end;
 $test$;
 rollback;

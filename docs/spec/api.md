@@ -410,6 +410,16 @@ Before `POST /api/daily/at-bats` is called from gameplay, a separate version-1 p
 
 ## Private Daily lineup ChatOps
 
+### Additional official edition ChatOps (source-staged, default OFF)
+
+`POST /admin/daily/editions/chatops` requires both exact-true edition-editor and edition-ChatOps flags, the existing dedicated ChatOps bearer credential, JSON, an empty query, and same-origin Fetch Metadata when supplied. It accepts only a bounded 8 KiB `create` envelope containing a draft, a read-only `lookup` envelope with exact future date and edition key, a `preview` envelope containing the exact occurrence UUID, a `revise` envelope containing that UUID, expected revision and nine ordered canonical player IDs, or a `schedule` envelope containing that UUID, expected revision and explicit confirmation. Create and revise never schedule; lookup and preview never write. The trusted `chatops:assistant` actor and existing private editorial service supply validation, lifecycle and revision CAS. Create and revise verify the complete ordered roster against private readback; schedule checks the status and revision readback. Responses are `private, no-store` and may contain future roster identities; errors are sanitized. This does not add issuance, public competition, production migration or activation; database-atomic Pacific-date protection remains a release gate (#664).
+
+**No additional-edition database/assistant transport ships in this source candidate.** The shared-queue `pg_net` and synchronous SQL HTTP drafts were removed after confidentiality and redirect review, respectively (#666). The private application route remains default-OFF, authenticated and independently verifiable. A secure connector or private application-owned intent transport must be separately designed and reviewed before use; do not put future lineups or reusable credentials in a shared SQL network queue. The primary production ChatOps transport still uses `pg_net` and requires a separate controlled cutover. The #664 database-atomic future-date guard, protected hosted acceptance, and explicit release authorization remain outstanding.
+
+### Primary Daily editor player search and preview
+
+`POST /admin/daily/players` is a private read-only primary editor endpoint. It requires the existing Basic administrator principal and first-party browser context, rejects URL query strings, bounds URL-encoded bodies to 1 KiB, and accepts either an exact `q` search field or the exact `playerId`, `puzzleDate`, and `slot` preview fields. Search returns at most 10 allowlisted candidate records and conservatively signals when the existing search limit was reached; preview requires an existing horizon date and slot, and returns the private game-preview presentation. Responses are private/no-store with no-referrer and sanitized errors. The editor keeps search and candidate selection in page state. Replacing a player remains a separate explicit POST, whose redirect contains date/slot/status but no player identity. This source change does not establish hosted request-body/log redaction or secure the separate ChatOps transport.
+
 ### `POST /admin/daily/chatops`
 
 This is a server-to-server operational adapter, not a browser or public gameplay API. It exists so an authorized assistant transport can apply one exact future nine-player lineup without manually replacing nine admin slots.
@@ -485,6 +495,38 @@ answers or hints are returned. Public play, issued publication, Archive and
 the legacy primary remain unaffected. The new editorial database migration,
 hosted QA and physical acceptance are separate prerequisites; production
 activation requires explicit release approval.
+
+### Secondary draft title revision (server service only)
+
+The server-only `renameOfficialDailyEditorialDraft` adapter normalizes a title
+using the same 3–60-character policy as draft creation and changes only that
+title plus revision/audit fields. It requires an exact occurrence UUID, a current
+PostgreSQL integer revision that can be incremented, and a trusted server actor.
+The read and conditional update both require a future Pacific date and
+`status=draft`; scheduled/issued drafts, stale revisions and lost races fail
+closed. Successful writes preserve occurrence/date/edition identity and all nine
+ordered selections, returning only safe status, occurrence ID and new revision.
+Even an identical stale retry must reload the current revision; it cannot infer
+that another editor's write was its own. Provider errors remain redacted.
+The private form adapter below is its only new consumer. It does not change
+the existing default-OFF editor flag, database schema, issuance, or release gates.
+
+### Restricted draft title form (source staged, default OFF)
+
+The exact-occurrence review page offers a title field only for a future Pacific
+`draft`, independent of clue readiness. `POST /admin/daily/editions/review/rename`
+requires the existing exact-true editor flag, first-party same-origin form
+admission and Basic admin principal. It accepts only occurrenceId,
+expectedRevision and title in a 1 KiB bounded UTF-8 URL-encoded body with no query,
+duplicate or unexpected fields. Invalid title/revision values fail before
+privileged database construction. The server-derived actor is passed to the
+rename service; browser actor/roster/status input is never accepted. Success
+redirects with 303 to exact-occurrence review to obtain the new revision; stale
+or scheduled drafts produce generic 409 responses. All responses are private,
+no-store and vary by Authorization. Rendering the form grants no write authority;
+the service rechecks date, status and revision. No schema, issuance, public link
+or production activation is added. Hosted/physical acceptance remains pending.
+
 
 ## Official secondary Daily result admission: fail-closed until signed evidence
 
@@ -702,6 +744,10 @@ A server-only historical primary reader returns strictly verified publication me
 
 The stored editorial ID (daily-YYYY-MM-DD-v1) is NOT necessarily the legacy gameplay/result puzzle ID, which can be roster-fingerprint or deterministic-fallback based. The reader deliberately exposes editorialRecordId, not puzzleId; it must not be linked or used for competitive admission without proving the historical authoritative identity and preserving existing results. This is source-only with no route, migration or activation, and not a completed unified Archive.
 
+### Verified historical primary gameplay identity — private precursor (#592)
+
+The server-only `verifyPublishedLegacyPrimaryGameIdentity` validates past published editorial identity, publication timestamp, Pacific date, number and all nine canonical ordered selections, then calls the existing `resolvePublicDailyPuzzleSelection` before deriving the opaque roster-fingerprint gameplay ID. A pre-2026-07-22 deterministic-fallback date is rejected even if a published editorial record exists. Invalid/future/stale/unpublished rows and provider failures fail closed; no player selections, hints, secrets or raw provider errors are returned. The verified current published roster does **not** prove all historic accepted results shared one immutable score/gameplay identity; distinct old result populations are preserved. There is no public route, replay link, score reclassification, new schema or enablement from this utility. Historical primary Archive items remain unlinked until separately verified source, route and gameplay acceptance.
+
 ## Private primary-and-secondary Archive read-model merger (#589, source staged)
 
 A private, source-only cross-catalog read model takes verified published primary editorial metadata and immutable secondary official edition metadata, orders by puzzle date descending and edition number ascending, and returns date-grouped pages with one exclusive (date, edition number) cursor. Each source fetches one more than the requested final page size (default 30, maximum 99), so a date containing hundreds of secondary editions can resume without duplicates, skipped dates or fixed edition limits. It checks date/number consistency, source identity collisions, malformed cursors and cross-source duplicate editions before exposing a page, redacting provider errors.
@@ -738,6 +784,23 @@ The private account UI appends older lineups on demand, validates response struc
 
 `scripts/qa-my-creations-pagination-browser.mjs` bundles the actual My Creations component and browser fetch path using the existing Vitest/Vite toolchain, then verifies eight mounted Chromium scenarios: 390px and 1280px viewports, unchanged or switched account scope, and empty or populated later pages. It uses a fresh browser context per case, an ephemeral loopback-only HTTP fixture and synthetic metadata; external requests and service workers are blocked. CI reuses the existing pinned QA-only Playwright installation. It does not sign in, use database credentials, exercise hosted ingress, capture screenshots/traces, or establish physical-device acceptance. A browser/fixture failure fails this verification.
 
+## Restricted revision-checked secondary Daily draft player replacement (source-staged)
+
+An authenticated editor may change **one selected player** of a future, still-unpublished secondary Daily draft on the exact nine-player review page. POST `/admin/daily/editions/review/replace` accepts exactly four unique URL-encoded fields: occurrence UUID, the presently reviewed draft revision (zero or greater), a batting-order slot 1–9, and a nonempty trimmed canonical player ID. The form body is bounded to 1024 actual UTF-8 bytes. The exact-true `OFFICIAL_DAILY_EDITOR_DRAFTS_ENABLED` feature flag, Basic administrator credentials, first-party Origin/Fetch Metadata and empty query are enforced before any private database access.
+
+The existing server-authoritative editorial draft service reads only the requested draft, rejects scheduled/issued/expired or stale revisions, preserves the immutable occurrence/date/edition identity, substitutes only the requested canonical player, validates all nine unique ordered selections and complete clue readiness privately, and commits a `draft`→`draft` revision CAS update. A matching unchanged player is a verified no-op; concurrent changes return sanitized 409 conflicts rather than silently overwriting another editor. Successful updates redirect to the private review page, requiring another review before scheduling. No private hint snapshot is returned.
+
+Draft rename and replacement refresh the Pacific date immediately before constructing their conditional writes. This narrows a request-spanning-midnight race but does not prove database-atomic timing if execution or lock acquisition is delayed after the application samples the clock. Database-side statement-time enforcement remains release issue #664.
+
+The database trigger and existing issuer continue to enforce immutable published selections. This does not add bulk editing, player autocomplete, public gameplay, secondary competitive score eligibility, an account permission grant, a migration or a production flag change. Isolated hosted multi-tab acceptance and physical mobile editing remain release gates.
+
+## Restricted secondary Daily candidate lookup (source-staged, default OFF)
+
+GET `/admin/daily/editions/players` is an authenticated first-party, default-OFF page for finding canonical player IDs. It rejects query parameters and performs no candidate search in the URL. The client submits a 2–80 character name or alias in a bounded URL-encoded POST body to `/admin/daily/editions/players/search`; the endpoint requires the exact-true editor flag, Basic admin authorization, first-party request metadata, an empty URL query and exactly one `q` field. It returns at most 25 projected identity-only matches with private no-store and no-referrer headers, or a sanitized error. It does not expose hidden clues or mutate a draft.
+
+On the exact-draft review page, the same lookup operates inline. Selecting a clue-ready candidate populates the replacement form in memory; neither the query nor selected player is written to a navigation URL. The editor chooses a slot and explicitly submits the existing one-slot replacement against the displayed revision. Server-side CAS, validation and scheduling confirmation remain unchanged. Player search requires JavaScript; hosted authorization, browser and device acceptance remain release gates. This does not activate a feature, authorize a migration, or establish privacy of server/access logs for request bodies.
+
+
 ### Current-day official Daily edition choice (A4, default OFF)
 
 The existing Daily Nine at `/` remains the primary, guest-playable default and Classic remains separate. A source-staged, unindexed and server-rendered `/daily/editions` page lists only today's **Pacific-date** immutable official secondary publication metadata, with bounded 30-per-page keyset continuation by positive `afterEdition`. A primary `/` link is always shown. With the existing default-OFF practice route source integrated, each published secondary title links only to `/daily/editions/:immutableId?date=YYYY-MM-DD` when all four chooser flags are true; the destination separately checks exact identity, date and release. Each link is labeled practice-only and never claims competitive score submission. The page includes no unrevealed hints and admits no competitive scores. Positive protected-hosted and device navigation acceptance is still required before enabling any flag. Unrelated query tracking parameters are ignored; a continuation keyset carries both the positive edition cursor and its authoritative Pacific puzzle date. Partial, malformed or stale-across-midnight cursor pairs fail closed before any privileged client or catalog read, rather than accidentally skipping new-day editions. The page provides a no-secret first-page restart link on failure. Valid current-day cursors remain date-bound, and the existing catalog independently enforces identity, ordering, date, metadata schema and answer-free selection. The current home shows the chooser link only in the Daily Nine mode when all four exact server flags are `true`: `OFFICIAL_DAILY_EDITION_CHOICE_ENABLED`, `OFFICIAL_DAILY_EDITION_PRACTICE_UI_ENABLED`, `OFFICIAL_DAILY_EDITION_HTTP_ENABLED`, `OFFICIAL_DAILY_EDITION_PRIVATE_RUNTIME_ENABLED`. All remain default OFF. This is metadata navigation only, not signed A3 competitive admission; competitive score admission under #566, protected-hosted/mobile navigation acceptance, and production authorization remain separate release gates.
@@ -747,3 +810,28 @@ The existing Daily Nine at `/` remains the primary, guest-playable default and C
 The shared exact-ID official practice route is source-integrated in #608. The staged Archive and today-chooser UI now render published secondary metadata as encoded `/daily/editions/:puzzleId?date=:PacificDate` links **only inside their already gated section/page**: Archive requires its four exact-true flags, and the chooser requires its separate four exact-true flags. The destination independently requires its three practice/HTTP/private-runtime flags, validates the one-field date query and immutable `daily-ed-v1-UUID`, and uses the existing released-publication reader and signed practice gameplay. Archive links retain the historical immutable publication date; the current-day chooser uses its server-authoritative Pacific date. No answer, clue, result, user identity, score, or server secret is placed in the URL.
 
 Legacy-primary entries remain plain-text/unlinked, because an editorial record ID is not an established historical gameplay/scoring ID. Issued secondary gameplay is **practice-only**: browser result collection, per-batter/completion competitive submissions, leaderboards and comparisons remain fail-closed under A3 issue #566. The existing beta Archive and primary Daily are unchanged. Source tests cover positive exact-ID/date links, default-OFF/no-private-I/O gates, escaping of editor titles, absent legacy-primary links, and existing route validation. This staging does **not** authorize production flags, official migrations, real account/Auth release, or public competition. Protected hosted QA and physical Safari/Android navigation and rollover remain required.
+
+## Custom v2 first-result guest display transport (source-only, default OFF)
+
+`GET /api/custom-lineup/challenges/:puzzleId/completion/display` returns `{status:"not_set"}` or the original immutable `{status:"saved",mode:"named",displayName:"..."}` / `{status:"saved",mode:"anonymous",displayName:null}` only for the exact signed noncreator first-attempt browser after private SQL readback. Query strings and conflicting Origin are rejected. `POST` accepts only bounded (4 KiB UTF-8) same-origin `application/json` with exactly `{mode:"named",displayName:"..."}` or `{mode:"anonymous"}`. SQL validates complete N-row points-v4 admission, summary/award parity and irrevocable first write; exact retry returns `200 existing`, new choice `201 created`, and a conflicting choice is rejected as SQLSTATE 23505 and exposed only as sanitized HTTP 503 (not an `existing` success). Other failures are redacted. Both exact-true server switches are required and remain OFF. `Cache-Control: private, no-store`, `Vary: Cookie`, `nosniff` and same-origin referrer/cross-origin resource policies protect private responses. Neither endpoint accepts/returns submission IDs, scores, hidden player/hint data or account profile claims. Public activation requires separate SQL, Auth, cross-tab and physical device acceptance.
+
+## Default-OFF Custom v2 guest completion display UI (source-staged)
+
+The unlisted v2 game page passes `completionDisplayEnabled` only when both exact-true gameplay and display HTTP gates are enabled. The authoritative first-attempt `/attempt/submit` returns `created` or `existing` on success; only then does `CustomLineupGame` set its admission state to `saved` and render the browser completion-choice panel. Failed or pending results cannot offer a name. It uses an exact-challenge same-origin, no-store GET/POST transport to choose a shared-valid 1–32 UTF-16-unit display name or Anonymous, once. It sends no score, submission ID, roster, clue, signed progression token or account identity. On uncertain POST, the client re-reads the saved server-authoritative first choice before retrying and never overwrites locally. React escapes plain-text names. Refresh restoration is limited to the exact signed browser, without public leaderboard name display or nickname/account linking. This is **source-only, disabled in production**; independent reviews, isolated migration/transaction QA, physical Safari/Android, browser security and abuse acceptance are pending.
+
+### Secondary Daily competitive gameplay candidate (#657)
+
+The server stages `POST /api/daily/editions/:puzzleId/competitive/:action` behind both `OFFICIAL_DAILY_EDITION_COMPETITIVE_HTTP_ENABLED=true` and `OFFICIAL_DAILY_EDITION_PRIVATE_RUNTIME_ENABLED=true`. Both default off. Each request requires HTTPS, a matching Origin, and a bounded JSON body. Responses carry `private, no-store`. The server requires a dedicated `OFFICIAL_DAILY_COMPETITIVE_SECRET` for the edition-scoped browser credential and signed progression. With that credential, players may start or resume any released edition and read their completed scorecard without a gameplay deadline. Production policy and rollout require approval.
+
+| Action | JSON fields | Behavior |
+| --- | --- | --- |
+| `bootstrap` | `date` | First contact returns HTTP 428 with an edition-scoped, host-only, HttpOnly, Secure, SameSite=Strict cookie. Repeat with the same edition credential to start any released edition or resume the original attempt with its current-batter hints, regardless of elapsed time. Future editions remain closed. |
+| `hints` | `progressionToken` | Reads the saved attempt and returns the authorized current-batter bundle for resume. Individual hint taps still use the local signed checkpoints. |
+| `resolve` | `progressionToken` and either `submittedPlayerId` or `giveUp: true` | Reads the saved attempt, checks the signed play and durably advances it. The ninth terminal play and engine-derived scorecard commit in one transaction. Identical response-loss retries recover the same result. |
+
+The edition, browser reservation and server-issued attempt govern score attribution. A missing cookie on a gameplay action or an invalid cookie is rejected. The player interface still uses its existing practice transport. First-entry setup, multi-tab cookie establishment, hosted PostgREST acceptance, shared UI integration and physical-device parity are release gates. An anonymous cookie cannot establish a unique person.
+
+
+A source-staged browser adapter for this transport retries the exact `428 {"error":"cookie_required"}` response once with same-origin credentials; it does not clear, overwrite or read the HttpOnly credential, and never sends score, at-bat facts or browser identity. It validates the four current-batter hints, checkpoints, and public puzzle/resolve responses using the existing practice parser. Unlike practice-first-entry validation, competitive bootstrap may legitimately return a later batter or an advanced local reveal depth. This is **not** authority to reset the UI to batter one: a future caller must reconcile the returned signed progression against the correct local scorecard and authoritative completion, fail closed when reconciliation is impossible, and isolate practice and competitive save semantics. The adapter is not yet connected to the player page; public activation is still disabled.
+
+An existing edition credential can request `POST /api/daily/editions/:puzzleId/competitive/scorecard` with only the issued date. The service reads the existing reservation and verifies its stored signed transcript against the released puzzle. Both responses include one display name per resolved pitch. The active response includes normalized terminal at-bats, revision, current strike count, signed progression and the current hint bundle. The completed response includes all nine normalized at-bats and the engine-derived summary. The read neither reserves an attempt nor advances progression.
