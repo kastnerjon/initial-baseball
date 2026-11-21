@@ -138,10 +138,10 @@ jobs:
           pnpm --filter @initial-baseball/daily build
           pnpm --filter @initial-baseball/web build
 
-      - name: Install pinned QA-only Chromium for default-OFF browser smoke
+      - name: Install pinned QA-only Chromium and WebKit for browser smoke
         run: |
           npm install --prefix /tmp/ib-default-off-smoke --no-package-lock playwright@1.56.1
-          /tmp/ib-default-off-smoke/node_modules/.bin/playwright install --with-deps chromium
+          /tmp/ib-default-off-smoke/node_modules/.bin/playwright install --with-deps chromium webkit
       - name: Verify default-OFF production-built routes in native Chromium
         env:
           IB_DEFAULT_OFF_SMOKE_PLAYWRIGHT_MODULE: /tmp/ib-default-off-smoke/node_modules/playwright/index.mjs
@@ -155,6 +155,11 @@ jobs:
       - name: Verify competitive Daily response-loss recovery in real Chromium
         env:
           OFFICIAL_DAILY_RECOVERY_QA_PLAYWRIGHT_MODULE: /tmp/ib-default-off-smoke/node_modules/playwright/index.mjs
+        run: node apps/web/scripts/qa-official-daily-competitive-recovery-browser.mjs
+      - name: Verify competitive Daily response-loss recovery in real WebKit
+        env:
+          OFFICIAL_DAILY_RECOVERY_QA_PLAYWRIGHT_MODULE: /tmp/ib-default-off-smoke/node_modules/playwright/index.mjs
+          OFFICIAL_DAILY_RECOVERY_QA_ENGINE: webkit
         run: node apps/web/scripts/qa-official-daily-competitive-recovery-browser.mjs
       - name: Verify Custom completion display component with simulated HTTP in Chromium
         env:
