@@ -120,9 +120,21 @@ try {
   await context.route('**/*',r=>isIsolationFixtureRequestAllowed(r.request().url(),base)
     ?r.continue():r.abort());
   const page=await context.newPage();
+  // Count application-level fetch calls independently of browser HTTP retransmits.
+  const resolvePath = '/api/daily/editions/' + ID + '/competitive/resolve';
+  await page.addInitScript(path => {
+    const originalFetch = window.fetch;
+    let resolveFetchCalls = 0;
+    window.fetch = function(input, init) {
+      const target = input instanceof Request ? input.url : String(input);
+      if (new URL(target, location.href).pathname === path) resolveFetchCalls++;
+      return originalFetch.call(this, input, init);
+    };
+    Object.defineProperty(window, '__ibQaResolveFetchCalls', { value: () => resolveFetchCalls });
+  }, resolvePath);
 
   const errors=[];
-  page.on('pageerror',e=>errors.push(e.message));
+  page.on('pageerror',e=>errors.push({name:e.name,message:e.message}));
   const nav=await page.goto(base,{waitUntil:'domcontentloaded'});
   assert.equal(nav?.status(),200,'Only loopback fixture should serve the game');
   await page.getByRole('button',{name:'Give Up'}).waitFor({timeout:20000});
@@ -144,6 +156,8 @@ try {
   await page.getByRole('button',{name:'Reload scorecard'}).waitFor({timeout:25000});
 
   assert.equal(revision,1);
+  assert.equal(await page.evaluate(() => window.__ibQaResolveFetchCalls()),1,
+    'one application-level resolve fetch through automatic recovery');
   assert.ok(resolves>=1,'real lost response must reach the authority');
   assert.equal(acceptedWrites,1,'transparent browser retransmission cannot accept a second write');
   const resolvesAfterFailure=resolves;
@@ -161,15 +175,31 @@ try {
   assert.equal(finalLock.held[0].name,'official-daily-competitive:'+ID,'recovered lock must be edition-scoped');
   assert.equal(finalLock.held[0].mode,'exclusive','recovered lock must be exclusive');
   assert.equal(resolves,resolvesAfterFailure,'manual reload must not replay the failed action');
+  assert.equal(await page.evaluate(() => window.__ibQaResolveFetchCalls()),1,
+    'manual reload must not issue another application-level resolve fetch');
   assert.equal(scoreReads,3,'manual reload must re-read canonical scorecard');
   assert.equal(revision,1,'one authoritative score write only');
   assert.equal(acceptedWrites,1,'only one authoritative winner');
   assert.deepEqual(actions,['scorecard',...Array(resolves).fill('resolve'),'scorecard','bootstrap','scorecard']);
-  // WebKit reports a pageerror for the deliberately destroyed resolve transport.
-  // Treat only that exact loopback URL as expected; all other JS errors still fail.
-  const abortedResolveUrl = base + '/api/daily/editions/' + ID + '/competitive/resolve';
-  const unexpectedErrors = errors.filter(message => browserEngine !== 'webkit'
-    || !message.startsWith('Fetch API cannot load ' + abortedResolveUrl));
+  // WebKit may report the intentionally aborted resolve as a native pageerror.
+  // Playwright can split its text at the first colon in "http://", yielding
+  // name "Fetch API cannot load http" and message "/127.0.0.1:PORT/...".
+  const abortedResolveUrl = base + resolvePath;
+  const rawDiagnostic = 'Fetch API cannot load ' + abortedResolveUrl;
+  const colon = rawDiagnostic.indexOf(':');
+  const splitName = rawDiagnostic.slice(0,colon);
+  const splitMessage = rawDiagnostic.slice(colon+2);
+  const exactDiagnostic = (message,prefix) => message === prefix
+    || message.startsWith(prefix + ' ') || message.startsWith(prefix + '.');
+  const isExpectedResolveAbort = ({name,message}) =>
+    (name === splitName && exactDiagnostic(message,splitMessage))
+    || ((name === 'Error' || name === 'TypeError') && exactDiagnostic(message,rawDiagnostic));
+  // Exercise the exception filter even when the browser does not emit this diagnostic.
+  assert.ok(isExpectedResolveAbort({name:splitName,message:splitMessage+' due to access control checks.'}));
+  assert.ok(!isExpectedResolveAbort({name:splitName,message:splitMessage+'-other'}));
+  assert.ok(!isExpectedResolveAbort({name:'ReferenceError',message:'unexpected application failure'}));
+  const unexpectedErrors = errors.filter(error => browserEngine !== 'webkit'
+    || !isExpectedResolveAbort(error));
   assert.deepEqual(unexpectedErrors,[],'no unexpected browser JavaScript errors');
   console.log('PASS Native ' + browserEngine +
     ' competitive POST response loss, failed scorecard + bootstrap, exclusive Web Lock release, manual authoritative reload and reacquire, one accepted action');
