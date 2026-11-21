@@ -78,6 +78,8 @@ const server=createServer(async(req,res)=>{
     let input='';
     for await (const chunk of req)input+=chunk;
     const action=path.split('/').at(-1);
+    assert.equal(path, '/api/daily/editions/' + ID + '/competitive/' + action,
+      'competitive HTTP request must target the exact fixture edition');
     actions.push(action);
     if(action==='scorecard') {
       scoreReads++;
@@ -120,6 +122,8 @@ try {
   const initial=await page.locator('.at-bat-progress-step[aria-current="step"]').getAttribute('aria-label');
   const firstLock=await page.evaluate(()=>navigator.locks.query());
   assert.equal(firstLock.held.length,1,'initial gameplay must hold native exclusive Web Lock');
+  assert.equal(firstLock.held[0].name,'official-daily-competitive:'+ID,'initial lock must be edition-scoped');
+  assert.equal(firstLock.held[0].mode,'exclusive','initial lock must be exclusive');
   assert.equal(initial,'At-bat 1: current');
   await page.getByRole('button',{name:'Give Up'}).click();
 
@@ -145,6 +149,8 @@ try {
   await page.locator('.at-bat-progress-step[aria-current="step"][aria-label="At-bat 2: current"]').waitFor({timeout:25000});
   const finalLock=await page.evaluate(()=>navigator.locks.query());
   assert.equal(finalLock.held.length,1,'recovered game must acquire one exclusive lock');
+  assert.equal(finalLock.held[0].name,'official-daily-competitive:'+ID,'recovered lock must be edition-scoped');
+  assert.equal(finalLock.held[0].mode,'exclusive','recovered lock must be exclusive');
   assert.equal(resolves,1,'manual reload must never replay failed action');
   assert.equal(scoreReads,3,'manual reload must re-read canonical scorecard');
   assert.equal(revision,1,'one authoritative score write only');
