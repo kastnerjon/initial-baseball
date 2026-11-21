@@ -56,7 +56,7 @@ const bootstrap = (pitchNumber=1) => ({
  puzzle,rulesetVersion:'points-v4', progressionToken:'signed-pitch-'+pitchNumber,
  hintBundle:bundle(pitchNumber),
 });
-let revision=0, scoreReads=0, bootReads=0, resolves=0;
+let revision=0, scoreReads=0, bootReads=0, resolves=0, acceptedWrites=0;
 const actions=[];
 const fact={pitchNumber:1,initials:'HP',outcome:'K',hintsRevealed:0,wrongGuesses:0,resolution:'give_up'};
 const scorecard=()=>({
@@ -96,8 +96,10 @@ const server=createServer(async(req,res)=>{
       const parsed=JSON.parse(input);
       assert.equal(parsed.giveUp,true,'only one user-initiated give-up should be sent');
       assert.equal(parsed.progressionToken,'signed-pitch-1');
-      if(revision===0)revision=1; // model SQL accepting the write before response loss
-      res.writeHead(503,{'Content-Type':'application/json'});res.end('{"error":"unavailable"}');return;
+      if(revision===0){revision=1;acceptedWrites++;} // one SQL-style winner even if Chromium retransmits
+      // Close the real HTTP connection after committing, without a response.
+      // Chromium may automatically retransmit a POST; it must not accept twice.
+      res.destroy();return;
     }
   }
   res.writeHead(404);res.end('Not found');
@@ -137,7 +139,9 @@ try {
   await page.getByRole('button',{name:'Reload scorecard'}).waitFor({timeout:25000});
 
   assert.equal(revision,1);
-  assert.equal(resolves,1,'lost response must not replay a competing give-up');
+  assert.ok(resolves>=1,'real lost response must reach the authority');
+  assert.equal(acceptedWrites,1,'transparent browser retransmission cannot accept a second write');
+  const resolvesAfterFailure=resolves;
   assert.equal(scoreReads,2,'automatic scorecard recovery must attempt a real HTTP read');
   assert.equal(bootReads,1,'failed scorecard read must attempt bounded bootstrap fallback');
   // Even a failed scorecard + failed bootstrap must release the previous exclusive lock.
@@ -151,10 +155,11 @@ try {
   assert.equal(finalLock.held.length,1,'recovered game must acquire one exclusive lock');
   assert.equal(finalLock.held[0].name,'official-daily-competitive:'+ID,'recovered lock must be edition-scoped');
   assert.equal(finalLock.held[0].mode,'exclusive','recovered lock must be exclusive');
-  assert.equal(resolves,1,'manual reload must never replay failed action');
+  assert.equal(resolves,resolvesAfterFailure,'manual reload must not replay the failed action');
   assert.equal(scoreReads,3,'manual reload must re-read canonical scorecard');
   assert.equal(revision,1,'one authoritative score write only');
-  assert.deepEqual(actions,['scorecard','resolve','scorecard','bootstrap','scorecard']);
+  assert.equal(acceptedWrites,1,'only one authoritative winner');
+  assert.deepEqual(actions,['scorecard',...Array(resolves).fill('resolve'),'scorecard','bootstrap','scorecard']);
   assert.deepEqual(errors,[],'no uncaught browser JavaScript errors');
   console.log('PASS Native Chromium competitive POST response loss, failed scorecard + bootstrap, exclusive Web Lock release, manual authoritative reload and reacquire, one accepted action');
   await context.close();
