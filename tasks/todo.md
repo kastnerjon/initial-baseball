@@ -2,7 +2,7 @@
 
 ## Competitive Daily browser recovery gate (QA-only, November 21)
 
-- [ ] **PR #TBD:** Run the same isolated competitive Daily signed-progression/response-loss/Web Lock recovery fixture in Chromium **and WebKit** during normal CI. No hosted Supabase, user cookies, production flags or release activation. This protects the shared Daily game against engine-specific recovery regressions; it is **not** physical iPhone Safari/Android acceptance. Latest hosted acceptance evidence: [#657 checkpoint](https://github.com/kastnerjon/initial-baseball/issues/657#issuecomment-7068682113).
+- [ ] **WebKit CI hardening:** Run the same isolated competitive Daily signed-progression/response-loss/Web Lock recovery fixture in Chromium **and WebKit** during normal CI. No hosted Supabase, user cookies, production flags or release activation. This protects the shared Daily game against engine-specific recovery regressions; it is **not** physical iPhone Safari/Android acceptance. Latest hosted acceptance evidence: [#657 checkpoint](https://github.com/kastnerjon/initial-baseball/issues/657#issuecomment-7068682113).
 - [ ] Remaining release acceptance: actual physical iPhone Safari and Android Chrome, natural Pacific-midnight held editorial lock in hosted isolated QA, full A→B→A rotation with recoverable QA secret, and explicit production rollout approval. Previous local production-shaped migrations passed selected install and rollback; production stays OFF.
 
 ## Primary delivery — exact-edition competitive provenance (#657)
