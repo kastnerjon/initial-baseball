@@ -2,8 +2,11 @@
 
 ## Controlled production scoring path — #657 (source only; production OFF)
 
-- [ ] Share one scored-play gate across the secondary Archive, chooser, shared Daily destination and competitive POST. Keep existing Preview-only QA admission, add a separately named exact-true production release flag; verify every missing/foreign-env flag rejects API access before cookie issuance and before SQL. **Do not set production flags/secret or issue any production editions in this implementation PR.**
-- [ ] Independent final-HEAD review, exact-head CI + matching Vercel Preview, merge and verify default-OFF production 404s. Physical Safari/Android and real Pacific-midnight QA and explicit owner approval remain separate release gates.
+- [x] Share one scored-play gate across the secondary Archive, chooser, shared Daily destination and competitive POST; independent review and main integration #691 passed exact-head CI and matching READY Preview. Production feature flag remains unset.
+- [x] Independently review, merge and verify production default-OFF source #691. Main push CI and production deployment passed; live secondary routes and competitive POST returned 404, and POST issued no cookie.
+- [x] Safely sync protected isolated QA to exact main source via independently reviewed #692, verify matching branch READY Preview and isolated QA Archive; physical iPhone Safari passed on prior QA build. **Android physical browser waived by owner for initial release, not passed.**
+- [ ] Source-only reversible ingress: add an independent exact-true production **new starts** switch, OFF by default, without shutting down existing signed scorecard reads/resolutions. Require final-head review/CI/Preview before merge; **do not set production flags, keys or issue editions.**
+- [ ] After any verified source integration, finish natural Pacific-midnight held editorial writer and recoverable active A→B→A isolated-QA signing rehearsal if safely achievable; owner sign-off required for production activation.
 - [x] Owner-approved seven additive Official Daily production migrations installed and schema/security/empty-state audited. Preserve source filename → production migration-version mapping in #657 comment #7073662821; do not blindly reapply those files.
 
 ## Competitive Daily browser recovery gate (QA-only, November 21)

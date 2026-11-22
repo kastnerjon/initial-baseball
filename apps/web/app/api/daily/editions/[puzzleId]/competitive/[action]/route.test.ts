@@ -53,6 +53,7 @@ describe('official Daily competitive POST', () => {
     vi.stubEnv('OFFICIAL_DAILY_COMPETITIVE_UI_QA', 'true');
     expect((await post('bootstrap', DATE)).status).toBe(404);
     vi.stubEnv('OFFICIAL_DAILY_COMPETITIVE_PRODUCTION_ENABLED', 'true');
+    vi.stubEnv('OFFICIAL_DAILY_COMPETITIVE_NEW_STARTS_ENABLED', 'true');
     expect((await post('bootstrap', DATE)).status).toBe(428);
     for (const gate of ['OFFICIAL_DAILY_EDITION_PRACTICE_UI_ENABLED',
       'OFFICIAL_DAILY_EDITION_HTTP_ENABLED',
@@ -71,6 +72,43 @@ describe('official Daily competitive POST', () => {
     vi.stubEnv('OFFICIAL_DAILY_COMPETITIVE_PRODUCTION_ENABLED', 'true');
     expect((await post('bootstrap', DATE)).status).toBe(404);
     expect(createServerOfficialDailyCompetitiveGame).not.toHaveBeenCalled();
+  });
+
+  it('closes only production first starts while preserving existing bootstrap, scorecard and progression', async () => {
+    vi.stubEnv('VERCEL_ENV', 'production');
+    vi.stubEnv('OFFICIAL_DAILY_COMPETITIVE_PRODUCTION_ENABLED', 'true');
+    const credential = createOfficialDailyAttemptBrowserCredential(SECRET);
+    const cookie = credential.issue(ID, ORIGIN).setCookie.split(';')[0]!;
+
+    // Default-OFF start admission: do not mint a new cookie or touch the DB.
+    const denied = await post('bootstrap', DATE);
+    expect(denied.status).toBe(404);
+    expect(denied.headers.get('set-cookie')).toBeNull();
+    expect(createServerOfficialDailyCompetitiveGame).not.toHaveBeenCalled();
+
+    // Existing signed owners can still bootstrap their durable attempt, advance,
+    // and read the committed score, with an existing-only read/write store.
+    expect((await post('bootstrap', DATE, cookie)).status).toBe(200);
+    expect(vi.mocked(createServerOfficialDailyCompetitiveGame).mock.lastCall?.[3]).toBe('existing');
+    game.getScorecard.mockResolvedValue({ status: 'completed', revision: 9 });
+    expect((await post('scorecard', DATE, cookie)).status).toBe(200);
+    expect((await post('resolve', { progressionToken: 'signed-bootstrap', giveUp: true }, cookie)).status).toBe(200);
+    expect(vi.mocked(createServerOfficialDailyCompetitiveGame).mock.calls.every(call => call[3] === 'existing'))
+      .toBe(true);
+
+    // Noncanonical values never reopen new starts.
+    vi.stubEnv('OFFICIAL_DAILY_COMPETITIVE_NEW_STARTS_ENABLED', 'TRUE');
+    expect((await post('bootstrap', DATE)).status).toBe(404);
+    vi.stubEnv('OFFICIAL_DAILY_COMPETITIVE_NEW_STARTS_ENABLED', 'true');
+    expect((await post('bootstrap', DATE)).status).toBe(428);
+    expect((await post('bootstrap', DATE, cookie)).status).toBe(200);
+    expect(vi.mocked(createServerOfficialDailyCompetitiveGame).mock.lastCall?.[3]).toBe('bootstrap');
+
+    // Full emergency shutdown still denies all scored endpoints regardless of this switch.
+    vi.stubEnv('OFFICIAL_DAILY_COMPETITIVE_PRODUCTION_ENABLED', 'false');
+    expect((await post('bootstrap', DATE, cookie)).status).toBe(404);
+    expect((await post('scorecard', DATE, cookie)).status).toBe(404);
+    expect((await post('resolve', { progressionToken: 'signed-bootstrap', giveUp: true }, cookie)).status).toBe(404);
   });
 
   it('confirms an edition-bound cookie before reserving, then uses existing-only ownership for actions', async () => {
