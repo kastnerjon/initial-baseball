@@ -16,15 +16,15 @@ import { getDailyHowToContent } from '../../../dailyHowTo';
 
 export const dynamic = 'force-dynamic';
 export const metadata = {
-  title: 'Daily Nine Practice | Initial Baseball',
-  description: 'An unlisted official Daily Nine practice puzzle.',
+  title: 'Daily Nine | Initial Baseball',
+  description: 'An unlisted published official Daily Nine puzzle.',
   robots: { index: false, follow: false, nocache: true },
   referrer: 'no-referrer',
 };
 
 /**
- * Private A2 acceptance route. No competitive attempt or score admission.
- * Three independent server gates default OFF; released puzzles only.
+ * Released exact-edition shared Daily game. Scored play and practice share
+ * strict server-side release gates; both remain default OFF in production.
  */
 export default async function OfficialDailyPracticePage({
   params, searchParams,

@@ -18,7 +18,7 @@ type PageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
-/** A4 read-only choice surface. Main Daily remains the primary and competitive A3 is disabled. */
+/** Read-only edition choice: the original Daily remains primary; scored admission is separately gated. */
 export default async function OfficialDailyEditionChoicePage({ searchParams }: PageProps): Promise<JSX.Element> {
   if (!isOfficialDailyEditionChooserVisible()) notFound();
   const competitiveAvailable = isOfficialDailyEditionCompetitivePreviewVisible();

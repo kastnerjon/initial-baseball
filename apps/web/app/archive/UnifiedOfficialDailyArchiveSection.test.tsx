@@ -50,11 +50,11 @@ describe('one date-grouped historical official Archive presentation', () => {
     expect(html).toContain('/archive?afterDate=2026-11-04&amp;afterEdition=2');
   });
 
-  it('labels scored preview entries accurately without exposing legacy primary replay', () => {
+  it('labels scored entries accurately without exposing legacy primary replay', () => {
     const html = renderToStaticMarkup(<UnifiedOfficialDailyArchiveSection
       practiceAvailable competitiveAvailable page={{ dates: records, nextCursor: null }} />);
     expect((html.match(/Scored play; results count for this edition/g) ?? []).length).toBe(3);
-    expect(html).toContain('support scored play in this preview');
+    expect(html).toContain('support scored play;');
     expect(html).not.toContain('Practice only; scores are not submitted');
     expect((html.match(/Historical replay unavailable/g) ?? []).length).toBe(2);
     expect(html.split('href="/daily/editions/').length - 1).toBe(3);
