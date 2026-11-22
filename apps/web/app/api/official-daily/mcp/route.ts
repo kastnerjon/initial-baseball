@@ -32,7 +32,7 @@ export async function POST(request: Request): Promise<Response> {
   });
   try {
     const response = await handler.fetch(request, {
-      authInfo: { token: '', clientId: principal.clientId, scopes: ['openid'],
+      authInfo: { token: '', clientId: principal.clientId, scopes: [], // Never assert unverified OAuth scope claims.
         expiresAt: principal.expiresAt },
     });
     const headers = new Headers(response.headers);
