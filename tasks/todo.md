@@ -2,6 +2,9 @@
 
 ## Mandatory ChatGPT publication transport — #663 / #666
 
+- [ ] Review and merge default-OFF QA OAuth consent source, then sync exact Git tree to protected QA. Consent/decision rechecks exact registered client/editor/callback before any approval. No account/issuer settings changed by source.
+- [ ] Register one isolated-QA Supabase OAuth 2.1 client, verify asymmetrically signed access JWTs, implement narrow audience hook with rollback, enable QA-only creator auth/consent on reviewed host, and verify PKCE/refresh/rejection/recovery. Never enable production publishing.
+
 - [x] #696 independently reviewed and merged: private separately confirmed immutable `issue` action in existing secondary ChatOps. #698 independently reviewed and merged precise four-file sync to protected named QA, matching main Git tree and READY QA deployment.
 - [ ] Source-stage/review a remote Streamable HTTP MCP server using existing editorial lifecycle, separate editor OAuth identity and issuer/audience/client verification, explicit schedule and issue, and no shared SQL HTTP queue. **Source candidate is not a connected plugin or feature activation.**
 - [ ] After review/CI/Preview, obtain QA-only authorization for Supabase OAuth configuration and narrowly scoped custom `aud` claim, deploy metadata, install connector explicitly, and complete protected synthetic end-to-end publishing, recovery and concurrency QA. Production remains OFF. Preserve existing primary `pg_net` until separately reviewed controlled remediation.
