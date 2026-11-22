@@ -17,7 +17,7 @@ const HEADERS = {
   'content-security-policy': "default-src 'none'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
 };
 const escape = (text: string) => text.replace(/[&<>"']/g, char =>
-  ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' })[char] ?? char);
+  ( { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' } as Record<string, string> )[char] ?? char);
 function page(body: string, status = 200) {
   return new NextResponse('<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Authorize ChatGPT | Initial Baseball</title></head><body><main><h1>Authorize ChatGPT</h1>'
     + body + '</main></body></html>', {
@@ -30,7 +30,8 @@ function fail(status: number) {
 }
 export async function GET(request: NextRequest): Promise<NextResponse> {
   const config = readOfficialDailyMcpConsentConfig();
-  if (!config || request.nextUrl.origin !== config.creator.origin) return fail(404);
+  if (!config || request.nextUrl.origin !== config.creator.origin
+      || request.headers.get('host') !== new URL(config.creator.origin).host) return fail(404);
   const params = request.nextUrl.searchParams;
   const authorizationId = params.get('authorization_id');
   if (params.size !== 1 || !validOfficialDailyOAuthAuthorizationId(authorizationId)) return fail(400);

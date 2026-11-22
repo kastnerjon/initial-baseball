@@ -23,7 +23,8 @@ function fail(status: number) {
 }
 export async function POST(request: NextRequest): Promise<NextResponse> {
   const config = readOfficialDailyMcpConsentConfig();
-  if (!config || request.nextUrl.origin !== config.creator.origin) return fail(404);
+  if (!config || request.nextUrl.origin !== config.creator.origin
+      || request.headers.get('host') !== new URL(config.creator.origin).host) return fail(404);
   if (!sameOriginPost(request)) return fail(403);
   const form = await creatorAuthForm(request);
   const authorizationId = form?.get('authorization_id');

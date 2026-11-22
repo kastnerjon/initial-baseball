@@ -29,7 +29,7 @@ const env = {
   OFFICIAL_DAILY_EDITOR_DRAFTS_ENABLED: 'true',
 };
 afterEach(() => vi.unstubAllEnvs());
-beforeEach(() => vi.resetAllMocks());
+beforeEach(() => vi.clearAllMocks());
 describe('QA-only MCP OAuth consent authorization boundary', () => {
   it('is off until three exact switches and complete same-environment URL configuration', () => {
     expect(readOfficialDailyMcpConsentConfig({})).toBeNull();
