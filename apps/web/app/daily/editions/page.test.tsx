@@ -12,7 +12,7 @@ vi.mock('../../serverOfficialDailyArchiveSection', () => ({
 }));
 vi.mock('../../serverOfficialDailyEditionChoice', () => ({
   isOfficialDailyEditionChooserVisible: mocked.enabled,
-  isOfficialDailyEditionCompetitivePreviewVisible: mocked.competitiveVisible,
+  isOfficialDailyEditionCompetitiveVisible: mocked.competitiveVisible,
   readCurrentOfficialDailyEditionChoice: mocked.read,
 }));
 import ChoicePage, { metadata } from './page';

@@ -2,7 +2,7 @@ import React, { type JSX } from 'react';
 import { notFound } from 'next/navigation';
 import { isOfficialDailyArchiveVisible } from '../../serverOfficialDailyArchiveSection';
 import {
-  isOfficialDailyEditionChooserVisible, isOfficialDailyEditionCompetitivePreviewVisible,
+  isOfficialDailyEditionChooserVisible, isOfficialDailyEditionCompetitiveVisible,
   readCurrentOfficialDailyEditionChoice,
 } from '../../serverOfficialDailyEditionChoice';
 import type { OfficialDailyEditionChoicePage } from '../../serverOfficialDailyEditionChoice';
@@ -21,7 +21,7 @@ type PageProps = {
 /** Read-only edition choice: the original Daily remains primary; scored admission is separately gated. */
 export default async function OfficialDailyEditionChoicePage({ searchParams }: PageProps): Promise<JSX.Element> {
   if (!isOfficialDailyEditionChooserVisible()) notFound();
-  const competitiveAvailable = isOfficialDailyEditionCompetitivePreviewVisible();
+  const competitiveAvailable = isOfficialDailyEditionCompetitiveVisible();
   let page: OfficialDailyEditionChoicePage | null = null;
   let unavailable = false;
   try {
