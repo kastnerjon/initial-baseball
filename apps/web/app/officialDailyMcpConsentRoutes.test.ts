@@ -76,6 +76,7 @@ describe('OAuth consent request/decision routes', () => {
     const res = await GET(get());
     expect(res.status).toBe(401);
     expect(await res.text()).toContain('separate tab');
+    expect(res.headers.get('referrer-policy')).toBe('origin');
     expect(getAuthorizationDetails).not.toHaveBeenCalled();
   });
   it('renders HTML-escaped client details with CSP and never leaks unverified scope', async () => {
@@ -85,9 +86,11 @@ describe('OAuth consent request/decision routes', () => {
     expect(body).toContain('&lt;Fake App&gt;');
     expect(body).not.toContain('<Fake App>');
     expect(body).toContain('type="submit"');
+    expect(body).toContain('name="decision" value="approve"');
+    expect(body).toContain('name="decision" value="deny"');
     expect(res.headers.get('cache-control')).toBe('private, no-store');
     expect(res.headers.get('content-security-policy')).toContain("default-src 'none'");
-    expect(res.headers.get('referrer-policy')).toBe('no-referrer');
+    expect(res.headers.get('referrer-policy')).toBe('origin');
   });
   it('refuses another client or editor before displaying consent or calling approve', async () => {
     getAuthorizationDetails.mockResolvedValueOnce({
@@ -109,6 +112,7 @@ describe('OAuth consent request/decision routes', () => {
     expect((await POST(post('authorization_id=' + authorizationId + '&decision=approve&decision=deny'))).status).toBe(400);
     expect((await POST(post('authorization_id=' + authorizationId + '&decision=publish'))).status).toBe(400);
     expect((await POST(post(undefined, { origin: '' }))).status).toBe(403);
+    expect((await POST(post(undefined, { origin: 'null' }))).status).toBe(403);
     expect(approveAuthorization).not.toHaveBeenCalled();
   });
   it('re-checks exact verified authorization before approval and pins the provider redirect', async () => {

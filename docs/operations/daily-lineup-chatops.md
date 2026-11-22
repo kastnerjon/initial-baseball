@@ -210,7 +210,7 @@ editor lock gate (#664), key rotation and #657 production authorization are
 not waived by an MCP source merge.
 
 
-### QA-only OAuth consent source (awaiting independent review; not enabled)
+### QA-only OAuth consent source (main-integrated; default OFF, QA acceptance incomplete)
 
 The dedicated authorization path is GET /oauth/consent?authorization_id=<opaque-id>, with
 a separately gated POST /api/official-daily/oauth/decision. Both are default OFF
@@ -228,8 +228,12 @@ to the registered exact callback; no arbitrary return-to URLs are accepted.
 For a guest, the consent page offers account login in a separate tab, preserving the
 original authorization page for refresh after login. This avoids modifying the Custom
 Lineup login/callback routing or storing authorization requests in a shared queue.
-The consent document loads no remote scripts/assets, uses no-store/no-referrer and
-a restrictive CSP. It does not include private future player identities. All errors
+The consent HTML document loads no remote scripts/assets, uses no-store and an
+origin-only Referrer-Policy so native same-origin Authorize/Deny form submissions
+send a verifiable Origin without leaking the authorization_id query in Referer.
+Successful provider redirects and fixed errors retain no-referrer; the decision
+handler continues rejecting absent, null and cross-origin POST Origin headers,
+with a restrictive CSP. It does not include private future player identities. All errors
 are fixed and sanitized. Real Supabase OAuth client registration, a safe custom JWT
 resource-audience hook, QA-specific login and callback setup, ingress rate limiting,
 and complete ChatGPT authorization-code/PKCE acceptance remain separate owner-approved
