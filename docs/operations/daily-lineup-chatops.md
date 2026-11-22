@@ -138,3 +138,73 @@ explicit reset. An owner-approved live reset should therefore be exceptional.
 Verify the ChatOps HTTP response and the authoritative scheduled editorial row's
 exact nine canonical IDs and audit identity, then check the public page after
 cache invalidation. Never report completion based on the `pg_net` dispatch ID alone.
+
+### Source-staged secure ChatGPT MCP secondary publishing (#666; default OFF)
+
+The new stateless Streamable HTTP endpoint is \`POST /api/official-daily/mcp\`, with
+RFC 9728 OAuth resource discovery at \`/.well-known/oauth-protected-resource\`.
+This is the **secondary edition** assistant transport, not the legacy primary
+\`pg_net\` workflow. It replaces neither primary authorization nor primary
+ChatOps. The MCP server invokes the existing editorial application services
+for player search, create, exact private lookup/preview, revision-checked
+nine-player revise, separately confirmed schedule and separately confirmed
+immutable issue. It does not enqueue requests in SQL, directly edit tables,
+or use external destinations chosen by tool arguments.
+
+Deployment defaults to **404**. No feature is available until both
+\`OFFICIAL_DAILY_EDITOR_MCP_ENABLED=true\` and
+\`OFFICIAL_DAILY_EDITOR_DRAFTS_ENABLED=true\` are explicitly present. The
+\`issue_official_daily_draft\` tool additionally requires
+\`OFFICIAL_DAILY_EDITOR_ISSUANCE_ENABLED=true\`; scheduling never issues. The
+MCP transport never enables public competitive play or new starts.
+
+A proposed separately approved QA-only OAuth setup must provide:
+
+- \`OFFICIAL_DAILY_EDITOR_MCP_RESOURCE_URL\` — exact HTTPS resource endpoint
+  \`https://<approved-QA-host>/api/official-daily/mcp\`, with no query/fragment;
+- \`SUPABASE_URL\` — isolated QA Supabase origin, reused by the existing
+  server-only Supabase adapter, **not** a new service-role credential;
+- \`OFFICIAL_DAILY_EDITOR_MCP_CLIENT_ID\` — dedicated approved OAuth 2.1 client,
+  not a primary ChatOps shared token;
+- \`OFFICIAL_DAILY_EDITOR_MCP_USER_ID\` — single explicitly approved UUID of the
+  editorial owner; this is an allowlist, never a claimed request argument;
+- an asymmetric Supabase JWT signing key (ES256/RS256). Verify the OAuth
+  authorization-code/PKCE and consent configuration, supported client
+  registration, and **resource-specific access-token \`aud\`**. Supabase's
+  normal \`aud=authenticated\` does **not** pass this MCP resource verifier.
+  A narrowly scoped OAuth-specific custom access token hook may be required;
+  changing that Auth policy is a separate approval/security review.
+
+Every request must pass exact URL, Host/Origin/Fetch Metadata, HTTPS,
+bearer-JWT signature/JWKS, exact issuer, exact resource audience, \`exp\`/\`iat\`,
+OAuth \`client_id\`, authenticated role and allowlisted \`sub\` **before any
+service-role client is created**. The OAuth metadata is public but contains
+only resource and authorization-server URLs, never credentials. The MCP
+response is private/no-store, text errors are restricted to fixed
+\`invalid\`/\`conflict\`/\`unavailable\` classes, and tool arguments are bounded
+at ingress. The app does not persist JWTs, roster payloads or responses in
+a shared request/response queue; no future-lineup payload goes to GitHub,
+logs, URL queries or CI fixtures. Use synthetic fixture identities for tests.
+
+**Authoring sequence:** privately resolve all nine identities and order;
+create draft; read back the exact occurrence and revision; revise as necessary;
+ask the owner explicitly whether to **schedule** that exact roster/revision;
+perform confirmed schedule; privately read back scheduled state and revised
+revision; ask the owner **separately** whether to **issue** this exact scheduled
+edition; call confirmed issue and verify immutable publication ID. A lost or
+ambiguous response is never permission to advance: use exact private
+lookup/preview, reconcile the immutable publication, and retry only with
+verified original revision/state. Do not manufacture a replacement edition.
+
+**Pre-activation/rollback:** keep all production flags OFF and do not rotate
+the existing nonexportable QA key A. Require final-head independent review,
+CI/Preview, approved isolated-QA OAuth registration and user allowlist, secure
+log/redaction and host-level rate limits, real ChatGPT plugin OAuth consent,
+synthetic hosted create→preview→revise→confirmed schedule→confirmed issue and
+readback with duplicate/stale/timeout/concurrency tests. Roll back the connector
+by disabling the MCP flag without changing gameplay or publication state.
+An already immutable issued edition cannot be "unissued." Existing primary
+\`pg_net\` queue transport still requires separate controlled remediation;
+do not reuse it for secondary unpublished lineups. The genuine Pacific-midnight
+editor lock gate (#664), key rotation and #657 production authorization are
+not waived by an MCP source merge.

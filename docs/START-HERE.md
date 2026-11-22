@@ -1,5 +1,12 @@
 # Initial Baseball — Start Here
 
+## November 22 — secure MCP connector source candidate (#666), activation OFF
+
+- PR #698 independently reviewed/merged into named protected QA at `a6af0f900e4b485d34cc027a9f37323abb7586b3`; full tree `3ebca0c007034818ce83becd1c72714e9ad25629` equals main and matching branch Vercel `dpl_47a55Mk8bNDmFpw7Bi2o6dTEhG5v` is READY. Production unchanged.
+- Active source-only work: OAuth-authenticated Streamable HTTP MCP connector reusing canonical search, protected secondary draft lifecycle and immutable issuer. Separate exact-true MCP/editor/issuance flags default OFF. This is **not** a connected ChatGPT plugin or hosted publishing acceptance.
+- Next: independently review and integrate the MCP source candidate after exact-head CI and Preview; approve and configure only isolated QA OAuth, dedicated editor allowlist and rate limiting before real hosted ChatGPT publishing tests. No production flags, Auth policies, secrets, editions, scores or signing keys touched.
+
+
 ## November 22 — source-staged production emergency new-start admission (pending review)
 
 - After verified #691 release gating and protected QA source-parity integration #692 ([#657 milestone](https://github.com/kastnerjon/initial-baseball/issues/657#issuecomment-7082696104)), a rollout audit identified one gap: turning OFF the sole competitive production gate would also strand existing players' scorecard reads and signed progression.

@@ -1,5 +1,12 @@
 # Initial Baseball — Current Work
 
+## Mandatory ChatGPT publication transport — #663 / #666
+
+- [x] #696 independently reviewed and merged: private separately confirmed immutable `issue` action in existing secondary ChatOps. #698 independently reviewed and merged precise four-file sync to protected named QA, matching main Git tree and READY QA deployment.
+- [ ] Source-stage/review a remote Streamable HTTP MCP server using existing editorial lifecycle, separate editor OAuth identity and issuer/audience/client verification, explicit schedule and issue, and no shared SQL HTTP queue. **Source candidate is not a connected plugin or feature activation.**
+- [ ] After review/CI/Preview, obtain QA-only authorization for Supabase OAuth configuration and narrowly scoped custom `aud` claim, deploy metadata, install connector explicitly, and complete protected synthetic end-to-end publishing, recovery and concurrency QA. Production remains OFF. Preserve existing primary `pg_net` until separately reviewed controlled remediation.
+
+
 ## Controlled production scoring path — #657 (source only; production OFF)
 
 - [x] Share one scored-play gate across the secondary Archive, chooser, shared Daily destination and competitive POST; independent review and main integration #691 passed exact-head CI and matching READY Preview. Production feature flag remains unset.
@@ -49,7 +56,7 @@
 ## Engineering workflow — native default-OFF smoke pilot (November 8)
 
 - [ ] Consolidate the three local default-OFF Daily browser QA milestones #628/#634/#635 as one reviewable #635 source change on current main, without losing #633 disabled Custom identity GET/POST guards: first signed hint → browser save → reload/authorized hint replay → second hint; signed first terminal give-up → next-at-bat reload; remaining eight signed terminal transitions → final nine-row points scorecard → completed-game reload. Require **new exact-head** CI with native Chromium, READY Preview and independent reviews before merge. This verifies real Chromium local Daily progression, not real guesses, hosted competitive scoring, Auth, secondary editions or physical phones.
-- [ ] After a successful pilot, compare CI runtime and false-failure rate. Keep the browser gate if it catches real route regressions without significant overhead; otherwise optimize its placement rather than weakening isolation. See \`docs/engineering/default-off-browser-qa.md\`.
+- [ ] After a successful pilot, compare CI runtime and false-failure rate. Keep the browser gate if it catches real route regressions without significant overhead; otherwise optimize its placement rather than weakening isolation. See `docs/engineering/default-off-browser-qa.md`.
 
 
 ## Security #531 — legacy signed browser QA environment cutover
