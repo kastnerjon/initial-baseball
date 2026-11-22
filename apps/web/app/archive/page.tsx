@@ -1,7 +1,7 @@
 import React, { type JSX } from 'react';
 import { listAvailableArchiveBetaPuzzles } from '../serverArchiveBetaRuntime';
 import { isOfficialDailyArchiveVisible } from '../serverOfficialDailyArchiveSection';
-import { isOfficialDailyEditionCompetitivePreviewVisible, isOfficialDailyEditionPracticeVisible } from '../serverOfficialDailyEditionChoice';
+import { isOfficialDailyEditionCompetitiveVisible, isOfficialDailyEditionPracticeVisible } from '../serverOfficialDailyEditionChoice';
 import { readPrivateUnifiedOfficialDailyArchive } from '../serverUnifiedOfficialDailyArchiveSection';
 import type { UnifiedArchivePage } from '../unifiedOfficialDailyArchiveMerge';
 import { ArchiveLocalResults } from './ArchiveLocalResults';
@@ -24,7 +24,7 @@ export default async function ArchivePage({ searchParams }: ArchivePageProps): P
   }
   const officialArchiveEnabled = isOfficialDailyArchiveVisible();
   const practiceAvailable = isOfficialDailyEditionPracticeVisible();
-  const competitiveAvailable = isOfficialDailyEditionCompetitivePreviewVisible();
+  const competitiveAvailable = isOfficialDailyEditionCompetitiveVisible();
   let official: UnifiedArchivePage | null = null;
   let officialUnavailable = false;
   if (officialArchiveEnabled) {

@@ -2,7 +2,7 @@ import React, { type JSX } from 'react';
 import { notFound } from 'next/navigation';
 import { isOfficialDailyArchiveVisible } from '../../serverOfficialDailyArchiveSection';
 import {
-  isOfficialDailyEditionChooserVisible, isOfficialDailyEditionCompetitivePreviewVisible,
+  isOfficialDailyEditionChooserVisible, isOfficialDailyEditionCompetitiveVisible,
   readCurrentOfficialDailyEditionChoice,
 } from '../../serverOfficialDailyEditionChoice';
 import type { OfficialDailyEditionChoicePage } from '../../serverOfficialDailyEditionChoice';
@@ -18,10 +18,10 @@ type PageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
 
-/** A4 read-only choice surface. Main Daily remains the primary and competitive A3 is disabled. */
+/** Read-only edition choice: the original Daily remains primary; scored admission is separately gated. */
 export default async function OfficialDailyEditionChoicePage({ searchParams }: PageProps): Promise<JSX.Element> {
   if (!isOfficialDailyEditionChooserVisible()) notFound();
-  const competitiveAvailable = isOfficialDailyEditionCompetitivePreviewVisible();
+  const competitiveAvailable = isOfficialDailyEditionCompetitiveVisible();
   let page: OfficialDailyEditionChoicePage | null = null;
   let unavailable = false;
   try {
@@ -38,7 +38,7 @@ export default async function OfficialDailyEditionChoicePage({ searchParams }: P
         <p className="eyebrow">Initial Baseball · Daily Nine</p>
         <h1>Today’s Daily puzzles</h1>
         <p>The original Daily Nine remains playable without an account. {competitiveAvailable
-          ? 'Additional published editions support scored play in this preview; results count for each exact edition.'
+          ? 'Additional published editions support scored play; results count for each exact edition.'
           : 'Additional published editions can be played for practice without an account; competitive scores are not submitted.'}</p>
         <p><a href="/">Play today’s primary Daily Nine</a></p>
         {unavailable || page === null ? (
