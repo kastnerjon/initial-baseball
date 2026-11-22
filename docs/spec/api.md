@@ -835,3 +835,40 @@ The edition, browser reservation and server-issued attempt govern score attribut
 A source-staged browser adapter for this transport retries the exact `428 {"error":"cookie_required"}` response once with same-origin credentials; it does not clear, overwrite or read the HttpOnly credential, and never sends score, at-bat facts or browser identity. It validates the four current-batter hints, checkpoints, and public puzzle/resolve responses using the existing practice parser. Unlike practice-first-entry validation, competitive bootstrap may legitimately return a later batter or an advanced local reveal depth. This is **not** authority to reset the UI to batter one: a future caller must reconcile the returned signed progression against the correct local scorecard and authoritative completion, fail closed when reconciliation is impossible, and isolate practice and competitive save semantics. The adapter is not yet connected to the player page; public activation is still disabled.
 
 An existing edition credential can request `POST /api/daily/editions/:puzzleId/competitive/scorecard` with only the issued date. The service reads the existing reservation and verifies its stored signed transcript against the released puzzle. Both responses include one display name per resolved pitch. The active response includes normalized terminal at-bats, revision, current strike count, signed progression and the current hint bundle. The completed response includes all nine normalized at-bats and the engine-derived summary. The read neither reserves an attempt nor advances progression.
+
+### OAuth-authenticated secondary Official Daily MCP connector (#666, source-only)
+
+The default-OFF remote MCP endpoint \`POST /api/official-daily/mcp\` uses
+stateless Streamable HTTP with a bounded 8 KiB JSON request envelope and
+\`private, no-store\` responses. \`/.well-known/oauth-protected-resource\`
+advertises the exact configured HTTPS resource and separate Supabase OAuth
+authorization server only when the editor and MCP flags are both exact-true.
+The server requires a valid signature against that QA Supabase issuer's
+asymmetric JWKS, exact resource \`aud\` and \`iss\`, unexpired JWT, authenticated
+role, exact approved OAuth \`client_id\` and single-editor UUID \`sub\`.
+Neither a normal Supabase user JWT for \`authenticated\` audience, a primary
+ChatOps bearer, a token for another client, a wrong-host Origin, nor missing
+configuration is accepted. Unauthenticated MCP requests receive a standard
+OAuth resource-discovery challenge, not future roster content. Host, Origin,
+Fetch Metadata and query path are checked before credential handling.
+The endpoint never accepts an arbitrary network destination or stores
+assistant payloads in an asynchronous database queue.
+
+The seven MCP tools are \`search_official_daily_players\`,
+\`create_official_daily_draft\`, \`lookup_official_daily_draft\`,
+\`preview_official_daily_draft\`, \`revise_official_daily_draft\`,
+\`schedule_official_daily_draft\` and \`issue_official_daily_draft\`.
+These use precisely the same existing canonical search, draft validation,
+revision CAS and immutable SQL issuer as first-party editorial services.
+Create/revise cannot schedule; schedule and issue require distinct owner
+confirmations and exact revisions; issuance additionally requires the
+existing exact-true issuance kill switch. The issue tool returns only
+\`created\`/\`existing\` and immutable \`puzzleId\`; there is no clue serialization
+in its output. On response loss use private authoritative readback; do not
+assume a timeout implies no write. All input validation and service errors
+remain sanitized.
+
+This is a **source candidate** and not evidence of a connected ChatGPT
+plugin, OAuth authorization-server setup, hosted QA acceptance, production
+permission, editor activation, issued edition or scored play. Existing
+primary Daily gameplay and primary ChatOps paths remain unchanged.
