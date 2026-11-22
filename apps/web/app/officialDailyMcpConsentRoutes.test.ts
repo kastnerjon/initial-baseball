@@ -25,11 +25,11 @@ const details = {
   user: { id: editorId, email: 'editor@example.test' }, scope: 'openid',
 };
 function get(path = '/oauth/consent?authorization_id=' + authorizationId) {
-  return new NextRequest(origin + path);
+  return new NextRequest(origin + path, { headers: { host: 'qa.initial.test' } });
 }
 function post(body = 'authorization_id=' + authorizationId + '&decision=approve', headers: Record<string, string> = {}) {
   return new NextRequest(origin + '/api/official-daily/oauth/decision', {
-    method: 'POST', body, headers: { origin, 'content-type': 'application/x-www-form-urlencoded', ...headers },
+    method: 'POST', body, headers: { host: 'qa.initial.test', origin, 'content-type': 'application/x-www-form-urlencoded', ...headers },
   });
 }
 beforeEach(() => {
@@ -108,7 +108,8 @@ describe('OAuth consent request/decision routes', () => {
     const r = await POST(post());
     expect(r.status).toBe(303);
     expect(r.headers.get('location')).toBe(returnUrl);
-    expect(approveAuthorization).toHaveBeenCalledExactlyOnceWith(authorizationId);
+    expect(approveAuthorization).toHaveBeenCalledTimes(1);
+    expect(approveAuthorization).toHaveBeenCalledWith(authorizationId);
     approveAuthorization.mockResolvedValue({ data: { redirect_url: 'https://attacker.test/?code=one' }, error: null });
     expect((await POST(post())).status).toBe(503);
   });
