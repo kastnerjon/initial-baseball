@@ -208,3 +208,29 @@ An already immutable issued edition cannot be "unissued." Existing primary
 do not reuse it for secondary unpublished lineups. The genuine Pacific-midnight
 editor lock gate (#664), key rotation and #657 production authorization are
 not waived by an MCP source merge.
+
+
+### QA-only OAuth consent source (awaiting independent review; not enabled)
+
+The dedicated authorization path is GET /oauth/consent?authorization_id=<opaque-id>, with
+a separately gated POST /api/official-daily/oauth/decision. Both are default OFF
+until editor MCP, draft authoring, account sign-in, and the additional exact-true
+OFFICIAL_DAILY_EDITOR_MCP_CONSENT_ENABLED flag are active on the same protected QA host.
+The callback is pinned by OFFICIAL_DAILY_EDITOR_MCP_CALLBACK_URL, an exact registered
+HTTPS ChatGPT redirect URI (no query or fragment). The server verifies the signed-in
+Supabase user matches the single approved editor, re-reads the provider authorization
+details, and checks the exact OAuth client ID, same editor, registered callback,
+authorization ID and bounded identity scopes. Approval and denial are explicit
+same-origin, bounded POSTs, with a second full authorization-details check immediately
+before the Supabase authorize/deny call. Provider redirects may leave the app only
+to the registered exact callback; no arbitrary return-to URLs are accepted.
+
+For a guest, the consent page offers account login in a separate tab, preserving the
+original authorization page for refresh after login. This avoids modifying the Custom
+Lineup login/callback routing or storing authorization requests in a shared queue.
+The consent document loads no remote scripts/assets, uses no-store/no-referrer and
+a restrictive CSP. It does not include private future player identities. All errors
+are fixed and sanitized. Real Supabase OAuth client registration, a safe custom JWT
+resource-audience hook, QA-specific login and callback setup, ingress rate limiting,
+and complete ChatGPT authorization-code/PKCE acceptance remain separate owner-approved
+QA operations. Source deployment is not permission to activate issuing or scoring.
