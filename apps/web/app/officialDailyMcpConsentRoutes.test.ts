@@ -11,7 +11,7 @@ vi.mock('@supabase/ssr', () => ({
   }),
 }));
 import { GET } from './oauth/consent/route';
-import { POST } from './api/official-daily/oauth/decision/route';
+import { POST, GET as decisionGET, DELETE as decisionDELETE } from './api/official-daily/oauth/decision/route';
 
 const origin = 'https://qa.initial.test';
 const editorId = '907f33db-c38f-43c3-8e6b-a3aaf19bbd08';
@@ -60,7 +60,14 @@ describe('OAuth consent request/decision routes', () => {
     vi.stubEnv('OFFICIAL_DAILY_EDITOR_MCP_CONSENT_ENABLED', 'false');
     expect((await GET(get())).status).toBe(404);
     expect((await POST(post())).status).toBe(404);
+    expect((await decisionGET()).status).toBe(404);
+    expect((await decisionDELETE()).status).toBe(404);
     expect(getUser).not.toHaveBeenCalled();
+  });
+  it('allows no decision GET/DELETE even when enabled', async () => {
+    expect((await decisionGET()).status).toBe(405);
+    expect((await decisionDELETE()).status).toBe(405);
+    expect(approveAuthorization).not.toHaveBeenCalled();
   });
   it('fails on missing/extra authorization query and disallows anonymous consent details', async () => {
     expect((await GET(get('/oauth/consent?authorization_id=short'))).status).toBe(400);

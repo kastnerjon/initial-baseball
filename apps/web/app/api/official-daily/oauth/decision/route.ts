@@ -17,7 +17,7 @@ const HEADERS = {
 };
 function fail(status: number) {
   return creatorAuthResponse(NextResponse.json(
-    { error: status === 404 ? 'not_found' : status === 403 ? 'forbidden' : 'unavailable' },
+    { error: status === 404 ? 'not_found' : status === 403 ? 'forbidden' : status === 405 ? 'method_not_allowed' : 'unavailable' },
     { status, headers: HEADERS },
   ));
 }
@@ -48,3 +48,9 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
     return auth.finish(NextResponse.redirect(result.data.redirect_url, 303));
   } catch { return auth.finish(fail(503)); }
 }
+
+/** Unsupported methods stay invisible until the independently enabled consent boundary is configured. */
+export async function GET(): Promise<NextResponse> {
+  return fail(readOfficialDailyMcpConsentConfig() ? 405 : 404);
+}
+export const DELETE = GET;
