@@ -49,7 +49,7 @@ export async function GET(request: NextRequest): Promise<NextResponse> {
     if (error) return auth.finish(fail(503));
     const details = inspectOfficialDailyOAuthDetails(data, authorizationId, config);
     if (!details) return auth.finish(fail(403));
-    if (details.kind === 'redirect') return auth.finish(NextResponse.redirect(details.url, 303));
+    if (details.kind === 'redirect') return auth.finish(NextResponse.redirect(details.url, { status: 303, headers: HEADERS }));
     return auth.finish(page(
       '<p>The application <strong>' + escape(details.clientName) + '</strong> requests access to the private Official Daily editor.</p>'
       + '<p>Approved callback: ' + escape(config.callback) + '</p>'

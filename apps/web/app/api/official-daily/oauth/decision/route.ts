@@ -45,7 +45,7 @@ export async function POST(request: NextRequest): Promise<NextResponse> {
       : await auth.client.auth.oauth.denyAuthorization(authorizationId);
     if (result.error || !validOfficialDailyOAuthRedirect(result.data?.redirect_url, config.callback))
       return auth.finish(fail(503));
-    return auth.finish(NextResponse.redirect(result.data.redirect_url, 303));
+    return auth.finish(NextResponse.redirect(result.data.redirect_url, { status: 303, headers: HEADERS }));
   } catch { return auth.finish(fail(503)); }
 }
 

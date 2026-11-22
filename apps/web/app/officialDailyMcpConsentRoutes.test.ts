@@ -115,6 +115,8 @@ describe('OAuth consent request/decision routes', () => {
     const r = await POST(post());
     expect(r.status).toBe(303);
     expect(r.headers.get('location')).toBe(returnUrl);
+    expect(r.headers.get('referrer-policy')).toBe('no-referrer');
+    expect(r.headers.get('cache-control')).toBe('private, no-store');
     expect(approveAuthorization).toHaveBeenCalledTimes(1);
     expect(approveAuthorization).toHaveBeenCalledWith(authorizationId);
     approveAuthorization.mockResolvedValue({ data: { redirect_url: 'https://attacker.test/?code=one' }, error: null });
@@ -124,8 +126,13 @@ describe('OAuth consent request/decision routes', () => {
     const denied = await POST(post('authorization_id=' + authorizationId + '&decision=deny'));
     expect(denied.status).toBe(303);
     expect(denied.headers.get('location')).toContain('error=access_denied');
+    expect(denied.headers.get('referrer-policy')).toBe('no-referrer');
+    expect(denied.headers.get('cache-control')).toBe('private, no-store');
     expect(approveAuthorization).not.toHaveBeenCalled();
     getAuthorizationDetails.mockResolvedValue({ data: { redirect_url: returnUrl }, error: null });
-    expect((await GET(get())).headers.get('location')).toBe(returnUrl);
+    const accepted = await GET(get());
+    expect(accepted.headers.get('location')).toBe(returnUrl);
+    expect(accepted.headers.get('referrer-policy')).toBe('no-referrer');
+    expect(accepted.headers.get('cache-control')).toBe('private, no-store');
   });
 });
