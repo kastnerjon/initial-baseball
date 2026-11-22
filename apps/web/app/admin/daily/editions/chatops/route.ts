@@ -49,6 +49,7 @@ export async function POST(request: Request): Promise<NextResponse> {
   const issue = v.action === 'issue' && keysEqual(v, ['action', 'occurrenceId', 'expectedRevision', 'confirmed'])
     && v.confirmed === true && Number.isSafeInteger(v.expectedRevision) && (v.expectedRevision as number) >= 0;
   if (!create && !preview && !lookup && !schedule && !revise && !issue) return reply(400, 'invalid_request');
+  if (issue && process.env.OFFICIAL_DAILY_EDITOR_ISSUANCE_ENABLED !== 'true') return reply(404, 'not_found');
   if (!create && !lookup && (typeof v.occurrenceId !== 'string' || !isOfficialDailyOccurrenceId(v.occurrenceId))) return reply(400, 'invalid_request');
   try {
     const expected = create ? parseOfficialDailyDraftInput(v.draft, new Date()) : null;

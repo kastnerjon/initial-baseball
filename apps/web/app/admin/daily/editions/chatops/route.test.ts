@@ -28,6 +28,7 @@ function request(body: unknown, headers: Record<string, string> = {}, url = URL)
 beforeEach(() => {
   vi.stubEnv('OFFICIAL_DAILY_EDITOR_CHATOPS_ENABLED', 'true');
   vi.stubEnv('OFFICIAL_DAILY_EDITOR_DRAFTS_ENABLED', 'true');
+  vi.stubEnv('OFFICIAL_DAILY_EDITOR_ISSUANCE_ENABLED', 'true');
   vi.stubEnv('DAILY_CHATOPS_TOKEN', TOKEN);
   vi.mocked(parseOfficialDailyDraftInput).mockReturnValue({ ...draft, title: 'Modern', puzzleNumber: 223,
     selections: roster.map((canonicalPlayerId, i) => ({ slot: i + 1, canonicalPlayerId, source: 'manual' as const })) });
@@ -172,13 +173,16 @@ describe('private official Daily edition ChatOps', () => {
     expect(scheduleOfficialDailyEditorialDraft).not.toHaveBeenCalled();
   });
   it('keeps issuance closed when either feature flag is disabled', async () => {
-    for (const flag of ['OFFICIAL_DAILY_EDITOR_CHATOPS_ENABLED', 'OFFICIAL_DAILY_EDITOR_DRAFTS_ENABLED']) {
+    for (const flag of ['OFFICIAL_DAILY_EDITOR_CHATOPS_ENABLED', 'OFFICIAL_DAILY_EDITOR_DRAFTS_ENABLED',
+      'OFFICIAL_DAILY_EDITOR_ISSUANCE_ENABLED']) {
       vi.stubEnv(flag, 'false');
       expect((await POST(request({ action: 'issue', occurrenceId: ID, expectedRevision: 1, confirmed: true }))).status).toBe(404);
       vi.stubEnv(flag, 'true');
     }
     expect(issuePrivateOfficialDaily).not.toHaveBeenCalled();
     expect(createServerSupabaseClient).not.toHaveBeenCalled();
+    vi.stubEnv('OFFICIAL_DAILY_EDITOR_ISSUANCE_ENABLED', 'false');
+    expect((await POST(request({ action: 'preview', occurrenceId: ID }))).status).toBe(200);
   });
   it('rejects cross-origin and cross-site issuance', async () => {
     const body = { action: 'issue', occurrenceId: ID, expectedRevision: 1, confirmed: true };
