@@ -1,5 +1,16 @@
 # Initial Baseball — Current Work
 
+## Controlled production scoring path — #657 (source only; production OFF)
+
+- [ ] Share one scored-play gate across the secondary Archive, chooser, shared Daily destination and competitive POST. Keep existing Preview-only QA admission, add a separately named exact-true production release flag; verify every missing/foreign-env flag rejects API access before cookie issuance and before SQL. **Do not set production flags/secret or issue any production editions in this implementation PR.**
+- [ ] Independent final-HEAD review, exact-head CI + matching Vercel Preview, merge and verify default-OFF production 404s. Physical Safari/Android and real Pacific-midnight QA and explicit owner approval remain separate release gates.
+- [x] Owner-approved seven additive Official Daily production migrations installed and schema/security/empty-state audited. Preserve source filename → production migration-version mapping in #657 comment #7073662821; do not blindly reapply those files.
+
+## Competitive Daily browser recovery gate (QA-only, November 21)
+
+- [x] **WebKit CI hardening:** Run the same isolated competitive Daily signed-progression/response-loss/Web Lock recovery fixture in Chromium **and WebKit** during normal CI. No hosted Supabase, user cookies, production flags or release activation. This protects the shared Daily game against engine-specific recovery regressions; it is **not** physical iPhone Safari/Android acceptance. Latest hosted acceptance evidence: [#657 checkpoint](https://github.com/kastnerjon/initial-baseball/issues/657#issuecomment-7068682113).
+- [ ] Remaining release acceptance: actual physical iPhone Safari and Android Chrome, natural Pacific-midnight held editorial lock in hosted isolated QA, full A→B→A rotation with recoverable QA secret, and explicit production rollout approval. Previous local production-shaped migrations passed selected install and rollback; production stays OFF.
+
 ## Primary delivery — exact-edition competitive provenance (#657)
 
 - [x] Merge signed game progression and transactional nine-at-bat plus summary persistence (#677, #678). Isolated PostgreSQL passed concurrent retry, sibling separation, partial-write rollback and fractional scoring.

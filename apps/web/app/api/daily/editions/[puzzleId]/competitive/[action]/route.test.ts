@@ -24,6 +24,10 @@ function post(action: string, body: unknown, cookie = '', id = ID, origin = ORIG
 }
 
 beforeEach(() => {
+  vi.stubEnv('VERCEL_ENV', 'preview');
+  vi.stubEnv('OFFICIAL_DAILY_COMPETITIVE_UI_QA', 'true');
+  vi.stubEnv('OFFICIAL_DAILY_EDITION_PRACTICE_UI_ENABLED', 'true');
+  vi.stubEnv('OFFICIAL_DAILY_EDITION_HTTP_ENABLED', 'true');
   vi.stubEnv('OFFICIAL_DAILY_EDITION_COMPETITIVE_HTTP_ENABLED', 'true');
   vi.stubEnv('OFFICIAL_DAILY_EDITION_PRIVATE_RUNTIME_ENABLED', 'true');
   vi.stubEnv('OFFICIAL_DAILY_COMPETITIVE_SECRET', SECRET);
@@ -43,6 +47,32 @@ describe('official Daily competitive POST', () => {
       expect(createServerOfficialDailyCompetitiveGame).not.toHaveBeenCalled();
     },
   );
+  it('denies scored API in production until its independent release flag is exact true', async () => {
+    vi.stubEnv('VERCEL_ENV', 'production');
+    expect((await post('bootstrap', DATE)).status).toBe(404);
+    vi.stubEnv('OFFICIAL_DAILY_COMPETITIVE_UI_QA', 'true');
+    expect((await post('bootstrap', DATE)).status).toBe(404);
+    vi.stubEnv('OFFICIAL_DAILY_COMPETITIVE_PRODUCTION_ENABLED', 'true');
+    expect((await post('bootstrap', DATE)).status).toBe(428);
+    for (const gate of ['OFFICIAL_DAILY_EDITION_PRACTICE_UI_ENABLED',
+      'OFFICIAL_DAILY_EDITION_HTTP_ENABLED',
+      'OFFICIAL_DAILY_EDITION_PRIVATE_RUNTIME_ENABLED',
+      'OFFICIAL_DAILY_EDITION_COMPETITIVE_HTTP_ENABLED']) {
+      vi.stubEnv(gate, 'false');
+      const response = await post('bootstrap', DATE);
+      expect(response.status).toBe(404);
+      expect(response.headers.get('set-cookie')).toBeNull();
+      vi.stubEnv(gate, 'true');
+    }
+    vi.stubEnv('OFFICIAL_DAILY_COMPETITIVE_PRODUCTION_ENABLED', 'false');
+    expect((await post('bootstrap', DATE)).status).toBe(404);
+    vi.stubEnv('VERCEL_ENV', 'preview');
+    vi.stubEnv('OFFICIAL_DAILY_COMPETITIVE_UI_QA', 'false');
+    vi.stubEnv('OFFICIAL_DAILY_COMPETITIVE_PRODUCTION_ENABLED', 'true');
+    expect((await post('bootstrap', DATE)).status).toBe(404);
+    expect(createServerOfficialDailyCompetitiveGame).not.toHaveBeenCalled();
+  });
+
   it('confirms an edition-bound cookie before reserving, then uses existing-only ownership for actions', async () => {
     const first = await post('bootstrap', DATE);
     expect(first.status).toBe(428);

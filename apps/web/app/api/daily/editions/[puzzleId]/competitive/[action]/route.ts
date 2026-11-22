@@ -3,13 +3,13 @@ import { createOfficialDailyAttemptBrowserCredential, isOfficialDailyBrowserPuzz
 import { parseBody, readBoundedJson, respond } from '../../../../../../officialDailyEditionRequest';
 import { createServerOfficialDailyCompetitiveGame } from '../../../../../../serverOfficialDailyCompetitiveGame';
 import { readOfficialDailyCompetitiveSigningKeys } from '../../../../../../officialDailyCompetitiveSigningKeys';
+import { isOfficialDailyEditionCompetitiveVisible } from '../../../../../../serverOfficialDailyEditionChoice';
 
 export const dynamic = 'force-dynamic';
 type Context = { params: Promise<{ puzzleId: string; action: string }> };
 
 export async function POST(request: Request, context: Context) {
-  if (process.env.OFFICIAL_DAILY_EDITION_COMPETITIVE_HTTP_ENABLED !== 'true' ||
-      process.env.OFFICIAL_DAILY_EDITION_PRIVATE_RUNTIME_ENABLED !== 'true') {
+  if (!isOfficialDailyEditionCompetitiveVisible()) {
     return respond({ error: 'not_found' }, 404);
   }
   const { puzzleId, action } = await context.params;

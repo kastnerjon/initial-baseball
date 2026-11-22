@@ -25,6 +25,19 @@ export function isOfficialDailyEditionCompetitivePreviewVisible(env: Environment
     && env.OFFICIAL_DAILY_EDITION_COMPETITIVE_HTTP_ENABLED === 'true';
 }
 
+/**
+ * Shared scored-play admission for the UI, Archive labels and competitive POST.
+ * Preview QA keeps its existing isolated gate; production requires a distinct,
+ * explicit release switch. Neither branch activates on missing/noncanonical flags.
+ */
+export function isOfficialDailyEditionCompetitiveVisible(env: Environment = process.env): boolean {
+  if (!isOfficialDailyEditionPracticeVisible(env)
+      || env.OFFICIAL_DAILY_EDITION_COMPETITIVE_HTTP_ENABLED !== 'true') return false;
+  if (env.VERCEL_ENV === 'preview') return env.OFFICIAL_DAILY_COMPETITIVE_UI_QA === 'true';
+  return env.VERCEL_ENV === 'production'
+    && env.OFFICIAL_DAILY_COMPETITIVE_PRODUCTION_ENABLED === 'true';
+}
+
 export function isOfficialDailyEditionChooserVisible(env: Environment = process.env): boolean {
   return env.OFFICIAL_DAILY_EDITION_CHOICE_ENABLED === 'true'
     && isOfficialDailyEditionPracticeVisible(env);

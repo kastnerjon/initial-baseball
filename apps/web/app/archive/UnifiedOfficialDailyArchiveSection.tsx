@@ -5,7 +5,7 @@ import type { UnifiedArchivePage } from '../unifiedOfficialDailyArchiveMerge';
  * Read-only A4 presentation for one historical official Daily archive.
  *
  * An editorial primary publication is not an issued gameplay identity.
- * Secondary IDs link only to the source-integrated default-OFF practice route.
+ * Secondary IDs link to the same default-OFF shared Daily route, scored only when independently enabled.
  * Legacy editorial primaries remain deliberately nonplayable placeholders.
  */
 export function UnifiedOfficialDailyArchiveSection({ page, practiceAvailable, competitiveAvailable }: {
@@ -18,7 +18,7 @@ export function UnifiedOfficialDailyArchiveSection({ page, practiceAvailable, co
       <h2>Official Daily editions</h2>
       <p>Past official lineups. {practiceAvailable
         ? competitiveAvailable
-          ? 'Published secondary editions support scored play in this preview; historical primary replay remains unavailable.'
+          ? 'Published secondary editions support scored play; historical primary replay remains unavailable.'
           : 'Published secondary editions are available for practice; historical primary replay remains unavailable.'
         : 'Secondary practice is not yet available; historical primary replay remains unavailable.'}</p>
       {page.dates.length === 0 ? (

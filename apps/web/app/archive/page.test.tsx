@@ -13,7 +13,7 @@ vi.mock('../serverOfficialDailyArchiveSection', () => ({
 }));
 vi.mock('../serverOfficialDailyEditionChoice', () => ({
   isOfficialDailyEditionPracticeVisible: mocked.practice,
-  isOfficialDailyEditionCompetitivePreviewVisible: mocked.competitive,
+  isOfficialDailyEditionCompetitiveVisible: mocked.competitive,
 }));
 vi.mock('../serverUnifiedOfficialDailyArchiveSection', () => ({
   readPrivateUnifiedOfficialDailyArchive: mocked.archive,

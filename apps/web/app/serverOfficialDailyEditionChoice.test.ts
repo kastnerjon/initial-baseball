@@ -11,7 +11,7 @@ vi.mock('./serverSupabaseClient', () => ({ createServerSupabaseClient: mocked.cl
 
 import {
   isOfficialDailyEditionChooserVisible, isOfficialDailyEditionPracticeVisible,
-  isOfficialDailyEditionCompetitivePreviewVisible,
+  isOfficialDailyEditionCompetitivePreviewVisible, isOfficialDailyEditionCompetitiveVisible,
   readCurrentOfficialDailyEditionChoice,
 } from './serverOfficialDailyEditionChoice';
 import { isOfficialDailyArchiveVisible } from './serverOfficialDailyArchiveSection';
@@ -65,6 +65,46 @@ describe('default-off official Daily edition chooser', () => {
       expect(isOfficialDailyEditionCompetitivePreviewVisible({ ...env, [flag]: 'false' })).toBe(false);
     }
     expect(isOfficialDailyEditionCompetitivePreviewVisible({})).toBe(false);
+  });
+
+  it('uses distinct explicit Preview and production scoring gates, fail-closed across UI and API', () => {
+    const qa = {
+      ...ON, VERCEL_ENV: 'preview', OFFICIAL_DAILY_COMPETITIVE_UI_QA: 'true',
+      OFFICIAL_DAILY_EDITION_COMPETITIVE_HTTP_ENABLED: 'true',
+    };
+    const prod = {
+      ...ON, VERCEL_ENV: 'production', OFFICIAL_DAILY_COMPETITIVE_PRODUCTION_ENABLED: 'true',
+      OFFICIAL_DAILY_EDITION_COMPETITIVE_HTTP_ENABLED: 'true',
+    };
+    expect(isOfficialDailyEditionCompetitiveVisible({})).toBe(false);
+    expect(isOfficialDailyEditionCompetitiveVisible(qa)).toBe(true);
+    expect(isOfficialDailyEditionCompetitiveVisible(prod)).toBe(true);
+    expect(isOfficialDailyEditionCompetitivePreviewVisible(prod)).toBe(false);
+    expect(isOfficialDailyEditionCompetitiveVisible({ ...qa, VERCEL_ENV: 'production' })).toBe(false);
+    expect(isOfficialDailyEditionCompetitiveVisible({ ...prod, VERCEL_ENV: 'preview' })).toBe(false);
+    for (const env of [qa, prod]) {
+      for (const flag of [
+        'OFFICIAL_DAILY_EDITION_PRACTICE_UI_ENABLED',
+        'OFFICIAL_DAILY_EDITION_HTTP_ENABLED',
+        'OFFICIAL_DAILY_EDITION_PRIVATE_RUNTIME_ENABLED',
+        'OFFICIAL_DAILY_EDITION_COMPETITIVE_HTTP_ENABLED',
+      ]) {
+        expect(isOfficialDailyEditionCompetitiveVisible({ ...env, [flag]: 'false' })).toBe(false);
+        expect(isOfficialDailyEditionCompetitiveVisible({ ...env, [flag]: 'TRUE' })).toBe(false);
+      }
+      expect(isOfficialDailyEditionCompetitiveVisible({ ...env, VERCEL_ENV: 'development' })).toBe(false);
+      expect(isOfficialDailyEditionCompetitiveVisible({ ...env, VERCEL_ENV: undefined })).toBe(false);
+    }
+    expect(isOfficialDailyEditionCompetitiveVisible({
+      ...prod, OFFICIAL_DAILY_COMPETITIVE_PRODUCTION_ENABLED: 'false',
+    })).toBe(false);
+    expect(isOfficialDailyEditionCompetitiveVisible({
+      ...qa, OFFICIAL_DAILY_COMPETITIVE_UI_QA: 'false',
+    })).toBe(false);
+    expect(isOfficialDailyEditionCompetitiveVisible({
+      ...prod, OFFICIAL_DAILY_COMPETITIVE_UI_QA: 'true',
+      OFFICIAL_DAILY_COMPETITIVE_PRODUCTION_ENABLED: 'false',
+    })).toBe(false);
   });
 
   it('matches all 32 real release-flag combinations, including chooser ON and Archive OFF', () => {

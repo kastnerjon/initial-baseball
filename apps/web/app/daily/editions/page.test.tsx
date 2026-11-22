@@ -12,7 +12,7 @@ vi.mock('../../serverOfficialDailyArchiveSection', () => ({
 }));
 vi.mock('../../serverOfficialDailyEditionChoice', () => ({
   isOfficialDailyEditionChooserVisible: mocked.enabled,
-  isOfficialDailyEditionCompetitivePreviewVisible: mocked.competitiveVisible,
+  isOfficialDailyEditionCompetitiveVisible: mocked.competitiveVisible,
   readCurrentOfficialDailyEditionChoice: mocked.read,
 }));
 import ChoicePage, { metadata } from './page';
@@ -74,7 +74,7 @@ describe('Daily edition choice page', () => {
         editionKey: 'same-b', puzzleNumber: 194 },
     ], nextCursor: null });
     const html = renderToStaticMarkup(await ChoicePage(args()));
-    expect(html).toContain('Additional published editions support scored play in this preview');
+    expect(html).toContain('Additional published editions support scored play');
     expect((html.match(/Scored play; results count for this edition/g) ?? []).length).toBe(2);
     expect(html).toContain('href="/daily/editions/daily-ed-v1-907f33db-c38f-43c3-8e6b-a3aaf19bbd08?date=2026-11-06"');
     expect(html).toContain('href="/daily/editions/daily-ed-v1-2a65c93c-3f36-4f4b-853f-92e85bb81648?date=2026-11-06"');

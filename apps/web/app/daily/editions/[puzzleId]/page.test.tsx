@@ -31,9 +31,14 @@ vi.mock('../../../serverOfficialDailyEditionChoice', () => ({
     'OFFICIAL_DAILY_EDITION_HTTP_ENABLED',
     'OFFICIAL_DAILY_EDITION_PRIVATE_RUNTIME_ENABLED',
   ].every(flag => process.env[flag] === 'true'),
-  isOfficialDailyEditionCompetitivePreviewVisible: () => process.env.VERCEL_ENV === 'preview'
-    && process.env.OFFICIAL_DAILY_COMPETITIVE_UI_QA === 'true'
-    && process.env.OFFICIAL_DAILY_EDITION_COMPETITIVE_HTTP_ENABLED === 'true',
+  isOfficialDailyEditionCompetitiveVisible: () =>
+    process.env.OFFICIAL_DAILY_EDITION_COMPETITIVE_HTTP_ENABLED === 'true'
+    && ['OFFICIAL_DAILY_EDITION_PRACTICE_UI_ENABLED',
+      'OFFICIAL_DAILY_EDITION_HTTP_ENABLED',
+      'OFFICIAL_DAILY_EDITION_PRIVATE_RUNTIME_ENABLED'].every(flag => process.env[flag] === 'true')
+    && ((process.env.VERCEL_ENV === 'preview' && process.env.OFFICIAL_DAILY_COMPETITIVE_UI_QA === 'true')
+      || (process.env.VERCEL_ENV === 'production'
+        && process.env.OFFICIAL_DAILY_COMPETITIVE_PRODUCTION_ENABLED === 'true')),
   readCurrentOfficialDailyEditionChoice: mocked.readChoice,
 }));
 
@@ -89,7 +94,7 @@ beforeEach(() => {
 });
 
 describe('default-OFF exact-ID official Daily practice page', () => {
-  it('mounts competitive entry only on explicitly enabled Preview and preserves production practice', async () => {
+  it('mounts shared scored entry only on authorized environment gate and preserves practice otherwise', async () => {
     enable();
     vi.stubEnv('OFFICIAL_DAILY_COMPETITIVE_UI_QA', 'true');
     vi.stubEnv('OFFICIAL_DAILY_EDITION_COMPETITIVE_HTTP_ENABLED', 'true');
@@ -99,6 +104,10 @@ describe('default-OFF exact-ID official Daily practice page', () => {
     expect(mocked.createRuntime).not.toHaveBeenCalled();
     vi.stubEnv('VERCEL_ENV', 'production');
     expect(renderToStaticMarkup(await OfficialDailyPracticePage(input()))).toContain('shared-daily-game');
+    expect(mocked.createRuntime).toHaveBeenCalledOnce();
+    vi.stubEnv('OFFICIAL_DAILY_COMPETITIVE_PRODUCTION_ENABLED', 'true');
+    const launched = renderToStaticMarkup(await OfficialDailyPracticePage(input()));
+    expect(launched).toContain('Opening your scorecard');
     expect(mocked.createRuntime).toHaveBeenCalledOnce();
   });
   it('is not indexed or described with private answer details', () => {
