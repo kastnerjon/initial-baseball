@@ -18,7 +18,7 @@ export function UnifiedOfficialDailyArchiveSection({ page, practiceAvailable, co
       <h2>Official Daily editions</h2>
       <p>Past official lineups. {practiceAvailable
         ? competitiveAvailable
-          ? 'Published secondary editions support scored play in this preview; historical primary replay remains unavailable.'
+          ? 'Published secondary editions support scored play; historical primary replay remains unavailable.'
           : 'Published secondary editions are available for practice; historical primary replay remains unavailable.'
         : 'Secondary practice is not yet available; historical primary replay remains unavailable.'}</p>
       {page.dates.length === 0 ? (

@@ -38,7 +38,7 @@ export default async function OfficialDailyEditionChoicePage({ searchParams }: P
         <p className="eyebrow">Initial Baseball · Daily Nine</p>
         <h1>Today’s Daily puzzles</h1>
         <p>The original Daily Nine remains playable without an account. {competitiveAvailable
-          ? 'Additional published editions support scored play in this preview; results count for each exact edition.'
+          ? 'Additional published editions support scored play; results count for each exact edition.'
           : 'Additional published editions can be played for practice without an account; competitive scores are not submitted.'}</p>
         <p><a href="/">Play today’s primary Daily Nine</a></p>
         {unavailable || page === null ? (
