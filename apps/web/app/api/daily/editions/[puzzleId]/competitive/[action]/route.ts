@@ -42,9 +42,16 @@ export async function POST(request: Request, context: Context) {
   try {
     const { active, legacy } = readOfficialDailyCompetitiveSigningKeys();
     const credentials = createOfficialDailyAttemptBrowserCredential(active, legacy);
+    // Closing new starts must not strand signed in-progress games or scorecards.
+    // Preview QA keeps existing behavior; production first-start admission
+    // requires a separate exact-true switch even while scored reads remain on.
+    const newStartsAllowed = process.env.VERCEL_ENV === 'preview' ||
+      (process.env.VERCEL_ENV === 'production' &&
+        process.env.OFFICIAL_DAILY_COMPETITIVE_NEW_STARTS_ENABLED === 'true');
     const identity = credentials.inspect(request.headers.get('cookie'), puzzleId, request.url);
     if (identity.kind === 'absent' && action === 'bootstrap') {
       // Wait for the browser to return the cookie before allocating its first attempt.
+      if (!newStartsAllowed) return respond({ error: 'not_found' }, 404);
       const response = respond({ error: 'cookie_required' }, 428);
       response.headers.set('set-cookie', credentials.issue(puzzleId, request.url).setCookie);
       return response;
@@ -52,7 +59,7 @@ export async function POST(request: Request, context: Context) {
     if (identity.kind !== 'valid') return respond({ error: 'forbidden' }, 403);
     const game = createServerOfficialDailyCompetitiveGame(
       puzzleId, identity.browserKeyDigest, active,
-      action === 'bootstrap' ? 'bootstrap' : 'existing', legacy,
+      action === 'bootstrap' && newStartsAllowed ? 'bootstrap' : 'existing', legacy,
     );
     const response = action === 'scorecard' ? respond(await game.getScorecard(date!))
       : action === 'bootstrap' ? respond(await game.getBootstrap(date!))
