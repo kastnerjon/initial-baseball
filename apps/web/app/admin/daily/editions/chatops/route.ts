@@ -8,6 +8,7 @@ import {
   createOfficialDailyEditorialDraft, findOfficialDailyEditorialDraftForRecovery, OfficialDailyDraftError, parseOfficialDailyDraftInput,
   readOfficialDailyEditorialDraftPreview, replaceOfficialDailyEditorialDraftRoster, scheduleOfficialDailyEditorialDraft,
 } from '../../../../serverOfficialDailyEditorialDrafts';
+import { issuePrivateOfficialDaily, OfficialDailyIssueError } from '../../../../serverOfficialDailyIssuance';
 
 const HEADERS = { 'cache-control': 'private, no-store', vary: 'Authorization' } as const;
 const reply = (status: number, error: string) => NextResponse.json({ error }, { status, headers: HEADERS });
@@ -45,7 +46,10 @@ export async function POST(request: Request): Promise<NextResponse> {
     && v.confirmed === true && Number.isSafeInteger(v.expectedRevision) && (v.expectedRevision as number) >= 0;
   const revise = v.action === 'revise' && keysEqual(v, ['action', 'occurrenceId', 'expectedRevision', 'canonicalPlayerIds'])
     && Number.isSafeInteger(v.expectedRevision) && (v.expectedRevision as number) >= 0 && Array.isArray(v.canonicalPlayerIds);
-  if (!create && !preview && !lookup && !schedule && !revise) return reply(400, 'invalid_request');
+  const issue = v.action === 'issue' && keysEqual(v, ['action', 'occurrenceId', 'expectedRevision', 'confirmed'])
+    && v.confirmed === true && Number.isSafeInteger(v.expectedRevision) && (v.expectedRevision as number) >= 0;
+  if (!create && !preview && !lookup && !schedule && !revise && !issue) return reply(400, 'invalid_request');
+  if (issue && process.env.OFFICIAL_DAILY_EDITOR_ISSUANCE_ENABLED !== 'true') return reply(404, 'not_found');
   if (!create && !lookup && (typeof v.occurrenceId !== 'string' || !isOfficialDailyOccurrenceId(v.occurrenceId))) return reply(400, 'invalid_request');
   try {
     const expected = create ? parseOfficialDailyDraftInput(v.draft, new Date()) : null;
@@ -82,12 +86,20 @@ export async function POST(request: Request): Promise<NextResponse> {
             && selection.canonicalPlayerId === ids[i])) return reply(409, 'conflict');
       return NextResponse.json({ result, draft }, { status: 200, headers: HEADERS });
     }
+    if (issue) {
+      // Issuance requires a second explicit confirmation. The existing issuer
+      // verifies the atomic SQL winner and frozen publication readback.
+      const result = await issuePrivateOfficialDaily(client, v.occurrenceId as string, v.expectedRevision as number);
+      return NextResponse.json({ result }, { status: result.status === 'created' ? 201 : 200, headers: HEADERS });
+    }
     const result = await scheduleOfficialDailyEditorialDraft(client, v.occurrenceId as string, v.expectedRevision as number, actorId);
     const draft = await readOfficialDailyEditorialDraftPreview(client, result.occurrenceId);
     if (draft.occurrenceId !== result.occurrenceId || draft.status !== 'scheduled' || draft.revision !== result.revision) return reply(409, 'conflict');
     return NextResponse.json({ result, draft }, { status: 200, headers: HEADERS });
   } catch (error) {
-    if (error instanceof OfficialDailyDraftError) return reply(error.kind === 'invalid' ? 400 : error.kind === 'conflict' ? 409 : 503, error.kind);
+    if (error instanceof OfficialDailyDraftError || error instanceof OfficialDailyIssueError) {
+      return reply(error.kind === 'invalid' ? 400 : error.kind === 'conflict' ? 409 : 503, error.kind);
+    }
     return reply(503, 'unavailable');
   }
 }
