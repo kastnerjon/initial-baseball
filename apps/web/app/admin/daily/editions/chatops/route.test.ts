@@ -6,10 +6,15 @@ vi.mock('../../../../serverOfficialDailyEditorialDrafts', () => {
   return { OfficialDailyDraftError, createOfficialDailyEditorialDraft: vi.fn(), findOfficialDailyEditorialDraftForRecovery: vi.fn(), parseOfficialDailyDraftInput: vi.fn(),
     readOfficialDailyEditorialDraftPreview: vi.fn(), replaceOfficialDailyEditorialDraftRoster: vi.fn(), scheduleOfficialDailyEditorialDraft: vi.fn() };
 });
+vi.mock('../../../../serverOfficialDailyIssuance', () => {
+  class OfficialDailyIssueError extends Error { constructor(readonly kind: string) { super('private issued roster'); } }
+  return { OfficialDailyIssueError, issuePrivateOfficialDaily: vi.fn() };
+});
 import { POST } from './route';
 import { createServerSupabaseClient } from '../../../../serverSupabaseClient';
 import { createOfficialDailyEditorialDraft, findOfficialDailyEditorialDraftForRecovery, OfficialDailyDraftError, parseOfficialDailyDraftInput,
   readOfficialDailyEditorialDraftPreview, replaceOfficialDailyEditorialDraftRoster, scheduleOfficialDailyEditorialDraft } from '../../../../serverOfficialDailyEditorialDrafts';
+import { issuePrivateOfficialDaily, OfficialDailyIssueError } from '../../../../serverOfficialDailyIssuance';
 
 const TOKEN = '0123456789abcdef0123456789abcdef';
 const ID = '907f33db-c38f-43c3-8e6b-a3aaf19bbd08';
@@ -31,6 +36,7 @@ beforeEach(() => {
     puzzleNumber: 223, editionKey: 'modern', editionNumber: 2, title: 'Modern', status: 'draft', revision: 0,
     canSchedule: true, selections: roster.map((canonicalPlayerId, i) => ({ slot: i + 1, canonicalPlayerId, displayName: null })) });
   vi.mocked(scheduleOfficialDailyEditorialDraft).mockResolvedValue({ status: 'scheduled', occurrenceId: ID, revision: 1 });
+  vi.mocked(issuePrivateOfficialDaily).mockResolvedValue({ status: 'created', puzzleId: 'daily-ed-v1-' + ID });
 });
 afterEach(() => { vi.unstubAllEnvs(); vi.clearAllMocks(); });
 describe('private official Daily edition ChatOps', () => {
@@ -122,6 +128,63 @@ describe('private official Daily edition ChatOps', () => {
     vi.mocked(readOfficialDailyEditorialDraftPreview).mockResolvedValueOnce({ ...prior, status: 'scheduled', revision: 1 });
     expect((await POST(request({ action: 'schedule', occurrenceId: ID, expectedRevision: 0, confirmed: true }))).status).toBe(200);
     expect(scheduleOfficialDailyEditorialDraft).toHaveBeenCalledWith(expect.anything(), ID, 0, 'chatops:assistant');
+  });
+  it('requires exact reviewed occurrence/revision and separate confirmation before issuing', async () => {
+    for (const body of [
+      { action: 'issue', occurrenceId: ID, expectedRevision: 1 },
+      { action: 'issue', occurrenceId: ID, expectedRevision: 1, confirmed: false },
+      { action: 'issue', occurrenceId: ID, expectedRevision: -1, confirmed: true },
+      { action: 'issue', occurrenceId: ID, expectedRevision: 0.5, confirmed: true },
+      { action: 'issue', occurrenceId: 'invalid', expectedRevision: 1, confirmed: true },
+      { action: 'issue', occurrenceId: ID, expectedRevision: 1, confirmed: true, canonicalPlayerIds: roster },
+      { action: 'issue', occurrenceId: ID, expectedRevision: 1, confirmed: true, actorId: 'spoofed' },
+    ]) expect((await POST(request(body))).status).toBe(400);
+    expect(createServerSupabaseClient).not.toHaveBeenCalled();
+    expect(issuePrivateOfficialDaily).not.toHaveBeenCalled();
+    expect(scheduleOfficialDailyEditorialDraft).not.toHaveBeenCalled();
+  });
+  it('issues a separately confirmed scheduled edition using the immutable issuer', async () => {
+    const response = await POST(request({ action: 'issue', occurrenceId: ID, expectedRevision: 1, confirmed: true }));
+    expect(response.status).toBe(201);
+    expect(response.headers.get('cache-control')).toBe('private, no-store');
+    expect(await response.json()).toEqual({ result: { status: 'created', puzzleId: 'daily-ed-v1-' + ID } });
+    expect(issuePrivateOfficialDaily).toHaveBeenCalledWith(expect.anything(), ID, 1);
+    expect(issuePrivateOfficialDaily).toHaveBeenCalledTimes(1);
+    expect(scheduleOfficialDailyEditorialDraft).not.toHaveBeenCalled();
+    expect(createOfficialDailyEditorialDraft).not.toHaveBeenCalled();
+  });
+  it('returns the existing immutable winner without a second issuance', async () => {
+    vi.mocked(issuePrivateOfficialDaily).mockResolvedValueOnce({ status: 'existing', puzzleId: 'daily-ed-v1-' + ID });
+    const response = await POST(request({ action: 'issue', occurrenceId: ID, expectedRevision: 2, confirmed: true }));
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({ result: { status: 'existing', puzzleId: 'daily-ed-v1-' + ID } });
+    expect(issuePrivateOfficialDaily).toHaveBeenCalledWith(expect.anything(), ID, 2);
+  });
+  it('fails closed on stale issuance revisions and redacts private issuance errors', async () => {
+    vi.mocked(issuePrivateOfficialDaily).mockRejectedValueOnce(new OfficialDailyIssueError('conflict'));
+    const stale = await POST(request({ action: 'issue', occurrenceId: ID, expectedRevision: 0, confirmed: true }));
+    expect(stale.status).toBe(409);
+    expect(await stale.text()).not.toContain('private issued roster');
+    vi.mocked(issuePrivateOfficialDaily).mockRejectedValueOnce(new OfficialDailyIssueError('unavailable'));
+    const unavailable = await POST(request({ action: 'issue', occurrenceId: ID, expectedRevision: 1, confirmed: true }));
+    expect(unavailable.status).toBe(503);
+    expect(await unavailable.text()).not.toContain('private issued roster');
+    expect(scheduleOfficialDailyEditorialDraft).not.toHaveBeenCalled();
+  });
+  it('keeps issuance closed when either feature flag is disabled', async () => {
+    for (const flag of ['OFFICIAL_DAILY_EDITOR_CHATOPS_ENABLED', 'OFFICIAL_DAILY_EDITOR_DRAFTS_ENABLED']) {
+      vi.stubEnv(flag, 'false');
+      expect((await POST(request({ action: 'issue', occurrenceId: ID, expectedRevision: 1, confirmed: true }))).status).toBe(404);
+      vi.stubEnv(flag, 'true');
+    }
+    expect(issuePrivateOfficialDaily).not.toHaveBeenCalled();
+    expect(createServerSupabaseClient).not.toHaveBeenCalled();
+  });
+  it('rejects cross-origin and cross-site issuance', async () => {
+    const body = { action: 'issue', occurrenceId: ID, expectedRevision: 1, confirmed: true };
+    expect((await POST(request(body, { origin: 'https://evil.test' }))).status).toBe(403);
+    expect((await POST(request(body, { 'sec-fetch-site': 'cross-site' }))).status).toBe(403);
+    expect(issuePrivateOfficialDaily).not.toHaveBeenCalled();
   });
   it('does not report success when post-write readback no longer matches', async () => {
     expect((await POST(request({ action: 'schedule', occurrenceId: ID, expectedRevision: 0, confirmed: true }))).status).toBe(409);
