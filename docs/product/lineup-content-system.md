@@ -160,6 +160,21 @@ The authorized editor should be able to:
 7. rerun validation;
 8. schedule the exact final nine.
 
+The authenticated primary Daily administration page displays today's actual nine-player lineup
+and the future editable editorial horizon. It also offers read-only, paginated primary
+lineup history (30 dates per page, newest first). For dates without a public editorial
+lineup, the history reconstructs the canonical deterministic Daily fallback instead
+of omitting a played day. It follows the same source selection policy as primary
+gameplay; pre-editorial dates and unscheduled drafts do not masquerade as published
+editorial lineups. Archived editorial records can be inspected without creating
+public replay links or permitting historical mutations.
+
+The normal human-facing admin table and player-search results emphasize player
+names, careers, positions, teams, usage and warnings; they do not show raw canonical
+IDs, recognizability rank numbers or rank bands. The canonical IDs and rank-derived
+validation remain available internally to the authorized editor workflow to preserve
+identity-safe selection and existing policy.
+
 The published puzzle is the exact nine selected canonical IDs. The recipe remains reusable metadata and an explanation of how the proposal was formed.
 
 For a bounded same-day identity correction, the current editorial record may be corrected only while it is still `scheduled`. That correction preserves scheduled lifecycle metadata in one optimistic save rather than exposing an intermediate draft, while the ordered lineup change produces a new public puzzle identity. `published` and `archived` records remain immutable.
