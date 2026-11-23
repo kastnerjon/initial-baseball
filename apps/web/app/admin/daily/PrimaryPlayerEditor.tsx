@@ -91,7 +91,6 @@ export default function PrimaryPlayerEditor({ puzzleDate, slot }: { puzzleDate: 
         <button type="button" style={resultStyle} disabled={busy} onClick={() => select(player.canonicalPlayerId)}>
           {player.displayName}{player.requiresYearDisambiguation ? ` (${player.yearsPlayedDisplay})` : ''}
           {' · '}{player.playerType}{' · '}{player.primaryPosition}{' · '}{player.teamsDisplay || 'Teams unavailable'}
-          {' · Rank '}{player.recognizabilityRank ?? '—'}{' · '}{player.canonicalPlayerId}
         </button>
       </li>)}</ul>
     </section> : null}

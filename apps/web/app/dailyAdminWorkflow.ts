@@ -3,12 +3,15 @@ import { baseballPlayers, dailyEligiblePlayers } from '@initial-baseball/basebal
 import type { CanonicalPlayerReveal } from '@initial-baseball/baseball-data/runtime';
 import {
   DAILY_AT_BAT_COUNT,
+  DAILY_PUZZLE_EPOCH,
   DAILY_REPEAT_WINDOW_DAYS,
   DAILY_REVIEWED_DATA_VERSION,
   createCanonicalDailyEditorialCandidates,
   createCanonicalDailyLineupCandidates,
   createDailyEditorialHorizonService,
   createDailyPuzzleEditorialService,
+  getDailyPuzzleNumber,
+  resolvePublicDailyPuzzleSelection,
   replaceDailyPuzzleLineup,
   createProductionCanonicalDailySelector,
   rankPlayersByRecognizability,
@@ -19,7 +22,7 @@ import {
   type ProductionCanonicalDailySelector,
 } from '@initial-baseball/daily';
 import { normalizeGuess, searchCanonicalPlayers } from '@initial-baseball/engine';
-import type { Player } from '@initial-baseball/shared';
+import type { DailyPuzzleStatus, Player } from '@initial-baseball/shared';
 import { buildDefaultDailyHints, type DefaultDailyHint } from './buildDefaultDailyHints';
 import type { DailyAdminLifecycleAction } from './dailyAdminLifecycleActions';
 import { createPlayerIdentity } from './dailyPuzzleAdapters';
@@ -36,6 +39,13 @@ export interface DailyAdminWorkflowDependencies {
   getCurrentDailyDate: () => string;
   loadReveal: (canonicalPlayerId: string) => CanonicalPlayerReveal;
 }
+
+export type DailyAdminHistoricalLineup = {
+  puzzleDate: string;
+  puzzleNumber: number;
+  status: DailyPuzzleStatus | 'fallback';
+  players: readonly { slot: number; displayName: string; yearsPlayedDisplay: string }[];
+};
 
 export type DailyAdminPlayerSearchResult = {
   canonicalPlayerId: string;
@@ -73,6 +83,7 @@ export class DailyAdminWorkflowError extends Error {
 
 export interface DailyAdminWorkflow {
   getHorizon(startDate?: string): Promise<readonly DailyEditorialHorizonPuzzle[]>;
+  getHistory(endDate: string, days?: number): Promise<readonly DailyAdminHistoricalLineup[]>;
   ensureHorizon(input: {
     actorId: string;
     occurredAt: string;
@@ -135,6 +146,60 @@ export function createDailyAdminWorkflow(
         startDate,
         candidates: resolvedDependencies.candidates,
         usageHistory: await getUsageHistory(repository, startDate, resolvedDependencies),
+      });
+    },
+
+    async getHistory(endDate, days = 30) {
+      if (!Number.isInteger(days) || days < 1 || days > 30) {
+        throw new Error('Daily admin history pages must contain between 1 and 30 days.');
+      }
+      const parsedEnd = Date.parse(`${endDate}T00:00:00.000Z`);
+      if (!/^\d{4}-\d{2}-\d{2}$/.test(endDate)
+        || !Number.isFinite(parsedEnd)
+        || new Date(parsedEnd).toISOString().slice(0, 10) !== endDate
+        || endDate < DAILY_PUZZLE_EPOCH
+        || endDate > resolvedDependencies.getCurrentDailyDate()) {
+        throw new Error('Daily admin history date is outside the available Daily range.');
+      }
+      const startDate = addDays(endDate, -(days - 1)) < DAILY_PUZZLE_EPOCH
+        ? DAILY_PUZZLE_EPOCH
+        : addDays(endDate, -(days - 1));
+      const records = await repository.listByDateRange(startDate, endDate);
+      const recordsByDate = new Map(records.map(record => [record.puzzleDate, record]));
+      return enumerateDates(startDate, endDate).reverse().map(puzzleDate => {
+        const record = recordsByDate.get(puzzleDate) ?? null;
+        const decision = resolvePublicDailyPuzzleSelection(puzzleDate, record);
+        // Drafts and pre-editorial-era records were never the public lineup.
+        const useEditorial = record !== null && (
+          decision.kind === 'editorial' || decision.kind === 'archived-unavailable'
+        );
+        if (useEditorial) {
+          return {
+            puzzleDate,
+            puzzleNumber: record.puzzleNumber,
+            status: record.status,
+            players: [...record.selections]
+              .sort((left, right) => left.slot - right.slot)
+              .map(selection => {
+                const player = candidatesById.get(selection.canonicalPlayerId)?.player;
+                return {
+                  slot: selection.slot,
+                  displayName: player?.displayName ?? 'Player unavailable',
+                  yearsPlayedDisplay: player?.yearsPlayedDisplay ?? '—',
+                };
+              }),
+          };
+        }
+        return {
+          puzzleDate,
+          puzzleNumber: getDailyPuzzleNumber(puzzleDate),
+          status: 'fallback' as const,
+          players: resolvedDependencies.selectProductionLineup(puzzleDate).map((selection, index) => ({
+            slot: index + 1,
+            displayName: selection.player.displayName,
+            yearsPlayedDisplay: selection.player.yearsPlayedDisplay,
+          })),
+        };
       });
     },
 

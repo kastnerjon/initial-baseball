@@ -1,10 +1,12 @@
 import PrimaryPlayerEditor from './PrimaryPlayerEditor';
 import { ArchiveBetaIssuanceForm } from './ArchiveBetaIssuanceForm';
 import type { DailyEditorialHorizonPuzzle, DailyEditorialHorizonSlot } from '@initial-baseball/daily';
-import type { JSX } from 'react';
+import React, { type JSX } from 'react';
 import type {
+  DailyAdminHistoricalLineup,
   DailyAdminLifecycleAction,
 } from '../../dailyAdminWorkflow';
+import type { DailyAdminHistoryWindow } from './dailyAdminHistoryWindow';
 import {
   DailyLifecycleActionForm,
   getDailyLifecycleSuccessMessage,
@@ -23,6 +25,9 @@ type DailyAdministrationViewProps = {
   betaIssuedDate?: string | null;
   archiveBetaStartDate: string;
   currentDate: string;
+  todayLineup: DailyAdminHistoricalLineup;
+  historyLineups: readonly DailyAdminHistoricalLineup[];
+  historyWindow: DailyAdminHistoryWindow;
 };
 
 export function DailyAdministrationView({
@@ -33,6 +38,9 @@ export function DailyAdministrationView({
   betaIssuedDate = null,
   archiveBetaStartDate,
   currentDate,
+  todayLineup,
+  historyLineups,
+  historyWindow,
 }: DailyAdministrationViewProps): JSX.Element {
   const selectedPuzzle = selection === null
     ? undefined
@@ -61,7 +69,7 @@ export function DailyAdministrationView({
       <ArchiveBetaIssuanceForm startDate={archiveBetaStartDate} currentDate={currentDate} verifiedDate={betaIssuedDate} />
 
       {replacementComplete ? (
-        <p role="status" style={successStyle}>Replacement saved. Duplicate, rank-band, 90-day repeat, and reveal-readiness validation ran again.</p>
+        <p role="status" style={successStyle}>Replacement saved. Duplicate, repeat, and reveal-readiness checks ran again.</p>
       ) : null}
 
       {lifecycleActionComplete !== null ? (
@@ -75,6 +83,13 @@ export function DailyAdministrationView({
         />
       ) : null}
 
+      <section aria-label="Today's Daily lineup" style={{ ...cardStyle, marginTop: 28 }}>
+        <p className="eyebrow">Primary Daily · {currentDate}</p>
+        <h2 style={{ marginTop: 0 }}>Today's lineup · Daily #{todayLineup.puzzleNumber}</h2>
+        <p style={{ marginTop: 0 }}>Current lineup · {formatLineupStatus(todayLineup.status)}</p>
+        <ReadOnlyLineupPlayers lineup={todayLineup} />
+      </section>
+
       {puzzles.length === 0 ? (
         <section style={emptyStyle}>
           <h2>No editorial puzzles in the upcoming horizon</h2>
@@ -85,8 +100,47 @@ export function DailyAdministrationView({
           {puzzles.map(puzzle => <PuzzleCard key={puzzle.puzzleDate} puzzle={puzzle} selection={selection} archiveBetaEligible={puzzle.puzzleDate >= archiveBetaStartDate} />)}
         </section>
       )}
+
+      <section aria-label="Past Daily lineups" style={{ marginTop: 32 }}>
+        <h2>Past Daily lineups</h2>
+        <p>Previous primary lineups, newest first. Open any day to see its nine players.</p>
+        <div style={{ display: 'grid', gap: 10 }}>
+          {historyLineups.map(lineup => (
+            <details key={lineup.puzzleDate} style={cardStyle}>
+              <summary style={{ cursor: 'pointer', fontWeight: 700 }}>
+                Daily #{lineup.puzzleNumber} · {lineup.puzzleDate}
+                <span style={{ fontWeight: 400, marginLeft: 12 }}>{formatLineupStatus(lineup.status)}</span>
+              </summary>
+              <ReadOnlyLineupPlayers lineup={lineup} />
+            </details>
+          ))}
+        </div>
+        <nav aria-label="Past lineup pages" style={{ display: 'flex', gap: 24, marginTop: 20 }}>
+          {historyWindow.olderEndDate ? (
+            <a href={`/admin/daily?historyEnd=${historyWindow.olderEndDate}`} style={textLinkStyle}>Older lineups</a>
+          ) : null}
+          {historyWindow.newerEndDate ? (
+            <a href={`/admin/daily?historyEnd=${historyWindow.newerEndDate}`} style={textLinkStyle}>Newer lineups</a>
+          ) : null}
+        </nav>
+      </section>
     </main>
   );
+}
+
+function ReadOnlyLineupPlayers({ lineup }: { lineup: DailyAdminHistoricalLineup }): JSX.Element {
+  return <ol style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(210px, 1fr))', gap: 12, paddingLeft: 24, marginBottom: 0 }}>
+    {lineup.players.map(player => (
+      <li key={player.slot} value={player.slot}>
+        <strong>{player.displayName}</strong>
+        <div style={{ fontSize: 13, opacity: 0.75 }}>{player.yearsPlayedDisplay}</div>
+      </li>
+    ))}
+  </ol>;
+}
+
+function formatLineupStatus(status: DailyAdminHistoricalLineup['status']): string {
+  return status === 'fallback' ? 'Original generated lineup' : status;
 }
 
 function EditorPanel({ puzzle, slot }: {
@@ -96,7 +150,7 @@ function EditorPanel({ puzzle, slot }: {
   return <section aria-label="Player replacement editor" style={{ ...cardStyle, marginTop: 28 }}>
     <p className="eyebrow">Editing {puzzle.puzzleDate} · Slot {slot.slot}</p>
     <h2>Replace {slot.player?.player.displayName ?? 'unresolved player'}</h2>
-    <p>{editable ? 'Search by player name or alias, inspect the exact game preview, then save the canonical player ID.' : 'Published and archived puzzles cannot be changed through ordinary replacement.'}</p>
+    <p>{editable ? 'Search by player name or alias, inspect the exact game preview, then save the selected player.' : 'Published and archived puzzles cannot be changed through ordinary replacement.'}</p>
     <a href="/admin/daily" style={linkButtonStyle}>Close editor</a>
     {editable ? <PrimaryPlayerEditor key={`${puzzle.puzzleDate}:${slot.slot}`} puzzleDate={puzzle.puzzleDate} slot={slot.slot} /> : null}
   </section>;
@@ -128,9 +182,9 @@ function PuzzleCard({
       </header>
 
       <div style={{ overflowX: 'auto', marginTop: 18 }}>
-        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 1420 }}>
+        <table style={{ width: '100%', borderCollapse: 'collapse', minWidth: 1050 }}>
           <thead>
-            <tr>{['Slot / band', 'Canonical ID', 'Player', 'Career', 'Type', 'Position', 'Teams', 'Rank', 'Last Daily use', 'Source', 'Warnings', 'Replacement'].map(label => <th key={label} style={headCellStyle}>{label}</th>)}</tr>
+            <tr>{['Slot', 'Player', 'Career', 'Type', 'Position', 'Teams', 'Last Daily use', 'Source', 'Warnings', 'Replacement'].map(label => <th key={label} style={headCellStyle}>{label}</th>)}</tr>
           </thead>
           <tbody>
             {puzzle.selections.map(slot => <SlotRow key={slot.slot} puzzle={puzzle} slot={slot} selected={selection?.puzzleDate === puzzle.puzzleDate && selection.slot === slot.slot} />)}
@@ -149,14 +203,12 @@ function SlotRow({ puzzle, slot, selected }: { puzzle: DailyEditorialHorizonPuzz
 
   return (
     <tr style={selected ? { background: 'rgba(23, 51, 38, 0.07)' } : undefined}>
-      <td style={bodyCellStyle}><strong>{slot.slot}</strong><br /><small>{validation?.expectedMinimumRank ?? '—'}–{validation?.expectedMaximumRank ?? '—'}</small></td>
-      <td style={bodyCellStyle}><code>{review?.canonicalPlayerId ?? validation?.canonicalPlayerId ?? 'Unresolved'}</code></td>
+      <td style={bodyCellStyle}><strong>{slot.slot}</strong></td>
       <td style={bodyCellStyle}><strong>{player?.displayName ?? 'Missing canonical player'}</strong></td>
       <td style={bodyCellStyle}>{player?.yearsPlayedDisplay || '—'}</td>
       <td style={bodyCellStyle}>{player?.primaryRole ?? '—'}</td>
       <td style={bodyCellStyle}>{player?.primaryPosition ?? '—'}</td>
       <td style={bodyCellStyle}>{player?.teamsDisplay || '—'}</td>
-      <td style={bodyCellStyle}>{review?.recognizabilityRank ?? '—'}</td>
       <td style={bodyCellStyle}>{validation?.lastDailyUsage ?? 'None in 90 days'}</td>
       <td style={bodyCellStyle}>{slot.source}</td>
       <td style={bodyCellStyle}>{validation?.warnings.join(', ') || 'None'}</td>
