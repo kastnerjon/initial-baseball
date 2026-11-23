@@ -97,6 +97,15 @@ describe('Daily admin workflow', () => {
     expect(horizon.map(puzzle => puzzle.puzzleDate)).toEqual(['2026-07-22']);
   });
 
+  it('reads scheduled December lineups within 30 days without writing', async () => {
+    const repository = new InMemoryRepository();
+    const injected = dependencies(); injected.getCurrentDailyDate = () => '2026-11-23';
+    for (const date of ['2026-12-01', '2026-12-06', '2026-12-24']) repository.seed(scheduleDailyPuzzle(buildDraft(date, injected.candidates), { actorId: 'editor', occurredAt: OCCURRED_AT }));
+    const save = vi.spyOn(repository, 'save');
+    expect((await createDailyAdminWorkflow(repository, injected).getHorizon(undefined, 30)).map(p => p.puzzleDate)).toEqual(['2026-12-01', '2026-12-06']);
+    expect(repository.records).toHaveLength(3); expect(save).not.toHaveBeenCalled();
+  });
+
   it('creates seven authorized drafts and records adapter-supplied audit metadata', async () => {
     const repository = new InMemoryRepository();
 
