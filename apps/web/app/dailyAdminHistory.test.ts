@@ -1,6 +1,8 @@
 import type { Player } from '@initial-baseball/shared';
 import {
+  archiveDailyPuzzle,
   createDailyPuzzleDraft,
+  publishDailyPuzzle,
   getDailyPuzzleNumber,
   scheduleDailyPuzzle,
   type DailyLineupCandidate,
@@ -100,6 +102,26 @@ describe('Authenticated primary Daily history read model', () => {
     expect(history[1]?.players[0]?.displayName).toBe(pool[9]?.player.displayName);
     expect(history[2]?.status).toBe('fallback');
     expect(rows.size).toBe(2);
+  });
+
+  it('preserves archived editorial selections as immutable historical facts', async () => {
+    const { pool, rows, workflow } = setup('2026-11-23');
+    const scheduled = scheduleDailyPuzzle(draft('2026-11-22', pool), {
+      actorId: 'daily-editor', occurredAt: '2026-11-21T12:00:00.000Z',
+    });
+    const published = publishDailyPuzzle(scheduled, {
+      actorId: 'daily-editor', occurredAt: '2026-11-22T12:00:00.000Z',
+    });
+    const archived = archiveDailyPuzzle(published, {
+      actorId: 'daily-editor', occurredAt: '2026-11-23T12:00:00.000Z',
+    });
+    rows.set('2026-11-22', archived);
+
+    const history = await workflow.getHistory('2026-11-22', 1);
+    expect(history[0]?.status).toBe('archived');
+    expect(history[0]?.players.map(p => p.displayName)).toEqual(pool.slice(0, 9).map(p => p.player.displayName));
+    expect(history[0]?.players).toHaveLength(9);
+    expect(rows.get('2026-11-22')).toBe(archived);
   });
 
   it('uses the public deterministic selection policy for dates before editorial launch', async () => {

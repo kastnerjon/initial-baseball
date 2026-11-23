@@ -1,7 +1,7 @@
 import PrimaryPlayerEditor from './PrimaryPlayerEditor';
 import { ArchiveBetaIssuanceForm } from './ArchiveBetaIssuanceForm';
 import type { DailyEditorialHorizonPuzzle, DailyEditorialHorizonSlot } from '@initial-baseball/daily';
-import type { JSX } from 'react';
+import React, { type JSX } from 'react';
 import type {
   DailyAdminHistoricalLineup,
   DailyAdminLifecycleAction,

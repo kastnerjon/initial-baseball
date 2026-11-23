@@ -1,5 +1,5 @@
 import type { DailyPuzzleStatus } from '@initial-baseball/shared';
-import type { JSX } from 'react';
+import React, { type JSX } from 'react';
 import type { DailyAdminLifecycleAction } from '../../dailyAdminLifecycleActions';
 
 type LifecycleAction = {
