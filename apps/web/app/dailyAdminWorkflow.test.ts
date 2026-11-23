@@ -87,6 +87,55 @@ function dependencies(candidates = buildCandidates()): DailyAdminWorkflowDepende
 }
 
 describe('Daily admin workflow', () => {
+  it('shows today and past lineups without mutating storage, including actual deterministic fallback days', async () => {
+    const repository = new InMemoryRepository();
+    const candidates = buildCandidates();
+    const injected = dependencies(candidates);
+    injected.getCurrentDailyDate = () => '2026-11-23';
+    repository.seed(scheduleDailyPuzzle(buildDraft('2026-11-23', candidates), {
+      actorId: 'daily-editor', occurredAt: OCCURRED_AT,
+    }));
+    repository.seed(buildDraft('2026-11-22', candidates));
+    injected.selectProductionLineup = date => candidates.slice(9, 18).map(candidate => ({
+      canonicalPlayerId: `${candidate.canonicalPlayerId}-${date}`,
+      player: candidate.player,
+    }));
+    const before = repository.records.length;
+    const history = await createDailyAdminWorkflow(repository, injected).getHistory('2026-11-23', 3);
+    expect(history.map(puzzle => puzzle.puzzleDate)).toEqual([
+      '2026-11-23', '2026-11-22', '2026-11-21',
+    ]);
+    expect(history[0]?.status).toBe('scheduled');
+    expect(history[0]?.players).toHaveLength(9);
+    expect(history[0]?.players[0]?.displayName).toBe(candidates[0]?.player.displayName);
+    expect(history[1]?.status).toBe('fallback');
+    expect(history[1]?.players[0]?.displayName).toBe(candidates[9]?.player.displayName);
+    expect(history[2]?.status).toBe('fallback');
+    expect(repository.records).toHaveLength(before);
+  });
+
+  it('uses the original deterministic lineup before the editorial launch even when a row exists', async () => {
+    const repository = new InMemoryRepository();
+    const candidates = buildCandidates();
+    repository.seed(scheduleDailyPuzzle(buildDraft('2026-07-21', candidates), {
+      actorId: 'daily-editor', occurredAt: OCCURRED_AT,
+    }));
+    const history = await createDailyAdminWorkflow(repository, dependencies(candidates))
+      .getHistory('2026-07-21', 1);
+    expect(history[0]?.status).toBe('fallback');
+    expect(history[0]?.players).toHaveLength(9);
+  });
+
+  it('bounds historical reads to the Daily epoch, today, and 30-day pages', async () => {
+    const workflow = createDailyAdminWorkflow(new InMemoryRepository(), dependencies());
+    await expect(workflow.getHistory('2026-07-22')).rejects.toThrow('outside the available Daily range');
+    await expect(workflow.getHistory('2026-02-30')).rejects.toThrow('outside the available Daily range');
+    await expect(workflow.getHistory('2026-07-21', 31)).rejects.toThrow('between 1 and 30 days');
+    const history = await workflow.getHistory('2026-04-27', 30);
+    expect(history).toHaveLength(1);
+    expect(history[0]?.puzzleNumber).toBe(1);
+  });
+
   it('defaults the operational horizon to tomorrow in the Daily time zone', async () => {
     const repository = new InMemoryRepository();
     const candidates = buildCandidates();

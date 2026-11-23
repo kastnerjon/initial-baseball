@@ -8,6 +8,7 @@ import { createDailyAdminContext } from '../../dailyAdminComposition';
 import { isDailyAdminLifecycleAction } from '../../dailyAdminLifecycleActions';
 import { DAILY_ADMIN_AUTH_PATH } from '../../dailyAdminPaths';
 import { createDailyAdminWorkflow } from '../../dailyAdminWorkflow';
+import { DAILY_ADMIN_HISTORY_PAGE_DAYS, getDailyAdminHistoryWindow } from './dailyAdminHistoryWindow';
 import {
   DailyAdministrationView,
   type DailyAdminEditorSelection,
@@ -28,7 +29,14 @@ export default async function DailyAdministrationPage({
       authorizationHeader: requestHeaders.get('authorization'),
     });
     const workflow = createDailyAdminWorkflow(repository);
-    const [params, puzzles] = await Promise.all([searchParams, workflow.getHorizon()]);
+    const params = await searchParams;
+    const currentDate = getPacificDailyDateString();
+    const historyWindow = getDailyAdminHistoryWindow(currentDate, readString(params.historyEnd));
+    const [puzzles, todayLineups, historyLineups] = await Promise.all([
+      workflow.getHorizon(),
+      workflow.getHistory(currentDate, 1),
+      workflow.getHistory(historyWindow.endDate, DAILY_ADMIN_HISTORY_PAGE_DAYS),
+    ]);
     const selection = resolveSelection(params, puzzles);
     const lifecycleAction = readString(params.lifecycle);
 
@@ -36,8 +44,11 @@ export default async function DailyAdministrationPage({
       <DailyAdministrationView
         betaIssuedDate={/^\d{4}-\d{2}-\d{2}$/.test(readString(params.betaIssued)) ? readString(params.betaIssued) : null}
         archiveBetaStartDate={ARCHIVE_BETA_EPOCH.startDate}
-        currentDate={getPacificDailyDateString()}
+        currentDate={currentDate}
         puzzles={puzzles}
+        todayLineup={todayLineups[0]!}
+        historyLineups={historyLineups}
+        historyWindow={historyWindow}
         selection={selection}
         replacementComplete={readString(params.updated) === '1'}
         lifecycleActionComplete={isDailyAdminLifecycleAction(lifecycleAction) ? lifecycleAction : null}

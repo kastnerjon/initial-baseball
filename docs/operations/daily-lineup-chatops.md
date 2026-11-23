@@ -59,6 +59,22 @@ The route:
 
 Published and archived puzzles remain immutable. Replacing a scheduled future lineup returns it to draft before an explicit schedule transition. A normal same-day full-lineup correction is allowed only while the current record is already `scheduled`; it is one optimistic-revision save that preserves scheduled lifecycle metadata. An exceptional owner-authorized current-day fallback reset may instead replace a `draft` with an explicit `schedule: true` request, using the already-read draft revision as its save precondition. The route may then receive the explicit `schedule: true` action as usual, and the workflow treats that already-scheduled current puzzle as an idempotent schedule transition. Because public puzzle identity is derived from the ordered canonical lineup, the corrected lineup receives a new puzzle ID automatically while earlier results remain attached to the old ID. Repository optimistic-revision semantics remain intact.
 
+## Admin lineup visibility
+
+The authenticated primary Daily administration page now shows today's primary nine-player
+lineup, the seven-day future editorial horizon, and 30-day pages of historical primary
+lineups, newest first. Past dates are read-only and have no editing or lifecycle actions.
+History follows the same public-primary selection decision: persisted scheduled/published
+editorial records when applicable, the deterministic fallback for dates without a public
+editorial lineup or before the editorial launch, and frozen editorial selections for
+archived records. The fallback label is a provenance distinction, not a new publication
+or replay mechanism. Historical rows never generate drafts or rewrite results.
+
+The normal admin tables and candidate search labels omit recognizability rank, rank bands
+and raw canonical IDs. These IDs remain internal to the existing authenticated selection
+and validation contracts, including the explicit replacement form. This presentation
+change does not expand admin privileges or expose lineups to public routes.
+
 ## Conversational operating procedure
 
 When the owner supplies a lineup:
