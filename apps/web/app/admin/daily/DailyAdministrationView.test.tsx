@@ -52,7 +52,7 @@ describe('Daily administration listing', () => {
         olderEndDate: '2026-10-23', newerEndDate: null,
       }}
     />);
-    expect(html).toContain("Today's lineup");
+    expect(html).toContain('Today&#x27;s lineup');
     expect(html).toContain('Today Player');
     expect(html).toContain('Past Daily lineups');
     expect(html).toContain('Past Player');
