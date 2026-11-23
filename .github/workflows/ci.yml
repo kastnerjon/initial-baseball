@@ -146,6 +146,10 @@ jobs:
         env:
           IB_DEFAULT_OFF_SMOKE_PLAYWRIGHT_MODULE: /tmp/ib-default-off-smoke/node_modules/playwright/index.mjs
         run: node apps/web/scripts/qa-default-off-browser.mjs
+      - name: Verify OAuth consent native form Origin and referrer privacy in Chromium and WebKit
+        env:
+          OFFICIAL_DAILY_OAUTH_QA_PLAYWRIGHT_MODULE: /tmp/ib-default-off-smoke/node_modules/playwright/index.mjs
+        run: node apps/web/scripts/qa-official-daily-oauth-consent-browser.mjs
       - name: Verify mounted secondary Daily hint progression and restoration
         run: node scripts/qa-daily-edition-hints-mounted.mjs
       - name: Verify official Daily edition browser persistence isolation
