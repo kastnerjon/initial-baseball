@@ -2,7 +2,8 @@
 
 ## Mandatory ChatGPT publication transport — #663 / #666
 
-- [ ] Review and merge default-OFF QA OAuth consent source, then sync exact Git tree to protected QA. Consent/decision rechecks exact registered client/editor/callback before any approval. No account/issuer settings changed by source.
+- [x] #701 default-OFF OAuth consent source independently reviewed and merged main `75c1c350`, CI and source deployment READY; review of #702 subsequently exposed native form Origin=null under no-referrer HTML policy. No OAuth feature enabled.
+- [ ] Integrate a separately reviewed main fix: origin-only consent HTML referrer policy with native Chromium/WebKit Authorize/Deny regression, strict null-Origin rejection and no-referrer on provider redirects. Then refresh paused #702 to **exact corrected main-tree parity** and require new independent review/CI/READY QA Preview before merge. No account/issuer settings changed.
 - [ ] Register one isolated-QA Supabase OAuth 2.1 client, verify asymmetrically signed access JWTs, implement narrow audience hook with rollback, enable QA-only creator auth/consent on reviewed host, and verify PKCE/refresh/rejection/recovery. Never enable production publishing.
 
 - [x] #696 independently reviewed and merged: private separately confirmed immutable `issue` action in existing secondary ChatOps. #698 independently reviewed and merged precise four-file sync to protected named QA, matching main Git tree and READY QA deployment.

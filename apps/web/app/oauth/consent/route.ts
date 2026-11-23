@@ -16,12 +16,16 @@ const HEADERS = {
   'x-frame-options': 'DENY',
   'content-security-policy': "default-src 'none'; form-action 'self'; base-uri 'none'; frame-ancestors 'none'",
 };
+// Consent HTML needs a real Origin on native same-site form POSTs. Origin-only
+// Referer prevents the authorization_id query from being sent in that header.
+// Keep the stricter no-referrer policy on OAuth provider redirects and errors.
+const CONSENT_HTML_HEADERS = { ...HEADERS, 'referrer-policy': 'origin' };
 const escape = (text: string) => text.replace(/[&<>"']/g, char =>
   ( { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' } as Record<string, string> )[char] ?? char);
 function page(body: string, status = 200) {
   return new NextResponse('<!doctype html><html lang="en"><head><meta charset="utf-8"><title>Authorize ChatGPT | Initial Baseball</title></head><body><main><h1>Authorize ChatGPT</h1>'
     + body + '</main></body></html>', {
-    status, headers: { ...HEADERS, 'content-type': 'text/html; charset=utf-8' },
+    status, headers: { ...CONSENT_HTML_HEADERS, 'content-type': 'text/html; charset=utf-8' },
   });
 }
 function fail(status: number) {
