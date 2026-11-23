@@ -16,6 +16,9 @@ import {
 
 export const dynamic = 'force-dynamic';
 
+// Display a month of persisted lineups; draft generation intentionally remains seven days.
+const UPCOMING_DAILY_ADMIN_DAYS = 30;
+
 type DailyAdministrationPageProps = {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 };
@@ -33,7 +36,7 @@ export default async function DailyAdministrationPage({
     const currentDate = getPacificDailyDateString();
     const historyWindow = getDailyAdminHistoryWindow(currentDate, readString(params.historyEnd));
     const [puzzles, todayLineups, historyLineups] = await Promise.all([
-      workflow.getHorizon(),
+      workflow.getHorizon(undefined, UPCOMING_DAILY_ADMIN_DAYS),
       workflow.getHistory(currentDate, 1),
       workflow.getHistory(historyWindow.endDate, DAILY_ADMIN_HISTORY_PAGE_DAYS),
     ]);
