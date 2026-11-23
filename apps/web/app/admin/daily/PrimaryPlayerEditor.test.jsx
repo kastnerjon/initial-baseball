@@ -22,6 +22,8 @@ it('keeps searches and previews out of URLs and requires explicit replacement', 
   await submit(input.closest('form'));
   expect(fetcher.mock.calls[0][0]).toBe('/admin/daily/players');
   expect(fetcher.mock.calls[0][1].body.toString()).toBe('q=Private+Player');
+  expect(container.textContent).not.toContain('private-id');
+  expect(container.textContent).not.toContain('Rank');
   expect(fetcher.mock.calls[0][1].referrerPolicy).toBe('no-referrer');
   const choose = [...container.querySelectorAll('button')].find(button => button.textContent.includes('Private Player'));
   await act(async () => choose.click());
