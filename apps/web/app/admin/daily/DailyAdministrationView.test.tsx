@@ -57,6 +57,7 @@ describe('Daily administration listing', () => {
     expect(html).toContain('Past Daily lineups');
     expect(html).toContain('Past Player');
     expect(html).toContain('Original generated lineup');
+    expect(html).toContain('Upcoming Daily lineups · next 30 days');
     expect(html).toContain('Future Player');
     expect(html).toContain('historyEnd=2026-10-23');
     expect(html).not.toContain('private-canonical-id');

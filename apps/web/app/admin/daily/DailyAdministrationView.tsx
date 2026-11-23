@@ -97,6 +97,7 @@ export function DailyAdministrationView({
         </section>
       ) : (
         <section aria-label="Upcoming Daily editorial puzzles" style={{ display: 'grid', gap: 24, marginTop: 28 }}>
+          <h2 style={{ margin: 0 }}>Upcoming Daily lineups · next 30 days</h2>
           {puzzles.map(puzzle => <PuzzleCard key={puzzle.puzzleDate} puzzle={puzzle} selection={selection} archiveBetaEligible={puzzle.puzzleDate >= archiveBetaStartDate} />)}
         </section>
       )}

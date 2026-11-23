@@ -82,7 +82,7 @@ export class DailyAdminWorkflowError extends Error {
 }
 
 export interface DailyAdminWorkflow {
-  getHorizon(startDate?: string): Promise<readonly DailyEditorialHorizonPuzzle[]>;
+  getHorizon(startDate?: string, days?: number): Promise<readonly DailyEditorialHorizonPuzzle[]>;
   getHistory(endDate: string, days?: number): Promise<readonly DailyAdminHistoricalLineup[]>;
   ensureHorizon(input: {
     actorId: string;
@@ -141,9 +141,10 @@ export function createDailyAdminWorkflow(
   }));
 
   return {
-    async getHorizon(startDate = getDefaultStartDate(resolvedDependencies)) {
+    async getHorizon(startDate = getDefaultStartDate(resolvedDependencies), days) {
       return horizonService.getHorizon({
         startDate,
+        ...(days === undefined ? {} : { days }),
         candidates: resolvedDependencies.candidates,
         usageHistory: await getUsageHistory(repository, startDate, resolvedDependencies),
       });
