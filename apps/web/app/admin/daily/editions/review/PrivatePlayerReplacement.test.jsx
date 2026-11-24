@@ -1,5 +1,6 @@
 // @vitest-environment jsdom
 import React, { act } from 'react';
+import { searchCanonicalPlayers } from '@initial-baseball/engine';
 import { createRoot } from 'react-dom/client';
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import PrivatePlayerReplacement from './PrivatePlayerReplacement';
@@ -105,4 +106,43 @@ it('does not offer selection for unready candidates and fails closed on malforme
   await act(async () => form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true })));
   expect(container.querySelector('[role="alert"]').textContent).toContain('temporarily unavailable');
   expect(container.querySelector('#draft-replace-player').value).toBe('');
+});
+
+
+it('prompts for a narrower search at the real canonical ten-candidate cap without claiming more exist', async () => {
+  const universe = Array.from({ length: 12 }, (_, index) => ({
+    id: 'synthetic-' + index, displayName: 'Fixture Player ' + index, aliases: [],
+  }));
+  const capped = searchCanonicalPlayers('fixture', universe);
+  expect(capped).toHaveLength(10);
+  const results = capped.map(player => ({
+    canonicalPlayerId: player.playerId, displayName: player.displayName,
+    primaryPosition: 'CF', yearsPlayedDisplay: '2000–2010',
+    requiresYearDisambiguation: false, revealReady: true,
+  }));
+  const fetcher = vi.fn()
+    .mockResolvedValueOnce({ ok: true, json: async () => ({ results, hasMore: false }) })
+    .mockResolvedValueOnce({ ok: true, json: async () => ({ results: results.slice(0, 9), hasMore: false }) });
+  vi.stubGlobal('fetch', fetcher);
+  await act(async () => root.render(<PrivatePlayerReplacement occurrenceId="fixture"
+    revision={3} selections={[]} />));
+  const input = container.querySelector('#private-player-query');
+  async function search(query) {
+    await act(async () => {
+      Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, 'value').set.call(input, query);
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    await act(async () => input.closest('form').dispatchEvent(
+      new Event('submit', { bubbles: true, cancelable: true }),
+    ));
+  }
+  await search('fixture');
+  expect(container.textContent).toContain('Showing 10 matches. Results may be limited');
+  expect(container.textContent).toContain('refine your search if your player is not listed');
+  expect(fetcher.mock.calls[0][0]).toBe('/admin/daily/editions/players/search');
+  expect(fetcher.mock.calls[0][1].body.toString()).toBe('q=fixture');
+  expect(location.href).not.toContain('fixture');
+  await search('fixture player');
+  expect(container.textContent).not.toContain('Results may be limited');
+  expect(fetcher).toHaveBeenCalledTimes(2);
 });

@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
+import { searchCanonicalPlayers } from '@initial-baseball/engine';
 vi.mock('server-only', () => ({}));
 vi.mock('../../../../../dailyAdminComposition', () => ({
   createDailyAdminContext: vi.fn(() => ({ repository: {} })),
@@ -61,6 +62,27 @@ describe('private POST player lookup', () => {
     expect(JSON.stringify(json)).not.toContain('SECRET_HINT');
     expect(JSON.stringify(json)).not.toContain('hintValues');
   });
+  it('demonstrates the actual engine cap arrives with hasMore false, without exposing private data', async () => {
+    const synthetic = Array.from({ length: 12 }, (_, index) => ({
+      id: 'fixture-' + index, displayName: 'Fixture Player ' + index, aliases: [],
+    }));
+    const capped = searchCanonicalPlayers('fixture', synthetic);
+    expect(capped).toHaveLength(10);
+    vi.mocked(createDailyAdminWorkflow).mockReturnValueOnce({
+      searchPlayers: vi.fn(() => capped.map(player => ({
+        ...candidate(Number(player.playerId.split('-')[1])),
+        canonicalPlayerId: player.playerId,
+        displayName: player.displayName,
+      }))),
+    } as never);
+    const response = await POST(request('q=fixture'));
+    expect(response.status).toBe(200);
+    const json = await response.json() as { results: unknown[]; hasMore: boolean };
+    expect(json.results).toHaveLength(10);
+    expect(json.hasMore).toBe(false);
+    expect(JSON.stringify(json)).not.toContain('SECRET_HINT');
+  });
+
   it('redacts provider errors', async () => {
     vi.mocked(createDailyAdminContext).mockImplementationOnce(() => { throw new Error('PRIVATE_VALUE'); });
     const response = await POST(request());

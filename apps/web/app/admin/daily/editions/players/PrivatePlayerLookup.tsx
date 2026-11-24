@@ -63,7 +63,8 @@ export default function PrivatePlayerLookup({ onSelect, onQueryChange }: {
     {result ? <section aria-label="Canonical player search results" aria-live="polite">
       <h2>Matching candidates</h2>
       {result.results.length === 0 ? <p>No matching Daily candidates.</p> : null}
-      {result.hasMore ? <p>Showing the first 25 matches. Refine the search to find a specific player.</p> : null}
+      {/* Canonical player search is capped at 10 before the route can count other matches. */}
+      {(result.hasMore || result.results.length >= 10) ? <p>Showing {result.results.length} matches. Results may be limited; refine your search if your player is not listed.</p> : null}
       <ol>{result.results.map(player => <li key={player.canonicalPlayerId}>
         <strong>{player.displayName}</strong>{player.requiresYearDisambiguation
           ? ' (' + player.yearsPlayedDisplay + ')' : ''}{' · '}{player.primaryPosition}{' · '}
