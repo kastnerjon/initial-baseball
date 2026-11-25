@@ -7,7 +7,7 @@ The dedicated editor QA project must build the nested Next application in
 resource discovery, consent and decision handlers. CI checks the compiled
 route inventory. Do not connect this project with the root web build settings:
 those build the player site. This source candidate is for disabled-route QA.
-A guest cannot sign in on this host yet. Complete editor-only sign-in, provider
+The dedicated /account route signs in an existing password-enabled QA editor and issues browser cookies only after checking the verified editor ID. Complete provider
 consent routing, rate limits and real ChatGPT testing before enabling writes.
 
 ## November 22 — secure MCP connector source candidate (#666), activation OFF
