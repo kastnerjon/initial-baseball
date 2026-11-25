@@ -1,0 +1,7 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "installCommand": "cd ../../.. && corepack pnpm install --frozen-lockfile",
+  "buildCommand": "test -f check-routes.mjs && cd ../../.. && corepack pnpm data:runtime && corepack pnpm --filter '@initial-baseball/web^...' build && corepack pnpm --filter @initial-baseball/web exec next build editor-qa && node apps/web/editor-qa/check-routes.mjs",
+  "outputDirectory": ".next"
+}
