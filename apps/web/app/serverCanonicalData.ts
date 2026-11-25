@@ -51,6 +51,7 @@ function findRuntimeDirectory(): string {
   const candidates = [
     resolve(process.cwd(), 'packages/baseball-data/reports/canonical-runtime-payload'),
     resolve(process.cwd(), '../../packages/baseball-data/reports/canonical-runtime-payload'),
+    resolve(process.cwd(), '../../../packages/baseball-data/reports/canonical-runtime-payload'),
   ];
   const runtimeDirectory = candidates.find(candidate => existsSync(candidate));
   if (runtimeDirectory === undefined) {
