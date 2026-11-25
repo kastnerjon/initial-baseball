@@ -1,5 +1,15 @@
 # Initial Baseball — Start Here
 
+## Editor QA build candidate (#666)
+
+The dedicated editor QA project must build the nested Next application in
+`apps/web/editor-qa`. Its route entry points reuse the existing MCP,
+resource discovery, consent and decision handlers. CI checks the compiled
+route inventory. Do not connect this project with the root web build settings:
+those build the player site. This source candidate is for disabled-route QA.
+A guest cannot sign in on this host yet. Complete editor-only sign-in, provider
+consent routing, rate limits and real ChatGPT testing before enabling writes.
+
 ## November 22 — secure MCP connector source candidate (#666), activation OFF
 
 - PR #698 independently reviewed/merged into named protected QA at `a6af0f900e4b485d34cc027a9f37323abb7586b3`; full tree `3ebca0c007034818ce83becd1c72714e9ad25629` equals main and matching branch Vercel `dpl_47a55Mk8bNDmFpw7Bi2o6dTEhG5v` is READY. Production unchanged.
