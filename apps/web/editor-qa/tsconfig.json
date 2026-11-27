@@ -1,0 +1,12 @@
+{
+  "extends": "../tsconfig.json",
+  "include": [
+    "next-env.d.ts",
+    "app/**/*.ts",
+    ".next/types/**/*.ts"
+  ],
+  "compilerOptions": {
+    "allowJs": true,
+    "esModuleInterop": true
+  }
+}

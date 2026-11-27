@@ -138,6 +138,11 @@ jobs:
           pnpm --filter @initial-baseball/daily build
           pnpm --filter @initial-baseball/web build
 
+      - name: Build isolated editor QA and verify the compiled route inventory
+        run: |
+          pnpm --filter @initial-baseball/web exec next build editor-qa
+          node apps/web/editor-qa/check-routes.mjs
+
       - name: Install pinned QA-only Chromium and WebKit for browser smoke
         run: |
           npm install --prefix /tmp/ib-default-off-smoke --no-package-lock playwright@1.56.1
